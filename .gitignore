@@ -102,13 +102,8 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+*env/
+*env.bak/
 
 # Spyder project settings
 .spyderproject
@@ -127,3 +122,15 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Emacs
+*~
+
+# PyCharm
+.idea/
+
+# Git
+.git/
+
+# MacOS
+.DS_Store/
