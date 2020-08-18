@@ -10,9 +10,10 @@ import requests
 import time
 
 from dcicutils.beanstalk_utils import get_beanstalk_real_url
+from dcicutils.command_utils import yes_or_no
 from dcicutils.env_utils import is_cgap_env
 from dcicutils.misc_utils import check_true
-from ..utils import yes_or_no
+
 
 EPILOG = __doc__
 
@@ -44,7 +45,7 @@ def get_cgap_auth_tuple():
                        % (KEY_ID_VAR, SECRET_VAR))
 
 
-def get_cap_auth_dict(server):
+def get_cgap_auth_dict(server):
     auth_tuple = get_cgap_auth_tuple()
     auth_dict = {
         'key': auth_tuple[0],
@@ -128,7 +129,8 @@ def main(simulated_args_for_testing=None):
         user_url = site + "/me?format=json"
         user_record_response = requests.get(user_url, auth=auth)
         if user_record_response.status_code == 401:
-            raise PermissionError("Your credentials (the access key information in environment variables %s and %s) were rejected by %s."
+            raise PermissionError("Your credentials (the access key information in environment variables %s and %s)"
+                                  " were rejected by %s."
                                   " Either this is not the right site, or you need to obtain up-to-date access keys."
                                   % (KEY_ID_VAR, SECRET_VAR, site))
         user_record_response.raise_for_status()
