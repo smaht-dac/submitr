@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "SubmitCGAP"
+name = "submit_cgap"
 version = "0.1.0"
 description = "Support for uploading file submissions to the Clinical Genomics Analysis Platform (CGAP)."
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
@@ -24,13 +24,35 @@ include = [
 ]
 
 [tool.poetry.dependencies]
+
 python = ">=3.6,<3.7"
+
+# TODO: When dcicutils.py reaches 0.40.0, yes_or_no can be imported from there, simplifying utils.py and its tests.
+dcicutils = ">=0.39.0,<1"
 boto3 = ">=1.10.50,<2"
+requests = ">=2.23.0,<3"
 
 [tool.poetry.dev-dependencies]
-nose = ">=1.3.7"
+
+# PyCharm says boto3-stubs contains useful type hints
+boto3-stubs = ">=1.14.37.0"
+
+# pygments is used by PyCharm
 pygments = ">=2"
 
+# PyTest and its auxiliary support files
+pytest = ">=4.5.0"
+pytest-cov = ">=2.7.1"
+pytest-mock = ">=1.10.4"
+pytest-runner = ">=5.1"
+
+[tool.poetry.scripts]
+
+submit-metadata-bundle = "submit_cgap.scripts.submit_metadata_bundle:main"
+upload-metadata-bundle-part = "submit_cgap.scripts.upload_metadata_bundle_part:main"
+make-sample-fastq-file = "submit_cgap.scripts.make_sample_fastq_file:main"
+
 [build-system]
+
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
