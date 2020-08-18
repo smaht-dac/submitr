@@ -27,8 +27,7 @@ include = [
 
 python = ">=3.6,<3.7"
 
-# TODO: When dcicutils.py reaches 0.40.0, yes_or_no can be imported from there, simplifying utils.py and its tests.
-dcicutils = ">=0.39.0,<1"
+dcicutils = ">=0.40.0,<1"
 boto3 = ">=1.10.50,<2"
 requests = ">=2.23.0,<3"
 
@@ -36,6 +35,9 @@ requests = ">=2.23.0,<3"
 
 # PyCharm says boto3-stubs contains useful type hints
 boto3-stubs = ">=1.14.37.0"
+
+# Linting generally
+flake8 = ">0"
 
 # pygments is used by PyCharm
 pygments = ">=2"
