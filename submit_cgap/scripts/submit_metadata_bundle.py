@@ -110,6 +110,8 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--project', '-p', help='project identifier', default=None)
     parser.add_argument('--site', '-s', help="an http or https address of the site to use", default=None)
     parser.add_argument('--env', '-e', help="a CGAP beanstalk environment name for the site to use", default=None)
+    parser.add_argument('--validate-only', '-v', action="store_true",
+                        help="whether to stop after validating without submitting", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     try:
@@ -117,10 +119,13 @@ def main(simulated_args_for_testing=None):
         bundle_filename = args.bundle_filename
         institution = args.institution
         project = args.project
+        validate_only = args.validate_only
 
         site = resolve_site(site=args.site, env=args.env)
 
-        if not yes_or_no("Submit %s to %s?" % (bundle_filename, site)):
+        validation_qualifier = " (for validation only)" if validate_only else ""
+
+        if not yes_or_no("Submit %s to %s%s?" % (bundle_filename, site, validation_qualifier)):
             show("Aborting submission.")
             exit(1)
 
@@ -168,6 +173,7 @@ def main(simulated_args_for_testing=None):
             'ingestion_type': 'data_bundle',
             'institution': institution,
             'project': project,
+            'validate_only': validate_only,
         }
 
         submission_url = site + "/submit_for_ingestion"
@@ -218,7 +224,7 @@ def main(simulated_args_for_testing=None):
 
         show_section('validation_output')
 
-        if success:
+        if success and not validate_only:
             show_section('post_output')
 
             show_section('upload_info')
