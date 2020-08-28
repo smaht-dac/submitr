@@ -11,7 +11,7 @@ import time
 from dcicutils import ff_utils
 from dcicutils.beanstalk_utils import get_beanstalk_real_url
 from dcicutils.command_utils import yes_or_no
-from dcicutils.env_utils import is_cgap_env, full_cgap_env_name
+from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.lang_utils import n_of
 from dcicutils.misc_utils import check_true, PRINT
 from .auth import DEFAULT_ENV_VAR, CGAPPermissionError, get_cgap_auth_dict, cgap_auth_to_tuple
