@@ -94,10 +94,26 @@ For example::
 
    submit-metadata-bundle mymetadata.xls
 
-This command will do everything except upload files.
-To upload each of those, you will also need to do::
+This command should do everything, including upload referenced files
+if they are in the same directory. (It will ask for confirmation.)
 
-   upload-bundle-data <filename>
+To invoke it for validation only, without submitting anything, do::
 
-(In the future, the ``submit-metadata-bundle`` command might
-do this as well.)
+   submit-metadata-bundle mymetadata.xls --validate_only
+
+You can resume execution with the upload part by doing::
+
+   resume-uploads <uuid> --env <env>
+
+or::
+
+   resume-uploads <uuid> --server <server>
+
+You can upload individual files separately by doing::
+
+   upload-metadata-bundle-part <filename> --uuid <uuid> --env <env>
+
+or::
+
+   upload-metadata-bundle-part <filename> --uuid <uuid> --server <server>
+
