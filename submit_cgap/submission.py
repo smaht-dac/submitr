@@ -14,7 +14,9 @@ from dcicutils.command_utils import yes_or_no
 from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.lang_utils import n_of
 from dcicutils.misc_utils import check_true, PRINT
-from .auth import DEFAULT_ENV_VAR, CGAPPermissionError, get_cgap_auth_dict, cgap_auth_to_tuple
+from .auth import get_keydict_for_server, keydict_to_keypair
+from .base import DEFAULT_ENV, DEFAULT_ENV_VAR
+from .exceptions import CGAPPermissionError
 
 
 # Programmatic output will use 'show' so that debugging statements using regular 'print' are more easily found.
@@ -41,8 +43,7 @@ def resolve_server(server, env):
     check_true(not server or not env, "You may not specify both 'server' and 'env'.", error_class=SyntaxError)
 
     if not server and not env:
-        env = os.environ.get(DEFAULT_ENV_VAR)
-        if env:
+        if DEFAULT_ENV:
             show("Defaulting to beanstalk environment '%s' because %s is set." % (env, DEFAULT_ENV_VAR))
         else:
             # Production default needs no explanation.
@@ -159,8 +160,6 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
 
     with script_catch_errors():
 
-        bundle_folder = os.path.dirname(bundle_filename)
-
         server = resolve_server(server=server, env=env)
 
         validation_qualifier = " (for validation only)" if validate_only else ""
@@ -169,10 +168,10 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
             show("Aborting submission.")
             exit(1)
 
-        auth_dict = get_cgap_auth_dict(server)
-        auth_tuple = cgap_auth_to_tuple(auth_dict)
+        keydict = get_keydict_for_server(server)
+        keypair = keydict_to_keypair(keydict)
 
-        user_record = get_user_record(server, auth=auth_tuple)
+        user_record = get_user_record(server, auth=keypair)
 
         institution = check_institution(institution, user_record)
         project = check_project(project, user_record)
@@ -193,7 +192,7 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
 
         submission_url = server + "/submit_for_ingestion"
 
-        res = requests.post(submission_url, auth=auth_tuple, data=post_data, files=post_files).json()
+        res = requests.post(submission_url, auth=keypair, data=post_data, files=post_files).json()
 
         # print(json.dumps(res, indent=2))
 
@@ -211,7 +210,7 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
             # Pointless to hit the queue immediately, so we avoid some
             # server stress by sleeping even before the first try.
             time.sleep(PROGRESS_CHECK_INTERVAL)
-            res = res = requests.get(tracking_url, auth=auth_tuple).json()
+            res = requests.get(tracking_url, auth=keypair).json()
             processing_status = res['processing_status']
             done = processing_status['state'] == 'done'
             if done:
@@ -242,27 +241,27 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
 
         if outcome == 'success':
             show_section(res, 'upload_info')
-            do_any_uploads(res, auth_dict, bundle_folder=None, bundle_filename=bundle_filename)
+            do_any_uploads(res, keydict, bundle_filename=bundle_filename)
 
 
-def do_any_uploads(res, auth_dict, bundle_folder=None, bundle_filename=None):
+def do_any_uploads(res, keydict, bundle_folder=None, bundle_filename=None):
     upload_info = get_section(res, 'upload_info')
     if upload_info:
         if yes_or_no("Upload %s?" % n_of(len(upload_info), "file")):
-            do_uploads(upload_info, auth=auth_dict,
+            do_uploads(upload_info, auth=keydict,
                        folder=bundle_folder or (os.path.dirname(bundle_filename) if bundle_filename else None))
 
 
-def resume_uploads(uuid, server=None, env=None, bundle_filename=None, auth_dict=None):
+def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None):
 
     with script_catch_errors():
 
         server = resolve_server(server=server, env=env)
-        auth_dict = auth_dict or get_cgap_auth_dict(server)
+        keydict = keydict or get_keydict_for_server(server)
         url = ingestion_submission_item_url(server, uuid)
-        response = requests.get(url, auth=cgap_auth_to_tuple(auth_dict))
+        response = requests.get(url, auth=keydict_to_keypair(keydict))
         response.raise_for_status()
-        do_any_uploads(response.json(), auth_dict, bundle_filename=bundle_filename or os.path.abspath(os.path.curdir))
+        do_any_uploads(response.json(), keydict, bundle_filename=bundle_filename or os.path.abspath(os.path.curdir))
 
 
 def execute_prearranged_upload(path, upload_credentials):
@@ -282,11 +281,12 @@ def execute_prearranged_upload(path, upload_credentials):
     except Exception as e:
         raise("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
 
-    show("Uploading file.")
     start = time.time()
     try:
-        subprocess.check_call(['aws', 's3', 'cp', '--only-show-errors', path, upload_credentials['upload_url']],
-                              env=env)
+        source = path
+        target = upload_credentials['upload_url']
+        show("Going to upload %s to %s." % (source, target))
+        subprocess.check_call(['aws', 's3', 'cp', '--only-show-errors', source, target], env=env)
     except subprocess.CalledProcessError as e:
         show("Upload failed with exit code %d" % e.returncode)
     else:
@@ -325,30 +325,33 @@ def do_uploads(upload_spec_list, auth, folder=None):
         representing uploads to be formed.
     :param auth: a dictionary-form auth spec, of the form {'key': ..., 'secret': ..., 'server': ...}
         representing destination and credentials.
+    :param folder: a string naming a folder in which to find the filenames to be uploaded.
     :return: None
     """
     for upload_spec in upload_spec_list:
         filename = os.path.join(folder or os.path.curdir, upload_spec['filename'])
         uuid = upload_spec['uuid']
-        if not yes_or_no("Upload %s?" % (filename)):
+        if not yes_or_no("Upload %s?" % (filename,)):
             show("OK, not uploading it.")
             continue
         try:
+            show("Uploading %s to item %s ..." % (filename, uuid))
             upload_file_to_uuid(filename=filename, uuid=uuid, auth=auth)
-            show("Upload of %s was successful." % filename)
+            show("Upload of %s to item %s was successful." % (filename, uuid))
         except Exception as e:
             show("%s: %s" % (e.__class__.__name__, e))
 
-def upload_metadata_bundle_part(part_filename, uuid, server, env):
+
+def upload_item_data(part_filename, uuid, server, env):
 
     server = resolve_server(server=server, env=env)
 
-    auth_dict = get_cgap_auth_dict(server)
+    keydict = get_keydict_for_server(server)
 
-    # print("auth_dict=", json.dumps(auth_dict, indent=2))
+    # print("keydict=", json.dumps(keydict, indent=2))
 
     if not yes_or_no("Upload %s to %s?" % (part_filename, server)):
         show("Aborting submission.")
         exit(1)
 
-    upload_file_to_uuid(filename=part_filename, uuid=uuid, auth=auth_dict)
+    upload_file_to_uuid(filename=part_filename, uuid=uuid, auth=keydict)

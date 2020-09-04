@@ -52,7 +52,7 @@ pytest-runner = ">=5.1"
 
 resume-uploads = "submit_cgap.scripts.resume_uploads:main"
 submit-metadata-bundle = "submit_cgap.scripts.submit_metadata_bundle:main"
-upload-metadata-bundle-part = "submit_cgap.scripts.upload_metadata_bundle_part:main"
+upload-item-data = "submit_cgap.scripts.upload_item_data:main"
 make-sample-fastq-file = "submit_cgap.scripts.make_sample_fastq_file:main"
 
 [build-system]

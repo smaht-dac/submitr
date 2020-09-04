@@ -1,129 +1,145 @@
-import io
 import json
+import os
 
 from dcicutils.qa_utils import override_environ, MockFileSystem
 from unittest import mock
+from .test_base import default_env_for_testing
+from .. import base as base_module
 from ..auth import (
-    CGAPPermissionError, auth_tuple_to_cgap_auth_dict, cgap_auth_to_tuple,
-    get_cgap_auth_dict, get_cgap_auth_tuple, get_cgap_keypair, get_cgap_keypairs,
-    ACCESS_KEY_FILENAME, KEY_ID_VAR, SECRET_VAR, DEFAULT_ENV_VAR, KEYPAIRS_FILENAME,
+    keypair_to_keydict, keydict_to_keypair,
+    KEYDICTS_FILENAME, get_cgap_keydicts,
+    get_keypair_for_env, get_keydict_for_env,
+    get_keydict_for_server, get_keypair_for_server,
 )
+from ..base import LOCAL_PSEUDOENV, PRODUCTION_SERVER, PRODUCTION_ENV
 
 
-def test_cgap_permission_error():
-
-    server = "http://localhost:8888"  # Not an address we use, but that shouldn't matter.
-    error = CGAPPermissionError(server)
-
-    assert isinstance(error, PermissionError)
-    assert isinstance(error, CGAPPermissionError)
-
-    assert error.server == server
-
-    assert str(error) == ("Your credentials (the access key information in environment variables"
-                          " SUBMIT_CGAP_ACCESS_KEY_ID and SUBMIT_CGAP_SECRET_ACCESS_KEY) were rejected"
-                          " by http://localhost:8888. Either this is not the right server,"
-                          " or you need to obtain up-to-date access keys.")
-
-
-def test_auth_env_variables():
-
-    # A minimal test that all our variables fit the naming scheme SUBMIT_CGAP_xxx.
-    vars = {'KEY_ID_VAR': KEY_ID_VAR, 'SECRET_VAR': SECRET_VAR, 'DEFAULT_ENV_VAR': DEFAULT_ENV_VAR}
-    for name, val in vars.items():
-        assert val.startswith("SUBMIT_CGAP_"), "The variable %s has an unexpected value: %s" % (name, val)
-
-
-def test_auth_filenames():
-
+def test_auth_filename():
     # A minimal test that we picked a name that is a hidden file with a CGAP-related name.
-    filenames = {'ACCESS_KEY_FILENAME': ACCESS_KEY_FILENAME, 'KEYPAIRS_FILENAME': KEYPAIRS_FILENAME}
-    for name, val in filenames.items():
-        assert val.startswith(".cgap"), "The variable %s has unexpected value: %s" % (name, val)
+    assert os.path.basename(KEYDICTS_FILENAME).startswith(".cgap"), (
+            "The variable KEYDICTS_FILENAME has unexpected value: %s" % KEYDICTS_FILENAME
+    )
 
 
-def test_cgap_auth_tuple():
-    key = "abc123"
-    secret = "abracadabra"
+def test_keydict_to_keypair():
 
-    with override_environ(SUBMIT_CGAP_ACCESS_KEY_ID=key, SUBMIT_CGAP_SECRET_ACCESS_KEY=secret):
-        assert get_cgap_auth_tuple() == (key, secret)
-
-    def assure_missing_env_variable_error():
-        try:
-            get_cgap_auth_tuple()
-        except Exception as e:
-            assert str(e) == ("Both of the environment variables SUBMIT_CGAP_ACCESS_KEY_ID and"
-                              " SUBMIT_CGAP_SECRET_ACCESS_KEY must be set. Appropriate values"
-                              " can be obtained by creating an access key in your CGAP user profile.")
-        else:
-            raise AssertionError("Expected error was not raised.")
-
-    with override_environ(SUBMIT_CGAP_ACCESS_KEY_ID=key, SUBMIT_CGAP_SECRET_ACCESS_KEY=None):
-        assure_missing_env_variable_error()
-
-    with override_environ(SUBMIT_CGAP_ACCESS_KEY_ID=None, SUBMIT_CGAP_SECRET_ACCESS_KEY=secret):
-        assure_missing_env_variable_error()
-
-    with override_environ(SUBMIT_CGAP_ACCESS_KEY_ID=None, SUBMIT_CGAP_SECRET_ACCESS_KEY=None):
-        assure_missing_env_variable_error()
+    assert keydict_to_keypair({'key': 'foo', 'secret': 'bar', 'server': 'baz'}) == ('foo', 'bar')
 
 
-def test_cgap_auth_dict():
-    key = "abc123"
-    secret = "abracadabra"
-    server = "http://localhost:8888"
+def test_keypair_to_keydict():
 
-    with override_environ(SUBMIT_CGAP_ACCESS_KEY_ID=key, SUBMIT_CGAP_SECRET_ACCESS_KEY=secret):
-        assert get_cgap_auth_dict(server) == {'key': key, 'secret': secret, 'server': server}
-
-    def assure_missing_env_variable_error():
-        try:
-            get_cgap_auth_dict(server)
-        except Exception as e:
-            assert str(e) == ("Both of the environment variables SUBMIT_CGAP_ACCESS_KEY_ID and"
-                              " SUBMIT_CGAP_SECRET_ACCESS_KEY must be set. Appropriate values"
-                              " can be obtained by creating an access key in your CGAP user profile.")
-        else:
-            raise AssertionError("Expected error was not raised.")
-
-    with override_environ(SUBMIT_CGAP_ACCESS_KEY_ID=key, SUBMIT_CGAP_SECRET_ACCESS_KEY=None):
-        assure_missing_env_variable_error()
-
-    with override_environ(SUBMIT_CGAP_ACCESS_KEY_ID=None, SUBMIT_CGAP_SECRET_ACCESS_KEY=secret):
-        assure_missing_env_variable_error()
-
-    with override_environ(SUBMIT_CGAP_ACCESS_KEY_ID=None, SUBMIT_CGAP_SECRET_ACCESS_KEY=None):
-        assure_missing_env_variable_error()
-
-
-def test_cgap_auth_to_tuple():
-
-    assert cgap_auth_to_tuple({'key': 'foo', 'secret': 'bar', 'server': 'baz'}) == ('foo', 'bar')
-
-
-def test_auth_tuple_to_cgap_auth_dict():
-
-    assert auth_tuple_to_cgap_auth_dict(('foo', 'bar'), server='baz') == {
+    assert keypair_to_keydict(('foo', 'bar'), server='baz') == {
         'key': 'foo',
         'secret': 'bar',
         'server': 'baz',
     }
 
 
-def test_get_cgap_keypair_and_keypairs():
+def test_get_keypair_keydict_and_keydicts():
 
-    expected_content = {'fourfront-cgapfoo': ['key123', 'secret123'], 'fourfront-cgaplocal': ['key456', 'secret456']}
+    cgap_pair = ('key000', 'secret000')
+
+    cgap_dict = {
+        'key': cgap_pair[0],
+        'secret': cgap_pair[1],
+        'server': PRODUCTION_SERVER,
+    }
+
+    cgap_foo_env = 'fourfront-cgapfoo'
+
+    cgap_foo_pair = ('key123', 'secret123')
+
+    cgap_foo_server = 'https://foo.cgap.hms.harvard.edu'
+
+    cgap_foo_dict = {
+        'key': cgap_foo_pair[0],
+        'secret': cgap_foo_pair[1],
+        'server': cgap_foo_server,
+    }
+
+    cgap_local_pair = ('key456', 'secret456')
+
+    cgap_local_server = 'http://localhost:8000'
+
+    cgap_local_dict = {
+        'key': cgap_local_pair[0],
+        'secret': cgap_local_pair[1],
+        'server': cgap_local_server,
+    }
+
+    # The content of the keydict file will be a dictionary like:
+    #   {
+    #       'fourfront-cgap': {
+    #           'key': 'key1',
+    #           'secret': 'somesecret1',
+    #           'server': 'https://cgap.hms.harvard.edu'
+    #       },
+    #       'fourfront-cgapfoo': {
+    #           'key': 'key2',
+    #           'secret': 'somesecret2',
+    #           'server': 'http://fourfront-cgapfoo.whatever.aws.com'
+    #       },
+    #       'fourfront-cgaplocal': {
+    #           'key': 'key3',
+    #           'secret': 'somesecret3',
+    #           'server': 'http://localhost:8000'
+    #       }
+    #   }
+    expected_content = {
+        cgap_foo_env: cgap_foo_dict,
+        LOCAL_PSEUDOENV: cgap_local_dict,
+        PRODUCTION_ENV: cgap_dict,
+    }
 
     mfs = MockFileSystem(files={
-        ".cgap-keypairs.json":
+        KEYDICTS_FILENAME:
             json.dumps(expected_content)
     })
 
     with mock.patch("io.open", mfs.open):
+        with mock.patch("os.path.exists", mfs.exists):
+            assert get_cgap_keydicts() == expected_content
 
-        assert get_cgap_keypairs() == expected_content
-        assert get_cgap_keypair('fourfront-cgapfoo') == ('key123', 'secret123')
-        assert get_cgap_keypair('fourfront-cgaplocal') == ('key456', 'secret456')
-        assert get_cgap_keypair(None) == ('key456', 'secret456')
-        assert get_cgap_keypair() == ('key456', 'secret456')
+            def test_it(override_default_env, default_pair_expected, default_dict_expected):
+
+                with default_env_for_testing(override_default_env):
+
+                    assert get_keypair_for_env(PRODUCTION_ENV) == cgap_pair
+                    assert get_keypair_for_env(cgap_foo_env) == cgap_foo_pair
+                    assert get_keypair_for_env(LOCAL_PSEUDOENV) == cgap_local_pair
+                    assert get_keypair_for_env(None) == default_pair_expected
+                    assert get_keypair_for_env() == default_pair_expected
+
+                    assert get_keydict_for_env(PRODUCTION_ENV) == cgap_dict
+                    assert get_keydict_for_env(cgap_foo_env) == cgap_foo_dict
+                    assert get_keydict_for_env(LOCAL_PSEUDOENV) == cgap_local_dict
+                    assert get_keydict_for_env(None) == default_dict_expected
+                    assert get_keydict_for_env() == default_dict_expected
+
+                    assert get_keypair_for_server(PRODUCTION_SERVER) == cgap_pair
+                    assert get_keypair_for_server(cgap_foo_server) == cgap_foo_pair
+                    assert get_keypair_for_server(cgap_local_server) == cgap_local_pair
+                    assert get_keypair_for_server(None) == default_pair_expected
+                    assert get_keypair_for_server() == default_pair_expected
+
+                    assert get_keydict_for_server(PRODUCTION_SERVER) == cgap_dict
+                    assert get_keydict_for_server(cgap_foo_server) == cgap_foo_dict
+                    assert get_keydict_for_server(cgap_local_server) == cgap_local_dict
+                    assert get_keydict_for_server(None) == default_dict_expected
+                    assert get_keydict_for_server() == default_dict_expected
+
+            test_it(override_default_env=None,  # If no override given, production env (fourfront-cgap) is default default.
+                    default_pair_expected=cgap_pair,
+                    default_dict_expected=cgap_dict)
+
+            test_it(override_default_env=PRODUCTION_ENV,
+                    default_pair_expected=cgap_pair,
+                    default_dict_expected=cgap_dict)
+
+            test_it(override_default_env=base_module.LOCAL_PSEUDOENV,
+                    default_pair_expected=cgap_local_pair,
+                    default_dict_expected=cgap_local_dict)
+
+            test_it(override_default_env=cgap_foo_env,
+                    default_pair_expected=cgap_foo_pair,
+                    default_dict_expected=cgap_foo_dict)
