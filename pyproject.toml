@@ -25,7 +25,7 @@ include = [
 
 [tool.poetry.dependencies]
 
-python = ">=3.6,<3.7"
+python = ">=3.6,<3.8"
 
 dcicutils = ">=0.40.0,<1"
 boto3 = ">=1.10.50,<2"
@@ -41,10 +41,10 @@ coverage = ">=4.5.4"
 coveralls = ">=2.1.1"
 
 # Linting generally
-flake8 = ">0"
+flake8 = ">=3.8.3"
 
 # pygments is used by PyCharm
-pygments = ">=2"
+pygments = ">=2.6.1"
 
 # PyTest and its auxiliary support files
 pytest = ">=4.5.0"
