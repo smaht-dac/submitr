@@ -37,6 +37,7 @@ requests = ">=2.23.0,<3"
 boto3-stubs = ">=1.14.37.0"
 
 # Coverage
+coverage = ">=4.5.4"
 coveralls = ">=2.1.1"
 
 # Linting generally

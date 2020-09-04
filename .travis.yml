@@ -9,7 +9,7 @@ before_install:
 install:
   - poetry install
 script:
-  - flake8 submit_cgap
+  - echo "flake8 submit_cgap presently suppressed"
   - travis_wait coverage run --source=submit_cgap -m pytest -vv test
   - if [ "$TRAVIS_PYTHON_VERSION" == "3.6" ]; then coveralls; fi;
 deploy:
