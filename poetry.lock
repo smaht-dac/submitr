@@ -339,6 +339,21 @@ version = "3.0.4"
 
 [[package]]
 category = "dev"
+description = "Codacy coverage reporter for Python"
+name = "codacy-coverage"
+optional = false
+python-versions = "*"
+version = "1.3.11"
+
+[package.dependencies]
+requests = ">=2.9.1"
+
+[package.extras]
+dev = ["check-manifest"]
+test = ["coverage", "nosetests"]
+
+[[package]]
+category = "dev"
 description = "Cross-platform colored terminal text."
 marker = "sys_platform == \"win32\""
 name = "colorama"
@@ -830,7 +845,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "743950144ce0df6408aadbb5f73e976f00069cd0e65a71fc6b7fe3d433eb6807"
+content-hash = "234967388c78d64bd5e659afe98e71ae20943134b77589aae4b512d05debb997"
 lock-version = "1.0"
 python-versions = ">=3.6,<3.8"
 
@@ -871,6 +886,10 @@ certifi = [
 chardet = [
     {file = "chardet-3.0.4-py2.py3-none-any.whl", hash = "sha256:fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691"},
     {file = "chardet-3.0.4.tar.gz", hash = "sha256:84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae"},
+]
+codacy-coverage = [
+    {file = "codacy-coverage-1.3.11.tar.gz", hash = "sha256:b94651934745c638a980ad8d67494077e60f71e19e29aad1c275b66e0a070cbc"},
+    {file = "codacy_coverage-1.3.11-py2.py3-none-any.whl", hash = "sha256:d8a1ce56b0dd156d6b1de14fa6217d32ec86097902f08a17ff2f95ba27264474"},
 ]
 colorama = [
     {file = "colorama-0.4.3-py2.py3-none-any.whl", hash = "sha256:7d73d2a99753107a36ac6b455ee49046802e59d9d076ef8e47b61499fa29afff"},
