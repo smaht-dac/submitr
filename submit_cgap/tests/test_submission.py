@@ -62,7 +62,9 @@ def test_resolve_server():
 
         with override_environ(SUBMIT_CGAP_DEFAULT_ENV=None):
 
-            assert resolve_server(env=None, server=None) == PRODUCTION_SERVER
+            with mock.patch.object(submission_module, "DEFAULT_ENV", None):
+
+                assert resolve_server(env=None, server=None) == PRODUCTION_SERVER
 
             with mock.patch.object(submission_module, "DEFAULT_ENV", 'fourfront-cgapdev'):
 
@@ -106,12 +108,6 @@ def make_user_record(title='J Doe',
     return user_record
 
 
-def make_good_response(title='J Doe',
-                       contact_email='jdoe@cgap.hms.harvard.edu',
-                       **kwargs):
-    return FakeResponse(status_code=200, json=make_user_record(title=title, contact_email=contact_email, **kwargs))
-
-
 def test_get_user_record():
 
     good_auth = ('mykey', 'mysecret')
@@ -134,6 +130,10 @@ def test_get_user_record():
     with mock.patch("requests.get", make_mocked_get()):
         get_user_record(server="http://localhost:12345", auth=good_auth)
 
+    with mock.patch("requests.get", lambda *x, **y: FakeResponse(status_code=400)):
+        with pytest.raises(Exception):  # Body is not JSON
+            get_user_record(server="http://localhost:12345", auth=good_auth)
+
 
 def test_check_institution():
 
@@ -151,7 +151,7 @@ def test_check_institution():
     except Exception as e:
         assert str(e).startswith("Your user profile declares no institution")
     else:
-        raise AssertionError("Expected error was not raised.")
+        raise AssertionError("Expected error was not raised.")  # noqa - we hope never to see this executed
 
     successful_result = check_institution(institution=None,
                                           user_record=make_user_record(submits_for=[
@@ -169,7 +169,7 @@ def test_check_institution():
     except Exception as e:
         assert str(e).startswith("You must use --institution to specify which institution")
     else:
-        raise AssertionError("Expected error was not raised.")
+        raise AssertionError("Expected error was not raised.")  # noqa - we hope never to see this executed
 
     print("successful_result=", successful_result)
 
@@ -192,7 +192,7 @@ def test_check_project():
     except Exception as e:
         assert str(e).startswith("Your user profile has no project declared")
     else:
-        raise AssertionError("Expected error was not raised.")
+        raise AssertionError("Expected error was not raised.")  # noqa - we hope never to see this executed
 
     successful_result = check_project(project=None,
                                       user_record=make_user_record(project={'@id': good_project})
@@ -356,7 +356,7 @@ def test_script_catch_errors():
         except SystemExit as e:
             assert e.code == 1, "Expected status code 1, but got %s." % e.code
         else:
-            raise AssertionError("SystemExit not raised.")
+            raise AssertionError("SystemExit not raised.")  # noqa - we hope never to see this executed
 
         assert shown.lines == ["RuntimeError: Some error"]
 

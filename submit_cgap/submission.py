@@ -14,7 +14,7 @@ from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.lang_utils import n_of
 from dcicutils.misc_utils import check_true
 from .auth import get_keydict_for_server, keydict_to_keypair
-from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_SERVER
+from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
 from .exceptions import CGAPPermissionError
 from .utils import show
 
@@ -39,7 +39,7 @@ def resolve_server(server, env):
             env = DEFAULT_ENV
         else:
             # Production default needs no explanation.
-            env = PRODUCTION_SERVER
+            env = PRODUCTION_ENV
 
     if env:
         try:
