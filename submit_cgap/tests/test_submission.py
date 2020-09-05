@@ -119,6 +119,10 @@ def test_get_user_record():
             return FakeResponse(status_code=200, json={'title': 'J Doe', 'contact_email': 'jdoe@cgap.hms.harvard.edu'})
         return mocked_get
 
+    with mock.patch("requests.get", return_value=FakeResponse(401, content='["not dictionary"]')):
+        with pytest.raises(CGAPPermissionError):
+            get_user_record(server="http://localhost:12345", auth=None)
+
     with mock.patch("requests.get", make_mocked_get(auth_failure_code=401)):
         with pytest.raises(CGAPPermissionError):
             get_user_record(server="http://localhost:12345", auth=None)
@@ -522,6 +526,38 @@ def test_script_catch_errors():
 #     execute_prearranged_upload(filename, upload_credentials=upload_credentials)
 
 
+def test_upload_file_to_uuid():
+
+    some_credentials = {
+        'AccessKeyId': 'some-access-key',
+        'SecretAccessKey': 'some-secret',
+        'Session-Token': 'some-session-token',
+        'upload_url': 'some-url'
+    }
+
+    some_result = {'@graph': [{'upload_credentials': some_credentials}]}
+    some_filename = 'some-filename'
+    some_uuid = '123-4444-5678'
+    some_auth = 'open sesame'
+
+    with mock.patch("dcicutils.ff_utils.patch_metadata", return_value=some_result):
+        with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
+            upload_file_to_uuid(filename=some_filename, uuid=some_uuid, auth=some_auth)
+            mocked_upload.assert_called_with(some_filename, upload_credentials=some_credentials)
+
+    bad_result = {'message': 'Houston, we have a problem.'}
+
+    with mock.patch("dcicutils.ff_utils.patch_metadata", return_value=bad_result):
+        with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
+            try:
+                upload_file_to_uuid(filename=some_filename, uuid=some_uuid, auth=some_auth)
+            except Exception as e:
+                assert str(e).startswith("Unable to obtain upload credentials")
+            else:
+                raise Exception("Expected error was not raised.")  # pragma: no cover - we hope this never happens
+            assert mocked_upload.call_count == 0
+
+
 def make_alternator(*values):
 
     class Alternatives:
@@ -641,3 +677,22 @@ def test_upload_item_data():
                     mock_resolve.assert_called_with(env=some_env, server=some_server)
                     mock_get.assert_called_with(some_server)
                     mock_upload.assert_called_with(filename=some_filename, uuid=some_uuid, auth=some_keydict)
+
+    with mock.patch.object(submission_module, "resolve_server", return_value=some_server) as mock_resolve:
+        with mock.patch.object(submission_module, "get_keydict_for_server", return_value=some_keydict) as mock_get:
+            with mock.patch.object(submission_module, "yes_or_no", return_value=False):
+                with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
+
+                    with shown_output() as shown:
+
+                        try:
+                            upload_item_data(part_filename=some_filename, uuid=some_uuid, server=some_server, env=some_env)
+                        except SystemExit as e:
+                            assert e.code == 1
+
+                        assert shown.lines == ['Aborting submission.']
+
+                    mock_resolve.assert_called_with(env=some_env, server=some_server)
+                    mock_get.assert_called_with(some_server)
+                    assert mock_upload.call_count == 0
+
