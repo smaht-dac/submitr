@@ -25,5 +25,5 @@ def main(simulated_args_for_testing=None):
                                   validate_only=args.validate_only)
 
 
-if __name__ == '__main__':
-    main()  # noqa - main is tested elsewhere
+if __name__ == '__main__':  # noqa - main is tested elsewhere
+    main()

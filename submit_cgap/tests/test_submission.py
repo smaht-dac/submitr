@@ -1,27 +1,11 @@
-# To be written
-
 import contextlib
-import datetime
-import io
-import json
-import os
 import pytest
 import re
-import requests
-import subprocess
-import time
 
-from dcicutils import ff_utils
-from dcicutils.beanstalk_utils import get_beanstalk_real_url
-from dcicutils.command_utils import yes_or_no
-from dcicutils.env_utils import full_cgap_env_name
-from dcicutils.lang_utils import n_of
-from dcicutils.qa_utils import override_environ
-from dcicutils.misc_utils import check_true, PRINT
+from dcicutils.qa_utils import override_environ, ignored
 from unittest import mock
 from .test_utils import shown_output
 from .. import submission as submission_module
-from ..auth import get_keydict_for_server, keydict_to_keypair
 from ..base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, PRODUCTION_SERVER
 from ..exceptions import CGAPPermissionError
 from ..submission import (
@@ -536,30 +520,107 @@ def test_script_catch_errors():
 #         raise RuntimeError("Unable to obtain upload credentials for file %s." % filename)
 #
 #     execute_prearranged_upload(filename, upload_credentials=upload_credentials)
-#
-#
-# def do_uploads(upload_spec_list, auth, folder=None):
-#     """
-#
-#     :param upload_spec_list: a list of upload_spec dictionaries, each of the form {'filename': ..., 'uuid': ...},
-#         representing uploads to be formed.
-#     :param auth: a dictionary-form auth spec, of the form {'key': ..., 'secret': ..., 'server': ...}
-#         representing destination and credentials.
-#     :param folder: a string naming a folder in which to find the filenames to be uploaded.
-#     :return: None
-#     """
-#     for upload_spec in upload_spec_list:
-#         filename = os.path.join(folder or os.path.curdir, upload_spec['filename'])
-#         uuid = upload_spec['uuid']
-#         if not yes_or_no("Upload %s?" % (filename,)):
-#             show("OK, not uploading it.")
-#             continue
-#         try:
-#             show("Uploading %s to item %s ..." % (filename, uuid))
-#             upload_file_to_uuid(filename=filename, uuid=uuid, auth=auth)
-#             show("Upload of %s to item %s was successful." % (filename, uuid))
-#         except Exception as e:
-#             show("%s: %s" % (e.__class__.__name__, e))
+
+
+def make_alternator(*values):
+
+    class Alternatives:
+
+        def __init__(self, values):
+            self.values = values
+            self.pos = 0
+
+        def next_value(self, *args, **kwargs):
+            ignored(args, kwargs)
+            result = self.values[self.pos]
+            self.pos = (self.pos + 1) % len(self.values)
+            return result
+
+    alternatives = Alternatives(values)
+
+    return alternatives.next_value
+
+
+def test_do_uploads():
+
+    good_auth = 'good-auth'
+    bad_auth = 'bad-auth'
+
+    @contextlib.contextmanager
+    def mock_uploads():
+
+        uploaded = {}
+
+        def mocked_upload_file(filename, uuid, auth):
+            if auth != good_auth:
+                raise Exception("Bad auth")
+            uploaded[uuid] = filename
+
+        with mock.patch.object(submission_module, "upload_file_to_uuid", mocked_upload_file):
+            yield uploaded  # This starts out empty when yielded, but as uploads occur will get populated.
+
+    with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+
+        with mock_uploads() as mock_uploaded:
+            do_uploads(upload_spec_list=[], auth=good_auth)
+            assert mock_uploaded == {}
+
+        some_uploads_to_do = [
+            {'uuid': '1234', 'filename': 'foo.fastq.gz'},
+            {'uuid': '2345', 'filename': 'bar.fastq.gz'},
+            {'uuid': '3456', 'filename': 'baz.fastq.gz'}
+        ]
+
+        with mock_uploads() as mock_uploaded:
+            with shown_output() as shown:
+                do_uploads(upload_spec_list=some_uploads_to_do, auth=bad_auth)
+                assert mock_uploaded == {}
+                assert shown.lines == [
+                    'Uploading ./foo.fastq.gz to item 1234 ...',
+                    'Exception: Bad auth',
+                    'Uploading ./bar.fastq.gz to item 2345 ...',
+                    'Exception: Bad auth',
+                    'Uploading ./baz.fastq.gz to item 3456 ...',
+                    'Exception: Bad auth'
+                ]
+
+        with mock_uploads() as mock_uploaded:
+            do_uploads(upload_spec_list=some_uploads_to_do, auth=good_auth)
+            assert mock_uploaded == {
+                '1234': './foo.fastq.gz',
+                '2345': './bar.fastq.gz',
+                '3456': './baz.fastq.gz'
+            }
+
+    with mock.patch.object(submission_module, "yes_or_no", make_alternator(True, False)):
+
+        with mock_uploads() as mock_uploaded:
+            with shown_output() as shown:
+                do_uploads(
+                    upload_spec_list=[
+                        {'uuid': '1234', 'filename': 'foo.fastq.gz'},
+                        {'uuid': '2345', 'filename': 'bar.fastq.gz'},
+                        {'uuid': '3456', 'filename': 'baz.fastq.gz'}
+                    ],
+                    auth=good_auth,
+                    folder='/x/yy/zzz/'
+                )
+                assert mock_uploaded == {
+                    '1234': '/x/yy/zzz/foo.fastq.gz',
+                    # The mock yes_or_no will have omitted this element.
+                    # '2345': './bar.fastq.gz',
+                    '3456': '/x/yy/zzz/baz.fastq.gz'
+                }
+                assert shown.lines == [
+                    'Uploading /x/yy/zzz/foo.fastq.gz to item 1234 ...',
+                    'Upload of /x/yy/zzz/foo.fastq.gz to item 1234 was successful.',
+                    # The query about uploading bar.fastq has been mocked out here
+                    # in favor of an unconditional False result, so the question does no I/O.
+                    # The only output is the result of simulating a 'no' answer.
+                    'OK, not uploading it.',
+                    'Uploading /x/yy/zzz/baz.fastq.gz to item 3456 ...',
+                    'Upload of /x/yy/zzz/baz.fastq.gz to item 3456 was successful.',
+                ]
 
 
 def test_upload_item_data():
