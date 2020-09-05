@@ -2,7 +2,7 @@ import json
 import os
 import pytest
 
-from dcicutils.qa_utils import override_environ, MockFileSystem
+from dcicutils.qa_utils import MockFileSystem
 from unittest import mock
 from .test_base import default_env_for_testing
 from .. import base as base_module
@@ -13,7 +13,7 @@ from ..auth import (
     get_keydict_for_server, get_keypair_for_server,
 )
 from ..base import LOCAL_PSEUDOENV, PRODUCTION_SERVER, PRODUCTION_ENV
-from ..exceptions import CGAPEnvKeyMissing
+from ..exceptions import CGAPEnvKeyMissing, CGAPServerKeyMissing
 
 
 def test_auth_filename():
@@ -49,6 +49,7 @@ def test_get_cgap_keydicts_missing():
 def test_get_keypair_keydict_and_keydicts():
 
     missing_env = 'fourfront-cgapwolf'
+    missing_server = "http://localhost:6666"
 
     cgap_pair = ('key000', 'secret000')
 
@@ -137,6 +138,9 @@ def test_get_keypair_keydict_and_keydicts():
                     assert get_keypair_for_server(cgap_local_server) == cgap_local_pair
                     assert get_keypair_for_server(None) == default_pair_expected
                     assert get_keypair_for_server() == default_pair_expected
+
+                    with pytest.raises(CGAPServerKeyMissing):
+                        get_keypair_for_server(missing_server)
 
                     assert get_keydict_for_server(PRODUCTION_SERVER) == cgap_dict
                     assert get_keydict_for_server(cgap_foo_server) == cgap_foo_dict
