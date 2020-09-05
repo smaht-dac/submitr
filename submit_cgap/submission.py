@@ -120,17 +120,14 @@ def show_section(res, section, caveat_outcome=None):
     else:
         caveat = ""
     show("----- %s%s -----" % (section.replace("_", " ").title(), caveat))
-    if isinstance(section_data, dict):
+    if not section_data:
+        show("Nothing to show.")
+    elif isinstance(section_data, dict):
         show(json.dumps(section_data, indent=2))
     elif isinstance(section_data, list):
-        lines = section_data
-        if lines:
-            for line in lines:
-                show(line)
-        else:
-            show("Nothing to show.")
-    else:
-        # This should not happen.
+        for line in section_data:
+            show(line)
+    else:  # We don't expect this, but such should be shown as-is, mostly to see what it is.
         show(section_data)
 
 

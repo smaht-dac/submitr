@@ -19,6 +19,7 @@ from dcicutils.lang_utils import n_of
 from dcicutils.qa_utils import override_environ
 from dcicutils.misc_utils import check_true, PRINT
 from unittest import mock
+from .test_utils import shown_output
 from .. import submission as submission_module
 from ..auth import get_keydict_for_server, keydict_to_keypair
 from ..base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, PRODUCTION_SERVER
@@ -27,7 +28,7 @@ from ..submission import (
     SERVER_REGEXP, check_institution, check_project, do_any_uploads, do_uploads,
     execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url,
     resolve_server, resume_uploads, script_catch_errors, show_section, submit_metadata_bundle,
-    upload_file_to_uuid, upload_item_data,
+    upload_file_to_uuid, upload_item_data, PROGRESS_CHECK_INTERVAL
 )
 from ..utils import FakeResponse
 
@@ -218,51 +219,163 @@ def test_check_project():
     assert successful_result == good_project
 
 
-# PROGRESS_CHECK_INTERVAL = 15
-#
-#
-# def get_section(res, section):
-#     return res.get(section) or res.get('additional_data', {}).get(section)
-#
-#
-# def show_section(res, section, caveat_outcome=None):
-#     section_data = get_section(res, section)
-#     if caveat_outcome and not section_data:
-#         # In the case of non-success, be brief unless there's data to show.
-#         return
-#     if caveat_outcome:
-#         caveat = " (prior to %s)" % caveat_outcome
-#     else:
-#         caveat = ""
-#     show("----- %s%s -----" % (section.replace("_", " ").title(), caveat))
-#     if isinstance(section_data, dict):
-#         show(json.dumps(section_data, indent=2))
-#     elif isinstance(section_data, list):
-#         lines = section_data
-#         if lines:
-#             for line in lines:
-#                 show(line)
-#         else:
-#             show("Nothing to show.")
-#     else:
-#         # This should not happen.
-#         show(section_data)
-#
-#
-# def ingestion_submission_item_url(server, uuid):
-#     return server + "/ingestion-submissions/" + uuid + "?format=json"
-#
-#
-# @contextlib.contextmanager
-# def script_catch_errors():
-#     try:
-#         yield
-#         exit(0)
-#     except Exception as e:
-#         show("%s: %s" % (e.__class__.__name__, str(e)))
-#         exit(1)
-#
-#
+def test_get_section():
+
+    assert get_section({}, 'foo') == None
+    assert get_section({'alpha': 3, 'beta': 4}, 'foo') == None
+    assert get_section({'alpha': 3, 'foo': 5, 'beta': 4}, 'foo') == 5
+    assert get_section({'additional_data': {}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'omega') == None
+    assert get_section({'additional_data': {'omega': 24}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'epsilon') == None
+    assert get_section({'additional_data': {'omega': 24}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'omega') == 24
+
+
+def test_progress_check_interval():
+
+    assert isinstance(PROGRESS_CHECK_INTERVAL, int) and PROGRESS_CHECK_INTERVAL > 0
+
+
+def test_ingestion_submission_item_url():
+
+    assert ingestion_submission_item_url(
+        server='http://foo.com',
+        uuid='123-4567-890'
+    ) == 'http://foo.com/ingestion-submissions/123-4567-890?format=json'
+
+
+def test_show_section_without_caveat():
+
+    nothing_to_show = [
+        '----- Foo -----',
+        'Nothing to show.'
+    ]
+
+    # Lines section available, without caveat.
+    with shown_output() as shown:
+        show_section(
+            res={'foo': ['abc', 'def']},
+            section='foo',
+            caveat_outcome=None)
+        assert shown.lines == [
+            '----- Foo -----',
+            'abc',
+            'def',
+        ]
+
+    # Lines section available, without caveat, but no section entry.
+    with shown_output() as shown:
+        show_section(
+            res={},
+            section='foo',
+            caveat_outcome=None
+        )
+        assert shown.lines == nothing_to_show
+
+    # Lines section available, without caveat, but empty.
+    with shown_output() as shown:
+        show_section(
+            res={'foo': []},
+            section='foo',
+            caveat_outcome=None
+        )
+        assert shown.lines == nothing_to_show
+
+    # Lines section available, without caveat, but null.
+    with shown_output() as shown:
+        show_section(
+            res={'foo': None},
+            section='foo',
+            caveat_outcome=None
+        )
+        assert shown.lines == nothing_to_show
+
+    # Dictionary section available, without caveat, and with a dictionary.
+    with shown_output() as shown:
+        show_section(
+            res={'foo': {'alpha': 'beta', 'gamma': 'delta'}},
+            section='foo',
+            caveat_outcome=None
+        )
+        assert shown.lines == [
+            '----- Foo -----',
+            '{\n'
+            '  "alpha": "beta",\n'
+            '  "gamma": "delta"\n'
+            '}'
+        ]
+
+    # Dictionary section available, without caveat, and with an empty dictionary.
+    with shown_output() as shown:
+        show_section(
+            res={'foo': {}},
+            section='foo',
+            caveat_outcome=None
+        )
+        assert shown.lines == nothing_to_show
+
+    # Random unexpected data, with caveat.
+    with shown_output() as shown:
+        show_section(
+            res={'foo': 17},
+            section='foo',
+            caveat_outcome=None
+        )
+        assert shown.lines == [
+            '----- Foo -----',
+            '17',
+        ]
+
+def test_show_section_with_caveat():
+
+    # Some output is shown marked by a caveat, that indicates execution stopped early for some reason
+    # and the output is partial.
+
+    caveat = 'some error'
+
+    # Lines section available, with caveat.
+    with shown_output() as shown:
+        when = 'some error'
+        show_section(
+            res={'foo': ['abc', 'def']},
+            section='foo',
+            caveat_outcome=when
+        )
+        assert shown.lines == [
+            '----- Foo (prior to %s) -----' % when,
+            'abc',
+            'def',
+        ]
+
+    # Lines section available, with caveat.
+    with shown_output() as shown:
+        show_section(
+            res={},
+            section='foo',
+            caveat_outcome=when
+        )
+        assert shown.lines == []  # Nothing shown if there is a caveat specified
+
+
+def test_script_catch_errors():
+    try:
+        with script_catch_errors():
+            pass
+    except SystemExit as e:
+        assert e.code == 0, "Expected status code 0, but got %s." % e.code
+    else:
+        raise AssertionError("SystemExit not raised.")
+
+    with shown_output() as shown:
+
+        try:
+            with script_catch_errors():
+                raise RuntimeError("Some error")
+        except SystemExit as e:
+            assert e.code == 1, "Expected status code 1, but got %s." % e.code
+        else:
+            raise AssertionError("SystemExit not raised.")
+
+        assert shown.lines == ["RuntimeError: Some error"]
+
 # def submit_metadata_bundle(bundle_filename, institution, project, server, env, validate_only):
 #
 #     with script_catch_errors():

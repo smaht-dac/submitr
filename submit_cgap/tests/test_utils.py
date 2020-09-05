@@ -6,26 +6,27 @@ from .. import utils as utils_module
 from ..utils import show, FakeResponse
 
 
+@contextlib.contextmanager
+def shown_output():
+
+    class ShownOutput:
+
+        def __init__(self):
+            self.lines = []
+
+        def mock_print_handler(self, *args):
+            text = " ".join(map(str, args))
+            print("Mocked print:", text)
+            self.lines.append(text)
+
+    shown = ShownOutput()
+
+    with mock.patch.object(utils_module, "PRINT") as mock_print:
+        mock_print.side_effect = shown.mock_print_handler
+        yield shown
+
+
 def test_show():
-
-    @contextlib.contextmanager
-    def shown_output():
-
-        class ShownOutput:
-
-            def __init__(self):
-                self.lines = []
-
-            def mock_print_handler(self, *args):
-                text = " ".join(args)
-                print("Mocked print:", text)
-                self.lines.append(text)
-
-        shown = ShownOutput()
-
-        with mock.patch.object(utils_module, "PRINT") as mock_print:
-            mock_print.side_effect = shown.mock_print_handler
-            yield shown
 
     # Test uses WITHOUT timestamps
     with shown_output() as shown:
