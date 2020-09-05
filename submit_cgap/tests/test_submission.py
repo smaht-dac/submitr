@@ -560,18 +560,23 @@ def test_script_catch_errors():
 #             show("Upload of %s to item %s was successful." % (filename, uuid))
 #         except Exception as e:
 #             show("%s: %s" % (e.__class__.__name__, e))
-#
-#
-# def upload_item_data(part_filename, uuid, server, env):
-#
-#     server = resolve_server(server=server, env=env)
-#
-#     keydict = get_keydict_for_server(server)
-#
-#     # print("keydict=", json.dumps(keydict, indent=2))
-#
-#     if not yes_or_no("Upload %s to %s?" % (part_filename, server)):
-#         show("Aborting submission.")
-#         exit(1)
-#
-#     upload_file_to_uuid(filename=part_filename, uuid=uuid, auth=keydict)
+
+
+def test_upload_item_data():
+
+    some_env = 'some-env'
+    some_server = 'some-server'
+    some_keydict = {'key': 'some-key', 'secret': 'some-secret', 'server': 'some-server'}
+    some_filename = 'some-filename'
+    some_uuid = '111-2222-333'
+
+    with mock.patch.object(submission_module, "resolve_server", return_value=some_server) as mock_resolve:
+        with mock.patch.object(submission_module, "get_keydict_for_server", return_value=some_keydict) as mock_get:
+            with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
+
+                    upload_item_data(part_filename=some_filename, uuid=some_uuid, server=some_server, env=some_env)
+
+                    mock_resolve.assert_called_with(env=some_env, server=some_server)
+                    mock_get.assert_called_with(some_server)
+                    mock_upload.assert_called_with(filename=some_filename, uuid=some_uuid, auth=some_keydict)
