@@ -20,5 +20,5 @@ def main(simulated_args_for_testing=None):
     upload_item_data(part_filename=args.part_filename, uuid=args.uuid, server=args.server, env=args.env)
 
 
-if __name__ == '__main__':  # noqa - main is tested elsewhere
+if __name__ == '__main__':
     main()

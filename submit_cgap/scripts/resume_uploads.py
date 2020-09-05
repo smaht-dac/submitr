@@ -20,5 +20,5 @@ def main(simulated_args_for_testing=None):
     resume_uploads(uuid=args.uuid, server=args.server, env=args.env, bundle_filename=args.bundle_filename)
 
 
-if __name__ == '__main__':  # noqa - main is tested elsewhere
+if __name__ == '__main__':
     main()

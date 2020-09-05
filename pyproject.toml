@@ -60,6 +60,10 @@ submit-metadata-bundle = "submit_cgap.scripts.submit_metadata_bundle:main"
 upload-item-data = "submit_cgap.scripts.upload_item_data:main"
 make-sample-fastq-file = "submit_cgap.scripts.make_sample_fastq_file:main"
 
+[tool.coverage.report]
+
+exclude_lines = ["if __name__ == .__main__.:"]
+
 [build-system]
 
 requires = ["poetry>=0.12"]
