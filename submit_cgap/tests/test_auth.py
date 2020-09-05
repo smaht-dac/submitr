@@ -1,5 +1,6 @@
 import json
 import os
+import pytest
 
 from dcicutils.qa_utils import override_environ, MockFileSystem
 from unittest import mock
@@ -12,6 +13,7 @@ from ..auth import (
     get_keydict_for_server, get_keypair_for_server,
 )
 from ..base import LOCAL_PSEUDOENV, PRODUCTION_SERVER, PRODUCTION_ENV
+from ..exceptions import CGAPEnvKeyMissing
 
 
 def test_auth_filename():
@@ -35,7 +37,18 @@ def test_keypair_to_keydict():
     }
 
 
+def test_get_cgap_keydicts_missing():
+
+    mfs = MockFileSystem()
+
+    with mock.patch.object(os.path, "exists", mfs.exists):
+
+        assert get_cgap_keydicts() == {}  # When missing, it appears empty
+
+
 def test_get_keypair_keydict_and_keydicts():
+
+    missing_env = 'fourfront-cgapwolf'
 
     cgap_pair = ('key000', 'secret000')
 
@@ -109,6 +122,9 @@ def test_get_keypair_keydict_and_keydicts():
                     assert get_keypair_for_env(LOCAL_PSEUDOENV) == cgap_local_pair
                     assert get_keypair_for_env(None) == default_pair_expected
                     assert get_keypair_for_env() == default_pair_expected
+
+                    with pytest.raises(CGAPEnvKeyMissing):
+                        get_keypair_for_env(missing_env)
 
                     assert get_keydict_for_env(PRODUCTION_ENV) == cgap_dict
                     assert get_keydict_for_env(cgap_foo_env) == cgap_foo_dict

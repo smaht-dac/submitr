@@ -21,4 +21,4 @@ def main(simulated_args_for_testing=None):
 
 
 if __name__ == '__main__':
-    main()
+    main()  # noQA - main is tested elsewhere
