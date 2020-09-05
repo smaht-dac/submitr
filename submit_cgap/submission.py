@@ -1,5 +1,4 @@
 import contextlib
-import datetime
 import io
 import json
 import os
@@ -13,19 +12,11 @@ from dcicutils.beanstalk_utils import get_beanstalk_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.lang_utils import n_of
-from dcicutils.misc_utils import check_true, PRINT
+from dcicutils.misc_utils import check_true
 from .auth import get_keydict_for_server, keydict_to_keypair
-from .base import DEFAULT_ENV, DEFAULT_ENV_VAR
+from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_SERVER
 from .exceptions import CGAPPermissionError
-
-
-# Programmatic output will use 'show' so that debugging statements using regular 'print' are more easily found.
-def show(*args, with_time=False):
-    if with_time:
-        hh_mm_ss = str(datetime.datetime.now().strftime("%H:%M:%S"))
-        PRINT(hh_mm_ss, *args)
-    else:
-        PRINT(*args)
+from .utils import show
 
 
 SERVER_REGEXP = re.compile(
@@ -33,9 +24,9 @@ SERVER_REGEXP = re.compile(
     # a fourfront-cgapXXX address. It is trying only to match cgap addresses, though of course it has to make an
     # exception for localhost debugging. You're on your own to make sure the right server is connected there.
     # -kmp 16-Aug-2020
-    r"^(https?://localhost:[0-9]+"
+    r"^(https?://localhost(:[0-9]+)?"
     r"|https?://fourfront-cgap[a-z0-9.-]*"
-    r"|https://[a-z.-]*cgap.hms.harvard.edu)/?$"
+    r"|https?://([a-z-]+[.])*cgap[.]hms[.]harvard[.]edu)/?$"
 )
 
 
@@ -45,9 +36,10 @@ def resolve_server(server, env):
     if not server and not env:
         if DEFAULT_ENV:
             show("Defaulting to beanstalk environment '%s' because %s is set." % (env, DEFAULT_ENV_VAR))
+            env = DEFAULT_ENV
         else:
             # Production default needs no explanation.
-            env = 'fourfront-cgap'
+            env = PRODUCTION_SERVER
 
     if env:
         try:
@@ -74,10 +66,10 @@ def get_user_record(server, auth):
         user_record = {}
     try:
         if user_record_response.status_code in (401, 403) and user_record.get("Title") == "Not logged in.":
-            show("You are not logged in.")
+            show("Server did not recognize you with the given credentials.")
     except Exception:
         pass
-    if user_record_response.status_code == 401:
+    if user_record_response.status_code in (401, 403):
         raise CGAPPermissionError(server=server)
     user_record_response.raise_for_status()
     user_record = user_record_response.json()
