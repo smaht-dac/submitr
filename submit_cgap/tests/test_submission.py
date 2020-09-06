@@ -1,4 +1,5 @@
 import contextlib
+import os
 import pytest
 import re
 
@@ -364,6 +365,12 @@ def test_script_catch_errors():
 
         assert shown.lines == ["RuntimeError: Some error"]
 
+
+def test_submit_metadata_bundle():
+    # TODO: Write this test.
+    pass
+
+
 # def submit_metadata_bundle(bundle_filename, institution, project, server, env, validate_only):
 #
 #     with script_catch_errors():
@@ -450,16 +457,98 @@ def test_script_catch_errors():
 #         if outcome == 'success':
 #             show_section(res, 'upload_info')
 #             do_any_uploads(res, keydict, bundle_filename=bundle_filename)
-#
-#
-# def do_any_uploads(res, keydict, bundle_folder=None, bundle_filename=None):
-#     upload_info = get_section(res, 'upload_info')
-#     if upload_info:
-#         if yes_or_no("Upload %s?" % n_of(len(upload_info), "file")):
-#             do_uploads(upload_info, auth=keydict,
-#                        folder=bundle_folder or (os.path.dirname(bundle_filename) if bundle_filename else None))
-#
-#
+
+
+def test_do_any_uploads():
+
+    # With no files, nothing to query about or load
+    with mock.patch.object(submission_module, "yes_or_no", return_value=True) as mock_yes_or_no:
+        with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
+            do_any_uploads(
+                res={'additional_info': {'upload_info': []}},
+                keydict={'key': 'key7', 'secret': 'secret7', 'server': 'http://localhost:7777'},
+                bundle_filename='/some-folder/foo.xls'
+            )
+            assert mock_yes_or_no.call_count == 0
+            assert mock_uploads.call_count == 0
+
+    with mock.patch.object(submission_module, "yes_or_no", return_value=False) as mock_yes_or_no:
+        with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
+            with shown_output() as shown:
+                do_any_uploads(
+                    res={'additional_data': {'upload_info': [{'uuid': '1234', 'filename': 'f1.fastq.gz'}]}},
+                    keydict={'key': 'key7', 'secret': 'secret7', 'server': 'http://localhost:7777'},
+                    bundle_filename='/some-folder/foo.xls'
+                )
+                mock_yes_or_no.assert_called_with("Upload 1 file?")
+                assert mock_uploads.call_count == 0
+                assert shown.lines == ['No uploads attempted.']
+
+    with mock.patch.object(submission_module, "yes_or_no", return_value=True) as mock_yes_or_no:
+        with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
+
+            some_upload_info = [
+                {'uuid': '1234', 'filename': 'f1.fastq.gz'},
+                {'uuid': '9876', 'filename': 'f2.fastq.gz'}
+            ]
+            some_res = {
+                'additional_data': {
+                    'upload_info': some_upload_info
+                }
+            }
+            some_keydict = {'key': 'key7', 'secret': 'secret7', 'server': 'http://localhost:7777'}
+            some_bundle_filename = '/some-folder/foo.xls'
+            some_folder = os.path.dirname(some_bundle_filename)
+            another_folder = '/another-folder/'
+
+            with shown_output() as shown:
+                do_any_uploads(
+                    res=some_res,
+                    keydict=some_keydict,
+                    bundle_filename=some_bundle_filename,  # from which a folder can be inferred
+                )
+                mock_yes_or_no.assert_called_with("Upload 2 files?")
+                mock_uploads.assert_called_with(
+                    some_upload_info,
+                    auth=some_keydict,
+                    folder=some_folder,  # the folder part of given some_bundle_filename
+                )
+                assert shown.lines == []
+
+            with shown_output() as shown:
+                do_any_uploads(
+                    res=some_res,
+                    keydict=some_keydict,
+                    bundle_folder=another_folder,  # rather than bundle_filename
+                )
+                mock_yes_or_no.assert_called_with("Upload 2 files?")
+                mock_uploads.assert_called_with(
+                    some_upload_info,
+                    auth=some_keydict,
+                    folder=another_folder,  # passed straight through
+                )
+                assert shown.lines == []
+
+            with shown_output() as shown:
+                do_any_uploads(
+                    res=some_res,
+                    keydict=some_keydict,
+                    # No bundle_filename or bundle_folder
+                )
+                mock_yes_or_no.assert_called_with("Upload 2 files?")
+                mock_uploads.assert_called_with(
+                    some_upload_info,
+                    auth=some_keydict,
+                    folder=None,  # No folder
+                )
+                assert shown.lines == []
+
+
+def test_resume_uploads():
+    # TODO: Write this test.
+    pass
+
+
 # def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None):
 #
 #     with script_catch_errors():
@@ -470,8 +559,13 @@ def test_script_catch_errors():
 #         response = requests.get(url, auth=keydict_to_keypair(keydict))
 #         response.raise_for_status()
 #         do_any_uploads(response.json(), keydict, bundle_filename=bundle_filename or os.path.abspath(os.path.curdir))
-#
-#
+
+
+def test_execute_prearranged_upload():
+    # TODO: Write this test.
+    pass
+
+
 # def execute_prearranged_upload(path, upload_credentials):
 #     """
 #     This performs a file upload using special credentials received from ff_utils.patch_metadata.

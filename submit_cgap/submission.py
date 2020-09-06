@@ -239,6 +239,8 @@ def do_any_uploads(res, keydict, bundle_folder=None, bundle_filename=None):
         if yes_or_no("Upload %s?" % n_of(len(upload_info), "file")):
             do_uploads(upload_info, auth=keydict,
                        folder=bundle_folder or (os.path.dirname(bundle_filename) if bundle_filename else None))
+        else:
+            show("No uploads attempted.")
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None):
