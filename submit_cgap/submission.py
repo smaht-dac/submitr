@@ -230,7 +230,7 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
 
         if outcome == 'success':
             show_section(res, 'upload_info')
-            do_any_uploads(res, keydict, bundle_filename=bundle_filename)
+            do_any_uploads(res, keydict=keydict, bundle_filename=bundle_filename)
 
 
 def do_any_uploads(res, keydict, bundle_folder=None, bundle_filename=None):
