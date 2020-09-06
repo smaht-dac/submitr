@@ -953,12 +953,7 @@ def test_submit_metadata_bundle():
                                                             # that a normal 'return' not 'exit' was done.
                                                             assert e.code == 0
 
-                                                        assert mock_do_any_uploads.call_count == 1
-                                                        mock_do_any_uploads.assert_called_with(
-                                                            final_res,
-                                                            bundle_filename=SOME_BUNDLE_FILENAME,
-                                                            keydict=SOME_KEYDICT
-                                                        )
+                                                        assert mock_do_any_uploads.call_count == 0
         assert shown.lines == [
             'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
             # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
