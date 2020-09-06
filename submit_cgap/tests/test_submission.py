@@ -824,17 +824,28 @@ def test_submit_metadata_bundle():
 
     with mock.patch("os.path.exists", mfs.exists):
         with mock.patch("io.open", mfs.open):
-            try:
-                submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                       institution=SOME_INSTITUTION,
-                                       project=SOME_PROJECT,
-                                       server=SOME_SERVER,
-                                       env=None,
-                                       validate_only=False)
-            except SystemExit as e:
-                assert e.code == 1
-            else:
-                raise AssertionError("Expected SystemExit did not happen.")  # pragma: no cover
+            with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                        with mock.patch.object(submission_module, "get_keydict_for_server",
+                                               return_value=SOME_KEYDICT):
+                            with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                                with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                                    with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                           return_value=SOME_KEYDICT):
+                                        with mock.patch("requests.post", mocked_post):
+                                            with mock.patch("requests.get", make_mocked_get(success_after_n_tries=3)):
+                                                try:
+                                                    submit_metadata_bundle(SOME_BUNDLE_FILENAME,
+                                                                           institution=SOME_INSTITUTION,
+                                                                           project=SOME_PROJECT,
+                                                                           server=SOME_SERVER,
+                                                                           env=None,
+                                                                           validate_only=False)
+                                                except ValueError as e:
+                                                    assert "does not exist" in str(e)
+                                                else:  # pragma: no cover
+                                                    raise AssertionError("Expected ValueError did not happen.")
 
     # This tests the normal case with validate_only=False
 
