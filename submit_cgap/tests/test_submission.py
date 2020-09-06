@@ -862,10 +862,10 @@ def test_submit_metadata_bundle():
                                                                                    server=SOME_SERVER,
                                                                                    env=None,
                                                                                    validate_only=False)
-                                                        except SystemExit as e:
+                                                        except SystemExit as e:  # pragma: no cover
+                                                            # This is just in case. In fact it's more likely
+                                                            # that a normal 'return' not 'exit' was done.
                                                             assert e.code == 0
-                                                        raise AssertionError(
-                                                            "Expected SystemExit not raised.")  # pragma: no cover
 
                                                         assert mock_do_any_uploads.call_count == 1
                                                         mock_do_any_uploads.assert_called_with(
@@ -916,7 +916,7 @@ def test_submit_metadata_bundle():
                                                                                    server=SOME_SERVER,
                                                                                    env=None,
                                                                                    validate_only=True)
-                                                        except SystemExit as e:
+                                                        except SystemExit as e:  # pragma: no cover
                                                             assert e.code == 0
                                                         # It's also OK if it doesn't do an exit(0)
 
