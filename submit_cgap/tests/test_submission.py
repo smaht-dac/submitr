@@ -864,7 +864,8 @@ def test_submit_metadata_bundle():
                                                                                    validate_only=False)
                                                         except SystemExit as e:
                                                             assert e.code == 0
-                                                        # It's also OK if it doesn't do an exit(0)
+                                                        raise AssertionError(
+                                                            "Expected SystemExit not raised.")  # pragma: no cover
 
                                                         assert mock_do_any_uploads.call_count == 1
                                                         mock_do_any_uploads.assert_called_with(

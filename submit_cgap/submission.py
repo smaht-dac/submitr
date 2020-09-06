@@ -232,6 +232,8 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
             show_section(res, 'upload_info')
             do_any_uploads(res, keydict=keydict, bundle_filename=bundle_filename)
 
+        exit(0)
+
 
 def do_any_uploads(res, keydict, bundle_folder=None, bundle_filename=None):
     upload_info = get_section(res, 'upload_info')
