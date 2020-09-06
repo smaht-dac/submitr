@@ -62,7 +62,11 @@ make-sample-fastq-file = "submit_cgap.scripts.make_sample_fastq_file:main"
 
 [tool.coverage.report]
 
-exclude_lines = ["if __name__ == .__main__.:", "pragma: no cover"]
+# https://coverage.readthedocs.io/en/latest/config.html
+exclude_lines = [
+  "if __name__ == .__main__.:",
+  "pragma: no cover"
+]
 
 [build-system]
 

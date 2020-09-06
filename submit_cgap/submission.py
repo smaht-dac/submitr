@@ -252,7 +252,9 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
         url = ingestion_submission_item_url(server, uuid)
         response = requests.get(url, auth=keydict_to_keypair(keydict))
         response.raise_for_status()
-        do_any_uploads(response.json(), keydict, bundle_filename=bundle_filename or os.path.abspath(os.path.curdir))
+        do_any_uploads(response.json(),
+                       keydict=keydict,
+                       bundle_filename=bundle_filename or os.path.abspath(os.path.curdir))
 
 
 def execute_prearranged_upload(path, upload_credentials):
@@ -270,7 +272,7 @@ def execute_prearranged_upload(path, upload_credentials):
                    AWS_SECRET_ACCESS_KEY=upload_credentials['SecretAccessKey'],
                    AWS_SECURITY_TOKEN=upload_credentials['SessionToken'])
     except Exception as e:
-        raise("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
+        raise ValueError("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
 
     start = time.time()
     try:

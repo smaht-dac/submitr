@@ -3,11 +3,11 @@ import os
 import pytest
 import re
 
-from dcicutils.qa_utils import override_environ, ignored
+from dcicutils.qa_utils import override_environ, ignored, ControlledTime
 from unittest import mock
 from .test_utils import shown_output
 from .. import submission as submission_module
-from ..base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, PRODUCTION_SERVER
+from ..base import PRODUCTION_SERVER
 from ..exceptions import CGAPPermissionError
 from ..submission import (
     SERVER_REGEXP, check_institution, check_project, do_any_uploads, do_uploads,
@@ -16,6 +16,70 @@ from ..submission import (
     upload_file_to_uuid, upload_item_data, PROGRESS_CHECK_INTERVAL
 )
 from ..utils import FakeResponse
+
+
+SOME_AUTH = ('my-key-id', 'good-secret')
+
+SOME_BAD_AUTH = ('my-key-id', 'bad-secret')
+
+SOME_BAD_RESULT = {'message': 'Houston, we have a problem.'}
+
+SOME_BUNDLE_FILENAME = '/some-folder/foo.xls'
+
+SOME_BUNDLE_FILENAME_FOLDER = os.path.dirname(SOME_BUNDLE_FILENAME)
+
+SOME_ENV = 'some-env'
+
+SOME_FILENAME = 'some-filename'
+
+SOME_SERVER = 'http://localhost:7777'  # Dependencies force this to be out of alphabetical order
+
+SOME_KEYDICT = {'key': 'key7', 'secret': 'secret7', 'server': SOME_SERVER}
+
+SOME_OTHER_BUNDLE_FOLDER = '/some-other-folder/'
+
+SOME_UPLOAD_URL = 'some-url'
+
+SOME_UPLOAD_CREDENTIALS = {
+    'AccessKeyId': 'some-access-key',
+    'SecretAccessKey': 'some-secret',
+    'SessionToken': 'some-session-token',
+    'upload_url': SOME_UPLOAD_URL,
+}
+
+SOME_UPLOAD_CREDENTIALS_RESULT = {
+    '@graph': [
+        {'upload_credentials': SOME_UPLOAD_CREDENTIALS}
+    ]
+}
+
+SOME_UPLOAD_INFO = [
+    {'uuid': '1234', 'filename': 'f1.fastq.gz'},
+    {'uuid': '9876', 'filename': 'f2.fastq.gz'}
+]
+
+SOME_UPLOAD_INFO_RESULT = {
+    'additional_data': {
+        'upload_info': SOME_UPLOAD_INFO
+    }
+}
+
+SOME_USER = "jdoe"
+
+SOME_USER_HOMEDIR = os.path.join('/home', SOME_USER)
+
+SOME_UUID = '123-4444-5678'
+
+SOME_ENVIRON = {
+    'USER': SOME_USER
+}
+
+SOME_ENVIRON_WITH_CREDS = {
+    'USER': SOME_USER,
+    'AWS_ACCESS_KEY_ID': 'some-access-key',
+    'AWS_SECRET_ACCESS_KEY': 'some-secret',
+    'AWS_SECURITY_TOKEN': 'some-session-token',
+}
 
 
 def test_server_regexp():
@@ -27,7 +91,7 @@ def test_server_regexp():
 
     for schema in schemas:
         for host in hosts:
-            for final_slash in ['/', '']:
+            for final_slash in final_slashes:
                 url_to_check = schema + "://" + host + final_slash
                 print("Trying", url_to_check, "expecting match...")
                 assert SERVER_REGEXP.match(url_to_check)
@@ -115,6 +179,7 @@ def test_get_user_record():
 
     def make_mocked_get(auth_failure_code=400):
         def mocked_get(url, *, auth):
+            ignored(url)
             if auth != good_auth:
                 return FakeResponse(status_code=auth_failure_code, json={'Title': 'Not logged in.'})
             return FakeResponse(status_code=200, json={'title': 'J Doe', 'contact_email': 'jdoe@cgap.hms.harvard.edu'})
@@ -210,11 +275,11 @@ def test_check_project():
 
 def test_get_section():
 
-    assert get_section({}, 'foo') == None
-    assert get_section({'alpha': 3, 'beta': 4}, 'foo') == None
+    assert get_section({}, 'foo') is None
+    assert get_section({'alpha': 3, 'beta': 4}, 'foo') is None
     assert get_section({'alpha': 3, 'foo': 5, 'beta': 4}, 'foo') == 5
-    assert get_section({'additional_data': {}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'omega') == None
-    assert get_section({'additional_data': {'omega': 24}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'epsilon') == None
+    assert get_section({'additional_data': {}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'omega') is None
+    assert get_section({'additional_data': {'omega': 24}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'epsilon') is None
     assert get_section({'additional_data': {'omega': 24}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'omega') == 24
 
 
@@ -313,6 +378,7 @@ def test_show_section_without_caveat():
             '17',
         ]
 
+
 def test_show_section_with_caveat():
 
     # Some output is shown marked by a caveat, that indicates execution stopped early for some reason
@@ -322,14 +388,13 @@ def test_show_section_with_caveat():
 
     # Lines section available, with caveat.
     with shown_output() as shown:
-        when = 'some error'
         show_section(
             res={'foo': ['abc', 'def']},
             section='foo',
-            caveat_outcome=when
+            caveat_outcome=caveat
         )
         assert shown.lines == [
-            '----- Foo (prior to %s) -----' % when,
+            '----- Foo (prior to %s) -----' % caveat,
             'abc',
             'def',
         ]
@@ -339,7 +404,7 @@ def test_show_section_with_caveat():
         show_section(
             res={},
             section='foo',
-            caveat_outcome=when
+            caveat_outcome=caveat
         )
         assert shown.lines == []  # Nothing shown if there is a caveat specified
 
@@ -366,9 +431,322 @@ def test_script_catch_errors():
         assert shown.lines == ["RuntimeError: Some error"]
 
 
+def test_do_any_uploads():
+
+    # With no files, nothing to query about or load
+    with mock.patch.object(submission_module, "yes_or_no", return_value=True) as mock_yes_or_no:
+        with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
+            do_any_uploads(
+                res={'additional_info': {'upload_info': []}},
+                keydict={'key': 'key7', 'secret': 'secret7', 'server': 'http://localhost:7777'},
+                bundle_filename='/some-folder/foo.xls'
+            )
+            assert mock_yes_or_no.call_count == 0
+            assert mock_uploads.call_count == 0
+
+    with mock.patch.object(submission_module, "yes_or_no", return_value=False) as mock_yes_or_no:
+        with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
+            with shown_output() as shown:
+                do_any_uploads(
+                    res={'additional_data': {'upload_info': [{'uuid': '1234', 'filename': 'f1.fastq.gz'}]}},
+                    keydict={'key': 'key7', 'secret': 'secret7', 'server': 'http://localhost:7777'},
+                    bundle_filename='/some-folder/foo.xls'
+                )
+                mock_yes_or_no.assert_called_with("Upload 1 file?")
+                assert mock_uploads.call_count == 0
+                assert shown.lines == ['No uploads attempted.']
+
+    with mock.patch.object(submission_module, "yes_or_no", return_value=True) as mock_yes_or_no:
+        with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
+
+            n_uploads = len(SOME_UPLOAD_INFO)
+
+            with shown_output() as shown:
+                do_any_uploads(
+                    res=SOME_UPLOAD_INFO_RESULT,
+                    keydict=SOME_KEYDICT,
+                    bundle_filename=SOME_BUNDLE_FILENAME,  # from which a folder can be inferred
+                )
+                mock_yes_or_no.assert_called_with("Upload %s files?" % n_uploads)
+                mock_uploads.assert_called_with(
+                    SOME_UPLOAD_INFO,
+                    auth=SOME_KEYDICT,
+                    folder=SOME_BUNDLE_FILENAME_FOLDER,  # the folder part of given SOME_BUNDLE_FILENAME
+                )
+                assert shown.lines == []
+
+            with shown_output() as shown:
+                do_any_uploads(
+                    res=SOME_UPLOAD_INFO_RESULT,
+                    keydict=SOME_KEYDICT,
+                    bundle_folder=SOME_OTHER_BUNDLE_FOLDER,  # rather than bundle_filename
+                )
+                mock_yes_or_no.assert_called_with("Upload %s files?" % n_uploads)
+                mock_uploads.assert_called_with(
+                    SOME_UPLOAD_INFO,
+                    auth=SOME_KEYDICT,
+                    folder=SOME_OTHER_BUNDLE_FOLDER,  # passed straight through
+                )
+                assert shown.lines == []
+
+            with shown_output() as shown:
+                do_any_uploads(
+                    res=SOME_UPLOAD_INFO_RESULT,
+                    keydict=SOME_KEYDICT,
+                    # No bundle_filename or bundle_folder
+                )
+                mock_yes_or_no.assert_called_with("Upload %s files?" % n_uploads)
+                mock_uploads.assert_called_with(
+                    SOME_UPLOAD_INFO,
+                    auth=SOME_KEYDICT,
+                    folder=None,  # No folder
+                )
+                assert shown.lines == []
+
+
+def test_resume_uploads():
+
+    @contextlib.contextmanager
+    def script_dont_catch_errors():
+        yield
+
+    with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+        with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+            with mock.patch.object(submission_module, "get_keydict_for_server", return_value=SOME_KEYDICT):
+                some_response_json = {'some': 'json'}
+                with mock.patch("requests.get", return_value=FakeResponse(200, json=some_response_json)):
+                    with mock.patch.object(submission_module, "do_any_uploads") as mock_do_any_uploads:
+                        resume_uploads(SOME_UUID, server=SOME_SERVER, env=None, bundle_filename=SOME_BUNDLE_FILENAME,
+                                       keydict=SOME_KEYDICT)
+                        mock_do_any_uploads.assert_called_with(
+                            some_response_json,
+                            keydict=SOME_KEYDICT,
+                            bundle_filename=SOME_BUNDLE_FILENAME
+                        )
+
+    with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+        with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+            with mock.patch.object(submission_module, "get_keydict_for_server", return_value=SOME_KEYDICT):
+                with mock.patch("requests.get", return_value=FakeResponse(401, json=SOME_BAD_RESULT)):
+                    with mock.patch.object(submission_module, "do_any_uploads") as mock_do_any_uploads:
+                        with pytest.raises(Exception):
+                            resume_uploads(SOME_UUID, server=SOME_SERVER, env=None,
+                                           bundle_filename=SOME_BUNDLE_FILENAME, keydict=SOME_KEYDICT)
+                        assert mock_do_any_uploads.call_count == 0
+
+
+class MockTime:
+    def __init__(self, **kwargs):
+        self._time = ControlledTime(**kwargs)
+
+    def time(self):
+        return (self._time.now() - self._time.INITIAL_TIME).total_seconds()
+
+
+def test_execute_prearranged_upload():
+
+    with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
+        with shown_output() as shown:
+            with pytest.raises(ValueError):
+                bad_credentials = SOME_UPLOAD_CREDENTIALS.copy()
+                bad_credentials.pop('SessionToken')
+                # This will abort quite early because it can't construct a proper set of credentials as env vars.
+                # Nothing has to be mocked because it won't get that far.
+                execute_prearranged_upload('this-file-name-is-not-used', bad_credentials)
+            assert shown.lines == []
+
+    with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
+        with shown_output() as shown:
+            with mock.patch("time.time", MockTime().time):
+                with mock.patch("subprocess.call", return_value=0) as mock_aws_call:
+                    execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
+                    mock_aws_call.assert_called_with(
+                        ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
+                        env=SOME_ENVIRON_WITH_CREDS
+                    )
+                    assert shown.lines == [
+                        "Going to upload some-filename to some-url.",
+                        "Uploaded in 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
+                    ]
+
+    with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
+        with shown_output() as shown:
+            with mock.patch("time.time", MockTime().time):
+                with mock.patch("subprocess.call", return_value=17) as mock_aws_call:
+                    execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
+                    mock_aws_call.assert_called_with(
+                        ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
+                        env=SOME_ENVIRON_WITH_CREDS
+                    )
+                    assert shown.lines == [
+                        "Going to upload some-filename to some-url.",
+                        "Upload failed with exit code 17"
+                    ]
+
+
+def test_upload_file_to_uuid():
+
+    with mock.patch("dcicutils.ff_utils.patch_metadata", return_value=SOME_UPLOAD_CREDENTIALS_RESULT):
+        with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
+            upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_AUTH)
+            mocked_upload.assert_called_with(SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
+
+    with mock.patch("dcicutils.ff_utils.patch_metadata", return_value=SOME_BAD_RESULT):
+        with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
+            try:
+                upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_AUTH)
+            except Exception as e:
+                assert str(e).startswith("Unable to obtain upload credentials")
+            else:
+                raise Exception("Expected error was not raised.")  # pragma: no cover - we hope this never happens
+            assert mocked_upload.call_count == 0
+
+
+def make_alternator(*values):
+
+    class Alternatives:
+
+        def __init__(self, values):
+            self.values = values
+            self.pos = 0
+
+        def next_value(self, *args, **kwargs):
+            ignored(args, kwargs)
+            result = self.values[self.pos]
+            self.pos = (self.pos + 1) % len(self.values)
+            return result
+
+    alternatives = Alternatives(values)
+
+    return alternatives.next_value
+
+
+def test_do_uploads():
+
+    @contextlib.contextmanager
+    def mock_uploads():
+
+        uploaded = {}
+
+        def mocked_upload_file(filename, uuid, auth):
+            if auth != SOME_AUTH:
+                raise Exception("Bad auth")
+            uploaded[uuid] = filename
+
+        with mock.patch.object(submission_module, "upload_file_to_uuid", mocked_upload_file):
+            yield uploaded  # This starts out empty when yielded, but as uploads occur will get populated.
+
+    with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+
+        with mock_uploads() as mock_uploaded:
+            do_uploads(upload_spec_list=[], auth=SOME_AUTH)
+            assert mock_uploaded == {}
+
+        some_uploads_to_do = [
+            {'uuid': '1234', 'filename': 'foo.fastq.gz'},
+            {'uuid': '2345', 'filename': 'bar.fastq.gz'},
+            {'uuid': '3456', 'filename': 'baz.fastq.gz'}
+        ]
+
+        with mock_uploads() as mock_uploaded:
+            with shown_output() as shown:
+                do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_BAD_AUTH)
+                assert mock_uploaded == {}  # Nothing uploaded because of bad auth
+                assert shown.lines == [
+                    'Uploading ./foo.fastq.gz to item 1234 ...',
+                    'Exception: Bad auth',
+                    'Uploading ./bar.fastq.gz to item 2345 ...',
+                    'Exception: Bad auth',
+                    'Uploading ./baz.fastq.gz to item 3456 ...',
+                    'Exception: Bad auth'
+                ]
+
+        with mock_uploads() as mock_uploaded:
+            with shown_output() as shown:
+                do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_AUTH)
+                assert mock_uploaded == {
+                    '1234': './foo.fastq.gz',
+                    '2345': './bar.fastq.gz',
+                    '3456': './baz.fastq.gz'
+                }
+                assert shown.lines == [
+                    'Uploading ./foo.fastq.gz to item 1234 ...',
+                    'Upload of ./foo.fastq.gz to item 1234 was successful.',
+                    'Uploading ./bar.fastq.gz to item 2345 ...',
+                    'Upload of ./bar.fastq.gz to item 2345 was successful.',
+                    'Uploading ./baz.fastq.gz to item 3456 ...',
+                    'Upload of ./baz.fastq.gz to item 3456 was successful.',
+                ]
+
+    with mock.patch.object(submission_module, "yes_or_no", make_alternator(True, False)):
+
+        with mock_uploads() as mock_uploaded:
+            with shown_output() as shown:
+                do_uploads(
+                    upload_spec_list=[
+                        {'uuid': '1234', 'filename': 'foo.fastq.gz'},
+                        {'uuid': '2345', 'filename': 'bar.fastq.gz'},
+                        {'uuid': '3456', 'filename': 'baz.fastq.gz'}
+                    ],
+                    auth=SOME_AUTH,
+                    folder='/x/yy/zzz/'
+                )
+                assert mock_uploaded == {
+                    '1234': '/x/yy/zzz/foo.fastq.gz',
+                    # The mock yes_or_no will have omitted this element.
+                    # '2345': './bar.fastq.gz',
+                    '3456': '/x/yy/zzz/baz.fastq.gz'
+                }
+                assert shown.lines == [
+                    'Uploading /x/yy/zzz/foo.fastq.gz to item 1234 ...',
+                    'Upload of /x/yy/zzz/foo.fastq.gz to item 1234 was successful.',
+                    # The query about uploading bar.fastq has been mocked out here
+                    # in favor of an unconditional False result, so the question does no I/O.
+                    # The only output is the result of simulating a 'no' answer.
+                    'OK, not uploading it.',
+                    'Uploading /x/yy/zzz/baz.fastq.gz to item 3456 ...',
+                    'Upload of /x/yy/zzz/baz.fastq.gz to item 3456 was successful.',
+                ]
+
+
+def test_upload_item_data():
+
+    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER) as mock_resolve:
+        with mock.patch.object(submission_module, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
+            with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
+
+                    upload_item_data(part_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
+
+                    mock_resolve.assert_called_with(env=SOME_ENV, server=SOME_SERVER)
+                    mock_get.assert_called_with(SOME_SERVER)
+                    mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_KEYDICT)
+
+    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER) as mock_resolve:
+        with mock.patch.object(submission_module, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
+            with mock.patch.object(submission_module, "yes_or_no", return_value=False):
+                with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
+
+                    with shown_output() as shown:
+
+                        try:
+                            upload_item_data(part_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER,
+                                             env=SOME_ENV)
+                        except SystemExit as e:
+                            assert e.code == 1
+                        else:
+                            raise AssertionError("Expected SystemExit not raised.")  # pragma: no cover
+
+                        assert shown.lines == ['Aborting submission.']
+
+                    mock_resolve.assert_called_with(env=SOME_ENV, server=SOME_SERVER)
+                    mock_get.assert_called_with(SOME_SERVER)
+                    assert mock_upload.call_count == 0
+
+
 def test_submit_metadata_bundle():
     # TODO: Write this test.
-    pass
+    ignored(submit_metadata_bundle)
 
 
 # def submit_metadata_bundle(bundle_filename, institution, project, server, env, validate_only):
@@ -457,314 +835,3 @@ def test_submit_metadata_bundle():
 #         if outcome == 'success':
 #             show_section(res, 'upload_info')
 #             do_any_uploads(res, keydict, bundle_filename=bundle_filename)
-
-
-def test_do_any_uploads():
-
-    # With no files, nothing to query about or load
-    with mock.patch.object(submission_module, "yes_or_no", return_value=True) as mock_yes_or_no:
-        with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
-            do_any_uploads(
-                res={'additional_info': {'upload_info': []}},
-                keydict={'key': 'key7', 'secret': 'secret7', 'server': 'http://localhost:7777'},
-                bundle_filename='/some-folder/foo.xls'
-            )
-            assert mock_yes_or_no.call_count == 0
-            assert mock_uploads.call_count == 0
-
-    with mock.patch.object(submission_module, "yes_or_no", return_value=False) as mock_yes_or_no:
-        with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
-            with shown_output() as shown:
-                do_any_uploads(
-                    res={'additional_data': {'upload_info': [{'uuid': '1234', 'filename': 'f1.fastq.gz'}]}},
-                    keydict={'key': 'key7', 'secret': 'secret7', 'server': 'http://localhost:7777'},
-                    bundle_filename='/some-folder/foo.xls'
-                )
-                mock_yes_or_no.assert_called_with("Upload 1 file?")
-                assert mock_uploads.call_count == 0
-                assert shown.lines == ['No uploads attempted.']
-
-    with mock.patch.object(submission_module, "yes_or_no", return_value=True) as mock_yes_or_no:
-        with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
-
-            some_upload_info = [
-                {'uuid': '1234', 'filename': 'f1.fastq.gz'},
-                {'uuid': '9876', 'filename': 'f2.fastq.gz'}
-            ]
-            some_res = {
-                'additional_data': {
-                    'upload_info': some_upload_info
-                }
-            }
-            some_keydict = {'key': 'key7', 'secret': 'secret7', 'server': 'http://localhost:7777'}
-            some_bundle_filename = '/some-folder/foo.xls'
-            some_folder = os.path.dirname(some_bundle_filename)
-            another_folder = '/another-folder/'
-
-            with shown_output() as shown:
-                do_any_uploads(
-                    res=some_res,
-                    keydict=some_keydict,
-                    bundle_filename=some_bundle_filename,  # from which a folder can be inferred
-                )
-                mock_yes_or_no.assert_called_with("Upload 2 files?")
-                mock_uploads.assert_called_with(
-                    some_upload_info,
-                    auth=some_keydict,
-                    folder=some_folder,  # the folder part of given some_bundle_filename
-                )
-                assert shown.lines == []
-
-            with shown_output() as shown:
-                do_any_uploads(
-                    res=some_res,
-                    keydict=some_keydict,
-                    bundle_folder=another_folder,  # rather than bundle_filename
-                )
-                mock_yes_or_no.assert_called_with("Upload 2 files?")
-                mock_uploads.assert_called_with(
-                    some_upload_info,
-                    auth=some_keydict,
-                    folder=another_folder,  # passed straight through
-                )
-                assert shown.lines == []
-
-            with shown_output() as shown:
-                do_any_uploads(
-                    res=some_res,
-                    keydict=some_keydict,
-                    # No bundle_filename or bundle_folder
-                )
-                mock_yes_or_no.assert_called_with("Upload 2 files?")
-                mock_uploads.assert_called_with(
-                    some_upload_info,
-                    auth=some_keydict,
-                    folder=None,  # No folder
-                )
-                assert shown.lines == []
-
-
-def test_resume_uploads():
-    # TODO: Write this test.
-    pass
-
-
-# def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None):
-#
-#     with script_catch_errors():
-#
-#         server = resolve_server(server=server, env=env)
-#         keydict = keydict or get_keydict_for_server(server)
-#         url = ingestion_submission_item_url(server, uuid)
-#         response = requests.get(url, auth=keydict_to_keypair(keydict))
-#         response.raise_for_status()
-#         do_any_uploads(response.json(), keydict, bundle_filename=bundle_filename or os.path.abspath(os.path.curdir))
-
-
-def test_execute_prearranged_upload():
-    # TODO: Write this test.
-    pass
-
-
-# def execute_prearranged_upload(path, upload_credentials):
-#     """
-#     This performs a file upload using special credentials received from ff_utils.patch_metadata.
-#
-#     :param path: the name of a local file to upload
-#     :param upload_credentials: a dictionary of credentials to be used for the upload,
-#         containing the keys 'AccessKeyId', 'SecretAccessKey', 'SessionToken', and 'upload_url'.
-#     """
-#
-#     try:
-#         env = dict(os.environ,
-#                    AWS_ACCESS_KEY_ID=upload_credentials['AccessKeyId'],
-#                    AWS_SECRET_ACCESS_KEY=upload_credentials['SecretAccessKey'],
-#                    AWS_SECURITY_TOKEN=upload_credentials['SessionToken'])
-#     except Exception as e:
-#         raise("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
-#
-#     start = time.time()
-#     try:
-#         source = path
-#         target = upload_credentials['upload_url']
-#         show("Going to upload %s to %s." % (source, target))
-#         subprocess.check_call(['aws', 's3', 'cp', '--only-show-errors', source, target], env=env)
-#     except subprocess.CalledProcessError as e:
-#         show("Upload failed with exit code %d" % e.returncode)
-#     else:
-#         end = time.time()
-#         duration = end - start
-#         show("Uploaded in %.2f seconds" % duration)
-
-def test_upload_file_to_uuid():
-
-    some_credentials = {
-        'AccessKeyId': 'some-access-key',
-        'SecretAccessKey': 'some-secret',
-        'Session-Token': 'some-session-token',
-        'upload_url': 'some-url'
-    }
-
-    some_result = {'@graph': [{'upload_credentials': some_credentials}]}
-    some_filename = 'some-filename'
-    some_uuid = '123-4444-5678'
-    some_auth = 'open sesame'
-
-    with mock.patch("dcicutils.ff_utils.patch_metadata", return_value=some_result):
-        with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
-            upload_file_to_uuid(filename=some_filename, uuid=some_uuid, auth=some_auth)
-            mocked_upload.assert_called_with(some_filename, upload_credentials=some_credentials)
-
-    bad_result = {'message': 'Houston, we have a problem.'}
-
-    with mock.patch("dcicutils.ff_utils.patch_metadata", return_value=bad_result):
-        with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
-            try:
-                upload_file_to_uuid(filename=some_filename, uuid=some_uuid, auth=some_auth)
-            except Exception as e:
-                assert str(e).startswith("Unable to obtain upload credentials")
-            else:
-                raise Exception("Expected error was not raised.")  # pragma: no cover - we hope this never happens
-            assert mocked_upload.call_count == 0
-
-
-def make_alternator(*values):
-
-    class Alternatives:
-
-        def __init__(self, values):
-            self.values = values
-            self.pos = 0
-
-        def next_value(self, *args, **kwargs):
-            ignored(args, kwargs)
-            result = self.values[self.pos]
-            self.pos = (self.pos + 1) % len(self.values)
-            return result
-
-    alternatives = Alternatives(values)
-
-    return alternatives.next_value
-
-
-def test_do_uploads():
-
-    good_auth = 'good-auth'
-    bad_auth = 'bad-auth'
-
-    @contextlib.contextmanager
-    def mock_uploads():
-
-        uploaded = {}
-
-        def mocked_upload_file(filename, uuid, auth):
-            if auth != good_auth:
-                raise Exception("Bad auth")
-            uploaded[uuid] = filename
-
-        with mock.patch.object(submission_module, "upload_file_to_uuid", mocked_upload_file):
-            yield uploaded  # This starts out empty when yielded, but as uploads occur will get populated.
-
-    with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-
-        with mock_uploads() as mock_uploaded:
-            do_uploads(upload_spec_list=[], auth=good_auth)
-            assert mock_uploaded == {}
-
-        some_uploads_to_do = [
-            {'uuid': '1234', 'filename': 'foo.fastq.gz'},
-            {'uuid': '2345', 'filename': 'bar.fastq.gz'},
-            {'uuid': '3456', 'filename': 'baz.fastq.gz'}
-        ]
-
-        with mock_uploads() as mock_uploaded:
-            with shown_output() as shown:
-                do_uploads(upload_spec_list=some_uploads_to_do, auth=bad_auth)
-                assert mock_uploaded == {}
-                assert shown.lines == [
-                    'Uploading ./foo.fastq.gz to item 1234 ...',
-                    'Exception: Bad auth',
-                    'Uploading ./bar.fastq.gz to item 2345 ...',
-                    'Exception: Bad auth',
-                    'Uploading ./baz.fastq.gz to item 3456 ...',
-                    'Exception: Bad auth'
-                ]
-
-        with mock_uploads() as mock_uploaded:
-            do_uploads(upload_spec_list=some_uploads_to_do, auth=good_auth)
-            assert mock_uploaded == {
-                '1234': './foo.fastq.gz',
-                '2345': './bar.fastq.gz',
-                '3456': './baz.fastq.gz'
-            }
-
-    with mock.patch.object(submission_module, "yes_or_no", make_alternator(True, False)):
-
-        with mock_uploads() as mock_uploaded:
-            with shown_output() as shown:
-                do_uploads(
-                    upload_spec_list=[
-                        {'uuid': '1234', 'filename': 'foo.fastq.gz'},
-                        {'uuid': '2345', 'filename': 'bar.fastq.gz'},
-                        {'uuid': '3456', 'filename': 'baz.fastq.gz'}
-                    ],
-                    auth=good_auth,
-                    folder='/x/yy/zzz/'
-                )
-                assert mock_uploaded == {
-                    '1234': '/x/yy/zzz/foo.fastq.gz',
-                    # The mock yes_or_no will have omitted this element.
-                    # '2345': './bar.fastq.gz',
-                    '3456': '/x/yy/zzz/baz.fastq.gz'
-                }
-                assert shown.lines == [
-                    'Uploading /x/yy/zzz/foo.fastq.gz to item 1234 ...',
-                    'Upload of /x/yy/zzz/foo.fastq.gz to item 1234 was successful.',
-                    # The query about uploading bar.fastq has been mocked out here
-                    # in favor of an unconditional False result, so the question does no I/O.
-                    # The only output is the result of simulating a 'no' answer.
-                    'OK, not uploading it.',
-                    'Uploading /x/yy/zzz/baz.fastq.gz to item 3456 ...',
-                    'Upload of /x/yy/zzz/baz.fastq.gz to item 3456 was successful.',
-                ]
-
-
-def test_upload_item_data():
-
-    some_env = 'some-env'
-    some_server = 'some-server'
-    some_keydict = {'key': 'some-key', 'secret': 'some-secret', 'server': 'some-server'}
-    some_filename = 'some-filename'
-    some_uuid = '111-2222-333'
-
-    with mock.patch.object(submission_module, "resolve_server", return_value=some_server) as mock_resolve:
-        with mock.patch.object(submission_module, "get_keydict_for_server", return_value=some_keydict) as mock_get:
-            with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
-
-                    upload_item_data(part_filename=some_filename, uuid=some_uuid, server=some_server, env=some_env)
-
-                    mock_resolve.assert_called_with(env=some_env, server=some_server)
-                    mock_get.assert_called_with(some_server)
-                    mock_upload.assert_called_with(filename=some_filename, uuid=some_uuid, auth=some_keydict)
-
-    with mock.patch.object(submission_module, "resolve_server", return_value=some_server) as mock_resolve:
-        with mock.patch.object(submission_module, "get_keydict_for_server", return_value=some_keydict) as mock_get:
-            with mock.patch.object(submission_module, "yes_or_no", return_value=False):
-                with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
-
-                    with shown_output() as shown:
-
-                        try:
-                            upload_item_data(part_filename=some_filename, uuid=some_uuid, server=some_server, env=some_env)
-                        except SystemExit as e:
-                            assert e.code == 1
-                        else:
-                            raise AssertionError("Expected SystemExit not raised.")  # pragma: no cover
-
-                        assert shown.lines == ['Aborting submission.']
-
-                    mock_resolve.assert_called_with(env=some_env, server=some_server)
-                    mock_get.assert_called_with(some_server)
-                    assert mock_upload.call_count == 0
-

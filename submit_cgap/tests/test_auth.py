@@ -148,7 +148,8 @@ def test_get_keypair_keydict_and_keydicts():
                     assert get_keydict_for_server(None) == default_dict_expected
                     assert get_keydict_for_server() == default_dict_expected
 
-            test_it(override_default_env=None,  # If no override given, production env (fourfront-cgap) is default default.
+            # If no override given, production env (fourfront-cgap) is default default.
+            test_it(override_default_env=None,
                     default_pair_expected=cgap_pair,
                     default_dict_expected=cgap_dict)
 
