@@ -799,8 +799,28 @@ def test_submit_metadata_bundle():
         }
     }
 
-    def make_mocked_get(success_after_n_tries=1):
-        responses = (partial_res,) * (success_after_n_tries - 1) + (final_res,)
+    error_res = {
+        'submission_id': SOME_UUID,
+        'errors': [
+            "ouch"
+        ],
+        "additional_data": {
+            "validation_output": [],
+            "post_output": [],
+            "upload_info": SOME_UPLOAD_INFO,
+        },
+        "processing_status": {
+            "state": "done",
+            "outcome": "error",
+            "progress": "irrelevant"
+        }
+    }
+
+    def make_mocked_get(success=True, done_after_n_tries=1):
+        if success:
+            responses = (partial_res,) * (done_after_n_tries - 1) + (final_res,)
+        else:
+            responses = (partial_res,) * (done_after_n_tries - 1) + (error_res,)
         response_maker = make_alternator(*responses)
 
         def mocked_get(url, auth):
@@ -834,7 +854,7 @@ def test_submit_metadata_bundle():
                                     with mock.patch.object(submission_module, "get_keydict_for_server",
                                                            return_value=SOME_KEYDICT):
                                         with mock.patch("requests.post", mocked_post):
-                                            with mock.patch("requests.get", make_mocked_get(success_after_n_tries=3)):
+                                            with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
                                                 try:
                                                     submit_metadata_bundle(SOME_BUNDLE_FILENAME,
                                                                            institution=SOME_INSTITUTION,
@@ -847,7 +867,7 @@ def test_submit_metadata_bundle():
                                                 else:  # pragma: no cover
                                                     raise AssertionError("Expected ValueError did not happen.")
 
-    # This tests the normal case with validate_only=False
+    # This tests the normal case with validate_only=False and a successful result.
 
     with shown_output() as shown:
         with mock.patch("os.path.exists", mfs.exists):
@@ -860,7 +880,7 @@ def test_submit_metadata_bundle():
                             with mock.patch.object(submission_module, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get", make_mocked_get(success_after_n_tries=3)):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -901,6 +921,61 @@ def test_submit_metadata_bundle():
 
     dt.reset_datetime()
 
+    # This tests the normal case with validate_only=False and an error result.
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", mocked_post):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
+                                                                                    success=False)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        try:
+                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
+                                                                                   institution=SOME_INSTITUTION,
+                                                                                   project=SOME_PROJECT,
+                                                                                   server=SOME_SERVER,
+                                                                                   env=None,
+                                                                                   validate_only=False)
+                                                        except SystemExit as e:  # pragma: no cover
+                                                            # This is just in case. In fact it's more likely
+                                                            # that a normal 'return' not 'exit' was done.
+                                                            assert e.code == 0
+
+                                                        assert mock_do_any_uploads.call_count == 1
+                                                        mock_do_any_uploads.assert_called_with(
+                                                            final_res,
+                                                            bundle_filename=SOME_BUNDLE_FILENAME,
+                                                            keydict=SOME_KEYDICT
+                                                        )
+        assert shown.lines == [
+            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
+            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
+            # 1 second after we started our virtual clock...
+            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:17 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:33 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:49 Final status: error',
+            # Output from uploads is not present because we mocked that out.
+            # See test of the call to the uploader higher up.
+        ]
+
+    dt.reset_datetime()
+
     # This tests the normal case with validate_only=True
 
     with shown_output() as shown:
@@ -914,7 +989,7 @@ def test_submit_metadata_bundle():
                             with mock.patch.object(submission_module, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get", make_mocked_get(success_after_n_tries=3)):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -963,7 +1038,7 @@ def test_submit_metadata_bundle():
                             with mock.patch.object(submission_module, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get", make_mocked_get(success_after_n_tries=10)):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=10)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
