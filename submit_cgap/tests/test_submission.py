@@ -155,7 +155,7 @@ def test_check_institution():
     except Exception as e:
         assert str(e).startswith("Your user profile declares no institution")
     else:
-        raise AssertionError("Expected error was not raised.")  # noqa - we hope never to see this executed
+        raise AssertionError("Expected error was not raised.")  # pragma: no cover
 
     successful_result = check_institution(institution=None,
                                           user_record=make_user_record(submits_for=[
@@ -173,7 +173,7 @@ def test_check_institution():
     except Exception as e:
         assert str(e).startswith("You must use --institution to specify which institution")
     else:
-        raise AssertionError("Expected error was not raised.")  # noqa - we hope never to see this executed
+        raise AssertionError("Expected error was not raised.")  # pragma: no cover - we hope never to see this executed
 
     print("successful_result=", successful_result)
 
@@ -196,7 +196,7 @@ def test_check_project():
     except Exception as e:
         assert str(e).startswith("Your user profile has no project declared")
     else:
-        raise AssertionError("Expected error was not raised.")  # noqa - we hope never to see this executed
+        raise AssertionError("Expected error was not raised.")  # pragma: no cover - we hope never to see this executed
 
     successful_result = check_project(project=None,
                                       user_record=make_user_record(project={'@id': good_project})
@@ -350,7 +350,7 @@ def test_script_catch_errors():
     except SystemExit as e:
         assert e.code == 0, "Expected status code 0, but got %s." % e.code
     else:
-        raise AssertionError("SystemExit not raised.")
+        raise AssertionError("SystemExit not raised.")  # pragma: no cover - we hope never to see this executed
 
     with shown_output() as shown:
 
@@ -360,7 +360,7 @@ def test_script_catch_errors():
         except SystemExit as e:
             assert e.code == 1, "Expected status code 1, but got %s." % e.code
         else:
-            raise AssertionError("SystemExit not raised.")  # noqa - we hope never to see this executed
+            raise AssertionError("SystemExit not raised.")  # pragma: no cover - we hope never to see this executed
 
         assert shown.lines == ["RuntimeError: Some error"]
 
@@ -501,30 +501,6 @@ def test_script_catch_errors():
 #         end = time.time()
 #         duration = end - start
 #         show("Uploaded in %.2f seconds" % duration)
-#
-#
-# def upload_file_to_uuid(filename, uuid, auth):
-#     """
-#     Upload file to a target environment.
-#
-#     :param filename: the name of a file to upload.
-#     :param uuid: the item into which the filename is to be uploaded.
-#     :param auth: auth info in the form of a dictionary containing 'key', 'secret', and 'server'.
-#     """
-#
-#     # filename here should not include path
-#     patch_data = {'filename': os.path.basename(filename)}
-#
-#     response = ff_utils.patch_metadata(patch_data, uuid, key=auth)
-#
-#     try:
-#         [metadata] = response['@graph']
-#         upload_credentials = metadata['upload_credentials']
-#     except Exception:
-#         raise RuntimeError("Unable to obtain upload credentials for file %s." % filename)
-#
-#     execute_prearranged_upload(filename, upload_credentials=upload_credentials)
-
 
 def test_upload_file_to_uuid():
 
@@ -689,6 +665,8 @@ def test_upload_item_data():
                             upload_item_data(part_filename=some_filename, uuid=some_uuid, server=some_server, env=some_env)
                         except SystemExit as e:
                             assert e.code == 1
+                        else:
+                            raise AssertionError("Expected SystemExit not raised.")  # pragma: no cover
 
                         assert shown.lines == ['Aborting submission.']
 
