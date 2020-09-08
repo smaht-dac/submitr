@@ -13,7 +13,11 @@ def main(simulated_args_for_testing=None):
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument('filename', help='a local Excel filename that is the data bundle')
-    parser.add_argument('--number', '-n', help='number of sequences', default=10)
-    parser.add_argument('--length', '-l', help='length of sequences', default=10)
+    parser.add_argument('--number', '-n', help='number of sequences', default=10, type=int)
+    parser.add_argument('--length', '-l', help='length of sequences', default=10, type=int)
     args = parser.parse_args(args=simulated_args_for_testing)
-    generate_sample_fastq_file(args.filename, num=args.number, length=args.length)
+    generate_sample_fastq_file(filename=args.filename, num=args.number, length=args.length)
+
+
+if __name__ == '__main__':
+    main()

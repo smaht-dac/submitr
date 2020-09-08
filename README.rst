@@ -5,10 +5,13 @@ submit-cgap
 File submission for CGAP
 ------------------------
 
+.. image:: https://travis-ci.org/dbmi-bgm/SubmitCGAP.svg
+   :target: https://travis-ci.org/dbmi-bgm/SubmitCGAP
+   :alt: Build Status
 
-.. Note::
-
- Badges go here. Later.
+.. image:: https://coveralls.io/repos/github/dbmi-bgm/SubmitCGAP/badge.svg
+   :target: https://coveralls.io/github/dbmi-bgm/SubmitCGAP
+   :alt: Coverage
 
 
 Description
@@ -78,6 +81,49 @@ install with poetry::
    poetry install
 
 
+Setting Up Credentials
+======================
+
+Credentials can be placed in the file ``~/.cgap-keydicts.json``. The file format is::
+
+   {"envname1": {"key": ..., "secret": ..., "server": ...}, "envname2": ..., ...}
+
+   The envname to use for production is "fourfront-cgap".
+   The envname to use for local debugging is "fourfront-cgaplocal".
+   So a typical file might look like:
+
+   {
+       "fourfront-cgap": {
+           "key": "some_key",
+           "secret": "some_secret",
+           "server": "https://cgap.hms.harvard.edu"
+       },
+       "fourfront-local": {
+           "key": "some_other_key",
+           "secret": "some_other_secret",
+           "server": "http://localhost:8000"
+       },
+       "fourfront-cgapdev": {
+           "key": "some_third_key",
+           "secret": "some_third_secret",
+           "server": "http://fourfront-cgapdev.9wzadzju3p.us-east-1.elasticbeanstalk.com/"
+       }
+   }
+
+This file should _not_ be readable by others than yourself.
+Set its permissions accordingly by using ``chmod 600``,
+which sets the file to be readable and writable only by yourself,
+and to give no one else (but the system superuser) any permissions at all::
+
+   $ ls -dal ~/.cgap-keydicts.json
+   -rw-r--r--  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keydicts.json
+
+   $ chmod 600 ~/.cgap-keydicts.json
+
+   $ ls -dal ~/.cgap-keydicts.json
+   -rw-------  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keydicts.json
+
+
 Getting Started
 ===============
 
@@ -94,10 +140,27 @@ For example::
 
    submit-metadata-bundle mymetadata.xls
 
-This command will do everything except upload files.
-To upload each of those, you will also need to do::
+This command should do everything, including upload referenced files
+if they are in the same directory. (It will ask for confirmation.)
 
-   upload-bundle-data <filename>
+To invoke it for validation only, without submitting anything, do::
 
-(In the future, the ``submit-metadata-bundle`` command might
-do this as well.)
+   submit-metadata-bundle mymetadata.xls --validate_only
+
+You can resume execution with the upload part by doing::
+
+   resume-uploads <uuid> --env <env>
+
+or::
+
+   resume-uploads <uuid> --server <server>
+
+You can upload individual files separately by doing::
+
+   upload-item-data <filename> --uuid <item-uuid> --env <env>
+
+or::
+
+   upload-item-data <filename> --uuid <item-uuid> --server <server>
+
+where the <item-uuid> is the uuid for the individual item, not the metadata bundle.
