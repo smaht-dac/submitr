@@ -17,13 +17,13 @@ def test_upload_item_data_script():
 
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
     test_it(args_in=['some.file'], expect_exit_code=0, expect_called=True, expect_call_args={
-        'part_filename': 'some.file',
+        'item_filename': 'some.file',
         'env': None,
         'server': None,
         'uuid': None,
     })
     expect_call_args = {
-        'part_filename': 'some.file',
+        'item_filename': 'some.file',
         'env': None,
         'server': None,
         'uuid': 'some-guid'
@@ -37,7 +37,7 @@ def test_upload_item_data_script():
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'part_filename': 'some.file',
+        'item_filename': 'some.file',
         'env': 'some-env',
         'server': 'some-server',
         'uuid': 'some-guid'

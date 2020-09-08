@@ -11,7 +11,7 @@ from .. import submission as submission_module
 from ..base import PRODUCTION_SERVER
 from ..exceptions import CGAPPermissionError
 from ..submission import (
-    SERVER_REGEXP, check_institution, check_project, do_any_uploads, do_uploads,
+    SERVER_REGEXP, get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads,
     execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url,
     resolve_server, resume_uploads, script_catch_errors, show_section, submit_metadata_bundle,
     upload_file_to_uuid, upload_item_data, PROGRESS_CHECK_INTERVAL
@@ -211,37 +211,36 @@ def test_get_user_record():
             get_user_record(server="http://localhost:12345", auth=SOME_AUTH)
 
 
-def test_check_institution():
+def test_get_defaulted_institution():
 
-    assert check_institution(institution=SOME_INSTITUTION, user_record='does-not-matter') == SOME_INSTITUTION
-    assert check_institution(institution='anything', user_record='does-not-matter') == 'anything'
+    assert get_defaulted_institution(institution=SOME_INSTITUTION, user_record='does-not-matter') == SOME_INSTITUTION
+    assert get_defaulted_institution(institution='anything', user_record='does-not-matter') == 'anything'
 
     try:
-        check_institution(institution=None, user_record=make_user_record())
+        get_defaulted_institution(institution=None, user_record=make_user_record())
     except Exception as e:
         assert str(e).startswith("Your user profile declares no institution")
 
     try:
-        check_institution(institution=None,
-                          user_record=make_user_record(submits_for=[]))
+        get_defaulted_institution(institution=None,
+                                  user_record=make_user_record(submits_for=[]))
     except Exception as e:
         assert str(e).startswith("Your user profile declares no institution")
     else:
         raise AssertionError("Expected error was not raised.")  # pragma: no cover
 
-    successful_result = check_institution(institution=None,
-                                          user_record=make_user_record(submits_for=[
-                                              {"@id": "/institutions/bwh"}
-                                          ]))
+    successful_result = get_defaulted_institution(institution=None,
+                                                  user_record=make_user_record(submits_for=[
+                                                      {"@id": "/institutions/bwh"}
+                                                  ]))
 
     try:
-        check_institution(institution=None,
-                          user_record=make_user_record(submits_for=[
-                              {"@id": "/institutions/hms-dbmi/"},
-                              {"@id": "/institutions/bch/"},
-                              {"@id": "/institutions/bwh"}
-                          ]
-                          ))
+        get_defaulted_institution(institution=None,
+                                  user_record=make_user_record(submits_for=[
+                                      {"@id": "/institutions/hms-dbmi/"},
+                                      {"@id": "/institutions/bch/"},
+                                      {"@id": "/institutions/bwh"}
+                                  ]))
     except Exception as e:
         assert str(e).startswith("You must use --institution to specify which institution")
     else:
@@ -252,27 +251,27 @@ def test_check_institution():
     assert successful_result == "/institutions/bwh"
 
 
-def test_check_project():
+def test_get_defaulted_project():
 
-    assert check_project(project=SOME_PROJECT, user_record='does-not-matter') == SOME_PROJECT
-    assert check_project(project='anything', user_record='does-not-matter') == 'anything'
+    assert get_defaulted_project(project=SOME_PROJECT, user_record='does-not-matter') == SOME_PROJECT
+    assert get_defaulted_project(project='anything', user_record='does-not-matter') == 'anything'
 
     try:
-        check_project(project=None, user_record=make_user_record())
+        get_defaulted_project(project=None, user_record=make_user_record())
     except Exception as e:
         assert str(e).startswith("Your user profile has no project declared")
 
     try:
-        check_project(project=None,
-                      user_record=make_user_record(project={}))
+        get_defaulted_project(project=None,
+                              user_record=make_user_record(project={}))
     except Exception as e:
         assert str(e).startswith("Your user profile has no project declared")
     else:
         raise AssertionError("Expected error was not raised.")  # pragma: no cover - we hope never to see this executed
 
-    successful_result = check_project(project=None,
-                                      user_record=make_user_record(project={'@id': SOME_PROJECT})
-                                      )
+    successful_result = get_defaulted_project(project=None,
+                                              user_record=make_user_record(project={'@id': SOME_PROJECT})
+                                              )
 
     print("successful_result=", successful_result)
 
@@ -718,7 +717,7 @@ def test_upload_item_data():
             with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                 with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
 
-                    upload_item_data(part_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
+                    upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
 
                     mock_resolve.assert_called_with(env=SOME_ENV, server=SOME_SERVER)
                     mock_get.assert_called_with(SOME_SERVER)
@@ -732,7 +731,7 @@ def test_upload_item_data():
                     with shown_output() as shown:
 
                         try:
-                            upload_item_data(part_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER,
+                            upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER,
                                              env=SOME_ENV)
                         except SystemExit as e:
                             assert e.code == 1

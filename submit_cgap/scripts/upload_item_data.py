@@ -17,7 +17,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--env', '-e', help="a CGAP beanstalk environment name for the server to use", default=None)
     args = parser.parse_args(args=simulated_args_for_testing)
 
-    upload_item_data(part_filename=args.part_filename, uuid=args.uuid, server=args.server, env=args.env)
+    upload_item_data(item_filename=args.part_filename, uuid=args.uuid, server=args.server, env=args.env)
 
 
 if __name__ == '__main__':

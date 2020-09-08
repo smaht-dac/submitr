@@ -19,6 +19,12 @@ from .exceptions import CGAPPermissionError
 from .utils import show, keyword_as_title
 
 
+# TODO: Will asks whether some of the errors in this file that are called "SyntaxError" really should be something else.
+#  The thought was that they're syntax errors because they tend to reflect as a need for a change in the
+#  command line argument syntax, but maybe I should raise other errors and just have them converted to syntax
+#  errors in the command itself. Something to think about another day. -kmp 8-Sep-2020
+
+
 SERVER_REGEXP = re.compile(
     # Note that this regular expression does NOT contain 4dnucleome.org for the same reason it requires
     # a fourfront-cgapXXX address. It is trying only to match cgap addresses, though of course it has to make an
@@ -31,6 +37,16 @@ SERVER_REGEXP = re.compile(
 
 
 def resolve_server(server, env):
+    """
+    Given a server spec or a beanstalk environment (or neither, but not both), returns a server spec.
+
+    :param server: a server spec or None
+      A server is the first part of a url (containing the schema, host and, optionally, port).
+      e.g., http://cgap.hms.harvard.edu or http://localhost:8000
+    :param env: a cgap beanstalk environment
+    :return: a server spec
+    """
+
     check_true(not server or not env, "You may not specify both 'server' and 'env'.", error_class=SyntaxError)
 
     if not server and not env:
@@ -58,6 +74,16 @@ def resolve_server(server, env):
 
 
 def get_user_record(server, auth):
+    """
+    Given a server and some auth info, gets the user record for the authorized user.
+
+    This works by using the /me endpoint.
+
+    :param server: a server spec
+    :param auth: auth info to be used when contacting the server
+    :return: the /me page in JSON format
+    """
+
     user_url = server + "/me?format=json"
     user_record_response = requests.get(user_url, auth=auth)
     try:
@@ -78,7 +104,15 @@ def get_user_record(server, auth):
     return user_record
 
 
-def check_institution(institution, user_record):
+def get_defaulted_institution(institution, user_record):
+    """
+    Returns the given institution or else if none is specified, it tries to infer an institution.
+
+    :param institution: the @id of an institution
+    :param user_record: the user record for the authorized user
+    :return: the @id of an institution to use
+    """
+
     if not institution:
         submits_for = user_record.get('submits_for', [])
         if len(submits_for) == 0:
@@ -93,7 +127,14 @@ def check_institution(institution, user_record):
     return institution
 
 
-def check_project(project, user_record):
+def get_defaulted_project(project, user_record):
+    """
+    Returns the given project or else if none is specified, it tries to infer a project.
+
+    :param project: the @id of a project
+    :param user_record: the user record for the authorized user
+    :return: the @id of a project to use
+    """
     if not project:
         project = user_record.get('project', {}).get('@id', None)
         if not project:
@@ -107,10 +148,30 @@ PROGRESS_CHECK_INTERVAL = 15
 
 
 def get_section(res, section):
+    """
+    Given a description of an ingestion submission, returns a section name within that ingestion.
+
+    :param res: the description of an ingestion submission as a python dictionary that represents JSON data
+    :param section: the name of a section to find either in the toplevel or in additional_data.
+    :return: the section's content
+    """
+
     return res.get(section) or res.get('additional_data', {}).get(section)
 
 
 def show_section(res, section, caveat_outcome=None):
+    """
+    Shows a given named section from a description of an ingestion submission.
+
+    The caveat is used when there has been an error and should be a phrase that describes the fact that output
+    shown is only up to the point of the caveat situation. Instead of a "My Heading" header the output will be
+    "My Heading (prior to <caveat>)."
+
+    :param res: the description of an ingestion submission as a python dictionary that represents JSON data
+    :param section: the name of a section to find either in the toplevel or in additional_data.
+    :param caveat_outcome: a phrase describing some caveat on the output
+    """
+
     section_data = get_section(res, section)
     if caveat_outcome and not section_data:
         # In the case of non-success, be brief unless there's data to show.
@@ -146,6 +207,16 @@ def script_catch_errors():
 
 
 def submit_metadata_bundle(bundle_filename, institution, project, server, env, validate_only):
+    """
+    Does the core action of submitting a metadata bundle.
+
+    :param bundle_filename: the name of the bundle file (.xls file) to be uploaded
+    :param institution: the @id of the institution for which the submission is being done
+    :param project: the @id of the project for which the submission is being done
+    :param server: the server to upload to
+    :param env: the beanstalk environment to upload to
+    :param validate_only: whether to do stop after validation instead of proceeding to post metadata
+    """
 
     with script_catch_errors():
 
@@ -162,8 +233,8 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
 
         user_record = get_user_record(server, auth=keypair)
 
-        institution = check_institution(institution, user_record)
-        project = check_project(project, user_record)
+        institution = get_defaulted_institution(institution, user_record)
+        project = get_defaulted_project(project, user_record)
 
         if not os.path.exists(bundle_filename):
             raise ValueError("The file '%s' does not exist." % bundle_filename)
@@ -246,6 +317,16 @@ def do_any_uploads(res, keydict, bundle_folder=None, bundle_filename=None):
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None):
+    """
+    Uploads the files associated with a given metadata_bundle. This is useful if you answered "no" to the query
+    about uploading your data and then later are ready to do that upload.
+
+    :param uuid: a string guid that identifies the metadata_bundle's ingestion_submission
+    :param server: the server to upload to
+    :param env: the beanstalk environment to upload to
+    :param bundle_filename: th metadata_bundle file to be uploaded
+    :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
+    """
 
     with script_catch_errors():
 
@@ -315,6 +396,7 @@ def upload_file_to_uuid(filename, uuid, auth):
 
 def do_uploads(upload_spec_list, auth, folder=None):
     """
+    Uploads the files mentioned in the give upload_spec_list.
 
     :param upload_spec_list: a list of upload_spec dictionaries, each of the form {'filename': ..., 'uuid': ...},
         representing uploads to be formed.
@@ -337,7 +419,18 @@ def do_uploads(upload_spec_list, auth, folder=None):
             show("%s: %s" % (e.__class__.__name__, e))
 
 
-def upload_item_data(part_filename, uuid, server, env):
+def upload_item_data(item_filename, uuid, server, env):
+    """
+    Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
+
+    Only one of server or env may be specified.
+
+    :param item_filename: the name of a file to be uploaded
+    :param uuid: the UUID of the Item with which the uploaded data is to be associated
+    :param server: the server to upload to (where the Item is defined)
+    :param env: the beanstalk environment to upload to (where the Item is defined)
+    :return:
+    """
 
     server = resolve_server(server=server, env=env)
 
@@ -345,8 +438,8 @@ def upload_item_data(part_filename, uuid, server, env):
 
     # print("keydict=", json.dumps(keydict, indent=2))
 
-    if not yes_or_no("Upload %s to %s?" % (part_filename, server)):
+    if not yes_or_no("Upload %s to %s?" % (item_filename, server)):
         show("Aborting submission.")
         exit(1)
 
-    upload_file_to_uuid(filename=part_filename, uuid=uuid, auth=keydict)
+    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=keydict)
