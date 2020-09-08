@@ -5,10 +5,13 @@ submit-cgap
 File submission for CGAP
 ------------------------
 
+.. image:: https://travis-ci.org/dbmi-bgm/SubmitCGAP.svg
+   :target: https://travis-ci.org/dbmi-bgm/SubmitCGAP
+   :alt: Build Status
 
-.. Note::
-
- Badges go here. Later.
+.. image:: https://coveralls.io/repos/github/dbmi-bgm/SubmitCGAP/badge.svg
+   :target: https://coveralls.io/github/dbmi-bgm/SubmitCGAP
+   :alt: Coverage
 
 
 Description
