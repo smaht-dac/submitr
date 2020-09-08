@@ -16,7 +16,7 @@ from dcicutils.misc_utils import check_true
 from .auth import get_keydict_for_server, keydict_to_keypair
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
 from .exceptions import CGAPPermissionError
-from .utils import show
+from .utils import show, keyword_as_title
 
 
 SERVER_REGEXP = re.compile(
@@ -119,7 +119,7 @@ def show_section(res, section, caveat_outcome=None):
         caveat = " (prior to %s)" % caveat_outcome
     else:
         caveat = ""
-    show("----- %s%s -----" % (section.replace("_", " ").title(), caveat))
+    show("----- %s%s -----" % (keyword_as_title(section), caveat))
     if not section_data:
         show("Nothing to show.")
     elif isinstance(section_data, dict):

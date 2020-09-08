@@ -4,7 +4,7 @@ import re
 
 from unittest import mock
 from .. import utils as utils_module
-from ..utils import show, FakeResponse
+from ..utils import show, keyword_as_title, FakeResponse
 
 
 @contextlib.contextmanager
@@ -57,6 +57,12 @@ def test_show():
 
         assert timestamp_pattern.match(shown.lines[0])
         assert not timestamp_pattern.match(shown.lines[1])
+
+
+def test_keyword_as_title():
+
+    assert keyword_as_title('foo') == 'Foo'
+    assert keyword_as_title('some_text') == 'Some Text'
 
 
 def test_fake_response():
