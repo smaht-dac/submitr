@@ -13,6 +13,9 @@ File submission for CGAP
    :target: https://coveralls.io/github/dbmi-bgm/SubmitCGAP
    :alt: Coverage
 
+.. image:: https://readthedocs.org/projects/submitcgap/badge/?version=latest
+   :target: https://submitcgap.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
 
 Description
 ===========
