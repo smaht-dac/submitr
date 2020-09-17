@@ -167,3 +167,10 @@ or::
    upload-item-data <filename> --uuid <item-uuid> --server <server>
 
 where the <item-uuid> is the uuid for the individual item, not the metadata bundle.
+
+
+.. toctree::
+  :maxdepth: 4
+
+  self
+  submit_cgap
