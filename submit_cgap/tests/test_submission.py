@@ -862,6 +862,11 @@ def test_submit_metadata_bundle():
                                                                            env=None,
                                                                            validate_only=False)
                                                 except ValueError as e:
+                                                    # submit_metadata_bundle will raise ValueError if its
+                                                    # bundle_filename argument is not the name of a
+                                                    # metadata bundle file. We did nothing in this mock to
+                                                    # create the file SOME_BUNDLE_FILENAME, so we expect something
+                                                    # like: "The file '/some-folder/foo.xls' does not exist."
                                                     assert "does not exist" in str(e)
                                                 else:  # pragma: no cover
                                                     raise AssertionError("Expected ValueError did not happen.")
@@ -916,6 +921,102 @@ def test_submit_metadata_bundle():
             '12:00:49 Final status: success',
             # Output from uploads is not present because we mocked that out.
             # See test of the call to the uploader higher up.
+        ]
+
+    dt.reset_datetime()
+
+    # This tests the normal case with validate_only=False and a post error due to multipart/form-data unsupported,
+    # a symptom of the metadata bundle submission protocol being unsupported.
+
+    def unsupported_media_type(*args, **kwargs):
+        return FakeResponse(415, json={
+            "status": "error",
+            "title": "Unsupported Media Type",
+            "detail": "Request content type multipart/form-data is not 'application/json'"
+        })
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", unsupported_media_type):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
+                                                                                    success=False)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        try:
+                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
+                                                                                   institution=SOME_INSTITUTION,
+                                                                                   project=SOME_PROJECT,
+                                                                                   server=SOME_SERVER,
+                                                                                   env=None,
+                                                                                   validate_only=False)
+                                                        except Exception as e:
+                                                            assert "raised for status" in str(e)
+                                                        else:  # pragma: no cover
+                                                            raise AssertionError("Expected error did not occur.")
+
+                                                        assert mock_do_any_uploads.call_count == 0
+        assert shown.lines == [
+            "The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.",
+            "Unsupported Media Type: Request content type multipart/form-data is not 'application/json'",
+            "NOTE: This error is known to occur if the server does not support metadata bundle submission."
+        ]
+
+    dt.reset_datetime()
+
+    # This tests the normal case with validate_only=False and a post error for some unknown reason.
+
+    def mysterious_error(*args, **kwargs):
+        return FakeResponse(400, json={
+            "status": "error",
+            "title": "Mysterious Error",
+            "detail": "If I told you, there'd be no mystery."
+        })
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", mysterious_error):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
+                                                                                    success=False)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        try:
+                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
+                                                                                   institution=SOME_INSTITUTION,
+                                                                                   project=SOME_PROJECT,
+                                                                                   server=SOME_SERVER,
+                                                                                   env=None,
+                                                                                   validate_only=False)
+                                                        except Exception as e:
+                                                            assert "raised for status" in str(e)
+                                                        else:  # pragma: no cover
+                                                            raise AssertionError("Expected error did not occur.")
+
+                                                        assert mock_do_any_uploads.call_count == 0
+        assert shown.lines == [
+            "The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.",
+            "Mysterious Error: If I told you, there'd be no mystery.",
         ]
 
     dt.reset_datetime()
