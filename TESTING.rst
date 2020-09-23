@@ -53,7 +53,7 @@ Only if you answer yes will it proceed, though it will still require that you ha
    Submit submit_cgap/tests/data/cgap_submit_test.xlsx to http://localhost:8000 (for validation only)? [yes/no]: yes
    CGAPPermissionError: Your credentials were rejected by http://localhost:8000. Either this is not the right server, or you need to obtain up-to-date access keys.
 
-Getting correct credentials is a matter of having your ``~/.cgap-keydicts.json`` file
+Getting correct credentials is a matter of having your ``~/.cgap-keys.json`` file
 in good order. See `Setting Up Credentials <INSTALLATION.rst#Setting Up Credentials>`__.
 If credentials are set up properly, you can do::
 

@@ -69,7 +69,7 @@ install with poetry::
 Setting Up Credentials
 ======================
 
-Credentials can be placed in the file ``~/.cgap-keydicts.json``. The file format is::
+Credentials can be placed in the file ``~/.cgap-keys.json``. The file format is::
 
    {"envname1": {"key": ..., "secret": ..., "server": ...}, "envname2": ..., ...}
 
@@ -100,12 +100,12 @@ Set its permissions accordingly by using ``chmod 600``,
 which sets the file to be readable and writable only by yourself,
 and to give no one else (but the system superuser) any permissions at all::
 
-   $ ls -dal ~/.cgap-keydicts.json
-   -rw-r--r--  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keydicts.json
+   $ ls -dal ~/.cgap-keys.json
+   -rw-r--r--  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keys.json
 
-   $ chmod 600 ~/.cgap-keydicts.json
+   $ chmod 600 ~/.cgap-keys.json
 
-   $ ls -dal ~/.cgap-keydicts.json
-   -rw-------  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keydicts.json
+   $ ls -dal ~/.cgap-keys.json
+   -rw-------  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keys.json
 
 

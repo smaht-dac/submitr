@@ -35,7 +35,7 @@ Installing this system involves these steps:
 1. Create and install a virtual environment.
 2. Install poetry
 3. Run "``poetry install``".
-4. Set up a ``~/.cgap-keydicts.json`` credentials file.
+4. Set up a ``~/.cgap-keys.json`` credentials file.
 
 For detailed information about these installation steps, see
 `Installing SubmitCGAP <INSTALLATION.rst>`__.
