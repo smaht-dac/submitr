@@ -11,7 +11,7 @@ from .. import submission as submission_module
 from ..base import PRODUCTION_SERVER
 from ..exceptions import CGAPPermissionError
 from ..submission import (
-    SERVER_REGEXP, get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads,
+    SERVER_REGEXP, get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info,
     execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url,
     resolve_server, resume_uploads, script_catch_errors, show_section, submit_metadata_bundle,
     upload_file_to_uuid, upload_item_data, PROGRESS_CHECK_INTERVAL
@@ -299,6 +299,29 @@ def test_ingestion_submission_item_url():
         server='http://foo.com',
         uuid='123-4567-890'
     ) == 'http://foo.com/ingestion-submissions/123-4567-890?format=json'
+
+
+def test_show_upload_info():
+
+    json_result = None  # Actual value comes later
+
+    def mocked_get(url, *, auth):
+        assert auth == SOME_AUTH
+        return FakeResponse(200, json=json_result)
+
+    with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+        with mock.patch("requests.get", mocked_get):
+
+            json_result = {}
+            with shown_output() as shown:
+                show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
+                assert shown.lines == ['No uploads.']
+
+            json_result = SOME_UPLOAD_INFO_RESULT
+            with shown_output() as shown:
+                show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
+                expected_lines = ['----- Upload Info -----', *map(str, SOME_UPLOAD_INFO)]
+                assert shown.lines == expected_lines
 
 
 def test_show_section_without_caveat():

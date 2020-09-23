@@ -1,4 +1,4 @@
-from ..base import KEYDICTS_FILENAME
+from ..base import KeyManager
 from ..exceptions import CGAPPermissionError, CGAPKeyMissing, CGAPEnvKeyMissing, CGAPServerKeyMissing
 
 
@@ -23,7 +23,7 @@ def test_cgap_key_missing():
     assert isinstance(error, RuntimeError)
     assert isinstance(error, CGAPKeyMissing)
 
-    assert str(error) == "Missing credential in file %s for testing." % KEYDICTS_FILENAME
+    assert str(error) == "Missing credential in file %s for testing." % KeyManager.keydicts_filename()
 
 
 def test_cgap_env_key_missing():
@@ -35,7 +35,7 @@ def test_cgap_env_key_missing():
     assert isinstance(error, CGAPKeyMissing)
 
     assert str(error) == ("Missing credential in file %s for beanstalk environment %s."
-                          % (KEYDICTS_FILENAME, some_env))
+                          % (KeyManager.keydicts_filename(), some_env))
 
 
 def test_cgap_server_key_missing():
@@ -48,4 +48,4 @@ def test_cgap_server_key_missing():
     assert isinstance(error, CGAPKeyMissing)
 
     assert str(error) == ("Missing credential in file %s for server %s."
-                          % (KEYDICTS_FILENAME, some_server))
+                          % (KeyManager.keydicts_filename(), some_server))

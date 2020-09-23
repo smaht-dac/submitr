@@ -7,20 +7,12 @@ from unittest import mock
 from .test_base import default_env_for_testing
 from .. import base as base_module
 from ..auth import (
-    keypair_to_keydict, keydict_to_keypair,
-    KEYDICTS_FILENAME, get_cgap_keydicts,
+    keypair_to_keydict, keydict_to_keypair, get_cgap_keydicts,
     get_keypair_for_env, get_keydict_for_env,
     get_keydict_for_server, get_keypair_for_server,
 )
-from ..base import LOCAL_PSEUDOENV, PRODUCTION_SERVER, PRODUCTION_ENV
+from ..base import LOCAL_PSEUDOENV, PRODUCTION_SERVER, PRODUCTION_ENV, KeyManager
 from ..exceptions import CGAPEnvKeyMissing, CGAPServerKeyMissing
-
-
-def test_auth_filename():
-    # A minimal test that we picked a name that is a hidden file with a CGAP-related name.
-    assert os.path.basename(KEYDICTS_FILENAME).startswith(".cgap"), (
-            "The variable KEYDICTS_FILENAME has unexpected value: %s" % KEYDICTS_FILENAME
-    )
 
 
 def test_keydict_to_keypair():
@@ -106,7 +98,7 @@ def test_get_keypair_keydict_and_keydicts():
     }
 
     mfs = MockFileSystem(files={
-        KEYDICTS_FILENAME:
+        KeyManager.keydicts_filename():
             json.dumps(expected_content)
     })
 

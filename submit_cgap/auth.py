@@ -3,7 +3,7 @@ import json
 import os
 
 from . import base as base_module
-from .base import KEYDICTS_FILENAME
+from .base import KeyManager
 from .exceptions import CGAPEnvKeyMissing, CGAPServerKeyMissing
 
 
@@ -24,9 +24,9 @@ def keydict_to_keypair(auth_dict):
 
 
 def get_cgap_keydicts():
-    if not os.path.exists(KEYDICTS_FILENAME):
+    if not os.path.exists(KeyManager.keydicts_filename()):
         return {}
-    with io.open(KEYDICTS_FILENAME) as keyfile:
+    with io.open(KeyManager.keydicts_filename()) as keyfile:
         keys = json.load(keyfile)
         return keys
 
@@ -50,7 +50,7 @@ def get_keydict_for_env(env=None):
                            # -kmp 4-Sep-2020
                            or base_module.DEFAULT_ENV)
     if not keydict:
-        raise CGAPEnvKeyMissing(env=env, keyfile=KEYDICTS_FILENAME)
+        raise CGAPEnvKeyMissing(env=env, keyfile=KeyManager.keydicts_filename())
     return keydict
 
 
@@ -90,7 +90,7 @@ def get_keydict_for_server(server=None):
     for keydict in keydicts.values():
         if keydict['server'].rstrip('/') == server_to_find:
             return keydict
-    raise CGAPServerKeyMissing(server=server, keyfile=KEYDICTS_FILENAME)
+    raise CGAPServerKeyMissing(server=server, keyfile=KeyManager.keydicts_filename())
 
 
 def get_keypair_for_server(server=None):
