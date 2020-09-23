@@ -57,13 +57,27 @@ However, if you want to deactivate an active environment, just do::
    deactivate
 
 
-Installing Poetry in a Virtual Environment
+Installing in a Virtual Environment
 ==========================================
 
+Installation for Developers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you are a developer, you'll be installing with Poetry.
 Once you have created a virtual environment, or have decided to just let Poetry handle that,
-install with poetry::
+install with poetry, make sure your current directory is the source repository and do::
 
    poetry install
+
+
+Installation for End Users (non-Developers)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you're an end user,
+once you have created and activated the virtual environment,
+just do::
+
+   pip install submit_cgap
 
 
 Setting Up Credentials
