@@ -12,7 +12,7 @@ from dcicutils.beanstalk_utils import get_beanstalk_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.lang_utils import n_of
-from dcicutils.misc_utils import check_true
+from dcicutils.misc_utils import check_true, environ_bool
 from .auth import get_keydict_for_server, keydict_to_keypair
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
 from .exceptions import CGAPPermissionError
@@ -252,9 +252,31 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
 
         submission_url = server + "/submit_for_ingestion"
 
-        res = requests.post(submission_url, auth=keypair, data=post_data, files=post_files).json()
+        response = requests.post(submission_url, auth=keypair, data=post_data, files=post_files)
+        res = response.json()
 
-        # print(json.dumps(res, indent=2))
+        try:
+            response.raise_for_status()
+        except Exception:
+            # For example, if you call this on an old version of cgap-portal that does not support this request,
+            # the error will be a 415 error, because the tween code defaultly insists on applicatoin/json:
+            # {
+            #     "@type": ["HTTPUnsupportedMediaType", "Error"],
+            #     "status": "error",
+            #     "code": 415,
+            #     "title": "Unsupported Media Type",
+            #     "description": "",
+            #     "detail": "Request content type multipart/form-data is not 'application/json'"
+            # }
+            title = res.get('title')
+            message = title
+            detail = res.get('detail')
+            if detail:
+                message += ": " + detail
+            show(message)
+            if title == "Unsupported Media Type":
+                show("NOTE: This error is known to occur if the server does not support metadata bundle submission.")
+            raise
 
         uuid = res['submission_id']
 
@@ -304,6 +326,31 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
             do_any_uploads(res, keydict=keydict, bundle_filename=bundle_filename)
 
         exit(0)
+
+
+def show_upload_info(uuid, server=None, env=None, keydict=None):
+    """
+    Uploads the files associated with a given metadata_bundle. This is useful if you answered "no" to the query
+    about uploading your data and then later are ready to do that upload.
+
+    :param uuid: a string guid that identifies the metadata_bundle's ingestion_submission
+    :param server: the server to upload to
+    :param env: the beanstalk environment to upload to
+    :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
+    """
+
+    with script_catch_errors():
+
+        server = resolve_server(server=server, env=env)
+        keydict = keydict or get_keydict_for_server(server)
+        url = ingestion_submission_item_url(server, uuid)
+        response = requests.get(url, auth=keydict_to_keypair(keydict))
+        response.raise_for_status()
+        res = response.json()
+        if get_section(res, 'upload_info'):
+            show_section(res, 'upload_info')
+        else:
+            show("No uploads.")
 
 
 def do_any_uploads(res, keydict, bundle_folder=None, bundle_filename=None):
@@ -394,6 +441,10 @@ def upload_file_to_uuid(filename, uuid, auth):
     execute_prearranged_upload(filename, upload_credentials=upload_credentials)
 
 
+# This can be set to True in unusual situations, but normally will be False to avoid unnecessary querying.
+CGAP_SELECTIVE_UPLOADS = environ_bool("CGAP_SELECTIVE_UPLOADS")
+
+
 def do_uploads(upload_spec_list, auth, folder=None):
     """
     Uploads the files mentioned in the give upload_spec_list.
@@ -408,7 +459,7 @@ def do_uploads(upload_spec_list, auth, folder=None):
     for upload_spec in upload_spec_list:
         filename = os.path.join(folder or os.path.curdir, upload_spec['filename'])
         uuid = upload_spec['uuid']
-        if not yes_or_no("Upload %s?" % (filename,)):
+        if CGAP_SELECTIVE_UPLOADS and not yes_or_no("Upload %s?" % (filename,)):
             show("OK, not uploading it.")
             continue
         try:

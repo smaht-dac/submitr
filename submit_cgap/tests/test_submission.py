@@ -4,14 +4,14 @@ import os
 import pytest
 import re
 
-from dcicutils.qa_utils import override_environ, ignored, ControlledTime, MockFileSystem
+from dcicutils.qa_utils import override_environ, ignored, ControlledTime, MockFileSystem, local_attrs
 from unittest import mock
 from .test_utils import shown_output
 from .. import submission as submission_module
 from ..base import PRODUCTION_SERVER
 from ..exceptions import CGAPPermissionError
 from ..submission import (
-    SERVER_REGEXP, get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads,
+    SERVER_REGEXP, get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info,
     execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url,
     resolve_server, resume_uploads, script_catch_errors, show_section, submit_metadata_bundle,
     upload_file_to_uuid, upload_item_data, PROGRESS_CHECK_INTERVAL
@@ -299,6 +299,29 @@ def test_ingestion_submission_item_url():
         server='http://foo.com',
         uuid='123-4567-890'
     ) == 'http://foo.com/ingestion-submissions/123-4567-890?format=json'
+
+
+def test_show_upload_info():
+
+    json_result = None  # Actual value comes later
+
+    def mocked_get(url, *, auth):
+        assert auth == SOME_AUTH
+        return FakeResponse(200, json=json_result)
+
+    with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+        with mock.patch("requests.get", mocked_get):
+
+            json_result = {}
+            with shown_output() as shown:
+                show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
+                assert shown.lines == ['No uploads.']
+
+            json_result = SOME_UPLOAD_INFO_RESULT
+            with shown_output() as shown:
+                show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
+                expected_lines = ['----- Upload Info -----', *map(str, SOME_UPLOAD_INFO)]
+                assert shown.lines == expected_lines
 
 
 def test_show_section_without_caveat():
@@ -679,35 +702,35 @@ def test_do_uploads():
                     'Upload of ./baz.fastq.gz to item 3456 was successful.',
                 ]
 
-    with mock.patch.object(submission_module, "yes_or_no", make_alternator(True, False)):
-
-        with mock_uploads() as mock_uploaded:
-            with shown_output() as shown:
-                do_uploads(
-                    upload_spec_list=[
-                        {'uuid': '1234', 'filename': 'foo.fastq.gz'},
-                        {'uuid': '2345', 'filename': 'bar.fastq.gz'},
-                        {'uuid': '3456', 'filename': 'baz.fastq.gz'}
-                    ],
-                    auth=SOME_AUTH,
-                    folder='/x/yy/zzz/'
-                )
-                assert mock_uploaded == {
-                    '1234': '/x/yy/zzz/foo.fastq.gz',
-                    # The mock yes_or_no will have omitted this element.
-                    # '2345': './bar.fastq.gz',
-                    '3456': '/x/yy/zzz/baz.fastq.gz'
-                }
-                assert shown.lines == [
-                    'Uploading /x/yy/zzz/foo.fastq.gz to item 1234 ...',
-                    'Upload of /x/yy/zzz/foo.fastq.gz to item 1234 was successful.',
-                    # The query about uploading bar.fastq has been mocked out here
-                    # in favor of an unconditional False result, so the question does no I/O.
-                    # The only output is the result of simulating a 'no' answer.
-                    'OK, not uploading it.',
-                    'Uploading /x/yy/zzz/baz.fastq.gz to item 3456 ...',
-                    'Upload of /x/yy/zzz/baz.fastq.gz to item 3456 was successful.',
-                ]
+    with local_attrs(submission_module, CGAP_SELECTIVE_UPLOADS=True):
+        with mock.patch.object(submission_module, "yes_or_no", make_alternator(True, False)):
+            with mock_uploads() as mock_uploaded:
+                with shown_output() as shown:
+                    do_uploads(
+                        upload_spec_list=[
+                            {'uuid': '1234', 'filename': 'foo.fastq.gz'},
+                            {'uuid': '2345', 'filename': 'bar.fastq.gz'},
+                            {'uuid': '3456', 'filename': 'baz.fastq.gz'}
+                        ],
+                        auth=SOME_AUTH,
+                        folder='/x/yy/zzz/'
+                    )
+                    assert mock_uploaded == {
+                        '1234': '/x/yy/zzz/foo.fastq.gz',
+                        # The mock yes_or_no will have omitted this element.
+                        # '2345': './bar.fastq.gz',
+                        '3456': '/x/yy/zzz/baz.fastq.gz'
+                    }
+                    assert shown.lines == [
+                        'Uploading /x/yy/zzz/foo.fastq.gz to item 1234 ...',
+                        'Upload of /x/yy/zzz/foo.fastq.gz to item 1234 was successful.',
+                        # The query about uploading bar.fastq has been mocked out here
+                        # in favor of an unconditional False result, so the question does no I/O.
+                        # The only output is the result of simulating a 'no' answer.
+                        'OK, not uploading it.',
+                        'Uploading /x/yy/zzz/baz.fastq.gz to item 3456 ...',
+                        'Upload of /x/yy/zzz/baz.fastq.gz to item 3456 was successful.',
+                    ]
 
 
 def test_upload_item_data():
@@ -862,6 +885,11 @@ def test_submit_metadata_bundle():
                                                                            env=None,
                                                                            validate_only=False)
                                                 except ValueError as e:
+                                                    # submit_metadata_bundle will raise ValueError if its
+                                                    # bundle_filename argument is not the name of a
+                                                    # metadata bundle file. We did nothing in this mock to
+                                                    # create the file SOME_BUNDLE_FILENAME, so we expect something
+                                                    # like: "The file '/some-folder/foo.xls' does not exist."
                                                     assert "does not exist" in str(e)
                                                 else:  # pragma: no cover
                                                     raise AssertionError("Expected ValueError did not happen.")
@@ -916,6 +944,102 @@ def test_submit_metadata_bundle():
             '12:00:49 Final status: success',
             # Output from uploads is not present because we mocked that out.
             # See test of the call to the uploader higher up.
+        ]
+
+    dt.reset_datetime()
+
+    # This tests the normal case with validate_only=False and a post error due to multipart/form-data unsupported,
+    # a symptom of the metadata bundle submission protocol being unsupported.
+
+    def unsupported_media_type(*args, **kwargs):
+        return FakeResponse(415, json={
+            "status": "error",
+            "title": "Unsupported Media Type",
+            "detail": "Request content type multipart/form-data is not 'application/json'"
+        })
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", unsupported_media_type):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
+                                                                                    success=False)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        try:
+                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
+                                                                                   institution=SOME_INSTITUTION,
+                                                                                   project=SOME_PROJECT,
+                                                                                   server=SOME_SERVER,
+                                                                                   env=None,
+                                                                                   validate_only=False)
+                                                        except Exception as e:
+                                                            assert "raised for status" in str(e)
+                                                        else:  # pragma: no cover
+                                                            raise AssertionError("Expected error did not occur.")
+
+                                                        assert mock_do_any_uploads.call_count == 0
+        assert shown.lines == [
+            "The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.",
+            "Unsupported Media Type: Request content type multipart/form-data is not 'application/json'",
+            "NOTE: This error is known to occur if the server does not support metadata bundle submission."
+        ]
+
+    dt.reset_datetime()
+
+    # This tests the normal case with validate_only=False and a post error for some unknown reason.
+
+    def mysterious_error(*args, **kwargs):
+        return FakeResponse(400, json={
+            "status": "error",
+            "title": "Mysterious Error",
+            "detail": "If I told you, there'd be no mystery."
+        })
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", mysterious_error):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
+                                                                                    success=False)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        try:
+                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
+                                                                                   institution=SOME_INSTITUTION,
+                                                                                   project=SOME_PROJECT,
+                                                                                   server=SOME_SERVER,
+                                                                                   env=None,
+                                                                                   validate_only=False)
+                                                        except Exception as e:
+                                                            assert "raised for status" in str(e)
+                                                        else:  # pragma: no cover
+                                                            raise AssertionError("Expected error did not occur.")
+
+                                                        assert mock_do_any_uploads.call_count == 0
+        assert shown.lines == [
+            "The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.",
+            "Mysterious Error: If I told you, there'd be no mystery.",
         ]
 
     dt.reset_datetime()

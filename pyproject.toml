@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "submit_cgap"
-version = "0.3.0"
+version = "0.4.0"
 description = "Support for uploading file submissions to the Clinical Genomics Analysis Platform (CGAP)."
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
@@ -27,6 +27,7 @@ include = [
 
 python = ">=3.6,<3.8"
 
+awscli = ">=1.18.140"
 dcicutils = ">=0.40.0,<1"
 boto3 = ">=1.10.50,<2"
 requests = ">=2.23.0,<3"
@@ -59,10 +60,11 @@ sphinx-rtd-theme = "0.5.0"
 
 [tool.poetry.scripts]
 
+make-sample-fastq-file = "submit_cgap.scripts.make_sample_fastq_file:main"
 resume-uploads = "submit_cgap.scripts.resume_uploads:main"
+show-upload-info = "submit_cgap.scripts.show_upload_info:main"
 submit-metadata-bundle = "submit_cgap.scripts.submit_metadata_bundle:main"
 upload-item-data = "submit_cgap.scripts.upload_item_data:main"
-make-sample-fastq-file = "submit_cgap.scripts.make_sample_fastq_file:main"
 
 [tool.coverage.report]
 

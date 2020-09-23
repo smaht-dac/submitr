@@ -1,9 +1,10 @@
-===========
-submit-cgap
-===========
+==========
+SubmitCGAP
+==========
 
-File submission for CGAP
-------------------------
+
+A file submission tool for CGAP
+-------------------------------
 
 .. image:: https://travis-ci.org/dbmi-bgm/SubmitCGAP.svg
    :target: https://travis-ci.org/dbmi-bgm/SubmitCGAP
@@ -20,118 +21,57 @@ File submission for CGAP
 Description
 ===========
 
-This is a tool for uploading files to CGAP.
+This is a tool for uploading certain kinds of files to CGAP.
+
+Initial support is for "metadata bundles", which are Excel files
+(such as .xls or .xlsx files)
+that are accompanied by other files (such as ``.fastq.gz`` files).
 
 
-System Requirements
-===================
-
-* Python 3.6
-* Pip (Any should work)
-* Virtualenv (>=15.0.0)
-
-Setting Up a Virtual Environment (OPTIONAL)
-===========================================
-
-This is optional.
-If you do not create a virtual environment, Poetry will make one for you.
-But there are still good reasons you might want to make your own, so here
-are three ways to do it:
-
-* If you have virtualenvwrapper that knows to use Python 3.6::
-
-   mkvirtualenv myenv
-
-* If you have virtualenv but not virtualenvwrapper,
-  and you have python3.6 in your ``PATH``::
-
-   virtualenv myenv -p python3.6
-
-* If you are using ``pyenv`` to control what environment you use::
-
-   pyenv exec python -m venv myenv
-
-
-Activating a Virtual Environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You should execute all actions related to this repository
-from within a virtual environment.
-
-To activate a virtual environment::
-
-   source myenv/bin/activate
-
-
-Deactivating a Virtual Environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-It's rarely necessary to deactivate a virtual environment.
-One is automatically deactivated if you enter another,
-and normally they have very little effect on other actions you might
-take. So it's normally safe to just leave them activated.
-
-However, if you want to deactivate an active environment, just do::
-
-   deactivate
-
-Installing Poetry in a Virtual Environment
-==========================================
-
-Once you have created a virtual environment, or have decided to just let Poetry handle that,
-install with poetry::
-
-   poetry install
-
-
-Setting Up Credentials
+About Metadata Bundles
 ======================
 
-Credentials can be placed in the file ``~/.cgap-keydicts.json``. The file format is::
+.. note::
 
-   {"envname1": {"key": ..., "secret": ..., "server": ...}, "envname2": ..., ...}
+   The format of the Excel files that are used as
+   "metadata bundles" is not yet documented.
+   For now you should begin by obtaining a template file from
+   your contact on the CGAP Team and then customize that as appropriate.
 
-   The envname to use for production is "fourfront-cgap".
-   The envname to use for local debugging is "fourfront-cgaplocal".
-   So a typical file might look like:
+Installation
+============
 
-   {
-       "fourfront-cgap": {
-           "key": "some_key",
-           "secret": "some_secret",
-           "server": "https://cgap.hms.harvard.edu"
-       },
-       "fourfront-local": {
-           "key": "some_other_key",
-           "secret": "some_other_secret",
-           "server": "http://localhost:8000"
-       },
-       "fourfront-cgapdev": {
-           "key": "some_third_key",
-           "secret": "some_third_secret",
-           "server": "http://fourfront-cgapdev.9wzadzju3p.us-east-1.elasticbeanstalk.com/"
-       }
-   }
+Installing this system involves these steps:
 
-This file should _not_ be readable by others than yourself.
-Set its permissions accordingly by using ``chmod 600``,
-which sets the file to be readable and writable only by yourself,
-and to give no one else (but the system superuser) any permissions at all::
+1. Create, install, and activate a virtual environment.
+2. Install poetry
+3. *Only if you are a developer*, select the source repository.
+   Others will not have a source repository to select,
+   so should skip this step.
+4. If you are an end user, do "``pip install submit_cgap``".
+   Otherwise, do "``make build``".
+5. Set up a ``~/.cgap-keys.json`` credentials file.
 
-   $ ls -dal ~/.cgap-keydicts.json
-   -rw-r--r--  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keydicts.json
+For detailed information about these installation steps, see
+`Installing SubmitCGAP <INSTALLATION.rst>`__.
 
-   $ chmod 600 ~/.cgap-keydicts.json
 
-   $ ls -dal ~/.cgap-keydicts.json
-   -rw-------  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keydicts.json
+Testing
+=======
+
+To run unit tests, do::
+
+   $ make test
+
+Additional notes on testing these scripts for release can be found in
+`Testing SubmitCGAP <TESTING.rst>`__.
 
 
 Getting Started
 ===============
 
-Once Poetry is installed, you should have access to the
-``submit-metadata-bundle`` command.
+Once ``poetry`` has finished installing this library into your virtual environment,
+you should have access to the ``submit-metadata-bundle`` command.
 For help about its arguments, do::
 
    submit-metadata-bundle --help
@@ -166,4 +106,4 @@ or::
 
    upload-item-data <filename> --uuid <item-uuid> --server <server>
 
-where the <item-uuid> is the uuid for the individual item, not the metadata bundle.
+where the ``<item-uuid>`` is the uuid for the individual item, not the metadata bundle.

@@ -19,4 +19,4 @@ deploy:
     tags: true
 after_success:
   - echo "Finished running tests"
-  - echo "Insert readthedocs build here."
+  - echo "A github webhook is supposed to cause readthedocs to update when master changes, so no action needed here."

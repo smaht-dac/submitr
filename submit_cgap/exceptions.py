@@ -1,4 +1,4 @@
-from .base import KEYDICTS_FILENAME
+from .base import KeyManager
 
 
 class CGAPPermissionError(PermissionError):
@@ -11,20 +11,20 @@ class CGAPPermissionError(PermissionError):
 
 class CGAPKeyMissing(RuntimeError):
 
-    def __init__(self, context, keyfile=KEYDICTS_FILENAME):
+    def __init__(self, context, keyfile=KeyManager.keydicts_filename()):
         self.context = context
         super().__init__("Missing credential in file %s for %s." % (keyfile, context))
 
 
 class CGAPEnvKeyMissing(CGAPKeyMissing):
 
-    def __init__(self, env, keyfile=KEYDICTS_FILENAME):
+    def __init__(self, env, keyfile=KeyManager.keydicts_filename()):
         self.env = env
         super().__init__(context="beanstalk environment %s" % env, keyfile=keyfile)
 
 
 class CGAPServerKeyMissing(CGAPKeyMissing):
 
-    def __init__(self, server, keyfile=KEYDICTS_FILENAME):
+    def __init__(self, server, keyfile=KeyManager.keydicts_filename()):
         self.server = server
         super().__init__(context="server %s" % server, keyfile=keyfile)
