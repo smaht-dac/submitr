@@ -29,6 +29,7 @@ def test_defaults():
     with default_env_for_testing(base_module.LOCAL_PSEUDOENV):
         assert base_module.DEFAULT_ENV == base_module.LOCAL_PSEUDOENV
 
+
 def test_keymanager():
 
     original_file = KeyManager.keydicts_filename()
