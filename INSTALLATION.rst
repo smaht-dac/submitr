@@ -65,9 +65,15 @@ Installation for Developers
 
 If you are a developer, you'll be installing with Poetry.
 Once you have created a virtual environment, or have decided to just let Poetry handle that,
-install with poetry, make sure your current directory is the source repository and do::
+go ahead with the installation. To do that, make sure your current directory is the source repository and do::
 
-   poetry install
+   make build
+
+
+.. tip::
+
+   Poetry is the substrate that our build scripts rely on.
+   You won't be calling it directly, but ``make build`` will call it.
 
 
 Installation for End Users (non-Developers)

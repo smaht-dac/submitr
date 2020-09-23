@@ -49,7 +49,7 @@ Installing this system involves these steps:
    Others will not have a source repository to select,
    so should skip this step.
 4. If you are an end user, do "``pip install submit_cgap``".
-   Otherwise, do "``poetry install``".
+   Otherwise, do "``make build``".
 5. Set up a ``~/.cgap-keys.json`` credentials file.
 
 For detailed information about these installation steps, see
