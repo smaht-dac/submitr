@@ -4,7 +4,7 @@ import os
 import pytest
 import re
 
-from dcicutils.qa_utils import override_environ, ignored, ControlledTime, MockFileSystem
+from dcicutils.qa_utils import override_environ, ignored, ControlledTime, MockFileSystem, local_attrs
 from unittest import mock
 from .test_utils import shown_output
 from .. import submission as submission_module
@@ -702,35 +702,35 @@ def test_do_uploads():
                     'Upload of ./baz.fastq.gz to item 3456 was successful.',
                 ]
 
-    with mock.patch.object(submission_module, "yes_or_no", make_alternator(True, False)):
-
-        with mock_uploads() as mock_uploaded:
-            with shown_output() as shown:
-                do_uploads(
-                    upload_spec_list=[
-                        {'uuid': '1234', 'filename': 'foo.fastq.gz'},
-                        {'uuid': '2345', 'filename': 'bar.fastq.gz'},
-                        {'uuid': '3456', 'filename': 'baz.fastq.gz'}
-                    ],
-                    auth=SOME_AUTH,
-                    folder='/x/yy/zzz/'
-                )
-                assert mock_uploaded == {
-                    '1234': '/x/yy/zzz/foo.fastq.gz',
-                    # The mock yes_or_no will have omitted this element.
-                    # '2345': './bar.fastq.gz',
-                    '3456': '/x/yy/zzz/baz.fastq.gz'
-                }
-                assert shown.lines == [
-                    'Uploading /x/yy/zzz/foo.fastq.gz to item 1234 ...',
-                    'Upload of /x/yy/zzz/foo.fastq.gz to item 1234 was successful.',
-                    # The query about uploading bar.fastq has been mocked out here
-                    # in favor of an unconditional False result, so the question does no I/O.
-                    # The only output is the result of simulating a 'no' answer.
-                    'OK, not uploading it.',
-                    'Uploading /x/yy/zzz/baz.fastq.gz to item 3456 ...',
-                    'Upload of /x/yy/zzz/baz.fastq.gz to item 3456 was successful.',
-                ]
+    with local_attrs(submission_module, CGAP_SELECTIVE_UPLOADS=True):
+        with mock.patch.object(submission_module, "yes_or_no", make_alternator(True, False)):
+            with mock_uploads() as mock_uploaded:
+                with shown_output() as shown:
+                    do_uploads(
+                        upload_spec_list=[
+                            {'uuid': '1234', 'filename': 'foo.fastq.gz'},
+                            {'uuid': '2345', 'filename': 'bar.fastq.gz'},
+                            {'uuid': '3456', 'filename': 'baz.fastq.gz'}
+                        ],
+                        auth=SOME_AUTH,
+                        folder='/x/yy/zzz/'
+                    )
+                    assert mock_uploaded == {
+                        '1234': '/x/yy/zzz/foo.fastq.gz',
+                        # The mock yes_or_no will have omitted this element.
+                        # '2345': './bar.fastq.gz',
+                        '3456': '/x/yy/zzz/baz.fastq.gz'
+                    }
+                    assert shown.lines == [
+                        'Uploading /x/yy/zzz/foo.fastq.gz to item 1234 ...',
+                        'Upload of /x/yy/zzz/foo.fastq.gz to item 1234 was successful.',
+                        # The query about uploading bar.fastq has been mocked out here
+                        # in favor of an unconditional False result, so the question does no I/O.
+                        # The only output is the result of simulating a 'no' answer.
+                        'OK, not uploading it.',
+                        'Uploading /x/yy/zzz/baz.fastq.gz to item 3456 ...',
+                        'Upload of /x/yy/zzz/baz.fastq.gz to item 3456 was successful.',
+                    ]
 
 
 def test_upload_item_data():

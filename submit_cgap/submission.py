@@ -12,7 +12,7 @@ from dcicutils.beanstalk_utils import get_beanstalk_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.lang_utils import n_of
-from dcicutils.misc_utils import check_true
+from dcicutils.misc_utils import check_true, environ_bool
 from .auth import get_keydict_for_server, keydict_to_keypair
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
 from .exceptions import CGAPPermissionError
@@ -441,6 +441,10 @@ def upload_file_to_uuid(filename, uuid, auth):
     execute_prearranged_upload(filename, upload_credentials=upload_credentials)
 
 
+# This can be set to True in unusual situations, but normally will be False to avoid unnecessary querying.
+CGAP_SELECTIVE_UPLOADS = environ_bool("CGAP_SELECTIVE_UPLOADS")
+
+
 def do_uploads(upload_spec_list, auth, folder=None):
     """
     Uploads the files mentioned in the give upload_spec_list.
@@ -455,7 +459,7 @@ def do_uploads(upload_spec_list, auth, folder=None):
     for upload_spec in upload_spec_list:
         filename = os.path.join(folder or os.path.curdir, upload_spec['filename'])
         uuid = upload_spec['uuid']
-        if not yes_or_no("Upload %s?" % (filename,)):
+        if CGAP_SELECTIVE_UPLOADS and not yes_or_no("Upload %s?" % (filename,)):
             show("OK, not uploading it.")
             continue
         try:
