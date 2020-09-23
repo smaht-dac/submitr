@@ -150,22 +150,18 @@ it's time to try it one more time::
    {'uuid': '7c039d90-4072-419b-ae12-7031ea9d4274', 'filename': 'f3.fastq.gz'}
    {'uuid': '4afcf1c7-ebfe-4e96-b272-69f358e43ca0', 'filename': 'f4.fastq.gz'}
    Upload 4 files? [yes/no]: yes
-   Upload submit_cgap/tests/data/f1.fastq.gz? [yes/no]: yes
    Uploading submit_cgap/tests/data/f1.fastq.gz to item 7f09e053-0cee-42ac-aa47-f725adb183d5 ...
    Going to upload submit_cgap/tests/data/f1.fastq.gz to s3://encoded-4dn-files/7f09e053-0cee-42ac-aa47-f725adb183d5/GAPFIYYBY24O.fastq.gz.
    Uploaded in 1.46 seconds
    Upload of submit_cgap/tests/data/f1.fastq.gz to item 7f09e053-0cee-42ac-aa47-f725adb183d5 was successful.
-   Upload submit_cgap/tests/data/f2.fastq.gz? [yes/no]: yes
    Uploading submit_cgap/tests/data/f2.fastq.gz to item 776f1767-cb43-48d1-84dc-90955ce0930a ...
    Going to upload submit_cgap/tests/data/f2.fastq.gz to s3://encoded-4dn-files/776f1767-cb43-48d1-84dc-90955ce0930a/GAPFIXJRIVGO.fastq.gz.
    Uploaded in 1.78 seconds
    Upload of submit_cgap/tests/data/f2.fastq.gz to item 776f1767-cb43-48d1-84dc-90955ce0930a was successful.
-   Upload submit_cgap/tests/data/f3.fastq.gz? [yes/no]: yes
    Uploading submit_cgap/tests/data/f3.fastq.gz to item 7c039d90-4072-419b-ae12-7031ea9d4274 ...
    Going to upload submit_cgap/tests/data/f3.fastq.gz to s3://encoded-4dn-files/7c039d90-4072-419b-ae12-7031ea9d4274/GAPFINORP5F5.fastq.gz.
    Uploaded in 0.74 seconds
    Upload of submit_cgap/tests/data/f3.fastq.gz to item 7c039d90-4072-419b-ae12-7031ea9d4274 was successful.
-   Upload submit_cgap/tests/data/f4.fastq.gz? [yes/no]: yes
    Uploading submit_cgap/tests/data/f4.fastq.gz to item 4afcf1c7-ebfe-4e96-b272-69f358e43ca0 ...
    Going to upload submit_cgap/tests/data/f4.fastq.gz to s3://encoded-4dn-files/4afcf1c7-ebfe-4e96-b272-69f358e43ca0/GAPFIMK89CF6.fastq.gz.
    Uploaded in 0.72 seconds
@@ -186,22 +182,18 @@ This guid is the tracking ID for this submission. You can do::
 
    $ resume-uploads c5bdbeee-49f1-4fa7-9e64-bc93f2cb151f --bundle_filename submit_cgap/tests/data/cgap_submit_test.xlsx -s http://localhost:8000
    Upload 4 files? [yes/no]: yes
-   Upload submit_cgap/tests/data/f1.fastq.gz? [yes/no]: yes
    Uploading submit_cgap/tests/data/f1.fastq.gz to item 7f09e053-0cee-42ac-aa47-f725adb183d5 ...
    Going to upload submit_cgap/tests/data/f1.fastq.gz to s3://encoded-4dn-files/7f09e053-0cee-42ac-aa47-f725adb183d5/GAPFIYYBY24O.fastq.gz.
    Uploaded in 0.86 seconds
    Upload of submit_cgap/tests/data/f1.fastq.gz to item 7f09e053-0cee-42ac-aa47-f725adb183d5 was successful.
-   Upload submit_cgap/tests/data/f2.fastq.gz? [yes/no]: yes
    Uploading submit_cgap/tests/data/f2.fastq.gz to item 776f1767-cb43-48d1-84dc-90955ce0930a ...
    Going to upload submit_cgap/tests/data/f2.fastq.gz to s3://encoded-4dn-files/776f1767-cb43-48d1-84dc-90955ce0930a/GAPFIXJRIVGO.fastq.gz.
    Uploaded in 0.76 seconds
    Upload of submit_cgap/tests/data/f2.fastq.gz to item 776f1767-cb43-48d1-84dc-90955ce0930a was successful.
-   Upload submit_cgap/tests/data/f3.fastq.gz? [yes/no]: yes
    Uploading submit_cgap/tests/data/f3.fastq.gz to item 7c039d90-4072-419b-ae12-7031ea9d4274 ...
    Going to upload submit_cgap/tests/data/f3.fastq.gz to s3://encoded-4dn-files/7c039d90-4072-419b-ae12-7031ea9d4274/GAPFINORP5F5.fastq.gz.
    Uploaded in 0.70 seconds
    Upload of submit_cgap/tests/data/f3.fastq.gz to item 7c039d90-4072-419b-ae12-7031ea9d4274 was successful.
-   Upload submit_cgap/tests/data/f4.fastq.gz? [yes/no]: yes
    Uploading submit_cgap/tests/data/f4.fastq.gz to item 4afcf1c7-ebfe-4e96-b272-69f358e43ca0 ...
    Going to upload submit_cgap/tests/data/f4.fastq.gz to s3://encoded-4dn-files/4afcf1c7-ebfe-4e96-b272-69f358e43ca0/GAPFIMK89CF6.fastq.gz.
    Uploaded in 0.72 seconds
