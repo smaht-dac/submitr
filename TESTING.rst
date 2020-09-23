@@ -1,6 +1,6 @@
-=======
-TESTING
-=======
+==================
+Testing SubmitCGAP
+==================
 
 This document describes various ways to test this repository.
 
@@ -54,7 +54,7 @@ Only if you answer yes will it proceed, though it will still require that you ha
    CGAPPermissionError: Your credentials were rejected by http://localhost:8000. Either this is not the right server, or you need to obtain up-to-date access keys.
 
 Getting correct credentials is a matter of having your ``~/.cgap-keydicts.json`` file
-in good order. See `Setting Up Credentials <README.rst#Setting Up Credentials>`__.
+in good order. See `Setting Up Credentials <INSTALLATION.rst#Setting Up Credentials>`__.
 If credentials are set up properly, you can do::
 
    $ submit-metadata-bundle submit_cgap/tests/data/cgap_submit_test.xlsx -v -s http://localhost:8000
@@ -75,7 +75,8 @@ If credentials are set up properly, you can do::
    case items: 3 validated; 0 errors
    All items validated.
 
-Of course, there could be an error in the file, in which case you'd see something more like::
+Of course, there could be an error in the file,
+in which case you'd see something more like::
 
    $ submit-metadata-bundle submit_cgap/tests/data/cgap_submit_test_with_errors.xlsx -v -s http://localhost:8000
    Submit submit_cgap/tests/data/cgap_submit_test_with_errors.xlsx to http://localhost:8000 (for validation only)? [yes/no]: yes
@@ -101,7 +102,8 @@ Of course, there could be an error in the file, in which case you'd see somethin
 Testing Metadata Bundle Submissions
 -----------------------------------
 
-When everything is all fixed up and you're ready to do the posting, it's time to try it one more time::
+When everything is all fixed up and you're ready to do the posting,
+it's time to try it one more time::
 
    $ submit-metadata-bundle submit_cgap/tests/data/cgap_submit_test.xlsx -s http://localhost:8000
    Submit submit_cgap/tests/data/cgap_submit_test.xlsx to http://localhost:8000? [yes/no]: yes
@@ -174,8 +176,9 @@ Note that you have some queries you'll have to answer in the middle of this.
 Testing resume-uploads
 ----------------------
 
-If for some reason you had answered no to "Upload 4 files?" you could resume this operation later
-by using the GUID that was mentioned toward the beginning of the output where it says::
+If for some reason you had answered no to "Upload 4 files?" you could
+resume this operation later by using the GUID that was mentioned toward
+the beginning of the output where it says::
 
    01:27:54 Bundle uploaded, assigned uuid c5bdbeee-49f1-4fa7-9e64-bc93f2cb151f for tracking. Awaiting processing...
 
