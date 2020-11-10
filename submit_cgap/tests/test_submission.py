@@ -77,6 +77,8 @@ SOME_USER_HOMEDIR = os.path.join('/home', SOME_USER)
 
 SOME_UUID = '123-4444-5678'
 
+SOME_UUID_UPLOAD_URL = SOME_SERVER + "/ingestion-submissions/" + SOME_UUID
+
 SOME_ENVIRON = {
     'USER': SOME_USER
 }
@@ -219,36 +221,23 @@ def test_get_defaulted_institution():
     try:
         get_defaulted_institution(institution=None, user_record=make_user_record())
     except Exception as e:
-        assert str(e).startswith("Your user profile declares no institution")
+        assert str(e).startswith("Your user profile has no institution")
 
     try:
         get_defaulted_institution(institution=None,
                                   user_record=make_user_record(submits_for=[]))
     except Exception as e:
-        assert str(e).startswith("Your user profile declares no institution")
+        assert str(e).startswith("Your user profile has no institution")
     else:
         raise AssertionError("Expected error was not raised.")  # pragma: no cover
 
     successful_result = get_defaulted_institution(institution=None,
-                                                  user_record=make_user_record(submits_for=[
-                                                      {"@id": "/institutions/bwh"}
-                                                  ]))
-
-    try:
-        get_defaulted_institution(institution=None,
-                                  user_record=make_user_record(submits_for=[
-                                      {"@id": "/institutions/hms-dbmi/"},
-                                      {"@id": "/institutions/bch/"},
-                                      {"@id": "/institutions/bwh"}
-                                  ]))
-    except Exception as e:
-        assert str(e).startswith("You must use --institution to specify which institution")
-    else:
-        raise AssertionError("Expected error was not raised.")  # pragma: no cover - we hope never to see this executed
+                                                  user_record=make_user_record(institution={'@id': SOME_INSTITUTION})
+                                                  )
 
     print("successful_result=", successful_result)
 
-    assert successful_result == "/institutions/bwh"
+    assert successful_result == SOME_INSTITUTION
 
 
 def test_get_defaulted_project():
@@ -306,6 +295,7 @@ def test_show_upload_info():
     json_result = None  # Actual value comes later
 
     def mocked_get(url, *, auth):
+        assert url.startswith(SOME_UUID_UPLOAD_URL)
         assert auth == SOME_AUTH
         return FakeResponse(200, json=json_result)
 

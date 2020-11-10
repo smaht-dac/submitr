@@ -114,16 +114,11 @@ def get_defaulted_institution(institution, user_record):
     """
 
     if not institution:
-        submits_for = user_record.get('submits_for', [])
-        if len(submits_for) == 0:
-            raise SyntaxError("Your user profile declares no institution"
-                              " on behalf of which you are authorized to make submissions.")
-        elif len(submits_for) > 1:
-            raise SyntaxError("You must use --institution to specify which institution you are submitting for"
-                              " (probably one of: %s)." % ", ".join([x['@id'] for x in submits_for]))
-        else:
-            institution = submits_for[0]['@id']
-            show("Using institution:", institution)
+        institution = user_record.get('institution', {}).get('@id', None)
+        if not institution:
+            raise SyntaxError("Your user profile has no institution declared,"
+                              " so you must specify --institution explicitly.")
+        show("Using institution:", institution)
     return institution
 
 
@@ -139,7 +134,7 @@ def get_defaulted_project(project, user_record):
         project = user_record.get('project', {}).get('@id', None)
         if not project:
             raise SyntaxError("Your user profile has no project declared,"
-                              " so you must specify a --project explicitly.")
+                              " so you must specify --project explicitly.")
         show("Using project:", project)
     return project
 
