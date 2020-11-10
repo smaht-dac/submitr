@@ -12,7 +12,7 @@ from dcicutils.beanstalk_utils import get_beanstalk_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.lang_utils import n_of
-from dcicutils.misc_utils import check_true, environ_bool, ignored
+from dcicutils.misc_utils import check_true, environ_bool
 from .auth import get_keydict_for_server, keydict_to_keypair
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
 from .exceptions import CGAPPermissionError
@@ -108,18 +108,17 @@ def get_defaulted_institution(institution, user_record):
     """
     Returns the given institution or else if none is specified, it tries to infer an institution.
 
-    NOTE: As of the new permissions change, there is no way to infer an institution. One might be added later.
-          For now, there we just raise an error if no explicit institution was supplied.
-
     :param institution: the @id of an institution
     :param user_record: the user record for the authorized user
     :return: the @id of an institution to use
     """
-    ignored(user_record)
+
     if not institution:
-        # Ref: https://hms-dbmi.atlassian.net/browse/C4-371
-        raise SyntaxError("There not currently a way to infer an institution for user,"
-                          " so you must specify --institution explicitly.")
+        institution = user_record.get('user_institution', {}).get('@id', None)
+        if not institution:
+            raise SyntaxError("Your user profile has no institution declared,"
+                              " so you must specify --institution explicitly.")
+        show("Using institution:", institution)
     return institution
 
 

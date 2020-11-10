@@ -37,6 +37,8 @@ SOME_KEY_ID, SOME_SECRET = SOME_AUTH
 
 SOME_INSTITUTION = '/institutions/hms-dbmi/'
 
+SOME_OTHER_INSTITUTION = '/institutions/big-pharma/'
+
 SOME_SERVER = 'http://localhost:7777'  # Dependencies force this to be out of alphabetical order
 
 SOME_KEYDICT = {'key': SOME_KEY_ID, 'secret': SOME_SECRET, 'server': SOME_SERVER}
@@ -221,7 +223,19 @@ def test_get_defaulted_institution():
     try:
         get_defaulted_institution(institution=None, user_record=make_user_record())
     except Exception as e:
-        assert str(e).startswith("There not currently a way to infer an institution")
+        assert str(e).startswith("Your user profile has no institution")
+
+    successful_result = get_defaulted_institution(institution=None,
+                                                  user_record=make_user_record(
+                                                      # this is the old-fashioned place for it - a decoy
+                                                      institution={'@id': SOME_OTHER_INSTITUTION},
+                                                      # this is the right place to find he info
+                                                      user_institution={'@id': SOME_INSTITUTION}
+                                                  ))
+
+    print("successful_result=", successful_result)
+
+    assert successful_result == SOME_INSTITUTION
 
 
 def test_get_defaulted_project():
@@ -839,7 +853,7 @@ def test_submit_metadata_bundle():
             if url.endswith("/me?format=json"):
                 return FakeResponse(200, json=make_user_record(
                     project=SOME_PROJECT,
-                    submits_for=[
+                    user_institution=[
                         {'@id': SOME_INSTITUTION}
                     ]
                 ))
