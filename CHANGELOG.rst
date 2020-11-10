@@ -12,8 +12,8 @@ Change Log
 
 **PR 4: Fix defaulting of institution in submit-metadata-bundle.**
 
-* Fix defaulting of the ``--institution`` command line argument to
-  the ``submit-metadata-bundle`` shell script.
+* Fix defaulting of the ``--institution`` and ``--project``
+  command line arguments to the ``submit-metadata-bundle`` shell script.
 
 * Add this ``CHANGELOG.rst``.
 
