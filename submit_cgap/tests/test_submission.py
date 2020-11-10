@@ -221,23 +221,7 @@ def test_get_defaulted_institution():
     try:
         get_defaulted_institution(institution=None, user_record=make_user_record())
     except Exception as e:
-        assert str(e).startswith("Your user profile has no institution")
-
-    try:
-        get_defaulted_institution(institution=None,
-                                  user_record=make_user_record(submits_for=[]))
-    except Exception as e:
-        assert str(e).startswith("Your user profile has no institution")
-    else:
-        raise AssertionError("Expected error was not raised.")  # pragma: no cover
-
-    successful_result = get_defaulted_institution(institution=None,
-                                                  user_record=make_user_record(institution={'@id': SOME_INSTITUTION})
-                                                  )
-
-    print("successful_result=", successful_result)
-
-    assert successful_result == SOME_INSTITUTION
+        assert str(e).startswith("There not currently a way to infer an institution")
 
 
 def test_get_defaulted_project():
@@ -248,23 +232,37 @@ def test_get_defaulted_project():
     try:
         get_defaulted_project(project=None, user_record=make_user_record())
     except Exception as e:
-        assert str(e).startswith("Your user profile has no project declared")
+        assert str(e).startswith("Your user profile declares no project")
 
     try:
         get_defaulted_project(project=None,
-                              user_record=make_user_record(project={}))
+                              user_record=make_user_record(project_roles=[]))
     except Exception as e:
-        assert str(e).startswith("Your user profile has no project declared")
+        assert str(e).startswith("Your user profile declares no project")
+    else:
+        raise AssertionError("Expected error was not raised.")  # pragma: no cover
+
+    try:
+        get_defaulted_project(project=None,
+                              user_record=make_user_record(project_roles=[
+                                  {"project": {"@id": "/projects/foo"}, "role": "developer"},
+                                  {"project": {"@id": "/projects/bar"}, "role": "clinician"},
+                                  {"project": {"@id": "/projects/baz"}, "role": "director"},
+                              ]))
+    except Exception as e:
+        assert str(e).startswith("You must use --project to specify which project")
     else:
         raise AssertionError("Expected error was not raised.")  # pragma: no cover - we hope never to see this executed
 
     successful_result = get_defaulted_project(project=None,
-                                              user_record=make_user_record(project={'@id': SOME_PROJECT})
-                                              )
+                                              user_record=make_user_record(project_roles=[
+                                                  {"project": {"@id": "/projects/the_only_project"},
+                                                   "role": "scientist"}
+                                              ]))
 
     print("successful_result=", successful_result)
 
-    assert successful_result == SOME_PROJECT
+    assert successful_result == "/projects/the_only_project"
 
 
 def test_get_section():
@@ -942,6 +940,7 @@ def test_submit_metadata_bundle():
     # a symptom of the metadata bundle submission protocol being unsupported.
 
     def unsupported_media_type(*args, **kwargs):
+        ignored(args, kwargs)
         return FakeResponse(415, json={
             "status": "error",
             "title": "Unsupported Media Type",
@@ -990,6 +989,7 @@ def test_submit_metadata_bundle():
     # This tests the normal case with validate_only=False and a post error for some unknown reason.
 
     def mysterious_error(*args, **kwargs):
+        ignored(args, kwargs)
         return FakeResponse(400, json={
             "status": "error",
             "title": "Mysterious Error",

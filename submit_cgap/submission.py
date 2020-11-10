@@ -108,17 +108,18 @@ def get_defaulted_institution(institution, user_record):
     """
     Returns the given institution or else if none is specified, it tries to infer an institution.
 
+    NOTE: As of the new permissions change, there is no way to infer an institution. One might be added later.
+          For now, there we just raise an error if no explicit institution was supplied.
+
     :param institution: the @id of an institution
     :param user_record: the user record for the authorized user
     :return: the @id of an institution to use
     """
 
     if not institution:
-        institution = user_record.get('institution', {}).get('@id', None)
-        if not institution:
-            raise SyntaxError("Your user profile has no institution declared,"
-                              " so you must specify --institution explicitly.")
-        show("Using institution:", institution)
+        # Ref: https://hms-dbmi.atlassian.net/browse/C4-371
+        raise SyntaxError("There not currently a way to infer an institution for user,"
+                          " so you must specify --institution explicitly.")
     return institution
 
 
@@ -126,16 +127,29 @@ def get_defaulted_project(project, user_record):
     """
     Returns the given project or else if none is specified, it tries to infer a project.
 
-    :param project: the @id of a project
+    :param project: the @id of an project, or None
     :param user_record: the user record for the authorized user
-    :return: the @id of a project to use
+    :return: the @id of an project to use
     """
+
     if not project:
-        project = user_record.get('project', {}).get('@id', None)
-        if not project:
-            raise SyntaxError("Your user profile has no project declared,"
-                              " so you must specify --project explicitly.")
-        show("Using project:", project)
+        # Ref: https://hms-dbmi.atlassian.net/browse/C4-371
+        # The project_roles are expected to look like:
+        #  [
+        #    {"project": {"@id": "/projects/foo"}, "role": "developer"},
+        #    {"project": {"@id": "/projects/bar"}, "role": "clinician"},
+        #    {"project": {"@id": "/projects/baz"}, "role": "director"},
+        #  ]
+        project_roles = user_record.get('project_roles', [])
+        if len(project_roles) == 0:
+            raise SyntaxError("Your user profile declares no project roles.")
+        elif len(project_roles) > 1:
+            raise SyntaxError("You must use --project to specify which project you are submitting for"
+                              " (probably one of: %s)." % ", ".join([x['project']['@id'] for x in project_roles]))
+        else:
+            [project_role] = project_roles
+            project = project_role['project']['@id']
+            show("Using project:", project)
     return project
 
 
