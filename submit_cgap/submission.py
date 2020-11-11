@@ -126,9 +126,9 @@ def get_defaulted_project(project, user_record):
     """
     Returns the given project or else if none is specified, it tries to infer a project.
 
-    :param project: the @id of an project, or None
+    :param project: the @id of a project, or None
     :param user_record: the user record for the authorized user
-    :return: the @id of an project to use
+    :return: the @id of a project to use
     """
 
     if not project:
