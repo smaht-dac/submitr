@@ -37,6 +37,8 @@ SOME_KEY_ID, SOME_SECRET = SOME_AUTH
 
 SOME_INSTITUTION = '/institutions/hms-dbmi/'
 
+SOME_OTHER_INSTITUTION = '/institutions/big-pharma/'
+
 SOME_SERVER = 'http://localhost:7777'  # Dependencies force this to be out of alphabetical order
 
 SOME_KEYDICT = {'key': SOME_KEY_ID, 'secret': SOME_SECRET, 'server': SOME_SERVER}
@@ -76,6 +78,8 @@ SOME_USER = "jdoe"
 SOME_USER_HOMEDIR = os.path.join('/home', SOME_USER)
 
 SOME_UUID = '123-4444-5678'
+
+SOME_UUID_UPLOAD_URL = SOME_SERVER + "/ingestion-submissions/" + SOME_UUID
 
 SOME_ENVIRON = {
     'USER': SOME_USER
@@ -219,36 +223,19 @@ def test_get_defaulted_institution():
     try:
         get_defaulted_institution(institution=None, user_record=make_user_record())
     except Exception as e:
-        assert str(e).startswith("Your user profile declares no institution")
-
-    try:
-        get_defaulted_institution(institution=None,
-                                  user_record=make_user_record(submits_for=[]))
-    except Exception as e:
-        assert str(e).startswith("Your user profile declares no institution")
-    else:
-        raise AssertionError("Expected error was not raised.")  # pragma: no cover
+        assert str(e).startswith("Your user profile has no institution")
 
     successful_result = get_defaulted_institution(institution=None,
-                                                  user_record=make_user_record(submits_for=[
-                                                      {"@id": "/institutions/bwh"}
-                                                  ]))
-
-    try:
-        get_defaulted_institution(institution=None,
-                                  user_record=make_user_record(submits_for=[
-                                      {"@id": "/institutions/hms-dbmi/"},
-                                      {"@id": "/institutions/bch/"},
-                                      {"@id": "/institutions/bwh"}
-                                  ]))
-    except Exception as e:
-        assert str(e).startswith("You must use --institution to specify which institution")
-    else:
-        raise AssertionError("Expected error was not raised.")  # pragma: no cover - we hope never to see this executed
+                                                  user_record=make_user_record(
+                                                      # this is the old-fashioned place for it - a decoy
+                                                      institution={'@id': SOME_OTHER_INSTITUTION},
+                                                      # this is the right place to find he info
+                                                      user_institution={'@id': SOME_INSTITUTION}
+                                                  ))
 
     print("successful_result=", successful_result)
 
-    assert successful_result == "/institutions/bwh"
+    assert successful_result == SOME_INSTITUTION
 
 
 def test_get_defaulted_project():
@@ -259,23 +246,37 @@ def test_get_defaulted_project():
     try:
         get_defaulted_project(project=None, user_record=make_user_record())
     except Exception as e:
-        assert str(e).startswith("Your user profile has no project declared")
+        assert str(e).startswith("Your user profile declares no project")
 
     try:
         get_defaulted_project(project=None,
-                              user_record=make_user_record(project={}))
+                              user_record=make_user_record(project_roles=[]))
     except Exception as e:
-        assert str(e).startswith("Your user profile has no project declared")
+        assert str(e).startswith("Your user profile declares no project")
+    else:
+        raise AssertionError("Expected error was not raised.")  # pragma: no cover
+
+    try:
+        get_defaulted_project(project=None,
+                              user_record=make_user_record(project_roles=[
+                                  {"project": {"@id": "/projects/foo"}, "role": "developer"},
+                                  {"project": {"@id": "/projects/bar"}, "role": "clinician"},
+                                  {"project": {"@id": "/projects/baz"}, "role": "director"},
+                              ]))
+    except Exception as e:
+        assert str(e).startswith("You must use --project to specify which project")
     else:
         raise AssertionError("Expected error was not raised.")  # pragma: no cover - we hope never to see this executed
 
     successful_result = get_defaulted_project(project=None,
-                                              user_record=make_user_record(project={'@id': SOME_PROJECT})
-                                              )
+                                              user_record=make_user_record(project_roles=[
+                                                  {"project": {"@id": "/projects/the_only_project"},
+                                                   "role": "scientist"}
+                                              ]))
 
     print("successful_result=", successful_result)
 
-    assert successful_result == SOME_PROJECT
+    assert successful_result == "/projects/the_only_project"
 
 
 def test_get_section():
@@ -306,6 +307,7 @@ def test_show_upload_info():
     json_result = None  # Actual value comes later
 
     def mocked_get(url, *, auth):
+        assert url.startswith(SOME_UUID_UPLOAD_URL)
         assert auth == SOME_AUTH
         return FakeResponse(200, json=json_result)
 
@@ -851,7 +853,7 @@ def test_submit_metadata_bundle():
             if url.endswith("/me?format=json"):
                 return FakeResponse(200, json=make_user_record(
                     project=SOME_PROJECT,
-                    submits_for=[
+                    user_institution=[
                         {'@id': SOME_INSTITUTION}
                     ]
                 ))
@@ -952,6 +954,7 @@ def test_submit_metadata_bundle():
     # a symptom of the metadata bundle submission protocol being unsupported.
 
     def unsupported_media_type(*args, **kwargs):
+        ignored(args, kwargs)
         return FakeResponse(415, json={
             "status": "error",
             "title": "Unsupported Media Type",
@@ -1000,6 +1003,7 @@ def test_submit_metadata_bundle():
     # This tests the normal case with validate_only=False and a post error for some unknown reason.
 
     def mysterious_error(*args, **kwargs):
+        ignored(args, kwargs)
         return FakeResponse(400, json={
             "status": "error",
             "title": "Mysterious Error",
