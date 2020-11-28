@@ -1,4 +1,5 @@
 import contextlib
+import functools
 import os
 
 from dcicutils.qa_utils import local_attrs
@@ -45,3 +46,11 @@ class KeyManager:
         filename = os.environ.get('CGAP_KEYS_FILE') or None  # Treats empty string as undefined
         with cls.alternate_keydicts_filename(filename=filename):
             yield
+
+
+def UsingCGAPKeysFile(fn):
+    @functools.wraps(fn)
+    def wrapped(*args, **kwargs):
+        with KeyManager.alternate_keydicts_filename_from_environ():
+            return fn(*args, **kwargs)
+    return wrapped
