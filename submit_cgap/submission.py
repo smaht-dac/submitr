@@ -214,6 +214,33 @@ def script_catch_errors():
         exit(1)
 
 
+def _post_submission(server, keypair, post_data, post_files):
+
+    project = post_data['project']
+    institution = post_data['institution']
+
+    old_style_submission_url = server + "/submit_for_ingestion"
+
+    response = requests.post(old_style_submission_url, auth=keypair, data=post_data, files=post_files)
+
+    if response.status_code == 404:
+
+        creation_post_data = {
+            "ingestion_type": "metadata_bundle",
+            "institution": institution,
+            "project": project
+        }
+        creation_response = requests.post("/IngestionSubmission", auth=keypair, data=creation_post_data)
+        creation_response.raise_for_status()
+        [submission] = creation_response.json()['@graph']
+        submission_id = submission['@id']
+
+        new_style_submission_url = server + submission_id + "/submit_for_ingestion"
+        response = requests.post(new_style_submission_url, auth=keypair, data=post_data, files=post_files)
+
+    return response
+
+
 def submit_metadata_bundle(bundle_filename, institution, project, server, env, validate_only):
     """
     Does the core action of submitting a metadata bundle.
@@ -258,9 +285,8 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
             'validate_only': validate_only,
         }
 
-        submission_url = server + "/submit_for_ingestion"
+        response = _post_submission(server=server, keypair=keypair, post_data=post_data, post_files=post_files)
 
-        response = requests.post(submission_url, auth=keypair, data=post_data, files=post_files)
         res = response.json()
 
         try:

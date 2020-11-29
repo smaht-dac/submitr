@@ -7,6 +7,13 @@ Change Log
 ----------
 
 
+0.5.0
+=====
+
+**PR 6: Accommodate new permissions protocol.**
+
+Implement support for submission with new permissions system.
+
 0.4.2
 =====
 
