@@ -21,7 +21,7 @@ def test_submit_metadata_bundle_script(keyfile):
                     # See additional test below.
                     assert KeyManager.keydicts_filename() == KeyManager.DEFAULT_KEYDICTS_FILENAME
                     def mocked_submit_metadata_bundle(*args, **kwargs):
-                        # We need to test this function because we test its call args below.
+                        # We don't need to test this function's actionsusin because we test its call args below.
                         # However, we do need to run this one test from the same dynamic context,
                         # so this is close enough.
                         assert KeyManager.keydicts_filename() == (keyfile or KeyManager.DEFAULT_KEYDICTS_FILENAME)
