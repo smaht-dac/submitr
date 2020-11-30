@@ -16,7 +16,16 @@ def test_submit_metadata_bundle_script(keyfile):
             with mock.patch.object(submit_metadata_bundle_module,
                                    "submit_metadata_bundle") as mock_submit_metadata_bundle:
                 try:
-                    assert KeyManager.keydicts_filename() == keyfile or KeyManager.DEFAULT_KEYDICTS_FILENAME
+                    # Outside of the call, we will always see the default filename for cgap keys
+                    # but inside the call, because of a decorator, the default might be different.
+                    # See additional test below.
+                    assert KeyManager.keydicts_filename() == KeyManager.DEFAULT_KEYDICTS_FILENAME
+                    def mocked_submit_metadata_bundle(*args, **kwargs):
+                        # We need to test this function because we test its call args below.
+                        # However, we do need to run this one test from the same dynamic context,
+                        # so this is close enough.
+                        assert KeyManager.keydicts_filename() == (keyfile or KeyManager.DEFAULT_KEYDICTS_FILENAME)
+                    mock_submit_metadata_bundle.side_effect = mocked_submit_metadata_bundle
                     submit_metadata_bundle_main(args_in)
                     mock_submit_metadata_bundle.assert_called_with(**expect_call_args)
                 except SystemExit as e:
