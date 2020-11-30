@@ -1,5 +1,6 @@
 import pytest
 
+from dcicutils.misc_utils import ignored
 from dcicutils.qa_utils import override_environ
 from unittest import mock
 from ..base import KeyManager
@@ -21,11 +22,14 @@ def test_resume_uploads_script(keyfile):
                         # but inside the call, because of a decorator, the default might be different.
                         # See additional test below.
                         assert KeyManager.keydicts_filename() == KeyManager.DEFAULT_KEYDICTS_FILENAME
+
                         def mocked_resume_uploads(*args, **kwargs):
+                            ignored(args, kwargs)
                             # We don't need to test this function's actions because we test its call args below.
                             # However, we do need to run this one test from the same dynamic context,
                             # so this is close enough.
                             assert KeyManager.keydicts_filename() == (keyfile or KeyManager.DEFAULT_KEYDICTS_FILENAME)
+
                         mock_resume_uploads.side_effect = mocked_resume_uploads
                         resume_uploads_main(args_in)
                         mock_resume_uploads.assert_called_with(**expect_call_args)
