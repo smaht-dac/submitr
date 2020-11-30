@@ -1,9 +1,14 @@
+import pytest
+
+from dcicutils.qa_utils import override_environ
 from unittest import mock
+from ..base import KeyManager
 from ..scripts.resume_uploads import main as resume_uploads_main
 from ..scripts import resume_uploads as resume_uploads_module
 
 
-def test_resume_uploads_script():
+@pytest.mark.parametrize("keyfile", [None, "foo.bar"])
+def test_resume_uploads_script(keyfile):
 
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
         output = []
@@ -11,6 +16,7 @@ def test_resume_uploads_script():
             mock_print.side_effect = lambda *args: output.append(" ".join(args))
             with mock.patch.object(resume_uploads_module, "resume_uploads") as mock_resume_uploads:
                 try:
+                    assert KeyManager.keydicts_filename() == keyfile or KeyManager.DEFAULT_KEYDICTS_FILENAME
                     resume_uploads_main(args_in)
                     mock_resume_uploads.assert_called_with(**expect_call_args)
                 except SystemExit as e:

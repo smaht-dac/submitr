@@ -25,7 +25,10 @@ DEFAULT_ENV = _compute_default_env()
 
 class KeyManager:
 
-    _KEYDICTS_FILENAME = os.path.expanduser('~/.cgap-keys.json')
+    # This is not necessarily the actual keydicts filename. It can e overridden by environment variable CGAP_KEYS_FILE
+    DEFAULT_KEYDICTS_FILENAME = os.path.expanduser('~/.cgap-keys.json')
+
+    _KEYDICTS_FILENAME = DEFAULT_KEYDICTS_FILENAME
 
     @classmethod
     def keydicts_filename(cls):

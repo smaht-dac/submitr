@@ -1,14 +1,20 @@
+import pytest
+
+from dcicutils.qa_utils import override_environ
 from unittest import mock
+from ..base import KeyManager
 from ..scripts.upload_item_data import main as upload_item_data_main
 from ..scripts import upload_item_data as upload_item_data_module
 
 
-def test_upload_item_data_script():
+@pytest.mark.parametrize("keyfile", [None, "foo.bar"])
+def test_upload_item_data_script(keyfile):
 
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
         with mock.patch.object(upload_item_data_module,
                                "upload_item_data") as mock_upload_item_data:
             try:
+                assert KeyManager.keydicts_filename() == keyfile or KeyManager.DEFAULT_KEYDICTS_FILENAME
                 upload_item_data_main(args_in)
                 mock_upload_item_data.assert_called_with(**expect_call_args)
             except SystemExit as e:

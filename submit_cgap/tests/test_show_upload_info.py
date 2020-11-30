@@ -1,9 +1,14 @@
+import pytest
+
+from dcicutils.qa_utils import override_environ
 from unittest import mock
+from ..base import KeyManager
 from ..scripts.show_upload_info import main as show_upload_info_main
 from ..scripts import show_upload_info as show_upload_info_module
 
 
-def test_show_upload_info_script():
+@pytest.mark.parametrize("keyfile", [None, "foo.bar"])
+def test_show_upload_info_script(keyfile):
 
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
         output = []
@@ -11,6 +16,7 @@ def test_show_upload_info_script():
             mock_print.side_effect = lambda *args: output.append(" ".join(args))
             with mock.patch.object(show_upload_info_module, "show_upload_info") as mock_show_upload_info:
                 try:
+                    assert KeyManager.keydicts_filename() == keyfile or KeyManager.DEFAULT_KEYDICTS_FILENAME
                     show_upload_info_main(args_in)
                     mock_show_upload_info.assert_called_with(**expect_call_args)
                 except SystemExit as e:
