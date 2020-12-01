@@ -1,10 +1,12 @@
 import argparse
 from ..submission import submit_metadata_bundle
+from ..base import UsingCGAPKeysFile
 
 
 EPILOG = __doc__
 
 
+@UsingCGAPKeysFile
 def main(simulated_args_for_testing=None):
     parser = argparse.ArgumentParser(  # noqa - PyCharm wrongly thinks the formatter_class is invalid
         description="Submits a data bundle",

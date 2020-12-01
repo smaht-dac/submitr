@@ -1,4 +1,5 @@
 import contextlib
+import functools
 import os
 
 from dcicutils.qa_utils import local_attrs
@@ -24,7 +25,10 @@ DEFAULT_ENV = _compute_default_env()
 
 class KeyManager:
 
-    _KEYDICTS_FILENAME = os.path.expanduser('~/.cgap-keys.json')
+    # This is not necessarily the actual keydicts filename. It can e overridden by environment variable CGAP_KEYS_FILE
+    DEFAULT_KEYDICTS_FILENAME = os.path.expanduser('~/.cgap-keys.json')
+
+    _KEYDICTS_FILENAME = DEFAULT_KEYDICTS_FILENAME
 
     @classmethod
     def keydicts_filename(cls):
@@ -45,3 +49,11 @@ class KeyManager:
         filename = os.environ.get('CGAP_KEYS_FILE') or None  # Treats empty string as undefined
         with cls.alternate_keydicts_filename(filename=filename):
             yield
+
+
+def UsingCGAPKeysFile(fn):
+    @functools.wraps(fn)
+    def wrapped(*args, **kwargs):
+        with KeyManager.alternate_keydicts_filename_from_environ():
+            return fn(*args, **kwargs)
+    return wrapped

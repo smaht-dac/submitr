@@ -7,6 +7,13 @@ Change Log
 ----------
 
 
+0.4.2
+=====
+
+**PR 5: Implement CGAP_KEYS_FILE**
+
+* Fix environment variable ``CGAP_KEYS_FILE`` to allow override of what file contains the user's keys.  This is intended only for internal use, not for end users, which is why it's not an argument to the relevant commands.
+
 0.4.1
 =====
 
