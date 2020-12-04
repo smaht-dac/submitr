@@ -12,7 +12,7 @@ from dcicutils.beanstalk_utils import get_beanstalk_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.lang_utils import n_of
-from dcicutils.misc_utils import check_true, environ_bool
+from dcicutils.misc_utils import check_true, environ_bool, PRINT
 from .auth import get_keydict_for_server, keydict_to_keypair
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
 from .exceptions import CGAPPermissionError
@@ -201,7 +201,7 @@ def show_section(res, section, caveat_outcome=None):
 
 
 def ingestion_submission_item_url(server, uuid):
-    return server + "/ingestion-submissions/" + uuid + "?format=json"
+    return url_path_join(server, "ingestion-submissions", uuid) + "?format=json"
 
 
 @contextlib.contextmanager
@@ -214,29 +214,86 @@ def script_catch_errors():
         exit(1)
 
 
-def _post_submission(server, keypair, post_data, post_files):
+def url_path_join(*fragments):
+    """
+    Concatenates its arguments, returning a string with exactly one slash ('/') separating each of the path fragments.
 
-    project = post_data['project']
-    institution = post_data['institution']
+    So, whether the path_fragments are ('foo', 'bar') or ('foo/', 'bar') or ('foo', '/bar') or ('foo/', '/bar')
+    or even ('foo//', '///bar'), the result will be 'foo/bar'. The left side of the first thing and the
+    right side of the last thing are unaffected.
 
-    old_style_submission_url = server + "/submit_for_ingestion"
+    :param fragments: a list of URL path fragments
+    :return: a slash-separated concatentation of the given path fragments
+    """
+    fragments = fragments or ("",)
+    result = fragments[0]  # Tolerate an empty list
+    for thing in fragments[1:]:
+        result = result.rstrip("/") + "/" + thing.lstrip("/")
+    return result
 
-    response = requests.post(old_style_submission_url, auth=keypair, data=post_data, files=post_files)
+
+DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
+
+
+def _post_submission(server, keypair, bundle_filename, creation_post_data, submission_post_data):
+
+    def post_files_data():
+        return {"datafile": io.open(bundle_filename, 'rb')}
+
+    old_style_submission_url = url_path_join(server, "submit_for_ingestion")
+    old_style_post_data = dict(creation_post_data, **submission_post_data)
+
+    response = requests.post(old_style_submission_url,
+                             auth=keypair,
+                             data=old_style_post_data,
+                             headers={'Content-type': 'application/json'},
+                             files=post_files_data())
+
+    if DEBUG_PROTOCOL:
+        PRINT("old_style_submission_url=", old_style_submission_url)
+        PRINT("old_style_post_data=", json.dumps(old_style_post_data, indent=2))
+        PRINT("keypair=", keypair)
+        PRINT("response=", response)
 
     if response.status_code == 404:
 
-        creation_post_data = {
-            "ingestion_type": "metadata_bundle",
-            "institution": institution,
-            "project": project
+        if DEBUG_PROTOCOL:
+            PRINT("Retrying with new protocol.")
+
+        creation_post_headers = {
+            'Content-type': 'application/json',
+            'Accept':  'application/json',
         }
-        creation_response = requests.post("/IngestionSubmission", auth=keypair, data=creation_post_data)
+        creation_post_url = url_path_join(server, "IngestionSubmission")
+        if DEBUG_PROTOCOL:
+            PRINT("creation_post_data=", json.dumps(creation_post_data, indent=2))
+            PRINT("creation_post_url=", creation_post_url)
+        creation_response = requests.post(creation_post_url, auth=keypair,
+                                          headers=creation_post_headers,
+                                          json=creation_post_data
+                                          # data=json.dumps(creation_post_data)
+                                          )
+        if DEBUG_PROTOCOL:
+            PRINT("headers:", creation_response.request.headers)
         creation_response.raise_for_status()
         [submission] = creation_response.json()['@graph']
         submission_id = submission['@id']
 
-        new_style_submission_url = server + submission_id + "/submit_for_ingestion"
-        response = requests.post(new_style_submission_url, auth=keypair, data=post_data, files=post_files)
+        if DEBUG_PROTOCOL:
+            PRINT("server=", server, "submission_id=", submission_id)
+        new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
+        if DEBUG_PROTOCOL:
+            PRINT("submitting new_style_submission_url=", new_style_submission_url)
+        response = requests.post(new_style_submission_url, auth=keypair, data=submission_post_data,
+                                 files=post_files_data())
+        if DEBUG_PROTOCOL:
+            PRINT("response received for submission post:", response)
+            PRINT("response.content:", response.content)
+
+    else:
+
+        if DEBUG_PROTOCOL:
+            PRINT("Old style protocol worked.")
 
     return response
 
@@ -274,43 +331,69 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
         if not os.path.exists(bundle_filename):
             raise ValueError("The file '%s' does not exist." % bundle_filename)
 
-        post_files = {
-            "datafile": io.open(bundle_filename, 'rb')
-        }
+        # We may need to do this twice, each time with a freshly opened file, so we manage it as a function.
+        # def post_files_fn():
+        #     return {
+        #         "datafile": io.open(bundle_filename, 'rb')
+        #     }
+        #
+        # post_data = {
+        #     'ingestion_type': 'metadata_bundle',
+        #     'institution': institution,
+        #     'project': project,
+        #     'validate_only': validate_only,
+        # }
 
-        post_data = {
-            'ingestion_type': 'metadata_bundle',
-            'institution': institution,
-            'project': project,
-            'validate_only': validate_only,
-        }
+        response = _post_submission(server=server, keypair=keypair,
+                                    # post_data=post_data,
+                                    # post_files_fn=post_files_fn,
+                                    bundle_filename=bundle_filename,
+                                    creation_post_data={
+                                        'ingestion_type': 'metadata_bundle',
+                                        'institution': institution,
+                                        'project': project,
+                                        "processing_status": {
+                                            "state": "submitted"
+                                        }
+                                    },
+                                    submission_post_data={
+                                        # 'ingestion_type': 'metadata_bundle',
+                                        'validate_only': validate_only,
+                                    })
 
-        response = _post_submission(server=server, keypair=keypair, post_data=post_data, post_files=post_files)
-
-        res = response.json()
+        try:
+            # This can fail if the body doesn't contain JSON
+            res = response.json()
+        except Exception:
+            res = None
 
         try:
             response.raise_for_status()
         except Exception:
-            # For example, if you call this on an old version of cgap-portal that does not support this request,
-            # the error will be a 415 error, because the tween code defaultly insists on applicatoin/json:
-            # {
-            #     "@type": ["HTTPUnsupportedMediaType", "Error"],
-            #     "status": "error",
-            #     "code": 415,
-            #     "title": "Unsupported Media Type",
-            #     "description": "",
-            #     "detail": "Request content type multipart/form-data is not 'application/json'"
-            # }
-            title = res.get('title')
-            message = title
-            detail = res.get('detail')
-            if detail:
-                message += ": " + detail
-            show(message)
-            if title == "Unsupported Media Type":
-                show("NOTE: This error is known to occur if the server does not support metadata bundle submission.")
+            if res is not None:
+                # For example, if you call this on an old version of cgap-portal that does not support this request,
+                # the error will be a 415 error, because the tween code defaultly insists on applicatoin/json:
+                # {
+                #     "@type": ["HTTPUnsupportedMediaType", "Error"],
+                #     "status": "error",
+                #     "code": 415,
+                #     "title": "Unsupported Media Type",
+                #     "description": "",
+                #     "detail": "Request content type multipart/form-data is not 'application/json'"
+                # }
+                title = res.get('title')
+                message = title
+                detail = res.get('detail')
+                if detail:
+                    message += ": " + detail
+                show(message)
+                if title == "Unsupported Media Type":
+                    show("NOTE: This error is known to occur if the server"
+                         " does not support metadata bundle submission.")
             raise
+
+        if res is None:
+            raise Exception("Bad JSON body in %s submission result." % response.status_code)
 
         uuid = res['submission_id']
 

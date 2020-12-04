@@ -12,7 +12,7 @@ from ..base import PRODUCTION_SERVER
 from ..exceptions import CGAPPermissionError
 from ..submission import (
     SERVER_REGEXP, get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info,
-    execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url,
+    execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url, url_path_join,
     resolve_server, resume_uploads, script_catch_errors, show_section, submit_metadata_bundle,
     upload_file_to_uuid, upload_item_data, PROGRESS_CHECK_INTERVAL
 )
@@ -439,6 +439,15 @@ def test_show_section_with_caveat():
         assert shown.lines == []  # Nothing shown if there is a caveat specified
 
 
+def test_url_path_join():
+
+    assert url_path_join('foo', 'bar') == 'foo/bar'
+    assert url_path_join('foo/', 'bar') == 'foo/bar'
+    assert url_path_join('foo', '/bar') == 'foo/bar'
+    assert url_path_join('foo/', '/bar') == 'foo/bar'
+    assert url_path_join('//foo//', '///bar//') == '//foo/bar//'
+
+
 def test_script_catch_errors():
     try:
         with script_catch_errors():
@@ -790,7 +799,7 @@ def test_submit_metadata_bundle_old():
 
                     assert shown.lines == ["Aborting submission."]
 
-    def mocked_post(url, auth, data, files):
+    def mocked_post(url, auth, data, headers, files):
         # We only expect requests.post to be called on one particular URL, so this definition is very specialized
         # mostly just to check that we're being called on what we think so we can return something highly specific
         # with some degree of confidence. -kmp 6-Sep-2020
@@ -798,6 +807,7 @@ def test_submit_metadata_bundle_old():
         assert auth == SOME_AUTH
         ignored(data)
         assert isinstance(files, dict) and 'datafile' in files and isinstance(files['datafile'], io.BytesIO)
+        assert headers == {'Content-type': 'application/json'}
         return FakeResponse(201, json={'submission_id': SOME_UUID})
 
     partial_res = {
@@ -1224,7 +1234,11 @@ def test_submit_metadata_bundle_new():
 
                     assert shown.lines == ["Aborting submission."]
 
-    def mocked_post(url, auth, data, files=None):
+    def mocked_post(url, auth, data=None, json=None, files=None, headers=None):
+        ignored(data, json)
+        content_type = headers and headers.get('Content-type')
+        if content_type:
+            assert content_type == 'application/json'
         if url.endswith("/IngestionSubmission"):
             return FakeResponse(201,
                                 json={
@@ -1246,7 +1260,7 @@ def test_submit_metadata_bundle_new():
                                             "@id": "/ingestion-submissions/" + SOME_UUID,
                                             "@type": ["IngestionSubmission", "Item"],
                                             "uuid": SOME_UUID,
-                                            #... other properties not needed ...
+                                            # ... other properties not needed ...
                                         }
                                     ]
                                 })
@@ -1258,13 +1272,11 @@ def test_submit_metadata_bundle_new():
             if m:
                 assert m.group(1) == SOME_UUID
                 assert auth == SOME_AUTH
-                ignored(data)
                 assert isinstance(files, dict) and 'datafile' in files and isinstance(files['datafile'], io.BytesIO)
                 return FakeResponse(201, json={'submission_id': SOME_UUID})
             else:
                 # Old protocol used
                 return FakeResponse(404, json={})
-
 
     partial_res = {
         'submission_id': SOME_UUID,
