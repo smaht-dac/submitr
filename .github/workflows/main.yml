@@ -40,8 +40,8 @@ jobs:
       - name: Build
         run: |
           poetry install
-          flake8 submit_cgap
+          poetry run flake8 submit_cgap
       
       - name: CI
         run: |
-          coverage run --source submit_cgap -m pytest -vv
+          poetry run coverage run --source submit_cgap -m pytest -vv
