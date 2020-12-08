@@ -6,6 +6,13 @@ SubmitCGAP
 Change Log
 ----------
 
+0.4.3
+=====
+
+**PR 6: Convert build to GA
+
+* Converts build from Travis to Github Actions.
+
 
 0.4.2
 =====
