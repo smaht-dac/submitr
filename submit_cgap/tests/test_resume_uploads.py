@@ -43,13 +43,15 @@ def test_resume_uploads_script(keyfile):
         'bundle_filename': None,
         'env': None,
         'server': None,
-        'uuid': 'some-guid'
+        'uuid': 'some-guid',
+        'upload_folder': None,
     })
     expect_call_args = {
         'bundle_filename': 'some.file',
         'env': None,
         'server': None,
-        'uuid': 'some-guid'
+        'uuid': 'some-guid',
+        'upload_folder': None,
     }
     test_it(args_in=['-b', 'some.file', 'some-guid'],
             expect_exit_code=0,
@@ -63,7 +65,8 @@ def test_resume_uploads_script(keyfile):
         'bundle_filename': 'some.file',
         'env': 'some-env',
         'server': None,
-        'uuid': 'some-guid'
+        'uuid': 'some-guid',
+        'upload_folder': None,
     }
     test_it(args_in=['some-guid', '-b', 'some.file', '-e', 'some-env'],
             expect_exit_code=0,
@@ -77,13 +80,30 @@ def test_resume_uploads_script(keyfile):
         'bundle_filename': 'some.file',
         'env': 'some-env',
         'server': 'http://some.server',
-        'uuid': 'some-guid'
+        'uuid': 'some-guid',
+        'upload_folder': None,
     }
     test_it(args_in=['some-guid', '-b', 'some.file', '-e', 'some-env', '-s', 'http://some.server'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     test_it(args_in=['-b', 'some.file', '-e', 'some-env', '-s', 'http://some.server', 'some-guid'],
+            expect_exit_code=0,
+            expect_called=True,
+            expect_call_args=expect_call_args)
+    expect_call_args = {
+        'bundle_filename': 'some.file',
+        'env': 'some-env',
+        'server': 'http://some.server',
+        'uuid': 'some-guid',
+        'upload_folder': 'a-folder',
+    }
+    test_it(args_in=['some-guid', '-b', 'some.file', '-e', 'some-env', '-s', 'http://some.server', '-u', 'a-folder'],
+            expect_exit_code=0,
+            expect_called=True,
+            expect_call_args=expect_call_args)
+    test_it(args_in=['-b', 'some.file', '-e', 'some-env', '-s', 'http://some.server', 'some-guid',
+                     '--upload_folder', 'a-folder'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)

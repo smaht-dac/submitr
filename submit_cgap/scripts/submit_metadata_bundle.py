@@ -20,11 +20,13 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--env', '-e', help="a CGAP beanstalk environment name for the server to use", default=None)
     parser.add_argument('--validate-only', '-v', action="store_true",
                         help="whether to stop after validating without submitting", default=False)
+    parser.add_argument('--upload_folder', '-u', help="location of the upload files", default=None)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     return submit_metadata_bundle(bundle_filename=args.bundle_filename, institution=args.institution,
                                   project=args.project, server=args.server, env=args.env,
-                                  validate_only=args.validate_only)
+                                  validate_only=args.validate_only, upload_folder=args.upload_folder,
+                                  )
 
 
 if __name__ == '__main__':

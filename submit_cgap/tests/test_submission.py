@@ -518,7 +518,7 @@ def test_do_any_uploads():
                 do_any_uploads(
                     res=SOME_UPLOAD_INFO_RESULT,
                     keydict=SOME_KEYDICT,
-                    bundle_folder=SOME_OTHER_BUNDLE_FOLDER,  # rather than bundle_filename
+                    upload_folder=SOME_OTHER_BUNDLE_FOLDER,  # rather than bundle_filename
                 )
                 mock_yes_or_no.assert_called_with("Upload %s files?" % n_uploads)
                 mock_uploads.assert_called_with(
@@ -556,7 +556,8 @@ def test_resume_uploads():
                         mock_do_any_uploads.assert_called_with(
                             some_response_json,
                             keydict=SOME_KEYDICT,
-                            bundle_filename=SOME_BUNDLE_FILENAME
+                            bundle_filename=SOME_BUNDLE_FILENAME,
+                            upload_folder=None,
                         )
 
     with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
@@ -941,7 +942,8 @@ def test_submit_metadata_bundle_old():
                                                         mock_do_any_uploads.assert_called_with(
                                                             final_res,
                                                             bundle_filename=SOME_BUNDLE_FILENAME,
-                                                            keydict=SOME_KEYDICT
+                                                            keydict=SOME_KEYDICT,
+                                                            upload_folder=None,
                                                         )
         assert shown.lines == [
             'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
@@ -1084,7 +1086,9 @@ def test_submit_metadata_bundle_old():
                                                                                    project=SOME_PROJECT,
                                                                                    server=SOME_SERVER,
                                                                                    env=None,
-                                                                                   validate_only=False)
+                                                                                   validate_only=False,
+                                                                                   upload_folder=None,
+                                                                                   )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
                                                             # that a normal 'return' not 'exit' was done.
@@ -1133,7 +1137,9 @@ def test_submit_metadata_bundle_old():
                                                                                    project=SOME_PROJECT,
                                                                                    server=SOME_SERVER,
                                                                                    env=None,
-                                                                                   validate_only=True)
+                                                                                   validate_only=True,
+                                                                                   upload_folder=None,
+                                                                                   )
                                                         except SystemExit as e:  # pragma: no cover
                                                             assert e.code == 0
                                                         # It's also OK if it doesn't do an exit(0)
@@ -1182,7 +1188,9 @@ def test_submit_metadata_bundle_old():
                                                                                    project=SOME_PROJECT,
                                                                                    server=SOME_SERVER,
                                                                                    env=None,
-                                                                                   validate_only=False)
+                                                                                   validate_only=False,
+                                                                                   upload_folder=None,
+                                                                                   )
                                                         except SystemExit as e:
                                                             # We expect to time out for too many waits before success.
                                                             assert e.code == 1
@@ -1399,7 +1407,9 @@ def test_submit_metadata_bundle_new():
                                                                                    project=SOME_PROJECT,
                                                                                    server=SOME_SERVER,
                                                                                    env=None,
-                                                                                   validate_only=False)
+                                                                                   validate_only=False,
+                                                                                   upload_folder=None,
+                                                                                   )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
                                                             # that a normal 'return' not 'exit' was done.
@@ -1409,7 +1419,8 @@ def test_submit_metadata_bundle_new():
                                                         mock_do_any_uploads.assert_called_with(
                                                             final_res,
                                                             bundle_filename=SOME_BUNDLE_FILENAME,
-                                                            keydict=SOME_KEYDICT
+                                                            keydict=SOME_KEYDICT,
+                                                            upload_folder=None,
                                                         )
         assert shown.lines == [
             'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
@@ -1463,7 +1474,9 @@ def test_submit_metadata_bundle_new():
                                                                                    project=SOME_PROJECT,
                                                                                    server=SOME_SERVER,
                                                                                    env=None,
-                                                                                   validate_only=False)
+                                                                                   validate_only=False,
+                                                                                   upload_folder=None,
+                                                                                   )
                                                         except Exception as e:
                                                             assert "raised for status" in str(e)
                                                         else:  # pragma: no cover
@@ -1512,7 +1525,9 @@ def test_submit_metadata_bundle_new():
                                                                                    project=SOME_PROJECT,
                                                                                    server=SOME_SERVER,
                                                                                    env=None,
-                                                                                   validate_only=False)
+                                                                                   validate_only=False,
+                                                                                   upload_folder=None,
+                                                                                   )
                                                         except Exception as e:
                                                             assert "raised for status" in str(e)
                                                         else:  # pragma: no cover
@@ -1552,7 +1567,9 @@ def test_submit_metadata_bundle_new():
                                                                                    project=SOME_PROJECT,
                                                                                    server=SOME_SERVER,
                                                                                    env=None,
-                                                                                   validate_only=False)
+                                                                                   validate_only=False,
+                                                                                   upload_folder=None,
+                                                                                   )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
                                                             # that a normal 'return' not 'exit' was done.
@@ -1601,7 +1618,9 @@ def test_submit_metadata_bundle_new():
                                                                                    project=SOME_PROJECT,
                                                                                    server=SOME_SERVER,
                                                                                    env=None,
-                                                                                   validate_only=True)
+                                                                                   validate_only=True,
+                                                                                   upload_folder=None,
+                                                                                   )
                                                         except SystemExit as e:  # pragma: no cover
                                                             assert e.code == 0
                                                         # It's also OK if it doesn't do an exit(0)
@@ -1650,7 +1669,9 @@ def test_submit_metadata_bundle_new():
                                                                                    project=SOME_PROJECT,
                                                                                    server=SOME_SERVER,
                                                                                    env=None,
-                                                                                   validate_only=False)
+                                                                                   validate_only=False,
+                                                                                   upload_folder=None,
+                                                                                   )
                                                         except SystemExit as e:
                                                             # We expect to time out for too many waits before success.
                                                             assert e.code == 1
