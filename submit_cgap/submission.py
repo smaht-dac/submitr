@@ -499,11 +499,12 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
         server = resolve_server(server=server, env=env)
         keydict = keydict or get_keydict_for_server(server)
         url = ingestion_submission_item_url(server, uuid)
-        response = requests.get(url, auth=keydict_to_keypair(keydict))
+        keypair = keydict_to_keypair(keydict)
+        response = requests.get(url, auth=keypair)
         response.raise_for_status()
         do_any_uploads(response.json(),
                        keydict=keydict,
-                       bundle_filename=bundle_filename or os.path.abspath(os.path.curdir),
+                       bundle_filename=bundle_filename,
                        upload_folder=upload_folder)
 
 
