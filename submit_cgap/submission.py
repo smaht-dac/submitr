@@ -331,22 +331,7 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
         if not os.path.exists(bundle_filename):
             raise ValueError("The file '%s' does not exist." % bundle_filename)
 
-        # We may need to do this twice, each time with a freshly opened file, so we manage it as a function.
-        # def post_files_fn():
-        #     return {
-        #         "datafile": io.open(bundle_filename, 'rb')
-        #     }
-        #
-        # post_data = {
-        #     'ingestion_type': 'metadata_bundle',
-        #     'institution': institution,
-        #     'project': project,
-        #     'validate_only': validate_only,
-        # }
-
         response = _post_submission(server=server, keypair=keypair,
-                                    # post_data=post_data,
-                                    # post_files_fn=post_files_fn,
                                     bundle_filename=bundle_filename,
                                     creation_post_data={
                                         'ingestion_type': 'metadata_bundle',
@@ -357,7 +342,6 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
                                         }
                                     },
                                     submission_post_data={
-                                        # 'ingestion_type': 'metadata_bundle',
                                         'validate_only': validate_only,
                                     })
 
