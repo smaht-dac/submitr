@@ -154,21 +154,28 @@ def test_c4_383_regression_action():
 
                             mock_requests_get.side_effect = mocked_requests_get
                             local_server = "http://localhost:8000"
-                            try:
-                                # Outside of the call, we will always see the default filename for cgap keys
-                                # but inside the call, because of a decorator, the default might be different.
-                                # See additional test below.
-                                assert KeyManager.keydicts_filename() == KeyManager.DEFAULT_KEYDICTS_FILENAME
+                            fake_keydict = {
+                                'key': 'my-key',
+                                'secret': 'my-secret',
+                                'server': local_server,
+                            }
+                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                   return_value=fake_keydict):
+                                try:
+                                    # Outside of the call, we will always see the default filename for cgap keys
+                                    # but inside the call, because of a decorator, the default might be different.
+                                    # See additional test below.
+                                    assert KeyManager.keydicts_filename() == KeyManager.DEFAULT_KEYDICTS_FILENAME
 
-                                resume_uploads_main(["2eab76cd-666c-4b04-9335-22f9c6084303",
-                                                     '--server', local_server])
-                            except SystemExit as e:
-                                assert e.code == 0
-                            joined_filename = os.path.join(current_dir, SAMPLE_UPLOAD_INFO[-1]['filename'])
-                            # Make sure this is dong what we expect.
-                            assert current_dir + "/" in joined_filename
-                            # Make sure the inner upload actually uploads to the current dir.
-                            mock_upload_file_to_uuid.assert_called_with(auth=get_keydict_for_server(local_server),
-                                                                        filename=joined_filename,
-                                                                        uuid=SAMPLE_UPLOAD_INFO[-1]['uuid'])
-                            assert output == []
+                                    resume_uploads_main(["2eab76cd-666c-4b04-9335-22f9c6084303",
+                                                         '--server', local_server])
+                                except SystemExit as e:
+                                    assert e.code == 0
+                                joined_filename = os.path.join(current_dir, SAMPLE_UPLOAD_INFO[-1]['filename'])
+                                # Make sure this is dong what we expect.
+                                assert current_dir + "/" in joined_filename
+                                # Make sure the inner upload actually uploads to the current dir.
+                                mock_upload_file_to_uuid.assert_called_with(auth=fake_keydict,
+                                                                            filename=joined_filename,
+                                                                            uuid=SAMPLE_UPLOAD_INFO[-1]['uuid'])
+                                assert output == []
