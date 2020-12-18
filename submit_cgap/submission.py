@@ -218,6 +218,19 @@ DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
 
 
 def _post_submission(server, keypair, bundle_filename, creation_post_data, submission_post_data):
+    """ This takes care of managing the compatibility step of using either the old or new ingestion protocol.
+
+    OLD PROTOCOL: Post directly to /submit_for_ingestion
+
+    NEW PROTOCOL: Create an IngestionSubmission and then use /ingestion-submissions/<guid>/submit_for_ingestion
+
+    :param server: the name of the server as a URL
+    :param keypair: a tuple which is a keypair (key_id, secret_key)
+    :param bundle_filename: the bundle filename to be submitted
+    :param creation_post_data: data to become part of the post data for the creation
+    :param submission_post_data: data to become part of the post data for the ingestion
+    :return: the results of the ingestion call (whether by the one-step or two-step process)
+    """
 
     def post_files_data():
         return {"datafile": io.open(bundle_filename, 'rb')}
