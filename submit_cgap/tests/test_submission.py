@@ -12,7 +12,7 @@ from ..base import PRODUCTION_SERVER
 from ..exceptions import CGAPPermissionError
 from ..submission import (
     SERVER_REGEXP, get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info,
-    execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url, url_path_join,
+    execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url,
     resolve_server, resume_uploads, script_catch_errors, show_section, submit_metadata_bundle,
     upload_file_to_uuid, upload_item_data, PROGRESS_CHECK_INTERVAL
 )
@@ -437,15 +437,6 @@ def test_show_section_with_caveat():
             caveat_outcome=caveat
         )
         assert shown.lines == []  # Nothing shown if there is a caveat specified
-
-
-def test_url_path_join():
-
-    assert url_path_join('foo', 'bar') == 'foo/bar'
-    assert url_path_join('foo/', 'bar') == 'foo/bar'
-    assert url_path_join('foo', '/bar') == 'foo/bar'
-    assert url_path_join('foo/', '/bar') == 'foo/bar'
-    assert url_path_join('//foo//', '///bar//') == '//foo/bar//'
 
 
 def test_script_catch_errors():
@@ -877,6 +868,7 @@ def test_submit_metadata_bundle_old():
 
     dt = ControlledTime()
 
+    # TODO: Will says he wants explanatory doc here and elsewhere with a big cascade like this.
     with mock.patch("os.path.exists", mfs.exists):
         with mock.patch("io.open", mfs.open):
             with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):

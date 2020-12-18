@@ -12,7 +12,7 @@ from dcicutils.beanstalk_utils import get_beanstalk_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.lang_utils import n_of
-from dcicutils.misc_utils import check_true, environ_bool, PRINT
+from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join
 from .auth import get_keydict_for_server, keydict_to_keypair
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
 from .exceptions import CGAPPermissionError
@@ -214,28 +214,23 @@ def script_catch_errors():
         exit(1)
 
 
-def url_path_join(*fragments):
-    """
-    Concatenates its arguments, returning a string with exactly one slash ('/') separating each of the path fragments.
-
-    So, whether the path_fragments are ('foo', 'bar') or ('foo/', 'bar') or ('foo', '/bar') or ('foo/', '/bar')
-    or even ('foo//', '///bar'), the result will be 'foo/bar'. The left side of the first thing and the
-    right side of the last thing are unaffected.
-
-    :param fragments: a list of URL path fragments
-    :return: a slash-separated concatentation of the given path fragments
-    """
-    fragments = fragments or ("",)
-    result = fragments[0]  # Tolerate an empty list
-    for thing in fragments[1:]:
-        result = result.rstrip("/") + "/" + thing.lstrip("/")
-    return result
-
-
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
 
 
 def _post_submission(server, keypair, bundle_filename, creation_post_data, submission_post_data):
+    """ This takes care of managing the compatibility step of using either the old or new ingestion protocol.
+
+    OLD PROTOCOL: Post directly to /submit_for_ingestion
+
+    NEW PROTOCOL: Create an IngestionSubmission and then use /ingestion-submissions/<guid>/submit_for_ingestion
+
+    :param server: the name of the server as a URL
+    :param keypair: a tuple which is a keypair (key_id, secret_key)
+    :param bundle_filename: the bundle filename to be submitted
+    :param creation_post_data: data to become part of the post data for the creation
+    :param submission_post_data: data to become part of the post data for the ingestion
+    :return: the results of the ingestion call (whether by the one-step or two-step process)
+    """
 
     def post_files_data():
         return {"datafile": io.open(bundle_filename, 'rb')}
@@ -332,22 +327,7 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
         if not os.path.exists(bundle_filename):
             raise ValueError("The file '%s' does not exist." % bundle_filename)
 
-        # We may need to do this twice, each time with a freshly opened file, so we manage it as a function.
-        # def post_files_fn():
-        #     return {
-        #         "datafile": io.open(bundle_filename, 'rb')
-        #     }
-        #
-        # post_data = {
-        #     'ingestion_type': 'metadata_bundle',
-        #     'institution': institution,
-        #     'project': project,
-        #     'validate_only': validate_only,
-        # }
-
         response = _post_submission(server=server, keypair=keypair,
-                                    # post_data=post_data,
-                                    # post_files_fn=post_files_fn,
                                     bundle_filename=bundle_filename,
                                     creation_post_data={
                                         'ingestion_type': 'metadata_bundle',
@@ -358,7 +338,6 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
                                         }
                                     },
                                     submission_post_data={
-                                        # 'ingestion_type': 'metadata_bundle',
                                         'validate_only': validate_only,
                                     })
 
