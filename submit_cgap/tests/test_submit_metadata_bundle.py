@@ -44,6 +44,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'institution': None,
         'project': None,
         'validate_only': False,
+        'upload_folder': None,
     })
     expect_call_args = {
         'bundle_filename': 'some-file',
@@ -52,6 +53,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'institution': "some-institution",
         'project': "some-project",
         'validate_only': True,
+        'upload_folder': None,
     }
     test_it(args_in=["--env", "some-env", "--institution", "some-institution",
                      "-s", "some-server", "-v", "-p", "some-project",
@@ -61,6 +63,27 @@ def test_submit_metadata_bundle_script(keyfile):
             expect_call_args=expect_call_args)
     test_it(args_in=["some-file", "--env", "some-env", "--institution", "some-institution",
                      "-s", "some-server", "--validate-only", "--project", "some-project"],
+            expect_exit_code=0,
+            expect_called=True,
+            expect_call_args=expect_call_args)
+    expect_call_args = {
+        'bundle_filename': 'some-file',
+        'env': "some-env",
+        'server': "some-server",
+        'institution': "some-institution",
+        'project': "some-project",
+        'validate_only': True,
+        'upload_folder': 'a-folder',
+    }
+    test_it(args_in=["--env", "some-env", "--institution", "some-institution",
+                     "-s", "some-server", "-v", "-p", "some-project", '-u', 'a-folder',
+                     'some-file'],
+            expect_exit_code=0,
+            expect_called=True,
+            expect_call_args=expect_call_args)
+    test_it(args_in=["some-file", "--env", "some-env", "--institution", "some-institution",
+                     "-s", "some-server", "--validate-only", "--project", "some-project",
+                     '--upload_folder', 'a-folder'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)

@@ -7,6 +7,17 @@ Change Log
 ----------
 
 
+0.6.0
+=====
+
+**PR 8: SubmitCGAP file upload bug**
+
+* Add ``--upload_folder`` argument to the ``resume-uploads``
+  and ``submit-metadata-bundle`` scripts.
+* Fix bug `SubmitCGAP file upload bug (C4-383) <https://hms-dbmi.atlassian.net/browse/C4-383>`_.
+* Add ``make retest`` to re-run test cases that have failed.
+
+
 0.5.0
 =====
 
