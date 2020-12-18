@@ -12,7 +12,7 @@ from dcicutils.beanstalk_utils import get_beanstalk_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.lang_utils import n_of
-from dcicutils.misc_utils import check_true, environ_bool, PRINT
+from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join
 from .auth import get_keydict_for_server, keydict_to_keypair
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
 from .exceptions import CGAPPermissionError
@@ -212,24 +212,6 @@ def script_catch_errors():
     except Exception as e:
         show("%s: %s" % (e.__class__.__name__, str(e)))
         exit(1)
-
-
-def url_path_join(*fragments):
-    """
-    Concatenates its arguments, returning a string with exactly one slash ('/') separating each of the path fragments.
-
-    So, whether the path_fragments are ('foo', 'bar') or ('foo/', 'bar') or ('foo', '/bar') or ('foo/', '/bar')
-    or even ('foo//', '///bar'), the result will be 'foo/bar'. The left side of the first thing and the
-    right side of the last thing are unaffected.
-
-    :param fragments: a list of URL path fragments
-    :return: a slash-separated concatentation of the given path fragments
-    """
-    fragments = fragments or ("",)
-    result = fragments[0]  # Tolerate an empty list
-    for thing in fragments[1:]:
-        result = result.rstrip("/") + "/" + thing.lstrip("/")
-    return result
 
 
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
