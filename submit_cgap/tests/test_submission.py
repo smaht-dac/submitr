@@ -770,7 +770,7 @@ def test_upload_item_data():
                     assert mock_upload.call_count == 0
 
 
-def test_submit_metadata_bundle():
+def test_submit_metadata_bundle_old():
 
     with shown_output() as shown:
         with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
@@ -790,7 +790,7 @@ def test_submit_metadata_bundle():
 
                     assert shown.lines == ["Aborting submission."]
 
-    def mocked_post(url, auth, data, files):
+    def mocked_post(url, auth, data, headers, files):
         # We only expect requests.post to be called on one particular URL, so this definition is very specialized
         # mostly just to check that we're being called on what we think so we can return something highly specific
         # with some degree of confidence. -kmp 6-Sep-2020
@@ -798,7 +798,477 @@ def test_submit_metadata_bundle():
         assert auth == SOME_AUTH
         ignored(data)
         assert isinstance(files, dict) and 'datafile' in files and isinstance(files['datafile'], io.BytesIO)
+        assert headers == {'Content-type': 'application/json'}
         return FakeResponse(201, json={'submission_id': SOME_UUID})
+
+    partial_res = {
+        'submission_id': SOME_UUID,
+        "processing_status": {
+            "state": "processing",
+            "outcome": "unknown",
+            "progress": "not done yet",
+        }
+    }
+
+    final_res = {
+        'submission_id': SOME_UUID,
+        "additional_data": {
+            "validation_output": [],
+            "post_output": [],
+            "upload_info": SOME_UPLOAD_INFO,
+        },
+        "processing_status": {
+            "state": "done",
+            "outcome": "success",
+            "progress": "irrelevant"
+        }
+    }
+
+    error_res = {
+        'submission_id': SOME_UUID,
+        'errors': [
+            "ouch"
+        ],
+        "additional_data": {
+            "validation_output": [],
+            "post_output": [],
+            "upload_info": SOME_UPLOAD_INFO,
+        },
+        "processing_status": {
+            "state": "done",
+            "outcome": "error",
+            "progress": "irrelevant"
+        }
+    }
+
+    def make_mocked_get(success=True, done_after_n_tries=1):
+        if success:
+            responses = (partial_res,) * (done_after_n_tries - 1) + (final_res,)
+        else:
+            responses = (partial_res,) * (done_after_n_tries - 1) + (error_res,)
+        response_maker = make_alternator(*responses)
+
+        def mocked_get(url, auth):
+            print("in mocked_get, url=", url, "auth=", auth)
+            assert auth == SOME_AUTH
+            if url.endswith("/me?format=json"):
+                return FakeResponse(200, json=make_user_record(
+                    project=SOME_PROJECT,
+                    user_institution=[
+                        {'@id': SOME_INSTITUTION}
+                    ]
+                ))
+            else:
+                assert url.endswith('/ingestion-submissions/' + SOME_UUID + "?format=json")
+                return FakeResponse(200, json=response_maker())
+        return mocked_get
+
+    mfs = MockFileSystem()
+
+    dt = ControlledTime()
+
+    # TODO: Will says he wants explanatory doc here and elsewhere with a big cascade like this.
+    with mock.patch("os.path.exists", mfs.exists):
+        with mock.patch("io.open", mfs.open):
+            with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                        with mock.patch.object(submission_module, "get_keydict_for_server",
+                                               return_value=SOME_KEYDICT):
+                            with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                                with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                                    with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                           return_value=SOME_KEYDICT):
+                                        with mock.patch("requests.post", mocked_post):
+                                            with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
+                                                try:
+                                                    submit_metadata_bundle(SOME_BUNDLE_FILENAME,
+                                                                           institution=SOME_INSTITUTION,
+                                                                           project=SOME_PROJECT,
+                                                                           server=SOME_SERVER,
+                                                                           env=None,
+                                                                           validate_only=False)
+                                                except ValueError as e:
+                                                    # submit_metadata_bundle will raise ValueError if its
+                                                    # bundle_filename argument is not the name of a
+                                                    # metadata bundle file. We did nothing in this mock to
+                                                    # create the file SOME_BUNDLE_FILENAME, so we expect something
+                                                    # like: "The file '/some-folder/foo.xls' does not exist."
+                                                    assert "does not exist" in str(e)
+                                                else:  # pragma: no cover
+                                                    raise AssertionError("Expected ValueError did not happen.")
+
+    # This tests the normal case with validate_only=False and a successful result.
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", mocked_post):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        try:
+                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
+                                                                                   institution=SOME_INSTITUTION,
+                                                                                   project=SOME_PROJECT,
+                                                                                   server=SOME_SERVER,
+                                                                                   env=None,
+                                                                                   validate_only=False)
+                                                        except SystemExit as e:  # pragma: no cover
+                                                            # This is just in case. In fact it's more likely
+                                                            # that a normal 'return' not 'exit' was done.
+                                                            assert e.code == 0
+
+                                                        assert mock_do_any_uploads.call_count == 1
+                                                        mock_do_any_uploads.assert_called_with(
+                                                            final_res,
+                                                            bundle_filename=SOME_BUNDLE_FILENAME,
+                                                            keydict=SOME_KEYDICT
+                                                        )
+        assert shown.lines == [
+            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
+            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
+            # 1 second after we started our virtual clock...
+            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:17 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:33 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:49 Final status: success',
+            # Output from uploads is not present because we mocked that out.
+            # See test of the call to the uploader higher up.
+        ]
+
+    dt.reset_datetime()
+
+    # This tests the normal case with validate_only=False and a post error due to multipart/form-data unsupported,
+    # a symptom of the metadata bundle submission protocol being unsupported.
+
+    def unsupported_media_type(*args, **kwargs):
+        ignored(args, kwargs)
+        return FakeResponse(415, json={
+            "status": "error",
+            "title": "Unsupported Media Type",
+            "detail": "Request content type multipart/form-data is not 'application/json'"
+        })
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", unsupported_media_type):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
+                                                                                    success=False)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        try:
+                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
+                                                                                   institution=SOME_INSTITUTION,
+                                                                                   project=SOME_PROJECT,
+                                                                                   server=SOME_SERVER,
+                                                                                   env=None,
+                                                                                   validate_only=False)
+                                                        except Exception as e:
+                                                            assert "raised for status" in str(e)
+                                                        else:  # pragma: no cover
+                                                            raise AssertionError("Expected error did not occur.")
+
+                                                        assert mock_do_any_uploads.call_count == 0
+        assert shown.lines == [
+            "The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.",
+            "Unsupported Media Type: Request content type multipart/form-data is not 'application/json'",
+            "NOTE: This error is known to occur if the server does not support metadata bundle submission."
+        ]
+
+    dt.reset_datetime()
+
+    # This tests the normal case with validate_only=False and a post error for some unknown reason.
+
+    def mysterious_error(*args, **kwargs):
+        ignored(args, kwargs)
+        return FakeResponse(400, json={
+            "status": "error",
+            "title": "Mysterious Error",
+            "detail": "If I told you, there'd be no mystery."
+        })
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", mysterious_error):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
+                                                                                    success=False)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        try:
+                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
+                                                                                   institution=SOME_INSTITUTION,
+                                                                                   project=SOME_PROJECT,
+                                                                                   server=SOME_SERVER,
+                                                                                   env=None,
+                                                                                   validate_only=False)
+                                                        except Exception as e:
+                                                            assert "raised for status" in str(e)
+                                                        else:  # pragma: no cover
+                                                            raise AssertionError("Expected error did not occur.")
+
+                                                        assert mock_do_any_uploads.call_count == 0
+        assert shown.lines == [
+            "The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.",
+            "Mysterious Error: If I told you, there'd be no mystery.",
+        ]
+
+    dt.reset_datetime()
+
+    # This tests the normal case with validate_only=False and an error result.
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", mocked_post):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
+                                                                                    success=False)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        try:
+                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
+                                                                                   institution=SOME_INSTITUTION,
+                                                                                   project=SOME_PROJECT,
+                                                                                   server=SOME_SERVER,
+                                                                                   env=None,
+                                                                                   validate_only=False)
+                                                        except SystemExit as e:  # pragma: no cover
+                                                            # This is just in case. In fact it's more likely
+                                                            # that a normal 'return' not 'exit' was done.
+                                                            assert e.code == 0
+
+                                                        assert mock_do_any_uploads.call_count == 0
+        assert shown.lines == [
+            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
+            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
+            # 1 second after we started our virtual clock...
+            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:17 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:33 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:49 Final status: error',
+            # Output from uploads is not present because we mocked that out.
+            # See test of the call to the uploader higher up.
+        ]
+
+    dt.reset_datetime()
+
+    # This tests the normal case with validate_only=True
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", mocked_post):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        try:
+                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
+                                                                                   institution=SOME_INSTITUTION,
+                                                                                   project=SOME_PROJECT,
+                                                                                   server=SOME_SERVER,
+                                                                                   env=None,
+                                                                                   validate_only=True)
+                                                        except SystemExit as e:  # pragma: no cover
+                                                            assert e.code == 0
+                                                        # It's also OK if it doesn't do an exit(0)
+
+                                                        # For validation only, we won't have tried uploads.
+                                                        assert mock_do_any_uploads.call_count == 0
+        assert shown.lines == [
+            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
+            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
+            # 1 second after we started our virtual clock...
+            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:17 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:33 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:49 Final status: success',
+            # Output from uploads is not present because we mocked that out.
+            # See test of the call to the uploader higher up.
+        ]
+
+    dt.reset_datetime()
+
+    # This tests what happens if the normal case times out.
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", mocked_post):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=10)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        try:
+                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
+                                                                                   institution=SOME_INSTITUTION,
+                                                                                   project=SOME_PROJECT,
+                                                                                   server=SOME_SERVER,
+                                                                                   env=None,
+                                                                                   validate_only=False)
+                                                        except SystemExit as e:
+                                                            # We expect to time out for too many waits before success.
+                                                            assert e.code == 1
+
+                                                        assert mock_do_any_uploads.call_count == 0
+        assert shown.lines == [
+            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
+            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
+            # 1 second after we started our virtual clock...
+            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:17 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:33 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:49 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:01:05 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:01:21 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:01:37 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:01:53 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:02:09 Progress is not done yet. Continuing to wait...',
+            # After 1 second to recheck the time...
+            '12:02:10 Timed out after 8 tries.',
+        ]
+
+
+def test_submit_metadata_bundle_new():
+
+    with shown_output() as shown:
+        with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+            with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                with mock.patch.object(submission_module, "yes_or_no", return_value=False):
+                    try:
+                        submit_metadata_bundle(SOME_BUNDLE_FILENAME,
+                                               institution=SOME_INSTITUTION,
+                                               project=SOME_PROJECT,
+                                               server=SOME_SERVER,
+                                               env=None,
+                                               validate_only=False)
+                    except SystemExit as e:
+                        assert e.code == 1
+                    else:
+                        raise AssertionError("Expected SystemExit did not happen.")  # pragma: no cover
+
+                    assert shown.lines == ["Aborting submission."]
+
+    def mocked_post(url, auth, data=None, json=None, files=None, headers=None):
+        ignored(data, json)
+        content_type = headers and headers.get('Content-type')
+        if content_type:
+            assert content_type == 'application/json'
+        if url.endswith("/IngestionSubmission"):
+            return FakeResponse(201,
+                                json={
+                                    "status": "success",
+                                    "@type": ["result"],
+                                    "@graph": [
+                                        {
+                                            "institution": SOME_INSTITUTION,
+                                            "project": SOME_PROJECT,
+                                            "ingestion_type": "metadata_bundle",
+                                            "processing_status": {
+                                                "state": "created",
+                                                "outcome": "unknown",
+                                                "progress": "unavailable"
+                                            },
+                                            "result": {},
+                                            "errors": [],
+                                            "additional_data": {},
+                                            "@id": "/ingestion-submissions/" + SOME_UUID,
+                                            "@type": ["IngestionSubmission", "Item"],
+                                            "uuid": SOME_UUID,
+                                            # ... other properties not needed ...
+                                        }
+                                    ]
+                                })
+        elif url.endswith("/submit_for_ingestion"):
+            # We only expect requests.post to be called on one particular URL, so this definition is very specialized
+            # mostly just to check that we're being called on what we think so we can return something highly specific
+            # with some degree of confidence. -kmp 6-Sep-2020
+            m = re.match(".*/ingestion-submissions/([a-f0-9-]*)/submit_for_ingestion$", url)
+            if m:
+                assert m.group(1) == SOME_UUID
+                assert auth == SOME_AUTH
+                assert isinstance(files, dict) and 'datafile' in files and isinstance(files['datafile'], io.BytesIO)
+                return FakeResponse(201, json={'submission_id': SOME_UUID})
+            else:
+                # Old protocol used
+                return FakeResponse(404, json={})
 
     partial_res = {
         'submission_id': SOME_UUID,

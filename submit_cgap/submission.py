@@ -12,7 +12,7 @@ from dcicutils.beanstalk_utils import get_beanstalk_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.lang_utils import n_of
-from dcicutils.misc_utils import check_true, environ_bool
+from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join
 from .auth import get_keydict_for_server, keydict_to_keypair
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
 from .exceptions import CGAPPermissionError
@@ -201,7 +201,7 @@ def show_section(res, section, caveat_outcome=None):
 
 
 def ingestion_submission_item_url(server, uuid):
-    return server + "/ingestion-submissions/" + uuid + "?format=json"
+    return url_path_join(server, "ingestion-submissions", uuid) + "?format=json"
 
 
 @contextlib.contextmanager
@@ -212,6 +212,85 @@ def script_catch_errors():
     except Exception as e:
         show("%s: %s" % (e.__class__.__name__, str(e)))
         exit(1)
+
+
+DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
+
+
+def _post_submission(server, keypair, bundle_filename, creation_post_data, submission_post_data):
+    """ This takes care of managing the compatibility step of using either the old or new ingestion protocol.
+
+    OLD PROTOCOL: Post directly to /submit_for_ingestion
+
+    NEW PROTOCOL: Create an IngestionSubmission and then use /ingestion-submissions/<guid>/submit_for_ingestion
+
+    :param server: the name of the server as a URL
+    :param keypair: a tuple which is a keypair (key_id, secret_key)
+    :param bundle_filename: the bundle filename to be submitted
+    :param creation_post_data: data to become part of the post data for the creation
+    :param submission_post_data: data to become part of the post data for the ingestion
+    :return: the results of the ingestion call (whether by the one-step or two-step process)
+    """
+
+    def post_files_data():
+        return {"datafile": io.open(bundle_filename, 'rb')}
+
+    old_style_submission_url = url_path_join(server, "submit_for_ingestion")
+    old_style_post_data = dict(creation_post_data, **submission_post_data)
+
+    response = requests.post(old_style_submission_url,
+                             auth=keypair,
+                             data=old_style_post_data,
+                             headers={'Content-type': 'application/json'},
+                             files=post_files_data())
+
+    if DEBUG_PROTOCOL:
+        PRINT("old_style_submission_url=", old_style_submission_url)
+        PRINT("old_style_post_data=", json.dumps(old_style_post_data, indent=2))
+        PRINT("keypair=", keypair)
+        PRINT("response=", response)
+
+    if response.status_code == 404:
+
+        if DEBUG_PROTOCOL:
+            PRINT("Retrying with new protocol.")
+
+        creation_post_headers = {
+            'Content-type': 'application/json',
+            'Accept':  'application/json',
+        }
+        creation_post_url = url_path_join(server, "IngestionSubmission")
+        if DEBUG_PROTOCOL:
+            PRINT("creation_post_data=", json.dumps(creation_post_data, indent=2))
+            PRINT("creation_post_url=", creation_post_url)
+        creation_response = requests.post(creation_post_url, auth=keypair,
+                                          headers=creation_post_headers,
+                                          json=creation_post_data
+                                          # data=json.dumps(creation_post_data)
+                                          )
+        if DEBUG_PROTOCOL:
+            PRINT("headers:", creation_response.request.headers)
+        creation_response.raise_for_status()
+        [submission] = creation_response.json()['@graph']
+        submission_id = submission['@id']
+
+        if DEBUG_PROTOCOL:
+            PRINT("server=", server, "submission_id=", submission_id)
+        new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
+        if DEBUG_PROTOCOL:
+            PRINT("submitting new_style_submission_url=", new_style_submission_url)
+        response = requests.post(new_style_submission_url, auth=keypair, data=submission_post_data,
+                                 files=post_files_data())
+        if DEBUG_PROTOCOL:
+            PRINT("response received for submission post:", response)
+            PRINT("response.content:", response.content)
+
+    else:
+
+        if DEBUG_PROTOCOL:
+            PRINT("Old style protocol worked.")
+
+    return response
 
 
 def submit_metadata_bundle(bundle_filename, institution, project, server, env, validate_only):
@@ -247,44 +326,53 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
         if not os.path.exists(bundle_filename):
             raise ValueError("The file '%s' does not exist." % bundle_filename)
 
-        post_files = {
-            "datafile": io.open(bundle_filename, 'rb')
-        }
+        response = _post_submission(server=server, keypair=keypair,
+                                    bundle_filename=bundle_filename,
+                                    creation_post_data={
+                                        'ingestion_type': 'metadata_bundle',
+                                        'institution': institution,
+                                        'project': project,
+                                        "processing_status": {
+                                            "state": "submitted"
+                                        }
+                                    },
+                                    submission_post_data={
+                                        'validate_only': validate_only,
+                                    })
 
-        post_data = {
-            'ingestion_type': 'metadata_bundle',
-            'institution': institution,
-            'project': project,
-            'validate_only': validate_only,
-        }
-
-        submission_url = server + "/submit_for_ingestion"
-
-        response = requests.post(submission_url, auth=keypair, data=post_data, files=post_files)
-        res = response.json()
+        try:
+            # This can fail if the body doesn't contain JSON
+            res = response.json()
+        except Exception:
+            res = None
 
         try:
             response.raise_for_status()
         except Exception:
-            # For example, if you call this on an old version of cgap-portal that does not support this request,
-            # the error will be a 415 error, because the tween code defaultly insists on applicatoin/json:
-            # {
-            #     "@type": ["HTTPUnsupportedMediaType", "Error"],
-            #     "status": "error",
-            #     "code": 415,
-            #     "title": "Unsupported Media Type",
-            #     "description": "",
-            #     "detail": "Request content type multipart/form-data is not 'application/json'"
-            # }
-            title = res.get('title')
-            message = title
-            detail = res.get('detail')
-            if detail:
-                message += ": " + detail
-            show(message)
-            if title == "Unsupported Media Type":
-                show("NOTE: This error is known to occur if the server does not support metadata bundle submission.")
+            if res is not None:
+                # For example, if you call this on an old version of cgap-portal that does not support this request,
+                # the error will be a 415 error, because the tween code defaultly insists on applicatoin/json:
+                # {
+                #     "@type": ["HTTPUnsupportedMediaType", "Error"],
+                #     "status": "error",
+                #     "code": 415,
+                #     "title": "Unsupported Media Type",
+                #     "description": "",
+                #     "detail": "Request content type multipart/form-data is not 'application/json'"
+                # }
+                title = res.get('title')
+                message = title
+                detail = res.get('detail')
+                if detail:
+                    message += ": " + detail
+                show(message)
+                if title == "Unsupported Media Type":
+                    show("NOTE: This error is known to occur if the server"
+                         " does not support metadata bundle submission.")
             raise
+
+        if res is None:
+            raise Exception("Bad JSON body in %s submission result." % response.status_code)
 
         uuid = res['submission_id']
 
