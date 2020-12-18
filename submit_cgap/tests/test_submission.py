@@ -867,6 +867,7 @@ def test_submit_metadata_bundle_old():
 
     dt = ControlledTime()
 
+    # TODO: Will says he wants explanatory doc here and elsewhere with a big cascade like this.
     with mock.patch("os.path.exists", mfs.exists):
         with mock.patch("io.open", mfs.open):
             with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
