@@ -5,7 +5,6 @@ from dcicutils.misc_utils import ignored
 from dcicutils.qa_utils import override_environ, MockResponse
 from unittest import mock
 from .. import submission as submission_module
-from ..auth import get_keydict_for_server
 from ..base import KeyManager
 from ..scripts.resume_uploads import main as resume_uploads_main
 from ..scripts import resume_uploads as resume_uploads_module
