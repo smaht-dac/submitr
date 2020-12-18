@@ -511,7 +511,7 @@ def execute_prearranged_upload(path, upload_credentials):
         show("Going to upload %s to %s." % (source, target))
         subprocess.check_call(['aws', 's3', 'cp', '--only-show-errors', source, target], env=env)
     except subprocess.CalledProcessError as e:
-        show("Upload failed with exit code %d" % e.returncode)
+        raise RuntimeError("Upload failed with exit code %d" % e.returncode)
     else:
         end = time.time()
         duration = end - start

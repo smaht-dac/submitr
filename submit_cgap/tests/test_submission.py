@@ -4,7 +4,7 @@ import os
 import pytest
 import re
 
-from dcicutils.qa_utils import override_environ, ignored, ControlledTime, MockFileSystem, local_attrs
+from dcicutils.qa_utils import override_environ, ignored, ControlledTime, MockFileSystem, local_attrs, raises_regexp
 from unittest import mock
 from .test_utils import shown_output
 from .. import submission as submission_module
@@ -600,14 +600,14 @@ def test_execute_prearranged_upload():
         with shown_output() as shown:
             with mock.patch("time.time", MockTime().time):
                 with mock.patch("subprocess.call", return_value=17) as mock_aws_call:
-                    execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
+                    with raises_regexp(RuntimeError, "Upload failed with exit code 17"):
+                        execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
                     mock_aws_call.assert_called_with(
                         ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
                         env=SOME_ENVIRON_WITH_CREDS
                     )
                     assert shown.lines == [
                         "Going to upload some-filename to some-url.",
-                        "Upload failed with exit code 17"
                     ]
 
 
