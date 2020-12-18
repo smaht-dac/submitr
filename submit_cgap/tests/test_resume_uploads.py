@@ -125,6 +125,7 @@ INGESTION_FRAGMENT_WITH_UPLOAD_INFO = {
     }
 }
 
+
 def test_c4_383_regression_action():
     """
     Check that bug C4-383 is really fixed.
@@ -145,9 +146,12 @@ def test_c4_383_regression_action():
                 with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                     with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload_file_to_uuid:
                         with mock.patch("requests.get") as mock_requests_get:
+
                             def mocked_requests_get(url, *args, **kwargs):
+                                ignored(args, kwargs)
                                 assert "ingestion-submissions" in url
                                 return MockResponse(200, json=INGESTION_FRAGMENT_WITH_UPLOAD_INFO)
+
                             mock_requests_get.side_effect = mocked_requests_get
                             local_server = "http://localhost:8000"
                             try:
