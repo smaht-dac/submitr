@@ -14,7 +14,7 @@ Change Log
 
 * Add ``--upload_folder`` argument to the ``resume-uploads``
   and ``submit-metadata-bundle`` scripts.
-* Fix bug `C4-383 <https://hms-dbmi.atlassian.net/browse/C4-383>`_.
+* Fix bug `SubmitCGAP file upload bug (C4-383) <https://hms-dbmi.atlassian.net/browse/C4-383>`_.
 
 
 0.5.0
