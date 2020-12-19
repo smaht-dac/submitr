@@ -469,7 +469,7 @@ def test_do_any_uploads():
             do_any_uploads(
                 res={'additional_info': {'upload_info': []}},
                 keydict=SOME_KEYDICT,
-                bundle_filename=SOME_BUNDLE_FILENAME
+                ingestion_filename=SOME_BUNDLE_FILENAME
             )
             assert mock_yes_or_no.call_count == 0
             assert mock_uploads.call_count == 0
@@ -480,7 +480,7 @@ def test_do_any_uploads():
                 do_any_uploads(
                     res={'additional_data': {'upload_info': [{'uuid': '1234', 'filename': 'f1.fastq.gz'}]}},
                     keydict=SOME_KEYDICT,
-                    bundle_filename=SOME_BUNDLE_FILENAME
+                    ingestion_filename=SOME_BUNDLE_FILENAME
                 )
                 mock_yes_or_no.assert_called_with("Upload 1 file?")
                 assert mock_uploads.call_count == 0
@@ -495,7 +495,7 @@ def test_do_any_uploads():
                 do_any_uploads(
                     res=SOME_UPLOAD_INFO_RESULT,
                     keydict=SOME_KEYDICT,
-                    bundle_filename=SOME_BUNDLE_FILENAME,  # from which a folder can be inferred
+                    ingestion_filename=SOME_BUNDLE_FILENAME,  # from which a folder can be inferred
                 )
                 mock_yes_or_no.assert_called_with("Upload %s files?" % n_uploads)
                 mock_uploads.assert_called_with(
@@ -509,7 +509,7 @@ def test_do_any_uploads():
                 do_any_uploads(
                     res=SOME_UPLOAD_INFO_RESULT,
                     keydict=SOME_KEYDICT,
-                    upload_folder=SOME_OTHER_BUNDLE_FOLDER,  # rather than bundle_filename
+                    upload_folder=SOME_OTHER_BUNDLE_FOLDER,  # rather than ingestion_filename
                 )
                 mock_yes_or_no.assert_called_with("Upload %s files?" % n_uploads)
                 mock_uploads.assert_called_with(
@@ -523,7 +523,7 @@ def test_do_any_uploads():
                 do_any_uploads(
                     res=SOME_UPLOAD_INFO_RESULT,
                     keydict=SOME_KEYDICT,
-                    # No bundle_filename or bundle_folder
+                    # No ingestion_filename or bundle_folder
                 )
                 mock_yes_or_no.assert_called_with("Upload %s files?" % n_uploads)
                 mock_uploads.assert_called_with(
@@ -547,7 +547,7 @@ def test_resume_uploads():
                         mock_do_any_uploads.assert_called_with(
                             some_response_json,
                             keydict=SOME_KEYDICT,
-                            bundle_filename=SOME_BUNDLE_FILENAME,
+                            ingestion_filename=SOME_BUNDLE_FILENAME,
                             upload_folder=None,
                         )
 
@@ -933,7 +933,7 @@ def test_submit_metadata_bundle_old():
                                                         assert mock_do_any_uploads.call_count == 1
                                                         mock_do_any_uploads.assert_called_with(
                                                             final_res,
-                                                            bundle_filename=SOME_BUNDLE_FILENAME,
+                                                            ingestion_filename=SOME_BUNDLE_FILENAME,
                                                             keydict=SOME_KEYDICT,
                                                             upload_folder=None,
                                                         )
@@ -1410,7 +1410,7 @@ def test_submit_metadata_bundle_new():
                                                         assert mock_do_any_uploads.call_count == 1
                                                         mock_do_any_uploads.assert_called_with(
                                                             final_res,
-                                                            bundle_filename=SOME_BUNDLE_FILENAME,
+                                                            ingestion_filename=SOME_BUNDLE_FILENAME,
                                                             keydict=SOME_KEYDICT,
                                                             upload_folder=None,
                                                         )

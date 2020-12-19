@@ -217,7 +217,7 @@ def script_catch_errors():
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
 
 
-def _post_submission(server, keypair, bundle_filename, creation_post_data, submission_post_data):
+def _post_submission(server, keypair, ingestion_filename, creation_post_data, submission_post_data):
     """ This takes care of managing the compatibility step of using either the old or new ingestion protocol.
 
     OLD PROTOCOL: Post directly to /submit_for_ingestion
@@ -226,14 +226,14 @@ def _post_submission(server, keypair, bundle_filename, creation_post_data, submi
 
     :param server: the name of the server as a URL
     :param keypair: a tuple which is a keypair (key_id, secret_key)
-    :param bundle_filename: the bundle filename to be submitted
+    :param ingestion_filename: the bundle filename to be submitted
     :param creation_post_data: data to become part of the post data for the creation
     :param submission_post_data: data to become part of the post data for the ingestion
     :return: the results of the ingestion call (whether by the one-step or two-step process)
     """
 
     def post_files_data():
-        return {"datafile": io.open(bundle_filename, 'rb')}
+        return {"datafile": io.open(ingestion_filename, 'rb')}
 
     old_style_submission_url = url_path_join(server, "submit_for_ingestion")
     old_style_post_data = dict(creation_post_data, **submission_post_data)
@@ -305,6 +305,13 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
     :param validate_only: whether to do stop after validation instead of proceeding to post metadata
     :param upload_folder: folder in which to find files to upload (default: same as bundle_filename)
     """
+    submit_any_ingestion(ingestion_filename=bundle_filename, ingestion_type='metadata_bundle',
+                         institution=institution, project=project, server=server,
+                         env=env, validate_only=validate_only, upload_folder=upload_folder)
+
+
+def submit_any_ingestion(ingestion_filename, ingestion_type, institution, project, server, env, validate_only,
+                         upload_folder=None):
 
     with script_catch_errors():
 
@@ -312,7 +319,7 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
 
         validation_qualifier = " (for validation only)" if validate_only else ""
 
-        if not yes_or_no("Submit %s to %s%s?" % (bundle_filename, server, validation_qualifier)):
+        if not yes_or_no("Submit %s to %s%s?" % (ingestion_filename, server, validation_qualifier)):
             show("Aborting submission.")
             exit(1)
 
@@ -324,13 +331,13 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
         institution = get_defaulted_institution(institution, user_record)
         project = get_defaulted_project(project, user_record)
 
-        if not os.path.exists(bundle_filename):
-            raise ValueError("The file '%s' does not exist." % bundle_filename)
+        if not os.path.exists(ingestion_filename):
+            raise ValueError("The file '%s' does not exist." % ingestion_filename)
 
         response = _post_submission(server=server, keypair=keypair,
-                                    bundle_filename=bundle_filename,
+                                    ingestion_filename=ingestion_filename,
                                     creation_post_data={
-                                        'ingestion_type': 'metadata_bundle',
+                                        'ingestion_type': ingestion_type,
                                         'institution': institution,
                                         'project': project,
                                         "processing_status": {
@@ -420,17 +427,17 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
 
         if outcome == 'success':
             show_section(res, 'upload_info')
-            do_any_uploads(res, keydict=keydict, bundle_filename=bundle_filename, upload_folder=upload_folder)
+            do_any_uploads(res, keydict=keydict, ingestion_filename=ingestion_filename, upload_folder=upload_folder)
 
         exit(0)
 
 
 def show_upload_info(uuid, server=None, env=None, keydict=None):
     """
-    Uploads the files associated with a given metadata_bundle. This is useful if you answered "no" to the query
+    Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
 
-    :param uuid: a string guid that identifies the metadata_bundle's ingestion_submission
+    :param uuid: a string guid that identifies the ingestion submission
     :param server: the server to upload to
     :param env: the beanstalk environment to upload to
     :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
@@ -450,27 +457,27 @@ def show_upload_info(uuid, server=None, env=None, keydict=None):
             show("No uploads.")
 
 
-def do_any_uploads(res, keydict, upload_folder=None, bundle_filename=None):
+def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None):
     upload_info = get_section(res, 'upload_info')
     if upload_info:
         if yes_or_no("Upload %s?" % n_of(len(upload_info), "file")):
             do_uploads(upload_info, auth=keydict,
-                       folder=upload_folder or (os.path.dirname(bundle_filename) if bundle_filename else None))
+                       folder=upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None))
         else:
             show("No uploads attempted.")
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None, upload_folder=None):
     """
-    Uploads the files associated with a given metadata_bundle. This is useful if you answered "no" to the query
+    Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
 
-    :param uuid: a string guid that identifies the metadata_bundle's ingestion_submission
+    :param uuid: a string guid that identifies the ingestion submission
     :param server: the server to upload to
     :param env: the beanstalk environment to upload to
-    :param bundle_filename: th metadata_bundle file to be uploaded
+    :param bundle_filename: the bundle file to be uploaded
     :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
-    :param upload_folder: folder in which to find files to upload (default: same as bundle_filename)
+    :param upload_folder: folder in which to find files to upload (default: same as ingestion_filename)
     """
 
     with script_catch_errors():
@@ -483,7 +490,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
         response.raise_for_status()
         do_any_uploads(response.json(),
                        keydict=keydict,
-                       bundle_filename=bundle_filename,
+                       ingestion_filename=bundle_filename,
                        upload_folder=upload_folder)
 
 
