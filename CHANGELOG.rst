@@ -7,6 +7,15 @@ Change Log
 ----------
 
 
+0.7.1
+=====
+
+**PR 10: Fix scripts/publish**
+
+* Fix the ``scripts/publish`` script to work on GitHub Actions (GA)
+  by allowing a ``--noconfirm`` argument.
+
+
 0.7.0
 =====
 
