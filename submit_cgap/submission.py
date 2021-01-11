@@ -293,11 +293,13 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     return response
 
 
-def submit_metadata_bundle(bundle_filename, institution, project, server, env, validate_only, upload_folder=None):
+def submit_any_ingestion(ingestion_filename, ingestion_type, institution, project, server, env, validate_only,
+                         upload_folder=None):
     """
     Does the core action of submitting a metadata bundle.
 
-    :param bundle_filename: the name of the bundle file (.xls file) to be uploaded
+    :param ingestion_filename: the name of the main data file to be ingested
+    :param ingestion_type: the type of ingestion to be performed (an ingestion_type in the IngestionSubmission schema)
     :param institution: the @id of the institution for which the submission is being done
     :param project: the @id of the project for which the submission is being done
     :param server: the server to upload to
@@ -305,13 +307,6 @@ def submit_metadata_bundle(bundle_filename, institution, project, server, env, v
     :param validate_only: whether to do stop after validation instead of proceeding to post metadata
     :param upload_folder: folder in which to find files to upload (default: same as bundle_filename)
     """
-    submit_any_ingestion(ingestion_filename=bundle_filename, ingestion_type='metadata_bundle',
-                         institution=institution, project=project, server=server,
-                         env=env, validate_only=validate_only, upload_folder=upload_folder)
-
-
-def submit_any_ingestion(ingestion_filename, ingestion_type, institution, project, server, env, validate_only,
-                         upload_folder=None):
 
     with script_catch_errors():
 
