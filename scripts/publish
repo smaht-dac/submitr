@@ -12,7 +12,7 @@ while true; do
        echo "In a script, you may want --noconfirm to suppress this query."
        exit 1
     elif [ "$1" = "--noconfirm" ]; then
-       do_confirm=yes
+       do_confirm=no
        shift 1
     elif [ $# -ne 0 ]; then
        echo "Unexpected argument: $1"
