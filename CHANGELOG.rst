@@ -7,6 +7,14 @@ Change Log
 ----------
 
 
+0.7.0
+=====
+
+**PR 9: SubmitCGAP --ingestion_type argument**
+
+* Add ``--ingestion_type`` argument to ``submit-metadata-bundle``.
+
+
 0.6.0
 =====
 
