@@ -3,6 +3,7 @@ import pytest
 from dcicutils.misc_utils import ignored
 from dcicutils.qa_utils import override_environ
 from unittest import mock
+from ..submission import DEFAULT_INGESTION_TYPE
 from ..base import KeyManager
 from ..scripts.submit_metadata_bundle import main as submit_metadata_bundle_main
 from ..scripts import submit_metadata_bundle as submit_metadata_bundle_module
@@ -39,7 +40,7 @@ def test_submit_metadata_bundle_script(keyfile):
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
     test_it(args_in=['some-file'], expect_exit_code=0, expect_called=True, expect_call_args={
         'ingestion_filename': 'some-file',
-        'ingestion_type': 'metadata_bundle',
+        'ingestion_type': DEFAULT_INGESTION_TYPE,
         'env': None,
         'server': None,
         'institution': None,
@@ -49,7 +50,7 @@ def test_submit_metadata_bundle_script(keyfile):
     })
     expect_call_args = {
         'ingestion_filename': 'some-file',
-        'ingestion_type': 'metadata_bundle',
+        'ingestion_type': DEFAULT_INGESTION_TYPE,
         'env': "some-env",
         'server': "some-server",
         'institution': "some-institution",
@@ -70,7 +71,7 @@ def test_submit_metadata_bundle_script(keyfile):
             expect_call_args=expect_call_args)
     expect_call_args = {
         'ingestion_filename': 'some-file',
-        'ingestion_type': 'metadata_bundle',
+        'ingestion_type': DEFAULT_INGESTION_TYPE,
         'env': "some-env",
         'server': "some-server",
         'institution': "some-institution",

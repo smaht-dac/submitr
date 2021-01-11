@@ -1262,7 +1262,7 @@ def test_submit_any_ingestion_new_protocol():
                                         {
                                             "institution": SOME_INSTITUTION,
                                             "project": SOME_PROJECT,
-                                            "ingestion_type": "metadata_bundle",
+                                            "ingestion_type": 'metadata_bundle',
                                             "processing_status": {
                                                 "state": "created",
                                                 "outcome": "unknown",

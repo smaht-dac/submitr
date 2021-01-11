@@ -293,6 +293,9 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     return response
 
 
+DEFAULT_INGESTION_TYPE = 'metadata_bundle'
+
+
 def submit_any_ingestion(ingestion_filename, ingestion_type, institution, project, server, env, validate_only,
                          upload_folder=None):
     """
@@ -314,7 +317,12 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
 
         validation_qualifier = " (for validation only)" if validate_only else ""
 
-        if not yes_or_no("Submit %s to %s%s?" % (ingestion_filename, server, validation_qualifier)):
+        maybe_ingestion_type = ''
+        if ingestion_type != DEFAULT_INGESTION_TYPE:
+            maybe_ingestion_type = " (%s)" % ingestion_type
+
+        if not yes_or_no("Submit %s%s to %s%s?"
+                         % (ingestion_filename, maybe_ingestion_type, server, validation_qualifier)):
             show("Aborting submission.")
             exit(1)
 

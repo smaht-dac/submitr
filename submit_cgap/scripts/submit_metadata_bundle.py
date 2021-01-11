@@ -1,5 +1,5 @@
 import argparse
-from ..submission import submit_any_ingestion
+from ..submission import submit_any_ingestion, DEFAULT_INGESTION_TYPE
 from ..base import UsingCGAPKeysFile
 
 
@@ -21,7 +21,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--validate-only', '-v', action="store_true",
                         help="whether to stop after validating without submitting", default=False)
     parser.add_argument('--upload_folder', '-u', help="location of the upload files", default=None)
-    parser.add_argument('--ingestion_type', '-t', help="the ingestion type", default='metadata_bundle')
+    parser.add_argument('--ingestion_type', '-t', help="the ingestion type", default=DEFAULT_INGESTION_TYPE)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     return submit_any_ingestion(ingestion_filename=args.bundle_filename, ingestion_type=args.ingestion_type,
