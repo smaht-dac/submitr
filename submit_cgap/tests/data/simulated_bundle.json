@@ -1,5 +1,5 @@
 {
-    "success": "true",
+    "success": true,
     "validation_output": ["Some validation stuff"],
     "post_output": ["Some post stuff", "More post stuff"],
     "upload_info": {},
