@@ -13,7 +13,7 @@ from ..exceptions import CGAPPermissionError
 from ..submission import (
     SERVER_REGEXP, get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info,
     execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url,
-    resolve_server, resume_uploads, script_catch_errors, show_section, submit_metadata_bundle,
+    resolve_server, resume_uploads, script_catch_errors, show_section, submit_any_ingestion,
     upload_file_to_uuid, upload_item_data, PROGRESS_CHECK_INTERVAL
 )
 from ..utils import FakeResponse
@@ -469,7 +469,7 @@ def test_do_any_uploads():
             do_any_uploads(
                 res={'additional_info': {'upload_info': []}},
                 keydict=SOME_KEYDICT,
-                bundle_filename=SOME_BUNDLE_FILENAME
+                ingestion_filename=SOME_BUNDLE_FILENAME
             )
             assert mock_yes_or_no.call_count == 0
             assert mock_uploads.call_count == 0
@@ -480,7 +480,7 @@ def test_do_any_uploads():
                 do_any_uploads(
                     res={'additional_data': {'upload_info': [{'uuid': '1234', 'filename': 'f1.fastq.gz'}]}},
                     keydict=SOME_KEYDICT,
-                    bundle_filename=SOME_BUNDLE_FILENAME
+                    ingestion_filename=SOME_BUNDLE_FILENAME
                 )
                 mock_yes_or_no.assert_called_with("Upload 1 file?")
                 assert mock_uploads.call_count == 0
@@ -495,7 +495,7 @@ def test_do_any_uploads():
                 do_any_uploads(
                     res=SOME_UPLOAD_INFO_RESULT,
                     keydict=SOME_KEYDICT,
-                    bundle_filename=SOME_BUNDLE_FILENAME,  # from which a folder can be inferred
+                    ingestion_filename=SOME_BUNDLE_FILENAME,  # from which a folder can be inferred
                 )
                 mock_yes_or_no.assert_called_with("Upload %s files?" % n_uploads)
                 mock_uploads.assert_called_with(
@@ -509,7 +509,7 @@ def test_do_any_uploads():
                 do_any_uploads(
                     res=SOME_UPLOAD_INFO_RESULT,
                     keydict=SOME_KEYDICT,
-                    upload_folder=SOME_OTHER_BUNDLE_FOLDER,  # rather than bundle_filename
+                    upload_folder=SOME_OTHER_BUNDLE_FOLDER,  # rather than ingestion_filename
                 )
                 mock_yes_or_no.assert_called_with("Upload %s files?" % n_uploads)
                 mock_uploads.assert_called_with(
@@ -523,7 +523,7 @@ def test_do_any_uploads():
                 do_any_uploads(
                     res=SOME_UPLOAD_INFO_RESULT,
                     keydict=SOME_KEYDICT,
-                    # No bundle_filename or bundle_folder
+                    # No ingestion_filename or bundle_folder
                 )
                 mock_yes_or_no.assert_called_with("Upload %s files?" % n_uploads)
                 mock_uploads.assert_called_with(
@@ -547,7 +547,7 @@ def test_resume_uploads():
                         mock_do_any_uploads.assert_called_with(
                             some_response_json,
                             keydict=SOME_KEYDICT,
-                            bundle_filename=SOME_BUNDLE_FILENAME,
+                            ingestion_filename=SOME_BUNDLE_FILENAME,
                             upload_folder=None,
                         )
 
@@ -771,19 +771,21 @@ def test_upload_item_data():
                     assert mock_upload.call_count == 0
 
 
-def test_submit_metadata_bundle_old():
+def test_submit_any_ingestion_old_protocol():
 
     with shown_output() as shown:
         with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                 with mock.patch.object(submission_module, "yes_or_no", return_value=False):
                     try:
-                        submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                               institution=SOME_INSTITUTION,
-                                               project=SOME_PROJECT,
-                                               server=SOME_SERVER,
-                                               env=None,
-                                               validate_only=False)
+                        submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                             ingestion_type='metadata_bundle',
+                                             institution=SOME_INSTITUTION,
+                                             project=SOME_PROJECT,
+                                             server=SOME_SERVER,
+                                             env=None,
+                                             validate_only=False,
+                                             )
                     except SystemExit as e:
                         assert e.code == 1
                     else:
@@ -883,14 +885,16 @@ def test_submit_metadata_bundle_old():
                                         with mock.patch("requests.post", mocked_post):
                                             with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
                                                 try:
-                                                    submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                                                           institution=SOME_INSTITUTION,
-                                                                           project=SOME_PROJECT,
-                                                                           server=SOME_SERVER,
-                                                                           env=None,
-                                                                           validate_only=False)
+                                                    submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                         ingestion_type='metadata_bundle',
+                                                                         institution=SOME_INSTITUTION,
+                                                                         project=SOME_PROJECT,
+                                                                         server=SOME_SERVER,
+                                                                         env=None,
+                                                                         validate_only=False,
+                                                                         )
                                                 except ValueError as e:
-                                                    # submit_metadata_bundle will raise ValueError if its
+                                                    # submit_any_ingestion will raise ValueError if its
                                                     # bundle_filename argument is not the name of a
                                                     # metadata bundle file. We did nothing in this mock to
                                                     # create the file SOME_BUNDLE_FILENAME, so we expect something
@@ -919,12 +923,14 @@ def test_submit_metadata_bundle_old():
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
-                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                                                                   institution=SOME_INSTITUTION,
-                                                                                   project=SOME_PROJECT,
-                                                                                   server=SOME_SERVER,
-                                                                                   env=None,
-                                                                                   validate_only=False)
+                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                 ingestion_type='metadata_bundle',
+                                                                                 institution=SOME_INSTITUTION,
+                                                                                 project=SOME_PROJECT,
+                                                                                 server=SOME_SERVER,
+                                                                                 env=None,
+                                                                                 validate_only=False,
+                                                                                 )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
                                                             # that a normal 'return' not 'exit' was done.
@@ -933,7 +939,7 @@ def test_submit_metadata_bundle_old():
                                                         assert mock_do_any_uploads.call_count == 1
                                                         mock_do_any_uploads.assert_called_with(
                                                             final_res,
-                                                            bundle_filename=SOME_BUNDLE_FILENAME,
+                                                            ingestion_filename=SOME_BUNDLE_FILENAME,
                                                             keydict=SOME_KEYDICT,
                                                             upload_folder=None,
                                                         )
@@ -984,12 +990,14 @@ def test_submit_metadata_bundle_old():
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
-                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                                                                   institution=SOME_INSTITUTION,
-                                                                                   project=SOME_PROJECT,
-                                                                                   server=SOME_SERVER,
-                                                                                   env=None,
-                                                                                   validate_only=False)
+                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                 ingestion_type='metadata_bundle',
+                                                                                 institution=SOME_INSTITUTION,
+                                                                                 project=SOME_PROJECT,
+                                                                                 server=SOME_SERVER,
+                                                                                 env=None,
+                                                                                 validate_only=False,
+                                                                                 )
                                                         except Exception as e:
                                                             assert "raised for status" in str(e)
                                                         else:  # pragma: no cover
@@ -1033,12 +1041,14 @@ def test_submit_metadata_bundle_old():
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
-                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                                                                   institution=SOME_INSTITUTION,
-                                                                                   project=SOME_PROJECT,
-                                                                                   server=SOME_SERVER,
-                                                                                   env=None,
-                                                                                   validate_only=False)
+                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                 ingestion_type='metadata_bundle',
+                                                                                 institution=SOME_INSTITUTION,
+                                                                                 project=SOME_PROJECT,
+                                                                                 server=SOME_SERVER,
+                                                                                 env=None,
+                                                                                 validate_only=False,
+                                                                                 )
                                                         except Exception as e:
                                                             assert "raised for status" in str(e)
                                                         else:  # pragma: no cover
@@ -1073,14 +1083,15 @@ def test_submit_metadata_bundle_old():
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
-                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                                                                   institution=SOME_INSTITUTION,
-                                                                                   project=SOME_PROJECT,
-                                                                                   server=SOME_SERVER,
-                                                                                   env=None,
-                                                                                   validate_only=False,
-                                                                                   upload_folder=None,
-                                                                                   )
+                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                 ingestion_type='metadata_bundle',
+                                                                                 institution=SOME_INSTITUTION,
+                                                                                 project=SOME_PROJECT,
+                                                                                 server=SOME_SERVER,
+                                                                                 env=None,
+                                                                                 validate_only=False,
+                                                                                 upload_folder=None,
+                                                                                 )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
                                                             # that a normal 'return' not 'exit' was done.
@@ -1124,14 +1135,15 @@ def test_submit_metadata_bundle_old():
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
-                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                                                                   institution=SOME_INSTITUTION,
-                                                                                   project=SOME_PROJECT,
-                                                                                   server=SOME_SERVER,
-                                                                                   env=None,
-                                                                                   validate_only=True,
-                                                                                   upload_folder=None,
-                                                                                   )
+                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                 ingestion_type='metadata_bundle',
+                                                                                 institution=SOME_INSTITUTION,
+                                                                                 project=SOME_PROJECT,
+                                                                                 server=SOME_SERVER,
+                                                                                 env=None,
+                                                                                 validate_only=True,
+                                                                                 upload_folder=None,
+                                                                                 )
                                                         except SystemExit as e:  # pragma: no cover
                                                             assert e.code == 0
                                                         # It's also OK if it doesn't do an exit(0)
@@ -1175,14 +1187,15 @@ def test_submit_metadata_bundle_old():
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
-                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                                                                   institution=SOME_INSTITUTION,
-                                                                                   project=SOME_PROJECT,
-                                                                                   server=SOME_SERVER,
-                                                                                   env=None,
-                                                                                   validate_only=False,
-                                                                                   upload_folder=None,
-                                                                                   )
+                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                 ingestion_type='metadata_bundle',
+                                                                                 institution=SOME_INSTITUTION,
+                                                                                 project=SOME_PROJECT,
+                                                                                 server=SOME_SERVER,
+                                                                                 env=None,
+                                                                                 validate_only=False,
+                                                                                 upload_folder=None,
+                                                                                 )
                                                         except SystemExit as e:
                                                             # We expect to time out for too many waits before success.
                                                             assert e.code == 1
@@ -1214,19 +1227,20 @@ def test_submit_metadata_bundle_old():
         ]
 
 
-def test_submit_metadata_bundle_new():
+def test_submit_any_ingestion_new_protocol():
 
     with shown_output() as shown:
         with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                 with mock.patch.object(submission_module, "yes_or_no", return_value=False):
                     try:
-                        submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                               institution=SOME_INSTITUTION,
-                                               project=SOME_PROJECT,
-                                               server=SOME_SERVER,
-                                               env=None,
-                                               validate_only=False)
+                        submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                             ingestion_type='metadata_bundle',
+                                             institution=SOME_INSTITUTION,
+                                             project=SOME_PROJECT,
+                                             server=SOME_SERVER,
+                                             env=None,
+                                             validate_only=False)
                     except SystemExit as e:
                         assert e.code == 1
                     else:
@@ -1248,7 +1262,7 @@ def test_submit_metadata_bundle_new():
                                         {
                                             "institution": SOME_INSTITUTION,
                                             "project": SOME_PROJECT,
-                                            "ingestion_type": "metadata_bundle",
+                                            "ingestion_type": 'metadata_bundle',
                                             "processing_status": {
                                                 "state": "created",
                                                 "outcome": "unknown",
@@ -1358,14 +1372,15 @@ def test_submit_metadata_bundle_new():
                                         with mock.patch("requests.post", mocked_post):
                                             with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
                                                 try:
-                                                    submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                                                           institution=SOME_INSTITUTION,
-                                                                           project=SOME_PROJECT,
-                                                                           server=SOME_SERVER,
-                                                                           env=None,
-                                                                           validate_only=False)
+                                                    submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                         ingestion_type='metadata_bundle',
+                                                                         institution=SOME_INSTITUTION,
+                                                                         project=SOME_PROJECT,
+                                                                         server=SOME_SERVER,
+                                                                         env=None,
+                                                                         validate_only=False)
                                                 except ValueError as e:
-                                                    # submit_metadata_bundle will raise ValueError if its
+                                                    # submit_any_ingestion will raise ValueError if its
                                                     # bundle_filename argument is not the name of a
                                                     # metadata bundle file. We did nothing in this mock to
                                                     # create the file SOME_BUNDLE_FILENAME, so we expect something
@@ -1394,14 +1409,15 @@ def test_submit_metadata_bundle_new():
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
-                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                                                                   institution=SOME_INSTITUTION,
-                                                                                   project=SOME_PROJECT,
-                                                                                   server=SOME_SERVER,
-                                                                                   env=None,
-                                                                                   validate_only=False,
-                                                                                   upload_folder=None,
-                                                                                   )
+                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                 ingestion_type='metadata_bundle',
+                                                                                 institution=SOME_INSTITUTION,
+                                                                                 project=SOME_PROJECT,
+                                                                                 server=SOME_SERVER,
+                                                                                 env=None,
+                                                                                 validate_only=False,
+                                                                                 upload_folder=None,
+                                                                                 )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
                                                             # that a normal 'return' not 'exit' was done.
@@ -1410,7 +1426,7 @@ def test_submit_metadata_bundle_new():
                                                         assert mock_do_any_uploads.call_count == 1
                                                         mock_do_any_uploads.assert_called_with(
                                                             final_res,
-                                                            bundle_filename=SOME_BUNDLE_FILENAME,
+                                                            ingestion_filename=SOME_BUNDLE_FILENAME,
                                                             keydict=SOME_KEYDICT,
                                                             upload_folder=None,
                                                         )
@@ -1461,14 +1477,15 @@ def test_submit_metadata_bundle_new():
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
-                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                                                                   institution=SOME_INSTITUTION,
-                                                                                   project=SOME_PROJECT,
-                                                                                   server=SOME_SERVER,
-                                                                                   env=None,
-                                                                                   validate_only=False,
-                                                                                   upload_folder=None,
-                                                                                   )
+                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                 ingestion_type='metadata_bundle',
+                                                                                 institution=SOME_INSTITUTION,
+                                                                                 project=SOME_PROJECT,
+                                                                                 server=SOME_SERVER,
+                                                                                 env=None,
+                                                                                 validate_only=False,
+                                                                                 upload_folder=None,
+                                                                                 )
                                                         except Exception as e:
                                                             assert "raised for status" in str(e)
                                                         else:  # pragma: no cover
@@ -1512,14 +1529,15 @@ def test_submit_metadata_bundle_new():
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
-                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                                                                   institution=SOME_INSTITUTION,
-                                                                                   project=SOME_PROJECT,
-                                                                                   server=SOME_SERVER,
-                                                                                   env=None,
-                                                                                   validate_only=False,
-                                                                                   upload_folder=None,
-                                                                                   )
+                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                 ingestion_type='metadata_bundle',
+                                                                                 institution=SOME_INSTITUTION,
+                                                                                 project=SOME_PROJECT,
+                                                                                 server=SOME_SERVER,
+                                                                                 env=None,
+                                                                                 validate_only=False,
+                                                                                 upload_folder=None,
+                                                                                 )
                                                         except Exception as e:
                                                             assert "raised for status" in str(e)
                                                         else:  # pragma: no cover
@@ -1554,14 +1572,15 @@ def test_submit_metadata_bundle_new():
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
-                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                                                                   institution=SOME_INSTITUTION,
-                                                                                   project=SOME_PROJECT,
-                                                                                   server=SOME_SERVER,
-                                                                                   env=None,
-                                                                                   validate_only=False,
-                                                                                   upload_folder=None,
-                                                                                   )
+                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                 ingestion_type='metadata_bundle',
+                                                                                 institution=SOME_INSTITUTION,
+                                                                                 project=SOME_PROJECT,
+                                                                                 server=SOME_SERVER,
+                                                                                 env=None,
+                                                                                 validate_only=False,
+                                                                                 upload_folder=None,
+                                                                                 )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
                                                             # that a normal 'return' not 'exit' was done.
@@ -1605,14 +1624,15 @@ def test_submit_metadata_bundle_new():
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
-                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                                                                   institution=SOME_INSTITUTION,
-                                                                                   project=SOME_PROJECT,
-                                                                                   server=SOME_SERVER,
-                                                                                   env=None,
-                                                                                   validate_only=True,
-                                                                                   upload_folder=None,
-                                                                                   )
+                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                 ingestion_type='metadata_bundle',
+                                                                                 institution=SOME_INSTITUTION,
+                                                                                 project=SOME_PROJECT,
+                                                                                 server=SOME_SERVER,
+                                                                                 env=None,
+                                                                                 validate_only=True,
+                                                                                 upload_folder=None,
+                                                                                 )
                                                         except SystemExit as e:  # pragma: no cover
                                                             assert e.code == 0
                                                         # It's also OK if it doesn't do an exit(0)
@@ -1656,14 +1676,15 @@ def test_submit_metadata_bundle_new():
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
-                                                            submit_metadata_bundle(SOME_BUNDLE_FILENAME,
-                                                                                   institution=SOME_INSTITUTION,
-                                                                                   project=SOME_PROJECT,
-                                                                                   server=SOME_SERVER,
-                                                                                   env=None,
-                                                                                   validate_only=False,
-                                                                                   upload_folder=None,
-                                                                                   )
+                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                 ingestion_type='metadata_bundle',
+                                                                                 institution=SOME_INSTITUTION,
+                                                                                 project=SOME_PROJECT,
+                                                                                 server=SOME_SERVER,
+                                                                                 env=None,
+                                                                                 validate_only=False,
+                                                                                 upload_folder=None,
+                                                                                 )
                                                         except SystemExit as e:
                                                             # We expect to time out for too many waits before success.
                                                             assert e.code == 1
