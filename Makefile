@@ -23,6 +23,9 @@ update:  # updates dependencies
 publish:
 	scripts/publish
 
+publish-for-ga:
+	scripts/publish --noconfirm
+
 help:
 	@make info
 
@@ -33,5 +36,5 @@ info:
 	   $(info - Use 'make build' to install dependencies using poetry.)
 	   $(info - Use 'make publish' to publish this library, but only if auto-publishing has failed.)
 	   $(info - Use 'make retest' to run failing tests from the previous test run.)
-	   $(info - Use 'make test' to run tests with the normal options we use on travis)
+	   $(info - Use 'make test' to run tests with the normal options we use for CI/CD like GA.)
 	   $(info - Use 'make update' to update dependencies (and the lock file))

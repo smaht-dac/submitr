@@ -7,6 +7,20 @@ Change Log
 ----------
 
 
+0.7.3
+=====
+
+**PR 10: Fix scripts/publish (C4-512)**
+
+* Fix the ``scripts/publish`` script to work on GitHub Actions (GA)
+  by allowing a ``--noconfirm`` argument.
+
+
+0.7.1, 0.7.2
+============
+
+These versions had flaws. The intended changes were released as version 0.7.3.
+
 0.7.0
 =====
 
