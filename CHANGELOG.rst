@@ -7,7 +7,7 @@ Change Log
 ----------
 
 
-0.7.2
+0.7.3
 =====
 
 **PR 10: Fix scripts/publish (C4-512)**
@@ -16,11 +16,10 @@ Change Log
   by allowing a ``--noconfirm`` argument.
 
 
-0.7.1
-=====
+0.7.1, 0.7.2
+============
 
-This PR had problems and was reissued as version 0.7.2.
-
+These versions had flaws. The intended changes were released as version 0.7.3.
 
 0.7.0
 =====
