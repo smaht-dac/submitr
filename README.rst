@@ -4,7 +4,7 @@ SubmitCGAP
 
 
 A file submission tool for CGAP
--------------------------------
+===============================
 
 .. image:: https://travis-ci.org/dbmi-bgm/SubmitCGAP.svg
    :target: https://travis-ci.org/dbmi-bgm/SubmitCGAP
@@ -23,20 +23,22 @@ Description
 
 This is a tool for uploading certain kinds of files to CGAP.
 
-Initial support is for "metadata bundles", which are Excel files
-(such as .xls or .xlsx files)
-that are accompanied by other files (such as ``.fastq.gz`` files).
+Current support is for "metadata bundles" and "gene lists".
+"Metadata bundles" are Excel files (``.xlsx``) accompanied by other files 
+(such as ``.fastq.gz`` files). 
+"Gene lists" are either Excel files (``.xlsx``) or plain text (``.txt``) files.
 
 
 About Metadata Bundles
 ======================
+"Metadata bundles" are Excel files (``.xlsx``) accompanied by other files 
+(such as ``.fastq.gz`` files). 
 
-.. note::
-
-   The format of the Excel files that are used as
-   "metadata bundles" is not yet documented.
-   For now you should begin by obtaining a template file from
-   your contact on the CGAP Team and then customize that as appropriate.
+**Note:**
+The format of the Excel files that are used as
+"metadata bundles" is not yet documented.
+For now you should begin by obtaining a template file from
+your contact on the CGAP Team and then customize that as appropriate.
 
 Installation
 ============
@@ -71,8 +73,13 @@ Getting Started
 ===============
 
 Once ``poetry`` has finished installing this library into your virtual environment,
-you should have access to the ``submit-metadata-bundle`` command.
-For help about its arguments, do::
+you should have access to the ``submit-metadata-bundle`` and the ``submit-genelist``
+commands.
+
+Metadata Bundles
+----------------
+
+For help about arguments, do::
 
    submit-metadata-bundle --help
 
@@ -107,3 +114,19 @@ or::
    upload-item-data <filename> --uuid <item-uuid> --server <server>
 
 where the ``<item-uuid>`` is the uuid for the individual item, not the metadata bundle.
+
+Gene Lists
+----------
+
+The ``submit-genelist`` command shares similar features with ``submit-metadata-bundle``.
+For help about arguments, do::
+
+   submit-genelist --help
+
+and to submit a gene list for validation only, do::
+
+   submit-genelist --validate-only
+
+For most situations, simply specify the gene list you want to upload, e.g.::
+
+   submit-genelist mygenelist.xlsx

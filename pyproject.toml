@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "submit_cgap"
-version = "0.7.3"
+version = "0.8.0"
 description = "Support for uploading file submissions to the Clinical Genomics Analysis Platform (CGAP)."
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
@@ -83,6 +83,7 @@ resume-uploads = "submit_cgap.scripts.resume_uploads:main"
 show-upload-info = "submit_cgap.scripts.show_upload_info:main"
 submit-metadata-bundle = "submit_cgap.scripts.submit_metadata_bundle:main"
 upload-item-data = "submit_cgap.scripts.upload_item_data:main"
+submit-genelist = "submit_cgap.scripts.submit_genelist:main"
 
 [tool.coverage.report]
 
