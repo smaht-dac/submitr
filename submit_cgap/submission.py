@@ -297,7 +297,7 @@ DEFAULT_INGESTION_TYPE = 'metadata_bundle'
 
 
 def submit_any_ingestion(ingestion_filename, ingestion_type, institution, project, server, env, validate_only,
-                         upload_folder=None):
+                         upload_folder=None, remote=False):
     """
     Does the core action of submitting a metadata bundle.
 
@@ -321,10 +321,11 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
         if ingestion_type != DEFAULT_INGESTION_TYPE:
             maybe_ingestion_type = " (%s)" % ingestion_type
 
-        if not yes_or_no("Submit %s%s to %s%s?"
-                         % (ingestion_filename, maybe_ingestion_type, server, validation_qualifier)):
-            show("Aborting submission.")
-            exit(1)
+        if not remote:
+            if not yes_or_no("Submit %s%s to %s%s?"
+                             % (ingestion_filename, maybe_ingestion_type, server, validation_qualifier)):
+                show("Aborting submission.")
+                exit(1)
 
         keydict = get_keydict_for_server(server)
         keypair = keydict_to_keypair(keydict)
@@ -430,7 +431,8 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
 
         if outcome == 'success':
             show_section(res, 'upload_info')
-            do_any_uploads(res, keydict=keydict, ingestion_filename=ingestion_filename, upload_folder=upload_folder)
+            do_any_uploads(res, keydict=keydict, ingestion_filename=ingestion_filename,
+                           upload_folder=upload_folder, remote=remote)
 
         exit(0)
 
@@ -460,17 +462,22 @@ def show_upload_info(uuid, server=None, env=None, keydict=None):
             show("No uploads.")
 
 
-def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None):
+def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, remote=False):
     upload_info = get_section(res, 'upload_info')
     if upload_info:
-        if yes_or_no("Upload %s?" % n_of(len(upload_info), "file")):
-            do_uploads(upload_info, auth=keydict,
+        if remote:
+            do_uploads(upload_info, auth=keydict, remote=remote,
                        folder=upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None))
         else:
-            show("No uploads attempted.")
+            if yes_or_no("Upload %s?" % n_of(len(upload_info), "file")):
+            do_uploads(upload_info, auth=keydict, remote=remote,
+                       folder=upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None))
+            else:
+                show("No uploads attempted.")
 
 
-def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None, upload_folder=None):
+def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
+                   upload_folder=None, remote=False):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -481,6 +488,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     :param bundle_filename: the bundle file to be uploaded
     :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
     :param upload_folder: folder in which to find files to upload (default: same as ingestion_filename)
+    :param remote: bool to suppress requests for user input
     """
 
     with script_catch_errors():
@@ -494,7 +502,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
         do_any_uploads(response.json(),
                        keydict=keydict,
                        ingestion_filename=bundle_filename,
-                       upload_folder=upload_folder)
+                       upload_folder=upload_folder,
+                       remote=remote)
 
 
 def execute_prearranged_upload(path, upload_credentials):
@@ -555,7 +564,7 @@ def upload_file_to_uuid(filename, uuid, auth):
 CGAP_SELECTIVE_UPLOADS = environ_bool("CGAP_SELECTIVE_UPLOADS")
 
 
-def do_uploads(upload_spec_list, auth, folder=None):
+def do_uploads(upload_spec_list, auth, folder=None, remote=False):
     """
     Uploads the files mentioned in the give upload_spec_list.
 
@@ -564,14 +573,16 @@ def do_uploads(upload_spec_list, auth, folder=None):
     :param auth: a dictionary-form auth spec, of the form {'key': ..., 'secret': ..., 'server': ...}
         representing destination and credentials.
     :param folder: a string naming a folder in which to find the filenames to be uploaded.
+    :param remote: bool to suppress requests for user input
     :return: None
     """
     for upload_spec in upload_spec_list:
         filename = os.path.join(folder or os.path.curdir, upload_spec['filename'])
         uuid = upload_spec['uuid']
-        if CGAP_SELECTIVE_UPLOADS and not yes_or_no("Upload %s?" % (filename,)):
-            show("OK, not uploading it.")
-            continue
+        if not remote:
+            if CGAP_SELECTIVE_UPLOADS and not yes_or_no("Upload %s?" % (filename,)):
+                show("OK, not uploading it.")
+                continue
         try:
             show("Uploading %s to item %s ..." % (filename, uuid))
             upload_file_to_uuid(filename=filename, uuid=uuid, auth=auth)
@@ -580,7 +591,7 @@ def do_uploads(upload_spec_list, auth, folder=None):
             show("%s: %s" % (e.__class__.__name__, e))
 
 
-def upload_item_data(item_filename, uuid, server, env):
+def upload_item_data(item_filename, uuid, server, env, remote=False):
     """
     Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
 
@@ -590,6 +601,7 @@ def upload_item_data(item_filename, uuid, server, env):
     :param uuid: the UUID of the Item with which the uploaded data is to be associated
     :param server: the server to upload to (where the Item is defined)
     :param env: the beanstalk environment to upload to (where the Item is defined)
+    :param remote: bool to suppress requests for user input
     :return:
     """
 
@@ -599,8 +611,9 @@ def upload_item_data(item_filename, uuid, server, env):
 
     # print("keydict=", json.dumps(keydict, indent=2))
 
-    if not yes_or_no("Upload %s to %s?" % (item_filename, server)):
-        show("Aborting submission.")
-        exit(1)
+    if not remote:
+        if not yes_or_no("Upload %s to %s?" % (item_filename, server)):
+            show("Aborting submission.")
+            exit(1)
 
     upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=keydict)
