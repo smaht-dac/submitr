@@ -17,7 +17,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--uuid', '-u', help='uuid identifier', default=None)
     parser.add_argument('--server', '-s', help="an http or https address of the server to use", default=None)
     parser.add_argument('--env', '-e', help="a CGAP beanstalk environment name for the server to use", default=None)
-    parses.add_argument('--remote', '-r', action="store_true",
+    parser.add_argument('--remote', '-r', action="store_true",
                         help="suppress requests for user input", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 

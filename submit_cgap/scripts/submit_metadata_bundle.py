@@ -22,7 +22,7 @@ def main(simulated_args_for_testing=None):
                         help="whether to stop after validating without submitting", default=False)
     parser.add_argument('--upload_folder', '-u', help="location of the upload files", default=None)
     parser.add_argument('--ingestion_type', '-t', help="the ingestion type", default=DEFAULT_INGESTION_TYPE)
-    parses.add_argument('--remote', '-r', action="store_true",
+    parser.add_argument('--remote', '-r', action="store_true",
                         help="suppress requests for user input", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
