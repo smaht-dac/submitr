@@ -23,7 +23,7 @@ def main(simulated_args_for_testing=None):
     args = parser.parse_args(args=simulated_args_for_testing)
 
     resume_uploads(uuid=args.uuid, server=args.server, env=args.env, bundle_filename=args.bundle_filename,
-                   upload_folder=args.upload_folder)
+                   upload_folder=args.upload_folder, remote=args.remote)
 
 
 if __name__ == '__main__':

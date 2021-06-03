@@ -30,7 +30,7 @@ def main(simulated_args_for_testing=None):
                                 institution=args.institution, project=args.project,
                                 server=args.server, env=args.env,
                                 validate_only=args.validate_only, upload_folder=args.upload_folder,
-                                remote=remote,
+                                remote=args.remote,
                                 )
 
 
