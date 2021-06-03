@@ -471,8 +471,8 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, re
                        folder=upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None))
         else:
             if yes_or_no("Upload %s?" % n_of(len(upload_info), "file")):
-            do_uploads(upload_info, auth=keydict, remote=remote,
-                       folder=upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None))
+                do_uploads(upload_info, auth=keydict, remote=remote,
+                           folder=upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None))
             else:
                 show("No uploads attempted.")
 
