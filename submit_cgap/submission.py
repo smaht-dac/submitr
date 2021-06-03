@@ -309,6 +309,7 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
     :param env: the beanstalk environment to upload to
     :param validate_only: whether to do stop after validation instead of proceeding to post metadata
     :param upload_folder: folder in which to find files to upload (default: same as bundle_filename)
+    :param remote: bool to suppress requests for user input
     """
 
     with script_catch_errors():
