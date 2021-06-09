@@ -47,6 +47,7 @@ def test_resume_uploads_script(keyfile):
         'server': None,
         'uuid': 'some-guid',
         'upload_folder': None,
+        'remote': False,
     })
     expect_call_args = {
         'bundle_filename': 'some.file',
@@ -54,6 +55,7 @@ def test_resume_uploads_script(keyfile):
         'server': None,
         'uuid': 'some-guid',
         'upload_folder': None,
+        'remote': False,
     }
     test_it(args_in=['-b', 'some.file', 'some-guid'],
             expect_exit_code=0,
@@ -69,6 +71,7 @@ def test_resume_uploads_script(keyfile):
         'server': None,
         'uuid': 'some-guid',
         'upload_folder': None,
+        'remote': False,
     }
     test_it(args_in=['some-guid', '-b', 'some.file', '-e', 'some-env'],
             expect_exit_code=0,
@@ -84,6 +87,7 @@ def test_resume_uploads_script(keyfile):
         'server': 'http://some.server',
         'uuid': 'some-guid',
         'upload_folder': None,
+        'remote': False,
     }
     test_it(args_in=['some-guid', '-b', 'some.file', '-e', 'some-env', '-s', 'http://some.server'],
             expect_exit_code=0,
@@ -99,6 +103,7 @@ def test_resume_uploads_script(keyfile):
         'server': 'http://some.server',
         'uuid': 'some-guid',
         'upload_folder': 'a-folder',
+        'remote': False,
     }
     test_it(args_in=['some-guid', '-b', 'some.file', '-e', 'some-env', '-s', 'http://some.server', '-u', 'a-folder'],
             expect_exit_code=0,
@@ -106,6 +111,18 @@ def test_resume_uploads_script(keyfile):
             expect_call_args=expect_call_args)
     test_it(args_in=['-b', 'some.file', '-e', 'some-env', '-s', 'http://some.server', 'some-guid',
                      '--upload_folder', 'a-folder'],
+            expect_exit_code=0,
+            expect_called=True,
+            expect_call_args=expect_call_args)
+    expect_call_args = {
+        'bundle_filename': 'some.file',
+        'env': None,
+        'server': 'http://some.server',
+        'uuid': 'some-guid',
+        'upload_folder': 'a-folder',
+        'remote': True,
+    }
+    test_it(args_in=['some-guid', '-b', 'some.file', '-s', 'http://some.server', '-u', 'a-folder', '-r'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)

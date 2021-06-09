@@ -502,6 +502,7 @@ def test_do_any_uploads():
                     SOME_UPLOAD_INFO,
                     auth=SOME_KEYDICT,
                     folder=SOME_BUNDLE_FILENAME_FOLDER,  # the folder part of given SOME_BUNDLE_FILENAME
+                    remote=False,
                 )
                 assert shown.lines == []
 
@@ -516,6 +517,7 @@ def test_do_any_uploads():
                     SOME_UPLOAD_INFO,
                     auth=SOME_KEYDICT,
                     folder=SOME_OTHER_BUNDLE_FOLDER,  # passed straight through
+                    remote=False,
                 )
                 assert shown.lines == []
 
@@ -530,8 +532,44 @@ def test_do_any_uploads():
                     SOME_UPLOAD_INFO,
                     auth=SOME_KEYDICT,
                     folder=None,  # No folder
+                    remote=False,
                 )
                 assert shown.lines == []
+
+            with shown_output() as shown:
+                do_any_uploads(
+                    res=SOME_UPLOAD_INFO_RESULT,
+                    keydict=SOME_KEYDICT,
+                    ingestion_filename=SOME_BUNDLE_FILENAME,  # from which a folder can be inferred
+                    remote=False
+                )
+                mock_uploads.assert_called_with(
+                    SOME_UPLOAD_INFO,
+                    auth=SOME_KEYDICT,
+                    folder=SOME_BUNDLE_FILENAME_FOLDER,  # the folder part of given SOME_BUNDLE_FILENAME
+                    remote=False,
+                )
+                assert shown.lines == []
+
+    with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
+
+        n_uploads = len(SOME_UPLOAD_INFO)
+
+        with shown_output() as shown:
+            do_any_uploads(
+                res=SOME_UPLOAD_INFO_RESULT,
+                keydict=SOME_KEYDICT,
+                ingestion_filename=SOME_BUNDLE_FILENAME,  # from which a folder can be inferred
+                remote=True,
+            )
+            mock_uploads.assert_called_with(
+                SOME_UPLOAD_INFO,
+                auth=SOME_KEYDICT,
+                folder=SOME_BUNDLE_FILENAME_FOLDER,  # the folder part of given SOME_BUNDLE_FILENAME
+                remote=True,
+            )
+            assert shown.lines == []
+
 
 
 def test_resume_uploads():
@@ -549,6 +587,7 @@ def test_resume_uploads():
                             keydict=SOME_KEYDICT,
                             ingestion_filename=SOME_BUNDLE_FILENAME,
                             upload_folder=None,
+                            remote=False,
                         )
 
     with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
@@ -705,6 +744,23 @@ def test_do_uploads():
                     'Upload of ./baz.fastq.gz to item 3456 was successful.',
                 ]
 
+    with mock_uploads() as mock_uploaded:
+        with shown_output() as shown:
+            do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_AUTH, remote=True)
+            assert mock_uploaded == {
+                '1234': './foo.fastq.gz',
+                '2345': './bar.fastq.gz',
+                '3456': './baz.fastq.gz'
+            }
+            assert shown.lines == [
+                'Uploading ./foo.fastq.gz to item 1234 ...',
+                'Upload of ./foo.fastq.gz to item 1234 was successful.',
+                'Uploading ./bar.fastq.gz to item 2345 ...',
+                'Upload of ./bar.fastq.gz to item 2345 was successful.',
+                'Uploading ./baz.fastq.gz to item 3456 ...',
+                'Upload of ./baz.fastq.gz to item 3456 was successful.',
+            ]
+
     with local_attrs(submission_module, CGAP_SELECTIVE_UPLOADS=True):
         with mock.patch.object(submission_module, "yes_or_no", make_alternator(True, False)):
             with mock_uploads() as mock_uploaded:
@@ -770,6 +826,18 @@ def test_upload_item_data():
                     mock_get.assert_called_with(SOME_SERVER)
                     assert mock_upload.call_count == 0
 
+    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER) as mock_resolve:
+        with mock.patch.object(submission_module, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
+            with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
+
+                upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID,
+                                 server=SOME_SERVER, env=SOME_ENV, remote=True)
+
+                mock_resolve.assert_called_with(env=SOME_ENV, server=SOME_SERVER)
+                mock_get.assert_called_with(SOME_SERVER)
+                mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID,
+                                               auth=SOME_KEYDICT)
+
 
 def test_submit_any_ingestion_old_protocol():
 
@@ -785,6 +853,7 @@ def test_submit_any_ingestion_old_protocol():
                                              server=SOME_SERVER,
                                              env=None,
                                              validate_only=False,
+                                             remote=False,
                                              )
                     except SystemExit as e:
                         assert e.code == 1
@@ -892,6 +961,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                          server=SOME_SERVER,
                                                                          env=None,
                                                                          validate_only=False,
+                                                                         remote=False
                                                                          )
                                                 except ValueError as e:
                                                     # submit_any_ingestion will raise ValueError if its
@@ -930,6 +1000,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=False,
+                                                                                 remote=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
@@ -942,7 +1013,66 @@ def test_submit_any_ingestion_old_protocol():
                                                             ingestion_filename=SOME_BUNDLE_FILENAME,
                                                             keydict=SOME_KEYDICT,
                                                             upload_folder=None,
+                                                            remote=False,
                                                         )
+        assert shown.lines == [
+            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
+            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
+            # 1 second after we started our virtual clock...
+            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:17 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:33 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:49 Final status: success',
+            # Output from uploads is not present because we mocked that out.
+            # See test of the call to the uploader higher up.
+        ]
+
+    dt.reset_datetime()
+
+    # Test for suppression of user input when submission with remote=True.
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "get_keydict_for_server",
+                                               return_value=SOME_KEYDICT):
+                            with mock.patch("requests.post", mocked_post):
+                                with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
+                                    with mock.patch("datetime.datetime", dt):
+                                        with mock.patch("time.sleep", dt.sleep):
+                                            with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module,
+                                                                       "do_any_uploads") as mock_do_any_uploads:
+                                                    try:
+                                                        submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                             ingestion_type='metadata_bundle',
+                                                                             institution=SOME_INSTITUTION,
+                                                                             project=SOME_PROJECT,
+                                                                             server=SOME_SERVER,
+                                                                             env=None,
+                                                                             validate_only=False,
+                                                                             remote=True,
+                                                                             )
+                                                    except SystemExit as e:  # pragma: no cover
+                                                        # This is just in case. In fact it's more likely
+                                                        # that a normal 'return' not 'exit' was done.
+                                                        assert e.code == 0
+
+                                                    assert mock_do_any_uploads.call_count == 1
+                                                    mock_do_any_uploads.assert_called_with(
+                                                        final_res,
+                                                        ingestion_filename=SOME_BUNDLE_FILENAME,
+                                                        keydict=SOME_KEYDICT,
+                                                        upload_folder=None,
+                                                        remote=True,
+                                                    )
         assert shown.lines == [
             'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
             # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
@@ -997,6 +1127,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=False,
+                                                                                 remote=False,
                                                                                  )
                                                         except Exception as e:
                                                             assert "raised for status" in str(e)
@@ -1048,6 +1179,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=False,
+                                                                                 remote=False,
                                                                                  )
                                                         except Exception as e:
                                                             assert "raised for status" in str(e)
@@ -1091,6 +1223,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  env=None,
                                                                                  validate_only=False,
                                                                                  upload_folder=None,
+                                                                                 remote=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
@@ -1143,6 +1276,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  env=None,
                                                                                  validate_only=True,
                                                                                  upload_folder=None,
+                                                                                 remote=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
                                                             assert e.code == 0
@@ -1195,6 +1329,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  env=None,
                                                                                  validate_only=False,
                                                                                  upload_folder=None,
+                                                                                 remote=False,
                                                                                  )
                                                         except SystemExit as e:
                                                             # We expect to time out for too many waits before success.
@@ -1240,7 +1375,8 @@ def test_submit_any_ingestion_new_protocol():
                                              project=SOME_PROJECT,
                                              server=SOME_SERVER,
                                              env=None,
-                                             validate_only=False)
+                                             validate_only=False,
+                                             remote=False,)
                     except SystemExit as e:
                         assert e.code == 1
                     else:
@@ -1378,7 +1514,8 @@ def test_submit_any_ingestion_new_protocol():
                                                                          project=SOME_PROJECT,
                                                                          server=SOME_SERVER,
                                                                          env=None,
-                                                                         validate_only=False)
+                                                                         validate_only=False,
+                                                                         remote=False,)
                                                 except ValueError as e:
                                                     # submit_any_ingestion will raise ValueError if its
                                                     # bundle_filename argument is not the name of a
@@ -1417,6 +1554,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                  env=None,
                                                                                  validate_only=False,
                                                                                  upload_folder=None,
+                                                                                 remote=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
@@ -1429,6 +1567,7 @@ def test_submit_any_ingestion_new_protocol():
                                                             ingestion_filename=SOME_BUNDLE_FILENAME,
                                                             keydict=SOME_KEYDICT,
                                                             upload_folder=None,
+                                                            remote=False,
                                                         )
         assert shown.lines == [
             'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
@@ -1485,6 +1624,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                  env=None,
                                                                                  validate_only=False,
                                                                                  upload_folder=None,
+                                                                                 remote=False,
                                                                                  )
                                                         except Exception as e:
                                                             assert "raised for status" in str(e)
@@ -1537,6 +1677,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                  env=None,
                                                                                  validate_only=False,
                                                                                  upload_folder=None,
+                                                                                 remote=False,
                                                                                  )
                                                         except Exception as e:
                                                             assert "raised for status" in str(e)
@@ -1580,6 +1721,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                  env=None,
                                                                                  validate_only=False,
                                                                                  upload_folder=None,
+                                                                                 remote=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
@@ -1632,6 +1774,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                  env=None,
                                                                                  validate_only=True,
                                                                                  upload_folder=None,
+                                                                                 remote=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
                                                             assert e.code == 0
@@ -1684,6 +1827,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                  env=None,
                                                                                  validate_only=False,
                                                                                  upload_folder=None,
+                                                                                 remote=False,
                                                                                  )
                                                         except SystemExit as e:
                                                             # We expect to time out for too many waits before success.

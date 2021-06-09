@@ -47,6 +47,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'project': None,
         'validate_only': False,
         'upload_folder': None,
+        'remote': False,
     })
     expect_call_args = {
         'ingestion_filename': 'some-file',
@@ -57,6 +58,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'project': "some-project",
         'validate_only': True,
         'upload_folder': None,
+        'remote': False,
     }
     test_it(args_in=["--env", "some-env", "--institution", "some-institution",
                      "-s", "some-server", "-v", "-p", "some-project",
@@ -78,6 +80,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'project': "some-project",
         'validate_only': False,
         'upload_folder': 'a-folder',
+        'remote': False,
     }
     test_it(args_in=["--env", "some-env",
                      "--institution", "some-institution",
@@ -106,6 +109,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'project': "some-project",
         'validate_only': True,
         'upload_folder': 'a-folder',
+        'remote': False,
     }
     test_it(args_in=["--env", "some-env",
                      "--institution", "some-institution",
@@ -126,6 +130,29 @@ def test_submit_metadata_bundle_script(keyfile):
                      "--project", "some-project",
                      '--upload_folder', 'a-folder',
                      '--ingestion_type', 'simulated_bundle'],
+            expect_exit_code=0,
+            expect_called=True,
+            expect_call_args=expect_call_args)
+    expect_call_args = {
+        'ingestion_filename': 'some-file',
+        'ingestion_type': DEFAULT_INGESTION_TYPE,
+        'env': "some-env",
+        'server': "some-server",
+        'institution': "some-institution",
+        'project': "some-project",
+        'validate_only': True,
+        'upload_folder': None,
+        'remote': True,
+    }
+    test_it(args_in=["--env", "some-env", "--institution", "some-institution",
+                     "-s", "some-server", "-v", "-p", "some-project",
+                     'some-file', '-r'],
+            expect_exit_code=0,
+            expect_called=True,
+            expect_call_args=expect_call_args)
+    test_it(args_in=["--env", "some-env", "--institution", "some-institution",
+                     "-s", "some-server", "-v", "-p", "some-project",
+                     'some-file', '--remote'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)

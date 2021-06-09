@@ -22,7 +22,7 @@ def main(simulated_args_for_testing=None):
     args = parser.parse_args(args=simulated_args_for_testing)
 
     upload_item_data(item_filename=args.part_filename, uuid=args.uuid, server=args.server,
-                     env=args.env, remote=ars.remote)
+                     env=args.env, remote=args.remote)
 
 
 if __name__ == '__main__':
