@@ -465,14 +465,13 @@ def show_upload_info(uuid, server=None, env=None, keydict=None):
 
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, remote=False):
     upload_info = get_section(res, 'upload_info')
+    folder = upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None)
     if upload_info:
         if remote:
-            do_uploads(upload_info, auth=keydict, remote=remote,
-                       folder=upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None))
+            do_uploads(upload_info, auth=keydict, remote=remote, folder=folder)
         else:
             if yes_or_no("Upload %s?" % n_of(len(upload_info), "file")):
-                do_uploads(upload_info, auth=keydict, remote=remote,
-                           folder=upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None))
+                do_uploads(upload_info, auth=keydict, remote=remote, folder=folder)
             else:
                 show("No uploads attempted.")
 

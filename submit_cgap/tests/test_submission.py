@@ -571,7 +571,6 @@ def test_do_any_uploads():
             assert shown.lines == []
 
 
-
 def test_resume_uploads():
 
     with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
