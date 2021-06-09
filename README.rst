@@ -115,6 +115,13 @@ or::
 
 where the ``<item-uuid>`` is the uuid for the individual item, not the metadata bundle.
 
+Normally, for the three commands above, you are asked to verify the files you would like
+to upload. If you would like to skip these prompts so the commands can be run by a
+scheduler or in the background, you can pass the ``--remote`` or ``-r`` argument, such
+as::
+    
+    submit-metadata-bundle mymetadata.xls --remote
+
 Gene Lists
 ----------
 
