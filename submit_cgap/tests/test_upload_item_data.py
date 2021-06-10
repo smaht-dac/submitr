@@ -81,7 +81,7 @@ def test_upload_item_data_script(keyfile):
         'uuid': 'some-guid',
         'no_query': True,
     }
-    test_it(args_in=['some.file', '-e', 'some-env', '--server', 'some-server', '-u','some-guid', '-nq'],
+    test_it(args_in=['some.file', '-e', 'some-env', '--server', 'some-server', '-u', 'some-guid', '-nq'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
