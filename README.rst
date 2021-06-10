@@ -117,10 +117,10 @@ where the ``<item-uuid>`` is the uuid for the individual item, not the metadata 
 
 Normally, for the three commands above, you are asked to verify the files you would like
 to upload. If you would like to skip these prompts so the commands can be run by a
-scheduler or in the background, you can pass the ``--remote`` or ``-r`` argument, such
+scheduler or in the background, you can pass the ``--no_query`` or ``-nq`` argument, such
 as::
     
-    submit-metadata-bundle mymetadata.xls --remote
+    submit-metadata-bundle mymetadata.xls --no_query
 
 Gene Lists
 ----------

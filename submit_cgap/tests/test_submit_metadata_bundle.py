@@ -47,7 +47,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'project': None,
         'validate_only': False,
         'upload_folder': None,
-        'remote': False,
+        'no_query': False,
     })
     expect_call_args = {
         'ingestion_filename': 'some-file',
@@ -58,7 +58,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'project': "some-project",
         'validate_only': True,
         'upload_folder': None,
-        'remote': False,
+        'no_query': False,
     }
     test_it(args_in=["--env", "some-env", "--institution", "some-institution",
                      "-s", "some-server", "-v", "-p", "some-project",
@@ -80,7 +80,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'project': "some-project",
         'validate_only': False,
         'upload_folder': 'a-folder',
-        'remote': False,
+        'no_query': False,
     }
     test_it(args_in=["--env", "some-env",
                      "--institution", "some-institution",
@@ -109,7 +109,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'project': "some-project",
         'validate_only': True,
         'upload_folder': 'a-folder',
-        'remote': False,
+        'no_query': False,
     }
     test_it(args_in=["--env", "some-env",
                      "--institution", "some-institution",
@@ -142,17 +142,17 @@ def test_submit_metadata_bundle_script(keyfile):
         'project': "some-project",
         'validate_only': True,
         'upload_folder': None,
-        'remote': True,
+        'no_query': True,
     }
     test_it(args_in=["--env", "some-env", "--institution", "some-institution",
                      "-s", "some-server", "-v", "-p", "some-project",
-                     'some-file', '-r'],
+                     'some-file', '-nq'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     test_it(args_in=["--env", "some-env", "--institution", "some-institution",
                      "-s", "some-server", "-v", "-p", "some-project",
-                     'some-file', '--remote'],
+                     'some-file', '--no_query'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)

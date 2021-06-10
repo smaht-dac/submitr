@@ -18,12 +18,12 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--env', '-e', help="a CGAP beanstalk environment name for the server to use", default=None)
     parser.add_argument('--bundle_filename', '-b', help="location of the original Excel submission file", default=None)
     parser.add_argument('--upload_folder', '-u', help="location of the upload files", default=None)
-    parser.add_argument('--remote', '-r', action="store_true",
+    parser.add_argument('--no_query', '-nq', action="store_true",
                         help="suppress requests for user input", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     resume_uploads(uuid=args.uuid, server=args.server, env=args.env, bundle_filename=args.bundle_filename,
-                   upload_folder=args.upload_folder, remote=args.remote)
+                   upload_folder=args.upload_folder, no_query=args.no_query)
 
 
 if __name__ == '__main__':
