@@ -804,7 +804,7 @@ def test_do_uploads(tmp_path):
     file_path = subfolder / "foo.fastq.gz"
     file_path.write_text("")
     file_path = file_path.as_posix()
-    upload_spec_list=[{'uuid': '1234', 'filename': 'foo.fastq.gz'}]
+    upload_spec_list = [{'uuid': '1234', 'filename': 'foo.fastq.gz'}]
     filename = upload_spec_list[0]["filename"]
     uuid = upload_spec_list[0]["uuid"]
 
@@ -868,7 +868,7 @@ def test_do_uploads(tmp_path):
             mock_upload.assert_not_called()
             assert shown.lines == [
                 "No upload attempted for file %s because multiple copies were found"
-                " in folder %s: %s." 
+                " in folder %s: %s."
                 % (filename, folder_str + "/**", ", ".join([another_file_path, file_path]))
             ]
 

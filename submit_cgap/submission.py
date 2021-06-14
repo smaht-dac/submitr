@@ -596,7 +596,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
         elif len(file_search) > 1:
             show(
                 "No upload attempted for file %s because multiple copies were found"
-                " in folder %s: %s." 
+                " in folder %s: %s."
                 % (upload_spec['filename'], folder, ", ".join(file_search))
             )
             continue
