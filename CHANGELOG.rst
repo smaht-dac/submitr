@@ -9,7 +9,7 @@ Change Log
 0.8.1
 =====
 
-**PR 13: SubmitCGAP --no_query argument**
+**PR 13: SubmitCGAP --no_query and --subfolders arguments**
 
 * Add ``--no_query`` argument to ``resume_uploads``, ``submit_metadata_bundle``,
   and ``upload_item_data`` scripts as well as corresponding functions in
