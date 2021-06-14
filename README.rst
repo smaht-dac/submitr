@@ -129,7 +129,7 @@ to upload. If you would like to skip these prompts so the commands can be run by
 scheduler or in the background, you can pass the ``--no_query`` or ``-nq`` argument, such
 as::
     
-    submit-metadata-bundle mymetadata.xls --no_query
+    submit-metadata-bundle mymetadata.xlsx --no_query
 
 Gene Lists
 ----------
