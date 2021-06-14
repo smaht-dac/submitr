@@ -20,10 +20,12 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--upload_folder', '-u', help="location of the upload files", default=None)
     parser.add_argument('--no_query', '-nq', action="store_true",
                         help="suppress requests for user input", default=False)
+    parser.add_argument('--subfolders', '-sf', action="store_true",
+                        help="search subfolders of folder for upload files", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     resume_uploads(uuid=args.uuid, server=args.server, env=args.env, bundle_filename=args.bundle_filename,
-                   upload_folder=args.upload_folder, no_query=args.no_query)
+                   upload_folder=args.upload_folder, no_query=args.no_query, subfolders=args.subfolders)
 
 
 if __name__ == '__main__':

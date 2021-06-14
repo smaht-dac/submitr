@@ -1,4 +1,5 @@
 import contextlib
+import glob
 import io
 import json
 import os
@@ -297,7 +298,7 @@ DEFAULT_INGESTION_TYPE = 'metadata_bundle'
 
 
 def submit_any_ingestion(ingestion_filename, ingestion_type, institution, project, server, env, validate_only,
-                         upload_folder=None, no_query=False):
+                         upload_folder=None, no_query=False, subfolders=False):
     """
     Does the core action of submitting a metadata bundle.
 
@@ -310,6 +311,7 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
     :param validate_only: whether to do stop after validation instead of proceeding to post metadata
     :param upload_folder: folder in which to find files to upload (default: same as bundle_filename)
     :param no_query: bool to suppress requests for user input
+    :param subfolders: bool to search subdirectories within upload_folder for files
     """
 
     with script_catch_errors():
@@ -433,7 +435,8 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
         if outcome == 'success':
             show_section(res, 'upload_info')
             do_any_uploads(res, keydict=keydict, ingestion_filename=ingestion_filename,
-                           upload_folder=upload_folder, no_query=no_query)
+                           upload_folder=upload_folder, no_query=no_query,
+                           subfolders=subfolders)
 
         exit(0)
 
@@ -463,21 +466,24 @@ def show_upload_info(uuid, server=None, env=None, keydict=None):
             show("No uploads.")
 
 
-def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False):
+def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
+                   no_query=False, subfolders=False):
     upload_info = get_section(res, 'upload_info')
     folder = upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None)
     if upload_info:
         if no_query:
-            do_uploads(upload_info, auth=keydict, no_query=no_query, folder=folder)
+            do_uploads(upload_info, auth=keydict, no_query=no_query, folder=folder,
+                       subfolders=subfolders)
         else:
             if yes_or_no("Upload %s?" % n_of(len(upload_info), "file")):
-                do_uploads(upload_info, auth=keydict, no_query=no_query, folder=folder)
+                do_uploads(upload_info, auth=keydict, no_query=no_query, folder=folder,
+                           subfolders=subfolders)
             else:
                 show("No uploads attempted.")
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
-                   upload_folder=None, no_query=False):
+                   upload_folder=None, no_query=False, subfolders=False):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -489,6 +495,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
     :param upload_folder: folder in which to find files to upload (default: same as ingestion_filename)
     :param no_query: bool to suppress requests for user input
+    :param subfolders: bool to search subdirectories within upload_folder for files
     """
 
     with script_catch_errors():
@@ -503,7 +510,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                        keydict=keydict,
                        ingestion_filename=bundle_filename,
                        upload_folder=upload_folder,
-                       no_query=no_query)
+                       no_query=no_query,
+                       subfolders=subfolders)
 
 
 def execute_prearranged_upload(path, upload_credentials):
@@ -564,7 +572,7 @@ def upload_file_to_uuid(filename, uuid, auth):
 CGAP_SELECTIVE_UPLOADS = environ_bool("CGAP_SELECTIVE_UPLOADS")
 
 
-def do_uploads(upload_spec_list, auth, folder=None, no_query=False):
+def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=False):
     """
     Uploads the files mentioned in the give upload_spec_list.
 
@@ -574,10 +582,26 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False):
         representing destination and credentials.
     :param folder: a string naming a folder in which to find the filenames to be uploaded.
     :param no_query: bool to suppress requests for user input
+    :param subfolders: bool to search subdirectories within upload_folder for files
     :return: None
     """
+    folder = folder or os.path.curdir
+    if subfolders:
+        folder = os.path.join(folder, '**')
     for upload_spec in upload_spec_list:
-        filename = os.path.join(folder or os.path.curdir, upload_spec['filename'])
+        file_path = os.path.join(folder, upload_spec['filename'])
+        file_search = glob.glob(file_path, recursive=subfolders)
+        if len(file_search) == 1:
+            filename = file_search[0]
+        elif len(file_search) > 1:
+            show(
+                "No upload attempted for file %s because multiple copies were found"
+                " in folder %s: %s." 
+                % (upload_spec['filename'], folder, ", ".join(file_search))
+            )
+            continue
+        else:
+            filename = file_path
         uuid = upload_spec['uuid']
         if not no_query:
             if CGAP_SELECTIVE_UPLOADS and not yes_or_no("Upload %s?" % (filename,)):

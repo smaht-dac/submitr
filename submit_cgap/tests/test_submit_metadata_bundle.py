@@ -48,6 +48,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'validate_only': False,
         'upload_folder': None,
         'no_query': False,
+        'subfolders': False,
     })
     expect_call_args = {
         'ingestion_filename': 'some-file',
@@ -59,6 +60,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'validate_only': True,
         'upload_folder': None,
         'no_query': False,
+        'subfolders': False,
     }
     test_it(args_in=["--env", "some-env", "--institution", "some-institution",
                      "-s", "some-server", "-v", "-p", "some-project",
@@ -81,6 +83,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'validate_only': False,
         'upload_folder': 'a-folder',
         'no_query': False,
+        'subfolders': False,
     }
     test_it(args_in=["--env", "some-env",
                      "--institution", "some-institution",
@@ -110,6 +113,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'validate_only': True,
         'upload_folder': 'a-folder',
         'no_query': False,
+        'subfolders': False,
     }
     test_it(args_in=["--env", "some-env",
                      "--institution", "some-institution",
@@ -143,16 +147,17 @@ def test_submit_metadata_bundle_script(keyfile):
         'validate_only': True,
         'upload_folder': None,
         'no_query': True,
+        'subfolders': True,
     }
     test_it(args_in=["--env", "some-env", "--institution", "some-institution",
                      "-s", "some-server", "-v", "-p", "some-project",
-                     'some-file', '-nq'],
+                     'some-file', '-nq', '-sf'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     test_it(args_in=["--env", "some-env", "--institution", "some-institution",
                      "-s", "some-server", "-v", "-p", "some-project",
-                     'some-file', '--no_query'],
+                     'some-file', '--no_query', '--subfolders'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)

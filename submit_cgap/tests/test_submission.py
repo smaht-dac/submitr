@@ -503,6 +503,7 @@ def test_do_any_uploads():
                     auth=SOME_KEYDICT,
                     folder=SOME_BUNDLE_FILENAME_FOLDER,  # the folder part of given SOME_BUNDLE_FILENAME
                     no_query=False,
+                    subfolders=False,
                 )
                 assert shown.lines == []
 
@@ -518,6 +519,7 @@ def test_do_any_uploads():
                     auth=SOME_KEYDICT,
                     folder=SOME_OTHER_BUNDLE_FOLDER,  # passed straight through
                     no_query=False,
+                    subfolders=False,
                 )
                 assert shown.lines == []
 
@@ -533,6 +535,7 @@ def test_do_any_uploads():
                     auth=SOME_KEYDICT,
                     folder=None,  # No folder
                     no_query=False,
+                    subfolders=False,
                 )
                 assert shown.lines == []
 
@@ -541,13 +544,15 @@ def test_do_any_uploads():
                     res=SOME_UPLOAD_INFO_RESULT,
                     keydict=SOME_KEYDICT,
                     ingestion_filename=SOME_BUNDLE_FILENAME,  # from which a folder can be inferred
-                    no_query=False
+                    no_query=False,
+                    subfolders=True,
                 )
                 mock_uploads.assert_called_with(
                     SOME_UPLOAD_INFO,
                     auth=SOME_KEYDICT,
                     folder=SOME_BUNDLE_FILENAME_FOLDER,  # the folder part of given SOME_BUNDLE_FILENAME
                     no_query=False,
+                    subfolders=True,
                 )
                 assert shown.lines == []
 
@@ -567,6 +572,7 @@ def test_do_any_uploads():
                 auth=SOME_KEYDICT,
                 folder=SOME_BUNDLE_FILENAME_FOLDER,  # the folder part of given SOME_BUNDLE_FILENAME
                 no_query=True,
+                subfolders=False,
             )
             assert shown.lines == []
 
@@ -587,6 +593,7 @@ def test_resume_uploads():
                             ingestion_filename=SOME_BUNDLE_FILENAME,
                             upload_folder=None,
                             no_query=False,
+                            subfolders=False,
                         )
 
     with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
@@ -686,7 +693,7 @@ def make_alternator(*values):
     return alternatives.next_value
 
 
-def test_do_uploads():
+def test_do_uploads(tmp_path):
 
     @contextlib.contextmanager
     def mock_uploads():
@@ -790,6 +797,81 @@ def test_do_uploads():
                         'Upload of /x/yy/zzz/baz.fastq.gz to item 3456 was successful.',
                     ]
 
+    folder = tmp_path / "to_upload"
+    folder.mkdir()
+    subfolder = folder / "files"
+    subfolder.mkdir()
+    file_path = subfolder / "foo.fastq.gz"
+    file_path.write_text("")
+    file_path = file_path.as_posix()
+    upload_spec_list=[{'uuid': '1234', 'filename': 'foo.fastq.gz'}]
+    filename = upload_spec_list[0]["filename"]
+    uuid = upload_spec_list[0]["uuid"]
+
+    with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
+        # File in subfolder and found.
+        do_uploads(
+            upload_spec_list,
+            auth=SOME_AUTH,
+            folder=subfolder,
+            no_query=True,
+        )
+        mock_upload.assert_called_with(
+            filename=file_path,
+            uuid=uuid,
+            auth=SOME_AUTH,
+        )
+
+    with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
+        # File not found, so pass join of folder and file.
+        do_uploads(
+            upload_spec_list,
+            auth=SOME_AUTH,
+            folder=folder,
+            no_query=True,
+        )
+        mock_upload.assert_called_with(
+            filename=(folder.as_posix() + "/" + filename),
+            uuid=uuid,
+            auth=SOME_AUTH,
+        )
+
+    with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
+        # File found within subfolder and upload called.
+        do_uploads(
+            upload_spec_list,
+            auth=SOME_AUTH,
+            folder=folder,
+            no_query=True,
+            subfolders=True,
+        )
+        mock_upload.assert_called_with(
+            filename=file_path,
+            uuid=uuid,
+            auth=SOME_AUTH,
+        )
+
+    with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
+        # Multiple matching files found; show lines and don't call for upload.
+        with shown_output() as shown:
+            another_file_path = folder / "foo.fastq.gz"
+            another_file_path.write_text("")
+            another_file_path = another_file_path.as_posix()
+            folder_str = folder.as_posix()
+            do_uploads(
+                upload_spec_list,
+                auth=SOME_AUTH,
+                folder=folder,
+                no_query=True,
+                subfolders=True,
+            )
+            mock_upload.assert_not_called()
+            assert shown.lines == [
+                "No upload attempted for file %s because multiple copies were found"
+                " in folder %s: %s." 
+                % (filename, folder_str + "/**", ", ".join([another_file_path, file_path]))
+            ]
+
 
 def test_upload_item_data():
 
@@ -853,6 +935,7 @@ def test_submit_any_ingestion_old_protocol():
                                              env=None,
                                              validate_only=False,
                                              no_query=False,
+                                             subfolders=False,
                                              )
                     except SystemExit as e:
                         assert e.code == 1
@@ -960,7 +1043,8 @@ def test_submit_any_ingestion_old_protocol():
                                                                          server=SOME_SERVER,
                                                                          env=None,
                                                                          validate_only=False,
-                                                                         no_query=False
+                                                                         no_query=False,
+                                                                         subfolders=False,
                                                                          )
                                                 except ValueError as e:
                                                     # submit_any_ingestion will raise ValueError if its
@@ -1000,6 +1084,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  env=None,
                                                                                  validate_only=False,
                                                                                  no_query=False,
+                                                                                 subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
@@ -1013,6 +1098,7 @@ def test_submit_any_ingestion_old_protocol():
                                                             keydict=SOME_KEYDICT,
                                                             upload_folder=None,
                                                             no_query=False,
+                                                            subfolders=False,
                                                         )
         assert shown.lines == [
             'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
@@ -1058,6 +1144,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                              env=None,
                                                                              validate_only=False,
                                                                              no_query=True,
+                                                                             subfolders=False,
                                                                              )
                                                     except SystemExit as e:  # pragma: no cover
                                                         # This is just in case. In fact it's more likely
@@ -1071,6 +1158,7 @@ def test_submit_any_ingestion_old_protocol():
                                                         keydict=SOME_KEYDICT,
                                                         upload_folder=None,
                                                         no_query=True,
+                                                        subfolders=False,
                                                     )
         assert shown.lines == [
             'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
@@ -1127,6 +1215,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  env=None,
                                                                                  validate_only=False,
                                                                                  no_query=False,
+                                                                                 subfolders=False,
                                                                                  )
                                                         except Exception as e:
                                                             assert "raised for status" in str(e)
@@ -1179,6 +1268,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  env=None,
                                                                                  validate_only=False,
                                                                                  no_query=False,
+                                                                                 subfolders=False,
                                                                                  )
                                                         except Exception as e:
                                                             assert "raised for status" in str(e)
@@ -1223,6 +1313,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  validate_only=False,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
+                                                                                 subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
@@ -1276,6 +1367,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  validate_only=True,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
+                                                                                 subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
                                                             assert e.code == 0
@@ -1329,6 +1421,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  validate_only=False,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
+                                                                                 subfolders=False,
                                                                                  )
                                                         except SystemExit as e:
                                                             # We expect to time out for too many waits before success.
@@ -1375,7 +1468,8 @@ def test_submit_any_ingestion_new_protocol():
                                              server=SOME_SERVER,
                                              env=None,
                                              validate_only=False,
-                                             no_query=False,)
+                                             no_query=False,
+                                             subfolders=False,)
                     except SystemExit as e:
                         assert e.code == 1
                     else:
@@ -1514,7 +1608,8 @@ def test_submit_any_ingestion_new_protocol():
                                                                          server=SOME_SERVER,
                                                                          env=None,
                                                                          validate_only=False,
-                                                                         no_query=False,)
+                                                                         no_query=False,
+                                                                         subfolders=False,)
                                                 except ValueError as e:
                                                     # submit_any_ingestion will raise ValueError if its
                                                     # bundle_filename argument is not the name of a
@@ -1554,6 +1649,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                  validate_only=False,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
+                                                                                 subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
@@ -1567,6 +1663,7 @@ def test_submit_any_ingestion_new_protocol():
                                                             keydict=SOME_KEYDICT,
                                                             upload_folder=None,
                                                             no_query=False,
+                                                            subfolders=False,
                                                         )
         assert shown.lines == [
             'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
@@ -1624,6 +1721,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                  validate_only=False,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
+                                                                                 subfolders=False,
                                                                                  )
                                                         except Exception as e:
                                                             assert "raised for status" in str(e)
@@ -1677,6 +1775,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                  validate_only=False,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
+                                                                                 subfolders=False,
                                                                                  )
                                                         except Exception as e:
                                                             assert "raised for status" in str(e)
@@ -1721,6 +1820,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                  validate_only=False,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
+                                                                                 subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
@@ -1774,6 +1874,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                  validate_only=True,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
+                                                                                 subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
                                                             assert e.code == 0
