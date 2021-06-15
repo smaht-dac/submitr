@@ -6,6 +6,22 @@ SubmitCGAP
 Change Log
 ----------
 
+0.9.0
+=====
+
+**PR 13: SubmitCGAP --no_query and --subfolders arguments**
+
+* Add ``--no_query`` argument to ``resume_uploads``, ``submit_metadata_bundle``,
+  and ``upload_item_data`` scripts as well as corresponding functions in
+  ``submission``.
+* Add ``--subfolders`` argument to ``resume_uploads`` and ``submit_metadata_bundle``
+  scripts and corresponding functions.
+* Change ``local_attrs`` import in base.py to reflect changes in ``dcicutils`` to allow
+  commands to be run following install of ``submit_cgap`` without need to install
+  ``pytest``.
+* Update ``pyproject.toml`` and ``poetry.lock`` to require new version of ``dcicutils``.
+
+
 0.8.0
 =====
 

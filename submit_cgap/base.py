@@ -2,7 +2,7 @@ import contextlib
 import functools
 import os
 
-from dcicutils.qa_utils import local_attrs
+from dcicutils.misc_utils import local_attrs
 
 
 # TODO: Integrate this better with dcicutils.env_utils
