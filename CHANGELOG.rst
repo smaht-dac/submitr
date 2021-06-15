@@ -6,7 +6,7 @@ SubmitCGAP
 Change Log
 ----------
 
-0.8.1
+0.9.0
 =====
 
 **PR 13: SubmitCGAP --no_query and --subfolders arguments**
