@@ -41,6 +41,11 @@ SOME_OTHER_INSTITUTION = '/institutions/big-pharma/'
 
 SOME_SERVER = 'http://localhost:7777'  # Dependencies force this to be out of alphabetical order
 
+SOME_ORCHESTRATED_SERVERS = [
+    'http://cgap-msa-something.amazonaws.com/',
+    'http://cgap-devtest-something.amazonaws.com/'
+]
+
 SOME_KEYDICT = {'key': SOME_KEY_ID, 'secret': SOME_SECRET, 'server': SOME_SERVER}
 
 SOME_OTHER_BUNDLE_FOLDER = '/some-other-folder/'
@@ -101,8 +106,14 @@ def script_dont_catch_errors():
 def test_server_regexp():
 
     schemas = ['http', 'https']
-    hosts = ['localhost', 'localhost:5000', 'fourfront-cgapfoo.what-ever.com',
-             'cgap.hms.harvard.edu', 'foo.bar.cgap.hms.harvard.edu']
+    hosts = [
+        'localhost',
+        'localhost:5000',
+        'fourfront-cgapfoo.what-ever.com',
+        'cgap-foo.what-ever.com',
+        'cgap.hms.harvard.edu',
+        'foo.bar.cgap.hms.harvard.edu',
+    ]
     final_slashes = ['/', '']  # 1 or 0 is good
 
     for schema in schemas:
@@ -117,7 +128,7 @@ def test_server_regexp():
         "ftp://localhost:80ab",
         "http://localhost.localnet",
         "http://foo.bar",
-        "https://foo.bar"
+        "https://foo.bar",
     ]
 
     for non_match in non_matches:
@@ -171,6 +182,10 @@ def test_resolve_server():
 
         assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
                         resolve_server(server=cgap_dev_server, env=None))  # Identity operation
+
+        for orchestrated_server in SOME_ORCHESTRATED_SERVERS:
+            assert re.match("http://cgap-[a-z]+.+amazonaws.com",
+                            resolve_server(server=orchestrated_server, env=None))  # non-fourfront environments
 
 
 def make_user_record(title='J Doe',

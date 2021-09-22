@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "submit_cgap"
-version = "0.9.0"
+version = "0.10.0"
 description = "Support for uploading file submissions to the Clinical Genomics Analysis Platform (CGAP)."
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
@@ -46,7 +46,7 @@ include = [
 python = ">=3.6,<3.8"
 
 awscli = ">=1.18.174"
-dcicutils = ">=1.18.1,<2"
+dcicutils = "^2.4.0"
 boto3 = ">=1.16.14,<2"
 requests = ">=2.24.0,<3"
 
