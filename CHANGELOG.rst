@@ -6,6 +6,14 @@ SubmitCGAP
 Change Log
 ----------
 
+0.9.0
+=====
+
+**PR 14: Fix server regexp for cgap-msa (C4-710)**
+
+* Allow orchestrated server names to pass syntax checking test.
+
+
 0.8.0
 =====
 
