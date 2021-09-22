@@ -28,7 +28,6 @@ Change Log
   commands to be run following install of ``submit_cgap`` without need to install
   ``pytest``.
 * Update ``pyproject.toml`` and ``poetry.lock`` to require new version of ``dcicutils``.
->>>>>>> master
 
 
 0.8.0
