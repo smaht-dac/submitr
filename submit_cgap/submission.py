@@ -31,7 +31,7 @@ SERVER_REGEXP = re.compile(
     # exception for localhost debugging. You're on your own to make sure the right server is connected there.
     # -kmp 16-Aug-2020
     r"^(https?://localhost(:[0-9]+)?"
-    r"|https?://fourfront-cgap[a-z0-9.-]*"
+    r"|https?://(fourfront-cgap|cgap-)[a-z0-9.-]*"
     r"|https?://([a-z-]+[.])*cgap[.]hms[.]harvard[.]edu)/?$"
 )
 

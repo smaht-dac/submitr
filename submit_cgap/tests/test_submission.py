@@ -101,8 +101,14 @@ def script_dont_catch_errors():
 def test_server_regexp():
 
     schemas = ['http', 'https']
-    hosts = ['localhost', 'localhost:5000', 'fourfront-cgapfoo.what-ever.com',
-             'cgap.hms.harvard.edu', 'foo.bar.cgap.hms.harvard.edu']
+    hosts = [
+        'localhost',
+        'localhost:5000',
+        'fourfront-cgapfoo.what-ever.com',
+        'cgap-foo.what-ever.com',
+        'cgap.hms.harvard.edu',
+        'foo.bar.cgap.hms.harvard.edu',
+    ]
     final_slashes = ['/', '']  # 1 or 0 is good
 
     for schema in schemas:
@@ -117,7 +123,7 @@ def test_server_regexp():
         "ftp://localhost:80ab",
         "http://localhost.localnet",
         "http://foo.bar",
-        "https://foo.bar"
+        "https://foo.bar",
     ]
 
     for non_match in non_matches:
