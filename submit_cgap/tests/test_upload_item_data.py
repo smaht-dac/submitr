@@ -42,12 +42,14 @@ def test_upload_item_data_script(keyfile):
         'env': None,
         'server': None,
         'uuid': None,
+        'no_query': False,
     })
     expect_call_args = {
         'item_filename': 'some.file',
         'env': None,
         'server': None,
-        'uuid': 'some-guid'
+        'uuid': 'some-guid',
+        'no_query': False,
     }
     test_it(args_in=['-u', 'some-guid', 'some.file'],
             expect_exit_code=0,
@@ -61,13 +63,25 @@ def test_upload_item_data_script(keyfile):
         'item_filename': 'some.file',
         'env': 'some-env',
         'server': 'some-server',
-        'uuid': 'some-guid'
+        'uuid': 'some-guid',
+        'no_query': False,
     }
     test_it(args_in=['some.file', '-e', 'some-env', '--server', 'some-server', '-u', 'some-guid'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     test_it(args_in=['-e', 'some-env', '--server', 'some-server', '-u', 'some-guid', 'some.file'],
+            expect_exit_code=0,
+            expect_called=True,
+            expect_call_args=expect_call_args)
+    expect_call_args = {
+        'item_filename': 'some.file',
+        'env': 'some-env',
+        'server': 'some-server',
+        'uuid': 'some-guid',
+        'no_query': True,
+    }
+    test_it(args_in=['some.file', '-e', 'some-env', '--server', 'some-server', '-u', 'some-guid', '-nq'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)

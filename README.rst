@@ -88,14 +88,23 @@ the bundle file you want to upload and either a site or a
 CGAP beanstalk environment.
 For example::
 
-   submit-metadata-bundle mymetadata.xls
+   submit-metadata-bundle mymetadata.xlsx
 
 This command should do everything, including upload referenced files
 if they are in the same directory. (It will ask for confirmation.)
 
 To invoke it for validation only, without submitting anything, do::
 
-   submit-metadata-bundle mymetadata.xls --validate_only
+   submit-metadata-bundle mymetadata.xlsx --validate_only
+
+To specify a different directory for the files, do::
+
+   submit-metadata-bundle mymetadata.xlsx --upload_folder /path/to/folder
+
+The above command will only look in the directory specified (and not any subdirectories)
+for the files to upload. To look in the directory and all subdirectories, do::
+
+   submit-metadata-bundle mymetadata.xlsx --upload_folder /path/to/folder --subfolders
 
 You can resume execution with the upload part by doing::
 
@@ -114,6 +123,13 @@ or::
    upload-item-data <filename> --uuid <item-uuid> --server <server>
 
 where the ``<item-uuid>`` is the uuid for the individual item, not the metadata bundle.
+
+Normally, for the three commands above, you are asked to verify the files you would like
+to upload. If you would like to skip these prompts so the commands can be run by a
+scheduler or in the background, you can pass the ``--no_query`` or ``-nq`` argument, such
+as::
+    
+    submit-metadata-bundle mymetadata.xlsx --no_query
 
 Gene Lists
 ----------
