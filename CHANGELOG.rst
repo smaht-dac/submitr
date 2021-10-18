@@ -9,10 +9,12 @@ Change Log
 1.0.0
 =====
 
+**PR 15: Update to require dcicutils 3.1.0 (C4-736)**
+
 * Fixes `SubmitCGAP still uses old dcicutils (C4-736) <https://hms-dbmi.atlassian.net/browse/C4-736>`_
   This change requires python 3.6.1 (instead of 3.6.0) and dcicutils 3.1.0 or greater (instead of 2.4.0).
 
-  This is technically an incompatible change, though no one is callig into this
+  This is technically an incompatible change, though no one is calling into this
   library programmatically so there is probably not code to be changed.
 
 * Bumps the major version to version 1.0.0 in part because of the technical change in dependencies
