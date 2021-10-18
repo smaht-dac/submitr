@@ -490,25 +490,25 @@ yaml = ["PyYAML (>=3.10)"]
 
 [[package]]
 name = "dcicutils"
-version = "2.4.0"
+version = "3.1.0"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 category = "main"
 optional = false
-python-versions = ">=3.5,<3.8"
+python-versions = ">=3.6.1,<3.8"
 
 [package.dependencies]
 aws-requests-auth = ">=0.4.2,<1"
-boto3 = ">=1.10.46,<2.0.0"
-botocore = ">=1.13.46,<2.0.0"
+boto3 = ">=1.17.39,<2.0.0"
+botocore = ">=1.20.39,<2.0.0"
 docker = ">=4.4.4,<5.0.0"
 elasticsearch = "6.8.1"
 gitpython = ">=3.1.2,<4.0.0"
-pytz = ">=2016.4"
+pytz = ">=2020.4"
 requests = ">=2.21.0,<3.0.0"
 rfc3986 = ">=1.4.0,<2.0.0"
 structlog = ">=19.2.0,<20.0.0"
-toml = ">=0.10.0,<1"
-urllib3 = ">=1.24.3,<2.0.0"
+toml = ">=0.10.1,<1"
+urllib3 = ">=1.26.6,<2.0.0"
 webtest = ">=2.0.34,<3.0.0"
 
 [[package]]
@@ -1165,8 +1165,8 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 
 [metadata]
 lock-version = "1.1"
-python-versions = ">=3.6,<3.8"
-content-hash = "628be69a20e218de222d5f23fd48124a611951c6edcd80e24cd0531df9e47179"
+python-versions = ">=3.6.1,<3.8"
+content-hash = "f9369480fb0556d3a0221695cae63ae899a74acf39ee2a8642eede850806318a"
 
 [metadata.files]
 alabaster = [
@@ -1288,8 +1288,8 @@ coveralls = [
     {file = "coveralls-3.2.0.tar.gz", hash = "sha256:15a987d9df877fff44cd81948c5806ffb6eafb757b3443f737888358e96156ee"},
 ]
 dcicutils = [
-    {file = "dcicutils-2.4.0-py3-none-any.whl", hash = "sha256:508e55768388d50a254c733069271ae1b01ea96b5d16db2d92fb8df1661ed2f7"},
-    {file = "dcicutils-2.4.0.tar.gz", hash = "sha256:bf1abe15c5cda162167cec65a457ce012c11e08d7d3393822f89063a2051bf22"},
+    {file = "dcicutils-3.1.0-py3-none-any.whl", hash = "sha256:db07a56815057926dad01cebd25ead872324334cad5e639c24e6b2c091526423"},
+    {file = "dcicutils-3.1.0.tar.gz", hash = "sha256:a0466d3a68d1ac80c612d90bd74392bd0b769029f9012b211102eac032a814e2"},
 ]
 docker = [
     {file = "docker-4.4.4-py2.py3-none-any.whl", hash = "sha256:f3607d5695be025fa405a12aca2e5df702a57db63790c73b927eb6a94aac60af"},
