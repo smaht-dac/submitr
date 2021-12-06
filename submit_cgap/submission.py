@@ -12,8 +12,9 @@ from dcicutils import ff_utils
 from dcicutils.beanstalk_utils import get_beanstalk_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.env_utils import full_cgap_env_name
+from dcicutils.ff_utils import get_health_page
 from dcicutils.lang_utils import n_of
-from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join
+from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join, ignorable
 from .auth import get_keydict_for_server, keydict_to_keypair
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
 from .exceptions import CGAPPermissionError
@@ -514,7 +515,18 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                        subfolders=subfolders)
 
 
-def execute_prearranged_upload(path, upload_credentials):
+def get_s3_encrypt_key_id(auth, upload_credentials):
+    # TODO: In the future, upload_credentials might contain the encrypt key id to save us from fetching the health page.
+    #       -kmp 6-Dec-2021
+    ignorable(upload_credentials)
+    try:
+        health = get_health_page(key=auth)
+        return health.get('s3_encrypt_key_id')
+    except Exception:
+        return None
+
+
+def execute_prearranged_upload(path, upload_credentials, auth):
     """
     This performs a file upload using special credentials received from ff_utils.patch_metadata.
 
@@ -524,6 +536,7 @@ def execute_prearranged_upload(path, upload_credentials):
     """
 
     try:
+        s3_encrypt_key_id = get_s3_encrypt_key_id(auth, upload_credentials)
         env = dict(os.environ,
                    AWS_ACCESS_KEY_ID=upload_credentials['AccessKeyId'],
                    AWS_SECRET_ACCESS_KEY=upload_credentials['SecretAccessKey'],
@@ -536,7 +549,11 @@ def execute_prearranged_upload(path, upload_credentials):
         source = path
         target = upload_credentials['upload_url']
         show("Going to upload %s to %s." % (source, target))
-        subprocess.check_call(['aws', 's3', 'cp', '--only-show-errors', source, target], env=env)
+        command = ['aws', 's3', 'cp']
+        if s3_encrypt_key_id:
+            command = command + ['-sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
+        command = command + ['--only-show-errors', source, target]
+        subprocess.check_call(command, env=env)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("Upload failed with exit code %d" % e.returncode)
     else:
@@ -565,7 +582,7 @@ def upload_file_to_uuid(filename, uuid, auth):
     except Exception:
         raise RuntimeError("Unable to obtain upload credentials for file %s." % filename)
 
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials)
+    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
 
 
 # This can be set to True in unusual situations, but normally will be False to avoid unnecessary querying.
