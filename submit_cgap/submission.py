@@ -524,7 +524,7 @@ def get_s3_encrypt_key_id(auth):
         return None
 
 
-def execute_prearranged_upload(path, upload_credentials, auth, s3_encrypt_key_id=None):
+def execute_prearranged_upload(path, upload_credentials, auth=None, s3_encrypt_key_id=None):
     """
     This performs a file upload using special credentials received from ff_utils.patch_metadata.
 
