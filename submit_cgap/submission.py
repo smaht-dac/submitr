@@ -515,10 +515,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                        subfolders=subfolders)
 
 
-def get_s3_encrypt_key_id(auth, upload_credentials):
-    # TODO: In the future, upload_credentials might contain the encrypt key id to save us from fetching the health page.
-    #       -kmp 6-Dec-2021
-    ignorable(upload_credentials)
+def get_s3_encrypt_key_id(auth):
     try:
         health = get_health_page(key=auth)
         return health.get('s3_encrypt_key_id')
@@ -526,7 +523,7 @@ def get_s3_encrypt_key_id(auth, upload_credentials):
         return None
 
 
-def execute_prearranged_upload(path, upload_credentials, auth):
+def execute_prearranged_upload(path, upload_credentials, auth, s3_encrypt_key_id=None):
     """
     This performs a file upload using special credentials received from ff_utils.patch_metadata.
 
@@ -535,9 +532,18 @@ def execute_prearranged_upload(path, upload_credentials, auth):
         containing the keys 'AccessKeyId', 'SecretAccessKey', 'SessionToken', and 'upload_url'.
     """
 
-    # print(f"Upload credentials contain {conjoined_list(list(upload_credentials.keys()))}.")
+    if DEBUG_PROTOCOL:
+        PRINT(f"Upload credentials contain {conjoined_list(list(upload_credentials.keys()))}.")
     try:
-        s3_encrypt_key_id = get_s3_encrypt_key_id(auth, upload_credentials)
+        if s3_encrypt_key_id:
+            if DEBUG_PROTOCOL:
+                PRINT(f"s3_encrypt_key_id was supplied along with upload_credentials: {s3_encrypt_key_id}")
+        else:
+            if DEBUG_PROTOCOL:
+                PRINT(f"Fetching s3_encrypt_key_id from health page.")
+            s3_encrypt_key_id = get_s3_encrypt_key_id(auth)
+            if DEBUG_PROTOCOL:
+                PRINT(f" =id=> {s3_encrypt_key_id}")
         extra_env = dict(AWS_ACCESS_KEY_ID=upload_credentials['AccessKeyId'],
                          AWS_SECRET_ACCESS_KEY=upload_credentials['SecretAccessKey'],
                          AWS_SECURITY_TOKEN=upload_credentials['SessionToken'])
@@ -554,9 +560,10 @@ def execute_prearranged_upload(path, upload_credentials, auth):
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
         command = command + ['--only-show-errors', source, target]
-        # print(f"Executing: {command}")
-        # print(f" ==> {' '.join(command)}")
-        # print(f" in an environment that includes {conjoined_list(list(extra_env.keys()))}.")
+        if DEBUG_PROTOCOL:
+            PRINT(f"Executing: {command}")
+            PRINT(f" ==> {' '.join(command)}")
+            PRINT(f"Environment variables include {conjoined_list(list(extra_env.keys()))}.")
         subprocess.check_call(command, env=env)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("Upload failed with exit code %d" % e.returncode)
@@ -583,10 +590,14 @@ def upload_file_to_uuid(filename, uuid, auth):
     try:
         [metadata] = response['@graph']
         upload_credentials = metadata['upload_credentials']
+        s3_encrypt_key_id = metadata.get('s3_encrypt_key_id')
+        if DEBUG_PROTOCOL:
+            PRINT(f"Extracted from metadata: s3_encrypt_key_id = {s3_encrypt_key_id}")
     except Exception:
         raise RuntimeError("Unable to obtain upload credentials for file %s." % filename)
 
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
+    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth,
+                               s3_encrypt_key_id=s3_encrypt_key_id)
 
 
 # This can be set to True in unusual situations, but normally will be False to avoid unnecessary querying.
