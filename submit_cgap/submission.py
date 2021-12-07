@@ -14,7 +14,8 @@ from dcicutils.command_utils import yes_or_no
 from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.ff_utils import get_health_page
 from dcicutils.lang_utils import n_of, conjoined_list
-from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join, ignorable
+from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join
+from dcicutils.s3_utils import HealthPageKey
 from .auth import get_keydict_for_server, keydict_to_keypair
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
 from .exceptions import CGAPPermissionError
@@ -259,7 +260,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
 
         creation_post_headers = {
             'Content-type': 'application/json',
-            'Accept':  'application/json',
+            'Accept': 'application/json',
         }
         creation_post_url = url_path_join(server, "IngestionSubmission")
         if DEBUG_PROTOCOL:
@@ -518,7 +519,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
 def get_s3_encrypt_key_id(auth):
     try:
         health = get_health_page(key=auth)
-        return health.get('s3_encrypt_key_id')
+        return health.get(HealthPageKey.S3_ENCRYPT_KEY_ID)
     except Exception:
         return None
 
@@ -543,7 +544,7 @@ def execute_prearranged_upload(path, upload_credentials, auth, s3_encrypt_key_id
                 PRINT(f"Fetching s3_encrypt_key_id from health page.")
             s3_encrypt_key_id = get_s3_encrypt_key_id(auth)
             if DEBUG_PROTOCOL:
-                PRINT(f" =id=> {s3_encrypt_key_id}")
+                PRINT(f" =id=> {s3_encrypt_key_id!r}")
         extra_env = dict(AWS_ACCESS_KEY_ID=upload_credentials['AccessKeyId'],
                          AWS_SECRET_ACCESS_KEY=upload_credentials['SecretAccessKey'],
                          AWS_SECURITY_TOKEN=upload_credentials['SessionToken'])

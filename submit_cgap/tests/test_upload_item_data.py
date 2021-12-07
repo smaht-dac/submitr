@@ -12,6 +12,7 @@ from ..scripts import upload_item_data as upload_item_data_module
 
 TEST_ENCRYPT_KEY = 'encrypt-key-for-testing'
 
+
 @pytest.mark.parametrize("keyfile", [None, "foo.bar"])
 @pytest.mark.parametrize("mocked_s3_encrypt_key_id", [None, TEST_ENCRYPT_KEY])
 def test_upload_item_data_script(keyfile, mocked_s3_encrypt_key_id):

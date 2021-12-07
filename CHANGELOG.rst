@@ -10,7 +10,7 @@ Change Log
 1.1.0
 =====
 
-Support for proper handlign of s3_encrypt_key_id where one is available 
+Support for proper handling of s3_encrypt_key_id where one is available
 (e.g., as shown in health page).
 
 
