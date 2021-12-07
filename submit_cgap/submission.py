@@ -535,7 +535,7 @@ def execute_prearranged_upload(path, upload_credentials, auth):
         containing the keys 'AccessKeyId', 'SecretAccessKey', 'SessionToken', and 'upload_url'.
     """
 
-    print(f"Upload credentials contain {conjoined_list(list(upload_credentials.keys()))}.")
+    # print(f"Upload credentials contain {conjoined_list(list(upload_credentials.keys()))}.")
     try:
         s3_encrypt_key_id = get_s3_encrypt_key_id(auth, upload_credentials)
         extra_env = dict(AWS_ACCESS_KEY_ID=upload_credentials['AccessKeyId'],
