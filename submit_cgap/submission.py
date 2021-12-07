@@ -13,7 +13,7 @@ from dcicutils.beanstalk_utils import get_beanstalk_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.ff_utils import get_health_page
-from dcicutils.lang_utils import n_of
+from dcicutils.lang_utils import n_of, conjoined_list
 from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join, ignorable
 from .auth import get_keydict_for_server, keydict_to_keypair
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
@@ -535,12 +535,13 @@ def execute_prearranged_upload(path, upload_credentials, auth):
         containing the keys 'AccessKeyId', 'SecretAccessKey', 'SessionToken', and 'upload_url'.
     """
 
+    print(f"Upload credentials contain {conjoined_list(list(upload_credentials.keys()))}.")
     try:
         s3_encrypt_key_id = get_s3_encrypt_key_id(auth, upload_credentials)
-        env = dict(os.environ,
-                   AWS_ACCESS_KEY_ID=upload_credentials['AccessKeyId'],
-                   AWS_SECRET_ACCESS_KEY=upload_credentials['SecretAccessKey'],
-                   AWS_SECURITY_TOKEN=upload_credentials['SessionToken'])
+        extra_env = dict(AWS_ACCESS_KEY_ID=upload_credentials['AccessKeyId'],
+                         AWS_SECRET_ACCESS_KEY=upload_credentials['SecretAccessKey'],
+                         AWS_SECURITY_TOKEN=upload_credentials['SessionToken'])
+        env = dict(os.environ, **extra_env)
     except Exception as e:
         raise ValueError("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
 
@@ -551,8 +552,11 @@ def execute_prearranged_upload(path, upload_credentials, auth):
         show("Going to upload %s to %s." % (source, target))
         command = ['aws', 's3', 'cp']
         if s3_encrypt_key_id:
-            command = command + ['-sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
+            command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
         command = command + ['--only-show-errors', source, target]
+        # print(f"Executing: {command}")
+        # print(f" ==> {' '.join(command)}")
+        # print(f" in an environment that includes {conjoined_list(list(extra_env.keys()))}.")
         subprocess.check_call(command, env=env)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("Upload failed with exit code %d" % e.returncode)
