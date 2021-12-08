@@ -676,7 +676,8 @@ def test_upload_file_to_uuid():
     with mock.patch("dcicutils.ff_utils.patch_metadata", return_value=SOME_UPLOAD_CREDENTIALS_RESULT):
         with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
             upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_AUTH)
-            mocked_upload.assert_called_with(SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
+            mocked_upload.assert_called_with(SOME_FILENAME, auth=SOME_AUTH, s3_encrypt_key_id=None,
+                                             upload_credentials=SOME_UPLOAD_CREDENTIALS)
 
     with mock.patch("dcicutils.ff_utils.patch_metadata", return_value=SOME_BAD_RESULT):
         with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:

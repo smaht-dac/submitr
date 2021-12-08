@@ -12,8 +12,10 @@ from dcicutils import ff_utils
 from dcicutils.beanstalk_utils import get_beanstalk_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.env_utils import full_cgap_env_name
-from dcicutils.lang_utils import n_of
+from dcicutils.ff_utils import get_health_page
+from dcicutils.lang_utils import n_of, conjoined_list
 from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join
+from dcicutils.s3_utils import HealthPageKey
 from .auth import get_keydict_for_server, keydict_to_keypair
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
 from .exceptions import CGAPPermissionError
@@ -258,7 +260,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
 
         creation_post_headers = {
             'Content-type': 'application/json',
-            'Accept':  'application/json',
+            'Accept': 'application/json',
         }
         creation_post_url = url_path_join(server, "IngestionSubmission")
         if DEBUG_PROTOCOL:
@@ -514,7 +516,15 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                        subfolders=subfolders)
 
 
-def execute_prearranged_upload(path, upload_credentials):
+def get_s3_encrypt_key_id(auth):
+    try:
+        health = get_health_page(key=auth)
+        return health.get(HealthPageKey.S3_ENCRYPT_KEY_ID)
+    except Exception:
+        return None
+
+
+def execute_prearranged_upload(path, upload_credentials, auth=None, s3_encrypt_key_id=None):
     """
     This performs a file upload using special credentials received from ff_utils.patch_metadata.
 
@@ -523,11 +533,22 @@ def execute_prearranged_upload(path, upload_credentials):
         containing the keys 'AccessKeyId', 'SecretAccessKey', 'SessionToken', and 'upload_url'.
     """
 
+    if DEBUG_PROTOCOL:
+        PRINT(f"Upload credentials contain {conjoined_list(list(upload_credentials.keys()))}.")
     try:
-        env = dict(os.environ,
-                   AWS_ACCESS_KEY_ID=upload_credentials['AccessKeyId'],
-                   AWS_SECRET_ACCESS_KEY=upload_credentials['SecretAccessKey'],
-                   AWS_SECURITY_TOKEN=upload_credentials['SessionToken'])
+        if s3_encrypt_key_id:
+            if DEBUG_PROTOCOL:
+                PRINT(f"s3_encrypt_key_id was supplied along with upload_credentials: {s3_encrypt_key_id}")
+        else:
+            if DEBUG_PROTOCOL:
+                PRINT(f"Fetching s3_encrypt_key_id from health page.")
+            s3_encrypt_key_id = get_s3_encrypt_key_id(auth)
+            if DEBUG_PROTOCOL:
+                PRINT(f" =id=> {s3_encrypt_key_id!r}")
+        extra_env = dict(AWS_ACCESS_KEY_ID=upload_credentials['AccessKeyId'],
+                         AWS_SECRET_ACCESS_KEY=upload_credentials['SecretAccessKey'],
+                         AWS_SECURITY_TOKEN=upload_credentials['SessionToken'])
+        env = dict(os.environ, **extra_env)
     except Exception as e:
         raise ValueError("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
 
@@ -536,7 +557,15 @@ def execute_prearranged_upload(path, upload_credentials):
         source = path
         target = upload_credentials['upload_url']
         show("Going to upload %s to %s." % (source, target))
-        subprocess.check_call(['aws', 's3', 'cp', '--only-show-errors', source, target], env=env)
+        command = ['aws', 's3', 'cp']
+        if s3_encrypt_key_id:
+            command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
+        command = command + ['--only-show-errors', source, target]
+        if DEBUG_PROTOCOL:
+            PRINT(f"Executing: {command}")
+            PRINT(f" ==> {' '.join(command)}")
+            PRINT(f"Environment variables include {conjoined_list(list(extra_env.keys()))}.")
+        subprocess.check_call(command, env=env)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("Upload failed with exit code %d" % e.returncode)
     else:
@@ -562,10 +591,14 @@ def upload_file_to_uuid(filename, uuid, auth):
     try:
         [metadata] = response['@graph']
         upload_credentials = metadata['upload_credentials']
+        s3_encrypt_key_id = metadata.get('s3_encrypt_key_id')
+        if DEBUG_PROTOCOL:
+            PRINT(f"Extracted from metadata: s3_encrypt_key_id = {s3_encrypt_key_id}")
     except Exception:
         raise RuntimeError("Unable to obtain upload credentials for file %s." % filename)
 
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials)
+    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth,
+                               s3_encrypt_key_id=s3_encrypt_key_id)
 
 
 # This can be set to True in unusual situations, but normally will be False to avoid unnecessary querying.
