@@ -45,3 +45,10 @@ jobs:
       - name: CI
         run: |
           poetry run coverage run --source submit_cgap -m pytest -vv
+
+      - name: Coveralls
+        # env:
+        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ matrix.python_version == '3.6' }}
+        run: |
+          poetry run coveralls --service=github
