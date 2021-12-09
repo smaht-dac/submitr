@@ -7,11 +7,19 @@ Change Log
 ----------
 
 
-1.1.0
+1.2.0
 =====
 
-Support for proper handling of s3_encrypt_key_id where one is available
-(e.g., as shown in health page).
+* Implements an optimization of the submission protocol so that if
+  the ``upload_credentials`` contain an entry for ``s3_encrypt_key_id``,
+  that value is used without the health page having to be consulted.
+
+
+1.1.1
+=====
+
+* Support for proper handling of ``s3_encrypt_key_id`` where one is available
+  (e.g., as shown in health page).
 
 
 1.0.0
