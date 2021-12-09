@@ -7,7 +7,7 @@ Change Log
 ----------
 
 
-1.2.0
+1.1.1
 =====
 
 * Implements an optimization of the submission protocol so that if
@@ -15,7 +15,7 @@ Change Log
   that value is used without the health page having to be consulted.
 
 
-1.1.1
+1.1.0
 =====
 
 * Support for proper handling of ``s3_encrypt_key_id`` where one is available
