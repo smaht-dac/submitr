@@ -688,7 +688,8 @@ def test_get_s3_encrypt_key_id(debug_protocol):
                 assert (get_s3_encrypt_key_id(upload_credentials=upload_creds, auth='not-used-by-mock')
                         == 'gotten-from-upload-creds')
                 assert mock_health_page_getter.call_count == 0
-                assert printed.lines == (['Extracted s3_encrypt_key_id from upload_credentials: gotten-from-upload-creds']
+                assert printed.lines == (['Extracted s3_encrypt_key_id from upload_credentials:'
+                                          ' gotten-from-upload-creds']
                                          if debug_protocol
                                          else [])
 
