@@ -1,83 +1,13 @@
-==========
-SubmitCGAP
-==========
-
-
-A file submission tool for CGAP
-===============================
-
-.. image:: https://travis-ci.org/dbmi-bgm/SubmitCGAP.svg
-   :target: https://travis-ci.org/dbmi-bgm/SubmitCGAP
-   :alt: Build Status
-
-.. image:: https://coveralls.io/repos/github/dbmi-bgm/SubmitCGAP/badge.svg
-   :target: https://coveralls.io/github/dbmi-bgm/SubmitCGAP
-   :alt: Coverage
-
-.. image:: https://readthedocs.org/projects/submitcgap/badge/?version=latest
-   :target: https://submitcgap.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
-
-Description
-===========
-
-This is a tool for uploading certain kinds of files to CGAP.
-
-Current support is for "metadata bundles" and "gene lists".
-"Metadata bundles" are Excel files (``.xlsx``) accompanied by other files
-(such as ``.fastq.gz`` files).
-"Gene lists" are either Excel files (``.xlsx``) or plain text (``.txt``) files.
-
-
-About Metadata Bundles
-======================
-"Metadata bundles" are Excel files (``.xlsx``) accompanied by other files
-(such as ``.fastq.gz`` files).
-
-**Note:**
-The format of the Excel files that are used as
-"metadata bundles" is not yet documented.
-For now you should begin by obtaining a template file from
-your contact on the CGAP Team and then customize that as appropriate.
-
-Installation
-============
-
-Installing this system involves these steps:
-
-1. Create, install, and activate a virtual environment.
-2. Install poetry
-3. *Only if you are a developer*, select the source repository.
-   Others will not have a source repository to select,
-   so should skip this step.
-4. If you are an end user, do "``pip install submit_cgap``".
-   Otherwise, do "``make build``".
-5. Set up a ``~/.cgap-keys.json`` credentials file.
-
-For detailed information about these installation steps, see
-`Installing SubmitCGAP <INSTALLATION.rst>`__.
-
-
-Testing
-=======
-
-To run unit tests, do::
-
-   $ make test
-
-Additional notes on testing these scripts for release can be found in
-`Testing SubmitCGAP <TESTING.rst>`__.
-
-
+===============
 Getting Started
 ===============
 
-Once ``poetry`` has finished installing this library into your virtual environment,
+Once you have finished installing this library into your virtual environment,
 you should have access to the ``submit-metadata-bundle`` and the ``submit-genelist``
 commands.
 
 Formatting Files for Submission
--------------------------------
+===============================
 
 There are 3 types of submissions: accessioning (new cases) and family history (pedigrees)
 both use the ``submit-metadata-bundle`` command, and gene lists use the ``submit-genelist``
@@ -88,7 +18,7 @@ see our submission help pages at `the main CGAP server <https://cgap.hms.harvard
 or at <your-cgap-server>/help/submission .
 
 Metadata Bundles
-----------------
+================
 
 There are two types of submissions that fall under "metadata bundles" - namely,
 accessioning (new cases) and family history (pedigrees). The default is accessioning,
@@ -148,7 +78,7 @@ as::
     submit-metadata-bundle mymetadata.xlsx --no_query
 
 Family History
-^^^^^^^^^^^^^^
+--------------
 
 If, after submitting a case, you would also like to submit a family history for the case,
 you use the same command as described above but add the --ingestion_type flag::
@@ -156,7 +86,7 @@ you use the same command as described above but add the --ingestion_type flag::
     submit-metadata-bundle mypedigree.xlsx --ingestion_type family_history --server <server_url>
 
 Gene Lists
-----------
+==========
 
 The ``submit-genelist`` command shares similar features with ``submit-metadata-bundle``.
 For help about arguments, do::
