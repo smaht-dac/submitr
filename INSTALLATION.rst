@@ -93,9 +93,12 @@ Credentials can be placed in the file ``~/.cgap-keys.json``. The file format is:
 
    {"envname1": {"key": ..., "secret": ..., "server": ...}, "envname2": ..., ...}
 
-   The envname to use for production is "fourfront-cgap".
-   The envname to use for local debugging is "fourfront-cgaplocal".
-   So a typical file might look like:
+   The envname to use for the main CGAP server is "fourfront-cgap".
+   The envname to use for local debugging (for developers) is "fourfront-cgaplocal".
+   For end users, reach out to your contact on the CGAP team if you're not sure which server you
+   need to submit to.
+   So a typical file might look like below (if you are not a developer, you will probably
+   only have one key rather than several):
 
    {
        "fourfront-cgap": {
@@ -127,5 +130,3 @@ and to give no one else (but the system superuser) any permissions at all::
 
    $ ls -dal ~/.cgap-keys.json
    -rw-------  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keys.json
-
-

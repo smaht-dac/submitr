@@ -7,7 +7,7 @@ Setting Up a Virtual Environment (OPTIONAL)
 ===========================================
 
 This is optional.
-If you do not create a virtual environment, Poetry will make one for you.
+If you use Poetry and do not create a virtual environment, Poetry will make one for you.
 But there are still good reasons you might want to make your own, so here
 are three ways to do it:
 
@@ -51,7 +51,11 @@ However, if you want to deactivate an active environment, just do::
 Installing Poetry in a Virtual Environment
 ==========================================
 
-Once you have created a virtual environment, or have decided to just let Poetry handle that,
+**End Users:** Submit-CGAP can be installed with a simple pip install.
+
+   pip install submit-cgap
+
+**Developers:** Once you have created a virtual environment, or have decided to just let Poetry handle that,
 install with poetry::
 
    poetry install
@@ -65,8 +69,8 @@ Credentials can be placed in the file ``~/.cgap-keydicts.json``. The file format
    {"envname1": {"key": ..., "secret": ..., "server": ...}, "envname2": ..., ...}
 
    The envname to use for the main CGAP server is "fourfront-cgap".
-   The envname to use for local debugging is "fourfront-cgaplocal".
-   Reach out to your contact on the CGAP team if you're not sure which server you
+   The envname to use for local debugging (for developers) is "fourfront-cgaplocal".
+   For end users, reach out to your contact on the CGAP team if you're not sure which server you
    need to submit to.
    So a typical file might look like below (if you are not a developer, you will probably
    only have one key rather than several):

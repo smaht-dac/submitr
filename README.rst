@@ -72,7 +72,7 @@ Additional notes on testing these scripts for release can be found in
 Getting Started
 ===============
 
-Once ``poetry`` has finished installing this library into your virtual environment,
+Once you have finished installing this library into your virtual environment,
 you should have access to the ``submit-metadata-bundle`` and the ``submit-genelist``
 commands.
 
@@ -95,6 +95,9 @@ accessioning (new cases) and family history (pedigrees). The default is accessio
 if no ingestion_type is specified. If you would like to submit a family history,
 make sure the cases are submitted first.
 
+Accessioning
+^^^^^^^^^^^^
+
 For help about arguments, do::
 
    submit-metadata-bundle --help
@@ -107,7 +110,10 @@ For example::
    submit-metadata-bundle mymetadata.xlsx --server <server_url>
 
 This command should do everything, including upload referenced files
-if they are in the same directory. (It will ask for confirmation.)
+if they are in the same directory. (It will ask for confirmation.) If you belong to
+multiple projects and/or institutions, you can also add the ``--project <project>``
+and ``--institution <institution>`` options; if you belong to only one project/institution
+in CGAP, the system will automatically detect them.
 
 To invoke it for validation only, without submitting anything, do::
 
@@ -169,4 +175,4 @@ and to submit a gene list for validation only, do::
 
 For most situations, simply specify the gene list you want to upload, e.g.::
 
-   submit-genelist mygenelist.xlsx
+   submit-genelist mygenelist.xlsx --server <server_url>
