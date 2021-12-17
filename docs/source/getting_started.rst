@@ -4,14 +4,12 @@ Getting Started
 
 Once you have finished installing this library into your virtual environment,
 you should have access to the ``submit-metadata-bundle`` and the ``submit-genelist``
-commands.
+commands. There are 3 types of submissions: accessioning (new cases) and family history (pedigrees)
+both use the ``submit-metadata-bundle`` command, and gene lists use the ``submit-genelist``
+command.
 
 Formatting Files for Submission
 ===============================
-
-There are 3 types of submissions: accessioning (new cases) and family history (pedigrees)
-both use the ``submit-metadata-bundle`` command, and gene lists use the ``submit-genelist``
-command.
 
 For details on what file formats are accepted and how the information should be structured,
 see our submission help pages at `the main CGAP server <https://cgap.hms.harvard.edu/help/submission>`_
@@ -22,7 +20,7 @@ Metadata Bundles
 
 There are two types of submissions that fall under "metadata bundles" - namely,
 accessioning (new cases) and family history (pedigrees). The default is accessioning,
-if no ingestion_type is specified. If you would like to submit a family history,
+if no ingestion type is specified. If you would like to submit a family history,
 make sure the cases are submitted first.
 
 Accessioning
