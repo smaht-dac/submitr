@@ -7,6 +7,12 @@ Change Log
 ----------
 
 
+1.1.2
+=====
+
+* Documentation reorganized; some documentation specific to submitting
+  family histories added.
+
 1.1.1
 =====
 

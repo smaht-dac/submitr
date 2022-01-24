@@ -3,19 +3,11 @@ Installing SubmitCGAP
 =====================
 
 
-System Requirements
-===================
-
-* Python 3.6 or 3.7
-* ``pip`` (version 20 or higher)
-* ``virtualenv`` (version 16 or higher)
-
-
 Setting Up a Virtual Environment (OPTIONAL)
 ===========================================
 
-This action is optional.
-If you do not create a virtual environment, Poetry will make one for you.
+This is optional.
+If you use Poetry and do not create a virtual environment, Poetry will make one for you.
 But there are still good reasons you might want to make your own, so here
 are three ways to do it:
 
@@ -56,40 +48,23 @@ However, if you want to deactivate an active environment, just do::
 
    deactivate
 
-
-Installing in a Virtual Environment
+Installing Poetry in a Virtual Environment
 ==========================================
 
-Installation for Developers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**End Users:** Submit-CGAP can be installed with a simple pip install::
 
-If you are a developer, you'll be installing with Poetry.
-Once you have created a virtual environment, or have decided to just let Poetry handle that,
-go ahead with the installation. To do that, make sure your current directory is the source repository and do::
+   pip install submit-cgap
 
-   make build
+**Developers:** Once you have created a virtual environment, or have decided to just let Poetry handle that,
+install with poetry::
 
-
-.. tip::
-
-   Poetry is the substrate that our build scripts rely on.
-   You won't be calling it directly, but ``make build`` will call it.
-
-
-Installation for End Users (non-Developers)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you're an end user,
-once you have created and activated the virtual environment,
-just do::
-
-   pip install submit_cgap
+   poetry install
 
 
 Setting Up Credentials
 ======================
 
-Credentials can be placed in the file ``~/.cgap-keys.json``. The file format is::
+Credentials can be placed in the file ``~/.cgap-keydicts.json``. The file format is::
 
    {"envname1": {"key": ..., "secret": ..., "server": ...}, "envname2": ..., ...}
 
@@ -98,7 +73,7 @@ The envname to use for local debugging (for developers) is "fourfront-cgaplocal"
 For end users, reach out to your contact on the CGAP team if you're not sure which server you
 need to submit to.
 So a typical file might look like below (if you are not a developer, you will probably
-only have one key rather than several):
+only have one key rather than several)::
 
    {
        "fourfront-cgap": {
@@ -123,10 +98,10 @@ Set its permissions accordingly by using ``chmod 600``,
 which sets the file to be readable and writable only by yourself,
 and to give no one else (but the system superuser) any permissions at all::
 
-   $ ls -dal ~/.cgap-keys.json
-   -rw-r--r--  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keys.json
+   $ ls -dal ~/.cgap-keydicts.json
+   -rw-r--r--  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keydicts.json
 
-   $ chmod 600 ~/.cgap-keys.json
+   $ chmod 600 ~/.cgap-keydicts.json
 
-   $ ls -dal ~/.cgap-keys.json
-   -rw-------  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keys.json
+   $ ls -dal ~/.cgap-keydicts.json
+   -rw-------  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keydicts.json
