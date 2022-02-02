@@ -64,32 +64,45 @@ install with poetry::
 Setting Up Credentials
 ======================
 
-Credentials can be placed in the file ``~/.cgap-keydicts.json``. The file format is::
+Credentials can be placed in a file named ``~/.cgap-keys.json``. The file format is::
 
    {"envname1": {"key": ..., "secret": ..., "server": ...}, "envname2": ..., ...}
 
-The envname to use for the main CGAP server is "fourfront-cgap".
-The envname to use for local debugging (for developers) is "fourfront-cgaplocal".
-For end users, reach out to your contact on the CGAP team if you're not sure which server you
-need to submit to.
-So a typical file might look like below (if you are not a developer, you will probably
-only have one key rather than several)::
+For most CGAP environments, the envname to use is the part of the url preceding
+``.hms.harvard.edu``, such as ``cgap-mgb`` or ``cgap-devtest``.
+For end users, reach out to your contact on the CGAP team or at
+`cgap-support@hms-dbmi.atlassian.net <mailto:cgap-support@hms-dbmi.atlassian.net>`_
+if you're not sure which server you need to submit to.
+A typical file might look like below for end users (replace the example environment
+and server with your own envname and server)::
+
+    {
+        "cgap-main": {
+            "key": "some_key",
+            "secret": "some_secret",
+            "server": "https://cgap-main.hms.harvard.edu"
+        }
+    }
+
+For developers, the suggested envname to use for local debugging (for developers) is "fourfront-cgaplocal".
+You will probably have several keys in your credential file. An example keyfile is shown below
+(note that the CGAP servers used are just example urls)::
 
    {
-       "fourfront-cgap": {
+       "cgap-main": {
            "key": "some_key",
            "secret": "some_secret",
-           "server": "https://cgap.hms.harvard.edu"
+           "server": "https://cgap-main.hms.harvard.edu"
        },
-       "fourfront-local": {
+       "fourfront-cgaplocal": {
            "key": "some_other_key",
            "secret": "some_other_secret",
            "server": "http://localhost:8000"
        },
-       "fourfront-cgapdev": {
+       "cgap-testing": {
            "key": "some_third_key",
            "secret": "some_third_secret",
-           "server": "http://fourfront-cgapdev.9wzadzju3p.us-east-1.elasticbeanstalk.com/"
+           "server": "https://cgap-testing.hms.harvard.edu"
        }
    }
 
@@ -98,10 +111,10 @@ Set its permissions accordingly by using ``chmod 600``,
 which sets the file to be readable and writable only by yourself,
 and to give no one else (but the system superuser) any permissions at all::
 
-   $ ls -dal ~/.cgap-keydicts.json
-   -rw-r--r--  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keydicts.json
+   $ ls -dal ~/.cgap-keys.json
+   -rw-r--r--  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keys.json
 
-   $ chmod 600 ~/.cgap-keydicts.json
+   $ chmod 600 ~/.cgap-keys.json
 
-   $ ls -dal ~/.cgap-keydicts.json
-   -rw-------  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keydicts.json
+   $ ls -dal ~/.cgap-keys.json
+   -rw-------  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keys.json
