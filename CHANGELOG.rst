@@ -7,11 +7,18 @@ Change Log
 ----------
 
 
+1.1.3
+=====
+
+* Fixed name of keyfile in installation documentation
+
+
 1.1.2
 =====
 
 * Documentation reorganized; some documentation specific to submitting
   family histories added.
+
 
 1.1.1
 =====
