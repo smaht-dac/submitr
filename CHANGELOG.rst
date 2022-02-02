@@ -10,7 +10,8 @@ Change Log
 1.1.3
 =====
 
-* Fixed name of keyfile in installation documentation
+* Fixed name of keyfile in installation documentation and added/modified some of
+  the wording and examples.
 
 
 1.1.2
