@@ -3,19 +3,11 @@ Installing SubmitCGAP
 =====================
 
 
-System Requirements
-===================
-
-* Python 3.6 or 3.7
-* ``pip`` (version 20 or higher)
-* ``virtualenv`` (version 16 or higher)
-
-
 Setting Up a Virtual Environment (OPTIONAL)
 ===========================================
 
-This action is optional.
-If you do not create a virtual environment, Poetry will make one for you.
+This is optional.
+If you use Poetry and do not create a virtual environment, Poetry will make one for you.
 But there are still good reasons you might want to make your own, so here
 are three ways to do it:
 
@@ -56,65 +48,61 @@ However, if you want to deactivate an active environment, just do::
 
    deactivate
 
-
-Installing in a Virtual Environment
+Installing Poetry in a Virtual Environment
 ==========================================
 
-Installation for Developers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**End Users:** Submit-CGAP can be installed with a simple pip install::
 
-If you are a developer, you'll be installing with Poetry.
-Once you have created a virtual environment, or have decided to just let Poetry handle that,
-go ahead with the installation. To do that, make sure your current directory is the source repository and do::
+   pip install submit-cgap
 
-   make build
+**Developers:** Once you have created a virtual environment, or have decided to just let Poetry handle that,
+install with poetry::
 
-
-.. tip::
-
-   Poetry is the substrate that our build scripts rely on.
-   You won't be calling it directly, but ``make build`` will call it.
-
-
-Installation for End Users (non-Developers)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you're an end user,
-once you have created and activated the virtual environment,
-just do::
-
-   pip install submit_cgap
+   poetry install
 
 
 Setting Up Credentials
 ======================
 
-Credentials can be placed in the file ``~/.cgap-keys.json``. The file format is::
+Credentials can be placed in a file named ``~/.cgap-keys.json``. The file format is::
 
    {"envname1": {"key": ..., "secret": ..., "server": ...}, "envname2": ..., ...}
 
-The envname to use for the main CGAP server is "fourfront-cgap".
-The envname to use for local debugging (for developers) is "fourfront-cgaplocal".
-For end users, reach out to your contact on the CGAP team if you're not sure which server you
-need to submit to.
-So a typical file might look like below (if you are not a developer, you will probably
-only have one key rather than several):
+For most CGAP environments, the envname to use is the part of the url preceding
+``.hms.harvard.edu``, such as ``cgap-mgb`` or ``cgap-devtest``.
+For end users, reach out to your contact on the CGAP team or at
+`cgap-support@hms-dbmi.atlassian.net <mailto:cgap-support@hms-dbmi.atlassian.net>`_
+if you're not sure which server you need to submit to.
+A typical file might look like below for end users (replace the example environment
+and server with your own envname and server)::
+
+    {
+        "cgap-main": {
+            "key": "some_key",
+            "secret": "some_secret",
+            "server": "https://cgap-main.hms.harvard.edu"
+        }
+    }
+
+For developers, the suggested envname to use for local debugging (for developers) is "fourfront-cgaplocal".
+You will probably have several keys in your credential file. An example keyfile is shown below
+(note that the CGAP servers used are just example urls)::
 
    {
-       "fourfront-cgap": {
+       "cgap-main": {
            "key": "some_key",
            "secret": "some_secret",
-           "server": "https://cgap.hms.harvard.edu"
+           "server": "https://cgap-main.hms.harvard.edu"
        },
-       "fourfront-local": {
+       "fourfront-cgaplocal": {
            "key": "some_other_key",
            "secret": "some_other_secret",
            "server": "http://localhost:8000"
        },
-       "fourfront-cgapdev": {
+       "cgap-testing": {
            "key": "some_third_key",
            "secret": "some_third_secret",
-           "server": "http://fourfront-cgapdev.9wzadzju3p.us-east-1.elasticbeanstalk.com/"
+           "server": "https://cgap-testing.hms.harvard.edu"
        }
    }
 

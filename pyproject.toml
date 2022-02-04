@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "submit_cgap"
-version = "1.1.1.2b0"  # actually, we need a different beta series
+version = "1.2.0"
 description = "Support for uploading file submissions to the Clinical Genomics Analysis Platform (CGAP)."
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
