@@ -500,8 +500,8 @@ category = "main"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 name = "dcicutils"
 optional = false
-python-versions = ">=3.6.1,<3.9"
-version = "3.8.0"
+python-versions = ">=3.6.1,<3.10"
+version = "3.8.0.1b0"
 
 [package.dependencies]
 aws-requests-auth = ">=0.4.2,<1"
@@ -1197,8 +1197,8 @@ docs = ["sphinx", "jaraco.packaging (>=8.2)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy"]
 
 [metadata]
-content-hash = "e2142ebcd8104478188aa49c438f28ad7895c24e2678274845928b8957bbff9e"
-python-versions = ">=3.6.1,<3.9"
+content-hash = "ce8355788de3666396cf11da89fd2378508717a4236dfd0cc2a03ddeb164648d"
+python-versions = ">=3.6.1,<3.10"
 
 [metadata.files]
 alabaster = [
@@ -1320,8 +1320,8 @@ coveralls = [
     {file = "coveralls-3.2.0.tar.gz", hash = "sha256:15a987d9df877fff44cd81948c5806ffb6eafb757b3443f737888358e96156ee"},
 ]
 dcicutils = [
-    {file = "dcicutils-3.8.0-py3-none-any.whl", hash = "sha256:16a7b933657e8ed8cd0feca285eac620f3c23af8cb06d7fc7338b4511cceda75"},
-    {file = "dcicutils-3.8.0.tar.gz", hash = "sha256:1b493f2f26fd37774cacdef6b5260e39a69187395af7d1527f5dd3d347e95187"},
+    {file = "dcicutils-3.8.0.1b0-py3-none-any.whl", hash = "sha256:09a75ac406ca378ba841beaffa543d9ddea87748ff3c8bfe7e5c4ebe50a5f0de"},
+    {file = "dcicutils-3.8.0.1b0.tar.gz", hash = "sha256:283abed5f0ab9e558aecbb9bbff3af574a11e4a4ab2c584b1e00f750b5e933ae"},
 ]
 docker = [
     {file = "docker-4.4.4-py2.py3-none-any.whl", hash = "sha256:f3607d5695be025fa405a12aca2e5df702a57db63790c73b927eb6a94aac60af"},
