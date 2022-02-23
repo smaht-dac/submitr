@@ -16,8 +16,7 @@ from dcicutils.ff_utils import get_health_page
 from dcicutils.lang_utils import n_of, conjoined_list
 from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join
 from dcicutils.s3_utils import HealthPageKey
-from .auth import get_keydict_for_server, keydict_to_keypair
-from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
+from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER
 from .exceptions import CGAPPermissionError
 from .utils import show, keyword_as_title
 
@@ -332,8 +331,8 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
                 show("Aborting submission.")
                 exit(1)
 
-        keydict = get_keydict_for_server(server)
-        keypair = keydict_to_keypair(keydict)
+        keydict = KEY_MANAGER.get_keydict_for_server(server)
+        keypair = KEY_MANAGER.keydict_to_keypair(keydict)
 
         user_record = get_user_record(server, auth=keypair)
 
@@ -457,9 +456,9 @@ def show_upload_info(uuid, server=None, env=None, keydict=None):
     with script_catch_errors():
 
         server = resolve_server(server=server, env=env)
-        keydict = keydict or get_keydict_for_server(server)
+        keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
         url = ingestion_submission_item_url(server, uuid)
-        response = requests.get(url, auth=keydict_to_keypair(keydict))
+        response = requests.get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict))
         response.raise_for_status()
         res = response.json()
         if get_section(res, 'upload_info'):
@@ -503,9 +502,9 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     with script_catch_errors():
 
         server = resolve_server(server=server, env=env)
-        keydict = keydict or get_keydict_for_server(server)
+        keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
         url = ingestion_submission_item_url(server, uuid)
-        keypair = keydict_to_keypair(keydict)
+        keypair = KEY_MANAGER.keydict_to_keypair(keydict)
         response = requests.get(url, auth=keypair)
         response.raise_for_status()
         do_any_uploads(response.json(),
@@ -546,6 +545,8 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
     :param path: the name of a local file to upload
     :param upload_credentials: a dictionary of credentials to be used for the upload,
         containing the keys 'AccessKeyId', 'SecretAccessKey', 'SessionToken', and 'upload_url'.
+    :param auth: a keypair or keydict (to be used in obtaining an s3_encrypt_key_id from the health page
+        if upload_credentials do not contain that id).
     """
 
     if DEBUG_PROTOCOL:
@@ -667,7 +668,7 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
 
     server = resolve_server(server=server, env=env)
 
-    keydict = get_keydict_for_server(server)
+    keydict = KEY_MANAGER.get_keydict_for_server(server)
 
     # print("keydict=", json.dumps(keydict, indent=2))
 

@@ -5,7 +5,7 @@ from dcicutils.qa_utils import override_environ
 from dcicutils.s3_utils import HealthPageKey
 from unittest import mock
 from .. import submission as submission_module
-from ..base import KeyManager
+from ..base import KEY_MANAGER
 from ..scripts.upload_item_data import main as upload_item_data_main
 from ..scripts import upload_item_data as upload_item_data_module
 
@@ -30,14 +30,14 @@ def test_upload_item_data_script(keyfile, mocked_s3_encrypt_key_id):
                         # Outside of the call, we will always see the default filename for cgap keys
                         # but inside the call, because of a decorator, the default might be different.
                         # See additional test below.
-                        assert KeyManager.keydicts_filename() == KeyManager.DEFAULT_KEYDICTS_FILENAME
+                        assert KEY_MANAGER.keys_file == KEY_MANAGER._default_keys_file()
 
                         def mocked_upload_item_data(*args, **kwargs):
                             ignored(args, kwargs)
                             # We don't need to test this function's actions because we test its call args below.
                             # However, we do need to run this one test from the same dynamic context,
                             # so this is close enough.
-                            assert KeyManager.keydicts_filename() == (keyfile or KeyManager.DEFAULT_KEYDICTS_FILENAME)
+                            assert KEY_MANAGER.keys_file == (keyfile or KEY_MANAGER._default_keys_file())
 
                         mock_upload_item_data.side_effect = mocked_upload_item_data
                         upload_item_data_main(args_in)

@@ -4,7 +4,7 @@ from dcicutils.misc_utils import ignored
 from dcicutils.qa_utils import override_environ
 from unittest import mock
 from ..submission import DEFAULT_INGESTION_TYPE
-from ..base import KeyManager
+from ..base import KEY_MANAGER
 from ..scripts.submit_metadata_bundle import main as submit_metadata_bundle_main
 from ..scripts import submit_metadata_bundle as submit_metadata_bundle_module
 
@@ -21,14 +21,14 @@ def test_submit_metadata_bundle_script(keyfile):
                     # Outside of the call, we will always see the default filename for cgap keys
                     # but inside the call, because of a decorator, the default might be different.
                     # See additional test below.
-                    assert KeyManager.keydicts_filename() == KeyManager.DEFAULT_KEYDICTS_FILENAME
+                    assert KEY_MANAGER.keys_file == KEY_MANAGER._default_keys_file()
 
                     def mocked_submit_metadata_bundle(*args, **kwargs):
                         ignored(args, kwargs)
                         # We don't need to test this function's actions because we test its call args below.
                         # However, we do need to run this one test from the same dynamic context,
                         # so this is close enough.
-                        assert KeyManager.keydicts_filename() == (keyfile or KeyManager.DEFAULT_KEYDICTS_FILENAME)
+                        assert KEY_MANAGER.keys_file == (keyfile or KEY_MANAGER._default_keys_file())
 
                     mock_submit_any_ingestion.side_effect = mocked_submit_metadata_bundle
                     submit_metadata_bundle_main(args_in)

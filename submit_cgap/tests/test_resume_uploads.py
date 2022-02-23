@@ -5,7 +5,7 @@ from dcicutils.misc_utils import ignored
 from dcicutils.qa_utils import override_environ, MockResponse
 from unittest import mock
 from .. import submission as submission_module
-from ..base import KeyManager
+from ..base import CGAPKeyManager
 from ..scripts.resume_uploads import main as resume_uploads_main
 from ..scripts import resume_uploads as resume_uploads_module
 
@@ -20,17 +20,20 @@ def test_resume_uploads_script(keyfile):
                 mock_print.side_effect = lambda *args: output.append(" ".join(args))
                 with mock.patch.object(resume_uploads_module, "resume_uploads") as mock_resume_uploads:
                     try:
+
+                        key_manager = CGAPKeyManager()
+
                         # Outside of the call, we will always see the default filename for cgap keys
                         # but inside the call, because of a decorator, the default might be different.
                         # See additional test below.
-                        assert KeyManager.keydicts_filename() == KeyManager.DEFAULT_KEYDICTS_FILENAME
+                        assert key_manager.keys_file == key_manager.KEYS_FILE
 
                         def mocked_resume_uploads(*args, **kwargs):
                             ignored(args, kwargs)
                             # We don't need to test this function's actions because we test its call args below.
                             # However, we do need to run this one test from the same dynamic context,
                             # so this is close enough.
-                            assert KeyManager.keydicts_filename() == (keyfile or KeyManager.DEFAULT_KEYDICTS_FILENAME)
+                            assert key_manager.keys_file == (keyfile or key_manager.KEYS_FILE)
 
                         mock_resume_uploads.side_effect = mocked_resume_uploads
                         resume_uploads_main(args_in)
@@ -194,13 +197,13 @@ def test_c4_383_regression_action():
                                 'secret': 'my-secret',
                                 'server': local_server,
                             }
-                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                            with mock.patch.object(CGAPKeyManager, "get_keydict_for_server",
                                                    return_value=fake_keydict):
                                 try:
                                     # Outside of the call, we will always see the default filename for cgap keys
                                     # but inside the call, because of a decorator, the default might be different.
                                     # See additional test below.
-                                    assert KeyManager.keydicts_filename() == KeyManager.DEFAULT_KEYDICTS_FILENAME
+                                    assert CGAPKeyManager().keys_file == CGAPKeyManager._default_keys_file()
 
                                     resume_uploads_main(["2eab76cd-666c-4b04-9335-22f9c6084303",
                                                          '--server', local_server])

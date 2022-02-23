@@ -3,7 +3,7 @@ import pytest
 from dcicutils.misc_utils import ignored
 from dcicutils.qa_utils import override_environ
 from unittest import mock
-from ..base import KeyManager
+from ..base import KEY_MANAGER
 from ..scripts.show_upload_info import main as show_upload_info_main
 from ..scripts import show_upload_info as show_upload_info_module
 
@@ -21,14 +21,14 @@ def test_show_upload_info_script(keyfile):
                         # Outside of the call, we will always see the default filename for cgap keys
                         # but inside the call, because of a decorator, the default might be different.
                         # See additional test below.
-                        assert KeyManager.keydicts_filename() == KeyManager.DEFAULT_KEYDICTS_FILENAME
+                        assert KEY_MANAGER.keys_file() == KEY_MANAGER._default_keys_file()
 
                         def mocked_show_upload_info(*args, **kwargs):
                             ignored(args, kwargs)
                             # We don't need to test this function's actions because we test its call args below.
                             # However, we do need to run this one test from the same dynamic context,
                             # so this is close enough.
-                            assert KeyManager.keydicts_filename() == (keyfile or KeyManager.DEFAULT_KEYDICTS_FILENAME)
+                            assert KEY_MANAGER.keys_file() == (keyfile or KEY_MANAGER._default_keys_file())
 
                         mock_show_upload_info.side_effect = mocked_show_upload_info
                         show_upload_info_main(args_in)

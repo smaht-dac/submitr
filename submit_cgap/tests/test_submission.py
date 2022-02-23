@@ -579,6 +579,7 @@ def test_do_any_uploads():
     with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
 
         n_uploads = len(SOME_UPLOAD_INFO)
+        ignored(n_uploads)
 
         with shown_output() as shown:
             do_any_uploads(
