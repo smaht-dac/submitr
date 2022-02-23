@@ -6,7 +6,8 @@ def system_exit_expected(*, exit_code):
     try:
         yield
     except SystemExit as e:
-        assert e.code == exit_code
+        if e.code != exit_code:
+            raise AssertionError(f"SystemExit got code={e.code} where code={exit_code} was expected.")
     except Exception as e:
         raise AssertionError(f"Expected SystemExit({exit_code}) but got unexpected error: {e}")
     else:
