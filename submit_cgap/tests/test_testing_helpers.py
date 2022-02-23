@@ -1,7 +1,6 @@
 import pytest
 import re
 
-from dcicutils.qa_utils import raises_regexp
 from .testing_helpers import system_exit_expected
 
 
