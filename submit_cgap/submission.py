@@ -207,16 +207,6 @@ def ingestion_submission_item_url(server, uuid):
     return url_path_join(server, "ingestion-submissions", uuid) + "?format=json"
 
 
-@contextlib.contextmanager
-def script_catch_errors():
-    try:
-        yield
-        exit(0)
-    except Exception as e:
-        show("%s: %s" % (e.__class__.__name__, str(e)))
-        exit(1)
-
-
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
 
 
@@ -316,7 +306,7 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
     :param subfolders: bool to search subdirectories within upload_folder for files
     """
 
-    with script_catch_errors():
+    if True:
 
         server = resolve_server(server=server, env=env)
 
@@ -454,7 +444,8 @@ def show_upload_info(uuid, server=None, env=None, keydict=None):
     :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
     """
 
-    with script_catch_errors():
+    # with script_catch_errors():
+    if True:
 
         server = resolve_server(server=server, env=env)
         keydict = keydict or get_keydict_for_server(server)
@@ -500,7 +491,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     :param subfolders: bool to search subdirectories within upload_folder for files
     """
 
-    with script_catch_errors():
+    # with script_catch_errors():
+    if True:
 
         server = resolve_server(server=server, env=env)
         keydict = keydict or get_keydict_for_server(server)

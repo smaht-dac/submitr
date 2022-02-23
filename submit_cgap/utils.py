@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 
 from dcicutils.misc_utils import PRINT
@@ -59,3 +60,13 @@ class FakeResponse:
     def raise_for_status(self):
         if self.status_code >= 300:
             raise Exception("%s raised for status." % self)
+
+
+@contextlib.contextmanager
+def script_catch_errors():
+    try:
+        yield
+        exit(0)
+    except Exception as e:
+        show("%s: %s" % (e.__class__.__name__, str(e)))
+        exit(1)

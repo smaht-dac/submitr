@@ -1,6 +1,7 @@
 import argparse
 from ..submission import show_upload_info
 from ..base import UsingCGAPKeysFile
+from ..utils import script_catch_errors
 
 
 EPILOG = __doc__
@@ -18,7 +19,9 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--env', '-e', help="a CGAP beanstalk environment name for the server to use", default=None)
     args = parser.parse_args(args=simulated_args_for_testing)
 
-    show_upload_info(uuid=args.uuid, server=args.server, env=args.env)
+    with script_catch_errors():
+
+        show_upload_info(uuid=args.uuid, server=args.server, env=args.env)
 
 
 if __name__ == '__main__':
