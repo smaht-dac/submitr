@@ -1,4 +1,3 @@
-import contextlib
 import glob
 import io
 import json
@@ -530,6 +529,8 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
     :param path: the name of a local file to upload
     :param upload_credentials: a dictionary of credentials to be used for the upload,
         containing the keys 'AccessKeyId', 'SecretAccessKey', 'SessionToken', and 'upload_url'.
+    :param auth: auth info in the form of a dictionary containing 'key', 'secret', and 'server',
+        and possibly other useful information such as an encryption key id.
     """
 
     if DEBUG_PROTOCOL:
