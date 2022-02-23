@@ -64,6 +64,7 @@ class FakeResponse:
 
 DEBUG_CGAP = environ_bool("DEBUG_CGAP")
 
+
 @contextlib.contextmanager
 def script_catch_errors():
     try:
