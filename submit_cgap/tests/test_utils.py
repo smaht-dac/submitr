@@ -4,7 +4,7 @@ import re
 
 from unittest import mock
 from .. import utils as utils_module
-from ..utils import show, keyword_as_title, FakeResponse
+from ..utils import show, keyword_as_title, FakeResponse, script_catch_errors
 
 
 @contextlib.contextmanager
@@ -107,3 +107,21 @@ def test_fake_response():
 
     with pytest.raises(Exception):
         error_response.raise_for_status()
+
+
+def test_script_catch_errors():
+
+    with shown_output() as shown:
+        with pytest.raises(SystemExit) as caught:
+            with script_catch_errors():
+                print("foo")
+        # foo = sys.exc_info()
+        assert caught.value.code == 0
+        assert shown.lines == []
+
+    with shown_output() as shown:
+        with pytest.raises(SystemExit) as caught:
+            with script_catch_errors():
+                raise Exception("Foo")
+        assert caught.value.code == 1
+        assert shown.lines == ["Exception: Foo"]

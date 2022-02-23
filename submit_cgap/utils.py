@@ -1,7 +1,7 @@
 import contextlib
 import datetime
 
-from dcicutils.misc_utils import PRINT
+from dcicutils.misc_utils import PRINT, environ_bool
 from json import dumps as json_dumps, loads as json_loads
 
 
@@ -59,8 +59,10 @@ class FakeResponse:
 
     def raise_for_status(self):
         if self.status_code >= 300:
-            raise Exception("%s raised for status." % self)
+            raise Exception(f"{self} raised for status.")
 
+
+DEBUG_CGAP = environ_bool("DEBUG_CGAP")
 
 @contextlib.contextmanager
 def script_catch_errors():
@@ -68,5 +70,9 @@ def script_catch_errors():
         yield
         exit(0)
     except Exception as e:
-        show("%s: %s" % (e.__class__.__name__, str(e)))
-        exit(1)
+        if DEBUG_CGAP:
+            # If debugging, let the error propagate, do not trap it.
+            raise
+        else:
+            show(f"{e.__class__.__name__}: {e}")
+            exit(1)
