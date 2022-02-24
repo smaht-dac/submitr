@@ -11,7 +11,7 @@ def test_make_sample_fastq_file_script():
                                "generate_sample_fastq_file") as mock_generate_sample_fastq_file:
             with system_exit_expected(exit_code=expect_exit_code):
                 make_sample_fastq_file_main(args_in)
-                mock_generate_sample_fastq_file.assert_called_with(**expect_call_args)
+                raise AssertionError("make_sample_fastq_file_main should not exit normally.")  # pragma: no cover
             assert mock_generate_sample_fastq_file.call_count == (1 if expect_called else 0)
 
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
