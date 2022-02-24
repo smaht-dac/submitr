@@ -503,7 +503,11 @@ def get_s3_encrypt_key_id_from_health_page(auth):
     try:
         health = get_health_page(key=auth)
         return health.get(HealthPageKey.S3_ENCRYPT_KEY_ID)
-    except Exception:
+    except Exception:  # pragma: no cover
+        # We don't actually unit test this section because get_health_page realistically always returns
+        # a dictionary, and so health.get(...) always succeeds, possibly returning None, which should
+        # already be tested. Returning None here amounts to the same and needs no extra unit testing.
+        # The presence of this error clause is largely pro forma and probably not really needed.
         return None
 
 

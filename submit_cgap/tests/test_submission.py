@@ -67,6 +67,16 @@ SOME_UPLOAD_CREDENTIALS = {
     'upload_url': SOME_UPLOAD_URL,
 }
 
+SOME_S3_ENCRYPT_KEY_ID = 'some/encrypt/key'
+
+SOME_EXTENDED_UPLOAD_CREDENTIALS = {
+    'AccessKeyId': 'some-access-key',
+    'SecretAccessKey': 'some-secret',
+    'SessionToken': 'some-session-token',
+    'upload_url': SOME_UPLOAD_URL,
+    's3_encrypt_key_id': SOME_S3_ENCRYPT_KEY_ID,
+}
+
 SOME_UPLOAD_CREDENTIALS_RESULT = {
     '@graph': [
         {'upload_credentials': SOME_UPLOAD_CREDENTIALS}
@@ -663,6 +673,22 @@ def test_execute_prearranged_upload():
                     execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
                     mock_aws_call.assert_called_with(
                         ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
+                        env=SOME_ENVIRON_WITH_CREDS
+                    )
+                    assert shown.lines == [
+                        "Going to upload some-filename to some-url.",
+                        "Uploaded in 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
+                    ]
+
+    with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
+        with shown_output() as shown:
+            with mock.patch("time.time", MockTime().time):
+                with mock.patch("subprocess.call", return_value=0) as mock_aws_call:
+                    execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_EXTENDED_UPLOAD_CREDENTIALS)
+                    mock_aws_call.assert_called_with(
+                        ['aws', 's3', 'cp',
+                         '--sse', 'aws:kms', '--sse-kms-key-id', SOME_S3_ENCRYPT_KEY_ID,
+                         '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
                         env=SOME_ENVIRON_WITH_CREDS
                     )
                     assert shown.lines == [
