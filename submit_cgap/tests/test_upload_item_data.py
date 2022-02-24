@@ -41,7 +41,8 @@ def test_upload_item_data_script(keyfile, mocked_s3_encrypt_key_id):
                             if KeyManager.keydicts_filename() == (keyfile or KeyManager.DEFAULT_KEYDICTS_FILENAME):
                                 exit(0)
                             else:
-                                exit(1)
+                                # This case is not expected to be reached but must be here for testing to catch
+                                exit(1)  # pragma: no cover
 
                         mock_upload_item_data.side_effect = mocked_upload_item_data
                         upload_item_data_main(args_in)

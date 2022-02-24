@@ -236,7 +236,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
                              headers={'Content-type': 'application/json'},
                              files=post_files_data())
 
-    if DEBUG_PROTOCOL:
+    if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT("old_style_submission_url=", old_style_submission_url)
         PRINT("old_style_post_data=", json.dumps(old_style_post_data, indent=2))
         PRINT("keypair=", keypair)
@@ -244,7 +244,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
 
     if response.status_code == 404:
 
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("Retrying with new protocol.")
 
         creation_post_headers = {
@@ -252,7 +252,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
             'Accept': 'application/json',
         }
         creation_post_url = url_path_join(server, "IngestionSubmission")
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("creation_post_data=", json.dumps(creation_post_data, indent=2))
             PRINT("creation_post_url=", creation_post_url)
         creation_response = requests.post(creation_post_url, auth=keypair,
@@ -260,26 +260,26 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
                                           json=creation_post_data
                                           # data=json.dumps(creation_post_data)
                                           )
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("headers:", creation_response.request.headers)
         creation_response.raise_for_status()
         [submission] = creation_response.json()['@graph']
         submission_id = submission['@id']
 
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("server=", server, "submission_id=", submission_id)
         new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("submitting new_style_submission_url=", new_style_submission_url)
         response = requests.post(new_style_submission_url, auth=keypair, data=submission_post_data,
                                  files=post_files_data())
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("response received for submission post:", response)
             PRINT("response.content:", response.content)
 
     else:
 
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("Old style protocol worked.")
 
     return response
@@ -510,14 +510,14 @@ def get_s3_encrypt_key_id_from_health_page(auth):
 def get_s3_encrypt_key_id(*, upload_credentials, auth):
     if 's3_encrypt_key_id' in upload_credentials:
         s3_encrypt_key_id = upload_credentials.get('s3_encrypt_key_id')
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f"Extracted s3_encrypt_key_id from upload_credentials: {s3_encrypt_key_id}")
     else:
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f"No s3_encrypt_key_id entry found in upload_credentials.")
             PRINT(f"Fetching s3_encrypt_key_id from health page.")
         s3_encrypt_key_id = get_s3_encrypt_key_id_from_health_page(auth)
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f" =id=> {s3_encrypt_key_id!r}")
     return s3_encrypt_key_id
 
@@ -533,7 +533,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
         and possibly other useful information such as an encryption key id.
     """
 
-    if DEBUG_PROTOCOL:
+    if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT(f"Upload credentials contain {conjoined_list(list(upload_credentials.keys()))}.")
     try:
         s3_encrypt_key_id = get_s3_encrypt_key_id(upload_credentials=upload_credentials, auth=auth)
@@ -553,7 +553,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
         command = command + ['--only-show-errors', source, target]
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f"Executing: {command}")
             PRINT(f" ==> {' '.join(command)}")
             PRINT(f"Environment variables include {conjoined_list(list(extra_env.keys()))}.")
