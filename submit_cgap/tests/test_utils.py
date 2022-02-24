@@ -5,7 +5,7 @@ import re
 from dcicutils.misc_utils import override_environ, environ_bool
 from unittest import mock
 from .. import utils as utils_module
-from ..utils import show, keyword_as_title, FakeResponse, script_catch_errors
+from ..utils import show, keyword_as_title, FakeResponse, script_catch_errors, ERROR_HERALD
 
 
 @contextlib.contextmanager
@@ -125,7 +125,7 @@ def test_script_catch_errors():
             with script_catch_errors():
                 raise Exception("Foo")
         assert caught.value.code == 1
-        assert shown.lines == ["Exception: Foo"]
+        assert shown.lines == [ERROR_HERALD, "Exception: Foo"]
 
     # Not enough to override env var DEBUG_CGAP, since the module is already loaded and the env var's value
     # is already seen and parsed. We must change module value at this point if we want to exercise the relevant

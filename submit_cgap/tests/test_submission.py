@@ -22,7 +22,7 @@ from ..submission import (
     upload_file_to_uuid, upload_item_data, PROGRESS_CHECK_INTERVAL,
     get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page,
 )
-from ..utils import FakeResponse, script_catch_errors
+from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
 
 SOME_AUTH = ('my-key-id', 'good-secret')
@@ -479,7 +479,7 @@ def test_script_catch_errors():
         else:
             raise AssertionError("SystemExit not raised.")  # pragma: no cover - we hope never to see this executed
 
-        assert shown.lines == ["RuntimeError: Some error"]
+        assert shown.lines == [ERROR_HERALD, "RuntimeError: Some error"]
 
 
 def test_do_any_uploads():

@@ -64,6 +64,8 @@ class FakeResponse:
 
 DEBUG_CGAP = environ_bool("DEBUG_CGAP")
 
+ERROR_HERALD = "Command exited in an unusual way. Please feel free to report this, citing the following message."
+
 
 @contextlib.contextmanager
 def script_catch_errors():
@@ -75,5 +77,6 @@ def script_catch_errors():
             # If debugging, let the error propagate, do not trap it.
             raise
         else:
+            show(ERROR_HERALD)
             show(f"{e.__class__.__name__}: {e}")
             exit(1)
