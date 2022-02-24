@@ -106,7 +106,15 @@ SOME_ENVIRON_WITH_CREDS = {
 
 @contextlib.contextmanager
 def script_dont_catch_errors():
+    # We use this to create a mock context that would allow us to catch errors that fall through here,
+    # but we are not relying on errors to actually happen, so it's OK if this never catches anything.
     yield
+
+
+def test_script_dont_catch_errors():  # test that errors pass through dont_catch_errors
+    with pytest.raises(AssertionError):
+        with script_dont_catch_errors():
+            raise AssertionError("Foo")
 
 
 def test_server_regexp():
