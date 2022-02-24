@@ -7,6 +7,14 @@ Change Log
 ----------
 
 
+1.4.0
+=====
+
+* Suppress stack traceback on unexpected errors.
+* Allow suppression behavior to be overridden by setting environment variable ``DEBUG_CGAP=TRUE``.
+* Add an instructive herald before unexpected errors, suggesting that a bug report might need to be filed.
+
+
 1.3.0
 =====
 
