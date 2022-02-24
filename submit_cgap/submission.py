@@ -375,7 +375,9 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
                      " does not support metadata bundle submission.")
         raise
 
-    if res is None:
+    if res is None:  # pragma: no cover
+        # This clause is not ordinarily entered. It handles a pathological case that we only hypothesize.
+        # It does not require careful unit test coverage. -kmp 23-Feb-2022
         raise Exception("Bad JSON body in %s submission result." % response.status_code)
 
     uuid = res['submission_id']
