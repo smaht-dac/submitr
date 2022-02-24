@@ -347,7 +347,9 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
     try:
         # This can fail if the body doesn't contain JSON
         res = response.json()
-    except Exception:
+    except Exception:  # pragma: no cover
+        # This clause is not ordinarily entered. It handles a pathological case that we only hypothesize.
+        # It does not require careful unit test coverage. -kmp 23-Feb-2022
         res = None
 
     try:
