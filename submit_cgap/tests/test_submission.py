@@ -12,17 +12,22 @@ from unittest import mock
 from .test_utils import shown_output
 from .test_upload_item_data import TEST_ENCRYPT_KEY
 from .. import submission as submission_module
+from .. import utils as utils_module
 from ..base import PRODUCTION_SERVER
 from ..exceptions import CGAPPermissionError
 from ..submission import (
     SERVER_REGEXP, get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info,
     execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url,
-    resolve_server, resume_uploads, script_catch_errors, show_section, submit_any_ingestion,
+    resolve_server, resume_uploads, show_section, submit_any_ingestion,
     upload_file_to_uuid, upload_item_data, PROGRESS_CHECK_INTERVAL,
     get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page,
 )
-from ..utils import FakeResponse
+from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
+
+SOME_INGESTION_TYPE = 'metadata_bundle'
+
+ANOTHER_INGESTION_TYPE = 'genelist'
 
 SOME_AUTH = ('my-key-id', 'good-secret')
 
@@ -66,6 +71,16 @@ SOME_UPLOAD_CREDENTIALS = {
     'upload_url': SOME_UPLOAD_URL,
 }
 
+SOME_S3_ENCRYPT_KEY_ID = 'some/encrypt/key'
+
+SOME_EXTENDED_UPLOAD_CREDENTIALS = {
+    'AccessKeyId': 'some-access-key',
+    'SecretAccessKey': 'some-secret',
+    'SessionToken': 'some-session-token',
+    'upload_url': SOME_UPLOAD_URL,
+    's3_encrypt_key_id': SOME_S3_ENCRYPT_KEY_ID,
+}
+
 SOME_UPLOAD_CREDENTIALS_RESULT = {
     '@graph': [
         {'upload_credentials': SOME_UPLOAD_CREDENTIALS}
@@ -105,7 +120,15 @@ SOME_ENVIRON_WITH_CREDS = {
 
 @contextlib.contextmanager
 def script_dont_catch_errors():
+    # We use this to create a mock context that would allow us to catch errors that fall through here,
+    # but we are not relying on errors to actually happen, so it's OK if this never catches anything.
     yield
+
+
+def test_script_dont_catch_errors():  # test that errors pass through dont_catch_errors
+    with pytest.raises(AssertionError):
+        with script_dont_catch_errors():
+            raise AssertionError("Foo")
 
 
 def test_server_regexp():
@@ -331,7 +354,7 @@ def test_show_upload_info():
         assert auth == SOME_AUTH
         return FakeResponse(200, json=json_result)
 
-    with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+    with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch("requests.get", mocked_get):
 
             json_result = {}
@@ -478,7 +501,7 @@ def test_script_catch_errors():
         else:
             raise AssertionError("SystemExit not raised.")  # pragma: no cover - we hope never to see this executed
 
-        assert shown.lines == ["RuntimeError: Some error"]
+        assert shown.lines == [ERROR_HERALD, "RuntimeError: Some error"]
 
 
 def test_do_any_uploads():
@@ -578,8 +601,7 @@ def test_do_any_uploads():
 
     with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
 
-        n_uploads = len(SOME_UPLOAD_INFO)
-        ignored(n_uploads)
+        # n_uploads = len(SOME_UPLOAD_INFO)
 
         with shown_output() as shown:
             do_any_uploads(
@@ -600,7 +622,7 @@ def test_do_any_uploads():
 
 def test_resume_uploads():
 
-    with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+    with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
             with mock.patch.object(submission_module, "get_keydict_for_server", return_value=SOME_KEYDICT):
                 some_response_json = {'some': 'json'}
@@ -617,7 +639,7 @@ def test_resume_uploads():
                             subfolders=False,
                         )
 
-    with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+    with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
             with mock.patch.object(submission_module, "get_keydict_for_server", return_value=SOME_KEYDICT):
                 with mock.patch("requests.get", return_value=FakeResponse(401, json=SOME_BAD_RESULT)):
@@ -655,6 +677,22 @@ def test_execute_prearranged_upload():
                     execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
                     mock_aws_call.assert_called_with(
                         ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
+                        env=SOME_ENVIRON_WITH_CREDS
+                    )
+                    assert shown.lines == [
+                        "Going to upload some-filename to some-url.",
+                        "Uploaded in 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
+                    ]
+
+    with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
+        with shown_output() as shown:
+            with mock.patch("time.time", MockTime().time):
+                with mock.patch("subprocess.call", return_value=0) as mock_aws_call:
+                    execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_EXTENDED_UPLOAD_CREDENTIALS)
+                    mock_aws_call.assert_called_with(
+                        ['aws', 's3', 'cp',
+                         '--sse', 'aws:kms', '--sse-kms-key-id', SOME_S3_ENCRYPT_KEY_ID,
+                         '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
                         env=SOME_ENVIRON_WITH_CREDS
                     )
                     assert shown.lines == [
@@ -1002,7 +1040,7 @@ def test_upload_item_data():
 def test_submit_any_ingestion_old_protocol():
 
     with shown_output() as shown:
-        with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+        with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                 with mock.patch.object(submission_module, "yes_or_no", return_value=False):
                     try:
@@ -1103,7 +1141,7 @@ def test_submit_any_ingestion_old_protocol():
     # TODO: Will says he wants explanatory doc here and elsewhere with a big cascade like this.
     with mock.patch("os.path.exists", mfs.exists):
         with mock.patch("io.open", mfs.open):
-            with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+            with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                 with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                     with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                         with mock.patch.object(submission_module, "get_keydict_for_server",
@@ -1142,7 +1180,7 @@ def test_submit_any_ingestion_old_protocol():
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(submission_module, "get_keydict_for_server",
@@ -1196,6 +1234,76 @@ def test_submit_any_ingestion_old_protocol():
 
     dt.reset_datetime()
 
+    # This tests the normal case with validate_only=False and a successful result.
+
+    def make_mocked_yes_or_no(expected_message):
+        def _yes_or_no(prompt):
+            assert prompt == expected_message
+            return True
+        return _yes_or_no
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no",
+                                               side_effect=make_mocked_yes_or_no(f"Submit {SOME_BUNDLE_FILENAME}"
+                                                                                 f" ({ANOTHER_INGESTION_TYPE})"
+                                                                                 f" to {SOME_SERVER}?")):
+                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", mocked_post):
+                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        try:
+                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                 ingestion_type=ANOTHER_INGESTION_TYPE,
+                                                                                 institution=SOME_INSTITUTION,
+                                                                                 project=SOME_PROJECT,
+                                                                                 server=SOME_SERVER,
+                                                                                 env=None,
+                                                                                 validate_only=False,
+                                                                                 no_query=False,
+                                                                                 subfolders=False,
+                                                                                 )
+                                                        except SystemExit as e:  # pragma: no cover
+                                                            # This is just in case. In fact it's more likely
+                                                            # that a normal 'return' not 'exit' was done.
+                                                            assert e.code == 0
+
+                                                        assert mock_do_any_uploads.call_count == 1
+                                                        mock_do_any_uploads.assert_called_with(
+                                                            final_res,
+                                                            ingestion_filename=SOME_BUNDLE_FILENAME,
+                                                            keydict=SOME_KEYDICT,
+                                                            upload_folder=None,
+                                                            no_query=False,
+                                                            subfolders=False,
+                                                        )
+        assert shown.lines == [
+            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
+            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
+            # 1 second after we started our virtual clock...
+            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:17 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:33 Progress is not done yet. Continuing to wait...',
+            # After 15 seconds sleep plus 1 second to recheck the time...
+            '12:00:49 Final status: success',
+            # Output from uploads is not present because we mocked that out.
+            # See test of the call to the uploader higher up.
+        ]
+
+    dt.reset_datetime()
+
     # Test for suppression of user input when submission with no_query=True.
 
     with shown_output() as shown:
@@ -1203,7 +1311,7 @@ def test_submit_any_ingestion_old_protocol():
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "get_keydict_for_server",
                                                return_value=SOME_KEYDICT):
@@ -1272,7 +1380,7 @@ def test_submit_any_ingestion_old_protocol():
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(submission_module, "get_keydict_for_server",
@@ -1325,7 +1433,7 @@ def test_submit_any_ingestion_old_protocol():
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(submission_module, "get_keydict_for_server",
@@ -1369,7 +1477,7 @@ def test_submit_any_ingestion_old_protocol():
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(submission_module, "get_keydict_for_server",
@@ -1424,7 +1532,7 @@ def test_submit_any_ingestion_old_protocol():
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(submission_module, "get_keydict_for_server",
@@ -1478,7 +1586,7 @@ def test_submit_any_ingestion_old_protocol():
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(submission_module, "get_keydict_for_server",
@@ -1536,7 +1644,7 @@ def test_submit_any_ingestion_old_protocol():
 def test_submit_any_ingestion_new_protocol():
 
     with shown_output() as shown:
-        with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+        with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                 with mock.patch.object(submission_module, "yes_or_no", return_value=False):
                     try:
@@ -1668,7 +1776,7 @@ def test_submit_any_ingestion_new_protocol():
 
     with mock.patch("os.path.exists", mfs.exists):
         with mock.patch("io.open", mfs.open):
-            with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+            with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                 with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                     with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                         with mock.patch.object(submission_module, "get_keydict_for_server",
@@ -1706,7 +1814,7 @@ def test_submit_any_ingestion_new_protocol():
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(submission_module, "get_keydict_for_server",
@@ -1777,7 +1885,7 @@ def test_submit_any_ingestion_new_protocol():
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(submission_module, "get_keydict_for_server",
@@ -1831,7 +1939,7 @@ def test_submit_any_ingestion_new_protocol():
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(submission_module, "get_keydict_for_server",
@@ -1876,7 +1984,7 @@ def test_submit_any_ingestion_new_protocol():
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(submission_module, "get_keydict_for_server",
@@ -1931,7 +2039,7 @@ def test_submit_any_ingestion_new_protocol():
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(submission_module, "get_keydict_for_server",
@@ -1985,7 +2093,7 @@ def test_submit_any_ingestion_new_protocol():
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(submission_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(submission_module, "get_keydict_for_server",

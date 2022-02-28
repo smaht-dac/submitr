@@ -32,7 +32,7 @@ def test_show_upload_info_script(keyfile):
 
                         mock_show_upload_info.side_effect = mocked_show_upload_info
                         show_upload_info_main(args_in)
-                        mock_show_upload_info.assert_called_with(**expect_call_args)
+                        raise AssertionError("show_upload_info_main should not exit normally.")  # pragma: no cover
                     except SystemExit as e:
                         assert e.code == expect_exit_code
                     assert mock_show_upload_info.call_count == (1 if expect_called else 0)

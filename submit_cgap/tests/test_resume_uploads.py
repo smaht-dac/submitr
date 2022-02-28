@@ -37,7 +37,7 @@ def test_resume_uploads_script(keyfile):
 
                         mock_resume_uploads.side_effect = mocked_resume_uploads
                         resume_uploads_main(args_in)
-                        mock_resume_uploads.assert_called_with(**expect_call_args)
+                        raise AssertionError("resume_uploads_main should not exit normally.")  # pragma: no cover
                     except SystemExit as e:
                         assert e.code == expect_exit_code
                     assert mock_resume_uploads.call_count == (1 if expect_called else 0)

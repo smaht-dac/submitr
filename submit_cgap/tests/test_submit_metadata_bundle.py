@@ -32,7 +32,7 @@ def test_submit_metadata_bundle_script(keyfile):
 
                     mock_submit_any_ingestion.side_effect = mocked_submit_metadata_bundle
                     submit_metadata_bundle_main(args_in)
-                    mock_submit_any_ingestion.assert_called_with(**expect_call_args)
+                    raise AssertionError("submit_metadata_bundle_main should not exit normally.")  # pragma: no cover
                 except SystemExit as e:
                     assert e.code == expect_exit_code
                 assert mock_submit_any_ingestion.call_count == (1 if expect_called else 0)

@@ -1,6 +1,7 @@
+import contextlib
 import datetime
 
-from dcicutils.misc_utils import PRINT
+from dcicutils.misc_utils import PRINT, environ_bool
 from json import dumps as json_dumps, loads as json_loads
 
 
@@ -58,4 +59,24 @@ class FakeResponse:
 
     def raise_for_status(self):
         if self.status_code >= 300:
-            raise Exception("%s raised for status." % self)
+            raise Exception(f"{self} raised for status.")
+
+
+DEBUG_CGAP = environ_bool("DEBUG_CGAP")
+
+ERROR_HERALD = "Command exited in an unusual way. Please feel free to report this, citing the following message."
+
+
+@contextlib.contextmanager
+def script_catch_errors():
+    try:
+        yield
+        exit(0)
+    except Exception as e:
+        if DEBUG_CGAP:
+            # If debugging, let the error propagate, do not trap it.
+            raise
+        else:
+            show(ERROR_HERALD)
+            show(f"{e.__class__.__name__}: {e}")
+            exit(1)

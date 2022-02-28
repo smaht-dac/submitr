@@ -1,4 +1,3 @@
-import contextlib
 import glob
 import io
 import json
@@ -206,16 +205,6 @@ def ingestion_submission_item_url(server, uuid):
     return url_path_join(server, "ingestion-submissions", uuid) + "?format=json"
 
 
-@contextlib.contextmanager
-def script_catch_errors():
-    try:
-        yield
-        exit(0)
-    except Exception as e:
-        show("%s: %s" % (e.__class__.__name__, str(e)))
-        exit(1)
-
-
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
 
 
@@ -246,7 +235,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
                              headers={'Content-type': 'application/json'},
                              files=post_files_data())
 
-    if DEBUG_PROTOCOL:
+    if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT("old_style_submission_url=", old_style_submission_url)
         PRINT("old_style_post_data=", json.dumps(old_style_post_data, indent=2))
         PRINT("keypair=", keypair)
@@ -254,7 +243,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
 
     if response.status_code == 404:
 
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("Retrying with new protocol.")
 
         creation_post_headers = {
@@ -262,7 +251,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
             'Accept': 'application/json',
         }
         creation_post_url = url_path_join(server, "IngestionSubmission")
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("creation_post_data=", json.dumps(creation_post_data, indent=2))
             PRINT("creation_post_url=", creation_post_url)
         creation_response = requests.post(creation_post_url, auth=keypair,
@@ -270,26 +259,26 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
                                           json=creation_post_data
                                           # data=json.dumps(creation_post_data)
                                           )
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("headers:", creation_response.request.headers)
         creation_response.raise_for_status()
         [submission] = creation_response.json()['@graph']
         submission_id = submission['@id']
 
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("server=", server, "submission_id=", submission_id)
         new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("submitting new_style_submission_url=", new_style_submission_url)
         response = requests.post(new_style_submission_url, auth=keypair, data=submission_post_data,
                                  files=post_files_data())
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("response received for submission post:", response)
             PRINT("response.content:", response.content)
 
     else:
 
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("Old style protocol worked.")
 
     return response
@@ -315,131 +304,133 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
     :param subfolders: bool to search subdirectories within upload_folder for files
     """
 
-    with script_catch_errors():
+    server = resolve_server(server=server, env=env)
 
-        server = resolve_server(server=server, env=env)
+    validation_qualifier = " (for validation only)" if validate_only else ""
 
-        validation_qualifier = " (for validation only)" if validate_only else ""
+    maybe_ingestion_type = ''
+    if ingestion_type != DEFAULT_INGESTION_TYPE:
+        maybe_ingestion_type = " (%s)" % ingestion_type
 
-        maybe_ingestion_type = ''
-        if ingestion_type != DEFAULT_INGESTION_TYPE:
-            maybe_ingestion_type = " (%s)" % ingestion_type
-
-        if not no_query:
-            if not yes_or_no("Submit %s%s to %s%s?"
-                             % (ingestion_filename, maybe_ingestion_type, server, validation_qualifier)):
-                show("Aborting submission.")
-                exit(1)
-
-        keydict = KEY_MANAGER.get_keydict_for_server(server)
-        keypair = KEY_MANAGER.keydict_to_keypair(keydict)
-
-        user_record = get_user_record(server, auth=keypair)
-
-        institution = get_defaulted_institution(institution, user_record)
-        project = get_defaulted_project(project, user_record)
-
-        if not os.path.exists(ingestion_filename):
-            raise ValueError("The file '%s' does not exist." % ingestion_filename)
-
-        response = _post_submission(server=server, keypair=keypair,
-                                    ingestion_filename=ingestion_filename,
-                                    creation_post_data={
-                                        'ingestion_type': ingestion_type,
-                                        'institution': institution,
-                                        'project': project,
-                                        "processing_status": {
-                                            "state": "submitted"
-                                        }
-                                    },
-                                    submission_post_data={
-                                        'validate_only': validate_only,
-                                    })
-
-        try:
-            # This can fail if the body doesn't contain JSON
-            res = response.json()
-        except Exception:
-            res = None
-
-        try:
-            response.raise_for_status()
-        except Exception:
-            if res is not None:
-                # For example, if you call this on an old version of cgap-portal that does not support this request,
-                # the error will be a 415 error, because the tween code defaultly insists on applicatoin/json:
-                # {
-                #     "@type": ["HTTPUnsupportedMediaType", "Error"],
-                #     "status": "error",
-                #     "code": 415,
-                #     "title": "Unsupported Media Type",
-                #     "description": "",
-                #     "detail": "Request content type multipart/form-data is not 'application/json'"
-                # }
-                title = res.get('title')
-                message = title
-                detail = res.get('detail')
-                if detail:
-                    message += ": " + detail
-                show(message)
-                if title == "Unsupported Media Type":
-                    show("NOTE: This error is known to occur if the server"
-                         " does not support metadata bundle submission.")
-            raise
-
-        if res is None:
-            raise Exception("Bad JSON body in %s submission result." % response.status_code)
-
-        uuid = res['submission_id']
-
-        show("Bundle uploaded, assigned uuid %s for tracking. Awaiting processing..." % uuid, with_time=True)
-
-        tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
-
-        outcome = None
-        n_tries = 8
-        tries_left = n_tries
-        done = False
-        while tries_left > 0:
-            # Pointless to hit the queue immediately, so we avoid some
-            # server stress by sleeping even before the first try.
-            time.sleep(PROGRESS_CHECK_INTERVAL)
-            res = requests.get(tracking_url, auth=keypair).json()
-            processing_status = res['processing_status']
-            done = processing_status['state'] == 'done'
-            if done:
-                outcome = processing_status['outcome']
-                break
-            else:
-                progress = processing_status['progress']
-                show("Progress is %s. Continuing to wait..." % progress, with_time=True)
-            tries_left -= 1
-
-        if not done:
-            show("Timed out after %d tries." % n_tries, with_time=True)
+    if not no_query:
+        if not yes_or_no("Submit %s%s to %s%s?"
+                         % (ingestion_filename, maybe_ingestion_type, server, validation_qualifier)):
+            show("Aborting submission.")
             exit(1)
 
-        show("Final status: %s" % outcome, with_time=True)
+    keydict = KEY_MANAGER.get_keydict_for_server(server)
+    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
 
-        if outcome == 'error' and res.get('errors'):
-            show_section(res, 'errors')
+    user_record = get_user_record(server, auth=keypair)
 
-        caveat_outcome = None if outcome == 'success' else outcome
+    institution = get_defaulted_institution(institution, user_record)
+    project = get_defaulted_project(project, user_record)
 
-        show_section(res, 'validation_output', caveat_outcome=caveat_outcome)
+    if not os.path.exists(ingestion_filename):
+        raise ValueError("The file '%s' does not exist." % ingestion_filename)
 
-        if validate_only:
-            exit(0)
+    response = _post_submission(server=server, keypair=keypair,
+                                ingestion_filename=ingestion_filename,
+                                creation_post_data={
+                                    'ingestion_type': ingestion_type,
+                                    'institution': institution,
+                                    'project': project,
+                                    "processing_status": {
+                                        "state": "submitted"
+                                    }
+                                },
+                                submission_post_data={
+                                    'validate_only': validate_only,
+                                })
 
-        show_section(res, 'post_output', caveat_outcome=caveat_outcome)
+    try:
+        # This can fail if the body doesn't contain JSON
+        res = response.json()
+    except Exception:  # pragma: no cover
+        # This clause is not ordinarily entered. It handles a pathological case that we only hypothesize.
+        # It does not require careful unit test coverage. -kmp 23-Feb-2022
+        res = None
 
-        if outcome == 'success':
-            show_section(res, 'upload_info')
-            do_any_uploads(res, keydict=keydict, ingestion_filename=ingestion_filename,
-                           upload_folder=upload_folder, no_query=no_query,
-                           subfolders=subfolders)
+    try:
+        response.raise_for_status()
+    except Exception:
+        if res is not None:
+            # For example, if you call this on an old version of cgap-portal that does not support this request,
+            # the error will be a 415 error, because the tween code defaultly insists on applicatoin/json:
+            # {
+            #     "@type": ["HTTPUnsupportedMediaType", "Error"],
+            #     "status": "error",
+            #     "code": 415,
+            #     "title": "Unsupported Media Type",
+            #     "description": "",
+            #     "detail": "Request content type multipart/form-data is not 'application/json'"
+            # }
+            title = res.get('title')
+            message = title
+            detail = res.get('detail')
+            if detail:
+                message += ": " + detail
+            show(message)
+            if title == "Unsupported Media Type":
+                show("NOTE: This error is known to occur if the server"
+                     " does not support metadata bundle submission.")
+        raise
 
+    if res is None:  # pragma: no cover
+        # This clause is not ordinarily entered. It handles a pathological case that we only hypothesize.
+        # It does not require careful unit test coverage. -kmp 23-Feb-2022
+        raise Exception("Bad JSON body in %s submission result." % response.status_code)
+
+    uuid = res['submission_id']
+
+    show("Bundle uploaded, assigned uuid %s for tracking. Awaiting processing..." % uuid, with_time=True)
+
+    tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
+
+    outcome = None
+    n_tries = 8
+    tries_left = n_tries
+    done = False
+    while tries_left > 0:
+        # Pointless to hit the queue immediately, so we avoid some
+        # server stress by sleeping even before the first try.
+        time.sleep(PROGRESS_CHECK_INTERVAL)
+        res = requests.get(tracking_url, auth=keypair).json()
+        processing_status = res['processing_status']
+        done = processing_status['state'] == 'done'
+        if done:
+            outcome = processing_status['outcome']
+            break
+        else:
+            progress = processing_status['progress']
+            show("Progress is %s. Continuing to wait..." % progress, with_time=True)
+        tries_left -= 1
+
+    if not done:
+        show("Timed out after %d tries." % n_tries, with_time=True)
+        exit(1)
+
+    show("Final status: %s" % outcome, with_time=True)
+
+    if outcome == 'error' and res.get('errors'):
+        show_section(res, 'errors')
+
+    caveat_outcome = None if outcome == 'success' else outcome
+
+    show_section(res, 'validation_output', caveat_outcome=caveat_outcome)
+
+    if validate_only:
         exit(0)
+
+    show_section(res, 'post_output', caveat_outcome=caveat_outcome)
+
+    if outcome == 'success':
+        show_section(res, 'upload_info')
+        do_any_uploads(res, keydict=keydict, ingestion_filename=ingestion_filename,
+                       upload_folder=upload_folder, no_query=no_query,
+                       subfolders=subfolders)
+
+    exit(0)
 
 
 def show_upload_info(uuid, server=None, env=None, keydict=None):
@@ -453,18 +444,16 @@ def show_upload_info(uuid, server=None, env=None, keydict=None):
     :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
     """
 
-    with script_catch_errors():
-
-        server = resolve_server(server=server, env=env)
-        keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
-        url = ingestion_submission_item_url(server, uuid)
-        response = requests.get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict))
-        response.raise_for_status()
-        res = response.json()
-        if get_section(res, 'upload_info'):
-            show_section(res, 'upload_info')
-        else:
-            show("No uploads.")
+    server = resolve_server(server=server, env=env)
+    keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
+    url = ingestion_submission_item_url(server, uuid)
+    response = requests.get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict))
+    response.raise_for_status()
+    res = response.json()
+    if get_section(res, 'upload_info'):
+        show_section(res, 'upload_info')
+    else:
+        show("No uploads.")
 
 
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
@@ -499,41 +488,43 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     :param subfolders: bool to search subdirectories within upload_folder for files
     """
 
-    with script_catch_errors():
-
-        server = resolve_server(server=server, env=env)
-        keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
-        url = ingestion_submission_item_url(server, uuid)
-        keypair = KEY_MANAGER.keydict_to_keypair(keydict)
-        response = requests.get(url, auth=keypair)
-        response.raise_for_status()
-        do_any_uploads(response.json(),
-                       keydict=keydict,
-                       ingestion_filename=bundle_filename,
-                       upload_folder=upload_folder,
-                       no_query=no_query,
-                       subfolders=subfolders)
+    server = resolve_server(server=server, env=env)
+    keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
+    url = ingestion_submission_item_url(server, uuid)
+    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
+    response = requests.get(url, auth=keypair)
+    response.raise_for_status()
+    do_any_uploads(response.json(),
+                   keydict=keydict,
+                   ingestion_filename=bundle_filename,
+                   upload_folder=upload_folder,
+                   no_query=no_query,
+                   subfolders=subfolders)
 
 
 def get_s3_encrypt_key_id_from_health_page(auth):
     try:
         health = get_health_page(key=auth)
         return health.get(HealthPageKey.S3_ENCRYPT_KEY_ID)
-    except Exception:
+    except Exception:  # pragma: no cover
+        # We don't actually unit test this section because get_health_page realistically always returns
+        # a dictionary, and so health.get(...) always succeeds, possibly returning None, which should
+        # already be tested. Returning None here amounts to the same and needs no extra unit testing.
+        # The presence of this error clause is largely pro forma and probably not really needed.
         return None
 
 
 def get_s3_encrypt_key_id(*, upload_credentials, auth):
     if 's3_encrypt_key_id' in upload_credentials:
         s3_encrypt_key_id = upload_credentials.get('s3_encrypt_key_id')
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f"Extracted s3_encrypt_key_id from upload_credentials: {s3_encrypt_key_id}")
     else:
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f"No s3_encrypt_key_id entry found in upload_credentials.")
             PRINT(f"Fetching s3_encrypt_key_id from health page.")
         s3_encrypt_key_id = get_s3_encrypt_key_id_from_health_page(auth)
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f" =id=> {s3_encrypt_key_id!r}")
     return s3_encrypt_key_id
 
@@ -545,11 +536,11 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
     :param path: the name of a local file to upload
     :param upload_credentials: a dictionary of credentials to be used for the upload,
         containing the keys 'AccessKeyId', 'SecretAccessKey', 'SessionToken', and 'upload_url'.
-    :param auth: a keypair or keydict (to be used in obtaining an s3_encrypt_key_id from the health page
-        if upload_credentials do not contain that id).
+    :param auth: auth info in the form of a dictionary containing 'key', 'secret', and 'server',
+        and possibly other useful information such as an encryption key id.
     """
 
-    if DEBUG_PROTOCOL:
+    if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT(f"Upload credentials contain {conjoined_list(list(upload_credentials.keys()))}.")
     try:
         s3_encrypt_key_id = get_s3_encrypt_key_id(upload_credentials=upload_credentials, auth=auth)
@@ -569,7 +560,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
         command = command + ['--only-show-errors', source, target]
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f"Executing: {command}")
             PRINT(f" ==> {' '.join(command)}")
             PRINT(f"Environment variables include {conjoined_list(list(extra_env.keys()))}.")

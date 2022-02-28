@@ -1,5 +1,7 @@
 import argparse
+from ..base import UsingCGAPKeysFile
 from ..submission import upload_item_data
+from ..utils import script_catch_errors
 
 
 EPILOG = __doc__
@@ -19,8 +21,10 @@ def main(simulated_args_for_testing=None):
                         help="suppress requests for user input", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
-    upload_item_data(item_filename=args.part_filename, uuid=args.uuid, server=args.server,
-                     env=args.env, no_query=args.no_query)
+    with script_catch_errors():
+
+        upload_item_data(item_filename=args.part_filename, uuid=args.uuid, server=args.server,
+                         env=args.env, no_query=args.no_query)
 
 
 if __name__ == '__main__':

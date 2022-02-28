@@ -1,5 +1,7 @@
 import argparse
+from ..base import UsingCGAPKeysFile
 from ..submission import resume_uploads
+from ..utils import script_catch_errors
 
 
 EPILOG = __doc__
@@ -22,8 +24,10 @@ def main(simulated_args_for_testing=None):
                         help="search subfolders of folder for upload files", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
-    resume_uploads(uuid=args.uuid, server=args.server, env=args.env, bundle_filename=args.bundle_filename,
-                   upload_folder=args.upload_folder, no_query=args.no_query, subfolders=args.subfolders)
+    with script_catch_errors():
+
+        resume_uploads(uuid=args.uuid, server=args.server, env=args.env, bundle_filename=args.bundle_filename,
+                       upload_folder=args.upload_folder, no_query=args.no_query, subfolders=args.subfolders)
 
 
 if __name__ == '__main__':

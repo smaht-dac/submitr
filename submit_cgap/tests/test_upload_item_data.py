@@ -8,6 +8,7 @@ from .. import submission as submission_module
 from ..base import KEY_MANAGER
 from ..scripts.upload_item_data import main as upload_item_data_main
 from ..scripts import upload_item_data as upload_item_data_module
+from .testing_helpers import system_exit_expected
 
 
 TEST_ENCRYPT_KEY = 'encrypt-key-for-testing'
@@ -26,7 +27,7 @@ def test_upload_item_data_script(keyfile, mocked_s3_encrypt_key_id):
 
                     mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: mocked_s3_encrypt_key_id}
 
-                    try:
+                    with system_exit_expected(exit_code=expect_exit_code):
                         # Outside of the call, we will always see the default filename for cgap keys
                         # but inside the call, because of a decorator, the default might be different.
                         # See additional test below.
@@ -37,13 +38,15 @@ def test_upload_item_data_script(keyfile, mocked_s3_encrypt_key_id):
                             # We don't need to test this function's actions because we test its call args below.
                             # However, we do need to run this one test from the same dynamic context,
                             # so this is close enough.
-                            assert KEY_MANAGER.keys_file == (keyfile or KEY_MANAGER._default_keys_file())
+                            if KEY_MANAGER.keys_file == (keyfile or KEY_MANAGER._default_keys_file()):
+                                exit(0)
+                            else:
+                                # This case is not expected to be reached but must be here for testing to catch
+                                exit(1)  # pragma: no cover
 
                         mock_upload_item_data.side_effect = mocked_upload_item_data
                         upload_item_data_main(args_in)
-                        mock_upload_item_data.assert_called_with(**expect_call_args)
-                    except SystemExit as e:
-                        assert e.code == expect_exit_code
+                        raise AssertionError("upload_item_data_main should not exit normally.")  # pragma: no cover
                     assert mock_upload_item_data.call_count == (1 if expect_called else 0)
 
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
