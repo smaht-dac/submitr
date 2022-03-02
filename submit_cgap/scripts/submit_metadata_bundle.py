@@ -1,5 +1,4 @@
 import argparse
-from ..base import UsingCGAPKeysFile
 from ..submission import submit_any_ingestion, DEFAULT_INGESTION_TYPE
 from ..utils import script_catch_errors
 

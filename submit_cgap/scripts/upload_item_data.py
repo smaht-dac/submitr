@@ -1,5 +1,4 @@
 import argparse
-from ..base import UsingCGAPKeysFile
 from ..submission import upload_item_data
 from ..utils import script_catch_errors
 
