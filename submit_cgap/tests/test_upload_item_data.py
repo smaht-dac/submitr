@@ -29,7 +29,8 @@ def test_upload_item_data_script(keyfile, mocked_s3_encrypt_key_id):
                             mock_print.side_effect = lambda *args: output.append(" ".join(args))
                             with system_exit_expected(exit_code=expect_exit_code):
                                 upload_item_data_main(args_in)
-                                raise AssertionError("upload_item_data_main should not exit normally.")  # pragma: no cover
+                                raise AssertionError(  # pragma: no cover
+                                    "upload_item_data_main should not exit normally.")
                             assert mock_upload_item_data.call_count == (1 if expect_called else 0)
                             if expect_called:
                                 assert mock_upload_item_data.called_with(**expect_call_args)

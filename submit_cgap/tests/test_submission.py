@@ -1148,28 +1148,28 @@ def test_submit_any_ingestion_old_protocol():
                                                return_value=SOME_KEYDICT):
                             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                                 with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                                        with mock.patch("requests.post", mocked_post):
-                                            with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
-                                                try:
-                                                    submit_any_ingestion(SOME_BUNDLE_FILENAME,
-                                                                         ingestion_type='metadata_bundle',
-                                                                         institution=SOME_INSTITUTION,
-                                                                         project=SOME_PROJECT,
-                                                                         server=SOME_SERVER,
-                                                                         env=None,
-                                                                         validate_only=False,
-                                                                         no_query=False,
-                                                                         subfolders=False,
-                                                                         )
-                                                except ValueError as e:
-                                                    # submit_any_ingestion will raise ValueError if its
-                                                    # bundle_filename argument is not the name of a
-                                                    # metadata bundle file. We did nothing in this mock to
-                                                    # create the file SOME_BUNDLE_FILENAME, so we expect something
-                                                    # like: "The file '/some-folder/foo.xls' does not exist."
-                                                    assert "does not exist" in str(e)
-                                                else:  # pragma: no cover
-                                                    raise AssertionError("Expected ValueError did not happen.")
+                                    with mock.patch("requests.post", mocked_post):
+                                        with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
+                                            try:
+                                                submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                     ingestion_type='metadata_bundle',
+                                                                     institution=SOME_INSTITUTION,
+                                                                     project=SOME_PROJECT,
+                                                                     server=SOME_SERVER,
+                                                                     env=None,
+                                                                     validate_only=False,
+                                                                     no_query=False,
+                                                                     subfolders=False,
+                                                                     )
+                                            except ValueError as e:
+                                                # submit_any_ingestion will raise ValueError if its
+                                                # bundle_filename argument is not the name of a
+                                                # metadata bundle file. We did nothing in this mock to
+                                                # create the file SOME_BUNDLE_FILENAME, so we expect something
+                                                # like: "The file '/some-folder/foo.xls' does not exist."
+                                                assert "does not exist" in str(e)
+                                            else:  # pragma: no cover
+                                                raise AssertionError("Expected ValueError did not happen.")
 
     # This tests the normal case with validate_only=False and a successful result.
 
@@ -1781,27 +1781,27 @@ def test_submit_any_ingestion_new_protocol():
                                                return_value=SOME_KEYDICT):
                             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                                 with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                                        with mock.patch("requests.post", mocked_post):
-                                            with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
-                                                try:
-                                                    submit_any_ingestion(SOME_BUNDLE_FILENAME,
-                                                                         ingestion_type='metadata_bundle',
-                                                                         institution=SOME_INSTITUTION,
-                                                                         project=SOME_PROJECT,
-                                                                         server=SOME_SERVER,
-                                                                         env=None,
-                                                                         validate_only=False,
-                                                                         no_query=False,
-                                                                         subfolders=False,)
-                                                except ValueError as e:
-                                                    # submit_any_ingestion will raise ValueError if its
-                                                    # bundle_filename argument is not the name of a
-                                                    # metadata bundle file. We did nothing in this mock to
-                                                    # create the file SOME_BUNDLE_FILENAME, so we expect something
-                                                    # like: "The file '/some-folder/foo.xls' does not exist."
-                                                    assert "does not exist" in str(e)
-                                                else:  # pragma: no cover
-                                                    raise AssertionError("Expected ValueError did not happen.")
+                                    with mock.patch("requests.post", mocked_post):
+                                        with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
+                                            try:
+                                                submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                     ingestion_type='metadata_bundle',
+                                                                     institution=SOME_INSTITUTION,
+                                                                     project=SOME_PROJECT,
+                                                                     server=SOME_SERVER,
+                                                                     env=None,
+                                                                     validate_only=False,
+                                                                     no_query=False,
+                                                                     subfolders=False,)
+                                            except ValueError as e:
+                                                # submit_any_ingestion will raise ValueError if its
+                                                # bundle_filename argument is not the name of a
+                                                # metadata bundle file. We did nothing in this mock to
+                                                # create the file SOME_BUNDLE_FILENAME, so we expect something
+                                                # like: "The file '/some-folder/foo.xls' does not exist."
+                                                assert "does not exist" in str(e)
+                                            else:  # pragma: no cover
+                                                raise AssertionError("Expected ValueError did not happen.")
 
     # This tests the normal case with validate_only=False and a successful result.
 

@@ -34,7 +34,6 @@ def test_submit_metadata_bundle_script(keyfile):
                             assert mock_submit_any_ingestion.called_with(**expect_call_args)
                         assert output == []
 
-
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
     test_it(args_in=['some-file'], expect_exit_code=0, expect_called=True, expect_call_args={
         'ingestion_filename': 'some-file',
