@@ -1,11 +1,10 @@
 import pytest
 
-from dcicutils.misc_utils import ignored
-from dcicutils.qa_utils import override_environ
+from dcicutils.creds_utils import CGAPKeyManager
 from unittest import mock
-from ..base import KEY_MANAGER
 from ..scripts.show_upload_info import main as show_upload_info_main
 from ..scripts import show_upload_info as show_upload_info_module
+from .testing_helpers import system_exit_expected, argparse_errors_muffled
 
 
 @pytest.mark.parametrize("keyfile", [None, "foo.bar"])
@@ -13,30 +12,22 @@ def test_show_upload_info_script(keyfile):
 
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
         output = []
-        with override_environ(CGAP_KEYS_FILE=keyfile):
-            with mock.patch.object(show_upload_info_module, "print") as mock_print:
-                mock_print.side_effect = lambda *args: output.append(" ".join(args))
-                with mock.patch.object(show_upload_info_module, "show_upload_info") as mock_show_upload_info:
-                    try:
-                        # Outside of the call, we will always see the default filename for cgap keys
-                        # but inside the call, because of a decorator, the default might be different.
-                        # See additional test below.
-                        assert KEY_MANAGER.keys_file() == KEY_MANAGER._default_keys_file()
-
-                        def mocked_show_upload_info(*args, **kwargs):
-                            ignored(args, kwargs)
-                            # We don't need to test this function's actions because we test its call args below.
-                            # However, we do need to run this one test from the same dynamic context,
-                            # so this is close enough.
-                            assert KEY_MANAGER.keys_file() == (keyfile or KEY_MANAGER._default_keys_file())
-
-                        mock_show_upload_info.side_effect = mocked_show_upload_info
-                        show_upload_info_main(args_in)
-                        raise AssertionError("show_upload_info_main should not exit normally.")  # pragma: no cover
-                    except SystemExit as e:
-                        assert e.code == expect_exit_code
-                    assert mock_show_upload_info.call_count == (1 if expect_called else 0)
-                    assert output == []
+        with argparse_errors_muffled():
+            with CGAPKeyManager.default_keys_file_for_testing(keyfile):
+                with mock.patch.object(show_upload_info_module, "print") as mock_print:
+                    mock_print.side_effect = lambda *args: output.append(" ".join(args))
+                    with mock.patch.object(show_upload_info_module, "show_upload_info") as mock_show_upload_info:
+                        with system_exit_expected(exit_code=expect_exit_code):
+                            key_manager = CGAPKeyManager()
+                            if keyfile:
+                                assert key_manager.keys_file == keyfile
+                            assert key_manager.keys_file == (keyfile or key_manager.KEYS_FILE)
+                            show_upload_info_main(args_in)
+                            raise AssertionError("show_upload_info_main should not exit normally.")  # pragma: no cover
+                        assert mock_show_upload_info.call_count == (1 if expect_called else 0)
+                        if expect_called:
+                            assert mock_show_upload_info.called_with(**expect_call_args)
+                        assert output == []
 
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
     test_it(args_in=['some-guid'], expect_exit_code=0, expect_called=True, expect_call_args={

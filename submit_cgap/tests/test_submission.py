@@ -13,7 +13,7 @@ from .test_utils import shown_output
 from .test_upload_item_data import TEST_ENCRYPT_KEY
 from .. import submission as submission_module
 from .. import utils as utils_module
-from ..base import PRODUCTION_SERVER
+from ..base import PRODUCTION_SERVER, KEY_MANAGER
 from ..exceptions import CGAPPermissionError
 from ..submission import (
     SERVER_REGEXP, get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info,
@@ -624,7 +624,7 @@ def test_resume_uploads():
 
     with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
-            with mock.patch.object(submission_module, "get_keydict_for_server", return_value=SOME_KEYDICT):
+            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT):
                 some_response_json = {'some': 'json'}
                 with mock.patch("requests.get", return_value=FakeResponse(200, json=some_response_json)):
                     with mock.patch.object(submission_module, "do_any_uploads") as mock_do_any_uploads:
@@ -641,7 +641,7 @@ def test_resume_uploads():
 
     with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
-            with mock.patch.object(submission_module, "get_keydict_for_server", return_value=SOME_KEYDICT):
+            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT):
                 with mock.patch("requests.get", return_value=FakeResponse(401, json=SOME_BAD_RESULT)):
                     with mock.patch.object(submission_module, "do_any_uploads") as mock_do_any_uploads:
                         with pytest.raises(Exception):
@@ -993,7 +993,7 @@ def test_do_uploads(tmp_path):
 def test_upload_item_data():
 
     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER) as mock_resolve:
-        with mock.patch.object(submission_module, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
+        with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
             with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                 with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
 
@@ -1004,7 +1004,7 @@ def test_upload_item_data():
                     mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_KEYDICT)
 
     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER) as mock_resolve:
-        with mock.patch.object(submission_module, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
+        with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
             with mock.patch.object(submission_module, "yes_or_no", return_value=False):
                 with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
 
@@ -1025,7 +1025,7 @@ def test_upload_item_data():
                     assert mock_upload.call_count == 0
 
     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER) as mock_resolve:
-        with mock.patch.object(submission_module, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
+        with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
             with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
 
                 upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID,
@@ -1144,12 +1144,10 @@ def test_submit_any_ingestion_old_protocol():
             with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                 with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                     with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                        with mock.patch.object(submission_module, "get_keydict_for_server",
+                        with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                return_value=SOME_KEYDICT):
                             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                                 with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                                    with mock.patch.object(submission_module, "get_keydict_for_server",
-                                                           return_value=SOME_KEYDICT):
                                         with mock.patch("requests.post", mocked_post):
                                             with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
                                                 try:
@@ -1183,7 +1181,7 @@ def test_submit_any_ingestion_old_protocol():
                 with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
                                     with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
@@ -1253,7 +1251,7 @@ def test_submit_any_ingestion_old_protocol():
                                                side_effect=make_mocked_yes_or_no(f"Submit {SOME_BUNDLE_FILENAME}"
                                                                                  f" ({ANOTHER_INGESTION_TYPE})"
                                                                                  f" to {SOME_SERVER}?")):
-                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
                                     with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
@@ -1313,7 +1311,7 @@ def test_submit_any_ingestion_old_protocol():
                     print("Data would go here.", file=fp)
                 with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
-                        with mock.patch.object(submission_module, "get_keydict_for_server",
+                        with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                return_value=SOME_KEYDICT):
                             with mock.patch("requests.post", mocked_post):
                                 with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
@@ -1383,7 +1381,7 @@ def test_submit_any_ingestion_old_protocol():
                 with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", unsupported_media_type):
                                     with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
@@ -1436,7 +1434,7 @@ def test_submit_any_ingestion_old_protocol():
                 with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mysterious_error):
                                     with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
@@ -1480,7 +1478,7 @@ def test_submit_any_ingestion_old_protocol():
                 with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
                                     with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
@@ -1535,7 +1533,7 @@ def test_submit_any_ingestion_old_protocol():
                 with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
                                     with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
@@ -1589,7 +1587,7 @@ def test_submit_any_ingestion_old_protocol():
                 with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
                                     with mock.patch("requests.get", make_mocked_get(done_after_n_tries=10)):
@@ -1779,12 +1777,10 @@ def test_submit_any_ingestion_new_protocol():
             with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                 with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                     with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                        with mock.patch.object(submission_module, "get_keydict_for_server",
+                        with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                return_value=SOME_KEYDICT):
                             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                                 with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                                    with mock.patch.object(submission_module, "get_keydict_for_server",
-                                                           return_value=SOME_KEYDICT):
                                         with mock.patch("requests.post", mocked_post):
                                             with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
                                                 try:
@@ -1817,7 +1813,7 @@ def test_submit_any_ingestion_new_protocol():
                 with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
                                     with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
@@ -1888,7 +1884,7 @@ def test_submit_any_ingestion_new_protocol():
                 with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", unsupported_media_type):
                                     with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
@@ -1942,7 +1938,7 @@ def test_submit_any_ingestion_new_protocol():
                 with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mysterious_error):
                                     with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
@@ -1987,7 +1983,7 @@ def test_submit_any_ingestion_new_protocol():
                 with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
                                     with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
@@ -2042,7 +2038,7 @@ def test_submit_any_ingestion_new_protocol():
                 with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
                                     with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
@@ -2096,7 +2092,7 @@ def test_submit_any_ingestion_new_protocol():
                 with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                            with mock.patch.object(submission_module, "get_keydict_for_server",
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
                                     with mock.patch("requests.get", make_mocked_get(done_after_n_tries=10)):
