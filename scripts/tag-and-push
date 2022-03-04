@@ -22,8 +22,7 @@ new_tag=v${version}
 
 git tag ${new_tag}
 
-
-if [ $? -neq 0 ]; then
+if [ $? -ne 0 ]; then
     echo "Adding tag ${new_tag} failed."
     exit 1
 else
@@ -32,7 +31,7 @@ fi
 
 git push origin ${new_tag}
 
-if [ $? -neq 0 ]; then
+if [ $? -ne 0 ]; then
     echo "Pushing tag ${new_tag} failed."
     exit 1
 else
