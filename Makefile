@@ -23,6 +23,9 @@ retest:  # runs only failed tests from the last test run. (if no failures, it se
 update:  # updates dependencies
 	poetry update
 
+tag-and-push:  # tags the branch and pushes it
+	@scripts/tag-and-push
+
 publish:
 	scripts/publish
 
