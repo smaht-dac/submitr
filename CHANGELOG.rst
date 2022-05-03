@@ -7,6 +7,12 @@ Change Log
 ----------
 
 
+1.4.1
+=====
+
+* Fix SubmitCGAP file upload to work correctly under Microsoft/Windows 10.
+
+
 1.4.0
 =====
 

@@ -677,7 +677,8 @@ def test_execute_prearranged_upload():
                     execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
                     mock_aws_call.assert_called_with(
                         ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
-                        env=SOME_ENVIRON_WITH_CREDS
+                        env=SOME_ENVIRON_WITH_CREDS,
+                        shell=True,
                     )
                     assert shown.lines == [
                         "Going to upload some-filename to some-url.",
@@ -693,7 +694,8 @@ def test_execute_prearranged_upload():
                         ['aws', 's3', 'cp',
                          '--sse', 'aws:kms', '--sse-kms-key-id', SOME_S3_ENCRYPT_KEY_ID,
                          '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
-                        env=SOME_ENVIRON_WITH_CREDS
+                        env=SOME_ENVIRON_WITH_CREDS,
+                        shell=True,
                     )
                     assert shown.lines == [
                         "Going to upload some-filename to some-url.",
@@ -708,7 +710,8 @@ def test_execute_prearranged_upload():
                         execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
                     mock_aws_call.assert_called_with(
                         ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
-                        env=SOME_ENVIRON_WITH_CREDS
+                        env=SOME_ENVIRON_WITH_CREDS,
+                        shell=True,
                     )
                     assert shown.lines == [
                         "Going to upload some-filename to some-url.",
