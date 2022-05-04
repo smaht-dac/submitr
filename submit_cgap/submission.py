@@ -565,7 +565,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
             PRINT(f"Executing: {command}")
             PRINT(f" ==> {' '.join(command)}")
             PRINT(f"Environment variables include {conjoined_list(list(extra_env.keys()))}.")
-        subprocess.check_call(command, env=env)
+        subprocess.check_call(command, env=env, shell=True)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("Upload failed with exit code %d" % e.returncode)
     else:
