@@ -7,10 +7,16 @@ Change Log
 ----------
 
 
+1.4.2
+=====
+
+* Further adustments to repair problems created by 1.4.1 (C4-818).
+
+
 1.4.1
 =====
 
-* Fix SubmitCGAP file upload to work correctly under Microsoft/Windows 10.
+* Fix SubmitCGAP file upload to work correctly under Microsoft/Windows 10 (C4-816).
 
 
 1.4.0
