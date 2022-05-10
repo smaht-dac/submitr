@@ -124,7 +124,13 @@ def _independently_confirmed_as_running_on_windows_native():
     #    os.name == 'nt' (as opposed to 'posix')
     #    platform.system() == 'Windows' (as opposed to 'Linux', 'Darwin', or 'CYGWIN_NT-<version>'
     # Since we're wanting to test one of these, we  use the other mechansim to confirm things.
-    return platform.system() == 'Windows'
+    standard_result = running_on_windows_native()
+    independent_result = platform.system() == 'Windows'
+    assert standard_result == independent_result, (
+        f"Mechanisms for telling whether we're on Windows disagree:"
+        f" standard_result={standard_result} independent_result={independent_result}"
+    )
+    return independent_result
 
 
 @contextlib.contextmanager
