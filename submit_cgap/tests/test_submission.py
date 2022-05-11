@@ -1,6 +1,7 @@
 import contextlib
 import io
 import os
+import platform
 import pytest
 import re
 
@@ -20,7 +21,7 @@ from ..submission import (
     execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url,
     resolve_server, resume_uploads, show_section, submit_any_ingestion,
     upload_file_to_uuid, upload_item_data, PROGRESS_CHECK_INTERVAL,
-    get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page,
+    get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page, running_on_windows_native,
 )
 from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
@@ -116,6 +117,20 @@ SOME_ENVIRON_WITH_CREDS = {
     'AWS_SECRET_ACCESS_KEY': 'some-secret',
     'AWS_SECURITY_TOKEN': 'some-session-token',
 }
+
+
+def _independently_confirmed_as_running_on_windows_native():
+    # There are two ways to tell if we're running on Windows native:
+    #    os.name == 'nt' (as opposed to 'posix')
+    #    platform.system() == 'Windows' (as opposed to 'Linux', 'Darwin', or 'CYGWIN_NT-<version>'
+    # Since we're wanting to test one of these, we  use the other mechansim to confirm things.
+    standard_result = running_on_windows_native()
+    independent_result = platform.system() == 'Windows'
+    assert standard_result == independent_result, (
+        f"Mechanisms for telling whether we're on Windows disagree:"
+        f" standard_result={standard_result} independent_result={independent_result}"
+    )
+    return independent_result
 
 
 @contextlib.contextmanager
@@ -658,64 +673,96 @@ class MockTime:
         return (self._time.now() - self._time.INITIAL_TIME).total_seconds()
 
 
-def test_execute_prearranged_upload():
+OS_SIMULATION_MODES = {
+    "windows": {"os.name": "nt", "platform.system": "Windows"},
+    "cygwin": {"os.name": "posix", "platform.system": "CYGWIN_NT-10.0"},  # just one of many examples
+    "linux": {"os.name": "posix", "platform.system": "Linux"},
+    "macos": {"os.name": "posix", "platform.system": "Darwin"}
+}
 
-    with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
-        with shown_output() as shown:
-            with pytest.raises(ValueError):
-                bad_credentials = SOME_UPLOAD_CREDENTIALS.copy()
-                bad_credentials.pop('SessionToken')
-                # This will abort quite early because it can't construct a proper set of credentials as env vars.
-                # Nothing has to be mocked because it won't get that far.
-                execute_prearranged_upload('this-file-name-is-not-used', bad_credentials)
-            assert shown.lines == []
+OS_SIMULATION_MODE_NAMES = list(OS_SIMULATION_MODES.keys())
 
-    with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
-        with shown_output() as shown:
-            with mock.patch("time.time", MockTime().time):
-                with mock.patch("subprocess.call", return_value=0) as mock_aws_call:
-                    execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
-                    mock_aws_call.assert_called_with(
-                        ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
-                        env=SOME_ENVIRON_WITH_CREDS,
-                        shell=True,
-                    )
-                    assert shown.lines == [
-                        "Going to upload some-filename to some-url.",
-                        "Uploaded in 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
-                    ]
 
-    with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
-        with shown_output() as shown:
-            with mock.patch("time.time", MockTime().time):
-                with mock.patch("subprocess.call", return_value=0) as mock_aws_call:
-                    execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_EXTENDED_UPLOAD_CREDENTIALS)
-                    mock_aws_call.assert_called_with(
-                        ['aws', 's3', 'cp',
-                         '--sse', 'aws:kms', '--sse-kms-key-id', SOME_S3_ENCRYPT_KEY_ID,
-                         '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
-                        env=SOME_ENVIRON_WITH_CREDS,
-                        shell=True,
-                    )
-                    assert shown.lines == [
-                        "Going to upload some-filename to some-url.",
-                        "Uploaded in 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
-                    ]
+@contextlib.contextmanager
+def os_simulation(*, simulation_mode):
 
-    with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
-        with shown_output() as shown:
-            with mock.patch("time.time", MockTime().time):
-                with mock.patch("subprocess.call", return_value=17) as mock_aws_call:
-                    with raises_regexp(RuntimeError, "Upload failed with exit code 17"):
+    assert simulation_mode in OS_SIMULATION_MODES, f"{simulation_mode} is not a defined os simulation mode."
+    info = OS_SIMULATION_MODES[simulation_mode]
+    os_name = info['os.name']
+
+    def mocked_system():
+        return info['platform.system']
+
+    with mock.patch.object(os, "name", os_name):
+        with mock.patch.object(platform, "system") as mock_system:
+            mock_system.side_effect = mocked_system
+            yield
+
+
+@pytest.mark.parametrize("os_simulation_mode", OS_SIMULATION_MODE_NAMES)
+def test_execute_prearranged_upload(os_simulation_mode: str):
+    with os_simulation(simulation_mode=os_simulation_mode):
+        with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
+            with shown_output() as shown:
+                with pytest.raises(ValueError):
+                    bad_credentials = SOME_UPLOAD_CREDENTIALS.copy()
+                    bad_credentials.pop('SessionToken')
+                    # This will abort quite early because it can't construct a proper set of credentials as env vars.
+                    # Nothing has to be mocked because it won't get that far.
+                    execute_prearranged_upload('this-file-name-is-not-used', bad_credentials)
+                assert shown.lines == []
+
+        subprocess_options = {}
+        if _independently_confirmed_as_running_on_windows_native():
+            subprocess_options = {'shell': True}
+
+        with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
+            with shown_output() as shown:
+                with mock.patch("time.time", MockTime().time):
+                    with mock.patch("subprocess.call", return_value=0) as mock_aws_call:
                         execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
-                    mock_aws_call.assert_called_with(
-                        ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
-                        env=SOME_ENVIRON_WITH_CREDS,
-                        shell=True,
-                    )
-                    assert shown.lines == [
-                        "Going to upload some-filename to some-url.",
-                    ]
+                        mock_aws_call.assert_called_with(
+                            ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
+                            env=SOME_ENVIRON_WITH_CREDS,
+                            **subprocess_options
+                        )
+                        assert shown.lines == [
+                            "Going to upload some-filename to some-url.",
+                            "Uploaded in 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
+                        ]
+
+        with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
+            with shown_output() as shown:
+                with mock.patch("time.time", MockTime().time):
+                    with mock.patch("subprocess.call", return_value=0) as mock_aws_call:
+                        execute_prearranged_upload(path=SOME_FILENAME,
+                                                   upload_credentials=SOME_EXTENDED_UPLOAD_CREDENTIALS)
+                        mock_aws_call.assert_called_with(
+                            ['aws', 's3', 'cp',
+                             '--sse', 'aws:kms', '--sse-kms-key-id', SOME_S3_ENCRYPT_KEY_ID,
+                             '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
+                            env=SOME_ENVIRON_WITH_CREDS,
+                            **subprocess_options
+                        )
+                        assert shown.lines == [
+                            "Going to upload some-filename to some-url.",
+                            "Uploaded in 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
+                        ]
+
+        with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
+            with shown_output() as shown:
+                with mock.patch("time.time", MockTime().time):
+                    with mock.patch("subprocess.call", return_value=17) as mock_aws_call:
+                        with raises_regexp(RuntimeError, "Upload failed with exit code 17"):
+                            execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
+                        mock_aws_call.assert_called_with(
+                            ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
+                            env=SOME_ENVIRON_WITH_CREDS,
+                            **subprocess_options
+                        )
+                        assert shown.lines == [
+                            "Going to upload some-filename to some-url.",
+                        ]
 
 
 @pytest.mark.parametrize('debug_protocol', [False, True])
@@ -2148,3 +2195,10 @@ def test_submit_any_ingestion_new_protocol():
             # After 1 second to recheck the time...
             '12:02:10 Timed out after 8 tries.',
         ]
+
+
+def test_running_on_windows_native():
+    for pair in [("nt", True), ("posix", False)]:
+        os_name, is_windows = pair
+        with mock.patch.object(os, "name", os_name):
+            assert running_on_windows_native() is is_windows

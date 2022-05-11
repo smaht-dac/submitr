@@ -565,13 +565,20 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
             PRINT(f"Executing: {command}")
             PRINT(f" ==> {' '.join(command)}")
             PRINT(f"Environment variables include {conjoined_list(list(extra_env.keys()))}.")
-        subprocess.check_call(command, env=env, shell=True)
+        options = {}
+        if running_on_windows_native():
+            options = {"shell": True}
+        subprocess.check_call(command, env=env, **options)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("Upload failed with exit code %d" % e.returncode)
     else:
         end = time.time()
         duration = end - start
         show("Uploaded in %.2f seconds" % duration)
+
+
+def running_on_windows_native():
+    return os.name == 'nt'
 
 
 def upload_file_to_uuid(filename, uuid, auth):
