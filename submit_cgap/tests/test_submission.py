@@ -4,7 +4,6 @@ import os
 import platform
 import pytest
 import re
-import sys
 
 from dcicutils.qa_utils import (
     override_environ, ignored, ControlledTime, MockFileSystem, local_attrs, raises_regexp, printed_output,
@@ -736,7 +735,8 @@ def test_execute_prearranged_upload(os_simulation_mode: str):
             with shown_output() as shown:
                 with mock.patch("time.time", MockTime().time):
                     with mock.patch("subprocess.call", return_value=0) as mock_aws_call:
-                        execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_EXTENDED_UPLOAD_CREDENTIALS)
+                        execute_prearranged_upload(path=SOME_FILENAME,
+                                                   upload_credentials=SOME_EXTENDED_UPLOAD_CREDENTIALS)
                         mock_aws_call.assert_called_with(
                             ['aws', 's3', 'cp',
                              '--sse', 'aws:kms', '--sse-kms-key-id', SOME_S3_ENCRYPT_KEY_ID,
