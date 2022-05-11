@@ -4,6 +4,7 @@ import os
 import platform
 import pytest
 import re
+import sys
 
 from dcicutils.qa_utils import (
     override_environ, ignored, ControlledTime, MockFileSystem, local_attrs, raises_regexp, printed_output,
@@ -673,68 +674,95 @@ class MockTime:
         return (self._time.now() - self._time.INITIAL_TIME).total_seconds()
 
 
-def test_execute_prearranged_upload():
+OS_SIMULATION_MODES = {
+    "windows": {"os.name": "nt", "platform.system": "Windows"},
+    "cygwin": {"os.name": "posix", "platform.system": "CYGWIN_NT-10.0"},  # just one of many examples
+    "linux": {"os.name": "posix", "platform.system": "Linux"},
+    "macos": {"os.name": "posix", "platform.system": "Darwin"}
+}
 
-    with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
-        with shown_output() as shown:
-            with pytest.raises(ValueError):
-                bad_credentials = SOME_UPLOAD_CREDENTIALS.copy()
-                bad_credentials.pop('SessionToken')
-                # This will abort quite early because it can't construct a proper set of credentials as env vars.
-                # Nothing has to be mocked because it won't get that far.
-                execute_prearranged_upload('this-file-name-is-not-used', bad_credentials)
-            assert shown.lines == []
+OS_SIMULATION_MODE_NAMES = list(OS_SIMULATION_MODES.keys())
 
-    subprocess_options = {}
-    if _independently_confirmed_as_running_on_windows_native():
-        subprocess_options = {'shell': True}
 
-    with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
-        with shown_output() as shown:
-            with mock.patch("time.time", MockTime().time):
-                with mock.patch("subprocess.call", return_value=0) as mock_aws_call:
-                    execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
-                    mock_aws_call.assert_called_with(
-                        ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
-                        env=SOME_ENVIRON_WITH_CREDS,
-                        **subprocess_options
-                    )
-                    assert shown.lines == [
-                        "Going to upload some-filename to some-url.",
-                        "Uploaded in 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
-                    ]
+@contextlib.contextmanager
+def os_simulation(*, simulation_mode):
 
-    with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
-        with shown_output() as shown:
-            with mock.patch("time.time", MockTime().time):
-                with mock.patch("subprocess.call", return_value=0) as mock_aws_call:
-                    execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_EXTENDED_UPLOAD_CREDENTIALS)
-                    mock_aws_call.assert_called_with(
-                        ['aws', 's3', 'cp',
-                         '--sse', 'aws:kms', '--sse-kms-key-id', SOME_S3_ENCRYPT_KEY_ID,
-                         '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
-                        env=SOME_ENVIRON_WITH_CREDS,
-                        **subprocess_options
-                    )
-                    assert shown.lines == [
-                        "Going to upload some-filename to some-url.",
-                        "Uploaded in 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
-                    ]
+    assert simulation_mode in OS_SIMULATION_MODES, f"{simulation_mode} is not a defined os simulation mode."
+    info = OS_SIMULATION_MODES[simulation_mode]
+    os_name = info['os.name']
 
-    with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
-        with shown_output() as shown:
-            with mock.patch("time.time", MockTime().time):
-                with mock.patch("subprocess.call", return_value=17) as mock_aws_call:
-                    with raises_regexp(RuntimeError, "Upload failed with exit code 17"):
+    def mocked_system():
+        return info['platform.system']
+
+    with mock.patch.object(os, "name", os_name):
+        with mock.patch.object(platform, "system") as mock_system:
+            mock_system.side_effect = mocked_system
+            yield
+
+
+@pytest.mark.parametrize("os_simulation_mode", OS_SIMULATION_MODE_NAMES)
+def test_execute_prearranged_upload(os_simulation_mode: str):
+    with os_simulation(simulation_mode=os_simulation_mode):
+        with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
+            with shown_output() as shown:
+                with pytest.raises(ValueError):
+                    bad_credentials = SOME_UPLOAD_CREDENTIALS.copy()
+                    bad_credentials.pop('SessionToken')
+                    # This will abort quite early because it can't construct a proper set of credentials as env vars.
+                    # Nothing has to be mocked because it won't get that far.
+                    execute_prearranged_upload('this-file-name-is-not-used', bad_credentials)
+                assert shown.lines == []
+
+        subprocess_options = {}
+        if _independently_confirmed_as_running_on_windows_native():
+            subprocess_options = {'shell': True}
+
+        with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
+            with shown_output() as shown:
+                with mock.patch("time.time", MockTime().time):
+                    with mock.patch("subprocess.call", return_value=0) as mock_aws_call:
                         execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
-                    mock_aws_call.assert_called_with(
-                        ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
-                        env=SOME_ENVIRON_WITH_CREDS,
-                        **subprocess_options
-                    )
-                    assert shown.lines == [
-                        "Going to upload some-filename to some-url.",
-                    ]
+                        mock_aws_call.assert_called_with(
+                            ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
+                            env=SOME_ENVIRON_WITH_CREDS,
+                            **subprocess_options
+                        )
+                        assert shown.lines == [
+                            "Going to upload some-filename to some-url.",
+                            "Uploaded in 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
+                        ]
+
+        with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
+            with shown_output() as shown:
+                with mock.patch("time.time", MockTime().time):
+                    with mock.patch("subprocess.call", return_value=0) as mock_aws_call:
+                        execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_EXTENDED_UPLOAD_CREDENTIALS)
+                        mock_aws_call.assert_called_with(
+                            ['aws', 's3', 'cp',
+                             '--sse', 'aws:kms', '--sse-kms-key-id', SOME_S3_ENCRYPT_KEY_ID,
+                             '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
+                            env=SOME_ENVIRON_WITH_CREDS,
+                            **subprocess_options
+                        )
+                        assert shown.lines == [
+                            "Going to upload some-filename to some-url.",
+                            "Uploaded in 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
+                        ]
+
+        with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
+            with shown_output() as shown:
+                with mock.patch("time.time", MockTime().time):
+                    with mock.patch("subprocess.call", return_value=17) as mock_aws_call:
+                        with raises_regexp(RuntimeError, "Upload failed with exit code 17"):
+                            execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
+                        mock_aws_call.assert_called_with(
+                            ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
+                            env=SOME_ENVIRON_WITH_CREDS,
+                            **subprocess_options
+                        )
+                        assert shown.lines == [
+                            "Going to upload some-filename to some-url.",
+                        ]
 
 
 @pytest.mark.parametrize('debug_protocol', [False, True])
