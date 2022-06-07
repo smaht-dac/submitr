@@ -598,7 +598,13 @@ def upload_file_to_uuid(filename, uuid, auth):
     try:
         [metadata] = response['@graph']
         upload_credentials = metadata['upload_credentials']
-    except Exception:
+    except Exception as e:
+        if DEBUG_PROTOCOL:  # pragma: no cover
+            PRINT(f"Problem trying to get upload credentials.")
+            PRINT(f" patch_data={patch_data}")
+            PRINT(f" uuid={uuid}")
+            PRINT(f" response={response}")
+            PRINT(f"Got error {type(e)}: {e}")
         raise RuntimeError("Unable to obtain upload credentials for file %s." % filename)
 
     execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
