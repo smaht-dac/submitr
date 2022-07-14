@@ -5,9 +5,8 @@ import platform
 import pytest
 import re
 
-from dcicutils.qa_utils import (
-    override_environ, ignored, ControlledTime, MockFileSystem, local_attrs, raises_regexp, printed_output,
-)
+from dcicutils.misc_utils import ignored, local_attrs, override_environ
+from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
 from unittest import mock
 from .test_utils import shown_output

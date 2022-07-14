@@ -7,6 +7,13 @@ Change Log
 ----------
 
 
+1.4.3
+=====
+
+* Use ``ignored``, ``local_attrs``, and ``override_environ``
+  from ``dcicutils.misc_utils`` rather than ``dcicutils.qa_utils``.
+
+
 1.4.2
 =====
 

@@ -1,7 +1,6 @@
 import pytest
 
-from dcicutils.misc_utils import ignored
-from dcicutils.qa_utils import override_environ
+from dcicutils.misc_utils import ignored, override_environ
 from unittest import mock
 from ..submission import DEFAULT_INGESTION_TYPE
 from ..base import KeyManager
