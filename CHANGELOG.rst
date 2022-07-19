@@ -7,6 +7,12 @@ Change Log
 ----------
 
 
+1.5.0
+=====
+
+* Support upload of extra files
+
+
 1.4.2
 =====
 
