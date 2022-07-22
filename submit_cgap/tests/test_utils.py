@@ -1,9 +1,6 @@
 import contextlib
-import pathlib
 import pytest
 import re
-import tempfile
-from functools import wraps
 
 from dcicutils.misc_utils import override_environ, environ_bool
 from unittest import mock
