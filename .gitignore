@@ -137,6 +137,7 @@ dmypy.json
 
 # MacOS
 .DS_Store/
+.DS_Store
 
 # RTD
 docs/build
