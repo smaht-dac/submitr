@@ -2270,8 +2270,8 @@ def test_search_for_file(
     """Test output file path +/- error message dependent on file search
     via glob.
     """
-    with mock.patch(
-        "submit_cgap.submission.glob.glob", return_value=glob_results
+    with mock.patch.object(
+        submission_module.glob, "glob", return_value=glob_results
     ) as mocked_glob:
         file_path_found, error_msg = search_for_file(directory, file_name, recursive)
         mocked_glob.assert_called_once_with(
@@ -2282,6 +2282,8 @@ def test_search_for_file(
             assert error_msg.startswith(
                 f"No upload attempted for file {file_name}"
             )
+        else:
+            assert not error_msg, "Error message found when not expected"
 
 
 @pytest.mark.parametrize(
@@ -2324,9 +2326,10 @@ def test_wrap_upload_function(
                 file_name = "foo/bar"
                 input_arg = "foo"
                 function_wrapper = UploadMessageWrapper(uuid, no_query=no_query)
-                result = function_wrapper.wrap_upload_function(
+                wrapped_function = function_wrapper.wrap_upload_function(
                     simple_function, file_name
-                )(input_arg, error_raised=error_raised)
+                )
+                result = wrapped_function(input_arg, error_raised=error_raised)
 
                 expected_lines = []
                 if not no_query and cgap_selective_uploads and not yes_or_no_result:
@@ -2375,10 +2378,9 @@ def test_upload_extra_files(
         else:
             return None, "error"
 
-    mocked_search_for_file = mock.MagicMock(side_effect=mocked_file_search)
     with mock.patch.object(
-        submission_module, "search_for_file", mocked_search_for_file
-    ):
+        submission_module, "search_for_file", side_effect=mocked_file_search
+    ) as mocked_search_for_file:
         with mock.patch.object(
             submission_module, "execute_prearranged_upload"
         ) as mocked_execute_upload:
@@ -2390,7 +2392,5 @@ def test_upload_extra_files(
                 auth,
                 recursive=recursive,
             )
-            assert len(
-                mocked_search_for_file.call_args_list
-            ) == expected_file_search_calls
+            assert len(mocked_search_for_file.call_args_list) == expected_file_search_calls
             assert len(mocked_execute_upload.call_args_list) == expected_uploader_calls
