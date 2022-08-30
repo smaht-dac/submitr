@@ -6,9 +6,9 @@ Installing SubmitCGAP
 System Requirements
 ===================
 
-* Python 3.6 or 3.7
-* ``pip`` (version 20 or higher)
-* ``virtualenv`` (version 16 or higher)
+* Python 3.7, 3.8 or 3.9
+* ``pip`` (>=20.0.0)
+* ``virtualenv`` (>=16.0.0)
 
 
 Setting Up a Virtual Environment (OPTIONAL)
@@ -19,16 +19,17 @@ If you do not create a virtual environment, Poetry will make one for you.
 But there are still good reasons you might want to make your own, so here
 are three ways to do it:
 
-* If you have virtualenvwrapper that knows to use Python 3.6::
+* If you have a ``virtualenvwrapper`` installation that knows how to use your Python version (3.7, 3.8 or 3.9)::
 
    mkvirtualenv myenv
 
 * If you have virtualenv but not virtualenvwrapper,
-  and you have python3.6 in your ``PATH``::
+  and you have, for example, ``python3.9`` in your ``PATH``::
 
-   virtualenv myenv -p python3.6
+   virtualenv myenv -p python3.9
 
-* If you are using ``pyenv`` to control what environment you use::
+* If you are using ``pyenv`` to control what Python version you use, make sure you have set it
+  to your preferred version and then do::
 
    pyenv exec python -m venv myenv
 
