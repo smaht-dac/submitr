@@ -7,6 +7,13 @@ Change Log
 ----------
 
 
+1.5.0
+=====
+
+* Support upload of extra files
+* Update test submission FASTQ files to match update submission requirements
+
+
 1.4.2
 =====
 
