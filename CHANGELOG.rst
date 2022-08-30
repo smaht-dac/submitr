@@ -10,10 +10,10 @@ Change Log
 2.0.0
 =====
 
-* Drop support for Python 3.6
+* Drop support for Python 3.6 (C4-898)
 
 * Use ``ignored``, ``local_attrs``, and ``override_environ``
-  from ``dcicutils.misc_utils`` rather than ``dcicutils.qa_utils``.
+  from ``dcicutils.misc_utils`` rather than ``dcicutils.qa_utils``. (C4-895)
 
 * Add debugging instrumentation for failed access to credentials.
 
