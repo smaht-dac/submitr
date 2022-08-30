@@ -7,11 +7,18 @@ Change Log
 ----------
 
 
-1.4.3
+1.5.1
 =====
 
 * Use ``ignored``, ``local_attrs``, and ``override_environ``
   from ``dcicutils.misc_utils`` rather than ``dcicutils.qa_utils``.
+
+
+1.5.0
+=====
+
+* Support upload of extra files
+* Update test submission FASTQ files to match update submission requirements
 
 
 1.4.2
