@@ -1,7 +1,6 @@
 import pytest
 
-from dcicutils.misc_utils import ignored
-from dcicutils.qa_utils import override_environ
+from dcicutils.misc_utils import ignored, override_environ
 from unittest import mock
 from ..base import KeyManager
 from ..scripts.submit_genelist import main as submit_genelist_main

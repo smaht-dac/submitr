@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
+        python_version: [3.7, 3.8, 3.9]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -49,6 +49,7 @@ jobs:
       - name: Coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: ${{ matrix.python_version == '3.6' }}
+        # For testing, use the oldest allowable version of Python to be sure we're not using features added later
+        if: ${{ matrix.python_version == '3.7' }}
         run: |
           poetry run coveralls --service=github
