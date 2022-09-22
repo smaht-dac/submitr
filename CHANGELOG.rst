@@ -6,6 +6,12 @@ SubmitCGAP
 Change Log
 ----------
 
+2.0.1
+=====
+
+* Update documentation with some small fixes
+* Add new basic setup documentation 
+
 
 2.0.0
 =====

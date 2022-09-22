@@ -12,7 +12,7 @@ Formatting Files for Submission
 ===============================
 
 For details on what file formats are accepted and how the information should be structured,
-see our submission help pages at `the main CGAP server <https://cgap.hms.harvard.edu/help/submission>`_
+see our submission help pages at `the main CGAP server <https://cgap-training.hms.harvard.edu/help/submission>`_
 or at <your-cgap-server>/help/submission .
 
 Metadata Bundles
@@ -45,7 +45,7 @@ in CGAP, the system will automatically detect them.
 
 To invoke it for validation only, without submitting anything, do::
 
-   submit-metadata-bundle mymetadata.xlsx --validate_only --server <server_url>
+   submit-metadata-bundle mymetadata.xlsx --validate-only --server <server_url>
 
 To specify a different directory for the files, do::
 
