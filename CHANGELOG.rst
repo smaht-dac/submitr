@@ -10,7 +10,7 @@ Change Log
 =====
 
 * Update documentation with some small fixes
-* Add new basic setup documentation 
+* Add new basic setup documentation
 
 
 2.0.0

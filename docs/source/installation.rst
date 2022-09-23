@@ -85,6 +85,12 @@ and server with your own envname and server)::
         }
     }
 
+The easiest way to modify this file is with TextEdit, which you can open from the Terminal with:
+
+.. code-block::
+
+    $ open -a TextEdit ~/.cgap-keys.json
+
 For developers, the suggested envname to use for local debugging (for developers) is "fourfront-cgaplocal".
 You will probably have several keys in your credential file. An example keyfile is shown below
 (note that the CGAP servers used are just example urls)::
