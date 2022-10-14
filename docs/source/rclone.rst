@@ -22,7 +22,7 @@ Navigate to the `rclone` `download page <https://rclone.org/downloads/>`_ and cl
 download button that corresponds to the operating system you are running. Once installed
 you should see the `rclone` command in your path.
 
-.. code-block::
+.. code-block:: console
 
     $ which rclone
 
@@ -46,7 +46,7 @@ you can access the files in your account. You will not need access credentials t
 to our buckets, though that can be arranged if it is preferred.
 
 
-.. code-block::
+.. code-block:: console
 
     $ rclone configure
     No remotes found, make a new one?
@@ -244,6 +244,7 @@ to our buckets, though that can be arranged if it is preferred.
     d) Delete this remote
     y/e/d> y
 
+
 If successful you should be able to transfer files from the local machine or your private
 s3 buckets into our submission bucket. If we have not told you the bucket name to submit
 to, please reach out to us at `cgap-support@hms-dbmi.atlassian.net <mailto:cgap-support@hms-dbmi.atlassian.net>`_.
@@ -253,15 +254,18 @@ our submission bucket. Test our remote by filling out the accessioning spreadshe
 and submitting it to our S3 bucket. Please denote a sensible case ID to use as a folder
 prefix for the current submission. Transfer the spreadsheet with:
 
-.. code-block::
+.. code-block:: console
 
     $ rclone copy ~/Documents/submit_cgap/case0001/case0001_accessioning.xls cgap_s3_submission:cgap-submission-bucket/case0001/case0001_accessioning.xls
 
+
 If successful, continue by transferring the raw files into the submission bucket.
 
-.. code-block::
+.. code-block:: console
+
     $ rclone copy cgap_s3_submission:your-private-s3-bucket/fastq1.fastq.gz cgap_s3_submission:cgap-submission-bucket/case0001/fastq1.fastq.gz
     $ rclone copy cgap_s3_submission:your-private-s3-bucket/fastq2.fastq.gz cgap_s3_submission:cgap-submission-bucket/case0001/fastq2.fastq.gz
+
 
 If you are not using AWS S3 as your storage provider, see the following instructions.
 
@@ -286,7 +290,7 @@ similar sort of
 `configuration <https://rclone.org/googlecloudstorage/>`_
 for communicating with Google Cloud. Run `rclone config` as before.
 
-.. code-block::
+.. code-block:: console
 
     $ rclone config
     New remote
@@ -409,13 +413,15 @@ for communicating with Google Cloud. Run `rclone config` as before.
     d) Delete this remote
     y/e/d> y
 
+
 After the Google Cloud connection is configured, you should be able to combine them
 to submit your submission files directly.
 
-.. code-block::
+.. code-block:: console
 
     $ rclone copy remote_files_for_cgap_submission:your-private-gcloud-bucket/fastq1.fastq.gz cgap_s3_submission:cgap-submission-bucket/case0001/fastq1.fastq.gz
     $ rclone copy remote_files_for_cgap_submission:your-private-gcloud-bucket/fastq2.fastq.gz cgap_s3_submission:cgap-submission-bucket/case0001/fastq2.fastq.gz
+
 
 These transfers may take some significant time but should still be faster than if
 downloading to the local machine. Once complete please notify one of our data wranglers
