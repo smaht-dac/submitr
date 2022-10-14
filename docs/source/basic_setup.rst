@@ -7,7 +7,21 @@ This document is intended for users who are not very familiar with the command l
 The intent is to provide detailed instructions for setting up your local environment for using SubmitCGAP.
 These instructions are intended to work with Mac OS X. Linux users are presumed advanced and Windows instructions are not available at this time but will be provided in the future.
 
------------------------
+
+Navigating this Document
+------------------------
+
+Each section in this document is meant to sequentially guide you through the initial setup
+process for installing dependencies necessary to run SubmitCGAP while simultaneously
+getting you setup with some best practices for managing the submissions in your local
+system.
+
+One import note of clarification is  that when you see code blocks that begin with `$`,
+this means the commands are meant to be run directly in the `Terminal` application
+(without the `$`). Blocks that do not begin with `$` are intended to be dropped
+directly into files.
+
+
 Unix Command Cheatsheet
 -----------------------
 
@@ -57,8 +71,8 @@ directories and files.
 * `touch <filename>` will create a new empty file.
 
 
-Getting Started
----------------
+Creating the Working Directory and Credentials File
+---------------------------------------------------
 
 To get started we will create an empty file to hold the submission credentials and a directory
 for storing the submission Excel files and associated raw sequencing files. At this time, the sequencing
@@ -71,6 +85,22 @@ create the directory for the submission files anywhere, just note the location (
 
     $ touch ~/.cgap-keys.json
     $ mkdir ~/Documents/submit_cgap
+
+
+Installing XCode Developer Tools
+--------------------------------
+
+Some new machines come with very few parts of the developer toolchain that may prevent
+you from doing even basic installation of packages. Thankfully, OSX packages all of the
+developer tools cleanly into an easily installable package it calls the XCode Developer
+Tools. You can install these with:
+
+.. code-block:: bash
+
+    $ xcode-select --install
+
+This install may take some significant time, but once complete you should have tools
+necessary for installing Python and other related package for use with SubmitCGAP.
 
 
 Installing Python and Pyenv
@@ -103,26 +133,26 @@ application, but we recommend `TextEdit` for users who are not familiar with oth
 Once open, add the following to your `~/.bashrc` file. It may have no contents - if it does not exist
 you can copy the below as is and drop it into the file. Doing so ensures that you can use
 your `~/.bashrc` file as a macro for making `pyenv` and associated commands available to you easily.
+When doing this ensure that you copy the block from below as sometimes the quotation marks
+get clobbered into an incorrect form that will throw errors when you run it.
 
 .. code-block:: bash
 
-    export PYENV_ROOT=“$HOME/.pyenv”
-    command -v pyenv >/dev/null || export PATH=“$PYENV_ROOT/bin:$PATH”
-    eval “$(pyenv init -)”
-    eval “$(pyenv virtualenv-init -)”
+    export PYENV_ROOT="$HOME/.pyenv"
+    command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+    eval "$(pyenv init -)"
+    eval "$(pyenv virtualenv-init -)"
 
 Once done you can force the changes to take effect by running `source ~/.bashrc`. Once done you should
-be able to run `pyenv`. In order to install newer Python versions, you will need to install Xcode
-Developer Tools.
+be able to run `pyenv`.
 
 .. code-block:: bash
 
     $ source ~/.bashrc
     $ pyenv  # verify installation, should output some help information
-    $ xcode-select --install
 
-This will take some significant time, but when it has completed you will have the toolchain necessary
-for installing newer Python versions to your machine and can proceed with the below.
+The previous XCode Developer Tools installation should give you dependencies necessary
+to install newer Python versions.
 
 .. code-block:: bash
 
