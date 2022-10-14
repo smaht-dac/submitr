@@ -271,7 +271,8 @@ Transferring from Another Cloud
 
 As mentioned previously, `rclone` is a cross-platform compatible file transfer tool.
 This allows you to submit files to our S3 buckets that live in other cloud platforms.
-To do this, you will need to locate your cloud provider on the main `rclone documentation page <https://rclone.org/>`_
+To do this, you will need to locate your cloud provider on the main
+`rclone documentation page <https://rclone.org/>`_
 and click the `config` button then follow the configuration instructions for `rclone` on
 the subsequent page.
 
@@ -281,8 +282,9 @@ Transferring from Google Cloud
 
 A common use-case is to transfer files that live in Google Cloud to us on S3. Similar to
 the S3 remote setup needed to communicate with our submission bucket, you must do a
-similar sort of `configuration <https://rclone.org/googlecloudstorage/>`_ for
-communicating with Google Cloud. Run `rclone config` as before.
+similar sort of
+`configuration <https://rclone.org/googlecloudstorage/>`_
+for communicating with Google Cloud. Run `rclone config` as before.
 
 .. code-block:: bash
 
