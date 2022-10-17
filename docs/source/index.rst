@@ -43,6 +43,7 @@ basics for working with the terminal and installing the dependencies to run this
   :maxdepth: 4
 
   self
+  rclone
   basic_setup
   installation
   getting_started
