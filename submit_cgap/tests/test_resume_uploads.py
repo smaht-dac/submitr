@@ -1,8 +1,8 @@
 import os
 import pytest
 
-from dcicutils.misc_utils import ignored
-from dcicutils.qa_utils import override_environ, MockResponse
+from dcicutils.misc_utils import ignored, override_environ
+from dcicutils.qa_utils import MockResponse
 from unittest import mock
 from .. import submission as submission_module
 from dcicutils.creds_utils import CGAPKeyManager

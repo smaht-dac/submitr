@@ -8,9 +8,11 @@ import subprocess
 import time
 
 from dcicutils import ff_utils
-from dcicutils.beanstalk_utils import get_beanstalk_real_url
+# get_env_real_url would rely on env_utils
+# from dcicutils.env_utils import get_env_real_url
 from dcicutils.command_utils import yes_or_no
-from dcicutils.env_utils import full_cgap_env_name
+# We're not going to use full_cgap_env_name now, we'll just rely on the keys file to say what the name is.
+# from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.ff_utils import get_health_page
 from dcicutils.lang_utils import n_of, conjoined_list
 from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join
@@ -52,7 +54,7 @@ def resolve_server(server, env):
 
     if not server and not env:
         if DEFAULT_ENV:
-            show("Defaulting to beanstalk environment '%s' because %s is set." % (env, DEFAULT_ENV_VAR))
+            show(f"Defaulting to environment {env!r} because {DEFAULT_ENV_VAR} is set.")
             env = DEFAULT_ENV
         else:
             # Production default needs no explanation.
@@ -60,16 +62,21 @@ def resolve_server(server, env):
 
     if env:
         try:
-            env = full_cgap_env_name(env)
-            server = get_beanstalk_real_url(env)
+            env = env  # was full_cgap_env_name(env), but we don't want to rely on env_utils for this tool
+            server = KEY_MANAGER.get_keydict_for_env(env)['server']
         except Exception:
-            raise SyntaxError("The specified env is not a valid CGAP beanstalk name.")
+            raise SyntaxError(f"The specified env is not a known environment name: {env}")
 
-    matched = SERVER_REGEXP.match(server)
-    if not matched:
-        raise ValueError("The server should be 'http://localhost:<port>' or 'https://<cgap-hostname>', not: %s"
-                         % server)
-    server = matched.group(1)
+    try:
+        if server:
+            # Called for effect. This will err if it's not there.
+            KEY_MANAGER.get_keydict_for_server(server)
+    except Exception:
+        matched = SERVER_REGEXP.match(server)
+        if not matched:
+            raise ValueError("The server should be 'http://localhost:<port>' or 'https://<cgap-hostname>', not: %s"
+                             % server)
+        server = matched.group(1)
 
     return server
 
@@ -564,13 +571,20 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
             PRINT(f"Executing: {command}")
             PRINT(f" ==> {' '.join(command)}")
             PRINT(f"Environment variables include {conjoined_list(list(extra_env.keys()))}.")
-        subprocess.check_call(command, env=env)
+        options = {}
+        if running_on_windows_native():
+            options = {"shell": True}
+        subprocess.check_call(command, env=env, **options)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("Upload failed with exit code %d" % e.returncode)
     else:
         end = time.time()
         duration = end - start
         show("Uploaded in %.2f seconds" % duration)
+
+
+def running_on_windows_native():
+    return os.name == 'nt'
 
 
 def upload_file_to_uuid(filename, uuid, auth):
@@ -580,7 +594,9 @@ def upload_file_to_uuid(filename, uuid, auth):
     :param filename: the name of a file to upload.
     :param uuid: the item into which the filename is to be uploaded.
     :param auth: auth info in the form of a dictionary containing 'key', 'secret', and 'server'.
+    :returns: item metadata dict or None
     """
+    metadata = None
 
     # filename here should not include path
     patch_data = {'filename': os.path.basename(filename)}
@@ -590,10 +606,18 @@ def upload_file_to_uuid(filename, uuid, auth):
     try:
         [metadata] = response['@graph']
         upload_credentials = metadata['upload_credentials']
-    except Exception:
+    except Exception as e:
+        if DEBUG_PROTOCOL:  # pragma: no cover
+            PRINT(f"Problem trying to get upload credentials.")
+            PRINT(f" patch_data={patch_data}")
+            PRINT(f" uuid={uuid}")
+            PRINT(f" response={response}")
+            PRINT(f"Got error {type(e)}: {e}")
         raise RuntimeError("Unable to obtain upload credentials for file %s." % filename)
 
     execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
+
+    return metadata
 
 
 # This can be set to True in unusual situations, but normally will be False to avoid unnecessary querying.
@@ -603,6 +627,8 @@ CGAP_SELECTIVE_UPLOADS = environ_bool("CGAP_SELECTIVE_UPLOADS")
 def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=False):
     """
     Uploads the files mentioned in the give upload_spec_list.
+
+    If any files have associated extra files, upload those as well.
 
     :param upload_spec_list: a list of upload_spec dictionaries, each of the form {'filename': ..., 'uuid': ...},
         representing uploads to be formed.
@@ -617,30 +643,138 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
     if subfolders:
         folder = os.path.join(folder, '**')
     for upload_spec in upload_spec_list:
-        file_path = os.path.join(folder, upload_spec['filename'])
-        file_search = glob.glob(file_path, recursive=subfolders)
-        if len(file_search) == 1:
-            filename = file_search[0]
-        elif len(file_search) > 1:
-            show(
-                "No upload attempted for file %s because multiple copies were found"
-                " in folder %s: %s."
-                % (upload_spec['filename'], folder, ", ".join(file_search))
-            )
+        file_metadata = None
+        file_name = upload_spec["filename"]
+        file_path, error_msg = search_for_file(folder, file_name, recursive=subfolders)
+        if error_msg:
+            show(error_msg)
             continue
-        else:
-            filename = file_path
         uuid = upload_spec['uuid']
-        if not no_query:
-            if CGAP_SELECTIVE_UPLOADS and not yes_or_no("Upload %s?" % (filename,)):
-                show("OK, not uploading it.")
-                continue
-        try:
-            show("Uploading %s to item %s ..." % (filename, uuid))
-            upload_file_to_uuid(filename=filename, uuid=uuid, auth=auth)
-            show("Upload of %s to item %s was successful." % (filename, uuid))
-        except Exception as e:
-            show("%s: %s" % (e.__class__.__name__, e))
+        uploader_wrapper = UploadMessageWrapper(uuid, no_query=no_query)
+        wrapped_upload_file_to_uuid = uploader_wrapper.wrap_upload_function(
+            upload_file_to_uuid, file_path
+        )
+        file_metadata = wrapped_upload_file_to_uuid(
+            filename=file_path, uuid=uuid, auth=auth
+        )
+        if file_metadata:
+            extra_files_credentials = file_metadata.get("extra_files_creds", [])
+            if extra_files_credentials:
+                upload_extra_files(
+                    extra_files_credentials,
+                    uploader_wrapper,
+                    folder,
+                    auth,
+                    recursive=subfolders,
+                )
+
+
+def search_for_file(directory, file_name, recursive=False):
+    """Search for file within directory.
+
+    :param directory: Directory path
+    :param file_name: Name of file to find
+    :param recursive: Whether to search sub-directories of given
+        directory
+    :returns: (Path to file or None, Error message or None)
+    """
+    file_path_found = None
+    msg = None
+    file_path = os.path.join(directory, file_name)
+    file_search = glob.glob(file_path, recursive=recursive)
+    if len(file_search) == 1:
+        [file_path_found] = file_search
+    elif len(file_search) > 1:
+        msg = (
+            "No upload attempted for file %s because multiple copies were found"
+            " in folder %s: %s."
+            % (file_name, directory, ", ".join(file_search))
+        )
+    else:
+        file_path_found = file_path
+    return file_path_found, msg
+
+
+class UploadMessageWrapper:
+    """Class to provide consistent queries/messages to user when
+    uploading file(s) to given File UUID.
+    """
+
+    def __init__(self, uuid, no_query=False):
+        """Initialize instance for given UUID
+
+        :param uuid: UUID of File item for uploads
+        :param no_query: Whether to suppress asking for user
+            confirmation prior to upload
+        """
+        self.uuid = uuid
+        self.no_query = no_query
+
+    def wrap_upload_function(self, function, file_name):
+        """Wrap upload given function with messages conerning upload.
+
+        :param function: Upload function to wrap
+        :param file_name: File to upload
+        :returns: Wrapped function
+        """
+        def wrapper(*args, **kwargs):
+            result = None
+            perform_upload = True
+            if not self.no_query:
+                if (
+                    CGAP_SELECTIVE_UPLOADS
+                    and not yes_or_no("Upload %s?" % (file_name))
+                ):
+                    show("OK, not uploading it.")
+                    perform_upload = False
+            if perform_upload:
+                try:
+                    show("Uploading %s to item %s ..." % (file_name, self.uuid))
+                    result = function(*args, **kwargs)
+                    show(
+                        "Upload of %s to item %s was successful."
+                        % (file_name, self.uuid)
+                    )
+                except Exception as e:
+                    show("%s: %s" % (e.__class__.__name__, e))
+            return result
+        return wrapper
+
+
+def upload_extra_files(
+    credentials, uploader_wrapper, folder, auth, recursive=False
+):
+    """Attempt upload of all extra files.
+
+    Similar to "do_uploads", search for each file and then call a
+    wrapped upload function. Here, since extra files do not correspond
+    to Items on the portal, no need to PATCH an Item to retrieve AWS
+    credentials; they are directly passed in from the parent File's
+    metadata.
+
+    :param credentials: AWS credentials dictionary
+    :param uploader_wrapper: UploadMessageWrapper instance
+    :param folder: Directory to search for files
+    :param auth: CGAP authorization tuple
+    :param recursive: Whether to search sub-directories for file
+    """
+    for extra_file_item in credentials:
+        extra_file_name = extra_file_item.get("filename")
+        extra_file_credentials = extra_file_item.get("upload_credentials")
+        if not extra_file_name or not extra_file_credentials:
+            continue
+        extra_file_path, error_msg = search_for_file(
+            folder, extra_file_name, recursive=recursive
+        )
+        if error_msg:
+            show(error_msg)
+            continue
+        wrapped_execute_prearranged_upload = uploader_wrapper.wrap_upload_function(
+            execute_prearranged_upload, extra_file_path
+        )
+        wrapped_execute_prearranged_upload(
+            extra_file_path, extra_file_credentials, auth=auth
+        )
 
 
 def upload_item_data(item_filename, uuid, server, env, no_query=False):

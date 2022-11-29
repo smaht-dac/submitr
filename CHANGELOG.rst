@@ -15,6 +15,36 @@ Change Log
 * Added a ``make`` target named ``clear-poetry-cache`` to help with certain ``poetry`` solver problems that result
   from improper caching.
 
+2.0.0
+=====
+
+* Drop support for Python 3.6 (C4-898)
+
+* Use ``ignored``, ``local_attrs``, and ``override_environ``
+  from ``dcicutils.misc_utils`` rather than ``dcicutils.qa_utils``. (C4-895)
+
+* Add debugging instrumentation for failed access to credentials.
+
+
+1.5.0
+=====
+
+* Support upload of extra files
+* Update test submission FASTQ files to match update submission requirements
+
+
+1.4.2
+=====
+
+* Further adustments to repair problems created by 1.4.1 (C4-818).
+
+
+1.4.1
+=====
+
+* Fix SubmitCGAP file upload to work correctly under Microsoft/Windows 10 (C4-816).
+
+
 1.4.0
 =====
 

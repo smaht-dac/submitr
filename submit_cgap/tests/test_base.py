@@ -1,6 +1,6 @@
 import contextlib
 
-from dcicutils.qa_utils import override_environ
+from dcicutils.misc_utils import override_environ
 from unittest import mock
 from .. import base as base_module
 

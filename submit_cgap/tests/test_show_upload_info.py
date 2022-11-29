@@ -1,6 +1,7 @@
 import pytest
 
 from dcicutils.creds_utils import CGAPKeyManager
+from dcicutils.misc_utils import ignored, override_environ
 from unittest import mock
 from ..scripts.show_upload_info import main as show_upload_info_main
 from ..scripts import show_upload_info as show_upload_info_module
