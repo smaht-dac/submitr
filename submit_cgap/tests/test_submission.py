@@ -257,7 +257,6 @@ def test_resolve_server():
             # assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
             #                 resolve_server(env='cgapdev', server=None))  # Omitting 'fourfront-' is allowed
 
-
             with pytest.raises(SyntaxError) as exc:
                 resolve_server(env='cgapdev', server=None)
             assert str(exc.value) == "The specified env is not a known environment name: cgapdev"
@@ -1081,6 +1080,7 @@ def test_do_uploads(tmp_path):
 
     # Test extra files credentials found and passed to handler
     def return_first_arg(first_arg, *args, **kwargs):
+        ignored(args, kwargs)
         return first_arg
 
     mocked_instance = mock.MagicMock()
@@ -1103,6 +1103,7 @@ def test_do_uploads(tmp_path):
                 mocked_upload_message_wrapper,
             ):
                 with shown_output() as shown:
+                    ignored(shown)
                     do_uploads(
                         upload_spec_list,
                         auth=SOME_AUTH,
@@ -2398,6 +2399,7 @@ def test_upload_extra_files(
     auth = SOME_AUTH
 
     def mocked_file_search(folder, extra_file_name, **kwargs):
+        ignored(kwargs)
         if extra_file_name in files_found:
             return os.path.join(folder, extra_file_name), None
         else:

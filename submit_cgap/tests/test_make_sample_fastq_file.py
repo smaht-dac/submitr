@@ -1,4 +1,6 @@
 from unittest import mock
+
+from dcicutils.misc_utils import ignored
 from ..scripts.make_sample_fastq_file import main as make_sample_fastq_file_main
 from ..scripts import make_sample_fastq_file as make_sample_fastq_file_module
 from .testing_helpers import system_exit_expected
@@ -7,6 +9,7 @@ from .testing_helpers import system_exit_expected
 def test_make_sample_fastq_file_script():
 
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
+        ignored(expect_call_args)
         with mock.patch.object(make_sample_fastq_file_module,
                                "generate_sample_fastq_file") as mock_generate_sample_fastq_file:
             with system_exit_expected(exit_code=expect_exit_code):
