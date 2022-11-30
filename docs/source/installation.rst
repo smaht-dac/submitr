@@ -6,7 +6,7 @@ Installing SubmitCGAP
 Setting Up a Virtual Environment (OPTIONAL)
 ===========================================
 
-This is optional.
+This is optional. See also the basic setup instructions for doing this setup with `pyenv`
 If you use Poetry and do not create a virtual environment, Poetry will make one for you.
 But there are still good reasons you might want to make your own, so here
 are three ways to do it:
@@ -49,8 +49,8 @@ However, if you want to deactivate an active environment, just do::
 
    deactivate
 
-Installing Poetry in a Virtual Environment
-==========================================
+Installing SubmitCGAP in a Virtual Environment
+==============================================
 
 **End Users:** Submit-CGAP can be installed with a simple pip install::
 
@@ -84,6 +84,12 @@ and server with your own envname and server)::
             "server": "https://cgap-main.hms.harvard.edu"
         }
     }
+
+The easiest way to modify this file is with TextEdit, which you can open from the Terminal with:
+
+.. code-block::
+
+    $ open -a TextEdit ~/.cgap-keys.json
 
 For developers, the suggested envname to use for local debugging (for developers) is "fourfront-cgaplocal".
 You will probably have several keys in your credential file. An example keyfile is shown below
@@ -119,3 +125,14 @@ and to give no one else (but the system superuser) any permissions at all::
 
    $ ls -dal ~/.cgap-keys.json
    -rw-------  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keys.json
+
+
+Generating Credentials
+======================
+
+Access keys for using SubmitCGAP are generated from the Web UI. Upon logging in, there is a user profile
+in the top right corner - select it and from the drop down navigate to profile. Once on your user profile
+there is an Access Keys box where you can add an access key. Click the green "Add Access Key" button and
+a pop up will show up with the ID and Secret. Copy these into your `~/.cgap-keys.json` file and SubmitCGAP
+will automatically detect and use them. You will need to reset the credential every 90 days as after that
+time the key will expire.

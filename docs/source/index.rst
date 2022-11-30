@@ -31,10 +31,20 @@ System Requirements
 * Virtualenv (>=16.0.0)
 
 
+What To Do Next
+===============
+
+Advanced users who have already installed Python can proceed to the installation instructions.
+Less experienced users should start with the basic setup instructions, which will introduce some
+basics for working with the terminal and installing the dependencies to run this package.
+
+
 .. toctree::
   :maxdepth: 4
 
   self
+  rclone
+  basic_setup
   installation
   getting_started
   submit_cgap
