@@ -6,7 +6,8 @@ SubmitCGAP
 Change Log
 ----------
 
-2.0.0
+
+3.0.0
 =====
 
 * Removed ``auth.py``, and in ``base.py`` removes the ``KeyManager`` class and the ``UsingCGAPKeysFile`` decorator.
@@ -14,6 +15,14 @@ Change Log
   (See `SubmitCGAP PR #24 <https://github.com/dbmi-bgm/SubmitCGAP/pull/24>`_ for additional detail.)
 * Added a ``make`` target named ``clear-poetry-cache`` to help with certain ``poetry`` solver problems that result
   from improper caching.
+
+
+2.0.1
+=====
+
+* Update documentation with some small fixes
+* Add new basic setup documentation
+
 
 2.0.0
 =====
