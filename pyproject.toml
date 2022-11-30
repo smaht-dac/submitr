@@ -47,7 +47,7 @@ include = [
 python = ">=3.7.0,<3.10"
 
 awscli = ">=1.18.174"
-dcicutils = ">=6.2.0"  # ">=3.11.0" is in fact all that's required
+dcicutils = "^6.2.0"  # ">=3.11.0,<4" is in fact all that's required
 boto3 = ">=1.16.14,<2"
 requests = ">=2.24.0,<3"
 
