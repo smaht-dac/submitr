@@ -1,7 +1,6 @@
 import pytest
 
 from dcicutils.creds_utils import CGAPKeyManager
-# from dcicutils.misc_utils import ignored, override_environ
 from dcicutils.s3_utils import HealthPageKey
 from unittest import mock
 from .. import submission as submission_module
