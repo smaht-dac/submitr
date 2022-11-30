@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "submit_cgap"
-version = "1.4.0.1b2"  # to become "2.0.0"
+version = "2.0.0.1b3"  # to become "3.0.0"
 description = "Support for uploading file submissions to the Clinical Genomics Analysis Platform (CGAP)."
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
@@ -33,7 +33,6 @@ classifiers = [
   # Specify the Python versions you support here. In particular, ensure
   # that you indicate whether you support Python 2, Python 3 or both.
   'Programming Language :: Python :: 3',
-  'Programming Language :: Python :: 3.6',
   'Programming Language :: Python :: 3.7',
   'Programming Language :: Python :: 3.8',
   'Programming Language :: Python :: 3.9',
@@ -45,7 +44,7 @@ include = [
 
 [tool.poetry.dependencies]
 
-python = ">=3.6.1,<3.10"
+python = ">=3.7.0,<3.10"
 
 awscli = ">=1.18.174"
 dcicutils = "^3.11.0"
@@ -97,5 +96,5 @@ exclude_lines = [
 
 [build-system]
 
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

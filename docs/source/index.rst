@@ -26,9 +26,9 @@ This is a tool for uploading files to CGAP.
 System Requirements
 ===================
 
-* Python 3.6
-* Pip (Any should work)
-* Virtualenv (>=15.0.0)
+* Python 3.7, 3.8 or 3.9
+* Pip (>=20.0.0)
+* Virtualenv (>=16.0.0)
 
 
 .. toctree::
