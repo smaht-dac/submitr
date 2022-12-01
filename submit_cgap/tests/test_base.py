@@ -21,7 +21,7 @@ def test_defaults():
 
     assert 'amazon' not in base_module.PRODUCTION_SERVER  # e.g., https://cgap-mgb.hms.harvar.edu (not an amazon URL)
 
-    assert re.match("https?://(localhost|127[.]0[.]0[.][0-9]+:[0-9][0-9][0-9][0-9])",  #, e.g., http://localhost:8000
+    assert re.match("https?://(localhost|127[.]0[.]0[.][0-9]+:[0-9][0-9][0-9][0-9])",  # e.g., http://localhost:8000
                     base_module.LOCAL_SERVER)
     assert 'local' in base_module.LOCAL_PSEUDOENV  # e.g., 'fourfront-cgaplocal'
 
