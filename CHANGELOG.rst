@@ -10,11 +10,28 @@ Change Log
 3.0.0
 =====
 
-* Removed ``auth.py``, and in ``base.py`` removes the ``KeyManager`` class and the ``UsingCGAPKeysFile`` decorator.
-* Changed other existing functionality to use new ``dcicutils.creds_utils`` in place of removed functionality.
-  (See `SubmitCGAP PR #24 <https://github.com/dbmi-bgm/SubmitCGAP/pull/24>`_ for additional detail.)
-* Added a ``make`` target named ``clear-poetry-cache`` to help with certain ``poetry`` solver problems that result
-  from improper caching.
+* Updates to use creds_utils (C4-779):
+
+  * Removed ``auth.py``, and in ``base.py`` removes:
+
+    * class ``KeyManager`` class
+
+    * decorator``UsingCGAPKeysFile``
+
+  * Changed other existing functionality to use new ``dcicutils.creds_utils`` in place of
+    removed functionality. (See
+    `SubmitCGAP PR #24 <https://github.com/dbmi-bgm/SubmitCGAP/pull/24>`_
+    for additional detail.)
+
+  * Added a ``make`` target named ``clear-poetry-cache``
+    to help with certain ``poetry`` solver problems that result from improper caching.
+
+* Upgrades to dcicutils 6.0 (C4-896):
+
+  * Avoid use of ``full_cgap_env_name``. Just don't adjust the name.
+
+  * Avoid use of ``get_real_env_url`` by changing ``submission.resolve_server``
+    to not use heuristics based on it.
 
 
 2.0.1
