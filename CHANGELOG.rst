@@ -33,6 +33,11 @@ Change Log
   * Avoid use of ``get_real_env_url`` by changing ``submission.resolve_server``
     to not use heuristics based on it.
 
+  **NOTE:** These changes are slightly incompatible, but not materially so.
+  There aren't programmatic dependencies on this library, unless maybe scripts.
+  It will be necessary after this change to use environment names and hostnames
+  that are properly declard in ``~/.cgap-keys.json``.
+
 
 2.0.1
 =====
