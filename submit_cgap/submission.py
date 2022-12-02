@@ -8,16 +8,16 @@ import subprocess
 import time
 
 from dcicutils import ff_utils
-from dcicutils.beanstalk_utils import get_beanstalk_real_url
+# get_env_real_url would rely on env_utils
+# from dcicutils.env_utils import get_env_real_url
 from dcicutils.command_utils import yes_or_no
-from dcicutils.env_utils import full_cgap_env_name
+# We're not going to use full_cgap_env_name now, we'll just rely on the keys file to say what the name is.
+# from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.ff_utils import get_health_page
 from dcicutils.lang_utils import n_of, conjoined_list
 from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join
 from dcicutils.s3_utils import HealthPageKey
-
-from .auth import get_keydict_for_server, keydict_to_keypair
-from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV
+from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER
 from .exceptions import CGAPPermissionError
 from .utils import show, keyword_as_title
 
@@ -54,7 +54,7 @@ def resolve_server(server, env):
 
     if not server and not env:
         if DEFAULT_ENV:
-            show("Defaulting to beanstalk environment '%s' because %s is set." % (env, DEFAULT_ENV_VAR))
+            show(f"Defaulting to environment {env!r} because {DEFAULT_ENV_VAR} is set.")
             env = DEFAULT_ENV
         else:
             # Production default needs no explanation.
@@ -62,16 +62,21 @@ def resolve_server(server, env):
 
     if env:
         try:
-            env = full_cgap_env_name(env)
-            server = get_beanstalk_real_url(env)
+            env = env  # was full_cgap_env_name(env), but we don't want to rely on env_utils for this tool
+            server = KEY_MANAGER.get_keydict_for_env(env)['server']
         except Exception:
-            raise SyntaxError("The specified env is not a valid CGAP beanstalk name.")
+            raise SyntaxError(f"The specified env is not a known environment name: {env}")
 
-    matched = SERVER_REGEXP.match(server)
-    if not matched:
-        raise ValueError("The server should be 'http://localhost:<port>' or 'https://<cgap-hostname>', not: %s"
-                         % server)
-    server = matched.group(1)
+    try:
+        if server:
+            # Called for effect. This will err if it's not there.
+            KEY_MANAGER.get_keydict_for_server(server)
+    except Exception:
+        matched = SERVER_REGEXP.match(server)
+        if not matched:
+            raise ValueError("The server should be 'http://localhost:<port>' or 'https://<cgap-hostname>', not: %s"
+                             % server)
+        server = matched.group(1)
 
     return server
 
@@ -320,8 +325,8 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
             show("Aborting submission.")
             exit(1)
 
-    keydict = get_keydict_for_server(server)
-    keypair = keydict_to_keypair(keydict)
+    keydict = KEY_MANAGER.get_keydict_for_server(server)
+    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
 
     user_record = get_user_record(server, auth=keypair)
 
@@ -447,9 +452,9 @@ def show_upload_info(uuid, server=None, env=None, keydict=None):
     """
 
     server = resolve_server(server=server, env=env)
-    keydict = keydict or get_keydict_for_server(server)
+    keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
     url = ingestion_submission_item_url(server, uuid)
-    response = requests.get(url, auth=keydict_to_keypair(keydict))
+    response = requests.get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict))
     response.raise_for_status()
     res = response.json()
     if get_section(res, 'upload_info'):
@@ -491,9 +496,9 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     """
 
     server = resolve_server(server=server, env=env)
-    keydict = keydict or get_keydict_for_server(server)
+    keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
     url = ingestion_submission_item_url(server, uuid)
-    keypair = keydict_to_keypair(keydict)
+    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
     response = requests.get(url, auth=keypair)
     response.raise_for_status()
     do_any_uploads(response.json(),
@@ -788,7 +793,7 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
 
     server = resolve_server(server=server, env=env)
 
-    keydict = get_keydict_for_server(server)
+    keydict = KEY_MANAGER.get_keydict_for_server(server)
 
     # print("keydict=", json.dumps(keydict, indent=2))
 

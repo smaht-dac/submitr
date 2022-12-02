@@ -1,7 +1,7 @@
 import pytest
 import re
 
-from .testing_helpers import system_exit_expected
+from .testing_helpers import system_exit_expected, argparse_errors_muffled
 
 
 def test_system_exit_expected():
@@ -27,3 +27,11 @@ def test_system_exit_expected():
     with pytest.raises(AssertionError, match=re.escape("Expected SystemExit(0) but got non-error exit.")):
         with system_exit_expected(exit_code=0):
             print("foo")  # no error
+
+
+def test_argparse_errors_muffled():
+
+    with argparse_errors_muffled():
+        # For now, we just test that we can call this at all. capturing the error output is a pain.
+        # The real test of this is that the test output doesn't have argparse error messages all over it.
+        pass

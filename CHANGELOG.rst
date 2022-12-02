@@ -6,11 +6,74 @@ SubmitCGAP
 Change Log
 ----------
 
+
+3.0.0
+=====
+
+* Updates to use creds_utils (C4-779):
+
+  * Removed ``auth.py``, and in ``base.py`` removes:
+
+    * class ``KeyManager`` class
+
+    * decorator``UsingCGAPKeysFile``
+
+  * Changed other existing functionality to use new ``dcicutils.creds_utils`` in place of
+    removed functionality. (See
+    `SubmitCGAP PR #24 <https://github.com/dbmi-bgm/SubmitCGAP/pull/24>`_
+    for additional detail.)
+
+  * Added a ``make`` target named ``clear-poetry-cache``
+    to help with certain ``poetry`` solver problems that result from improper caching.
+
+* Upgrades to dcicutils 6.0 (C4-896):
+
+  * Avoid use of ``full_cgap_env_name``. Just don't adjust the name.
+
+  * Avoid use of ``get_real_env_url`` by changing ``submission.resolve_server``
+    to not use heuristics based on it.
+
+  **NOTE:** These changes are slightly incompatible, but not materially so.
+  There aren't programmatic dependencies on this library, unless maybe scripts.
+  It will be necessary after this change to use environment names and hostnames
+  that are properly declard in ``~/.cgap-keys.json``.
+
+
 2.0.1
 =====
 
 * Update documentation with some small fixes
 * Add new basic setup documentation
+
+
+2.0.0
+=====
+
+* Drop support for Python 3.6 (C4-898)
+
+* Use ``ignored``, ``local_attrs``, and ``override_environ``
+  from ``dcicutils.misc_utils`` rather than ``dcicutils.qa_utils``. (C4-895)
+
+* Add debugging instrumentation for failed access to credentials.
+
+
+1.5.0
+=====
+
+* Support upload of extra files
+* Update test submission FASTQ files to match update submission requirements
+
+
+1.4.2
+=====
+
+* Further adustments to repair problems created by 1.4.1 (C4-818).
+
+
+1.4.1
+=====
+
+* Fix SubmitCGAP file upload to work correctly under Microsoft/Windows 10 (C4-816).
 
 
 2.0.0

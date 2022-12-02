@@ -1,10 +1,9 @@
 import contextlib
-import os
+import re
 
 from dcicutils.misc_utils import override_environ
 from unittest import mock
 from .. import base as base_module
-from ..base import KeyManager
 
 
 # The SUBMITCGAP_ENV environment variable is used at application startup to compute a value of DEFAULT_ENV
@@ -20,53 +19,12 @@ def default_env_for_testing(default_env):
 
 def test_defaults():
 
-    assert base_module.PRODUCTION_SERVER == "https://cgap.hms.harvard.edu"
+    assert 'amazon' not in base_module.PRODUCTION_SERVER  # e.g., https://cgap-mgb.hms.harvar.edu (not an amazon URL)
 
-    assert base_module.LOCAL_SERVER == "http://localhost:8000"
-    assert base_module.LOCAL_PSEUDOENV == 'fourfront-cgaplocal'
+    assert re.match("https?://(localhost|127[.]0[.]0[.][0-9]+:[0-9][0-9][0-9][0-9])",  # e.g., http://localhost:8000
+                    base_module.LOCAL_SERVER)
+    assert 'local' in base_module.LOCAL_PSEUDOENV  # e.g., 'fourfront-cgaplocal'
 
     assert base_module.DEFAULT_ENV == base_module.PRODUCTION_ENV
     with default_env_for_testing(base_module.LOCAL_PSEUDOENV):
         assert base_module.DEFAULT_ENV == base_module.LOCAL_PSEUDOENV
-
-
-def test_keymanager():
-
-    original_file = KeyManager.keydicts_filename()
-
-    assert isinstance(original_file, str)
-
-    with KeyManager.alternate_keydicts_filename(None):
-        assert KeyManager.keydicts_filename() == original_file
-
-    assert KeyManager.keydicts_filename() == original_file
-
-    with override_environ(CGAP_KEYS_FILE=None):
-        assert os.environ.get('CGAP_KEYS_FILE') is None
-        with KeyManager.alternate_keydicts_filename_from_environ():
-            assert KeyManager.keydicts_filename() == original_file
-        assert KeyManager.keydicts_filename() == original_file
-
-    assert KeyManager.keydicts_filename() == original_file
-
-    with override_environ(CGAP_KEYS_FILE=""):
-        assert os.environ.get('CGAP_KEYS_FILE') == ""
-        with KeyManager.alternate_keydicts_filename_from_environ():
-            assert KeyManager.keydicts_filename() == original_file
-
-    assert KeyManager.keydicts_filename() == original_file
-
-    alternate_file = 'some-other-file'
-
-    with KeyManager.alternate_keydicts_filename(alternate_file):
-        assert KeyManager.keydicts_filename() == alternate_file
-
-    assert KeyManager.keydicts_filename() == original_file
-
-    with override_environ(CGAP_KEYS_FILE=alternate_file):
-        assert os.environ.get('CGAP_KEYS_FILE') == alternate_file
-        with KeyManager.alternate_keydicts_filename_from_environ():
-            assert KeyManager.keydicts_filename() == alternate_file
-        assert KeyManager.keydicts_filename() == original_file
-
-    assert KeyManager.keydicts_filename() == original_file

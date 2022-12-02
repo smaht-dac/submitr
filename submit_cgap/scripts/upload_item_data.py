@@ -1,13 +1,11 @@
 import argparse
 from ..submission import upload_item_data
-from ..base import UsingCGAPKeysFile
 from ..utils import script_catch_errors
 
 
 EPILOG = __doc__
 
 
-@UsingCGAPKeysFile
 def main(simulated_args_for_testing=None):
     parser = argparse.ArgumentParser(  # noqa - PyCharm wrongly thinks the formatter_class is invalid
         description="Submits a data bundle part",

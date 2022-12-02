@@ -1,6 +1,9 @@
 clean:
 	rm -rf *.egg-info
 
+clear-poetry-cache:  # clear poetry/pypi cache. for user to do explicitly, never automatic
+	poetry cache clear pypi --all
+
 configure:  # does any pre-requisite installs
 	pip install poetry
 
@@ -20,6 +23,9 @@ retest:  # runs only failed tests from the last test run. (if no failures, it se
 update:  # updates dependencies
 	poetry update
 
+tag-and-push:  # tags the branch and pushes it
+	@scripts/tag-and-push
+
 publish:
 	scripts/publish
 
@@ -38,3 +44,4 @@ info:
 	   $(info - Use 'make retest' to run failing tests from the previous test run.)
 	   $(info - Use 'make test' to run tests with the normal options we use for CI/CD like GA.)
 	   $(info - Use 'make update' to update dependencies (and the lock file))
+	   $(info - Use 'make clear-poetry-cache' to clear the poetry pypi cache if in a bad state. (Safe, but later recaching can be slow.))
