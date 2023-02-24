@@ -15,8 +15,8 @@ from dcicutils.common import APP_CGAP, APP_FOURFRONT, OrchestratedApp
 # We're not going to use full_cgap_env_name now, we'll just rely on the keys file to say what the name is.
 # from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.ff_utils import get_health_page
-from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
-from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join
+from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list
+from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join, ignorable
 from dcicutils.s3_utils import HealthPageKey
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER
 from .exceptions import CGAPPermissionError
@@ -369,11 +369,14 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
     :param ingestion_filename: the name of the main data file to be ingested
     :param ingestion_type: the type of ingestion to be performed (an ingestion_type in the IngestionSubmission schema)
-    :param institution: the @id of the institution for which the submission is being done
-    :param project: the @id of the project for which the submission is being done
     :param server: the server to upload to
     :param env: the beanstalk environment to upload to
     :param validate_only: whether to do stop after validation instead of proceeding to post metadata
+    :param app: either 'cgap' (the default) or 'fourfront'
+    :param institution: the @id of the institution for which the submission is being done (when app='cgap' or None)
+    :param project: the @id of the project for which the submission is being done (when app='cgap' or None)
+    :param lab: the @id of the lab for which the submission is being done (when app='fourfront')
+    :param award: the @id of the award for which the submission is being done (when app='fourfront')
     :param upload_folder: folder in which to find files to upload (default: same as bundle_filename)
     :param no_query: bool to suppress requests for user input
     :param subfolders: bool to search subdirectories within upload_folder for files
@@ -392,17 +395,18 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     else:
         raise ValueError(f"Unknown application: {app}")
 
+    problems = []
+    for argname, argvalue in required_args.items():
+        if not argvalue:
+            problems.append(f"--{argname} is required")
+        else:
+            app_args[argname] = argvalue
+    for argname, argvalue in unwanted_args.items():
+        if argvalue:
+            problems.append(f"--{argname} is not allowed")
+
+    ignorable(problems)
     # Actually, we're going to default these later, so probably this check is a bad idea. -kmp 24-Feb-2023
-    #
-    # problems = []
-    # for argname, argvalue in required_args.items():
-    #     if not argvalue:
-    #         problems.append(f"--{argname} is required")
-    #     else:
-    #         app_args[argname] = argvalue
-    # for argname, argvalue in unwanted_args.items():
-    #     if argvalue:
-    #         problems.append(f"--{argname} is not allowed")
     #
     # if problems:
     #     raise ValueError(there_are(problems, kind="problem", joiner=conjoined_list, punctuate=True))
@@ -691,6 +695,7 @@ def upload_file_to_uuid(filename, uuid, auth):
     :returns: item metadata dict or None
     """
     metadata = None
+    ignorable(metadata)  # PyCharm might need this if it worries it isn't set below
 
     # filename here should not include path
     patch_data = {'filename': os.path.basename(filename)}
@@ -737,7 +742,6 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
     if subfolders:
         folder = os.path.join(folder, '**')
     for upload_spec in upload_spec_list:
-        file_metadata = None
         file_name = upload_spec["filename"]
         file_path, error_msg = search_for_file(folder, file_name, recursive=subfolders)
         if error_msg:
@@ -817,7 +821,7 @@ class UploadMessageWrapper:
             if not self.no_query:
                 if (
                     CGAP_SELECTIVE_UPLOADS
-                    and not yes_or_no("Upload %s?" % (file_name))
+                    and not yes_or_no(f"Upload {file_name}?")
                 ):
                     show("OK, not uploading it.")
                     perform_upload = False
