@@ -11,10 +11,11 @@ from dcicutils import ff_utils
 # get_env_real_url would rely on env_utils
 # from dcicutils.env_utils import get_env_real_url
 from dcicutils.command_utils import yes_or_no
+from dcicutils.common import APP_CGAP, APP_FOURFRONT, OrchestratedApp
 # We're not going to use full_cgap_env_name now, we'll just rely on the keys file to say what the name is.
 # from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.ff_utils import get_health_page
-from dcicutils.lang_utils import n_of, conjoined_list
+from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join
 from dcicutils.s3_utils import HealthPageKey
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER
@@ -116,7 +117,7 @@ def get_defaulted_institution(institution, user_record):
     """
     Returns the given institution or else if none is specified, it tries to infer an institution.
 
-    :param institution: the @id of an institution
+    :param institution: the @id of an institution, or None
     :param user_record: the user record for the authorized user
     :return: the @id of an institution to use
     """
@@ -158,6 +159,70 @@ def get_defaulted_project(project, user_record):
             project = project_role['project']['@id']
             show("Using project:", project)
     return project
+
+
+def get_defaulted_award(award, user_record):
+    """
+    Returns the given award or else if none is specified, it tries to infer an award.
+
+    :param award: the @id of an award, or None
+    :param user_record: the user record for the authorized user
+    :return: the @id of an award to use
+    """
+
+    if not award:
+        # The lab is expected to have awards looking like:
+        #  [
+        #    {"project": {"@id": "/projects/foo"}, "role": "developer"},
+        #    {"project": {"@id": "/projects/bar"}, "role": "clinician"},
+        #    {"project": {"@id": "/projects/baz"}, "role": "director"},
+        #  ]
+        lab = user_record.get('lab', {})
+        lab_awards = lab.get('awards')
+        if len(lab_awards) == 0:
+            raise SyntaxError("Your user profile declares no lab with awards.")
+        elif len(lab_awards) > 1:
+            options = disjoined_list([award['@id'] for award in lab_awards])
+            raise SyntaxError(f"Your lab ({lab['@id']}) declares multiple awards."
+                              f" You must explicitly specify one of {options} with --award.")
+        else:
+            [lab_award] = lab_awards
+            award = lab_award['@id']
+            show("Using award:", award)
+    return award
+
+
+def get_defaulted_lab(lab, user_record):
+    """
+    Returns the given lab or else if none is specified, it tries to infer a lab.
+
+    :param lab: the @id of a lab, or None
+    :param user_record: the user record for the authorized user
+    :return: the @id of a lab to use
+    """
+
+    if not lab:
+        lab = user_record.get('lab', {}).get('@id', None)
+        if not lab:
+            raise SyntaxError("Your user profile has no lab declared,"
+                              " so you must specify --lab explicitly.")
+        show("Using lab:", lab)
+    return lab
+
+
+APP_ARG_DEFAULTERS = {
+    'institution': get_defaulted_institution,
+    'probject': get_defaulted_project,
+    'lab': get_defaulted_lab,
+
+}
+
+
+def do_app_arg_defaulting(app_args, user_record):
+    for arg, val in app_args.items():
+        defaulter = APP_ARG_DEFAULTERS.get(arg)
+        if defaulter:
+            app_args[arg] = defaulter(val, user_record)
 
 
 PROGRESS_CHECK_INTERVAL = 15
@@ -293,8 +358,11 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
 
 DEFAULT_INGESTION_TYPE = 'metadata_bundle'
 
+DEFAULT_APP = APP_CGAP
 
-def submit_any_ingestion(ingestion_filename, ingestion_type, institution, project, server, env, validate_only,
+
+def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, validate_only,
+                         institution=None, project=None, lab=None, award=None, app: OrchestratedApp = None,
                          upload_folder=None, no_query=False, subfolders=False):
     """
     Does the core action of submitting a metadata bundle.
@@ -310,6 +378,34 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
     :param no_query: bool to suppress requests for user input
     :param subfolders: bool to search subdirectories within upload_folder for files
     """
+
+    if app is None:  # For legacy reasons, SubmitCGAP was the first so didn't expect this arg was needed
+        app = DEFAULT_APP
+
+    app_args = {}
+    if app == APP_CGAP:
+        required_args = {'institution': institution, 'project': project}
+        unwanted_args = {'lab': lab, 'award': award}
+    elif app == APP_FOURFRONT:
+        required_args = {'lab': lab, 'award': award}
+        unwanted_args = {'institution': institution, 'project': project}
+    else:
+        raise ValueError(f"Unknown application: {app}")
+
+    # Actually, we're going to default these later, so probably this check is a bad idea. -kmp 24-Feb-2023
+    #
+    # problems = []
+    # for argname, argvalue in required_args.items():
+    #     if not argvalue:
+    #         problems.append(f"--{argname} is required")
+    #     else:
+    #         app_args[argname] = argvalue
+    # for argname, argvalue in unwanted_args.items():
+    #     if argvalue:
+    #         problems.append(f"--{argname} is not allowed")
+    #
+    # if problems:
+    #     raise ValueError(there_are(problems, kind="problem", joiner=conjoined_list, punctuate=True))
 
     server = resolve_server(server=server, env=env)
 
@@ -330,8 +426,7 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
 
     user_record = get_user_record(server, auth=keypair)
 
-    institution = get_defaulted_institution(institution, user_record)
-    project = get_defaulted_project(project, user_record)
+    do_app_arg_defaulting(app_args, user_record)
 
     if not os.path.exists(ingestion_filename):
         raise ValueError("The file '%s' does not exist." % ingestion_filename)
@@ -340,11 +435,10 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
                                 ingestion_filename=ingestion_filename,
                                 creation_post_data={
                                     'ingestion_type': ingestion_type,
-                                    'institution': institution,
-                                    'project': project,
                                     "processing_status": {
                                         "state": "submitted"
-                                    }
+                                    },
+                                    **app_args,  # institution & project or lab & award
                                 },
                                 submission_post_data={
                                     'validate_only': validate_only,
