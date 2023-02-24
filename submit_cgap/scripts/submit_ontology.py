@@ -1,4 +1,6 @@
 import argparse
+
+from dcicutils.common import APP_FOURFRONT
 from ..submission import submit_any_ingestion
 from ..utils import script_catch_errors
 
@@ -31,7 +33,7 @@ def main(simulated_args_for_testing=None):
                 server=args.server,
                 env=args.env,
                 validate_only=args.validate_only,
-                app='fourfront'
+                app=APP_FOURFRONT,
         )
 
 

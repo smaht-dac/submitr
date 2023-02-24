@@ -385,6 +385,13 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     if app is None:  # For legacy reasons, SubmitCGAP was the first so didn't expect this arg was needed
         app = DEFAULT_APP
 
+    if KEY_MANAGER.selected_app != app:
+        with KEY_MANAGER.locally_selected_app(app):
+            return submit_any_ingestion(ingestion_filename=ingestion_filename, ingestion_type=ingestion_type,
+                                        server=server, env=env, validate_only=validate_only,
+                                        institution=institution, project=project, lab=lab, award=award, app=app,
+                                        upload_folder=upload_folder, no_query=no_query, subfolders=subfolders)
+
     app_args = {}
     if app == APP_CGAP:
         required_args = {'institution': institution, 'project': project}
