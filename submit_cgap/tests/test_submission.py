@@ -24,6 +24,7 @@ from ..submission import (
     get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page, running_on_windows_native,
     search_for_file, UploadMessageWrapper, upload_extra_files,
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
+    get_defaulted_lab, get_defaulted_award,
 )
 from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
@@ -52,6 +53,10 @@ SOME_INSTITUTION = '/institutions/hms-dbmi/'
 
 SOME_OTHER_INSTITUTION = '/institutions/big-pharma/'
 
+SOME_LAB = '/lab/good-lab/'
+
+SOME_OTHER_LAB = '/lab/evil-lab/'
+
 SOME_SERVER = 'http://localhost:7777'  # Dependencies force this to be out of alphabetical order
 
 SOME_ORCHESTRATED_SERVERS = [
@@ -64,6 +69,8 @@ SOME_KEYDICT = {'key': SOME_KEY_ID, 'secret': SOME_SECRET, 'server': SOME_SERVER
 SOME_OTHER_BUNDLE_FOLDER = '/some-other-folder/'
 
 SOME_PROJECT = '/projects/12a92962-8265-4fc0-b2f8-cf14f05db58b/'  # Test Project from master inserts
+
+SOME_AWARD = '/awards/45083e37-0342-4a0f-833d-aa7ab4be60f1/'
 
 SOME_UPLOAD_URL = 'some-url'
 
@@ -2470,3 +2477,78 @@ def test_resolve_app_args():
     with pytest.raises(ValueError) as exc:
         _resolve_app_args(institution=None, project='bar', lab=None, award=None, app=APP_FOURFRONT)
     assert str(exc.value) == 'There is 1 inappropriate argument: --project.'
+
+    # Bogus application name
+
+    with pytest.raises(ValueError) as exc:
+        invalid_app = APP_CGAP + APP_FOURFRONT  # make a bogus app name
+        _resolve_app_args(institution=None, project=None, lab=None, award=None, app=invalid_app)
+    assert str(exc.value) == f"Unknown application: {invalid_app}"
+
+
+def test_get_defaulted_lab():
+
+    assert get_defaulted_lab(lab=SOME_LAB, user_record='does-not-matter') == SOME_LAB
+    assert get_defaulted_lab(lab='anything', user_record='does-not-matter') == 'anything'
+
+    try:
+        get_defaulted_lab(lab=None, user_record=make_user_record())
+    except Exception as e:
+        assert str(e).startswith("Your user profile has no lab")
+
+    user_record = make_user_record(
+        # this is the old-fashioned place for it, but what fourfront uses
+        lab={'@id': SOME_LAB},
+    )
+
+    successful_result = get_defaulted_lab(lab=None, user_record=user_record)
+
+    print("successful_result=", successful_result)
+
+    assert successful_result == SOME_LAB
+
+
+def test_get_defaulted_award():
+
+    assert get_defaulted_award(award=SOME_AWARD, user_record='does-not-matter') == SOME_AWARD
+    assert get_defaulted_award(award='anything', user_record='does-not-matter') == 'anything'
+
+    try:
+        get_defaulted_award(award=None, user_record=make_user_record())
+    except Exception as e:
+        assert str(e).startswith("Your user profile declares no lab with awards.")
+
+    try:
+        get_defaulted_award(award=None,
+                              user_record=make_user_record(award_roles=[]))
+    except Exception as e:
+        assert str(e).startswith("Your user profile declares no lab with awards.")
+    else:
+        raise AssertionError("Expected error was not raised.")  # pragma: no cover
+
+    try:
+        get_defaulted_award(award=None,
+                              user_record=make_user_record(lab={
+                                  '@id': SOME_LAB,
+                                  'awards': [
+                                      {"@id": "/awards/foo"},
+                                      {"@id": "/awards/bar"},
+                                      {"@id": "/awards/baz"},
+                                  ]}))
+    except Exception as e:
+        assert str(e) == ("Your lab (/lab/good-lab/) declares multiple awards."
+                          " You must explicitly specify one of /awards/foo, /awards/bar or /awards/baz with --award.")
+    else:
+        raise AssertionError("Expected error was not raised.")  # pragma: no cover - we hope never to see this executed
+
+    successful_result = get_defaulted_award(award=None,
+                                              user_record=make_user_record(
+                                                  lab={
+                                                      '@id': SOME_LAB,
+                                                      'awards': [
+                                                          {"@id": SOME_AWARD},
+                                                      ]}))
+
+    print("successful_result=", successful_result)
+
+    assert successful_result == SOME_AWARD

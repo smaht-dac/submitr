@@ -178,7 +178,7 @@ def get_defaulted_award(award, user_record):
         #    {"project": {"@id": "/projects/baz"}, "role": "director"},
         #  ]
         lab = user_record.get('lab', {})
-        lab_awards = lab.get('awards')
+        lab_awards = lab.get('awards', [])
         if len(lab_awards) == 0:
             raise SyntaxError("Your user profile declares no lab with awards.")
         elif len(lab_awards) > 1:
