@@ -2520,7 +2520,7 @@ def test_get_defaulted_award():
 
     try:
         get_defaulted_award(award=None,
-                              user_record=make_user_record(award_roles=[]))
+                            user_record=make_user_record(award_roles=[]))
     except Exception as e:
         assert str(e).startswith("Your user profile declares no lab with awards.")
     else:
@@ -2528,13 +2528,13 @@ def test_get_defaulted_award():
 
     try:
         get_defaulted_award(award=None,
-                              user_record=make_user_record(lab={
-                                  '@id': SOME_LAB,
-                                  'awards': [
-                                      {"@id": "/awards/foo"},
-                                      {"@id": "/awards/bar"},
-                                      {"@id": "/awards/baz"},
-                                  ]}))
+                            user_record=make_user_record(lab={
+                                '@id': SOME_LAB,
+                                'awards': [
+                                    {"@id": "/awards/foo"},
+                                    {"@id": "/awards/bar"},
+                                    {"@id": "/awards/baz"},
+                                ]}))
     except Exception as e:
         assert str(e) == ("Your lab (/lab/good-lab/) declares multiple awards."
                           " You must explicitly specify one of /awards/foo, /awards/bar or /awards/baz with --award.")
@@ -2542,12 +2542,12 @@ def test_get_defaulted_award():
         raise AssertionError("Expected error was not raised.")  # pragma: no cover - we hope never to see this executed
 
     successful_result = get_defaulted_award(award=None,
-                                              user_record=make_user_record(
-                                                  lab={
-                                                      '@id': SOME_LAB,
-                                                      'awards': [
-                                                          {"@id": SOME_AWARD},
-                                                      ]}))
+                                            user_record=make_user_record(
+                                                lab={
+                                                    '@id': SOME_LAB,
+                                                    'awards': [
+                                                        {"@id": SOME_AWARD},
+                                                    ]}))
 
     print("successful_result=", successful_result)
 
