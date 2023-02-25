@@ -1,4 +1,5 @@
 import contextlib
+import pytest
 import re
 
 from dcicutils.common import APP_CGAP, APP_FOURFRONT
@@ -48,6 +49,11 @@ def test_generic_key_manager():
     assert isinstance(key_manager(manager), FourfrontKeyManager)
     assert isinstance(key_manager(manager), KeyManager)
 
+    invalid_app = APP_CGAP + APP_FOURFRONT
+
+    with pytest.raises(ValueError):
+        manager.select_app(invalid_app)
+
     with manager.locally_selected_app(APP_CGAP):
         assert manager.selected_app == APP_CGAP
         assert isinstance(key_manager(manager), CGAPKeyManager)
@@ -74,3 +80,5 @@ def test_generic_key_manager():
         mock_get_keydict_for_server.side_effect = mocked_get_keydict_for_server
         res = manager.get_keydict_for_server(mocked_server)
         assert res == mocked_keydict
+
+    assert manager.keys_file == key_manager(manager).keys_file
