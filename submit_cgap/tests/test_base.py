@@ -1,6 +1,8 @@
 import contextlib
 import re
 
+from dcicutils.common import APP_CGAP, APP_FOURFRONT
+from dcicutils.creds_utils import CGAPKeyManager, FourfrontKeyManager, KeyManager
 from dcicutils.misc_utils import override_environ
 from unittest import mock
 from .. import base as base_module
@@ -28,3 +30,42 @@ def test_defaults():
     assert base_module.DEFAULT_ENV == base_module.PRODUCTION_ENV
     with default_env_for_testing(base_module.LOCAL_PSEUDOENV):
         assert base_module.DEFAULT_ENV == base_module.LOCAL_PSEUDOENV
+
+
+def test_generic_key_manager():
+
+    manager = base_module.GenericKeyManager()
+    assert isinstance(manager, base_module.GenericKeyManager)
+    assert manager.selected_app == APP_CGAP
+    assert isinstance(manager._key_manager, CGAPKeyManager)  # noQA - protected member access
+
+    manager.select_app(APP_FOURFRONT)
+    assert manager.selected_app == APP_FOURFRONT
+    assert isinstance(manager._key_manager, FourfrontKeyManager)  # noQA - protected member access
+
+    with manager.locally_selected_app(APP_CGAP):
+        assert manager.selected_app == APP_CGAP
+        assert isinstance(manager._key_manager, CGAPKeyManager)  # noQA - protected member access
+
+    assert manager.selected_app == APP_FOURFRONT
+    assert isinstance(manager._key_manager, FourfrontKeyManager)  # noQA - protected member access
+
+    mocked_envname = 'some-env'
+    mocked_server = 'some-server'
+    mocked_keydict = {'key': 'mykey', 'secret': 'mysecret', 'server': mocked_server}
+
+    with mock.patch.object(FourfrontKeyManager, "get_keydict_for_env") as mock_get_keydict_for_env:
+        def mocked_get_keydict_for_env(env):
+            assert env == mocked_envname
+            return mocked_keydict
+        mock_get_keydict_for_env.side_effect = mocked_get_keydict_for_env
+        res = manager.get_keydict_for_env(mocked_envname)
+        assert res == mocked_keydict
+
+    with mock.patch.object(FourfrontKeyManager, "get_keydict_for_server") as mock_get_keydict_for_server:
+        def mocked_get_keydict_for_server(server):
+            assert server == mocked_server
+            return mocked_keydict
+        mock_get_keydict_for_server.side_effect = mocked_get_keydict_for_server
+        res = manager.get_keydict_for_server(mocked_server)
+        assert res == mocked_keydict

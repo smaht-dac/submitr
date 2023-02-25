@@ -15,7 +15,7 @@ from dcicutils.common import APP_CGAP, APP_FOURFRONT, OrchestratedApp
 # We're not going to use full_cgap_env_name now, we'll just rely on the keys file to say what the name is.
 # from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.ff_utils import get_health_page
-from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list
+from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join, ignorable
 from dcicutils.s3_utils import HealthPageKey
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER
@@ -361,6 +361,32 @@ DEFAULT_INGESTION_TYPE = 'metadata_bundle'
 DEFAULT_APP = APP_CGAP
 
 
+def _resolve_app_args(institution, project, lab, award, app):
+
+    app_args = {}
+    if app == APP_CGAP:
+        required_args = {'institution': institution, 'project': project}
+        unwanted_args = {'lab': lab, 'award': award}
+    elif app == APP_FOURFRONT:
+        required_args = {'lab': lab, 'award': award}
+        unwanted_args = {'institution': institution, 'project': project}
+    else:
+        raise ValueError(f"Unknown application: {app}")
+
+    for argname, argvalue in required_args.items():
+        app_args[argname] = argvalue
+
+    extra_keys = []
+    for argname, argvalue in unwanted_args.items():
+        if argvalue:
+            extra_keys.append(f"--{argname}")
+
+    if extra_keys:
+        raise ValueError(there_are(extra_keys, kind="inappropriate argument", joiner=conjoined_list, punctuate=True))
+
+    return app_args
+
+
 def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, validate_only,
                          institution=None, project=None, lab=None, award=None, app: OrchestratedApp = None,
                          upload_folder=None, no_query=False, subfolders=False):
@@ -392,31 +418,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
                                         institution=institution, project=project, lab=lab, award=award, app=app,
                                         upload_folder=upload_folder, no_query=no_query, subfolders=subfolders)
 
-    app_args = {}
-    if app == APP_CGAP:
-        required_args = {'institution': institution, 'project': project}
-        unwanted_args = {'lab': lab, 'award': award}
-    elif app == APP_FOURFRONT:
-        required_args = {'lab': lab, 'award': award}
-        unwanted_args = {'institution': institution, 'project': project}
-    else:
-        raise ValueError(f"Unknown application: {app}")
-
-    problems = []
-    for argname, argvalue in required_args.items():
-        if not argvalue:
-            problems.append(f"--{argname} is required")
-        else:
-            app_args[argname] = argvalue
-    for argname, argvalue in unwanted_args.items():
-        if argvalue:
-            problems.append(f"--{argname} is not allowed")
-
-    ignorable(problems)
-    # Actually, we're going to default these later, so probably this check is a bad idea. -kmp 24-Feb-2023
-    #
-    # if problems:
-    #     raise ValueError(there_are(problems, kind="problem", joiner=conjoined_list, punctuate=True))
+    app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app)
 
     server = resolve_server(server=server, env=env)
 
