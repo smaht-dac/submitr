@@ -2486,6 +2486,45 @@ def test_resolve_app_args():
     assert str(exc.value) == f"Unknown application: {invalid_app}"
 
 
+def test_submit_any_ingestion():
+
+    print()  # start on a fresh line
+
+    initial_app = APP_CGAP
+    expected_app = APP_FOURFRONT
+
+    class StopEarly(BaseException):
+        pass
+
+    def mocked_resolve_app_args(institution, project, lab, award, app):
+        assert app == expected_app
+        raise StopEarly()
+
+    original_submit_any_ingestion = submit_any_ingestion
+
+    def wrapped_submit_any_ingestion(*args, **kwargs):
+        print(f"app={kwargs['app']} current={KEY_MANAGER.selected_app}")
+        return original_submit_any_ingestion(*args, **kwargs)
+
+    with mock.patch.object(submission_module, 'submit_any_ingestion') as mock_submit_any_ingestion:
+        mock_submit_any_ingestion.side_effect = wrapped_submit_any_ingestion
+        with mock.patch.object(submission_module, "_resolve_app_args") as mock_resolve_app_args:
+            try:
+                mock_resolve_app_args.side_effect = mocked_resolve_app_args
+                with KEY_MANAGER.locally_selected_app(initial_app):
+                    print(f"current={KEY_MANAGER.selected_app}")
+                    mock_submit_any_ingestion(ingestion_filename=SOME_FILENAME,
+                                              ingestion_type=SOME_INGESTION_TYPE, server=SOME_SERVER, env=SOME_ENV,
+                                              validate_only=True, institution=SOME_INSTITUTION, project=SOME_PROJECT,
+                                              lab=SOME_LAB, award=SOME_AWARD, upload_folder=SOME_FILENAME,
+                                              no_query=True, subfolders=False,
+                                              # This is what we're testing...
+                                              app=expected_app)
+            except StopEarly:
+                assert mock_submit_any_ingestion.call_count == 2  # It called itself recursively
+                pass  # in this case, it also means pass the test
+
+
 def test_get_defaulted_lab():
 
     assert get_defaulted_lab(lab=SOME_LAB, user_record='does-not-matter') == SOME_LAB
