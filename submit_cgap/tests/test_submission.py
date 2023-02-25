@@ -5,6 +5,7 @@ import platform
 import pytest
 import re
 
+from dcicutils.common import APP_CGAP, APP_FOURFRONT
 from dcicutils.misc_utils import ignored, local_attrs, override_environ
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
@@ -22,6 +23,7 @@ from ..submission import (
     upload_file_to_uuid, upload_item_data, PROGRESS_CHECK_INTERVAL,
     get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page, running_on_windows_native,
     search_for_file, UploadMessageWrapper, upload_extra_files,
+    _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
 )
 from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
@@ -2421,3 +2423,50 @@ def test_upload_extra_files(
             )
             assert len(mocked_search_for_file.call_args_list) == expected_file_search_calls
             assert len(mocked_execute_upload.call_args_list) == expected_uploader_calls
+
+
+def test_resolve_app_args():
+
+    # No arguments specified. Presumably they'll later be defaulted.
+
+    res = _resolve_app_args(institution=None, project=None, lab=None, award=None, app=APP_CGAP)
+    assert res == {'institution': None, 'project': None}
+
+    res = _resolve_app_args(institution=None, project=None, lab=None, award=None, app=APP_FOURFRONT)
+    assert res == {'lab': None, 'award': None}
+
+    # Exactly the right arguments.
+
+    res = _resolve_app_args(institution='foo', project='bar', lab=None, award=None, app=APP_CGAP)
+    assert res == {'institution': 'foo', 'project': 'bar'}
+
+    res = _resolve_app_args(institution=None, project=None, lab='foo', award='bar', app=APP_FOURFRONT)
+    assert res == {'lab': 'foo', 'award': 'bar'}
+
+    # Bad arguments for CGAP.
+
+    with pytest.raises(ValueError) as exc:
+        _resolve_app_args(institution=None, project=None, lab='foo', award='bar', app=APP_CGAP)
+    assert str(exc.value) == 'There are 2 inappropriate arguments: --lab and --award.'
+
+    with pytest.raises(ValueError) as exc:
+        _resolve_app_args(institution=None, project=None, lab='foo', award=None, app=APP_CGAP)
+    assert str(exc.value) == 'There is 1 inappropriate argument: --lab.'
+
+    with pytest.raises(ValueError) as exc:
+        _resolve_app_args(institution=None, project=None, lab=None, award='bar', app=APP_CGAP)
+    assert str(exc.value) == 'There is 1 inappropriate argument: --award.'
+
+    # Bad arguments for Fourfront
+
+    with pytest.raises(ValueError) as exc:
+        _resolve_app_args(institution='foo', project='bar', lab=None, award=None, app=APP_FOURFRONT)
+    assert str(exc.value) == 'There are 2 inappropriate arguments: --institution and --project.'
+
+    with pytest.raises(ValueError) as exc:
+        _resolve_app_args(institution='foo', project=None, lab=None, award=None, app=APP_FOURFRONT)
+    assert str(exc.value) == 'There is 1 inappropriate argument: --institution.'
+
+    with pytest.raises(ValueError) as exc:
+        _resolve_app_args(institution=None, project='bar', lab=None, award=None, app=APP_FOURFRONT)
+    assert str(exc.value) == 'There is 1 inappropriate argument: --project.'

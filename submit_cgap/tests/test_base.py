@@ -34,21 +34,26 @@ def test_defaults():
 
 def test_generic_key_manager():
 
+    def key_manager(generic_key_manager):
+        return generic_key_manager._key_manager  # noQA - protected member access
+
     manager = base_module.GenericKeyManager()
     assert isinstance(manager, base_module.GenericKeyManager)
     assert manager.selected_app == APP_CGAP
-    assert isinstance(manager._key_manager, CGAPKeyManager)  # noQA - protected member access
+    assert isinstance(key_manager(manager), CGAPKeyManager)
+    assert isinstance(key_manager(manager), KeyManager)
 
     manager.select_app(APP_FOURFRONT)
     assert manager.selected_app == APP_FOURFRONT
-    assert isinstance(manager._key_manager, FourfrontKeyManager)  # noQA - protected member access
+    assert isinstance(key_manager(manager), FourfrontKeyManager)
+    assert isinstance(key_manager(manager), KeyManager)
 
     with manager.locally_selected_app(APP_CGAP):
         assert manager.selected_app == APP_CGAP
-        assert isinstance(manager._key_manager, CGAPKeyManager)  # noQA - protected member access
+        assert isinstance(key_manager(manager), CGAPKeyManager)
 
     assert manager.selected_app == APP_FOURFRONT
-    assert isinstance(manager._key_manager, FourfrontKeyManager)  # noQA - protected member access
+    assert isinstance(key_manager(manager), FourfrontKeyManager)
 
     mocked_envname = 'some-env'
     mocked_server = 'some-server'
