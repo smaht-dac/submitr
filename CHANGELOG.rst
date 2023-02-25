@@ -7,6 +7,16 @@ Change Log
 ----------
 
 
+3.1.0
+=====
+
+* Add command submit-ontology
+* In ``base.py``:
+  *  New class ``GenericKeyManager`` to manage possibility of either Fourfront or CGAP keys files
+     (``~/.fourfront-keys.json`` vs ``~/.cgap-keys.json``)
+* Appropriate unit test coverage.
+
+
 3.0.0
 =====
 
