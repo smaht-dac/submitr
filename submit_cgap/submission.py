@@ -173,9 +173,9 @@ def get_defaulted_award(award, user_record):
     if not award:
         # The lab is expected to have awards looking like:
         #  [
-        #    {"project": {"@id": "/projects/foo"}, "role": "developer"},
-        #    {"project": {"@id": "/projects/bar"}, "role": "clinician"},
-        #    {"project": {"@id": "/projects/baz"}, "role": "director"},
+        #    {"@id": "/awards/foo", ...},
+        #    {"@id": "/awards/bar", ...},
+        #    {"@id": "/awards/baz", ...},
         #  ]
         lab = user_record.get('lab', {})
         lab_awards = lab.get('awards', [])

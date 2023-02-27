@@ -10,7 +10,7 @@ EPILOG = __doc__
 
 def main(simulated_args_for_testing=None):
     parser = argparse.ArgumentParser(  # noqa - PyCharm wrongly thinks the formatter_class is invalid
-        description="Submits a gene list",
+        description="Submits an ontology",
         epilog=EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
