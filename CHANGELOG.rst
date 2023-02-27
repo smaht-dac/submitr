@@ -15,6 +15,7 @@ Change Log
   *  New class ``GenericKeyManager`` to manage possibility of either Fourfront or CGAP keys files
      (``~/.fourfront-keys.json`` vs ``~/.cgap-keys.json``)
 * Appropriate unit test coverage.
+* Use poetry 1.3.2 for building. Update other dependencies.
 
 
 3.0.0
