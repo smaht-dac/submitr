@@ -212,7 +212,7 @@ def get_defaulted_lab(lab, user_record):
 
 APP_ARG_DEFAULTERS = {
     'institution': get_defaulted_institution,
-    'probject': get_defaulted_project,
+    'project': get_defaulted_project,
     'lab': get_defaulted_lab,
     'award': get_defaulted_award,
 }
