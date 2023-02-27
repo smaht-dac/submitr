@@ -85,6 +85,7 @@ show-upload-info = "submit_cgap.scripts.show_upload_info:main"
 submit-metadata-bundle = "submit_cgap.scripts.submit_metadata_bundle:main"
 upload-item-data = "submit_cgap.scripts.upload_item_data:main"
 submit-genelist = "submit_cgap.scripts.submit_genelist:main"
+submit-ontology = "submit_cgap.scripts.submit_ontology:main"
 
 [tool.coverage.report]
 
