@@ -160,7 +160,7 @@ def get_defaulted_project(project, user_record):
     return project
 
 
-PROGRESS_CHECK_INTERVAL = 15
+PROGRESS_CHECK_INTERVAL = 15  # seconds
 
 
 def get_section(res, section):
@@ -395,7 +395,7 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
     tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
 
     outcome = None
-    n_tries = 8
+    n_tries = 40
     tries_left = n_tries
     done = False
     while tries_left > 0:
