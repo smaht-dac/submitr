@@ -1,14 +1,16 @@
 import contextlib
+import datetime
 import io
 import os
 import platform
 import pytest
 import re
+from unittest import mock
 
 from dcicutils.misc_utils import ignored, local_attrs, override_environ
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
-from unittest import mock
+
 from .test_utils import shown_output
 from .test_upload_item_data import TEST_ENCRYPT_KEY
 from .. import submission as submission_module
@@ -16,10 +18,11 @@ from .. import utils as utils_module
 from ..base import PRODUCTION_SERVER, KEY_MANAGER
 from ..exceptions import CGAPPermissionError
 from ..submission import (
-    SERVER_REGEXP, get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info,
+    SERVER_REGEXP, PROGRESS_CHECK_INTERVAL, ATTEMPTS_BEFORE_TIMEOUT,
+    get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info,
     execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url,
     resolve_server, resume_uploads, show_section, submit_any_ingestion,
-    upload_file_to_uuid, upload_item_data, PROGRESS_CHECK_INTERVAL,
+    upload_file_to_uuid, upload_item_data,
     get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page, running_on_windows_native,
     search_for_file, UploadMessageWrapper, upload_extra_files,
 )
@@ -388,6 +391,10 @@ def test_get_section():
 def test_progress_check_interval():
 
     assert isinstance(PROGRESS_CHECK_INTERVAL, int) and PROGRESS_CHECK_INTERVAL > 0
+
+
+def test_attempts_before_timeout():
+    assert isinstance(ATTEMPTS_BEFORE_TIMEOUT, int) and ATTEMPTS_BEFORE_TIMEOUT > 0
 
 
 def test_ingestion_submission_item_url():
@@ -1168,6 +1175,149 @@ def test_upload_item_data():
                                                auth=SOME_KEYDICT)
 
 
+START_TIME_FOR_TESTS = "12:00:00"
+WAIT_TIME_FOR_TEST_UPDATES_SECONDS = 1
+
+
+def update_time(start_time, time_delta_seconds):
+    datetime_at_start_time = get_today_datetime_for_time(start_time)
+    time_delta = datetime.timedelta(seconds=time_delta_seconds)
+    datetime_at_end_time = datetime_at_start_time + time_delta
+    end_time = datetime_at_end_time.time()
+    return end_time.isoformat()
+
+
+def get_today_datetime_for_time(time_to_use):
+    today = datetime.date.today()
+    time = datetime.time.fromisoformat(time_to_use)
+    datetime_at_time_to_use = datetime.datetime.fromisoformat(
+        f"{today.isoformat()}T{time.isoformat()}"
+    )
+    return datetime_at_time_to_use
+
+
+def make_uploaded_lines(
+    start_time=START_TIME_FOR_TESTS, wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS
+):
+    uploaded_time = update_time(start_time, wait_time_delta)
+    return [
+        f"The server {SOME_SERVER} recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.",
+        (
+            f"{uploaded_time} Bundle uploaded, assigned uuid {SOME_UUID} for tracking."
+            " Awaiting processing..."
+        ),
+    ]
+
+
+def make_wait_lines(
+    wait_attempts,
+    start_time=START_TIME_FOR_TESTS,
+    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
+):
+    result = []
+    uploaded_time = update_time(start_time, wait_time_delta)
+    for idx in range(wait_attempts):
+        time_delta_from_start = (PROGRESS_CHECK_INTERVAL + wait_time_delta) * (idx + 1)
+        wait_time = update_time(uploaded_time, time_delta_from_start)
+        wait_line = f"{wait_time} Progress is not done yet. Continuing to wait..."
+        result.append(wait_line)
+    return result
+
+
+def make_timeout_lines(
+    start_time=START_TIME_FOR_TESTS,
+    get_attempts=ATTEMPTS_BEFORE_TIMEOUT,
+    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
+):
+    wait_time = get_elapsed_time_for_get_attempts(
+        get_attempts, start_time=start_time, wait_time_delta=wait_time_delta
+    )
+    time_out_time = update_time(wait_time, wait_time_delta)
+    return [f"{time_out_time} Timed out after {get_attempts} tries."]
+
+
+def make_success_lines(
+    get_attempts,
+    start_time=START_TIME_FOR_TESTS,
+    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
+):
+    success_get_attempts = get_attempts
+    success_time = get_elapsed_time_for_get_attempts(
+        success_get_attempts, start_time=start_time, wait_time_delta=wait_time_delta
+    )
+    return [f"{success_time} Final status: success"]
+
+
+def make_failure_lines(
+    get_attempts,
+    start_time=START_TIME_FOR_TESTS,
+    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
+):
+    failure_time = get_elapsed_time_for_get_attempts(
+        get_attempts, start_time=start_time, wait_time_delta=wait_time_delta
+    )
+    return [f"{failure_time} Final status: error"]
+
+
+def get_elapsed_time_for_get_attempts(
+    get_attempts,
+    start_time=START_TIME_FOR_TESTS,
+    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
+):
+    initial_check_time_delta = wait_time_delta
+    wait_time_delta = (PROGRESS_CHECK_INTERVAL + wait_time_delta) * get_attempts
+    elapsed_time_delta = initial_check_time_delta + wait_time_delta
+    return update_time(start_time, elapsed_time_delta)
+
+
+def make_successful_submission_lines(
+    get_attempts,
+    start_time=START_TIME_FOR_TESTS,
+    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
+):
+    result = []
+    wait_attempts = get_attempts - 1
+    result += make_uploaded_lines(start_time=start_time, wait_time_delta=wait_time_delta)
+    if wait_attempts > 0:
+        result += make_wait_lines(
+            wait_attempts, start_time=start_time, wait_time_delta=wait_time_delta
+        )
+    result += make_success_lines(
+        get_attempts, start_time=start_time, wait_time_delta=wait_time_delta
+    )
+    return result
+
+
+def make_timeout_submission_lines(
+    start_time=START_TIME_FOR_TESTS, wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS
+):
+    result = []
+    result += make_uploaded_lines(start_time=start_time, wait_time_delta=wait_time_delta)
+    result += make_wait_lines(
+        ATTEMPTS_BEFORE_TIMEOUT, start_time=start_time, wait_time_delta=wait_time_delta
+    )
+    result += make_timeout_lines(start_time=start_time, wait_time_delta=wait_time_delta)
+    return result
+
+
+def make_failed_submission_lines(
+    get_attempts,
+    start_time=START_TIME_FOR_TESTS,
+    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
+):
+    result = []
+    wait_attempts = get_attempts - 1
+    result += make_uploaded_lines(start_time=start_time, wait_time_delta=wait_time_delta)
+    if wait_attempts > 0:
+        result += make_wait_lines(
+            wait_attempts, start_time=start_time, wait_time_delta=wait_time_delta
+        )
+    result += make_failure_lines(
+        get_attempts, start_time=start_time, wait_time_delta=wait_time_delta
+    )
+    return result
+
+
 def test_submit_any_ingestion_old_protocol():
 
     with shown_output() as shown:
@@ -1304,6 +1454,7 @@ def test_submit_any_ingestion_old_protocol():
 
     # This tests the normal case with validate_only=False and a successful result.
 
+    get_request_attempts = 3
     with shown_output() as shown:
         with mock.patch("os.path.exists", mfs.exists):
             with mock.patch("io.open", mfs.open):
@@ -1315,7 +1466,8 @@ def test_submit_any_ingestion_old_protocol():
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -1346,20 +1498,7 @@ def test_submit_any_ingestion_old_protocol():
                                                             no_query=False,
                                                             subfolders=False,
                                                         )
-        assert shown.lines == [
-            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
-            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
-            # 1 second after we started our virtual clock...
-            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:17 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:33 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:49 Final status: success',
-            # Output from uploads is not present because we mocked that out.
-            # See test of the call to the uploader higher up.
-        ]
+        assert shown.lines == make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -1385,7 +1524,8 @@ def test_submit_any_ingestion_old_protocol():
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -1416,20 +1556,7 @@ def test_submit_any_ingestion_old_protocol():
                                                             no_query=False,
                                                             subfolders=False,
                                                         )
-        assert shown.lines == [
-            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
-            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
-            # 1 second after we started our virtual clock...
-            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:17 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:33 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:49 Final status: success',
-            # Output from uploads is not present because we mocked that out.
-            # See test of the call to the uploader higher up.
-        ]
+        assert shown.lines == make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -1445,7 +1572,8 @@ def test_submit_any_ingestion_old_protocol():
                         with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                return_value=SOME_KEYDICT):
                             with mock.patch("requests.post", mocked_post):
-                                with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
+                                with mock.patch("requests.get",
+                                                make_mocked_get(done_after_n_tries=get_request_attempts)):
                                     with mock.patch("datetime.datetime", dt):
                                         with mock.patch("time.sleep", dt.sleep):
                                             with mock.patch.object(submission_module, "show_section"):
@@ -1476,20 +1604,7 @@ def test_submit_any_ingestion_old_protocol():
                                                         no_query=True,
                                                         subfolders=False,
                                                     )
-        assert shown.lines == [
-            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
-            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
-            # 1 second after we started our virtual clock...
-            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:17 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:33 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:49 Final status: success',
-            # Output from uploads is not present because we mocked that out.
-            # See test of the call to the uploader higher up.
-        ]
+        assert shown.lines == make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -1515,8 +1630,9 @@ def test_submit_any_ingestion_old_protocol():
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", unsupported_media_type):
-                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
-                                                                                    success=False)):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts,
+                                                                    success=False)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -1568,8 +1684,9 @@ def test_submit_any_ingestion_old_protocol():
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mysterious_error):
-                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
-                                                                                    success=False)):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts,
+                                                                    success=False)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -1612,8 +1729,9 @@ def test_submit_any_ingestion_old_protocol():
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
-                                                                                    success=False)):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts,
+                                                                    success=False)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -1637,20 +1755,7 @@ def test_submit_any_ingestion_old_protocol():
                                                             assert e.code == 0
 
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == [
-            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
-            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
-            # 1 second after we started our virtual clock...
-            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:17 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:33 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:49 Final status: error',
-            # Output from uploads is not present because we mocked that out.
-            # See test of the call to the uploader higher up.
-        ]
+        assert shown.lines == make_failed_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -1667,7 +1772,8 @@ def test_submit_any_ingestion_old_protocol():
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -1691,20 +1797,7 @@ def test_submit_any_ingestion_old_protocol():
 
                                                         # For validation only, we won't have tried uploads.
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == [
-            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
-            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
-            # 1 second after we started our virtual clock...
-            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:17 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:33 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:49 Final status: success',
-            # Output from uploads is not present because we mocked that out.
-            # See test of the call to the uploader higher up.
-        ]
+        assert shown.lines == make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -1721,7 +1814,8 @@ def test_submit_any_ingestion_old_protocol():
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=10)):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=ATTEMPTS_BEFORE_TIMEOUT + 1)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -1744,30 +1838,7 @@ def test_submit_any_ingestion_old_protocol():
                                                             assert e.code == 1
 
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == [
-            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
-            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
-            # 1 second after we started our virtual clock...
-            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:17 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:33 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:49 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:01:05 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:01:21 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:01:37 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:01:53 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:02:09 Progress is not done yet. Continuing to wait...',
-            # After 1 second to recheck the time...
-            '12:02:10 Timed out after 8 tries.',
-        ]
+        assert shown.lines == make_timeout_submission_lines()
 
 
 def test_submit_any_ingestion_new_protocol():
@@ -1903,6 +1974,8 @@ def test_submit_any_ingestion_new_protocol():
 
     dt = ControlledTime()
 
+    get_request_attempts = 3
+
     with mock.patch("os.path.exists", mfs.exists):
         with mock.patch("io.open", mfs.open):
             with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
@@ -1913,7 +1986,8 @@ def test_submit_any_ingestion_new_protocol():
                             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                                 with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                                     with mock.patch("requests.post", mocked_post):
-                                        with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
+                                        with mock.patch("requests.get",
+                                                        make_mocked_get(done_after_n_tries=get_request_attempts)):
                                             try:
                                                 submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                      ingestion_type='metadata_bundle',
@@ -1947,7 +2021,8 @@ def test_submit_any_ingestion_new_protocol():
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -1979,20 +2054,7 @@ def test_submit_any_ingestion_new_protocol():
                                                             no_query=False,
                                                             subfolders=False,
                                                         )
-        assert shown.lines == [
-            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
-            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
-            # 1 second after we started our virtual clock...
-            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:17 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:33 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:49 Final status: success',
-            # Output from uploads is not present because we mocked that out.
-            # See test of the call to the uploader higher up.
-        ]
+        assert shown.lines == make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -2018,8 +2080,9 @@ def test_submit_any_ingestion_new_protocol():
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", unsupported_media_type):
-                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
-                                                                                    success=False)):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts,
+                                                                    success=False)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -2072,8 +2135,9 @@ def test_submit_any_ingestion_new_protocol():
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mysterious_error):
-                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
-                                                                                    success=False)):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts,
+                                                                    success=False)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -2117,8 +2181,9 @@ def test_submit_any_ingestion_new_protocol():
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3,
-                                                                                    success=False)):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts,
+                                                                    success=False)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -2142,20 +2207,7 @@ def test_submit_any_ingestion_new_protocol():
                                                             assert e.code == 0
 
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == [
-            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
-            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
-            # 1 second after we started our virtual clock...
-            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:17 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:33 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:49 Final status: error',
-            # Output from uploads is not present because we mocked that out.
-            # See test of the call to the uploader higher up.
-        ]
+        assert shown.lines == make_failed_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -2172,7 +2224,8 @@ def test_submit_any_ingestion_new_protocol():
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -2196,20 +2249,7 @@ def test_submit_any_ingestion_new_protocol():
 
                                                         # For validation only, we won't have tried uploads.
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == [
-            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
-            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
-            # 1 second after we started our virtual clock...
-            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:17 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:33 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:49 Final status: success',
-            # Output from uploads is not present because we mocked that out.
-            # See test of the call to the uploader higher up.
-        ]
+        assert shown.lines == make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -2226,7 +2266,10 @@ def test_submit_any_ingestion_new_protocol():
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
                                 with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get", make_mocked_get(done_after_n_tries=10)):
+                                    with mock.patch(
+                                        "requests.get",
+                                        make_mocked_get(done_after_n_tries=ATTEMPTS_BEFORE_TIMEOUT + 1)
+                                    ):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -2248,30 +2291,7 @@ def test_submit_any_ingestion_new_protocol():
                                                             assert e.code == 1
 
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == [
-            'The server http://localhost:7777 recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.',
-            # We're ticking the clock once for each check of the virtual clock at 1 second per tick.
-            # 1 second after we started our virtual clock...
-            '12:00:01 Bundle uploaded, assigned uuid 123-4444-5678 for tracking. Awaiting processing...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:17 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:33 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:00:49 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:01:05 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:01:21 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:01:37 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:01:53 Progress is not done yet. Continuing to wait...',
-            # After 15 seconds sleep plus 1 second to recheck the time...
-            '12:02:09 Progress is not done yet. Continuing to wait...',
-            # After 1 second to recheck the time...
-            '12:02:10 Timed out after 8 tries.',
-        ]
+        assert shown.lines == make_timeout_submission_lines()
 
 
 def test_running_on_windows_native():

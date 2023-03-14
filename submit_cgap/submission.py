@@ -161,6 +161,7 @@ def get_defaulted_project(project, user_record):
 
 
 PROGRESS_CHECK_INTERVAL = 15  # seconds
+ATTEMPTS_BEFORE_TIMEOUT = 40
 
 
 def get_section(res, section):
@@ -395,8 +396,7 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
     tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
 
     outcome = None
-    n_tries = 40
-    tries_left = n_tries
+    tries_left = ATTEMPTS_BEFORE_TIMEOUT
     done = False
     while tries_left > 0:
         # Pointless to hit the queue immediately, so we avoid some
@@ -414,7 +414,7 @@ def submit_any_ingestion(ingestion_filename, ingestion_type, institution, projec
         tries_left -= 1
 
     if not done:
-        show("Timed out after %d tries." % n_tries, with_time=True)
+        show("Timed out after %d tries." % ATTEMPTS_BEFORE_TIMEOUT, with_time=True)
         exit(1)
 
     show("Final status: %s" % outcome, with_time=True)
