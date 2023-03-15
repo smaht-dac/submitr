@@ -1179,9 +1179,11 @@ START_TIME_FOR_TESTS = "12:00:00"
 WAIT_TIME_FOR_TEST_UPDATES_SECONDS = 1
 
 
-def update_time(start_time, time_delta_seconds):
+def update_time(*, start_time=None, wait_time_delta=None):
+    start_time = start_time or START_TIME_FOR_TESTS
+    wait_time_delta = wait_time_delta or WAIT_TIME_FOR_TEST_UPDATES_SECONDS
     datetime_at_start_time = get_today_datetime_for_time(start_time)
-    time_delta = datetime.timedelta(seconds=time_delta_seconds)
+    time_delta = datetime.timedelta(seconds=wait_time_delta)
     datetime_at_end_time = datetime_at_start_time + time_delta
     end_time = datetime_at_end_time.time()
     return end_time.isoformat()
@@ -1196,10 +1198,8 @@ def get_today_datetime_for_time(time_to_use):
     return datetime_at_time_to_use
 
 
-def make_uploaded_lines(
-    start_time=START_TIME_FOR_TESTS, wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS
-):
-    uploaded_time = update_time(start_time, wait_time_delta)
+def make_uploaded_lines(**time_info):
+    uploaded_time = update_time(**time_info)
     return [
         f"The server {SOME_SERVER} recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.",
         (
@@ -1209,37 +1209,28 @@ def make_uploaded_lines(
     ]
 
 
-def make_wait_lines(
-    wait_attempts, *,
-    start_time=START_TIME_FOR_TESTS,
-    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
-):
+def make_wait_lines(wait_attempts, *, start_time=None, wait_time_delta=None):
+    start_time = start_time or START_TIME_FOR_TESTS
+    wait_time_delta = wait_time_delta or WAIT_TIME_FOR_TEST_UPDATES_SECONDS
     result = []
-    uploaded_time = update_time(start_time, wait_time_delta)
+    uploaded_time = update_time(start_time=start_time, wait_time_delta=wait_time_delta)
     for idx in range(wait_attempts):
         time_delta_from_start = (PROGRESS_CHECK_INTERVAL + wait_time_delta) * (idx + 1)
-        wait_time = update_time(uploaded_time, time_delta_from_start)
+        wait_time = update_time(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
         wait_line = f"{wait_time} Progress is not done yet. Continuing to wait..."
         result.append(wait_line)
     return result
 
 
-def make_timeout_lines(*,
-    start_time=START_TIME_FOR_TESTS,
-    get_attempts=ATTEMPTS_BEFORE_TIMEOUT,
-    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
-):
-    wait_time = get_elapsed_time_for_get_attempts(
-        get_attempts, start_time=start_time, wait_time_delta=wait_time_delta
-    )
-    time_out_time = update_time(wait_time, wait_time_delta)
+def make_timeout_lines(*, get_attempts=ATTEMPTS_BEFORE_TIMEOUT, wait_time_delta=None, **start_time_info):
+    wait_time_delta = wait_time_delta or WAIT_TIME_FOR_TEST_UPDATES_SECONDS
+    wait_time = get_elapsed_time_for_get_attempts(get_attempts, wait_time_delta=wait_time_delta, **start_time_info)
+    time_out_time = update_time(start_time=wait_time, wait_time_delta=wait_time_delta)
     return [f"{time_out_time} Timed out after {get_attempts} tries."]
 
 
-def make_outcome_lines(get_attempts, *, outcome, start_time=None, wait_time_delta=None):
-    start_time = start_time or START_TIME_FOR_TESTS
-    wait_time_delta = wait_time_delta or WAIT_TIME_FOR_TEST_UPDATES_SECONDS
-    end_time = get_elapsed_time_for_get_attempts(get_attempts, start_time=start_time, wait_time_delta=wait_time_delta)
+def make_outcome_lines(get_attempts, *, outcome, **time_info):
+    end_time = get_elapsed_time_for_get_attempts(get_attempts, **time_info)
     return [f"{end_time} Final status: {outcome}"]
 
 
@@ -1249,7 +1240,7 @@ def get_elapsed_time_for_get_attempts(get_attempts, *, start_time=None, wait_tim
     initial_check_time_delta = wait_time_delta
     wait_time_delta = (PROGRESS_CHECK_INTERVAL + wait_time_delta) * get_attempts
     elapsed_time_delta = initial_check_time_delta + wait_time_delta
-    return update_time(start_time, elapsed_time_delta)
+    return update_time(start_time=start_time, wait_time_delta=elapsed_time_delta)
 
 
 def make_successful_submission_lines(get_attempts, *, start_time=None, wait_time_delta=None):
@@ -1268,31 +1259,21 @@ def make_successful_submission_lines(get_attempts, *, start_time=None, wait_time
     return result
 
 
-def make_timeout_submission_lines(*, start_time=None, wait_time_delta=None):
-    start_time = start_time or START_TIME_FOR_TESTS
-    wait_time_delta = wait_time_delta or WAIT_TIME_FOR_TEST_UPDATES_SECONDS
+def make_timeout_submission_lines(**time_info):
     result = []
-    result += make_uploaded_lines(start_time=start_time, wait_time_delta=wait_time_delta)
-    result += make_wait_lines(
-        ATTEMPTS_BEFORE_TIMEOUT, start_time=start_time, wait_time_delta=wait_time_delta
-    )
-    result += make_timeout_lines(start_time=start_time, wait_time_delta=wait_time_delta)
+    result += make_uploaded_lines(**time_info)
+    result += make_wait_lines(ATTEMPTS_BEFORE_TIMEOUT, **time_info)
+    result += make_timeout_lines(**time_info)
     return result
 
 
-def make_failed_submission_lines(get_attempts, *, start_time=None, wait_time_delta=None):
-    start_time = start_time or START_TIME_FOR_TESTS
-    wait_time_delta = wait_time_delta or WAIT_TIME_FOR_TEST_UPDATES_SECONDS
+def make_failed_submission_lines(get_attempts, **time_info):
     result = []
     wait_attempts = get_attempts - 1
-    result += make_uploaded_lines(start_time=start_time, wait_time_delta=wait_time_delta)
+    result += make_uploaded_lines(**time_info)
     if wait_attempts > 0:
-        result += make_wait_lines(
-            wait_attempts, start_time=start_time, wait_time_delta=wait_time_delta
-        )
-    result += make_outcome_lines(
-        get_attempts, outcome="error", start_time=start_time, wait_time_delta=wait_time_delta
-    )
+        result += make_wait_lines(wait_attempts, **time_info)
+    result += make_outcome_lines(get_attempts, outcome="error", **time_info)
     return result
 
 
