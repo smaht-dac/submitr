@@ -7,6 +7,14 @@ Change Log
 ----------
 
 
+3.1.0
+=====
+
+`PR 34: Increase submission timeout <https://github.com/dbmi-bgm/SubmitCGAP/pull/34>`_
+
+* Increase submission timeout from 2 to 10 minutes
+
+
 3.0.0
 =====
 
