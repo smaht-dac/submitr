@@ -1239,15 +1239,23 @@ class Scenario:
         return adjusted_scenario.get_time_after_wait()
 
     @classmethod
-    def make_successful_submission_lines(cls, get_attempts):
+    def make_submission_lines(cls, get_attempts, outcome):
         scenario = Scenario()
         result = []
         wait_attempts = get_attempts - 1
         result += scenario.make_uploaded_lines()
         if wait_attempts > 0:
             result += scenario.make_wait_lines(wait_attempts)
-        result += scenario.make_outcome_lines(get_attempts, outcome="success")
+        result += scenario.make_outcome_lines(get_attempts, outcome=outcome)
         return result
+
+    @classmethod
+    def make_successful_submission_lines(cls, get_attempts):
+        return cls.make_submission_lines(get_attempts, outcome="success")
+
+    @classmethod
+    def make_failed_submission_lines(cls, get_attempts):
+        return cls.make_submission_lines(get_attempts, outcome="error")
 
     @classmethod
     def make_timeout_submission_lines(cls):
@@ -1256,17 +1264,6 @@ class Scenario:
         result += scenario.make_uploaded_lines()
         result += scenario.make_wait_lines(ATTEMPTS_BEFORE_TIMEOUT)
         result += scenario.make_timeout_lines()
-        return result
-
-    @classmethod
-    def make_failed_submission_lines(cls, get_attempts):
-        scenario = Scenario()
-        result = []
-        wait_attempts = get_attempts - 1
-        result += scenario.make_uploaded_lines()
-        if wait_attempts > 0:
-            result += scenario.make_wait_lines(wait_attempts)
-        result += scenario.make_outcome_lines(get_attempts, outcome="error")
         return result
 
 
