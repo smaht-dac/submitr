@@ -1175,18 +1175,6 @@ def test_upload_item_data():
                                                auth=SOME_KEYDICT)
 
 
-START_TIME_FOR_TESTS = "12:00:00"
-WAIT_TIME_FOR_TEST_UPDATES_SECONDS = 1
-
-
-def update_time(start_time, time_delta_seconds):
-    datetime_at_start_time = get_today_datetime_for_time(start_time)
-    time_delta = datetime.timedelta(seconds=time_delta_seconds)
-    datetime_at_end_time = datetime_at_start_time + time_delta
-    end_time = datetime_at_end_time.time()
-    return end_time.isoformat()
-
-
 def get_today_datetime_for_time(time_to_use):
     today = datetime.date.today()
     time = datetime.time.fromisoformat(time_to_use)
@@ -1196,126 +1184,87 @@ def get_today_datetime_for_time(time_to_use):
     return datetime_at_time_to_use
 
 
-def make_uploaded_lines(
-    start_time=START_TIME_FOR_TESTS, wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS
-):
-    uploaded_time = update_time(start_time, wait_time_delta)
-    return [
-        f"The server {SOME_SERVER} recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.",
-        (
-            f"{uploaded_time} Bundle uploaded, assigned uuid {SOME_UUID} for tracking."
-            " Awaiting processing..."
-        ),
-    ]
+class Scenario:
 
+    START_TIME_FOR_TESTS = "12:00:00"
+    WAIT_TIME_FOR_TEST_UPDATES_SECONDS = 1
 
-def make_wait_lines(
-    wait_attempts,
-    start_time=START_TIME_FOR_TESTS,
-    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
-):
-    result = []
-    uploaded_time = update_time(start_time, wait_time_delta)
-    for idx in range(wait_attempts):
-        time_delta_from_start = (PROGRESS_CHECK_INTERVAL + wait_time_delta) * (idx + 1)
-        wait_time = update_time(uploaded_time, time_delta_from_start)
-        wait_line = f"{wait_time} Progress is not done yet. Continuing to wait..."
-        result.append(wait_line)
-    return result
+    def __init__(self, start_time=None, wait_time_delta=None):
+        self.start_time = start_time or self.START_TIME_FOR_TESTS
+        self.wait_time_delta = wait_time_delta or self.WAIT_TIME_FOR_TEST_UPDATES_SECONDS
 
+    def get_time_after_wait(self):
+        datetime_at_start_time = get_today_datetime_for_time(self.start_time)
+        time_delta = datetime.timedelta(seconds=self.wait_time_delta)
+        datetime_at_end_time = datetime_at_start_time + time_delta
+        end_time = datetime_at_end_time.time()
+        return end_time.isoformat()
 
-def make_timeout_lines(
-    start_time=START_TIME_FOR_TESTS,
-    get_attempts=ATTEMPTS_BEFORE_TIMEOUT,
-    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
-):
-    wait_time = get_elapsed_time_for_get_attempts(
-        get_attempts, start_time=start_time, wait_time_delta=wait_time_delta
-    )
-    time_out_time = update_time(wait_time, wait_time_delta)
-    return [f"{time_out_time} Timed out after {get_attempts} tries."]
+    def make_uploaded_lines(self):
+        uploaded_time = self.get_time_after_wait()
+        return [
+            f"The server {SOME_SERVER} recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.",
+            (
+                f"{uploaded_time} Bundle uploaded, assigned uuid {SOME_UUID} for tracking."
+                " Awaiting processing..."
+            ),
+        ]
 
+    def make_wait_lines(self, wait_attempts):
+        result = []
+        uploaded_time = self.get_time_after_wait()
+        for idx in range(wait_attempts):
+            time_delta_from_start = (PROGRESS_CHECK_INTERVAL + self.wait_time_delta) * (idx + 1)
+            adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
+            wait_time = adjusted_scenario.get_time_after_wait()
+            wait_line = f"{wait_time} Progress is not done yet. Continuing to wait..."
+            result.append(wait_line)
+        return result
 
-def make_success_lines(
-    get_attempts,
-    start_time=START_TIME_FOR_TESTS,
-    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
-):
-    success_get_attempts = get_attempts
-    success_time = get_elapsed_time_for_get_attempts(
-        success_get_attempts, start_time=start_time, wait_time_delta=wait_time_delta
-    )
-    return [f"{success_time} Final status: success"]
+    def make_timeout_lines(self, *, get_attempts=ATTEMPTS_BEFORE_TIMEOUT):
+        wait_time = self.get_elapsed_time_for_get_attempts(get_attempts)
+        adjusted_scenario = Scenario(start_time=wait_time, wait_time_delta=self.wait_time_delta)
+        time_out_time = adjusted_scenario.get_time_after_wait()
+        return [f"{time_out_time} Timed out after {get_attempts} tries."]
 
+    def make_outcome_lines(self, get_attempts, *, outcome):
+        end_time = self.get_elapsed_time_for_get_attempts(get_attempts)
+        return [f"{end_time} Final status: {outcome}"]
 
-def make_failure_lines(
-    get_attempts,
-    start_time=START_TIME_FOR_TESTS,
-    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
-):
-    failure_time = get_elapsed_time_for_get_attempts(
-        get_attempts, start_time=start_time, wait_time_delta=wait_time_delta
-    )
-    return [f"{failure_time} Final status: error"]
+    def get_elapsed_time_for_get_attempts(self, get_attempts):
+        initial_check_time_delta = self.wait_time_delta
+        wait_time_delta = (PROGRESS_CHECK_INTERVAL + self.wait_time_delta) * get_attempts
+        elapsed_time_delta = initial_check_time_delta + wait_time_delta
+        adjusted_scenario = Scenario(start_time=self.start_time, wait_time_delta=elapsed_time_delta)
+        return adjusted_scenario.get_time_after_wait()
 
+    @classmethod
+    def make_submission_lines(cls, get_attempts, outcome):
+        scenario = Scenario()
+        result = []
+        wait_attempts = get_attempts - 1
+        result += scenario.make_uploaded_lines()
+        if wait_attempts > 0:
+            result += scenario.make_wait_lines(wait_attempts)
+        result += scenario.make_outcome_lines(get_attempts, outcome=outcome)
+        return result
 
-def get_elapsed_time_for_get_attempts(
-    get_attempts,
-    start_time=START_TIME_FOR_TESTS,
-    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
-):
-    initial_check_time_delta = wait_time_delta
-    wait_time_delta = (PROGRESS_CHECK_INTERVAL + wait_time_delta) * get_attempts
-    elapsed_time_delta = initial_check_time_delta + wait_time_delta
-    return update_time(start_time, elapsed_time_delta)
+    @classmethod
+    def make_successful_submission_lines(cls, get_attempts):
+        return cls.make_submission_lines(get_attempts, outcome="success")
 
+    @classmethod
+    def make_failed_submission_lines(cls, get_attempts):
+        return cls.make_submission_lines(get_attempts, outcome="error")
 
-def make_successful_submission_lines(
-    get_attempts,
-    start_time=START_TIME_FOR_TESTS,
-    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
-):
-    result = []
-    wait_attempts = get_attempts - 1
-    result += make_uploaded_lines(start_time=start_time, wait_time_delta=wait_time_delta)
-    if wait_attempts > 0:
-        result += make_wait_lines(
-            wait_attempts, start_time=start_time, wait_time_delta=wait_time_delta
-        )
-    result += make_success_lines(
-        get_attempts, start_time=start_time, wait_time_delta=wait_time_delta
-    )
-    return result
-
-
-def make_timeout_submission_lines(
-    start_time=START_TIME_FOR_TESTS, wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS
-):
-    result = []
-    result += make_uploaded_lines(start_time=start_time, wait_time_delta=wait_time_delta)
-    result += make_wait_lines(
-        ATTEMPTS_BEFORE_TIMEOUT, start_time=start_time, wait_time_delta=wait_time_delta
-    )
-    result += make_timeout_lines(start_time=start_time, wait_time_delta=wait_time_delta)
-    return result
-
-
-def make_failed_submission_lines(
-    get_attempts,
-    start_time=START_TIME_FOR_TESTS,
-    wait_time_delta=WAIT_TIME_FOR_TEST_UPDATES_SECONDS,
-):
-    result = []
-    wait_attempts = get_attempts - 1
-    result += make_uploaded_lines(start_time=start_time, wait_time_delta=wait_time_delta)
-    if wait_attempts > 0:
-        result += make_wait_lines(
-            wait_attempts, start_time=start_time, wait_time_delta=wait_time_delta
-        )
-    result += make_failure_lines(
-        get_attempts, start_time=start_time, wait_time_delta=wait_time_delta
-    )
-    return result
+    @classmethod
+    def make_timeout_submission_lines(cls):
+        scenario = Scenario()
+        result = []
+        result += scenario.make_uploaded_lines()
+        result += scenario.make_wait_lines(ATTEMPTS_BEFORE_TIMEOUT)
+        result += scenario.make_timeout_lines()
+        return result
 
 
 def test_submit_any_ingestion_old_protocol():
@@ -1498,7 +1447,7 @@ def test_submit_any_ingestion_old_protocol():
                                                             no_query=False,
                                                             subfolders=False,
                                                         )
-        assert shown.lines == make_successful_submission_lines(get_request_attempts)
+        assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -1556,7 +1505,7 @@ def test_submit_any_ingestion_old_protocol():
                                                             no_query=False,
                                                             subfolders=False,
                                                         )
-        assert shown.lines == make_successful_submission_lines(get_request_attempts)
+        assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -1604,7 +1553,7 @@ def test_submit_any_ingestion_old_protocol():
                                                         no_query=True,
                                                         subfolders=False,
                                                     )
-        assert shown.lines == make_successful_submission_lines(get_request_attempts)
+        assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -1755,7 +1704,7 @@ def test_submit_any_ingestion_old_protocol():
                                                             assert e.code == 0
 
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == make_failed_submission_lines(get_request_attempts)
+        assert shown.lines == Scenario.make_failed_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -1797,7 +1746,7 @@ def test_submit_any_ingestion_old_protocol():
 
                                                         # For validation only, we won't have tried uploads.
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == make_successful_submission_lines(get_request_attempts)
+        assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -1838,7 +1787,7 @@ def test_submit_any_ingestion_old_protocol():
                                                             assert e.code == 1
 
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == make_timeout_submission_lines()
+        assert shown.lines == Scenario.make_timeout_submission_lines()
 
 
 def test_submit_any_ingestion_new_protocol():
@@ -2054,7 +2003,7 @@ def test_submit_any_ingestion_new_protocol():
                                                             no_query=False,
                                                             subfolders=False,
                                                         )
-        assert shown.lines == make_successful_submission_lines(get_request_attempts)
+        assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -2207,7 +2156,7 @@ def test_submit_any_ingestion_new_protocol():
                                                             assert e.code == 0
 
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == make_failed_submission_lines(get_request_attempts)
+        assert shown.lines == Scenario.make_failed_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -2249,7 +2198,7 @@ def test_submit_any_ingestion_new_protocol():
 
                                                         # For validation only, we won't have tried uploads.
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == make_successful_submission_lines(get_request_attempts)
+        assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -2291,7 +2240,7 @@ def test_submit_any_ingestion_new_protocol():
                                                             assert e.code == 1
 
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == make_timeout_submission_lines()
+        assert shown.lines == Scenario.make_timeout_submission_lines()
 
 
 def test_running_on_windows_native():
