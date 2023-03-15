@@ -1193,7 +1193,7 @@ class Scenario:
         self.start_time = start_time or self.START_TIME_FOR_TESTS
         self.wait_time_delta = wait_time_delta or self.WAIT_TIME_FOR_TEST_UPDATES_SECONDS
 
-    def update_time(self):
+    def get_time_after_wait(self):
         datetime_at_start_time = get_today_datetime_for_time(self.start_time)
         time_delta = datetime.timedelta(seconds=self.wait_time_delta)
         datetime_at_end_time = datetime_at_start_time + time_delta
@@ -1201,7 +1201,7 @@ class Scenario:
         return end_time.isoformat()
 
     def make_uploaded_lines(self):
-        uploaded_time = self.update_time()
+        uploaded_time = self.get_time_after_wait()
         return [
             f"The server {SOME_SERVER} recognizes you as J Doe <jdoe@cgap.hms.harvard.edu>.",
             (
@@ -1212,11 +1212,11 @@ class Scenario:
 
     def make_wait_lines(self, wait_attempts):
         result = []
-        uploaded_time = self.update_time()
+        uploaded_time = self.get_time_after_wait()
         for idx in range(wait_attempts):
             time_delta_from_start = (PROGRESS_CHECK_INTERVAL + self.wait_time_delta) * (idx + 1)
             adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
-            wait_time = adjusted_scenario.update_time()
+            wait_time = adjusted_scenario.get_time_after_wait()
             wait_line = f"{wait_time} Progress is not done yet. Continuing to wait..."
             result.append(wait_line)
         return result
@@ -1224,7 +1224,7 @@ class Scenario:
     def make_timeout_lines(self, *, get_attempts=ATTEMPTS_BEFORE_TIMEOUT):
         wait_time = self.get_elapsed_time_for_get_attempts(get_attempts)
         adjusted_scenario = Scenario(start_time=wait_time, wait_time_delta=self.wait_time_delta)
-        time_out_time = adjusted_scenario.update_time()
+        time_out_time = adjusted_scenario.get_time_after_wait()
         return [f"{time_out_time} Timed out after {get_attempts} tries."]
 
     def make_outcome_lines(self, get_attempts, *, outcome):
@@ -1236,7 +1236,7 @@ class Scenario:
         wait_time_delta = (PROGRESS_CHECK_INTERVAL + self.wait_time_delta) * get_attempts
         elapsed_time_delta = initial_check_time_delta + wait_time_delta
         adjusted_scenario = Scenario(start_time=self.start_time, wait_time_delta=elapsed_time_delta)
-        return adjusted_scenario.update_time()
+        return adjusted_scenario.get_time_after_wait()
 
     @classmethod
     def make_successful_submission_lines(cls, get_attempts):
