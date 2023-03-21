@@ -14,10 +14,12 @@ from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, OrchestratedApp
 # We're not going to use full_cgap_env_name now, we'll just rely on the keys file to say what the name is.
 # from dcicutils.env_utils import full_cgap_env_name
+from dcicutils.exceptions import InvalidParameterError
 from dcicutils.ff_utils import get_health_page
 from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
-from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join, ignorable
+from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join, ignorable, remove_prefix
 from dcicutils.s3_utils import HealthPageKey
+from urllib.parse import urlparse
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER
 from .exceptions import CGAPPermissionError
 from .utils import show, keyword_as_title
@@ -161,7 +163,7 @@ def get_defaulted_project(project, user_record):
     return project
 
 
-def get_defaulted_award(award, user_record):
+def get_defaulted_award(award, user_record, error_if_none=False):
     """
     Returns the given award or else if none is specified, it tries to infer an award.
 
@@ -180,19 +182,26 @@ def get_defaulted_award(award, user_record):
         lab = user_record.get('lab', {})
         lab_awards = lab.get('awards', [])
         if len(lab_awards) == 0:
-            raise SyntaxError("Your user profile declares no lab with awards.")
+            if error_if_none:
+                raise SyntaxError("Your user profile declares no lab with awards.")
         elif len(lab_awards) > 1:
             options = disjoined_list([award['@id'] for award in lab_awards])
-            raise SyntaxError(f"Your lab ({lab['@id']}) declares multiple awards."
-                              f" You must explicitly specify one of {options} with --award.")
+            if error_if_none:
+                raise SyntaxError(f"Your lab ({lab['@id']}) declares multiple awards."
+                                  f" You must explicitly specify one of {options} with --award.")
         else:
             [lab_award] = lab_awards
             award = lab_award['@id']
-            show("Using award:", award)
+        if not award:
+            show("No award was inferred.")
+        else:
+            show("Using inferred award:", award)
+    else:
+        show("Using given award:", award)
     return award
 
 
-def get_defaulted_lab(lab, user_record):
+def get_defaulted_lab(lab, user_record, error_if_none=False):
     """
     Returns the given lab or else if none is specified, it tries to infer a lab.
 
@@ -204,9 +213,15 @@ def get_defaulted_lab(lab, user_record):
     if not lab:
         lab = user_record.get('lab', {}).get('@id', None)
         if not lab:
-            raise SyntaxError("Your user profile has no lab declared,"
-                              " so you must specify --lab explicitly.")
-        show("Using lab:", lab)
+            if error_if_none:
+                raise SyntaxError("Your user profile has no lab declared,"
+                                  " so you must specify --lab explicitly.")
+        if not lab:
+            show("No lab was inferred.")
+        else:
+            show("Using inferred lab:", lab)
+    else:
+        show("Using given lab:", lab)
     return lab
 
 
@@ -279,8 +294,11 @@ def ingestion_submission_item_url(server, uuid):
 
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
 
+TRY_OLD_PROTOCOL = False
 
-def _post_submission(server, keypair, ingestion_filename, creation_post_data, submission_post_data):
+
+def _post_submission(server, keypair, ingestion_filename, creation_post_data, submission_post_data,
+                     submission_protocol):
     """ This takes care of managing the compatibility step of using either the old or new ingestion protocol.
 
     OLD PROTOCOL: Post directly to /submit_for_ingestion
@@ -296,62 +314,70 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     """
 
     def post_files_data():
-        return {"datafile": io.open(ingestion_filename, 'rb')}
+        if submission_protocol == SubmissionProtocol.UPLOAD:
+            return {"datafile": io.open(ingestion_filename, 'rb')}
+        else:
+            return None
 
-    old_style_submission_url = url_path_join(server, "submit_for_ingestion")
-    old_style_post_data = dict(creation_post_data, **submission_post_data)
+    if TRY_OLD_PROTOCOL:
 
-    response = requests.post(old_style_submission_url,
-                             auth=keypair,
-                             data=old_style_post_data,
-                             headers={'Content-type': 'application/json'},
-                             files=post_files_data())
+        old_style_submission_url = url_path_join(server, "submit_for_ingestion")
+        old_style_post_data = dict(creation_post_data, **submission_post_data)
+
+        response = requests.post(old_style_submission_url,
+                                 auth=keypair,
+                                 data=old_style_post_data,
+                                 headers={'Content-type': 'application/json'},
+                                 files=post_files_data())
+
+        if DEBUG_PROTOCOL:  # pragma: no cover
+            PRINT("old_style_submission_url=", old_style_submission_url)
+            PRINT("old_style_post_data=", json.dumps(old_style_post_data, indent=2))
+            PRINT("keypair=", keypair)
+            PRINT("response=", response)
+
+        if response.status_code != 404:
+
+            if DEBUG_PROTOCOL:  # pragma: no cover
+                PRINT("Old style protocol worked.")
+
+            return response
+
+        else:  # on 404, try new protocol ...
+
+            if DEBUG_PROTOCOL:  # pragma: no cover
+                PRINT("Retrying with new protocol.")
+
+    creation_post_headers = {
+        'Content-type': 'application/json',
+        'Accept': 'application/json',
+    }
+    creation_post_url = url_path_join(server, "IngestionSubmission")
+    if DEBUG_PROTOCOL:  # pragma: no cover
+        PRINT("creation_post_data=", json.dumps(creation_post_data, indent=2))
+        PRINT("creation_post_url=", creation_post_url)
+    creation_response = requests.post(creation_post_url, auth=keypair,
+                                      headers=creation_post_headers,
+                                      json=creation_post_data
+                                      # data=json.dumps(creation_post_data)
+                                      )
+    if DEBUG_PROTOCOL:  # pragma: no cover
+        PRINT("headers:", creation_response.request.headers)
+    creation_response.raise_for_status()
+    [submission] = creation_response.json()['@graph']
+    submission_id = submission['@id']
 
     if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT("old_style_submission_url=", old_style_submission_url)
-        PRINT("old_style_post_data=", json.dumps(old_style_post_data, indent=2))
-        PRINT("keypair=", keypair)
-        PRINT("response=", response)
-
-    if response.status_code == 404:
-
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT("Retrying with new protocol.")
-
-        creation_post_headers = {
-            'Content-type': 'application/json',
-            'Accept': 'application/json',
-        }
-        creation_post_url = url_path_join(server, "IngestionSubmission")
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT("creation_post_data=", json.dumps(creation_post_data, indent=2))
-            PRINT("creation_post_url=", creation_post_url)
-        creation_response = requests.post(creation_post_url, auth=keypair,
-                                          headers=creation_post_headers,
-                                          json=creation_post_data
-                                          # data=json.dumps(creation_post_data)
-                                          )
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT("headers:", creation_response.request.headers)
-        creation_response.raise_for_status()
-        [submission] = creation_response.json()['@graph']
-        submission_id = submission['@id']
-
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT("server=", server, "submission_id=", submission_id)
-        new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT("submitting new_style_submission_url=", new_style_submission_url)
-        response = requests.post(new_style_submission_url, auth=keypair, data=submission_post_data,
-                                 files=post_files_data())
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT("response received for submission post:", response)
-            PRINT("response.content:", response.content)
-
-    else:
-
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT("Old style protocol worked.")
+        PRINT("server=", server, "submission_id=", submission_id)
+    new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
+    if DEBUG_PROTOCOL:  # pragma: no cover
+        PRINT("submitting new_style_submission_url=", new_style_submission_url)
+        PRINT(f"data=submission_post_data={json.dumps(submission_post_data, indent=2)}")
+    response = requests.post(new_style_submission_url, auth=keypair, data=submission_post_data,
+                             files=post_files_data())
+    if DEBUG_PROTOCOL:  # pragma: no cover
+        PRINT("response received for submission post:", response)
+        PRINT("response.content:", response.content)
 
     return response
 
@@ -359,6 +385,18 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
 DEFAULT_INGESTION_TYPE = 'metadata_bundle'
 
 DEFAULT_APP = APP_CGAP
+
+
+class SubmissionProtocol:
+    S3 = 's3'
+    UPLOAD = 'upload'
+
+
+SUBMISSION_PROTOCOLS = [SubmissionProtocol.S3, SubmissionProtocol.UPLOAD]
+
+DEFAULT_SUBMISSION_PROTOCOL = SubmissionProtocol.S3
+
+GENERIC_SCHEMA_TYPE = 'FileOther'
 
 
 def _resolve_app_args(institution, project, lab, award, app):
@@ -389,7 +427,8 @@ def _resolve_app_args(institution, project, lab, award, app):
 
 def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, validate_only,
                          institution=None, project=None, lab=None, award=None, app: OrchestratedApp = None,
-                         upload_folder=None, no_query=False, subfolders=False):
+                         upload_folder=None, no_query=False, subfolders=False,
+                         submission_protocol=DEFAULT_SUBMISSION_PROTOCOL):
     """
     Does the core action of submitting a metadata bundle.
 
@@ -406,6 +445,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     :param upload_folder: folder in which to find files to upload (default: same as bundle_filename)
     :param no_query: bool to suppress requests for user input
     :param subfolders: bool to search subdirectories within upload_folder for files
+    :param submission_protocol: which submission protocol to use (default: 's3')
     """
 
     if app is None:  # For legacy reasons, SubmitCGAP was the first so didn't expect this arg was needed
@@ -416,7 +456,8 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
             return submit_any_ingestion(ingestion_filename=ingestion_filename, ingestion_type=ingestion_type,
                                         server=server, env=env, validate_only=validate_only,
                                         institution=institution, project=project, lab=lab, award=award, app=app,
-                                        upload_folder=upload_folder, no_query=no_query, subfolders=subfolders)
+                                        upload_folder=upload_folder, no_query=no_query, subfolders=subfolders,
+                                        submission_protocol=submission_protocol)
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app)
 
@@ -444,18 +485,47 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     if not os.path.exists(ingestion_filename):
         raise ValueError("The file '%s' does not exist." % ingestion_filename)
 
-    response = _post_submission(server=server, keypair=keypair,
-                                ingestion_filename=ingestion_filename,
-                                creation_post_data={
-                                    'ingestion_type': ingestion_type,
-                                    "processing_status": {
-                                        "state": "submitted"
+    if submission_protocol == SubmissionProtocol.S3:
+
+        result = upload_file_to_new_uuid(filename=ingestion_filename, schema_name=GENERIC_SCHEMA_TYPE, auth=keydict,
+                                         **app_args)
+        submission_post_data = compute_s3_submission_post_data(ingestion_filename=ingestion_filename,
+                                                               ingestion_post_result=result,
+                                                               # The rest of this is other_args to pass through...
+                                                               validate_only=validate_only, **app_args)
+
+        response = _post_submission(server=server, keypair=keypair,
+                                    ingestion_filename=ingestion_filename,
+                                    creation_post_data={
+                                        'ingestion_type': ingestion_type,
+                                        "processing_status": {
+                                            "state": "submitted"
+                                        },
+                                        **app_args,  # institution & project or lab & award
                                     },
-                                    **app_args,  # institution & project or lab & award
-                                },
-                                submission_post_data={
-                                    'validate_only': validate_only,
-                                })
+                                    submission_post_data=submission_post_data,
+                                    submission_protocol=submission_protocol)
+
+    elif submission_protocol == SubmissionProtocol.UPLOAD:
+
+        response = _post_submission(server=server, keypair=keypair,
+                                    ingestion_filename=ingestion_filename,
+                                    creation_post_data={
+                                        'ingestion_type': ingestion_type,
+                                        "processing_status": {
+                                            "state": "submitted"
+                                        },
+                                        **app_args,  # institution & project or lab & award
+                                    },
+                                    submission_post_data={
+                                        'validate_only': validate_only,
+                                    },
+                                    submission_protocol=submission_protocol)
+
+    else:
+
+        raise InvalidParameterError(parameter='submission_protocol', value=submission_protocol,
+                                    options=SUBMISSION_PROTOCOLS)
 
     try:
         # This can fail if the body doesn't contain JSON
@@ -545,6 +615,33 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
                        subfolders=subfolders)
 
     exit(0)
+
+
+def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, **other_args):
+    uuid = ingestion_post_result['uuid']
+    at_id = ingestion_post_result['@id']
+    accession = ingestion_post_result.get('accession')  # maybe not always there?
+    upload_credentials = ingestion_post_result['upload_credentials']
+    upload_urlstring = upload_credentials['upload_url']
+    upload_url = urlparse(upload_urlstring)
+    upload_key = upload_credentials['key']
+    upload_bucket = upload_url.netloc
+    # Possible sanity check, probably not needed...
+    # check_true(upload_key == remove_prefix('/', upload_url.path, required=True),
+    #            message=f"The upload_key, {upload_key!r}, did not match path of {upload_url}.")
+    submission_post_data = {
+        'data_file_uuid': uuid,
+        'data_file_accession': accession,
+        'data_file_@id': at_id,
+        'data_file_url': upload_urlstring,
+        'data_file_bucket': upload_bucket,
+        'data_file_key': upload_key,
+        'data_file_source_filename': os.path.basename(ingestion_filename),
+        **other_args  # validate_only, and any of institution, project, lab, or award that caller gave us
+    }
+    if DEBUG_PROTOCOL:  # noQA
+        PRINT(f"submission_post_data={json.dumps(submission_post_data, indent=2)}")
+    return submission_post_data
 
 
 def show_upload_info(uuid, server=None, env=None, keydict=None):
@@ -694,6 +791,40 @@ def running_on_windows_native():
     return os.name == 'nt'
 
 
+def compute_file_post_data(filename, context_attributes):
+    file_basename = os.path.basename(filename)
+    _, ext = os.path.splitext(file_basename)  # could probably get a nicer error message if file in bad format
+    file_format = remove_prefix('.', ext, required=True)
+    return {
+        'filename': file_basename,
+        'file_format': file_format,
+        **{attr: val for attr, val in context_attributes.items() if val}
+    }
+
+
+def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
+    """
+    Upload file to a target environment.
+
+    :param filename: the name of a file to upload.
+    :param schema_name: the schema_name to use when creating a new file item whose content is to be uploaded.
+    :param auth: auth info in the form of a dictionary containing 'key', 'secret', and 'server'.
+    :returns: item metadata dict or None
+    """
+
+    post_item = compute_file_post_data(filename=filename, context_attributes=context_attributes)
+
+    response = ff_utils.post_metadata(post_item=post_item, schema_name=schema_name, key=auth)
+
+    metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
+                                                                           method='POST', schema_name=schema_name,
+                                                                           filename=filename, payload_data=post_item)
+
+    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
+
+    return metadata
+
+
 def upload_file_to_uuid(filename, uuid, auth):
     """
     Upload file to a target environment.
@@ -711,21 +842,31 @@ def upload_file_to_uuid(filename, uuid, auth):
 
     response = ff_utils.patch_metadata(patch_data, uuid, key=auth)
 
+    metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
+                                                                           method='PATCH', uuid=uuid,
+                                                                           filename=filename, payload_data=patch_data)
+
+    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
+
+    return metadata
+
+
+def extract_metadata_and_upload_credentials(response, filename, method, payload_data, uuid=None, schema_name=None):
     try:
         [metadata] = response['@graph']
         upload_credentials = metadata['upload_credentials']
     except Exception as e:
         if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f"Problem trying to get upload credentials.")
-            PRINT(f" patch_data={patch_data}")
-            PRINT(f" uuid={uuid}")
+            PRINT(f"Problem trying to {method} to get upload credentials.")
+            PRINT(f" payload_data={payload_data}")
+            if uuid:
+                PRINT(f" uuid={uuid}")
+            if schema_name:
+                PRINT(f" schema_name={schema_name}")
             PRINT(f" response={response}")
             PRINT(f"Got error {type(e)}: {e}")
-        raise RuntimeError("Unable to obtain upload credentials for file %s." % filename)
-
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
-
-    return metadata
+        raise RuntimeError(f"Unable to obtain upload credentials for file {filename}.")
+    return metadata, upload_credentials
 
 
 # This can be set to True in unusual situations, but normally will be False to avoid unnecessary querying.

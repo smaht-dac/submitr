@@ -1,5 +1,8 @@
 import argparse
-from ..submission import submit_any_ingestion, DEFAULT_INGESTION_TYPE
+from dcicutils.common import APP_CGAP
+from ..submission import (
+    submit_any_ingestion, DEFAULT_INGESTION_TYPE, DEFAULT_SUBMISSION_PROTOCOL, SUBMISSION_PROTOCOLS
+)
 from ..utils import script_catch_errors
 
 
@@ -20,11 +23,18 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--validate-only', '-v', action="store_true",
                         help="whether to stop after validating without submitting", default=False)
     parser.add_argument('--upload_folder', '-u', help="location of the upload files", default=None)
-    parser.add_argument('--ingestion_type', '-t', help="the ingestion type", default=DEFAULT_INGESTION_TYPE)
-    parser.add_argument('--no_query', '-nq', action="store_true",
+    parser.add_argument('--ingestion_type', '--ingestion-type', '-t', help="the ingestion type",
+                        default=DEFAULT_INGESTION_TYPE)
+    parser.add_argument('--no_query', '--no-query', '-nq', action="store_true",
                         help="suppress requests for user input", default=False)
     parser.add_argument('--subfolders', '-sf', action="store_true",
                         help="search subfolders of folder for upload files", default=False)
+    parser.add_argument('--app', default=APP_CGAP,
+                        help=f"An application (default {APP_CGAP!r}. Only for debugging."
+                             f" Normally this should not be given.")
+    parser.add_argument('--submission_protocol', '--submission-protocol', '-sp',
+                        choices=SUBMISSION_PROTOCOLS, default=DEFAULT_SUBMISSION_PROTOCOL,
+                        help=f"the submission protocol (default {DEFAULT_SUBMISSION_PROTOCOL!r})")
     args = parser.parse_args(args=simulated_args_for_testing)
 
     with script_catch_errors():
@@ -33,7 +43,8 @@ def main(simulated_args_for_testing=None):
                              institution=args.institution, project=args.project,
                              server=args.server, env=args.env,
                              validate_only=args.validate_only, upload_folder=args.upload_folder,
-                             no_query=args.no_query, subfolders=args.subfolders,
+                             no_query=args.no_query, subfolders=args.subfolders, app=args.app,
+                             submission_protocol=args.submission_protocol,
                              )
 
 

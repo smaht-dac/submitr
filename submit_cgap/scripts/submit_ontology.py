@@ -1,7 +1,7 @@
 import argparse
 
-from dcicutils.common import APP_FOURFRONT
-from ..submission import submit_any_ingestion
+from dcicutils.common import APP_FOURFRONT, ORCHESTRATED_APPS
+from ..submission import submit_any_ingestion, DEFAULT_SUBMISSION_PROTOCOL, SUBMISSION_PROTOCOLS, DEFAULT_APP
 from ..utils import script_catch_errors
 
 
@@ -21,6 +21,14 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--env', '-e', help="a CGAP beanstalk environment name for the server to use", default=None)
     parser.add_argument('--validate-only', '-v', action="store_true",
                         help="whether to stop after validating without submitting", default=False)
+    parser.add_argument('--app', choices=ORCHESTRATED_APPS, default=APP_FOURFRONT,
+                        help=f"An application (default {APP_FOURFRONT!r}. Only for debugging."
+                             f" Normally this should not be given.")
+    parser.add_argument('--submission_protocol', '--submission-protocol', '-sp',
+                        choices=SUBMISSION_PROTOCOLS, default=DEFAULT_SUBMISSION_PROTOCOL,
+                        help=f"the submission protocol (default {DEFAULT_SUBMISSION_PROTOCOL!r})")
+
+
     args = parser.parse_args(args=simulated_args_for_testing)
 
     with script_catch_errors():
@@ -33,7 +41,8 @@ def main(simulated_args_for_testing=None):
                 server=args.server,
                 env=args.env,
                 validate_only=args.validate_only,
-                app=APP_FOURFRONT,
+                app=args.app,
+                submission_protocol=args.submission_protocol,
         )
 
 
