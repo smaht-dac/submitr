@@ -2526,28 +2526,30 @@ def test_get_defaulted_award():
     except Exception as e:
         assert str(e).startswith("Your user profile declares no lab with awards.")
 
-    try:
-        get_defaulted_award(award=None,
-                            user_record=make_user_record(award_roles=[]))
-    except Exception as e:
-        assert str(e).startswith("Your user profile declares no lab with awards.")
-    else:
-        raise AssertionError("Expected error was not raised.")  # pragma: no cover
+    # We decided to make this function not report errors on lack of award... -kmp 21-Mar-2023
 
-    try:
-        get_defaulted_award(award=None,
-                            user_record=make_user_record(lab={
-                                '@id': SOME_LAB,
-                                'awards': [
-                                    {"@id": "/awards/foo"},
-                                    {"@id": "/awards/bar"},
-                                    {"@id": "/awards/baz"},
-                                ]}))
-    except Exception as e:
-        assert str(e) == ("Your lab (/lab/good-lab/) declares multiple awards."
-                          " You must explicitly specify one of /awards/foo, /awards/bar or /awards/baz with --award.")
-    else:
-        raise AssertionError("Expected error was not raised.")  # pragma: no cover - we hope never to see this executed
+    # try:
+    #     get_defaulted_award(award=None,
+    #                         user_record=make_user_record(award_roles=[]))
+    # except Exception as e:
+    #     assert str(e).startswith("Your user profile declares no lab with awards.")
+    # else:
+    #     raise AssertionError("Expected error was not raised.")  # pragma: no cover
+    #
+    # try:
+    #     get_defaulted_award(award=None,
+    #                         user_record=make_user_record(lab={
+    #                             '@id': SOME_LAB,
+    #                             'awards': [
+    #                                 {"@id": "/awards/foo"},
+    #                                 {"@id": "/awards/bar"},
+    #                                 {"@id": "/awards/baz"},
+    #                             ]}))
+    # except Exception as e:
+    #     assert str(e) == ("Your lab (/lab/good-lab/) declares multiple awards."
+    #                       " You must explicitly specify one of /awards/foo, /awards/bar or /awards/baz with --award.")
+    # else:
+    #     raise AssertionError("Expected error was not raised.")  # pragma: no cover - we hope never to see this executed
 
     successful_result = get_defaulted_award(award=None,
                                             user_record=make_user_record(

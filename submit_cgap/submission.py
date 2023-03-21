@@ -25,6 +25,16 @@ from .exceptions import CGAPPermissionError
 from .utils import show, keyword_as_title
 
 
+class SubmissionProtocol:
+    S3 = 's3'
+    UPLOAD = 'upload'
+
+
+SUBMISSION_PROTOCOLS = [SubmissionProtocol.S3, SubmissionProtocol.UPLOAD]
+
+DEFAULT_SUBMISSION_PROTOCOL = SubmissionProtocol.UPLOAD
+
+
 # TODO: Will asks whether some of the errors in this file that are called "SyntaxError" really should be something else.
 #  The thought was that they're syntax errors because they tend to reflect as a need for a change in the
 #  command line argument syntax, but maybe I should raise other errors and just have them converted to syntax
@@ -295,11 +305,11 @@ def ingestion_submission_item_url(server, uuid):
 
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
 
-TRY_OLD_PROTOCOL = False
+TRY_OLD_PROTOCOL = True
 
 
 def _post_submission(server, keypair, ingestion_filename, creation_post_data, submission_post_data,
-                     submission_protocol):
+                     submission_protocol=DEFAULT_SUBMISSION_PROTOCOL):
     """ This takes care of managing the compatibility step of using either the old or new ingestion protocol.
 
     OLD PROTOCOL: Post directly to /submit_for_ingestion
@@ -386,16 +396,6 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
 DEFAULT_INGESTION_TYPE = 'metadata_bundle'
 
 DEFAULT_APP = APP_CGAP
-
-
-class SubmissionProtocol:
-    S3 = 's3'
-    UPLOAD = 'upload'
-
-
-SUBMISSION_PROTOCOLS = [SubmissionProtocol.S3, SubmissionProtocol.UPLOAD]
-
-DEFAULT_SUBMISSION_PROTOCOL = SubmissionProtocol.S3
 
 GENERIC_SCHEMA_TYPE = 'FileOther'
 

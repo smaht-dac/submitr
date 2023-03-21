@@ -1,7 +1,7 @@
 import argparse
 
 from dcicutils.common import APP_FOURFRONT, ORCHESTRATED_APPS
-from ..submission import submit_any_ingestion, DEFAULT_SUBMISSION_PROTOCOL, SUBMISSION_PROTOCOLS, DEFAULT_APP
+from ..submission import submit_any_ingestion, SubmissionProtocol, SUBMISSION_PROTOCOLS, DEFAULT_APP
 from ..utils import script_catch_errors
 
 
@@ -25,8 +25,8 @@ def main(simulated_args_for_testing=None):
                         help=f"An application (default {APP_FOURFRONT!r}. Only for debugging."
                              f" Normally this should not be given.")
     parser.add_argument('--submission_protocol', '--submission-protocol', '-sp',
-                        choices=SUBMISSION_PROTOCOLS, default=DEFAULT_SUBMISSION_PROTOCOL,
-                        help=f"the submission protocol (default {DEFAULT_SUBMISSION_PROTOCOL!r})")
+                        choices=SUBMISSION_PROTOCOLS, default=SubmissionProtocol.S3,
+                        help=f"the submission protocol (default {SubmissionProtocol.S3!r})")
 
 
     args = parser.parse_args(args=simulated_args_for_testing)
