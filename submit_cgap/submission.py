@@ -330,7 +330,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
         else:
             return None
 
-    if TRY_OLD_PROTOCOL:
+    if submission_protocol == SubmissionProtocol.UPLOAD and TRY_OLD_PROTOCOL:
 
         old_style_submission_url = url_path_join(server, "submit_for_ingestion")
         old_style_post_data = dict(creation_post_data, **submission_post_data)
