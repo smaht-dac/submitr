@@ -7,7 +7,7 @@ Change Log
 ----------
 
 
-3.1.0
+3.2.0
 =====
 
 * Add command submit-ontology
@@ -16,6 +16,15 @@ Change Log
      (``~/.fourfront-keys.json`` vs ``~/.cgap-keys.json``)
 * Appropriate unit test coverage.
 * Use poetry 1.3.2 for building. Update other dependencies.
+
+
+
+3.1.0
+=====
+
+`PR 34: Increase submission timeout <https://github.com/dbmi-bgm/SubmitCGAP/pull/34>`_
+
+* Increase submission timeout from 2 to 10 minutes
 
 
 3.0.0
