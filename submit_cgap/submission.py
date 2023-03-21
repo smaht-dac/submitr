@@ -328,7 +328,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
         if submission_protocol == SubmissionProtocol.UPLOAD:
             return {"datafile": io.open(ingestion_filename, 'rb')}
         else:
-            return None
+            return {"datafile": None}
 
     if submission_protocol == SubmissionProtocol.UPLOAD and TRY_OLD_PROTOCOL:
 
@@ -630,13 +630,13 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
     # check_true(upload_key == remove_prefix('/', upload_url.path, required=True),
     #            message=f"The upload_key, {upload_key!r}, did not match path of {upload_url}.")
     submission_post_data = {
-        'data_file_uuid': uuid,
-        'data_file_accession': accession,
-        'data_file_@id': at_id,
-        'data_file_url': upload_urlstring,
-        'data_file_bucket': upload_bucket,
-        'data_file_key': upload_key,
-        'data_file_source_filename': os.path.basename(ingestion_filename),
+        'datafile_uuid': uuid,
+        'datafile_accession': accession,
+        'datafile_@id': at_id,
+        'datafile_url': upload_urlstring,
+        'datafile_bucket': upload_bucket,
+        'datafile_key': upload_key,
+        'datafile_source_filename': os.path.basename(ingestion_filename),
         **other_args  # validate_only, and any of institution, project, lab, or award that caller gave us
     }
     if DEBUG_PROTOCOL:  # noQA
