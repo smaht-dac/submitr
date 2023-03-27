@@ -1,7 +1,10 @@
 import argparse
-
+import json
+import io
+import os
 from dcicutils.common import APP_FOURFRONT, ORCHESTRATED_APPS
-from ..submission import submit_any_ingestion, SubmissionProtocol, SUBMISSION_PROTOCOLS
+from dcicutils.misc_utils import PRINT
+from ..submission import submit_any_ingestion, SubmissionProtocol, SUBMISSION_PROTOCOLS, DEFAULT_APP
 from ..utils import script_catch_errors
 
 
@@ -27,10 +30,16 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--submission_protocol', '--submission-protocol', '-sp',
                         choices=SUBMISSION_PROTOCOLS, default=SubmissionProtocol.S3,
                         help=f"the submission protocol (default {SubmissionProtocol.S3!r})")
+    parser.add_argument('--verbose', default=False, action='store_true', help='Include verbose output.')
+    parser.add_argument('--debug', default=False, action='store_true', help='Include debug output.')
+
 
     args = parser.parse_args(args=simulated_args_for_testing)
 
     with script_catch_errors():
+
+        if not verify_ontology_file(args.ontology_filename):
+            return
 
         return submit_any_ingestion(
                 ingestion_filename=args.ontology_filename,
@@ -42,7 +51,22 @@ def main(simulated_args_for_testing=None):
                 validate_only=args.validate_only,
                 app=args.app,
                 submission_protocol=args.submission_protocol,
-        )
+                verbose=args.verbose, debug=args.debug)
+
+
+def verify_ontology_file(ontology_filename: str) -> bool:
+    if not os.path.exists(ontology_filename):
+        PRINT(f"ERROR: Cannot find specified ontology (JSON) file: {ontology_filename}")
+        return False
+    try:
+        with io.open(ontology_filename, "r") as f:
+            ontology_json = json.load(f)
+            ontology_term_count = len(ontology_json["terms"])
+    except Exception:
+        PRINT(f"ERROR: Cannot load specified ontology (JSON) file: {ontology_filename}")
+        return False
+    PRINT(f"Verified specified ontology (JSON) file: {ontology_filename} (ontology terms: {ontology_term_count})")
+    return True
 
 
 if __name__ == '__main__':
