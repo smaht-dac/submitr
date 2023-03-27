@@ -8,7 +8,7 @@ import re
 from unittest import mock
 
 from dcicutils.common import APP_CGAP, APP_FOURFRONT
-from dcicutils.misc_utils import ignored, local_attrs, override_environ
+from dcicutils.misc_utils import ignored, local_attrs, override_environ, NamedObject
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
 
@@ -27,7 +27,8 @@ from ..submission import (
     get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page, running_on_windows_native,
     search_for_file, UploadMessageWrapper, upload_extra_files,
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
-    get_defaulted_lab, get_defaulted_award,
+    _post_files_data,  # noQA - again, testing a protected member
+    get_defaulted_lab, get_defaulted_award, SubmissionProtocol,
 )
 from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
@@ -2466,6 +2467,7 @@ def test_submit_any_ingestion():
         pass
 
     def mocked_resolve_app_args(institution, project, lab, award, app):
+        ignored(institution, project, award, lab)
         assert app == expected_app
         raise StopEarly()
 
@@ -2549,7 +2551,7 @@ def test_get_defaulted_award():
     #     assert str(e) == ("Your lab (/lab/good-lab/) declares multiple awards."
     #                       " You must explicitly specify one of /awards/foo, /awards/bar or /awards/baz with --award.")
     # else:
-    #     raise AssertionError("Expected error was not raised.")  # pragma: no cover - we hope never to see this executed
+    #     raise AssertionError("Expected error was not raised.")  # pragma: no cover - hopefully never executed
 
     successful_result = get_defaulted_award(award=None,
                                             user_record=make_user_record(
@@ -2562,3 +2564,21 @@ def test_get_defaulted_award():
     print("successful_result=", successful_result)
 
     assert successful_result == SOME_AWARD
+
+
+def test_post_files_data():
+
+    with mock.patch("io.open") as mock_open:
+
+        test_filename = 'file_to_be_posted.something'
+        mock_open.return_value = mocked_open_file = NamedObject('mocked open file')
+
+        d = _post_files_data(SubmissionProtocol.UPLOAD, test_filename)
+        assert d == {'datafile': mocked_open_file}
+        mock_open.called_with(test_filename, 'rb')
+
+        mock_open.reset_mock()
+
+        d = _post_files_data(SubmissionProtocol.S3, test_filename)
+        assert d == {'datafile': None}
+        mock_open.assert_not_called()

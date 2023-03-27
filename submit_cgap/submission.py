@@ -19,6 +19,8 @@ from dcicutils.ff_utils import get_health_page
 from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join, ignorable, remove_prefix
 from dcicutils.s3_utils import HealthPageKey
+from typing import BinaryIO, Dict, Optional
+from typing_extensions import Literal
 from urllib.parse import urlparse
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER
 from .exceptions import CGAPPermissionError
@@ -179,6 +181,7 @@ def get_defaulted_award(award, user_record, error_if_none=False):
 
     :param award: the @id of an award, or None
     :param user_record: the user record for the authorized user
+    :param error_if_none: boolean true if failure to infer an award should an raise error, and false otherwise.
     :return: the @id of an award to use
     """
 
@@ -217,6 +220,7 @@ def get_defaulted_lab(lab, user_record, error_if_none=False):
 
     :param lab: the @id of a lab, or None
     :param user_record: the user record for the authorized user
+    :param error_if_none: boolean true if failure to infer a lab should an raise error, and false otherwise.
     :return: the @id of a lab to use
     """
 
@@ -308,6 +312,24 @@ DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
 TRY_OLD_PROTOCOL = True
 
 
+def _post_files_data(submission_protocol, ingestion_filename) -> Dict[Literal['datafile'], Optional[BinaryIO]]:
+    """
+    This composes a dictionary of the form {'datafile': <maybe-stream>}.
+
+    If the submission protocol is SubmissionProtocol.UPLOAD (i.e., 'upload'), the given ingestion filename is opened
+    and used as the datafile value in the dictionary. If it is something else, no file is opened and None is used.
+
+    :param submission_protocol:
+    :param ingestion_filename:
+    :return: a dictionary with key 'datafile' whose value is either an open binary input stream or None
+    """
+
+    if submission_protocol == SubmissionProtocol.UPLOAD:
+        return {"datafile": io.open(ingestion_filename, 'rb')}
+    else:
+        return {"datafile": None}
+
+
 def _post_submission(server, keypair, ingestion_filename, creation_post_data, submission_post_data,
                      submission_protocol=DEFAULT_SUBMISSION_PROTOCOL):
     """ This takes care of managing the compatibility step of using either the old or new ingestion protocol.
@@ -324,12 +346,6 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     :return: the results of the ingestion call (whether by the one-step or two-step process)
     """
 
-    def post_files_data():
-        if submission_protocol == SubmissionProtocol.UPLOAD:
-            return {"datafile": io.open(ingestion_filename, 'rb')}
-        else:
-            return {"datafile": None}
-
     if submission_protocol == SubmissionProtocol.UPLOAD and TRY_OLD_PROTOCOL:
 
         old_style_submission_url = url_path_join(server, "submit_for_ingestion")
@@ -339,7 +355,8 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
                                  auth=keypair,
                                  data=old_style_post_data,
                                  headers={'Content-type': 'application/json'},
-                                 files=post_files_data())
+                                 files=_post_files_data(submission_protocol=submission_protocol,
+                                                        ingestion_filename=ingestion_filename))
 
         if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("old_style_submission_url=", old_style_submission_url)
@@ -385,7 +402,8 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
         PRINT("submitting new_style_submission_url=", new_style_submission_url)
         PRINT(f"data=submission_post_data={json.dumps(submission_post_data, indent=2)}")
     response = requests.post(new_style_submission_url, auth=keypair, data=submission_post_data,
-                             files=post_files_data())
+                             files=_post_files_data(submission_protocol=submission_protocol,
+                                                    ingestion_filename=ingestion_filename))
     if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT("response received for submission post:", response)
         PRINT("response.content:", response.content)
