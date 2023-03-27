@@ -2501,11 +2501,6 @@ def test_get_defaulted_lab():
     assert get_defaulted_lab(lab=SOME_LAB, user_record='does-not-matter') == SOME_LAB
     assert get_defaulted_lab(lab='anything', user_record='does-not-matter') == 'anything'
 
-    try:
-        get_defaulted_lab(lab=None, user_record=make_user_record())
-    except Exception as e:
-        assert str(e).startswith("Your user profile has no lab")
-
     user_record = make_user_record(
         # this is the old-fashioned place for it, but what fourfront uses
         lab={'@id': SOME_LAB},
@@ -2517,41 +2512,19 @@ def test_get_defaulted_lab():
 
     assert successful_result == SOME_LAB
 
+    assert get_defaulted_lab(lab=None, user_record=make_user_record()) is None
+    assert get_defaulted_lab(lab=None, user_record=make_user_record(), error_if_none=False) is None
+
+    try:
+        get_defaulted_lab(lab=None, user_record=make_user_record(), error_if_none=True)
+    except Exception as e:
+        assert str(e).startswith("Your user profile has no lab")
+
 
 def test_get_defaulted_award():
 
     assert get_defaulted_award(award=SOME_AWARD, user_record='does-not-matter') == SOME_AWARD
     assert get_defaulted_award(award='anything', user_record='does-not-matter') == 'anything'
-
-    try:
-        get_defaulted_award(award=None, user_record=make_user_record())
-    except Exception as e:
-        assert str(e).startswith("Your user profile declares no lab with awards.")
-
-    # We decided to make this function not report errors on lack of award... -kmp 21-Mar-2023
-
-    # try:
-    #     get_defaulted_award(award=None,
-    #                         user_record=make_user_record(award_roles=[]))
-    # except Exception as e:
-    #     assert str(e).startswith("Your user profile declares no lab with awards.")
-    # else:
-    #     raise AssertionError("Expected error was not raised.")  # pragma: no cover
-    #
-    # try:
-    #     get_defaulted_award(award=None,
-    #                         user_record=make_user_record(lab={
-    #                             '@id': SOME_LAB,
-    #                             'awards': [
-    #                                 {"@id": "/awards/foo"},
-    #                                 {"@id": "/awards/bar"},
-    #                                 {"@id": "/awards/baz"},
-    #                             ]}))
-    # except Exception as e:
-    #     assert str(e) == ("Your lab (/lab/good-lab/) declares multiple awards."
-    #                       " You must explicitly specify one of /awards/foo, /awards/bar or /awards/baz with --award.")
-    # else:
-    #     raise AssertionError("Expected error was not raised.")  # pragma: no cover - hopefully never executed
 
     successful_result = get_defaulted_award(award=None,
                                             user_record=make_user_record(
@@ -2564,6 +2537,43 @@ def test_get_defaulted_award():
     print("successful_result=", successful_result)
 
     assert successful_result == SOME_AWARD
+
+    # We decided to make this function not report errors on lack of award,
+    # but we did add a way to request the error reporting, so we test that with an explicit
+    # error_if_none=True argument. -kmp 27-Mar-2023
+
+    try:
+        get_defaulted_award(award=None,
+                            user_record=make_user_record(award_roles=[]),
+                            error_if_none=True)
+    except Exception as e:
+        assert str(e).startswith("Your user profile declares no lab with awards.")
+    else:
+        raise AssertionError("Expected error was not raised.")  # pragma: no cover
+
+    try:
+        get_defaulted_award(award=None,
+                            user_record=make_user_record(lab={
+                                '@id': SOME_LAB,
+                                'awards': [
+                                    {"@id": "/awards/foo"},
+                                    {"@id": "/awards/bar"},
+                                    {"@id": "/awards/baz"},
+                                ]}),
+                            error_if_none=True)
+    except Exception as e:
+        assert str(e) == ("Your lab (/lab/good-lab/) declares multiple awards."
+                          " You must explicitly specify one of /awards/foo, /awards/bar or /awards/baz with --award.")
+    else:
+        raise AssertionError("Expected error was not raised.")  # pragma: no cover - hopefully never executed
+
+    assert get_defaulted_award(award=None, user_record=make_user_record()) is None
+    assert get_defaulted_award(award=None, user_record=make_user_record(), error_if_none=False) is None
+
+    try:
+        get_defaulted_award(award=None, user_record=make_user_record(), error_if_none=True)
+    except Exception as e:
+        assert str(e).startswith("Your user profile declares no lab with awards.")
 
 
 def test_post_files_data():
