@@ -28,7 +28,8 @@ from ..submission import (
     search_for_file, UploadMessageWrapper, upload_extra_files,
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
     _post_files_data,  # noQA - again, testing a protected member
-    get_defaulted_lab, get_defaulted_award, SubmissionProtocol,
+    get_defaulted_lab, get_defaulted_award, SubmissionProtocol, compute_file_post_data,
+    upload_file_to_new_uuid,
 )
 from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
@@ -2588,3 +2589,104 @@ def test_post_files_data():
         d = _post_files_data(SubmissionProtocol.S3, test_filename)
         assert d == {'datafile': None}
         mock_open.assert_not_called()
+
+
+def test_compute_file_post_data():
+
+    assert compute_file_post_data('foo.bar', dict(lab=None, award=None, institution=None, project=None)) == {
+        'filename': 'foo.bar',
+        'file_format': 'bar',
+    }
+
+    assert compute_file_post_data('foo.bar', dict(lab='/labs/L1/', award='/awards/A1/',
+                                                  institution=None, project=None)) == {
+        'filename': 'foo.bar',
+        'file_format': 'bar',
+        'lab': '/labs/L1/',
+        'award': '/awards/A1/',
+    }
+
+    assert compute_file_post_data('foo.bar', dict(lab=None, award=None,
+                                                  institution='/institutions/I1/', project='/projects/P1/')) == {
+        'filename': 'foo.bar',
+        'file_format': 'bar',
+        'institution': '/institutions/I1/',
+        'project': '/projects/P1/'
+    }
+
+
+def test_upload_file_to_new_uuid():
+
+    expected_schema_name = 'FileOther'
+
+    mocked_key = 'an_authorized_key'
+    mocked_secret = 'an_authorized_secret'
+    mocked_good_auth = {'key': mocked_key, 'secret': mocked_secret}
+    mocked_bad_auth = {'key': f'not_{mocked_key}', 'secret': f'not_{mocked_secret}'}
+    mocked_good_uuid = 'good-uuid-0000-0001'
+    mocked_good_at_id = '/things/good-thing/'
+    award_and_lab = {'award': '/awards/A1/', 'lab': '/labs/L1/'}
+    institution_and_project = {'institution': '/institution/I1/', 'project': '/projects/P1/'}
+    mocked_good_filename_ext = 'file'
+    mocked_good_filename = f'good.{mocked_good_filename_ext}'
+    mocked_good_upload_credentials = {'upload-credentials': 'go here'}
+    mocked_good_file_metadata = {
+        'uuid': mocked_good_uuid,
+        '@id': mocked_good_at_id,
+        'upload_credentials': mocked_good_upload_credentials,
+    }
+
+    def mocked_execute_prearranged_upload(filename, upload_credentials, auth):
+        assert filename == mocked_good_filename
+        assert upload_credentials == mocked_good_upload_credentials
+        assert auth == mocked_good_auth
+
+    def test_it(schema_name, auth, expected_post_item, **context_attributes):
+
+        def mocked_post_metadata(post_item, schema_name, key):
+            assert post_item == expected_post_item
+            assert schema_name == expected_schema_name
+            assert key == mocked_good_auth, "Simulated authorization failure"
+            return {
+                '@graph': [
+                    mocked_good_file_metadata
+                ]
+            }
+
+        # Note: compute_file_post_data is allowed to run without mocking
+        with mock.patch("dcicutils.ff_utils.post_metadata") as mock_post_metadata:
+            mock_post_metadata.side_effect = mocked_post_metadata
+            with mock.patch.object(submission_module, "execute_prearranged_upload") as mock_execute_prearranged_upload:
+                mock_execute_prearranged_upload.side_effect = mocked_execute_prearranged_upload
+                res = upload_file_to_new_uuid(mocked_good_filename, schema_name=schema_name, auth=auth,
+                                              **context_attributes)
+                assert res == mocked_good_file_metadata
+
+    test_it(schema_name='FileOther', auth=mocked_good_auth,
+            expected_post_item={
+                'filename': mocked_good_filename,
+                'file_format': mocked_good_filename_ext
+            })
+
+    test_it(schema_name='FileOther', auth=mocked_good_auth,
+            expected_post_item={
+                'filename': mocked_good_filename,
+                'file_format': mocked_good_filename_ext,
+                **award_and_lab
+            },
+            **award_and_lab)
+
+    test_it(schema_name='FileOther', auth=mocked_good_auth,
+            expected_post_item={
+                'filename': mocked_good_filename,
+                'file_format': mocked_good_filename_ext,
+                **institution_and_project
+            },
+            **institution_and_project)
+
+    with pytest.raises(Exception):
+        test_it(schema_name='FileOther', auth=mocked_bad_auth,
+                expected_post_item={
+                    'filename': mocked_good_filename,
+                    'file_format': mocked_good_filename_ext
+                })
