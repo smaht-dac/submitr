@@ -57,7 +57,7 @@ SERVER_REGEXP = re.compile(
 )
 
 
-def resolve_server(server, env):
+def resolve_server(server, env, verbose: bool = False):
     """
     Given a server spec or a beanstalk environment (or neither, but not both), returns a server spec.
 
@@ -72,7 +72,7 @@ def resolve_server(server, env):
 
     if not server and not env:
         if DEFAULT_ENV:
-            show(f"Defaulting to environment {env!r} because {DEFAULT_ENV_VAR} is set.")
+            show(f"Defaulting to environment {env!r} because {DEFAULT_ENV_VAR} is set.", with_time=verbose)
             env = DEFAULT_ENV
         else:
             # Production default needs no explanation.
@@ -99,7 +99,7 @@ def resolve_server(server, env):
     return server
 
 
-def get_user_record(server, auth):
+def get_user_record(server, auth, verbose: bool = False, debug: bool = False):
     """
     Given a server and some auth info, gets the user record for the authorized user.
 
@@ -112,26 +112,26 @@ def get_user_record(server, auth):
 
     user_url = server + "/me?format=json"
 #   user_record_response = requests.get(user_url, auth=auth)
-    user_record_response = portal_request_get(user_url, auth=auth)
+    user_record_response = portal_request_get(user_url, auth=auth, debug=debug)
     try:
         user_record = user_record_response.json()
     except Exception:
         user_record = {}
     try:
         if user_record_response.status_code in (401, 403) and user_record.get("Title") == "Not logged in.":
-            show("Server did not recognize you with the given credentials.")
+            show("Server did not recognize you with the given credentials.", with_time=verbose)
     except Exception:
         pass
     if user_record_response.status_code in (401, 403):
         raise CGAPPermissionError(server=server)
     user_record_response.raise_for_status()
     user_record = user_record_response.json()
-    show("The server %s recognizes you as %s <%s>."
-         % (server, user_record['title'], user_record['contact_email']))
+    show("The server %s recognizes you as: %s <%s>"
+         % (server, user_record['title'], user_record['contact_email']), with_time=verbose)
     return user_record
 
 
-def get_defaulted_institution(institution, user_record):
+def get_defaulted_institution(institution, user_record, verbose: bool = False):
     """
     Returns the given institution or else if none is specified, it tries to infer an institution.
 
@@ -145,11 +145,11 @@ def get_defaulted_institution(institution, user_record):
         if not institution:
             raise SyntaxError("Your user profile has no institution declared,"
                               " so you must specify --institution explicitly.")
-        show("Using institution:", institution)
+        show("Using institution:", institution, with_time=verbose)
     return institution
 
 
-def get_defaulted_project(project, user_record):
+def get_defaulted_project(project, user_record, verbose: bool = False):
     """
     Returns the given project or else if none is specified, it tries to infer a project.
 
@@ -175,11 +175,11 @@ def get_defaulted_project(project, user_record):
         else:
             [project_role] = project_roles
             project = project_role['project']['@id']
-            show("Using project:", project)
+            show("Using project:", project, with_time=verbose)
     return project
 
 
-def get_defaulted_award(award, user_record, error_if_none=False):
+def get_defaulted_award(award, user_record, error_if_none=False, verbose: bool = False):
     """
     Returns the given award or else if none is specified, it tries to infer an award.
 
@@ -210,15 +210,15 @@ def get_defaulted_award(award, user_record, error_if_none=False):
             [lab_award] = lab_awards
             award = lab_award['@id']
         if not award:
-            show("No award was inferred.")
+            show("No award was inferred.", with_time=verbose)
         else:
-            show("Using inferred award:", award)
+            show("Using inferred award:", award, with_time=verbose)
     else:
-        show("Using given award:", award)
+        show("Using given award:", award, with_time=verbose)
     return award
 
 
-def get_defaulted_lab(lab, user_record, error_if_none=False):
+def get_defaulted_lab(lab, user_record, error_if_none=False, verbose: bool = False):
     """
     Returns the given lab or else if none is specified, it tries to infer a lab.
 
@@ -235,11 +235,11 @@ def get_defaulted_lab(lab, user_record, error_if_none=False):
                 raise SyntaxError("Your user profile has no lab declared,"
                                   " so you must specify --lab explicitly.")
         if not lab:
-            show("No lab was inferred.")
+            show("No lab was inferred.", with_time=verbose)
         else:
-            show("Using inferred lab:", lab)
+            show("Using inferred lab:", lab, with_time=verbose)
     else:
-        show("Using given lab:", lab)
+        show("Using given lab:", lab, with_time=verbose)
     return lab
 
 
@@ -251,11 +251,11 @@ APP_ARG_DEFAULTERS = {
 }
 
 
-def do_app_arg_defaulting(app_args, user_record):
+def do_app_arg_defaulting(app_args, user_record, verbose: bool = False):
     for arg, val in app_args.items():
         defaulter = APP_ARG_DEFAULTERS.get(arg)
         if defaulter:
-            app_args[arg] = defaulter(val, user_record)
+            app_args[arg] = defaulter(val, user_record, verbose=verbose)
 
 
 PROGRESS_CHECK_INTERVAL = 15  # seconds
@@ -400,7 +400,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
 #                                     # data=json.dumps(creation_post_data)
 #                                     )
     if verbose:
-        PRINT("Creating IngestionSubmission (bundle) type object ... ", end="", flush=True)
+        show("Creating IngestionSubmission (bundle) type object ...", with_time=True)
     if submission_protocol == SubmissionProtocol.S3:
         # New with Fourfront ontology ingestion work (March 2023).
         # Store the submission data in the parameters of the IngestionSubmission object
@@ -416,6 +416,8 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     creation_response.raise_for_status()
     [submission] = creation_response.json()['@graph']
     submission_id = submission['@id']
+    if verbose:
+        show(f"Created IngestionSubmission (bundle) type object: {submission.get('uuid', 'not-found')}", with_time=True)
 
     if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT("server=", server, "submission_id=", submission_id)
@@ -506,7 +508,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app)
 
-    server = resolve_server(server=server, env=env)
+    server = resolve_server(server=server, env=env, verbose=verbose)
 
     validation_qualifier = " (for validation only)" if validate_only else ""
 
@@ -517,15 +519,15 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     if not no_query:
         if not yes_or_no("Submit %s%s to %s%s?"
                          % (ingestion_filename, maybe_ingestion_type, server, validation_qualifier)):
-            show("Aborting submission.")
+            show("Aborting submission.", with_time=verbose)
             exit(1)
 
     keydict = KEY_MANAGER.get_keydict_for_server(server)
     keypair = KEY_MANAGER.keydict_to_keypair(keydict)
 
-    user_record = get_user_record(server, auth=keypair)
+    user_record = get_user_record(server, auth=keypair, verbose=verbose, debug=debug)
 
-    do_app_arg_defaulting(app_args, user_record)
+    do_app_arg_defaulting(app_args, user_record, verbose=verbose)
 
     if not os.path.exists(ingestion_filename):
         raise ValueError("The file '%s' does not exist." % ingestion_filename)
@@ -601,10 +603,10 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
             detail = res.get('detail')
             if detail:
                 message += ": " + detail
-            show(message)
+            show(message, with_time=verbose)
             if title == "Unsupported Media Type":
                 show("NOTE: This error is known to occur if the server"
-                     " does not support metadata bundle submission.")
+                     " does not support metadata bundle submission.", with_time=verbose)
         raise
 
     if res is None:  # pragma: no cover
@@ -613,8 +615,6 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
         raise Exception("Bad JSON body in %s submission result." % response.status_code)
 
     uuid = res['submission_id']
-
-    show("Bundle uploaded, assigned uuid %s for tracking. Awaiting processing..." % uuid, with_time=True)
 
     def check_ingestion_progress():
         """
@@ -634,12 +634,15 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
             progress = status["progress"]
             return False, progress, response
 
+    show("Checking ingestion process using IngestionSubmission uuid: %s ..." % uuid, with_time=verbose)
+
     # Check the ingestion processing repeatedly, up to ATTEMPTS_BEFORE_TIMEOUT times,
     # and waiting PROGRESS_CHECK_INTERVAL seconds between each check.
     [check_done, check_status, check_response] = (
         check_repeatedly(check_ingestion_progress,
                          wait_seconds=PROGRESS_CHECK_INTERVAL,
-                         repeat_count=ATTEMPTS_BEFORE_TIMEOUT)
+                         repeat_count=ATTEMPTS_BEFORE_TIMEOUT,
+                         verbose=verbose)
     )
 
     """
@@ -663,10 +666,10 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     """
 
     if not check_done:
-        show("Exiting after check processing timeout | Check status using: TODO")
+        show("Exiting after check processing timeout | Check status using: TODO", with_time=verbose)
         exit(1)
 
-    show("Final status: %s" % check_status, with_time=True)
+    show("Final status: %s" % check_status.title(), with_time=verbose)
 
     if check_status == "error" and check_response.get("errors"):
         show_section(check_response, "errors")
@@ -823,7 +826,7 @@ def get_s3_encrypt_key_id(*, upload_credentials, auth):
     return s3_encrypt_key_id
 
 
-def execute_prearranged_upload(path, upload_credentials, auth=None, debug: bool = False):
+def execute_prearranged_upload(path, upload_credentials, auth=None, verbose: bool = False, debug: bool = False):
     """
     This performs a file upload using special credentials received from ff_utils.patch_metadata.
 
@@ -849,7 +852,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None, debug: bool 
     try:
         source = path
         target = upload_credentials['upload_url']
-        show("Uploading local file %s directly (via aws-cli) to: %s" % (source, target))
+        show("Uploading local file %s directly (via aws-cli) to: %s" % (source, target), with_time=verbose)
         command = ['aws', 's3', 'cp']
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
@@ -869,7 +872,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None, debug: bool 
     else:
         end = time.time()
         duration = end - start
-        show("Upload duration: %.2f seconds" % duration)
+        show("Upload duration: %.2f seconds" % duration, with_time=verbose)
 
 
 def running_on_windows_native():
@@ -899,14 +902,19 @@ def upload_file_to_new_uuid(filename, schema_name, auth, verbose: bool = False, 
 
     post_item = compute_file_post_data(filename=filename, context_attributes=context_attributes)
 
+    if verbose:
+        show("Creating FileOther type object ...", with_time=verbose)
 #   response = ff_utils.post_metadata(post_item=post_item, schema_name=schema_name, key=auth)
     response = portal_metadata_post(schema=schema_name, data=post_item, auth=auth, debug=debug)
+    if verbose:
+        show(f"Created FileOther type object:"
+             f" {response.get('@graph', [{'uuid': 'not-found'}])[0].get('uuid', 'not-found')}", with_time=verbose)
 
     metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
                                                                            method='POST', schema_name=schema_name,
                                                                            filename=filename, payload_data=post_item)
 
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
+    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth, verbose=verbose, debug=debug)
 
     return metadata
 
@@ -933,7 +941,7 @@ def upload_file_to_uuid(filename, uuid, auth):
                                                                            method='PATCH', uuid=uuid,
                                                                            filename=filename, payload_data=patch_data)
 
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
+    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth, verbose=verbose, debug=debug)
 
     return metadata
 

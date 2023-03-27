@@ -5,7 +5,7 @@ import os
 from dcicutils.common import APP_FOURFRONT, ORCHESTRATED_APPS
 from dcicutils.misc_utils import PRINT
 from ..submission import submit_any_ingestion, SubmissionProtocol, SUBMISSION_PROTOCOLS, DEFAULT_APP
-from ..utils import script_catch_errors
+from ..utils import script_catch_errors, show
 
 
 EPILOG = __doc__
@@ -56,16 +56,16 @@ def main(simulated_args_for_testing=None):
 
 def verify_ontology_file(ontology_filename: str) -> bool:
     if not os.path.exists(ontology_filename):
-        PRINT(f"ERROR: Cannot find specified ontology (JSON) file: {ontology_filename}")
+        show(f"ERROR: Cannot find specified ontology (JSON) file: {ontology_filename}")
         return False
     try:
         with io.open(ontology_filename, "r") as f:
             ontology_json = json.load(f)
             ontology_term_count = len(ontology_json["terms"])
     except Exception:
-        PRINT(f"ERROR: Cannot load specified ontology (JSON) file: {ontology_filename}")
+        show(f"ERROR: Cannot load specified ontology (JSON) file: {ontology_filename}")
         return False
-    PRINT(f"Verified specified ontology (JSON) file: {ontology_filename} (ontology terms: {ontology_term_count})")
+    show(f"Verified specified ontology (JSON) file: {ontology_filename} (ontology terms: {ontology_term_count})")
     return True
 
 

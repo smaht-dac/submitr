@@ -101,7 +101,8 @@ def check_repeatedly(check_function: Callable,
                      done_message: str = None,
                      stop_message: str = None,
                      response_message: bool = True,
-                     messages = True) -> bool:
+                     messages: bool = True,
+                     verbose: bool = False) -> bool:
     """
     Calls the given function (check_function) repeatedly, until it returns either a tuple whose first element is
     truthy, or just a non-tuple truthy value, waiting between calls for the given number (wait_seconds) of seconds,
@@ -116,7 +117,7 @@ def check_repeatedly(check_function: Callable,
     value, then that value will be printed to the stdout.
     """
     def output(message):
-        show(message, with_time=False, same_line=True)
+        show(message, with_time=verbose, same_line=True)
     if not check_message:
         check_message = "Checking processing"
     if not wait_message:
