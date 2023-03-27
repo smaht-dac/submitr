@@ -29,7 +29,7 @@ from ..submission import (
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
     _post_files_data,  # noQA - again, testing a protected member
     get_defaulted_lab, get_defaulted_award, SubmissionProtocol, compute_file_post_data,
-    upload_file_to_new_uuid,
+    upload_file_to_new_uuid, compute_s3_submission_post_data,
 )
 from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
@@ -2615,26 +2615,41 @@ def test_compute_file_post_data():
     }
 
 
+mocked_key = 'an_authorized_key'
+mocked_secret = 'an_authorized_secret'
+mocked_good_auth = {'key': mocked_key, 'secret': mocked_secret}
+mocked_bad_auth = {'key': f'not_{mocked_key}', 'secret': f'not_{mocked_secret}'}
+mocked_good_uuid = 'good-uuid-0000-0001'
+mocked_good_at_id = '/things/good-thing/'
+mocked_award_and_lab = {'award': '/awards/A1/', 'lab': '/labs/L1/'}
+mocked_institution_and_project = {'institution': '/institution/I1/', 'project': '/projects/P1/'}
+mocked_good_filename_base = 'some_good'
+mocked_good_filename_ext = 'file'
+mocked_good_filename = f'{mocked_good_filename_base}.{mocked_good_filename_ext}'
+mocked_s3_upload_bucket = 'some-bucket'
+mocked_s3_upload_key = f'{mocked_good_uuid}/{mocked_good_filename}'
+mocked_s3_url = f's3://{mocked_s3_upload_bucket}/{mocked_s3_upload_key}'
+mocked_good_upload_credentials = {
+    'key': mocked_s3_upload_key,
+    'upload_url': mocked_s3_url,
+    'upload_credentials': {
+        'AccessKeyId': 'some-access-key-id',
+        'SecretAccessKey': 'some-secret-access-key',
+        'SessionToken': 'some-session-token-much-longer-than-this-mock'
+    }
+}
+mocked_good_file_metadata = {
+    'uuid': mocked_good_uuid,
+    'accession': mocked_good_at_id,
+    '@id': mocked_good_at_id,
+    'key': mocked_good_filename,
+    'upload_credentials': mocked_good_upload_credentials,
+}
+
+
 def test_upload_file_to_new_uuid():
 
     expected_schema_name = 'FileOther'
-
-    mocked_key = 'an_authorized_key'
-    mocked_secret = 'an_authorized_secret'
-    mocked_good_auth = {'key': mocked_key, 'secret': mocked_secret}
-    mocked_bad_auth = {'key': f'not_{mocked_key}', 'secret': f'not_{mocked_secret}'}
-    mocked_good_uuid = 'good-uuid-0000-0001'
-    mocked_good_at_id = '/things/good-thing/'
-    award_and_lab = {'award': '/awards/A1/', 'lab': '/labs/L1/'}
-    institution_and_project = {'institution': '/institution/I1/', 'project': '/projects/P1/'}
-    mocked_good_filename_ext = 'file'
-    mocked_good_filename = f'good.{mocked_good_filename_ext}'
-    mocked_good_upload_credentials = {'upload-credentials': 'go here'}
-    mocked_good_file_metadata = {
-        'uuid': mocked_good_uuid,
-        '@id': mocked_good_at_id,
-        'upload_credentials': mocked_good_upload_credentials,
-    }
 
     def mocked_execute_prearranged_upload(filename, upload_credentials, auth):
         assert filename == mocked_good_filename
@@ -2672,17 +2687,17 @@ def test_upload_file_to_new_uuid():
             expected_post_item={
                 'filename': mocked_good_filename,
                 'file_format': mocked_good_filename_ext,
-                **award_and_lab
+                **mocked_award_and_lab
             },
-            **award_and_lab)
+            **mocked_award_and_lab)
 
     test_it(schema_name='FileOther', auth=mocked_good_auth,
             expected_post_item={
                 'filename': mocked_good_filename,
                 'file_format': mocked_good_filename_ext,
-                **institution_and_project
+                **mocked_institution_and_project
             },
-            **institution_and_project)
+            **mocked_institution_and_project)
 
     with pytest.raises(Exception):
         test_it(schema_name='FileOther', auth=mocked_bad_auth,
@@ -2690,3 +2705,24 @@ def test_upload_file_to_new_uuid():
                     'filename': mocked_good_filename,
                     'file_format': mocked_good_filename_ext
                 })
+
+
+def test_compute_s3_submission_post_data():
+
+    other_args = {'other_arg1': 1, 'other_arg2': 2}
+
+    some_filename = f'/some/upload/dir/{mocked_good_filename}'
+
+    assert compute_s3_submission_post_data(ingestion_filename=some_filename,
+                                           ingestion_post_result=mocked_good_file_metadata,
+                                           **other_args
+                                           ) == {
+        'datafile_uuid': mocked_good_uuid,
+        'datafile_accession': mocked_good_at_id,
+        'datafile_@id': mocked_good_at_id,
+        'datafile_url': mocked_s3_url,
+        'datafile_bucket': mocked_s3_upload_bucket,
+        'datafile_key': mocked_s3_upload_key,
+        'datafile_source_filename': mocked_good_filename,
+        **other_args
+    }
