@@ -2515,10 +2515,9 @@ def test_get_defaulted_lab():
     assert get_defaulted_lab(lab=None, user_record=make_user_record()) is None
     assert get_defaulted_lab(lab=None, user_record=make_user_record(), error_if_none=False) is None
 
-    try:
+    with pytest.raises(Exception) as exc:
         get_defaulted_lab(lab=None, user_record=make_user_record(), error_if_none=True)
-    except Exception as e:
-        assert str(e).startswith("Your user profile has no lab")
+    assert str(exc.value).startswith("Your user profile has no lab")
 
 
 def test_get_defaulted_award():
@@ -2551,7 +2550,7 @@ def test_get_defaulted_award():
     else:
         raise AssertionError("Expected error was not raised.")  # pragma: no cover
 
-    try:
+    with pytest.raises(Exception) as exc:
         get_defaulted_award(award=None,
                             user_record=make_user_record(lab={
                                 '@id': SOME_LAB,
@@ -2561,19 +2560,16 @@ def test_get_defaulted_award():
                                     {"@id": "/awards/baz"},
                                 ]}),
                             error_if_none=True)
-    except Exception as e:
-        assert str(e) == ("Your lab (/lab/good-lab/) declares multiple awards."
-                          " You must explicitly specify one of /awards/foo, /awards/bar or /awards/baz with --award.")
-    else:
-        raise AssertionError("Expected error was not raised.")  # pragma: no cover - hopefully never executed
+    assert str(exc.value) == ("Your lab (/lab/good-lab/) declares multiple awards."
+                              " You must explicitly specify one of /awards/foo, /awards/bar"
+                              " or /awards/baz with --award.")
 
     assert get_defaulted_award(award=None, user_record=make_user_record()) is None
     assert get_defaulted_award(award=None, user_record=make_user_record(), error_if_none=False) is None
 
-    try:
+    with pytest.raises(Exception) as exc:
         get_defaulted_award(award=None, user_record=make_user_record(), error_if_none=True)
-    except Exception as e:
-        assert str(e).startswith("Your user profile declares no lab with awards.")
+    assert str(exc.value).startswith("Your user profile declares no lab with awards.")
 
 
 def test_post_files_data():
