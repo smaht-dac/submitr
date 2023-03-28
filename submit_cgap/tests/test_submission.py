@@ -2123,23 +2123,6 @@ def test_submit_any_ingestion_new_protocol():
                                                         with mock.patch.object(submission_module,
                                                                                "upload_file_to_new_uuid"
                                                                                ) as mock_upload_file_to_new_uuid:
-                                                            def mocked_upload_file_to_new_uuid(filename, schema_name,
-                                                                                               auth, **app_args):
-                                                                assert filename == SOME_BUNDLE_FILENAME
-                                                                assert schema_name == expected_schema_name
-                                                                assert auth['key'] == SOME_KEY_ID
-                                                                assert auth['secret'] == SOME_SECRET
-                                                                return {
-                                                                    'uuid': mocked_good_uuid,
-                                                                    'accession': mocked_good_at_id,
-                                                                    '@id': mocked_good_at_id,
-                                                                    'key': mocked_good_filename,
-                                                                    'upload_credentials':
-                                                                        mocked_good_upload_credentials,
-                                                                }
-                                                            mock_upload_file_to_new_uuid.side_effect = (
-                                                                mocked_upload_file_to_new_uuid
-                                                            )
                                                             with pytest.raises(Exception):
                                                                 submit_any_ingestion(
                                                                     SOME_BUNDLE_FILENAME,
@@ -2155,7 +2138,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                     # This is going to make it fail:
                                                                     submission_protocol='bad-submission-protocol',
                                                                 )
-
+                                                            mock_upload_file_to_new_uuid.assert_not_called()
                                                             assert mock_do_any_uploads.call_count == 0
 
     expect_datafile_for_mocked_post = True
