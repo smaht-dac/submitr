@@ -1,6 +1,9 @@
 import argparse
 import contextlib
-
+import json
+import os
+import tempfile
+from typing import Any, Generator
 from unittest import mock
 
 
@@ -21,3 +24,17 @@ def system_exit_expected(*, exit_code):
 def argparse_errors_muffled():
     with mock.patch.object(argparse.ArgumentParser, "_print_message"):
         yield
+
+
+@contextlib.contextmanager
+def temporary_json_file(data: dict) -> Generator[Any, None, None]:
+    filename = None
+    try:
+        with tempfile.NamedTemporaryFile("w", delete=False) as f:
+            filename = f.name
+            json.dump(data, f)
+            f.close()
+            yield filename
+    finally:
+        if filename:
+            os.remove(filename)

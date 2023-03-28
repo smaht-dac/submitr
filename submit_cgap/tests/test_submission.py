@@ -713,6 +713,7 @@ def test_resume_uploads():
                             upload_folder=None,
                             no_query=False,
                             subfolders=False,
+                            verbose=False, debug=False
                         )
 
     with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
@@ -788,8 +789,8 @@ def test_execute_prearranged_upload(os_simulation_mode: str):
                             **subprocess_options
                         )
                         assert shown.lines == [
-                            "Going to upload some-filename to some-url.",
-                            "Uploaded in 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
+                            "Uploading local file some-filename directly (via aws-cli) to: some-url",
+                            "Upload duration: 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
                         ]
 
         with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
@@ -806,8 +807,8 @@ def test_execute_prearranged_upload(os_simulation_mode: str):
                             **subprocess_options
                         )
                         assert shown.lines == [
-                            "Going to upload some-filename to some-url.",
-                            "Uploaded in 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
+                            "Uploading local file some-filename directly (via aws-cli) to: some-url",
+                            "Upload duration: 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
                         ]
 
         with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
@@ -822,7 +823,7 @@ def test_execute_prearranged_upload(os_simulation_mode: str):
                             **subprocess_options
                         )
                         assert shown.lines == [
-                            "Going to upload some-filename to some-url.",
+                            "Uploading local file some-filename directly (via aws-cli) to: some-url",
                         ]
 
 
@@ -930,7 +931,7 @@ def test_do_uploads(tmp_path):
 
         uploaded = {}
 
-        def mocked_upload_file(filename, uuid, auth):
+        def mocked_upload_file(filename, uuid, auth, verbose = False, debug = False):
             if auth != SOME_AUTH:
                 raise Exception("Bad auth")
             uploaded[uuid] = filename
@@ -1050,6 +1051,7 @@ def test_do_uploads(tmp_path):
             filename=file_path,
             uuid=uuid,
             auth=SOME_AUTH,
+            verbose=False, debug=False
         )
 
     with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
@@ -1064,6 +1066,7 @@ def test_do_uploads(tmp_path):
             filename=(folder.as_posix() + "/" + filename),
             uuid=uuid,
             auth=SOME_AUTH,
+            verbose=False, debug=False
         )
 
     with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
@@ -1079,6 +1082,7 @@ def test_do_uploads(tmp_path):
             filename=file_path,
             uuid=uuid,
             auth=SOME_AUTH,
+            verbose=False, debug=False
         )
 
     with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
@@ -1142,6 +1146,7 @@ def test_do_uploads(tmp_path):
                         folder,
                         SOME_AUTH,
                         recursive=False,
+                        verbose=False, debug=False
                     )
 
 
@@ -1152,11 +1157,12 @@ def test_upload_item_data():
             with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                 with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
 
+                    pass
                     upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
 
                     mock_resolve.assert_called_with(env=SOME_ENV, server=SOME_SERVER)
                     mock_get.assert_called_with(SOME_SERVER)
-                    mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_KEYDICT)
+                    mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_KEYDICT, verbose=False, debug=False)
 
     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER) as mock_resolve:
         with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
@@ -1189,7 +1195,7 @@ def test_upload_item_data():
                 mock_resolve.assert_called_with(env=SOME_ENV, server=SOME_SERVER)
                 mock_get.assert_called_with(SOME_SERVER)
                 mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID,
-                                               auth=SOME_KEYDICT)
+                                               auth=SOME_KEYDICT, verbose=False, debug=False)
 
 
 def get_today_datetime_for_time(time_to_use):
@@ -1222,43 +1228,66 @@ class Scenario:
         return [
             f"The server {SOME_SERVER} recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>",
             (
-                f"{uploaded_time} Bundle uploaded, assigned uuid {SOME_UUID} for tracking."
-                " Awaiting processing..."
+                f"{uploaded_time} Bundle uploaded. Checking ingestion process using IngestionSubmission uuid: {SOME_UUID} ..."
             ),
         ]
 
-    def make_wait_lines(self, wait_attempts):
+    def make_wait_lines(self, wait_attempts, outcome = None):
         result = []
         uploaded_time = self.get_time_after_wait()
-        for idx in range(wait_attempts):
-            time_delta_from_start = (PROGRESS_CHECK_INTERVAL + self.wait_time_delta) * (idx + 1)
+        time_delta_from_start = 0
+        nchecks = 0
+        CLEAR = "\033[K"
+        for idx in range(wait_attempts + 1): # range(PROGRESS_CHECK_INTERVAL): #range(wait_attempts):
+            # time_delta_from_start = (PROGRESS_CHECK_INTERVAL + self.wait_time_delta) * (idx + 1)
+            # adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
+            # wait_time = adjusted_scenario.get_time_after_wait()
+            # wait_line = f"{wait_time} Progress is not done yet. Continuing to wait..."
+            # result.append(wait_line)
+            time_delta_from_start += 1
             adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
             wait_time = adjusted_scenario.get_time_after_wait()
-            #wait_line = f"{wait_time} Progress is not done yet. Continuing to wait..."
-            #result.append(wait_line)
-            # xyzzy
-            wait_line = f"{wait_time} Checking processing | Status: None | Checked: 0 times ..."
+            wait_line = f"{CLEAR}{wait_time} Checking processing | Status: Not Done Yet | Checked: {nchecks} time{'s' if nchecks != 1 else ''} ...\r"
             result.append(wait_line)
-            for i in reversed(range(1, self.wait_time_delta + 1)):
+            if nchecks >= wait_attempts:
+                time_delta_from_start += 1
+                adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
                 wait_time = adjusted_scenario.get_time_after_wait()
-                wait_line = f"{wait_time} XWaiting for processing completion | Status: Unavailable | Checked: {idx + 1} time{'s' if idx + 1 != 1 else ''} | Next check: {i} second{'s' if i != 1 else ''} ..."
+                if outcome == "timeout":
+                    wait_line = f"{CLEAR}{wait_time} Giving up waiting for processing completion | Status: Not Done Yet | Checked: {nchecks + 1} times\n\r"
+                else:
+                    wait_line = f"{CLEAR}{wait_time} Processing complete | Status: {outcome.title() if outcome else 'Unknown'} | Checked: {nchecks + 1} times\n\r"
                 result.append(wait_line)
-            # xyzzy
+                break
+            nchecks += 1
+            for i in range(PROGRESS_CHECK_INTERVAL): # range(self.wait_time_delta):
+                time_delta_from_start += 2 # Extra 1 for the 1-second sleep loop in utils.check_repeatedly
+                adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
+                wait_time = adjusted_scenario.get_time_after_wait()
+                wait_line = (
+                    f"{CLEAR}{wait_time} Waiting for processing completion"
+                    f" | Status: Not Done Yet | Checked: {idx + 1} time{'s' if idx + 1 != 1 else ''}"
+                    f" | Next check: {PROGRESS_CHECK_INTERVAL - i} second{'s' if PROGRESS_CHECK_INTERVAL - i != 1 else ''} ...\r"
+                )
+                result.append(wait_line)
         return result
 
     def make_timeout_lines(self, *, get_attempts=ATTEMPTS_BEFORE_TIMEOUT):
         wait_time = self.get_elapsed_time_for_get_attempts(get_attempts)
         adjusted_scenario = Scenario(start_time=wait_time, wait_time_delta=self.wait_time_delta)
         time_out_time = adjusted_scenario.get_time_after_wait()
+        return [f"Exiting after check processing timeout | Check status using: TODO"]
         return [f"{time_out_time} Timed out after {get_attempts} tries."]
 
     def make_outcome_lines(self, get_attempts, *, outcome):
         end_time = self.get_elapsed_time_for_get_attempts(get_attempts)
-        return [f"{end_time} Final status: {outcome}"]
+        return [f"{end_time} Final status: {outcome.title()}"]
 
     def get_elapsed_time_for_get_attempts(self, get_attempts):
         initial_check_time_delta = self.wait_time_delta
-        wait_time_delta = (PROGRESS_CHECK_INTERVAL + self.wait_time_delta) * get_attempts
+        # Extra PROGRESS_CHECK_INTERVAL for the 1-second sleep loop in utils.check_repeatedly,
+        # via make_wait_lines; and extra 2 for the extra (first/last) lines in make_wait_lines.
+        wait_time_delta = (PROGRESS_CHECK_INTERVAL + self.wait_time_delta) * get_attempts + PROGRESS_CHECK_INTERVAL + 2
         elapsed_time_delta = initial_check_time_delta + wait_time_delta
         adjusted_scenario = Scenario(start_time=self.start_time, wait_time_delta=elapsed_time_delta)
         return adjusted_scenario.get_time_after_wait()
@@ -1270,7 +1299,7 @@ class Scenario:
         wait_attempts = get_attempts - 1
         result += scenario.make_uploaded_lines()
         if wait_attempts > 0:
-            result += scenario.make_wait_lines(wait_attempts)
+            result += scenario.make_wait_lines(wait_attempts, outcome=outcome)
         result += scenario.make_outcome_lines(get_attempts, outcome=outcome)
         return result
 
@@ -1287,7 +1316,7 @@ class Scenario:
         scenario = Scenario()
         result = []
         result += scenario.make_uploaded_lines()
-        result += scenario.make_wait_lines(ATTEMPTS_BEFORE_TIMEOUT)
+        result += scenario.make_wait_lines(ATTEMPTS_BEFORE_TIMEOUT - 1, outcome="timeout")
         result += scenario.make_timeout_lines()
         return result
 
@@ -1470,7 +1499,7 @@ def test_submit_any_ingestion_old_protocol():
                                                             keydict=SOME_KEYDICT,
                                                             upload_folder=None,
                                                             no_query=False,
-                                                            subfolders=False,
+                                                            subfolders=False, verbose=False, debug=False
                                                         )
         assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
@@ -1528,7 +1557,7 @@ def test_submit_any_ingestion_old_protocol():
                                                             keydict=SOME_KEYDICT,
                                                             upload_folder=None,
                                                             no_query=False,
-                                                            subfolders=False,
+                                                            subfolders=False, verbose=False, debug=False
                                                         )
         assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
@@ -1576,7 +1605,7 @@ def test_submit_any_ingestion_old_protocol():
                                                         keydict=SOME_KEYDICT,
                                                         upload_folder=None,
                                                         no_query=True,
-                                                        subfolders=False,
+                                                        subfolders=False, verbose=False, debug=False
                                                     )
         assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
@@ -1935,7 +1964,7 @@ def test_submit_any_ingestion_new_protocol():
         response_maker = make_alternator(*responses)
 
         def mocked_get(url, auth, **kwargs):
-            print("xyzzy in mocked_get, url=", url, "auth=", auth)
+            print("in mocked_get, url=", url, "auth=", auth)
             assert auth == SOME_AUTH
             if url.endswith("/me?format=json"):
                 return FakeResponse(200, json=make_user_record(
@@ -1989,17 +2018,6 @@ def test_submit_any_ingestion_new_protocol():
 
     # This tests the normal case with SubmissionProtocol.UPLOAD (the default), and with validate_only=False
     # and a successful result.
-#   #xyzzy
-#   from ..utils import show
-#   with mock.patch("datetime.datetime", dt):
-#       assert True is True
-#       print(str(datetime.datetime.now().strftime("%H:%M:%S")))
-#       print(str(datetime.datetime.now().strftime("%H:%M:%S")))
-#       print(str(datetime.datetime.now().strftime("%H:%M:%S")))
-#       show("abc", with_time=True)
-#       show("def", with_time=True)
-#       show("ghi", with_time=True)
-#   return #xyzzy
 
     with shown_output() as shown:
         with mock.patch("os.path.exists", mfs.exists):
@@ -2046,11 +2064,6 @@ def test_submit_any_ingestion_new_protocol():
                                                             subfolders=False,
                                                             verbose=False, debug=False
                                                         )
-        print('xyzzy/a')
-        print(shown.lines)
-        print('xyzzy/b')
-        print(Scenario.make_successful_submission_lines(get_request_attempts))
-        return # xyzzy
         assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
@@ -2126,7 +2139,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                 subfolders=False,
                                                                 verbose=False, debug=False
                                                             )
-        #xyzzy assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
+        assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -2326,7 +2339,7 @@ def test_submit_any_ingestion_new_protocol():
                                                             assert e.code == 0
 
                                                         assert mock_do_any_uploads.call_count == 0
-        #xyzzy assert shown.lines == Scenario.make_failed_submission_lines(get_request_attempts)
+        assert shown.lines == Scenario.make_failed_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -2368,7 +2381,7 @@ def test_submit_any_ingestion_new_protocol():
 
                                                         # For validation only, we won't have tried uploads.
                                                         assert mock_do_any_uploads.call_count == 0
-        #xyzzy assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
+        assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
@@ -2410,7 +2423,7 @@ def test_submit_any_ingestion_new_protocol():
                                                             assert e.code == 1
 
                                                         assert mock_do_any_uploads.call_count == 0
-        #xyzzy assert shown.lines == Scenario.make_timeout_submission_lines()
+        assert shown.lines == Scenario.make_timeout_submission_lines()
 
 
 def test_running_on_windows_native():

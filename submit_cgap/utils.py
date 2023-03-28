@@ -117,9 +117,7 @@ def check_repeatedly(check_function: Callable,
     value, then that value will be printed to the stdout.
     """
     def output(message):
-        #show(message, with_time=verbose, same_line=True)
-        #show(message, with_time=verbose, same_line=False)
-        show(message, with_time=True, same_line=False)
+        show(message, with_time=verbose, same_line=True)
     if not check_message:
         check_message = "Checking processing"
     if not wait_message:
@@ -130,7 +128,7 @@ def check_repeatedly(check_function: Callable,
         stop_message = "Giving up waiting for processing completion"
     ntimes = 0
     check_function_returning_tuple = True
-    check_status = "None"
+    check_status = "Not Done Yet"
     start_time = time.time()
     start_time = 0
     while True:
@@ -148,25 +146,20 @@ def check_repeatedly(check_function: Callable,
             check_status = None
         if check_done:
             if messages:
-                duration = round(time.time() - start_time)
                 output(f"{done_message} {f'| Status: {check_status.title()}' if check_status else ''}"
-                       f" | Checked: {ntimes} time{'s' if ntimes != 1 else ''}"
-                       f" | Duration: {duration} second{'s' if duration != 1 else ''}\n")
+                       f" | Checked: {ntimes} time{'s' if ntimes != 1 else ''}\n")
             return check_function_response
         if repeat_count > 0 and ntimes >= repeat_count:
             if messages:
-                #duration = round(time.time() - start_time)
-                duration = 0
                 output(f"{stop_message} {f'| Status: {check_status.title()}' if check_status else ''}"
-                       f" | Checked: {ntimes} time{'s' if ntimes != 1 else ''}"
-                       f" | Duration: {round(time.time() - start_time)} second{'s' if duration != 1 else ''}\n")
+                       f" | Checked: {ntimes} time{'s' if ntimes != 1 else ''}\n")
             return check_function_response if check_function_returning_tuple else False
         for i in range(wait_seconds):
-            #time.sleep(1)
+            time.sleep(1)
             if messages:
                 output(f"{wait_message} {f'| Status: {check_status.title()}' if check_status else ''}"
                        f" | Checked: {ntimes} time{'s' if ntimes != 1 else ''}"
-                       f" | Next check: {wait_seconds - i} second{'s' if wait_seconds - i != 1 else ' '} ...")
+                       f" | Next check: {wait_seconds - i} second{'s' if wait_seconds - i != 1 else ''} ...")
 
 
 def portal_metadata_post(schema: str, data: dict, auth: Tuple, debug: bool = False) -> dict:
