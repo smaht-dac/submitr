@@ -7,7 +7,8 @@ import pytest
 import re
 from unittest import mock
 
-from dcicutils.misc_utils import ignored, local_attrs, override_environ
+from dcicutils.common import APP_CGAP, APP_FOURFRONT
+from dcicutils.misc_utils import ignored, local_attrs, override_environ, NamedObject
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
 
@@ -25,6 +26,10 @@ from ..submission import (
     upload_file_to_uuid, upload_item_data,
     get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page, running_on_windows_native,
     search_for_file, UploadMessageWrapper, upload_extra_files,
+    _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
+    _post_files_data,  # noQA - again, testing a protected member
+    get_defaulted_lab, get_defaulted_award, SubmissionProtocol, compute_file_post_data,
+    upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE,
 )
 from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
@@ -53,6 +58,10 @@ SOME_INSTITUTION = '/institutions/hms-dbmi/'
 
 SOME_OTHER_INSTITUTION = '/institutions/big-pharma/'
 
+SOME_LAB = '/lab/good-lab/'
+
+SOME_OTHER_LAB = '/lab/evil-lab/'
+
 SOME_SERVER = 'http://localhost:7777'  # Dependencies force this to be out of alphabetical order
 
 SOME_ORCHESTRATED_SERVERS = [
@@ -65,6 +74,8 @@ SOME_KEYDICT = {'key': SOME_KEY_ID, 'secret': SOME_SECRET, 'server': SOME_SERVER
 SOME_OTHER_BUNDLE_FOLDER = '/some-other-folder/'
 
 SOME_PROJECT = '/projects/12a92962-8265-4fc0-b2f8-cf14f05db58b/'  # Test Project from master inserts
+
+SOME_AWARD = '/awards/45083e37-0342-4a0f-833d-aa7ab4be60f1/'
 
 SOME_UPLOAD_URL = 'some-url'
 
@@ -1813,6 +1824,8 @@ def test_submit_any_ingestion_new_protocol():
 
                     assert shown.lines == ["Aborting submission."]
 
+    expect_datafile_for_mocked_post = True
+
     def mocked_post(url, auth, data=None, json=None, files=None, headers=None):
         ignored(data, json)
         content_type = headers and headers.get('Content-type')
@@ -1851,7 +1864,10 @@ def test_submit_any_ingestion_new_protocol():
             if m:
                 assert m.group(1) == SOME_UUID
                 assert auth == SOME_AUTH
-                assert isinstance(files, dict) and 'datafile' in files and isinstance(files['datafile'], io.BytesIO)
+                if expect_datafile_for_mocked_post:
+                    assert isinstance(files, dict) and 'datafile' in files and isinstance(files['datafile'], io.BytesIO)
+                else:
+                    assert files == {'datafile': None}
                 return FakeResponse(201, json={'submission_id': SOME_UUID})
             else:
                 # Old protocol used
@@ -1957,7 +1973,8 @@ def test_submit_any_ingestion_new_protocol():
                                             else:  # pragma: no cover
                                                 raise AssertionError("Expected ValueError did not happen.")
 
-    # This tests the normal case with validate_only=False and a successful result.
+    # This tests the normal case with SubmissionProtocol.UPLOAD (the default), and with validate_only=False
+    # and a successful result.
 
     with shown_output() as shown:
         with mock.patch("os.path.exists", mfs.exists):
@@ -2004,6 +2021,127 @@ def test_submit_any_ingestion_new_protocol():
                                                             subfolders=False,
                                                         )
         assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
+
+    dt.reset_datetime()
+
+    # This tests the normal case with SubmissionProtocol.S3, and with validate_only=False and a successful result.
+
+    expect_datafile_for_mocked_post = False
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", mocked_post):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        with mock.patch.object(submission_module,
+                                                                               "upload_file_to_new_uuid"
+                                                                               ) as mock_upload_file_to_new_uuid:
+                                                            def mocked_upload_file_to_new_uuid(filename, schema_name,
+                                                                                               auth, **app_args):
+                                                                assert filename == SOME_BUNDLE_FILENAME
+                                                                assert schema_name == expected_schema_name
+                                                                assert auth['key'] == SOME_KEY_ID
+                                                                assert auth['secret'] == SOME_SECRET
+                                                                return {
+                                                                    'uuid': mocked_good_uuid,
+                                                                    'accession': mocked_good_at_id,
+                                                                    '@id': mocked_good_at_id,
+                                                                    'key': mocked_good_filename,
+                                                                    'upload_credentials':
+                                                                        mocked_good_upload_credentials,
+                                                                }
+                                                            mock_upload_file_to_new_uuid.side_effect = (
+                                                                mocked_upload_file_to_new_uuid
+                                                            )
+                                                            try:
+                                                                submit_any_ingestion(
+                                                                    SOME_BUNDLE_FILENAME,
+                                                                    ingestion_type='metadata_bundle',
+                                                                    institution=SOME_INSTITUTION,
+                                                                    project=SOME_PROJECT,
+                                                                    server=SOME_SERVER,
+                                                                    env=None,
+                                                                    validate_only=False,
+                                                                    upload_folder=None,
+                                                                    no_query=False,
+                                                                    subfolders=False,
+                                                                    submission_protocol=SubmissionProtocol.S3,
+                                                                )
+                                                            except SystemExit as e:  # pragma: no cover
+                                                                # This is just in case. In fact it's more likely
+                                                                # that a normal 'return' not 'exit' was done.
+                                                                assert e.code == 0
+
+                                                            assert mock_do_any_uploads.call_count == 1
+                                                            mock_do_any_uploads.assert_called_with(
+                                                                final_res,
+                                                                ingestion_filename=SOME_BUNDLE_FILENAME,
+                                                                keydict=SOME_KEYDICT,
+                                                                upload_folder=None,
+                                                                no_query=False,
+                                                                subfolders=False,
+                                                            )
+        assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
+
+    dt.reset_datetime()
+
+    # Check an edge case
+
+    expect_datafile_for_mocked_post = False
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", mocked_post):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        with mock.patch.object(submission_module,
+                                                                               "upload_file_to_new_uuid"
+                                                                               ) as mock_upload_file_to_new_uuid:
+                                                            with pytest.raises(Exception):
+                                                                submit_any_ingestion(
+                                                                    SOME_BUNDLE_FILENAME,
+                                                                    ingestion_type='metadata_bundle',
+                                                                    institution=SOME_INSTITUTION,
+                                                                    project=SOME_PROJECT,
+                                                                    server=SOME_SERVER,
+                                                                    env=None,
+                                                                    validate_only=False,
+                                                                    upload_folder=None,
+                                                                    no_query=False,
+                                                                    subfolders=False,
+                                                                    # This is going to make it fail:
+                                                                    submission_protocol='bad-submission-protocol',
+                                                                )
+                                                            mock_upload_file_to_new_uuid.assert_not_called()
+                                                            assert mock_do_any_uploads.call_count == 0
+
+    expect_datafile_for_mocked_post = True
 
     dt.reset_datetime()
 
@@ -2390,3 +2528,327 @@ def test_upload_extra_files(
             )
             assert len(mocked_search_for_file.call_args_list) == expected_file_search_calls
             assert len(mocked_execute_upload.call_args_list) == expected_uploader_calls
+
+
+def test_resolve_app_args():
+
+    # No arguments specified. Presumably they'll later be defaulted.
+
+    res = _resolve_app_args(institution=None, project=None, lab=None, award=None, app=APP_CGAP)
+    assert res == {'institution': None, 'project': None}
+
+    res = _resolve_app_args(institution=None, project=None, lab=None, award=None, app=APP_FOURFRONT)
+    assert res == {'lab': None, 'award': None}
+
+    # Exactly the right arguments.
+
+    res = _resolve_app_args(institution='foo', project='bar', lab=None, award=None, app=APP_CGAP)
+    assert res == {'institution': 'foo', 'project': 'bar'}
+
+    res = _resolve_app_args(institution=None, project=None, lab='foo', award='bar', app=APP_FOURFRONT)
+    assert res == {'lab': 'foo', 'award': 'bar'}
+
+    # Bad arguments for CGAP.
+
+    with pytest.raises(ValueError) as exc:
+        _resolve_app_args(institution=None, project=None, lab='foo', award='bar', app=APP_CGAP)
+    assert str(exc.value) == 'There are 2 inappropriate arguments: --lab and --award.'
+
+    with pytest.raises(ValueError) as exc:
+        _resolve_app_args(institution=None, project=None, lab='foo', award=None, app=APP_CGAP)
+    assert str(exc.value) == 'There is 1 inappropriate argument: --lab.'
+
+    with pytest.raises(ValueError) as exc:
+        _resolve_app_args(institution=None, project=None, lab=None, award='bar', app=APP_CGAP)
+    assert str(exc.value) == 'There is 1 inappropriate argument: --award.'
+
+    # Bad arguments for Fourfront
+
+    with pytest.raises(ValueError) as exc:
+        _resolve_app_args(institution='foo', project='bar', lab=None, award=None, app=APP_FOURFRONT)
+    assert str(exc.value) == 'There are 2 inappropriate arguments: --institution and --project.'
+
+    with pytest.raises(ValueError) as exc:
+        _resolve_app_args(institution='foo', project=None, lab=None, award=None, app=APP_FOURFRONT)
+    assert str(exc.value) == 'There is 1 inappropriate argument: --institution.'
+
+    with pytest.raises(ValueError) as exc:
+        _resolve_app_args(institution=None, project='bar', lab=None, award=None, app=APP_FOURFRONT)
+    assert str(exc.value) == 'There is 1 inappropriate argument: --project.'
+
+    # Bogus application name
+
+    with pytest.raises(ValueError) as exc:
+        invalid_app = APP_CGAP + APP_FOURFRONT  # make a bogus app name
+        _resolve_app_args(institution=None, project=None, lab=None, award=None, app=invalid_app)
+    assert str(exc.value) == f"Unknown application: {invalid_app}"
+
+
+def test_submit_any_ingestion():
+
+    print()  # start on a fresh line
+
+    initial_app = APP_CGAP
+    expected_app = APP_FOURFRONT
+
+    class StopEarly(BaseException):
+        pass
+
+    def mocked_resolve_app_args(institution, project, lab, award, app):
+        ignored(institution, project, award, lab)
+        assert app == expected_app
+        raise StopEarly()
+
+    original_submit_any_ingestion = submit_any_ingestion
+
+    def wrapped_submit_any_ingestion(*args, **kwargs):
+        print(f"app={kwargs['app']} current={KEY_MANAGER.selected_app}")
+        return original_submit_any_ingestion(*args, **kwargs)
+
+    with mock.patch.object(submission_module, 'submit_any_ingestion') as mock_submit_any_ingestion:
+        mock_submit_any_ingestion.side_effect = wrapped_submit_any_ingestion
+        with mock.patch.object(submission_module, "_resolve_app_args") as mock_resolve_app_args:
+            try:
+                mock_resolve_app_args.side_effect = mocked_resolve_app_args
+                with KEY_MANAGER.locally_selected_app(initial_app):
+                    print(f"current={KEY_MANAGER.selected_app}")
+                    mock_submit_any_ingestion(ingestion_filename=SOME_FILENAME,
+                                              ingestion_type=SOME_INGESTION_TYPE, server=SOME_SERVER, env=SOME_ENV,
+                                              validate_only=True, institution=SOME_INSTITUTION, project=SOME_PROJECT,
+                                              lab=SOME_LAB, award=SOME_AWARD, upload_folder=SOME_FILENAME,
+                                              no_query=True, subfolders=False,
+                                              # This is what we're testing...
+                                              app=expected_app)
+            except StopEarly:
+                assert mock_submit_any_ingestion.call_count == 2  # It called itself recursively
+                pass  # in this case, it also means pass the test
+
+
+def test_get_defaulted_lab():
+
+    assert get_defaulted_lab(lab=SOME_LAB, user_record='does-not-matter') == SOME_LAB
+    assert get_defaulted_lab(lab='anything', user_record='does-not-matter') == 'anything'
+
+    user_record = make_user_record(
+        # this is the old-fashioned place for it, but what fourfront uses
+        lab={'@id': SOME_LAB},
+    )
+
+    successful_result = get_defaulted_lab(lab=None, user_record=user_record)
+
+    print("successful_result=", successful_result)
+
+    assert successful_result == SOME_LAB
+
+    assert get_defaulted_lab(lab=None, user_record=make_user_record()) is None
+    assert get_defaulted_lab(lab=None, user_record=make_user_record(), error_if_none=False) is None
+
+    with pytest.raises(Exception) as exc:
+        get_defaulted_lab(lab=None, user_record=make_user_record(), error_if_none=True)
+    assert str(exc.value).startswith("Your user profile has no lab")
+
+
+def test_get_defaulted_award():
+
+    assert get_defaulted_award(award=SOME_AWARD, user_record='does-not-matter') == SOME_AWARD
+    assert get_defaulted_award(award='anything', user_record='does-not-matter') == 'anything'
+
+    successful_result = get_defaulted_award(award=None,
+                                            user_record=make_user_record(
+                                                lab={
+                                                    '@id': SOME_LAB,
+                                                    'awards': [
+                                                        {"@id": SOME_AWARD},
+                                                    ]}))
+
+    print("successful_result=", successful_result)
+
+    assert successful_result == SOME_AWARD
+
+    # We decided to make this function not report errors on lack of award,
+    # but we did add a way to request the error reporting, so we test that with an explicit
+    # error_if_none=True argument. -kmp 27-Mar-2023
+
+    try:
+        get_defaulted_award(award=None,
+                            user_record=make_user_record(award_roles=[]),
+                            error_if_none=True)
+    except Exception as e:
+        assert str(e).startswith("Your user profile declares no lab with awards.")
+    else:
+        raise AssertionError("Expected error was not raised.")  # pragma: no cover
+
+    with pytest.raises(Exception) as exc:
+        get_defaulted_award(award=None,
+                            user_record=make_user_record(lab={
+                                '@id': SOME_LAB,
+                                'awards': [
+                                    {"@id": "/awards/foo"},
+                                    {"@id": "/awards/bar"},
+                                    {"@id": "/awards/baz"},
+                                ]}),
+                            error_if_none=True)
+    assert str(exc.value) == ("Your lab (/lab/good-lab/) declares multiple awards."
+                              " You must explicitly specify one of /awards/foo, /awards/bar"
+                              " or /awards/baz with --award.")
+
+    assert get_defaulted_award(award=None, user_record=make_user_record()) is None
+    assert get_defaulted_award(award=None, user_record=make_user_record(), error_if_none=False) is None
+
+    with pytest.raises(Exception) as exc:
+        get_defaulted_award(award=None, user_record=make_user_record(), error_if_none=True)
+    assert str(exc.value).startswith("Your user profile declares no lab with awards.")
+
+
+def test_post_files_data():
+
+    with mock.patch("io.open") as mock_open:
+
+        test_filename = 'file_to_be_posted.something'
+        mock_open.return_value = mocked_open_file = NamedObject('mocked open file')
+
+        d = _post_files_data(SubmissionProtocol.UPLOAD, test_filename)
+        assert d == {'datafile': mocked_open_file}
+        mock_open.called_with(test_filename, 'rb')
+
+        mock_open.reset_mock()
+
+        d = _post_files_data(SubmissionProtocol.S3, test_filename)
+        assert d == {'datafile': None}
+        mock_open.assert_not_called()
+
+
+def test_compute_file_post_data():
+
+    assert compute_file_post_data('foo.bar', dict(lab=None, award=None, institution=None, project=None)) == {
+        'filename': 'foo.bar',
+        'file_format': 'bar',
+    }
+
+    assert compute_file_post_data('foo.bar', dict(lab='/labs/L1/', award='/awards/A1/',
+                                                  institution=None, project=None)) == {
+        'filename': 'foo.bar',
+        'file_format': 'bar',
+        'lab': '/labs/L1/',
+        'award': '/awards/A1/',
+    }
+
+    assert compute_file_post_data('foo.bar', dict(lab=None, award=None,
+                                                  institution='/institutions/I1/', project='/projects/P1/')) == {
+        'filename': 'foo.bar',
+        'file_format': 'bar',
+        'institution': '/institutions/I1/',
+        'project': '/projects/P1/'
+    }
+
+
+mocked_key = 'an_authorized_key'
+mocked_secret = 'an_authorized_secret'
+mocked_good_auth = {'key': mocked_key, 'secret': mocked_secret}
+mocked_bad_auth = {'key': f'not_{mocked_key}', 'secret': f'not_{mocked_secret}'}
+mocked_good_uuid = 'good-uuid-0000-0001'
+mocked_good_at_id = '/things/good-thing/'
+mocked_award_and_lab = {'award': '/awards/A1/', 'lab': '/labs/L1/'}
+mocked_institution_and_project = {'institution': '/institution/I1/', 'project': '/projects/P1/'}
+mocked_good_filename_base = 'some_good'
+mocked_good_filename_ext = 'file'
+mocked_good_filename = f'{mocked_good_filename_base}.{mocked_good_filename_ext}'
+mocked_s3_upload_bucket = 'some-bucket'
+mocked_s3_upload_key = f'{mocked_good_uuid}/{mocked_good_filename}'
+mocked_s3_url = f's3://{mocked_s3_upload_bucket}/{mocked_s3_upload_key}'
+mocked_good_upload_credentials = {
+    'key': mocked_s3_upload_key,
+    'upload_url': mocked_s3_url,
+    'upload_credentials': {
+        'AccessKeyId': 'some-access-key-id',
+        'SecretAccessKey': 'some-secret-access-key',
+        'SessionToken': 'some-session-token-much-longer-than-this-mock'
+    }
+}
+mocked_good_file_metadata = {
+    'uuid': mocked_good_uuid,
+    'accession': mocked_good_at_id,
+    '@id': mocked_good_at_id,
+    'key': mocked_good_filename,
+    'upload_credentials': mocked_good_upload_credentials,
+}
+expected_schema_name = GENERIC_SCHEMA_TYPE
+
+
+def test_upload_file_to_new_uuid():
+
+    def mocked_execute_prearranged_upload(filename, upload_credentials, auth):
+        assert filename == mocked_good_filename
+        assert upload_credentials == mocked_good_upload_credentials
+        assert auth == mocked_good_auth
+
+    def test_it(schema_name, auth, expected_post_item, **context_attributes):
+
+        def mocked_post_metadata(post_item, schema_name, key):
+            assert post_item == expected_post_item
+            assert schema_name == expected_schema_name
+            assert key == mocked_good_auth, "Simulated authorization failure"
+            return {
+                '@graph': [
+                    mocked_good_file_metadata
+                ]
+            }
+
+        # Note: compute_file_post_data is allowed to run without mocking
+        with mock.patch("dcicutils.ff_utils.post_metadata") as mock_post_metadata:
+            mock_post_metadata.side_effect = mocked_post_metadata
+            with mock.patch.object(submission_module, "execute_prearranged_upload") as mock_execute_prearranged_upload:
+                mock_execute_prearranged_upload.side_effect = mocked_execute_prearranged_upload
+                res = upload_file_to_new_uuid(mocked_good_filename, schema_name=schema_name, auth=auth,
+                                              **context_attributes)
+                assert res == mocked_good_file_metadata
+
+    test_it(schema_name='FileOther', auth=mocked_good_auth,
+            expected_post_item={
+                'filename': mocked_good_filename,
+                'file_format': mocked_good_filename_ext
+            })
+
+    test_it(schema_name='FileOther', auth=mocked_good_auth,
+            expected_post_item={
+                'filename': mocked_good_filename,
+                'file_format': mocked_good_filename_ext,
+                **mocked_award_and_lab
+            },
+            **mocked_award_and_lab)
+
+    test_it(schema_name='FileOther', auth=mocked_good_auth,
+            expected_post_item={
+                'filename': mocked_good_filename,
+                'file_format': mocked_good_filename_ext,
+                **mocked_institution_and_project
+            },
+            **mocked_institution_and_project)
+
+    with pytest.raises(Exception):
+        test_it(schema_name='FileOther', auth=mocked_bad_auth,
+                expected_post_item={
+                    'filename': mocked_good_filename,
+                    'file_format': mocked_good_filename_ext
+                })
+
+
+def test_compute_s3_submission_post_data():
+
+    other_args = {'other_arg1': 1, 'other_arg2': 2}
+
+    some_filename = f'/some/upload/dir/{mocked_good_filename}'
+
+    assert compute_s3_submission_post_data(ingestion_filename=some_filename,
+                                           ingestion_post_result=mocked_good_file_metadata,
+                                           **other_args
+                                           ) == {
+        'datafile_uuid': mocked_good_uuid,
+        'datafile_accession': mocked_good_at_id,
+        'datafile_@id': mocked_good_at_id,
+        'datafile_url': mocked_s3_url,
+        'datafile_bucket': mocked_s3_upload_bucket,
+        'datafile_key': mocked_s3_upload_key,
+        'datafile_source_filename': mocked_good_filename,
+        **other_args
+    }

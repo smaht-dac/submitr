@@ -7,6 +7,23 @@ Change Log
 ----------
 
 
+4.0.0
+=====
+
+* Add command submit-ontology with new SubmissionProtocol.S3 support that allows upload first via S3
+  when initiating a connection. This is not an incompatible change, but it is a very major feature addition,
+  so I'm going to bump the major version.
+
+* In ``base.py``:
+
+  *  New class ``GenericKeyManager`` to manage possibility of either Fourfront or CGAP keys files
+     (``~/.fourfront-keys.json`` vs ``~/.cgap-keys.json``)
+
+* Appropriate unit test coverage.
+
+* Use poetry 1.3.2 for building. Update other dependencies.
+
+
 3.1.0
 =====
 
