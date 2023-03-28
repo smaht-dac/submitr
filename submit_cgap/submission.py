@@ -111,7 +111,6 @@ def get_user_record(server, auth, verbose: bool = False, debug: bool = False):
     """
 
     user_url = server + "/me?format=json"
-#   user_record_response = requests.get(user_url, auth=auth)
     user_record_response = portal_request_get(user_url, auth=auth, debug=debug)
     try:
         user_record = user_record_response.json()
@@ -258,7 +257,7 @@ def do_app_arg_defaulting(app_args, user_record, verbose: bool = False):
             app_args[arg] = defaulter(val, user_record, verbose=verbose)
 
 
-PROGRESS_CHECK_INTERVAL = 15  # seconds
+PROGRESS_CHECK_INTERVAL = 7  # seconds
 ATTEMPTS_BEFORE_TIMEOUT = 40
 
 
@@ -355,12 +354,6 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
         old_style_submission_url = url_path_join(server, "submit_for_ingestion")
         old_style_post_data = dict(creation_post_data, **submission_post_data)
 
-#       response = requests.post(old_style_submission_url,
-#                                auth=keypair,
-#                                data=old_style_post_data,
-#                                headers={'Content-type': 'application/json'},
-#                                files=_post_files_data(submission_protocol=submission_protocol,
-#                                                       ingestion_filename=ingestion_filename))
         response = portal_request_post(old_style_submission_url,
                                        auth=keypair,
                                        data=old_style_post_data,
@@ -394,11 +387,6 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT("creation_post_data=", json.dumps(creation_post_data, indent=2))
         PRINT("creation_post_url=", creation_post_url)
-#   creation_response = requests.post(creation_post_url, auth=keypair,
-#                                     headers=creation_post_headers,
-#                                     json=creation_post_data
-#                                     # data=json.dumps(creation_post_data)
-#                                     )
     if verbose:
         show("Creating IngestionSubmission (bundle) type object ...", with_time=True)
     if submission_protocol == SubmissionProtocol.S3:
@@ -425,9 +413,6 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT("submitting new_style_submission_url=", new_style_submission_url)
         PRINT(f"data=submission_post_data={json.dumps(submission_post_data, indent=2)}")
-#   response = requests.post(new_style_submission_url, auth=keypair, data=submission_post_data,
-#                            files=_post_files_data(submission_protocol=submission_protocol,
-#                                                   ingestion_filename=ingestion_filename))
     response = portal_request_post(new_style_submission_url, auth=keypair, data=submission_post_data,
                                    files=_post_files_data(submission_protocol=submission_protocol,
                                                           ingestion_filename=ingestion_filename))
@@ -645,26 +630,6 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
                          verbose=verbose)
     )
 
-    """
-    outcome = None
-    tries_left = ATTEMPTS_BEFORE_TIMEOUT
-    done = False
-    while tries_left > 0:
-        # Pointless to hit the queue immediately, so we avoid some
-        # server stress by sleeping even before the first try.
-        time.sleep(PROGRESS_CHECK_INTERVAL)
-        res = requests.get(tracking_url, auth=keypair).json()
-        processing_status = res['processing_status']
-        done = processing_status['state'] == 'done'
-        if done:
-            outcome = processing_status['outcome']
-            break
-        else:
-            progress = processing_status['progress']
-            show("Progress is %s. Continuing to wait..." % progress, with_time=True)
-        tries_left -= 1
-    """
-
     if not check_done:
         show("Exiting after check processing timeout | Check status using: TODO", with_time=verbose)
         exit(1)
@@ -686,7 +651,8 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
         show_section(check_response, "upload_info")
         do_any_uploads(check_response, keydict=keydict, ingestion_filename=ingestion_filename,
                        upload_folder=upload_folder, no_query=no_query,
-                       subfolders=subfolders)
+                       subfolders=subfolders,
+                       verbose=verbose, debug=debug)
 
     exit(0)
 
@@ -718,7 +684,7 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
     return submission_post_data
 
 
-def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None):
+def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None, verbose: bool = False, debug: bool = False):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -733,43 +699,62 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None)
         app = DEFAULT_APP
     if KEY_MANAGER.selected_app != app:
         with KEY_MANAGER.locally_selected_app(app):
-            return show_upload_info(uuid=uuid, server=server, env=env, keydict=keydict, app=app)
+            return show_upload_info(uuid=uuid, server=server, env=env, keydict=keydict, app=app,
+                                    verbose=verbose, debug=debug)
 
     server = resolve_server(server=server, env=env)
     keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
     url = ingestion_submission_item_url(server, uuid)
-#   response = requests.get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict))
-    response = portal_request_get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict))
+    response = portal_request_get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict), debug=debug)
     response.raise_for_status()
     res = response.json()
     if get_section(res, 'upload_info'):
         show_section(res, 'upload_info')
     else:
-        show("No uploads.")
+        show("Uploads: None")
 
     if get_section(res, 'validation_output'):
         print()
         show_section(res, 'validation_output')
 
+    # New (dmichaels) ...
+    if res.get('processing_status'):
+        show("----- Status -----")
+        state = res['processing_status'].get('state')
+        if state:
+            show(f"State: {state.title()}")
+        outcome = res['processing_status'].get('outcome')
+        if outcome:
+            show(f"Outcome: {outcome.title()}")
+        progress = res['processing_status'].get('progress')
+        if progress:
+            show(f"Progress: {progress.title()}")
+    if res.get('parameters'):
+        datafile_url = res['parameters'].get('datafile_url')
+        if datafile_url:
+            show("----- FileObject -----")
+            print(datafile_url)
+
 
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
-                   no_query=False, subfolders=False):
+                   no_query=False, subfolders=False, verbose: bool = False, debug: bool = False):
     upload_info = get_section(res, 'upload_info')
     folder = upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None)
     if upload_info:
         if no_query:
             do_uploads(upload_info, auth=keydict, no_query=no_query, folder=folder,
-                       subfolders=subfolders)
+                       subfolders=subfolders, verbose=verbose, debug=debug)
         else:
             if yes_or_no("Upload %s?" % n_of(len(upload_info), "file")):
                 do_uploads(upload_info, auth=keydict, no_query=no_query, folder=folder,
-                           subfolders=subfolders)
+                           subfolders=subfolders, verbose=verbose, debug=debug)
             else:
                 show("No uploads attempted.")
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
-                   upload_folder=None, no_query=False, subfolders=False):
+                   upload_folder=None, no_query=False, subfolders=False,
+                   verbose: bool = False, debug: bool = False):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -788,15 +773,15 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
     url = ingestion_submission_item_url(server, uuid)
     keypair = KEY_MANAGER.keydict_to_keypair(keydict)
-#   response = requests.get(url, auth=keypair)
-    response = portal_request_get(url, auth=keypair)
+    response = portal_request_get(url, auth=keypair, debug=debug)
     response.raise_for_status()
     do_any_uploads(response.json(),
                    keydict=keydict,
                    ingestion_filename=bundle_filename,
                    upload_folder=upload_folder,
                    no_query=no_query,
-                   subfolders=subfolders)
+                   subfolders=subfolders,
+                   verbose=verbose, debug=debug)
 
 
 def get_s3_encrypt_key_id_from_health_page(auth):
@@ -904,7 +889,6 @@ def upload_file_to_new_uuid(filename, schema_name, auth, verbose: bool = False, 
 
     if verbose:
         show("Creating FileOther type object ...", with_time=verbose)
-#   response = ff_utils.post_metadata(post_item=post_item, schema_name=schema_name, key=auth)
     response = portal_metadata_post(schema=schema_name, data=post_item, auth=auth, debug=debug)
     if verbose:
         show(f"Created FileOther type object:"
@@ -919,7 +903,7 @@ def upload_file_to_new_uuid(filename, schema_name, auth, verbose: bool = False, 
     return metadata
 
 
-def upload_file_to_uuid(filename, uuid, auth):
+def upload_file_to_uuid(filename, uuid, auth, verbose: bool = False, debug: bool = False):
     """
     Upload file to a target environment.
 
@@ -934,7 +918,6 @@ def upload_file_to_uuid(filename, uuid, auth):
     # filename here should not include path
     patch_data = {'filename': os.path.basename(filename)}
 
-#   response = ff_utils.patch_metadata(patch_data, uuid, key=auth)
     response = portal_metadata_patch(uuid=uuid, data=patch_data, auth=auth)
 
     metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
@@ -968,7 +951,7 @@ def extract_metadata_and_upload_credentials(response, filename, method, payload_
 CGAP_SELECTIVE_UPLOADS = environ_bool("CGAP_SELECTIVE_UPLOADS")
 
 
-def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=False):
+def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=False, verbose: bool = False, debug: bool = False):
     """
     Uploads the files mentioned in the give upload_spec_list.
 
@@ -998,7 +981,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
             upload_file_to_uuid, file_path
         )
         file_metadata = wrapped_upload_file_to_uuid(
-            filename=file_path, uuid=uuid, auth=auth
+            filename=file_path, uuid=uuid, auth=auth, verbose=verbose, debug=debug
         )
         if file_metadata:
             extra_files_credentials = file_metadata.get("extra_files_creds", [])
@@ -1009,6 +992,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
                     folder,
                     auth,
                     recursive=subfolders,
+                    verbose=verbose, debug=debug
                 )
 
 
@@ -1085,7 +1069,7 @@ class UploadMessageWrapper:
 
 
 def upload_extra_files(
-    credentials, uploader_wrapper, folder, auth, recursive=False
+    credentials, uploader_wrapper, folder, auth, recursive=False, verbose: bool = False, debug: bool = False
 ):
     """Attempt upload of all extra files.
 
@@ -1116,11 +1100,11 @@ def upload_extra_files(
             execute_prearranged_upload, extra_file_path
         )
         wrapped_execute_prearranged_upload(
-            extra_file_path, extra_file_credentials, auth=auth
+            extra_file_path, extra_file_credentials, auth=auth, verbose=verbose, debug=debug
         )
 
 
-def upload_item_data(item_filename, uuid, server, env, no_query=False):
+def upload_item_data(item_filename, uuid, server, env, no_query=False, verbose: bool = False, debug: bool = False):
     """
     Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
 
@@ -1145,4 +1129,4 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
             show("Aborting submission.")
             exit(1)
 
-    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=keydict)
+    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=keydict, verbose=verbose, debug=debug)
