@@ -2096,6 +2096,68 @@ def test_submit_any_ingestion_new_protocol():
                                                             )
         assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
+    dt.reset_datetime()
+
+    # Check an edge case
+
+    expect_datafile_for_mocked_post = False
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", mocked_post):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        with mock.patch.object(submission_module,
+                                                                               "upload_file_to_new_uuid"
+                                                                               ) as mock_upload_file_to_new_uuid:
+                                                            def mocked_upload_file_to_new_uuid(filename, schema_name,
+                                                                                               auth, **app_args):
+                                                                assert filename == SOME_BUNDLE_FILENAME
+                                                                assert schema_name == expected_schema_name
+                                                                assert auth['key'] == SOME_KEY_ID
+                                                                assert auth['secret'] == SOME_SECRET
+                                                                return {
+                                                                    'uuid': mocked_good_uuid,
+                                                                    'accession': mocked_good_at_id,
+                                                                    '@id': mocked_good_at_id,
+                                                                    'key': mocked_good_filename,
+                                                                    'upload_credentials':
+                                                                        mocked_good_upload_credentials,
+                                                                }
+                                                            mock_upload_file_to_new_uuid.side_effect = (
+                                                                mocked_upload_file_to_new_uuid
+                                                            )
+                                                            with pytest.raises(Exception):
+                                                                submit_any_ingestion(
+                                                                    SOME_BUNDLE_FILENAME,
+                                                                    ingestion_type='metadata_bundle',
+                                                                    institution=SOME_INSTITUTION,
+                                                                    project=SOME_PROJECT,
+                                                                    server=SOME_SERVER,
+                                                                    env=None,
+                                                                    validate_only=False,
+                                                                    upload_folder=None,
+                                                                    no_query=False,
+                                                                    subfolders=False,
+                                                                    # This is going to make it fail:
+                                                                    submission_protocol='bad-submission-protocol',
+                                                                )
+
+                                                            assert mock_do_any_uploads.call_count == 0
+
     expect_datafile_for_mocked_post = True
 
     dt.reset_datetime()
