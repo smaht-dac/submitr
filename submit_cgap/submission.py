@@ -650,7 +650,7 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
         'datafile_source_filename': os.path.basename(ingestion_filename),
         **other_args  # validate_only, and any of institution, project, lab, or award that caller gave us
     }
-    if DEBUG_PROTOCOL:  # noQA
+    if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT(f"submission_post_data={json.dumps(submission_post_data, indent=2)}")
     return submission_post_data
 
