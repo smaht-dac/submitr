@@ -65,6 +65,7 @@ def test_submit_ontology_script(keyfile):
                 expect_exit_code=0,
                 expect_called=True,
                 expect_call_args=expect_call_args)
+
         test_it(args_in=[ontology_filename, "--env", "some-env", "--lab", "some-lab",
                          "-s", "some-server", "--validate-only", "-a", "some-award"],
                 expect_exit_code=0,
