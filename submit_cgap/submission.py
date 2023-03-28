@@ -504,47 +504,40 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     if not os.path.exists(ingestion_filename):
         raise ValueError("The file '%s' does not exist." % ingestion_filename)
 
+    creation_post_data = {
+        'ingestion_type': ingestion_type,
+        "processing_status": {
+            "state": "submitted"
+        },
+        **app_args,  # institution & project or lab & award
+    }
+
     if submission_protocol == SubmissionProtocol.S3:
 
-        result = upload_file_to_new_uuid(filename=ingestion_filename, schema_name=GENERIC_SCHEMA_TYPE, auth=keydict,
-                                         **app_args)
+        upload_result = upload_file_to_new_uuid(filename=ingestion_filename, schema_name=GENERIC_SCHEMA_TYPE,
+                                                auth=keydict, **app_args)
+
         submission_post_data = compute_s3_submission_post_data(ingestion_filename=ingestion_filename,
-                                                               ingestion_post_result=result,
+                                                               ingestion_post_result=upload_result,
                                                                # The rest of this is other_args to pass through...
                                                                validate_only=validate_only, **app_args)
 
-        response = _post_submission(server=server, keypair=keypair,
-                                    ingestion_filename=ingestion_filename,
-                                    creation_post_data={
-                                        'ingestion_type': ingestion_type,
-                                        "processing_status": {
-                                            "state": "submitted"
-                                        },
-                                        **app_args,  # institution & project or lab & award
-                                    },
-                                    submission_post_data=submission_post_data,
-                                    submission_protocol=submission_protocol)
-
     elif submission_protocol == SubmissionProtocol.UPLOAD:
 
-        response = _post_submission(server=server, keypair=keypair,
-                                    ingestion_filename=ingestion_filename,
-                                    creation_post_data={
-                                        'ingestion_type': ingestion_type,
-                                        "processing_status": {
-                                            "state": "submitted"
-                                        },
-                                        **app_args,  # institution & project or lab & award
-                                    },
-                                    submission_post_data={
-                                        'validate_only': validate_only,
-                                    },
-                                    submission_protocol=submission_protocol)
+        submission_post_data = {
+            'validate_only': validate_only,
+        }
 
     else:
 
         raise InvalidParameterError(parameter='submission_protocol', value=submission_protocol,
                                     options=SUBMISSION_PROTOCOLS)
+
+    response = _post_submission(server=server, keypair=keypair,
+                                ingestion_filename=ingestion_filename,
+                                creation_post_data=creation_post_data,
+                                submission_post_data=submission_post_data,
+                                submission_protocol=submission_protocol)
 
     try:
         # This can fail if the body doesn't contain JSON

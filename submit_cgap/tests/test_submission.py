@@ -29,7 +29,7 @@ from ..submission import (
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
     _post_files_data,  # noQA - again, testing a protected member
     get_defaulted_lab, get_defaulted_award, SubmissionProtocol, compute_file_post_data,
-    upload_file_to_new_uuid, compute_s3_submission_post_data,
+    upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE,
 )
 from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
@@ -1824,6 +1824,8 @@ def test_submit_any_ingestion_new_protocol():
 
                     assert shown.lines == ["Aborting submission."]
 
+    expect_datafile_for_mocked_post = True
+
     def mocked_post(url, auth, data=None, json=None, files=None, headers=None):
         ignored(data, json)
         content_type = headers and headers.get('Content-type')
@@ -1862,7 +1864,10 @@ def test_submit_any_ingestion_new_protocol():
             if m:
                 assert m.group(1) == SOME_UUID
                 assert auth == SOME_AUTH
-                assert isinstance(files, dict) and 'datafile' in files and isinstance(files['datafile'], io.BytesIO)
+                if expect_datafile_for_mocked_post:
+                    assert isinstance(files, dict) and 'datafile' in files and isinstance(files['datafile'], io.BytesIO)
+                else:
+                    assert files == {'datafile': None}
                 return FakeResponse(201, json={'submission_id': SOME_UUID})
             else:
                 # Old protocol used
@@ -1968,7 +1973,8 @@ def test_submit_any_ingestion_new_protocol():
                                             else:  # pragma: no cover
                                                 raise AssertionError("Expected ValueError did not happen.")
 
-    # This tests the normal case with validate_only=False and a successful result.
+    # This tests the normal case with SubmissionProtocol.UPLOAD (the default), and with validate_only=False
+    # and a successful result.
 
     with shown_output() as shown:
         with mock.patch("os.path.exists", mfs.exists):
@@ -2015,6 +2021,82 @@ def test_submit_any_ingestion_new_protocol():
                                                             subfolders=False,
                                                         )
         assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
+
+    dt.reset_datetime()
+
+    # This tests the normal case with SubmissionProtocol.S3, and with validate_only=False and a successful result.
+
+    expect_datafile_for_mocked_post = False
+
+    with shown_output() as shown:
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch("io.open", mfs.open):
+                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
+                    print("Data would go here.", file=fp)
+                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
+                                                   return_value=SOME_KEYDICT):
+                                with mock.patch("requests.post", mocked_post):
+                                    with mock.patch("requests.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts)):
+                                        with mock.patch("datetime.datetime", dt):
+                                            with mock.patch("time.sleep", dt.sleep):
+                                                with mock.patch.object(submission_module, "show_section"):
+                                                    with mock.patch.object(submission_module,
+                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                                        with mock.patch.object(submission_module,
+                                                                               "upload_file_to_new_uuid"
+                                                                               ) as mock_upload_file_to_new_uuid:
+                                                            def mocked_upload_file_to_new_uuid(filename, schema_name,
+                                                                                               auth, **app_args):
+                                                                assert filename == SOME_BUNDLE_FILENAME
+                                                                assert schema_name == expected_schema_name
+                                                                assert auth['key'] == SOME_KEY_ID
+                                                                assert auth['secret'] == SOME_SECRET
+                                                                return {
+                                                                    'uuid': mocked_good_uuid,
+                                                                    'accession': mocked_good_at_id,
+                                                                    '@id': mocked_good_at_id,
+                                                                    'key': mocked_good_filename,
+                                                                    'upload_credentials':
+                                                                        mocked_good_upload_credentials,
+                                                                }
+                                                            mock_upload_file_to_new_uuid.side_effect = (
+                                                                mocked_upload_file_to_new_uuid
+                                                            )
+                                                            try:
+                                                                submit_any_ingestion(
+                                                                    SOME_BUNDLE_FILENAME,
+                                                                    ingestion_type='metadata_bundle',
+                                                                    institution=SOME_INSTITUTION,
+                                                                    project=SOME_PROJECT,
+                                                                    server=SOME_SERVER,
+                                                                    env=None,
+                                                                    validate_only=False,
+                                                                    upload_folder=None,
+                                                                    no_query=False,
+                                                                    subfolders=False,
+                                                                    submission_protocol=SubmissionProtocol.S3,
+                                                                )
+                                                            except SystemExit as e:  # pragma: no cover
+                                                                # This is just in case. In fact it's more likely
+                                                                # that a normal 'return' not 'exit' was done.
+                                                                assert e.code == 0
+
+                                                            assert mock_do_any_uploads.call_count == 1
+                                                            mock_do_any_uploads.assert_called_with(
+                                                                final_res,
+                                                                ingestion_filename=SOME_BUNDLE_FILENAME,
+                                                                keydict=SOME_KEYDICT,
+                                                                upload_folder=None,
+                                                                no_query=False,
+                                                                subfolders=False,
+                                                            )
+        assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
+
+    expect_datafile_for_mocked_post = True
 
     dt.reset_datetime()
 
@@ -2645,11 +2727,10 @@ mocked_good_file_metadata = {
     'key': mocked_good_filename,
     'upload_credentials': mocked_good_upload_credentials,
 }
+expected_schema_name = GENERIC_SCHEMA_TYPE
 
 
 def test_upload_file_to_new_uuid():
-
-    expected_schema_name = 'FileOther'
 
     def mocked_execute_prearranged_upload(filename, upload_credentials, auth):
         assert filename == mocked_good_filename
