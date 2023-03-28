@@ -704,11 +704,12 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     else:
         show("Uploads: None")
 
+    # New March 2023 ...
+
     if get_section(res, 'validation_output'):
         PRINT()
         show_section(res, 'validation_output')
 
-    # New (dmichaels) ...
     if res.get('processing_status'):
         show("----- Status -----")
         state = res['processing_status'].get('state')
@@ -720,6 +721,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
         progress = res['processing_status'].get('progress')
         if progress:
             show(f"Progress: {progress.title()}")
+
     if res.get('parameters'):
         datafile_url = res['parameters'].get('datafile_url')
         if datafile_url:
