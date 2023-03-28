@@ -117,7 +117,9 @@ def check_repeatedly(check_function: Callable,
     value, then that value will be printed to the stdout.
     """
     def output(message):
-        show(message, with_time=verbose, same_line=True)
+        #show(message, with_time=verbose, same_line=True)
+        #show(message, with_time=verbose, same_line=False)
+        show(message, with_time=True, same_line=False)
     if not check_message:
         check_message = "Checking processing"
     if not wait_message:
@@ -130,6 +132,7 @@ def check_repeatedly(check_function: Callable,
     check_function_returning_tuple = True
     check_status = "None"
     start_time = time.time()
+    start_time = 0
     while True:
         if messages:
             output(f"{check_message} {f'| Status: {check_status.title()}' if check_status else ''}"
@@ -152,13 +155,14 @@ def check_repeatedly(check_function: Callable,
             return check_function_response
         if repeat_count > 0 and ntimes >= repeat_count:
             if messages:
-                duration = round(time.time() - start_time)
+                #duration = round(time.time() - start_time)
+                duration = 0
                 output(f"{stop_message} {f'| Status: {check_status.title()}' if check_status else ''}"
                        f" | Checked: {ntimes} time{'s' if ntimes != 1 else ''}"
                        f" | Duration: {round(time.time() - start_time)} second{'s' if duration != 1 else ''}\n")
             return check_function_response if check_function_returning_tuple else False
         for i in range(wait_seconds):
-            time.sleep(1)
+            #time.sleep(1)
             if messages:
                 output(f"{wait_message} {f'| Status: {check_status.title()}' if check_status else ''}"
                        f" | Checked: {ntimes} time{'s' if ntimes != 1 else ''}"
@@ -222,6 +226,8 @@ def _portal_request(request: Callable,
             headers = {"Content-Type": "application/json", "Accept": "application/json"}
     if headers:
         kwargs["headers"] = headers
+    else:
+        kwargs["headers"] = None
     if data:
         if not files:
             kwargs["json"] = data

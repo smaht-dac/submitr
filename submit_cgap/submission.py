@@ -257,7 +257,7 @@ def do_app_arg_defaulting(app_args, user_record, verbose: bool = False):
             app_args[arg] = defaulter(val, user_record, verbose=verbose)
 
 
-PROGRESS_CHECK_INTERVAL = 7  # seconds
+PROGRESS_CHECK_INTERVAL = 1  # seconds
 ATTEMPTS_BEFORE_TIMEOUT = 40
 
 
@@ -592,6 +592,8 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
     uuid = res['submission_id']
 
+    show("Bundle uploaded, assigned uuid %s for tracking. Awaiting processing..." % uuid, with_time=True)
+
     def check_ingestion_progress():
         """
         Calls endpoint to get this status of the IngestionSubmission uuid.
@@ -610,7 +612,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
             progress = status["progress"]
             return False, progress, response
 
-    show("Checking ingestion process using IngestionSubmission uuid: %s ..." % uuid, with_time=verbose)
+#   show("Checking ingestion process using IngestionSubmission uuid: %s ..." % uuid, with_time=verbose) # xyzzy
 
     # Check the ingestion processing repeatedly, up to ATTEMPTS_BEFORE_TIMEOUT times,
     # and waiting PROGRESS_CHECK_INTERVAL seconds between each check.
@@ -618,7 +620,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
         check_repeatedly(check_ingestion_progress,
                          wait_seconds=PROGRESS_CHECK_INTERVAL,
                          repeat_count=ATTEMPTS_BEFORE_TIMEOUT,
-                         verbose=verbose)
+                         verbose=True)
     )
 
     if not check_done:
@@ -705,7 +707,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
         show("Uploads: None")
 
     if get_section(res, 'validation_output'):
-        print()
+        PRINT()
         show_section(res, 'validation_output')
 
     # New (dmichaels) ...
@@ -724,7 +726,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
         datafile_url = res['parameters'].get('datafile_url')
         if datafile_url:
             show("----- FileObject -----")
-            print(datafile_url)
+            PRINT(datafile_url)
 
 
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
