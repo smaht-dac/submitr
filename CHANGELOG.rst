@@ -7,6 +7,15 @@ Change Log
 ----------
 
 
+4.1.0
+=====
+
+* Verify ontology file first before processing in submit-ontology.
+* Added --verbose and --debug options to submit-xyz and show-upload-info.
+* Fixed show-upload-info to work with new --app option etc.
+* Updated show-upload-info to show more info on the given ingestion uuid.
+
+
 4.0.0
 =====
 
