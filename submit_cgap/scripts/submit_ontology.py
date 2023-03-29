@@ -31,8 +31,6 @@ def main(simulated_args_for_testing=None):
                         help=f"the submission protocol (default {SubmissionProtocol.S3!r})")
     parser.add_argument('--verbose', default=False, action='store_true', help='Include verbose output.')
     parser.add_argument('--debug', default=False, action='store_true', help='Include debug output.')
-
-
     args = parser.parse_args(args=simulated_args_for_testing)
 
     with script_catch_errors():
