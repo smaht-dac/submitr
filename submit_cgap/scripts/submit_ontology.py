@@ -3,8 +3,7 @@ import json
 import io
 import os
 from dcicutils.common import APP_FOURFRONT, ORCHESTRATED_APPS
-from dcicutils.misc_utils import PRINT
-from ..submission import submit_any_ingestion, SubmissionProtocol, SUBMISSION_PROTOCOLS, DEFAULT_APP
+from ..submission import submit_any_ingestion, SubmissionProtocol, SUBMISSION_PROTOCOLS
 from ..utils import script_catch_errors, show
 
 

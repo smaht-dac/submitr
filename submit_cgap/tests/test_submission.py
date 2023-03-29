@@ -790,7 +790,8 @@ def test_execute_prearranged_upload(os_simulation_mode: str):
                         )
                         assert shown.lines == [
                             "Uploading local file some-filename directly (via aws-cli) to: some-url",
-                            "Upload duration: 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
+                            # 1 tick (at rate of 1 second per tick in our controlled time)
+                            "Upload duration: 1.00 seconds"
                         ]
 
         with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
@@ -808,7 +809,8 @@ def test_execute_prearranged_upload(os_simulation_mode: str):
                         )
                         assert shown.lines == [
                             "Uploading local file some-filename directly (via aws-cli) to: some-url",
-                            "Upload duration: 1.00 seconds"  # 1 tick (at rate of 1 second per tick in our controlled time)
+                            # 1 tick (at rate of 1 second per tick in our controlled time)
+                            "Upload duration: 1.00 seconds"
                         ]
 
         with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
@@ -931,7 +933,7 @@ def test_do_uploads(tmp_path):
 
         uploaded = {}
 
-        def mocked_upload_file(filename, uuid, auth, verbose = False, debug = False):
+        def mocked_upload_file(filename, uuid, auth, verbose: bool = False, debug: bool = False):
             if auth != SOME_AUTH:
                 raise Exception("Bad auth")
             uploaded[uuid] = filename
@@ -1162,7 +1164,8 @@ def test_upload_item_data():
 
                     mock_resolve.assert_called_with(env=SOME_ENV, server=SOME_SERVER)
                     mock_get.assert_called_with(SOME_SERVER)
-                    mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_KEYDICT, verbose=False, debug=False)
+                    mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_KEYDICT,
+                                                   verbose=False, debug=False)
 
     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER) as mock_resolve:
         with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
@@ -1228,41 +1231,47 @@ class Scenario:
         return [
             f"The server {SOME_SERVER} recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>",
             (
-                f"{uploaded_time} Bundle uploaded. Checking ingestion process using IngestionSubmission uuid: {SOME_UUID} ..."
+                (f"{uploaded_time} Bundle uploaded."
+                 f" Checking ingestion process using IngestionSubmission uuid: {SOME_UUID} ...")
             ),
         ]
 
-    def make_wait_lines(self, wait_attempts, outcome = None):
+    def make_wait_lines(self, wait_attempts, outcome: str = None):
         result = []
         uploaded_time = self.get_time_after_wait()
         time_delta_from_start = 0
         nchecks = 0
         CLEAR = "\033[K"
-        for idx in range(wait_attempts + 1): # range(PROGRESS_CHECK_INTERVAL): #range(wait_attempts):
+        for idx in range(wait_attempts + 1):
             time_delta_from_start += 1
             adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
             wait_time = adjusted_scenario.get_time_after_wait()
-            wait_line = f"{CLEAR}{wait_time} Checking processing | Status: Not Done Yet | Checked: {nchecks} time{'s' if nchecks != 1 else ''} ...\r"
+            wait_line = (f"{CLEAR}{wait_time} Checking processing"
+                         f" | Status: Not Done Yet | Checked: {nchecks} time{'s' if nchecks != 1 else ''} ...\r")
             result.append(wait_line)
             if nchecks >= wait_attempts:
                 time_delta_from_start += 1
                 adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
                 wait_time = adjusted_scenario.get_time_after_wait()
                 if outcome == "timeout":
-                    wait_line = f"{CLEAR}{wait_time} Giving up waiting for processing completion | Status: Not Done Yet | Checked: {nchecks + 1} times\n\r"
+                    wait_line = (f"{CLEAR}{wait_time} Giving up waiting for processing completion"
+                                 f" | Status: Not Done Yet | Checked: {nchecks + 1} times\n\r")
                 else:
-                    wait_line = f"{CLEAR}{wait_time} Processing complete | Status: {outcome.title() if outcome else 'Unknown'} | Checked: {nchecks + 1} times\n\r"
+                    wait_line = (f"{CLEAR}{wait_time} Processing complete"
+                                 f" | Status: {outcome.title() if outcome else 'Unknown'}"
+                                 f" | Checked: {nchecks + 1} times\n\r")
                 result.append(wait_line)
                 break
             nchecks += 1
-            for i in range(PROGRESS_CHECK_INTERVAL): # range(self.wait_time_delta):
-                time_delta_from_start += 2 # Extra 1 for the 1-second sleep loop in utils.check_repeatedly
+            for i in range(PROGRESS_CHECK_INTERVAL):
+                time_delta_from_start += 2  # Extra 1 for the 1-second sleep loop in utils.check_repeatedly
                 adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
                 wait_time = adjusted_scenario.get_time_after_wait()
                 wait_line = (
                     f"{CLEAR}{wait_time} Waiting for processing completion"
                     f" | Status: Not Done Yet | Checked: {idx + 1} time{'s' if idx + 1 != 1 else ''}"
-                    f" | Next check: {PROGRESS_CHECK_INTERVAL - i} second{'s' if PROGRESS_CHECK_INTERVAL - i != 1 else ''} ...\r"
+                    f" | Next check: {PROGRESS_CHECK_INTERVAL - i}"
+                    f" second{'s' if PROGRESS_CHECK_INTERVAL - i != 1 else ''} ...\r"
                 )
                 result.append(wait_line)
         return result
