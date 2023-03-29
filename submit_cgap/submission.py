@@ -3,7 +3,6 @@ import io
 import json
 import os
 import re
-import requests
 import subprocess
 import time
 
@@ -25,7 +24,7 @@ from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER
 from .exceptions import CGAPPermissionError
 from .utils import (
     show, keyword_as_title,
-    check_repeatedly, 
+    check_repeatedly,
     portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
 )
 
@@ -62,7 +61,7 @@ def resolve_server(server, env, verbose: bool = False):
     Given a server spec or a beanstalk environment (or neither, but not both), returns a server spec.
 
     :param server: a server spec or None
-      A server is the first part of a url (containing the schema, host and, optionally, port).
+      A server is the first part of an url (containing the schema, host and, optionally, port).
       e.g., http://cgap.hms.harvard.edu or http://localhost:8000
     :param env: a cgap beanstalk environment
     :return: a server spec
@@ -184,7 +183,7 @@ def get_defaulted_award(award, user_record, error_if_none=False, verbose: bool =
 
     :param award: the @id of an award, or None
     :param user_record: the user record for the authorized user
-    :param error_if_none: boolean true if failure to infer an award should an raise error, and false otherwise.
+    :param error_if_none: boolean true if failure to infer an award should raise an error, and false otherwise.
     :return: the @id of an award to use
     """
 
@@ -223,7 +222,7 @@ def get_defaulted_lab(lab, user_record, error_if_none=False, verbose: bool = Fal
 
     :param lab: the @id of a lab, or None
     :param user_record: the user record for the authorized user
-    :param error_if_none: boolean true if failure to infer a lab should an raise error, and false otherwise.
+    :param error_if_none: boolean true if failure to infer a lab should raise an error, and false otherwise.
     :return: the @id of a lab to use
     """
 
@@ -379,10 +378,6 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
             if DEBUG_PROTOCOL:  # pragma: no cover
                 PRINT("Retrying with new protocol.")
 
-    creation_post_headers = {
-        'Content-type': 'application/json',
-        'Accept': 'application/json',
-    }
     creation_post_url = url_path_join(server, "IngestionSubmission")
     if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT("creation_post_data=", json.dumps(creation_post_data, indent=2))
@@ -675,7 +670,8 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
     return submission_post_data
 
 
-def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None, verbose: bool = False, debug: bool = False):
+def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
+                     verbose: bool = False, debug: bool = False):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -868,7 +864,9 @@ def compute_file_post_data(filename, context_attributes):
     }
 
 
-def upload_file_to_new_uuid(filename, schema_name, auth, verbose: bool = False, debug: bool = False, **context_attributes):
+def upload_file_to_new_uuid(filename, schema_name, auth,
+                            verbose: bool = False, debug: bool = False,
+                            **context_attributes):
     """
     Upload file to a target environment.
 
@@ -944,7 +942,8 @@ def extract_metadata_and_upload_credentials(response, filename, method, payload_
 CGAP_SELECTIVE_UPLOADS = environ_bool("CGAP_SELECTIVE_UPLOADS")
 
 
-def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=False, verbose: bool = False, debug: bool = False):
+def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=False,
+               verbose: bool = False, debug: bool = False):
     """
     Uploads the files mentioned in the give upload_spec_list.
 

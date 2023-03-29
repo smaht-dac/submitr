@@ -129,8 +129,6 @@ def check_repeatedly(check_function: Callable,
     ntimes = 0
     check_function_returning_tuple = True
     check_status = "Not Done Yet"
-    start_time = time.time()
-    start_time = 0
     while True:
         if messages:
             output(f"{check_message} {f'| Status: {check_status.title()}' if check_status else ''}"
@@ -175,11 +173,11 @@ def portal_metadata_post(schema: str, data: dict, auth: Tuple, debug: bool = Fal
 
 def portal_metadata_patch(uuid: str, data: dict, auth: Tuple, debug: bool = False) -> dict:
     if debug:
-        PRINT(f"DEBUG: METADATA PATCH {'/' if not schema.startswith('/') else ''}{uuid}"
+        PRINT(f"DEBUG: METADATA PATCH {'/' if not uuid.startswith('/') else ''}{uuid}"
               f" | DATA: {json.dumps(data)}")
     response = ff_utils.patch_metadata(patch_item=data, obj_id=uuid, key=auth)
     if debug:
-        PRINT(f"DEBUG: METADATA PATCH {'/' if not schema.startswith('/') else ''}{uuid} -> {response.get('status')}"
+        PRINT(f"DEBUG: METADATA PATCH {'/' if not uuid.startswith('/') else ''}{uuid} -> {response.get('status')}"
               f" | RESPONSE: {json.dumps(response, default=str)}")
     return response
 
@@ -241,5 +239,6 @@ def _portal_request(request: Callable,
         PRINT()
     response = request(url, **kwargs)
     if debug:
-        PRINT(f"DEBUG: HTTP {request.__name__.upper()} {url} -> {response.status_code} | RESPONSE: {json.dumps(response.json(), default=str)}")
+        PRINT(f"DEBUG: HTTP {request.__name__.upper()} {url} -> {response.status_code}"
+              f" | RESPONSE: {json.dumps(response.json(), default=str)}")
     return response
