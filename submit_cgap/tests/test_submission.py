@@ -1239,11 +1239,6 @@ class Scenario:
         nchecks = 0
         CLEAR = "\033[K"
         for idx in range(wait_attempts + 1): # range(PROGRESS_CHECK_INTERVAL): #range(wait_attempts):
-            # time_delta_from_start = (PROGRESS_CHECK_INTERVAL + self.wait_time_delta) * (idx + 1)
-            # adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
-            # wait_time = adjusted_scenario.get_time_after_wait()
-            # wait_line = f"{wait_time} Progress is not done yet. Continuing to wait..."
-            # result.append(wait_line)
             time_delta_from_start += 1
             adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
             wait_time = adjusted_scenario.get_time_after_wait()
