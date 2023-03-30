@@ -1,6 +1,7 @@
 from dcicutils.misc_utils import environ_bool, full_object_name, PRINT
-from dcicutils.obfuscation_utils import obfuscate
+from dcicutils.obfuscation_utils import obfuscate_dict
 import functools
+import json
 
 
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
@@ -28,11 +29,10 @@ def Trace(enabled=None):
 
 
 def _show_dict(d, indent=0):
-    d = obfuscate(d)
-    if not d:
+    d = obfuscate_dict(d)
+    if not isinstance(d, dict):
+        return ""
+    elif not d:
         return "{}"
     else:
-        s = "dict("
-        for k, v in d.items():
-            s += f"{' ' * indent}{k}={v!r}"
-        return s + " " * indent + ")"
+        return json.dumps(d)
