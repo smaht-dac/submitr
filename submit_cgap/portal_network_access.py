@@ -63,6 +63,7 @@ def _portal_request(request: Callable, url: str, auth: Tuple, **kwargs) -> reque
             PRINT(f" | JSON: {json.dumps(kwargs['json'], default=str)}", end="")
         if kwargs.get("files"):
             PRINT(f" | FILES: {json.dumps(kwargs['files'], default=str)}", end="")
+        PRINT()
 
     response = request(url, auth=auth, allow_redirects=True, **kwargs)
 
