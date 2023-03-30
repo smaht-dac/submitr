@@ -383,7 +383,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     creation_response.raise_for_status()
     [submission] = creation_response.json()['@graph']
     submission_id = submission['@id']
-    if DEBUG_PROTOCOL:
+    if DEBUG_PROTOCOL:  # pragma: no cover
         show(f"Created IngestionSubmission (bundle) type object: {submission.get('uuid', 'not-found')}")
     new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
     response = portal_request_post(new_style_submission_url, auth=keypair, data=submission_post_data,
@@ -799,7 +799,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
         options = {}
         if running_on_windows_native():
             options = {"shell": True}
-        if DEBUG_PROTOCOL:
+        if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f"DEBUG CLI: {' '.join(command)} | ENV INCLUDES: {conjoined_list(list(extra_env.keys()))}")
         subprocess.check_call(command, env=env, **options)
     except subprocess.CalledProcessError as e:
@@ -837,10 +837,10 @@ def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
 
     post_item = compute_file_post_data(filename=filename, context_attributes=context_attributes)
 
-    if DEBUG_PROTOCOL:
+    if DEBUG_PROTOCOL:  # pragma: no cover
         show("Creating FileOther type object ...")
     response = portal_metadata_post(schema=schema_name, data=post_item, auth=auth)
-    if DEBUG_PROTOCOL:
+    if DEBUG_PROTOCOL:  # pragma: no cover
         show(f"Created FileOther type object:"
              f" {response.get('@graph', [{'uuid': 'not-found'}])[0].get('uuid', 'not-found')}")
 
