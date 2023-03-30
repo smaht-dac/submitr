@@ -17,7 +17,6 @@ def shown_output():
         def __init__(self):
             self.lines = []
 
-        #def mock_print_handler(self, *args, **kwargs):
         def mock_print_handler(self, *args, end=None, flush=None):
             ignored(end)
             ignored(flush)
