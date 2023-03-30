@@ -57,7 +57,6 @@ def verify_ontology_file(ontology_filename: str) -> bool:
             ontology_term_count = len(ontology_json["terms"])
     except Exception:
         raise ScriptFailure(f"Cannot load specified ontology (JSON) file: {ontology_filename}")
-        return False
     show(f"Verified specified ontology (JSON) file: {ontology_filename} (ontology terms: {ontology_term_count})")
     return True
 
