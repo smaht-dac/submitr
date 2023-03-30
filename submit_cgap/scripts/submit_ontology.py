@@ -50,7 +50,7 @@ def main(simulated_args_for_testing=None):
 
 def verify_ontology_file(ontology_filename: str) -> bool:
     if not os.path.exists(ontology_filename):
-        raise ScriptFailure(f"Cannot find specified ontology (JSON) file: {ontology_filename}")
+        raise ScriptFailure(f"Specified ontology file does not exist: {ontology_filename}")
     try:
         with io.open(ontology_filename, "r") as f:
             ontology_json = json.load(f)
