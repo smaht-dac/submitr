@@ -32,8 +32,8 @@ class SubmissionProtocol:
 
 
 SUBMISSION_PROTOCOLS = [SubmissionProtocol.S3, SubmissionProtocol.UPLOAD]
-
 DEFAULT_SUBMISSION_PROTOCOL = SubmissionProtocol.UPLOAD
+STANDARD_HTTP_HEADERS = {"Content-type": "application/json"}
 
 
 # TODO: Will asks whether some of the errors in this file that are called "SyntaxError" really should be something else.
@@ -107,7 +107,7 @@ def get_user_record(server, auth):
     """
 
     user_url = server + "/me?format=json"
-    user_record_response = portal_request_get(user_url, auth=auth)
+    user_record_response = portal_request_get(user_url, auth=auth, headers=STANDARD_HTTP_HEADERS)
     try:
         user_record = user_record_response.json()
     except Exception:
@@ -352,6 +352,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
 
         response = portal_request_post(old_style_submission_url,
                                        auth=keypair,
+                                       headers=None,
                                        data=old_style_post_data,
                                        files=_post_files_data(submission_protocol=submission_protocol,
                                                               ingestion_filename=ingestion_filename))
@@ -379,14 +380,20 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
         # this is the FileOther object info, its uuid and associated data file, which was uploaded
         # in this case (SubmissionProtocol.S3) directly to S3 from submit-ontology.
         creation_post_data["parameters"] = submission_post_data
-    creation_response = portal_request_post(creation_post_url, auth=keypair, data=creation_post_data)
+    creation_response = portal_request_post(creation_post_url,
+                                            auth=keypair,
+                                            headers=STANDARD_HTTP_HEADERS,
+                                            json=creation_post_data)
     creation_response.raise_for_status()
     [submission] = creation_response.json()['@graph']
     submission_id = submission['@id']
     if DEBUG_PROTOCOL:  # pragma: no cover
         show(f"Created IngestionSubmission (bundle) type object: {submission.get('uuid', 'not-found')}")
     new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
-    response = portal_request_post(new_style_submission_url, auth=keypair, data=submission_post_data,
+    response = portal_request_post(new_style_submission_url,
+                                   auth=keypair,
+                                   headers=None,
+                                   data=submission_post_data,
                                    files=_post_files_data(submission_protocol=submission_protocol,
                                                           ingestion_filename=ingestion_filename))
     return response
@@ -570,7 +577,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
         From outer scope: server, keypair, uuid (of IngestionSubmission)
         """
         tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
-        response = portal_request_get(tracking_url, auth=keypair).json()
+        response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS).json()
         # FYI this processing_status and its state, progress, outcome properties were ultimately set
         # from within the ingester process, from within types.ingestion.SubmissionFolio.processing_status.
         status = response["processing_status"]
@@ -660,7 +667,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None)
     server = resolve_server(server=server, env=env)
     keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
     url = ingestion_submission_item_url(server, uuid)
-    response = portal_request_get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict))
+    response = portal_request_get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict), headers=STANDARD_HTTP_HEADERS)
     response.raise_for_status()
     res = response.json()
     if get_section(res, 'upload_info'):
@@ -728,7 +735,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
     url = ingestion_submission_item_url(server, uuid)
     keypair = KEY_MANAGER.keydict_to_keypair(keydict)
-    response = portal_request_get(url, auth=keypair)
+    response = portal_request_get(url, auth=keypair, headers=STANDARD_HTTP_HEADERS)
     response.raise_for_status()
     do_any_uploads(response.json(),
                    keydict=keydict,
