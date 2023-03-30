@@ -34,7 +34,7 @@ def temporary_json_file(data: dict) -> Generator[Any, None, None]:
             filename = f.name  # obtain file's absolute path for later use
             json.dump(data, f)
             f.close()  # The deleted=False above keeps file from being deleted upon this close
-            yield filename
+        yield filename
     finally:
         if filename:
             try:
