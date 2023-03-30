@@ -42,8 +42,11 @@ def portal_request_post(url: str, auth: Tuple, **kwargs) -> requests.models.Resp
 
 
 def _portal_request(request: Callable, url: str, auth: Tuple, **kwargs) -> requests.models.Response:
+
     if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT(f"DEBUG: HTTP {request.__name__.upper()} {url}", end="")
+        if auth:
+            PRINT(f" | AUTH: <REDACTED>", end="")
         if kwargs.get("headers"):
             PRINT(f" | HEADERS: {json.dumps(kwargs['headers'], default=str)}", end="")
         if kwargs.get("data"):
@@ -52,10 +55,11 @@ def _portal_request(request: Callable, url: str, auth: Tuple, **kwargs) -> reque
             PRINT(f" | JSON: {json.dumps(kwargs['json'], default=str)}", end="")
         if kwargs.get("files"):
             PRINT(f" | FILES: {json.dumps(kwargs['files'], default=str)}", end="")
-        if auth:
-            PRINT(f" | AUTH: <REDACTED>", end="")
+
     response = request(url, auth=auth, allow_redirects=True, **kwargs)
+
     if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT(f"DEBUG: HTTP {request.__name__.upper()} {url} -> {response.status_code}"
               f" | RESPONSE: {json.dumps(response.json(), default=str)}")
+
     return response
