@@ -22,7 +22,7 @@ from typing_extensions import Literal
 from urllib.parse import urlparse
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER
 from .exceptions import CGAPPermissionError
-from .portal_calls import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
+from .portal_network_access import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
 from .utils import show, keyword_as_title, check_repeatedly
 
 
