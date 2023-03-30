@@ -24,8 +24,7 @@ def Trace(enabled=None):
                     PRINT(f"TRACE {trace_name} RETURN: {_dict_to_str(res)}")
                 elif isinstance(res, requests.models.Response):
                     try:
-                        res_dict = res.json()
-                        PRINT(f"TRACE {trace_name} RETURN: {_dict_to_str(res_dict)}")
+                        PRINT(f"TRACE {trace_name} RETURN: {_dict_to_str(res.json())}")
                     except Exception:
                         PRINT(f"TRACE {trace_name} RETURN: {res!r}")
                 else:
