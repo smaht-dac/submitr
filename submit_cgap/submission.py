@@ -356,12 +356,6 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
                                        files=_post_files_data(submission_protocol=submission_protocol,
                                                               ingestion_filename=ingestion_filename))
 
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT("old_style_submission_url=", old_style_submission_url)
-            PRINT("old_style_post_data=", json.dumps(old_style_post_data, indent=2))
-            PRINT("keypair=", keypair)
-            PRINT("response=", response)
-
         if response.status_code != 404:
 
             if DEBUG_PROTOCOL:  # pragma: no cover
@@ -376,8 +370,6 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
 
     creation_post_url = url_path_join(server, "IngestionSubmission")
     if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT("creation_post_data=", json.dumps(creation_post_data, indent=2))
-        PRINT("creation_post_url=", creation_post_url)
         PRINT("Creating IngestionSubmission (bundle) type object ...")
     if submission_protocol == SubmissionProtocol.S3:
         # New with Fourfront ontology ingestion work (March 2023).
@@ -387,29 +379,16 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
         # this is the FileOther object info, its uuid and associated data file, which was uploaded
         # in this case (SubmissionProtocol.S3) directly to S3 from submit-ontology.
         creation_post_data["parameters"] = submission_post_data
-        # creation_post_data["additional_data"] = {"upload_info": submission_post_data}
     creation_response = portal_request_post(creation_post_url, auth=keypair, data=creation_post_data)
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT("headers:", creation_response.request.headers)
     creation_response.raise_for_status()
     [submission] = creation_response.json()['@graph']
     submission_id = submission['@id']
     if DEBUG_PROTOCOL:
         show(f"Created IngestionSubmission (bundle) type object: {submission.get('uuid', 'not-found')}")
-
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT("server=", server, "submission_id=", submission_id)
     new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT("submitting new_style_submission_url=", new_style_submission_url)
-        PRINT(f"data=submission_post_data={json.dumps(submission_post_data, indent=2)}")
     response = portal_request_post(new_style_submission_url, auth=keypair, data=submission_post_data,
                                    files=_post_files_data(submission_protocol=submission_protocol,
                                                           ingestion_filename=ingestion_filename))
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT("response received for submission post:", response)
-        PRINT("response.content:", response.content)
-
     return response
 
 
@@ -658,8 +637,6 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
         'datafile_source_filename': os.path.basename(ingestion_filename),
         **other_args  # validate_only, and any of institution, project, lab, or award that caller gave us
     }
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT(f"submission_post_data={json.dumps(submission_post_data, indent=2)}")
     return submission_post_data
 
 
@@ -819,15 +796,11 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
         command = command + ['--only-show-errors', source, target]
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f"Executing: {command}")
-            PRINT(f" ==> {' '.join(command)}")
-            PRINT(f"Environment variables include {conjoined_list(list(extra_env.keys()))}.")
         options = {}
         if running_on_windows_native():
             options = {"shell": True}
         if DEBUG_PROTOCOL:
-            PRINT(f"DEBUG CLI: {command} | OPTIONS: {options}")
+            PRINT(f"DEBUG CLI: {' '.join(command)} | ENV INCLUDES: {conjoined_list(list(extra_env.keys()))}")
         subprocess.check_call(command, env=env, **options)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("Upload failed with exit code %d" % e.returncode)
