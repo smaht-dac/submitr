@@ -17,9 +17,8 @@ def shown_output():
         def __init__(self):
             self.lines = []
 
-        def mock_print_handler(self, *args, end=None, flush=None):
-            ignored(end)
-            ignored(flush)
+        def mock_print_handler(self, *args, **kwargs):
+            assert kwargs.keys() <= {"end", "flush"}
             text = " ".join(map(str, args))
             print("Mocked print:", text)
             self.lines.append(text)
