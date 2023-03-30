@@ -37,4 +37,7 @@ def temporary_json_file(data: dict) -> Generator[Any, None, None]:
             yield filename
     finally:
         if filename:
-            os.remove(filename)
+            try:
+                os.remove(filename)
+            except:  # perhaps someone else already removed it
+                pass
