@@ -14,13 +14,12 @@ DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
 def portal_metadata_post(schema: str, data: dict, auth: Tuple) -> dict:
 
     if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT(f"DEBUG: METADATA POST {'/' if not schema.startswith('/') else ''}{schema}"
-              f" | DATA: {json.dumps(data)}")
+        PRINT(f"DEBUG: METADATA POST {schema} | DATA: {json.dumps(data)}")
 
     response = ff_utils.post_metadata(post_item=data, schema_name=schema, key=auth)
 
     if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT(f"DEBUG: METADATA POST {'/' if not schema.startswith('/') else ''}{schema} -> {response.get('status')}"
+        PRINT(f"DEBUG: METADATA POST {schema} -> {response.get('status')}"
               f" | RESPONSE: {json.dumps(response, default=str)}")
 
     return response
@@ -29,13 +28,12 @@ def portal_metadata_post(schema: str, data: dict, auth: Tuple) -> dict:
 def portal_metadata_patch(uuid: str, data: dict, auth: Tuple) -> dict:
 
     if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT(f"DEBUG: METADATA PATCH {'/' if not uuid.startswith('/') else ''}{uuid}"
-              f" | DATA: {json.dumps(data)}")
+        PRINT(f"DEBUG: METADATA PATCH {uuid} | DATA: {json.dumps(data)}")
 
     response = ff_utils.patch_metadata(patch_item=data, obj_id=uuid, key=auth)
 
     if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT(f"DEBUG: METADATA PATCH {'/' if not uuid.startswith('/') else ''}{uuid} -> {response.get('status')}"
+        PRINT(f"DEBUG: METADATA PATCH {uuid} -> {response.get('status')}"
               f" | RESPONSE: {json.dumps(response, default=str)}")
 
     return response
