@@ -50,13 +50,13 @@ def main(simulated_args_for_testing=None):
 
 def verify_ontology_file(ontology_filename: str) -> bool:
     if not os.path.exists(ontology_filename):
-        raise ScriptFailure(f"ERROR: Cannot find specified ontology (JSON) file: {ontology_filename}")
+        raise ScriptFailure(f"Cannot find specified ontology (JSON) file: {ontology_filename}")
     try:
         with io.open(ontology_filename, "r") as f:
             ontology_json = json.load(f)
             ontology_term_count = len(ontology_json["terms"])
     except Exception:
-        raise ScriptFailure(f"ERROR: Cannot load specified ontology (JSON) file: {ontology_filename}")
+        raise ScriptFailure(f"Cannot load specified ontology (JSON) file: {ontology_filename}")
         return False
     show(f"Verified specified ontology (JSON) file: {ontology_filename} (ontology terms: {ontology_term_count})")
     return True
