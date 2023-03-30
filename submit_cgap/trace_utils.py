@@ -40,10 +40,9 @@ def Trace(enabled=None):
 
 def _dict_to_str(d, indent=0):
     # TODO: It appears the obfuscate_dict does not handle dictionaries within arrays.
-    d = obfuscate_dict(d)
     if not isinstance(d, dict):
         return ""
     elif not d:
         return "{}"
     else:
-        return json.dumps(d)
+        return json.dumps(obfuscate_dict(d))
