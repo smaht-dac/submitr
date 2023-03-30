@@ -1,4 +1,4 @@
-from dcicutils.misc_utils import environ_bool, full_object_name, PRINT
+from dcicutils.misc_utils import environ_bool, full_object_name, get_error_message, PRINT
 from dcicutils.obfuscation_utils import obfuscate_dict
 import functools
 import json
