@@ -39,5 +39,5 @@ def temporary_json_file(data: dict) -> Generator[Any, None, None]:
         if filename:
             try:
                 os.remove(filename)
-            except:  # perhaps someone else already removed it
+            except Exception:  # perhaps someone else already removed it
                 pass
