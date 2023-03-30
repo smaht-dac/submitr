@@ -617,8 +617,7 @@ def test_do_any_uploads():
                     auth=SOME_KEYDICT,
                     folder=SOME_BUNDLE_FILENAME_FOLDER,  # the folder part of given SOME_BUNDLE_FILENAME
                     no_query=False,
-                    subfolders=False,
-                    verbose=False, debug=False
+                    subfolders=False
                 )
                 assert shown.lines == []
 
@@ -634,8 +633,7 @@ def test_do_any_uploads():
                     auth=SOME_KEYDICT,
                     folder=SOME_OTHER_BUNDLE_FOLDER,  # passed straight through
                     no_query=False,
-                    subfolders=False,
-                    verbose=False, debug=False
+                    subfolders=False
                 )
                 assert shown.lines == []
 
@@ -651,8 +649,7 @@ def test_do_any_uploads():
                     auth=SOME_KEYDICT,
                     folder=None,  # No folder
                     no_query=False,
-                    subfolders=False,
-                    verbose=False, debug=False
+                    subfolders=False
                 )
                 assert shown.lines == []
 
@@ -669,8 +666,7 @@ def test_do_any_uploads():
                     auth=SOME_KEYDICT,
                     folder=SOME_BUNDLE_FILENAME_FOLDER,  # the folder part of given SOME_BUNDLE_FILENAME
                     no_query=False,
-                    subfolders=True,
-                    verbose=False, debug=False
+                    subfolders=True
                 )
                 assert shown.lines == []
 
@@ -690,8 +686,7 @@ def test_do_any_uploads():
                 auth=SOME_KEYDICT,
                 folder=SOME_BUNDLE_FILENAME_FOLDER,  # the folder part of given SOME_BUNDLE_FILENAME
                 no_query=True,
-                subfolders=False,
-                verbose=False, debug=False
+                subfolders=False
             )
             assert shown.lines == []
 
@@ -712,8 +707,7 @@ def test_resume_uploads():
                             ingestion_filename=SOME_BUNDLE_FILENAME,
                             upload_folder=None,
                             no_query=False,
-                            subfolders=False,
-                            verbose=False, debug=False
+                            subfolders=False
                         )
 
     with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
@@ -893,8 +887,7 @@ def test_upload_file_to_uuid():
             metadata = upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_AUTH)
             assert metadata == SOME_FILE_METADATA
             mocked_upload.assert_called_with(SOME_FILENAME, auth=SOME_AUTH,
-                                             upload_credentials=SOME_UPLOAD_CREDENTIALS,
-                                             verbose=False, debug=False)
+                                             upload_credentials=SOME_UPLOAD_CREDENTIALS)
 
     with mock.patch("dcicutils.ff_utils.patch_metadata", return_value=SOME_BAD_RESULT):
         with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
@@ -933,7 +926,7 @@ def test_do_uploads(tmp_path):
 
         uploaded = {}
 
-        def mocked_upload_file(filename, uuid, auth, verbose: bool = False, debug: bool = False):
+        def mocked_upload_file(filename, uuid, auth):
             if auth != SOME_AUTH:
                 raise Exception("Bad auth")
             uploaded[uuid] = filename
@@ -1052,8 +1045,7 @@ def test_do_uploads(tmp_path):
         mock_upload.assert_called_with(
             filename=file_path,
             uuid=uuid,
-            auth=SOME_AUTH,
-            verbose=False, debug=False
+            auth=SOME_AUTH
         )
 
     with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
@@ -1067,8 +1059,7 @@ def test_do_uploads(tmp_path):
         mock_upload.assert_called_with(
             filename=(folder.as_posix() + "/" + filename),
             uuid=uuid,
-            auth=SOME_AUTH,
-            verbose=False, debug=False
+            auth=SOME_AUTH
         )
 
     with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
@@ -1083,8 +1074,7 @@ def test_do_uploads(tmp_path):
         mock_upload.assert_called_with(
             filename=file_path,
             uuid=uuid,
-            auth=SOME_AUTH,
-            verbose=False, debug=False
+            auth=SOME_AUTH
         )
 
     with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
@@ -1147,8 +1137,7 @@ def test_do_uploads(tmp_path):
                         mocked_instance,
                         folder,
                         SOME_AUTH,
-                        recursive=False,
-                        verbose=False, debug=False
+                        recursive=False
                     )
 
 
@@ -1164,8 +1153,7 @@ def test_upload_item_data():
 
                     mock_resolve.assert_called_with(env=SOME_ENV, server=SOME_SERVER)
                     mock_get.assert_called_with(SOME_SERVER)
-                    mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_KEYDICT,
-                                                   verbose=False, debug=False)
+                    mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_KEYDICT)
 
     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER) as mock_resolve:
         with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
@@ -1197,8 +1185,7 @@ def test_upload_item_data():
 
                 mock_resolve.assert_called_with(env=SOME_ENV, server=SOME_SERVER)
                 mock_get.assert_called_with(SOME_SERVER)
-                mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID,
-                                               auth=SOME_KEYDICT, verbose=False, debug=False)
+                mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_KEYDICT)
 
 
 def get_today_datetime_for_time(time_to_use):
@@ -1503,7 +1490,7 @@ def test_submit_any_ingestion_old_protocol():
                                                             keydict=SOME_KEYDICT,
                                                             upload_folder=None,
                                                             no_query=False,
-                                                            subfolders=False, verbose=False, debug=False
+                                                            subfolders=False
                                                         )
         assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
@@ -1561,7 +1548,7 @@ def test_submit_any_ingestion_old_protocol():
                                                             keydict=SOME_KEYDICT,
                                                             upload_folder=None,
                                                             no_query=False,
-                                                            subfolders=False, verbose=False, debug=False
+                                                            subfolders=False
                                                         )
         assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
@@ -1609,7 +1596,7 @@ def test_submit_any_ingestion_old_protocol():
                                                         keydict=SOME_KEYDICT,
                                                         upload_folder=None,
                                                         no_query=True,
-                                                        subfolders=False, verbose=False, debug=False
+                                                        subfolders=False
                                                     )
         assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
@@ -1863,7 +1850,7 @@ def test_submit_any_ingestion_new_protocol():
                                              env=None,
                                              validate_only=False,
                                              no_query=False,
-                                             subfolders=False,)
+                                             subfolders=False)
                     except SystemExit as e:
                         assert e.code == 1
                     else:
@@ -2009,7 +1996,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                      env=None,
                                                                      validate_only=False,
                                                                      no_query=False,
-                                                                     subfolders=False,)
+                                                                     subfolders=False)
                                             except ValueError as e:
                                                 # submit_any_ingestion will raise ValueError if its
                                                 # bundle_filename argument is not the name of a
@@ -2051,8 +2038,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                  validate_only=False,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
-                                                                                 subfolders=False,
-                                                                                 )
+                                                                                 subfolders=False)
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact it's more likely
                                                             # that a normal 'return' not 'exit' was done.
@@ -2065,9 +2051,7 @@ def test_submit_any_ingestion_new_protocol():
                                                             keydict=SOME_KEYDICT,
                                                             upload_folder=None,
                                                             no_query=False,
-                                                            subfolders=False,
-                                                            verbose=False, debug=False
-                                                        )
+                                                            subfolders=False)
         assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
@@ -2140,9 +2124,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                 keydict=SOME_KEYDICT,
                                                                 upload_folder=None,
                                                                 no_query=False,
-                                                                subfolders=False,
-                                                                verbose=False, debug=False
-                                                            )
+                                                                subfolders=False)
         assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
 
     dt.reset_datetime()

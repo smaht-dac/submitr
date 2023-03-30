@@ -56,7 +56,7 @@ SERVER_REGEXP = re.compile(
 )
 
 
-def resolve_server(server, env, verbose: bool = False):
+def resolve_server(server, env):
     """
     Given a server spec or a beanstalk environment (or neither, but not both), returns a server spec.
 
@@ -71,7 +71,7 @@ def resolve_server(server, env, verbose: bool = False):
 
     if not server and not env:
         if DEFAULT_ENV:
-            show(f"Defaulting to environment {env!r} because {DEFAULT_ENV_VAR} is set.", with_time=verbose)
+            show(f"Defaulting to environment {env!r} because {DEFAULT_ENV_VAR} is set.")
             env = DEFAULT_ENV
         else:
             # Production default needs no explanation.
@@ -98,7 +98,7 @@ def resolve_server(server, env, verbose: bool = False):
     return server
 
 
-def get_user_record(server, auth, verbose: bool = False, debug: bool = False):
+def get_user_record(server, auth):
     """
     Given a server and some auth info, gets the user record for the authorized user.
 
@@ -110,14 +110,14 @@ def get_user_record(server, auth, verbose: bool = False, debug: bool = False):
     """
 
     user_url = server + "/me?format=json"
-    user_record_response = portal_request_get(user_url, auth=auth, debug=debug)
+    user_record_response = portal_request_get(user_url, auth=auth)
     try:
         user_record = user_record_response.json()
     except Exception:
         user_record = {}
     try:
         if user_record_response.status_code in (401, 403) and user_record.get("Title") == "Not logged in.":
-            show("Server did not recognize you with the given credentials.", with_time=verbose)
+            show("Server did not recognize you with the given credentials.")
     except Exception:
         pass
     if user_record_response.status_code in (401, 403):
@@ -125,11 +125,11 @@ def get_user_record(server, auth, verbose: bool = False, debug: bool = False):
     user_record_response.raise_for_status()
     user_record = user_record_response.json()
     show("The server %s recognizes you as: %s <%s>"
-         % (server, user_record['title'], user_record['contact_email']), with_time=verbose)
+         % (server, user_record['title'], user_record['contact_email']))
     return user_record
 
 
-def get_defaulted_institution(institution, user_record, verbose: bool = False):
+def get_defaulted_institution(institution, user_record):
     """
     Returns the given institution or else if none is specified, it tries to infer an institution.
 
@@ -143,11 +143,11 @@ def get_defaulted_institution(institution, user_record, verbose: bool = False):
         if not institution:
             raise SyntaxError("Your user profile has no institution declared,"
                               " so you must specify --institution explicitly.")
-        show("Using institution:", institution, with_time=verbose)
+        show("Using institution:", institution)
     return institution
 
 
-def get_defaulted_project(project, user_record, verbose: bool = False):
+def get_defaulted_project(project, user_record):
     """
     Returns the given project or else if none is specified, it tries to infer a project.
 
@@ -173,11 +173,11 @@ def get_defaulted_project(project, user_record, verbose: bool = False):
         else:
             [project_role] = project_roles
             project = project_role['project']['@id']
-            show("Using project:", project, with_time=verbose)
+            show("Using project:", project)
     return project
 
 
-def get_defaulted_award(award, user_record, error_if_none=False, verbose: bool = False):
+def get_defaulted_award(award, user_record, error_if_none=False):
     """
     Returns the given award or else if none is specified, it tries to infer an award.
 
@@ -208,15 +208,15 @@ def get_defaulted_award(award, user_record, error_if_none=False, verbose: bool =
             [lab_award] = lab_awards
             award = lab_award['@id']
         if not award:
-            show("No award was inferred.", with_time=verbose)
+            show("No award was inferred.")
         else:
-            show("Using inferred award:", award, with_time=verbose)
+            show("Using inferred award:", award)
     else:
-        show("Using given award:", award, with_time=verbose)
+        show("Using given award:", award)
     return award
 
 
-def get_defaulted_lab(lab, user_record, error_if_none=False, verbose: bool = False):
+def get_defaulted_lab(lab, user_record, error_if_none=False):
     """
     Returns the given lab or else if none is specified, it tries to infer a lab.
 
@@ -233,11 +233,11 @@ def get_defaulted_lab(lab, user_record, error_if_none=False, verbose: bool = Fal
                 raise SyntaxError("Your user profile has no lab declared,"
                                   " so you must specify --lab explicitly.")
         if not lab:
-            show("No lab was inferred.", with_time=verbose)
+            show("No lab was inferred.")
         else:
-            show("Using inferred lab:", lab, with_time=verbose)
+            show("Using inferred lab:", lab)
     else:
-        show("Using given lab:", lab, with_time=verbose)
+        show("Using given lab:", lab)
     return lab
 
 
@@ -249,11 +249,11 @@ APP_ARG_DEFAULTERS = {
 }
 
 
-def do_app_arg_defaulting(app_args, user_record, verbose: bool = False):
+def do_app_arg_defaulting(app_args, user_record):
     for arg, val in app_args.items():
         defaulter = APP_ARG_DEFAULTERS.get(arg)
         if defaulter:
-            app_args[arg] = defaulter(val, user_record, verbose=verbose)
+            app_args[arg] = defaulter(val, user_record)
 
 
 PROGRESS_CHECK_INTERVAL = 15  # seconds
@@ -333,7 +333,7 @@ def _post_files_data(submission_protocol, ingestion_filename) -> Dict[Literal['d
 
 
 def _post_submission(server, keypair, ingestion_filename, creation_post_data, submission_post_data,
-                     submission_protocol=DEFAULT_SUBMISSION_PROTOCOL, verbose: bool = False, debug: bool = False):
+                     submission_protocol=DEFAULT_SUBMISSION_PROTOCOL):
     """ This takes care of managing the compatibility step of using either the old or new ingestion protocol.
 
     OLD PROTOCOL: Post directly to /submit_for_ingestion
@@ -357,8 +357,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
                                        auth=keypair,
                                        data=old_style_post_data,
                                        files=_post_files_data(submission_protocol=submission_protocol,
-                                                              ingestion_filename=ingestion_filename),
-                                       debug=debug)
+                                                              ingestion_filename=ingestion_filename))
 
         if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT("old_style_submission_url=", old_style_submission_url)
@@ -382,8 +381,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT("creation_post_data=", json.dumps(creation_post_data, indent=2))
         PRINT("creation_post_url=", creation_post_url)
-    if verbose:
-        show("Creating IngestionSubmission (bundle) type object ...", with_time=True)
+        PRINT("Creating IngestionSubmission (bundle) type object ...")
     if submission_protocol == SubmissionProtocol.S3:
         # New with Fourfront ontology ingestion work (March 2023).
         # Store the submission data in the parameters of the IngestionSubmission object
@@ -399,8 +397,8 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     creation_response.raise_for_status()
     [submission] = creation_response.json()['@graph']
     submission_id = submission['@id']
-    if verbose:
-        show(f"Created IngestionSubmission (bundle) type object: {submission.get('uuid', 'not-found')}", with_time=True)
+    if DEBUG_PROTOCOL:
+        show(f"Created IngestionSubmission (bundle) type object: {submission.get('uuid', 'not-found')}")
 
     if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT("server=", server, "submission_id=", submission_id)
@@ -454,7 +452,7 @@ def _resolve_app_args(institution, project, lab, award, app):
 def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, validate_only,
                          institution=None, project=None, lab=None, award=None, app: OrchestratedApp = None,
                          upload_folder=None, no_query=False, subfolders=False,
-                         submission_protocol=DEFAULT_SUBMISSION_PROTOCOL, verbose: bool = False, debug: bool = False):
+                         submission_protocol=DEFAULT_SUBMISSION_PROTOCOL):
     """
     Does the core action of submitting a metadata bundle.
 
@@ -483,12 +481,11 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
                                         server=server, env=env, validate_only=validate_only,
                                         institution=institution, project=project, lab=lab, award=award, app=app,
                                         upload_folder=upload_folder, no_query=no_query, subfolders=subfolders,
-                                        submission_protocol=submission_protocol,
-                                        verbose=verbose, debug=debug)
+                                        submission_protocol=submission_protocol)
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app)
 
-    server = resolve_server(server=server, env=env, verbose=verbose)
+    server = resolve_server(server=server, env=env)
 
     validation_qualifier = " (for validation only)" if validate_only else ""
 
@@ -505,9 +502,9 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     keydict = KEY_MANAGER.get_keydict_for_server(server)
     keypair = KEY_MANAGER.keydict_to_keypair(keydict)
 
-    user_record = get_user_record(server, auth=keypair, verbose=verbose, debug=debug)
+    user_record = get_user_record(server, auth=keypair)
 
-    do_app_arg_defaulting(app_args, user_record, verbose=verbose)
+    do_app_arg_defaulting(app_args, user_record)
 
     if not os.path.exists(ingestion_filename):
         raise ValueError("The file '%s' does not exist." % ingestion_filename)
@@ -523,7 +520,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     if submission_protocol == SubmissionProtocol.S3:
 
         upload_result = upload_file_to_new_uuid(filename=ingestion_filename, schema_name=GENERIC_SCHEMA_TYPE,
-                                                auth=keydict, verbose=verbose, debug=debug, **app_args)
+                                                auth=keydict, **app_args)
 
         submission_post_data = compute_s3_submission_post_data(ingestion_filename=ingestion_filename,
                                                                ingestion_post_result=upload_result,
@@ -574,10 +571,10 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
             detail = res.get('detail')
             if detail:
                 message += ": " + detail
-            show(message, with_time=verbose)
+            show(message)
             if title == "Unsupported Media Type":
                 show("NOTE: This error is known to occur if the server"
-                     " does not support metadata bundle submission.", with_time=verbose)
+                     " does not support metadata bundle submission.")
         raise
 
     if res is None:  # pragma: no cover
@@ -612,12 +609,11 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     [check_done, check_status, check_response] = (
         check_repeatedly(check_ingestion_progress,
                          wait_seconds=PROGRESS_CHECK_INTERVAL,
-                         repeat_count=ATTEMPTS_BEFORE_TIMEOUT,
-                         verbose=True)
+                         repeat_count=ATTEMPTS_BEFORE_TIMEOUT)
     )
 
     if not check_done:
-        show("Exiting after check processing timeout | Check status using: TODO", with_time=verbose)
+        show("Exiting after check processing timeout | Check status using: TODO")
         exit(1)
 
     show("Final status: %s" % check_status.title(), with_time=True)
@@ -637,8 +633,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
         show_section(check_response, "upload_info")
         do_any_uploads(check_response, keydict=keydict, ingestion_filename=ingestion_filename,
                        upload_folder=upload_folder, no_query=no_query,
-                       subfolders=subfolders,
-                       verbose=verbose, debug=debug)
+                       subfolders=subfolders)
 
     exit(0)
 
@@ -670,8 +665,7 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
     return submission_post_data
 
 
-def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
-                     verbose: bool = False, debug: bool = False):
+def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -686,13 +680,12 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
         app = DEFAULT_APP
     if KEY_MANAGER.selected_app != app:
         with KEY_MANAGER.locally_selected_app(app):
-            return show_upload_info(uuid=uuid, server=server, env=env, keydict=keydict, app=app,
-                                    verbose=verbose, debug=debug)
+            return show_upload_info(uuid=uuid, server=server, env=env, keydict=keydict, app=app)
 
     server = resolve_server(server=server, env=env)
     keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
     url = ingestion_submission_item_url(server, uuid)
-    response = portal_request_get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict), debug=debug)
+    response = portal_request_get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict))
     response.raise_for_status()
     res = response.json()
     if get_section(res, 'upload_info'):
@@ -725,25 +718,23 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
             PRINT(datafile_url)
 
 
-def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
-                   no_query=False, subfolders=False, verbose: bool = False, debug: bool = False):
+def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False, subfolders=False):
     upload_info = get_section(res, 'upload_info')
     folder = upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None)
     if upload_info:
         if no_query:
             do_uploads(upload_info, auth=keydict, no_query=no_query, folder=folder,
-                       subfolders=subfolders, verbose=verbose, debug=debug)
+                       subfolders=subfolders)
         else:
             if yes_or_no("Upload %s?" % n_of(len(upload_info), "file")):
                 do_uploads(upload_info, auth=keydict, no_query=no_query, folder=folder,
-                           subfolders=subfolders, verbose=verbose, debug=debug)
+                           subfolders=subfolders)
             else:
                 show("No uploads attempted.")
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
-                   upload_folder=None, no_query=False, subfolders=False,
-                   verbose: bool = False, debug: bool = False):
+                   upload_folder=None, no_query=False, subfolders=False):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -762,15 +753,14 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
     url = ingestion_submission_item_url(server, uuid)
     keypair = KEY_MANAGER.keydict_to_keypair(keydict)
-    response = portal_request_get(url, auth=keypair, debug=debug)
+    response = portal_request_get(url, auth=keypair)
     response.raise_for_status()
     do_any_uploads(response.json(),
                    keydict=keydict,
                    ingestion_filename=bundle_filename,
                    upload_folder=upload_folder,
                    no_query=no_query,
-                   subfolders=subfolders,
-                   verbose=verbose, debug=debug)
+                   subfolders=subfolders)
 
 
 def get_s3_encrypt_key_id_from_health_page(auth):
@@ -800,7 +790,7 @@ def get_s3_encrypt_key_id(*, upload_credentials, auth):
     return s3_encrypt_key_id
 
 
-def execute_prearranged_upload(path, upload_credentials, auth=None, verbose: bool = False, debug: bool = False):
+def execute_prearranged_upload(path, upload_credentials, auth=None):
     """
     This performs a file upload using special credentials received from ff_utils.patch_metadata.
 
@@ -826,7 +816,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None, verbose: boo
     try:
         source = path
         target = upload_credentials['upload_url']
-        show("Uploading local file %s directly (via aws-cli) to: %s" % (source, target), with_time=verbose)
+        show("Uploading local file %s directly (via aws-cli) to: %s" % (source, target))
         command = ['aws', 's3', 'cp']
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
@@ -838,7 +828,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None, verbose: boo
         options = {}
         if running_on_windows_native():
             options = {"shell": True}
-        if debug:
+        if DEBUG_PROTOCOL:
             PRINT(f"DEBUG CLI: {command} | OPTIONS: {options}")
         subprocess.check_call(command, env=env, **options)
     except subprocess.CalledProcessError as e:
@@ -846,7 +836,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None, verbose: boo
     else:
         end = time.time()
         duration = end - start
-        show("Upload duration: %.2f seconds" % duration, with_time=verbose)
+        show("Upload duration: %.2f seconds" % duration)
 
 
 def running_on_windows_native():
@@ -864,9 +854,7 @@ def compute_file_post_data(filename, context_attributes):
     }
 
 
-def upload_file_to_new_uuid(filename, schema_name, auth,
-                            verbose: bool = False, debug: bool = False,
-                            **context_attributes):
+def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
     """
     Upload file to a target environment.
 
@@ -878,23 +866,23 @@ def upload_file_to_new_uuid(filename, schema_name, auth,
 
     post_item = compute_file_post_data(filename=filename, context_attributes=context_attributes)
 
-    if verbose:
-        show("Creating FileOther type object ...", with_time=verbose)
-    response = portal_metadata_post(schema=schema_name, data=post_item, auth=auth, debug=debug)
-    if verbose:
+    if DEBUG_PROTOCOL:
+        show("Creating FileOther type object ...")
+    response = portal_metadata_post(schema=schema_name, data=post_item, auth=auth)
+    if DEBUG_PROTOCOL:
         show(f"Created FileOther type object:"
-             f" {response.get('@graph', [{'uuid': 'not-found'}])[0].get('uuid', 'not-found')}", with_time=verbose)
+             f" {response.get('@graph', [{'uuid': 'not-found'}])[0].get('uuid', 'not-found')}")
 
     metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
                                                                            method='POST', schema_name=schema_name,
                                                                            filename=filename, payload_data=post_item)
 
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth, verbose=verbose, debug=debug)
+    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
 
     return metadata
 
 
-def upload_file_to_uuid(filename, uuid, auth, verbose: bool = False, debug: bool = False):
+def upload_file_to_uuid(filename, uuid, auth):
     """
     Upload file to a target environment.
 
@@ -915,7 +903,7 @@ def upload_file_to_uuid(filename, uuid, auth, verbose: bool = False, debug: bool
                                                                            method='PATCH', uuid=uuid,
                                                                            filename=filename, payload_data=patch_data)
 
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth, verbose=verbose, debug=debug)
+    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
 
     return metadata
 
@@ -942,8 +930,7 @@ def extract_metadata_and_upload_credentials(response, filename, method, payload_
 CGAP_SELECTIVE_UPLOADS = environ_bool("CGAP_SELECTIVE_UPLOADS")
 
 
-def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=False,
-               verbose: bool = False, debug: bool = False):
+def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=False):
     """
     Uploads the files mentioned in the give upload_spec_list.
 
@@ -972,9 +959,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
         wrapped_upload_file_to_uuid = uploader_wrapper.wrap_upload_function(
             upload_file_to_uuid, file_path
         )
-        file_metadata = wrapped_upload_file_to_uuid(
-            filename=file_path, uuid=uuid, auth=auth, verbose=verbose, debug=debug
-        )
+        file_metadata = wrapped_upload_file_to_uuid(filename=file_path, uuid=uuid, auth=auth)
         if file_metadata:
             extra_files_credentials = file_metadata.get("extra_files_creds", [])
             if extra_files_credentials:
@@ -983,8 +968,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
                     uploader_wrapper,
                     folder,
                     auth,
-                    recursive=subfolders,
-                    verbose=verbose, debug=debug
+                    recursive=subfolders
                 )
 
 
@@ -1061,7 +1045,7 @@ class UploadMessageWrapper:
 
 
 def upload_extra_files(
-    credentials, uploader_wrapper, folder, auth, recursive=False, verbose: bool = False, debug: bool = False
+    credentials, uploader_wrapper, folder, auth, recursive=False
 ):
     """Attempt upload of all extra files.
 
@@ -1091,12 +1075,10 @@ def upload_extra_files(
         wrapped_execute_prearranged_upload = uploader_wrapper.wrap_upload_function(
             execute_prearranged_upload, extra_file_path
         )
-        wrapped_execute_prearranged_upload(
-            extra_file_path, extra_file_credentials, auth=auth, verbose=verbose, debug=debug
-        )
+        wrapped_execute_prearranged_upload(extra_file_path, extra_file_credentials, auth=auth)
 
 
-def upload_item_data(item_filename, uuid, server, env, no_query=False, verbose: bool = False, debug: bool = False):
+def upload_item_data(item_filename, uuid, server, env, no_query=False):
     """
     Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
 
@@ -1121,4 +1103,4 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False, verbose: 
             show("Aborting submission.")
             exit(1)
 
-    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=keydict, verbose=verbose, debug=debug)
+    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=keydict)

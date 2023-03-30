@@ -30,8 +30,6 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--submission_protocol', '--submission-protocol', '-sp',
                         choices=SUBMISSION_PROTOCOLS, default=SubmissionProtocol.S3,
                         help=f"the submission protocol (default {SubmissionProtocol.S3!r})")
-    parser.add_argument('--verbose', default=False, action='store_true', help='Include verbose output.')
-    parser.add_argument('--debug', default=False, action='store_true', help='Include debug output.')
     args = parser.parse_args(args=simulated_args_for_testing)
 
     with script_catch_errors():
@@ -47,8 +45,7 @@ def main(simulated_args_for_testing=None):
                 env=args.env,
                 validate_only=args.validate_only,
                 app=args.app,
-                submission_protocol=args.submission_protocol,
-                verbose=args.verbose, debug=args.debug)
+                submission_protocol=args.submission_protocol)
 
 
 def verify_ontology_file(ontology_filename: str) -> bool:

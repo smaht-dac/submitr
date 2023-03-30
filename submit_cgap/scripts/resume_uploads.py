@@ -21,15 +21,12 @@ def main(simulated_args_for_testing=None):
                         help="suppress requests for user input", default=False)
     parser.add_argument('--subfolders', '-sf', action="store_true",
                         help="search subfolders of folder for upload files", default=False)
-    parser.add_argument('--verbose', default=False, action='store_true', help='Include verbose output.')
-    parser.add_argument('--debug', default=False, action='store_true', help='Include debug output.')
     args = parser.parse_args(args=simulated_args_for_testing)
 
     with script_catch_errors():
 
         resume_uploads(uuid=args.uuid, server=args.server, env=args.env, bundle_filename=args.bundle_filename,
-                       upload_folder=args.upload_folder, no_query=args.no_query, subfolders=args.subfolders,
-                       verbose=args.verbose, debug=args.debug)
+                       upload_folder=args.upload_folder, no_query=args.no_query, subfolders=args.subfolders)
 
 
 if __name__ == '__main__':
