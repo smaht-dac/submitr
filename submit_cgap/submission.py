@@ -22,11 +22,8 @@ from typing_extensions import Literal
 from urllib.parse import urlparse
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER
 from .exceptions import CGAPPermissionError
-from .utils import (
-    show, keyword_as_title,
-    check_repeatedly,
-    portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
-)
+from .portal_calls import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
+from .utils import show, keyword_as_title, check_repeatedly
 
 
 class SubmissionProtocol:
@@ -588,7 +585,8 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
     def check_ingestion_progress():
         """
-        Calls endpoint to get this status of the IngestionSubmission uuid.
+        Calls endpoint to get this status of the IngestionSubmission uuid (in outer scope);
+        this is used as an argument to check_repeatedly below to call over and over.
         Returns tuple with: done-indicator (True or False), short-status (str), full-response (dict)
         From outer scope: server, keypair, uuid (of IngestionSubmission)
         """

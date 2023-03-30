@@ -1,11 +1,8 @@
 import contextlib
 import datetime
 import io
-import json
-import requests
 import time
-from typing import Callable, Optional, Tuple, Union
-from dcicutils import ff_utils
+from typing import Callable, Tuple
 from dcicutils.misc_utils import PRINT, environ_bool
 from json import dumps as json_dumps, loads as json_loads
 
@@ -93,6 +90,7 @@ def script_catch_errors():
             exit(1)
 
 
+# TODO: If deemed generally useful then move to dcicutils.
 def check_repeatedly(check_function: Callable,
                      wait_seconds: int = 10,
                      repeat_count: int = -1,
@@ -158,87 +156,3 @@ def check_repeatedly(check_function: Callable,
                 output(f"{wait_message} {f'| Status: {check_status.title()}' if check_status else ''}"
                        f" | Checked: {ntimes} time{'s' if ntimes != 1 else ''}"
                        f" | Next check: {wait_seconds - i} second{'s' if wait_seconds - i != 1 else ''} ...")
-
-
-def portal_metadata_post(schema: str, data: dict, auth: Tuple, debug: bool = False) -> dict:
-    if debug:
-        PRINT(f"DEBUG: METADATA POST {'/' if not schema.startswith('/') else ''}{schema}"
-              f" | DATA: {json.dumps(data)}")
-    response = ff_utils.post_metadata(post_item=data, schema_name=schema, key=auth)
-    if debug:
-        PRINT(f"DEBUG: METADATA POST {'/' if not schema.startswith('/') else ''}{schema} -> {response.get('status')}"
-              f" | RESPONSE: {json.dumps(response, default=str)}")
-    return response
-
-
-def portal_metadata_patch(uuid: str, data: dict, auth: Tuple, debug: bool = False) -> dict:
-    if debug:
-        PRINT(f"DEBUG: METADATA PATCH {'/' if not uuid.startswith('/') else ''}{uuid}"
-              f" | DATA: {json.dumps(data)}")
-    response = ff_utils.patch_metadata(patch_item=data, obj_id=uuid, key=auth)
-    if debug:
-        PRINT(f"DEBUG: METADATA PATCH {'/' if not uuid.startswith('/') else ''}{uuid} -> {response.get('status')}"
-              f" | RESPONSE: {json.dumps(response, default=str)}")
-    return response
-
-
-def portal_request_get(url: str,
-                       auth: Tuple = None,
-                       debug: bool = False) -> dict:
-    return _portal_request(requests.get, url=url, auth=auth, debug=debug)
-
-
-def portal_request_post(url: str,
-                        data: Optional[Union[str, dict]] = None,
-                        file: Optional[str] = None,
-                        files: Optional[dict] = None,
-                        auth: Tuple = None,
-                        debug: bool = False) -> dict:
-    return _portal_request(requests.post, url=url, auth=auth, data=data, file=file, files=files, debug=debug)
-
-
-def _portal_request(request: Callable,
-                    url: str,
-                    auth: Tuple = None,
-                    headers: Optional[dict] = None,
-                    data: Optional[Union[dict, list]] = None,
-                    file: Optional[str] = None,
-                    files: Optional[dict] = None,
-                    debug: bool = False) -> dict:
-    kwargs = {
-        "auth": auth,
-        "allow_redirects": True
-    }
-    if not files:
-        if file:
-            files = {"datafile": io.open(file, "rb") if file != "/dev/null" else None}
-    if not headers:
-        if not files:
-            headers = {"Content-Type": "application/json", "Accept": "application/json"}
-    if headers:
-        kwargs["headers"] = headers
-    else:
-        kwargs["headers"] = None
-    if data:
-        if not files:
-            kwargs["json"] = data
-        else:
-            kwargs["data"] = data
-    if files:
-        kwargs["files"] = files
-    if debug:
-        PRINT(f"DEBUG: HTTP {request.__name__.upper()} {url}", end="")
-        if data:
-            PRINT(f" | DATA: {json.dumps(data, default=str)}", end="")
-        if files:
-            PRINT(f" | FILES: {json.dumps(files, default=str)}", end="")
-        if headers:
-            PRINT(f" | HEADERS: {json.dumps(headers, default=str)}", end="")
-        if auth:
-            PRINT(f" | AUTH: (\"{auth[0]}\", <REDACTED>)", end="")
-        PRINT()
-    response = request(url, **kwargs)
-    if debug:
-        PRINT(f"DEBUG: HTTP {request.__name__.upper()} {url} -> {response.status_code}"
-              f" | RESPONSE: {json.dumps(response.json(), default=str)}")
-    return response
