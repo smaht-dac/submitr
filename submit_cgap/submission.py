@@ -58,7 +58,7 @@ def resolve_server(server, env):
     Given a server spec or a beanstalk environment (or neither, but not both), returns a server spec.
 
     :param server: a server spec or None
-      A server is the first part of an url (containing the schema, host and, optionally, port).
+      A server is the first part of a URL (containing the schema, host and, optionally, port).
       e.g., http://cgap.hms.harvard.edu or http://localhost:8000
     :param env: a cgap beanstalk environment
     :return: a server spec
