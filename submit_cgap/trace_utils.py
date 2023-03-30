@@ -1,8 +1,8 @@
-from dcicutils.misc_utils import environ_bool, full_object_name, get_error_message, PRINT
-from dcicutils.obfuscation_utils import obfuscate_dict
 import functools
 import json
 import requests
+from dcicutils.misc_utils import environ_bool, full_object_name, get_error_message, PRINT
+from dcicutils.obfuscation_utils import obfuscate_dict
 
 
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
@@ -48,4 +48,4 @@ def _dict_to_str(d, indent=0):
     elif not d:
         return "{}"
     else:
-        return json.dumps(obfuscate_dict(d))
+        return json.dumps(obfuscate_dict(d, obfuscated="<REDACTED>"))
