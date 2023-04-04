@@ -3,7 +3,7 @@
 import requests
 from typing import Tuple
 from dcicutils import ff_utils
-from .trace_utils import Trace
+from dcicutils.trace_utils import Trace
 
 
 @Trace()
