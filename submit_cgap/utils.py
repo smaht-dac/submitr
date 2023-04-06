@@ -2,7 +2,7 @@ import contextlib
 import datetime
 import io
 import time
-from typing import Callable, Tuple
+from typing import Any, Callable, Tuple, Union
 from dcicutils.misc_utils import PRINT, environ_bool
 from json import dumps as json_dumps, loads as json_loads
 
@@ -101,7 +101,7 @@ def check_repeatedly(check_function: Callable,
                      stop_message: str = None,
                      response_message: bool = True,
                      messages: bool = True,
-                     verbose: bool = True) -> bool:
+                     verbose: bool = True) -> Union[Tuple[bool, str, Any], Any]:
     """
     Calls the given function (check_function) repeatedly, until it returns either a tuple whose first element is
     truthy, or just a non-tuple truthy value, waiting between calls for the given number (wait_seconds) of seconds,
