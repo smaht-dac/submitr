@@ -247,10 +247,15 @@ APP_ARG_DEFAULTERS = {
 
 
 def do_app_arg_defaulting(app_args, user_record):
-    for arg, val in app_args.items():
+    for arg in list(app_args.keys()):
+        val = app_args[arg]
         defaulter = APP_ARG_DEFAULTERS.get(arg)
         if defaulter:
-            app_args[arg] = defaulter(val, user_record)
+            val = defaulter(val, user_record)
+            if val:
+                app_args[arg] = val
+            elif val is None:
+                del app_args[arg]
 
 
 PROGRESS_CHECK_INTERVAL = 15  # seconds
@@ -647,7 +652,9 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
     return submission_post_data
 
 
-def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None):
+def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
+                     show_upload_info=True, show_validation_output=True,
+                     show_processing_status=True, show_parameters=True):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -662,7 +669,9 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None)
         app = DEFAULT_APP
     if KEY_MANAGER.selected_app != app:
         with KEY_MANAGER.locally_selected_app(app):
-            return show_upload_info(uuid=uuid, server=server, env=env, keydict=keydict, app=app)
+            return show_upload_info(uuid=uuid, server=server, env=env, keydict=keydict, app=app,
+                                    show_upload_info=show_upload_info, show_validation_output=show_validation_output,
+                                    show_processing_status=show_processing_status, show_parameters=show_parameters)
 
     server = resolve_server(server=server, env=env)
     keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
@@ -670,18 +679,18 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None)
     response = portal_request_get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict), headers=STANDARD_HTTP_HEADERS)
     response.raise_for_status()
     res = response.json()
-    if get_section(res, 'upload_info'):
+    if show_upload_info and get_section(res, 'upload_info'):
         show_section(res, 'upload_info')
     else:
         show("Uploads: None")
 
     # New March 2023 ...
 
-    if get_section(res, 'validation_output'):
-        PRINT()
+    if show_validation_output and get_section(res, 'validation_output'):
+        PRINT()  # start on a fresh line
         show_section(res, 'validation_output')
 
-    if res.get('processing_status'):
+    if show_processing_status and res.get('processing_status'):
         show("----- Status -----")
         state = res['processing_status'].get('state')
         if state:
@@ -693,7 +702,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None)
         if progress:
             show(f"Progress: {progress.title()}")
 
-    if res.get('parameters'):
+    if show_parameters and res.get('parameters'):
         datafile_url = res['parameters'].get('datafile_url')
         if datafile_url:
             show("----- FileObject -----")
@@ -798,7 +807,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
     try:
         source = path
         target = upload_credentials['upload_url']
-        show("Uploading local file %s directly (via aws-cli) to: %s" % (source, target))
+        show("Uploading local file %s directly (via AWS CLI) to: %s" % (source, target))
         command = ['aws', 's3', 'cp']
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
@@ -848,8 +857,8 @@ def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
         show("Creating FileOther type object ...")
     response = portal_metadata_post(schema=schema_name, data=post_item, auth=auth)
     if DEBUG_PROTOCOL:  # pragma: no cover
-        show(f"Created FileOther type object:"
-             f" {response.get('@graph', [{'uuid': 'not-found'}])[0].get('uuid', 'not-found')}")
+        type_object_message = f" {response.get('@graph', [{'uuid': 'not-found'}])[0].get('uuid', 'not-found')}"
+        show(f"Created FileOther type object: {type_object_message}")
 
     metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
                                                                            method='POST', schema_name=schema_name,
@@ -935,9 +944,11 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
         uuid = upload_spec['uuid']
         uploader_wrapper = UploadMessageWrapper(uuid, no_query=no_query)
         wrapped_upload_file_to_uuid = uploader_wrapper.wrap_upload_function(
-            upload_file_to_uuid, file_path
+            upload_file_to_uuid, file_path,
         )
-        file_metadata = wrapped_upload_file_to_uuid(filename=file_path, uuid=uuid, auth=auth)
+        file_metadata = wrapped_upload_file_to_uuid(
+            filename=file_path, uuid=uuid, auth=auth,
+        )
         if file_metadata:
             extra_files_credentials = file_metadata.get("extra_files_creds", [])
             if extra_files_credentials:
@@ -946,7 +957,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
                     uploader_wrapper,
                     folder,
                     auth,
-                    recursive=subfolders
+                    recursive=subfolders,
                 )
 
 

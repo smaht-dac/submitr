@@ -299,7 +299,7 @@ def test_get_user_record():
 
     def make_mocked_get(auth_failure_code=400):
         def mocked_get(url, *, auth, **kwargs):
-            ignored(url)
+            ignored(url, kwargs)
             if auth != SOME_AUTH:
                 return FakeResponse(status_code=auth_failure_code, json={'Title': 'Not logged in.'})
             return FakeResponse(status_code=200, json={'title': 'J Doe', 'contact_email': 'jdoe@cgap.hms.harvard.edu'})
@@ -783,7 +783,7 @@ def test_execute_prearranged_upload(os_simulation_mode: str):
                             **subprocess_options
                         )
                         assert shown.lines == [
-                            "Uploading local file some-filename directly (via aws-cli) to: some-url",
+                            "Uploading local file some-filename directly (via AWS CLI) to: some-url",
                             # 1 tick (at rate of 1 second per tick in our controlled time)
                             "Upload duration: 1.00 seconds"
                         ]
@@ -802,7 +802,7 @@ def test_execute_prearranged_upload(os_simulation_mode: str):
                             **subprocess_options
                         )
                         assert shown.lines == [
-                            "Uploading local file some-filename directly (via aws-cli) to: some-url",
+                            "Uploading local file some-filename directly (via AWS CLI) to: some-url",
                             # 1 tick (at rate of 1 second per tick in our controlled time)
                             "Upload duration: 1.00 seconds"
                         ]
@@ -819,7 +819,7 @@ def test_execute_prearranged_upload(os_simulation_mode: str):
                             **subprocess_options
                         )
                         assert shown.lines == [
-                            "Uploading local file some-filename directly (via aws-cli) to: some-url",
+                            "Uploading local file some-filename directly (via AWS CLI) to: some-url",
                         ]
 
 
@@ -1228,12 +1228,12 @@ class Scenario:
         uploaded_time = self.get_time_after_wait()
         time_delta_from_start = 0
         nchecks = 0
-        CLEAR = "\033[K"
+        ERASE_LINE = "\033[K"
         for idx in range(wait_attempts + 1):
             time_delta_from_start += 1
             adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
             wait_time = adjusted_scenario.get_time_after_wait()
-            wait_line = (f"{CLEAR}{wait_time} Checking processing"
+            wait_line = (f"{ERASE_LINE}{wait_time} Checking processing"
                          f" | Status: Not Done Yet | Checked: {nchecks} time{'s' if nchecks != 1 else ''} ...\r")
             result.append(wait_line)
             if nchecks >= wait_attempts:
@@ -1241,10 +1241,10 @@ class Scenario:
                 adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
                 wait_time = adjusted_scenario.get_time_after_wait()
                 if outcome == "timeout":
-                    wait_line = (f"{CLEAR}{wait_time} Giving up waiting for processing completion"
+                    wait_line = (f"{ERASE_LINE}{wait_time} Giving up waiting for processing completion"
                                  f" | Status: Not Done Yet | Checked: {nchecks + 1} times\n\r")
                 else:
-                    wait_line = (f"{CLEAR}{wait_time} Processing complete"
+                    wait_line = (f"{ERASE_LINE}{wait_time} Processing complete"
                                  f" | Status: {outcome.title() if outcome else 'Unknown'}"
                                  f" | Checked: {nchecks + 1} times\n\r")
                 result.append(wait_line)
@@ -1255,7 +1255,7 @@ class Scenario:
                 adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
                 wait_time = adjusted_scenario.get_time_after_wait()
                 wait_line = (
-                    f"{CLEAR}{wait_time} Waiting for processing completion"
+                    f"{ERASE_LINE}{wait_time} Waiting for processing completion"
                     f" | Status: Not Done Yet | Checked: {idx + 1} time{'s' if idx + 1 != 1 else ''}"
                     f" | Next check: {PROGRESS_CHECK_INTERVAL - i}"
                     f" second{'s' if PROGRESS_CHECK_INTERVAL - i != 1 else ''} ...\r"

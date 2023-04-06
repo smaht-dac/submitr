@@ -4,6 +4,7 @@ import io
 import os
 from dcicutils.common import APP_FOURFRONT, ORCHESTRATED_APPS
 from dcicutils.command_utils import ScriptFailure
+from dcicutils.misc_utils import get_error_message
 from ..submission import submit_any_ingestion, SubmissionProtocol, SUBMISSION_PROTOCOLS
 from ..utils import script_catch_errors, show
 
@@ -45,7 +46,8 @@ def main(simulated_args_for_testing=None):
                 env=args.env,
                 validate_only=args.validate_only,
                 app=args.app,
-                submission_protocol=args.submission_protocol)
+                submission_protocol=args.submission_protocol,
+        )
 
 
 def verify_ontology_file(ontology_filename: str) -> bool:
@@ -55,8 +57,8 @@ def verify_ontology_file(ontology_filename: str) -> bool:
         with io.open(ontology_filename, "r") as f:
             ontology_json = json.load(f)
             ontology_term_count = len(ontology_json["terms"])
-    except Exception:
-        raise ScriptFailure(f"Cannot load specified ontology (JSON) file: {ontology_filename}")
+    except Exception as e:
+        raise ScriptFailure(f"Cannot load specified ontology (JSON) file: {ontology_filename} | {get_error_message(e)}")
     show(f"Verified specified ontology (JSON) file: {ontology_filename} (ontology terms: {ontology_term_count})")
     return True
 
