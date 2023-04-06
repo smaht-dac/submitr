@@ -15,6 +15,7 @@ def show(*args, with_time: bool = False, same_line: bool = False):
     :param args: an object to be printed
     :param with_time: a boolean specifying whether to prepend a timestamp
     """
+    ERASE_LINE = "\033[K"
     output = io.StringIO()
     if with_time:
         hh_mm_ss = str(datetime.datetime.now().strftime("%H:%M:%S"))
@@ -23,7 +24,7 @@ def show(*args, with_time: bool = False, same_line: bool = False):
         print(*args, end="", file=output)
     output = output.getvalue()
     if same_line:
-        PRINT(f"\033[K{output}\r", end="", flush=True)
+        PRINT(f"{ERASE_LINE}{output}\r", end="", flush=True)
     else:
         PRINT(output)
 
