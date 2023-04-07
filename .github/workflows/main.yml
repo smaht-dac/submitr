@@ -52,4 +52,5 @@ jobs:
         # For testing, use the oldest allowable version of Python to be sure we're not using features added later
         if: ${{ matrix.python_version == '3.7' }}
         run: |
+          pip install coveralls
           poetry run coveralls --service=github
