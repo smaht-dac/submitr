@@ -37,7 +37,7 @@ def test_submit_ontology_script(keyfile):
 
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
 
-    with temporary_json_file({"terms": []}) as ontology_filename:
+    with temporary_json_file({"ontology_term": []}) as ontology_filename:
 
         test_it(args_in=[ontology_filename], expect_exit_code=0, expect_called=True, expect_call_args={
             'ontology_filename': ontology_filename,

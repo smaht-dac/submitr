@@ -56,7 +56,7 @@ def verify_ontology_file(ontology_filename: str) -> bool:
     try:
         with io.open(ontology_filename, "r") as f:
             ontology_json = json.load(f)
-            ontology_term_count = len(ontology_json["terms"])
+            ontology_term_count = len(ontology_json["ontology_term"])  # xyzzy
     except Exception as e:
         raise ScriptFailure(f"Cannot load specified ontology (JSON) file: {ontology_filename} | {get_error_message(e)}")
     show(f"Verified specified ontology (JSON) file: {ontology_filename} (ontology terms: {ontology_term_count})")
