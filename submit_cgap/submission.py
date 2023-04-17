@@ -78,6 +78,8 @@ def resolve_server(server, env):
         try:
             env = env  # was full_cgap_env_name(env), but we don't want to rely on env_utils for this tool
             server = KEY_MANAGER.get_keydict_for_env(env)['server']
+            if server.endswith("/"):
+                server = server[:-1]
         except Exception:
             raise SyntaxError(f"The specified env is not a known environment name: {env}")
 
