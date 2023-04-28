@@ -49,7 +49,7 @@ python = ">=3.7.0,<3.10"
 awscli = "^1.27.79"
 # boto3 = "^1.26.79"
 #dcicutils = "6.10.1.1b1"
-dcicutils = "6.10.1.2b2"
+dcicutils = "7.3.2.1b2"
 requests = "^2.28.2"
 
 [tool.poetry.dev-dependencies]
@@ -83,6 +83,7 @@ sphinx-rtd-theme = ">=1.2.0"
 [tool.poetry.scripts]
 
 make-sample-fastq-file = "submit_cgap.scripts.make_sample_fastq_file:main"
+publish-to-pypi = "dcicutils.scripts.publish_to_pypi:main"
 resume-uploads = "submit_cgap.scripts.resume_uploads:main"
 show-submission-info = "submit_cgap.scripts.show_submission_info:main"
 show-upload-info = "submit_cgap.scripts.show_upload_info:main"
