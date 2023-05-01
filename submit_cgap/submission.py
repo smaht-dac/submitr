@@ -3,11 +3,9 @@ import io
 import json
 import os
 import re
-import requests
 import subprocess
 import time
 
-from dcicutils import ff_utils
 # get_env_real_url would rely on env_utils
 # from dcicutils.env_utils import get_env_real_url
 from dcicutils.command_utils import yes_or_no
@@ -24,7 +22,8 @@ from typing_extensions import Literal
 from urllib.parse import urlparse
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER
 from .exceptions import CGAPPermissionError
-from .utils import show, keyword_as_title
+from .portal_network_access import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
+from .utils import show, keyword_as_title, check_repeatedly
 
 
 class SubmissionProtocol:
@@ -33,8 +32,8 @@ class SubmissionProtocol:
 
 
 SUBMISSION_PROTOCOLS = [SubmissionProtocol.S3, SubmissionProtocol.UPLOAD]
-
 DEFAULT_SUBMISSION_PROTOCOL = SubmissionProtocol.UPLOAD
+STANDARD_HTTP_HEADERS = {"Content-type": "application/json"}
 
 
 # TODO: Will asks whether some of the errors in this file that are called "SyntaxError" really should be something else.
@@ -59,7 +58,7 @@ def resolve_server(server, env):
     Given a server spec or a beanstalk environment (or neither, but not both), returns a server spec.
 
     :param server: a server spec or None
-      A server is the first part of a url (containing the schema, host and, optionally, port).
+      A server is the first part of a URL (containing the schema, host and, optionally, port).
       e.g., http://cgap.hms.harvard.edu or http://localhost:8000
     :param env: a cgap beanstalk environment
     :return: a server spec
@@ -79,6 +78,8 @@ def resolve_server(server, env):
         try:
             env = env  # was full_cgap_env_name(env), but we don't want to rely on env_utils for this tool
             server = KEY_MANAGER.get_keydict_for_env(env)['server']
+            if server.endswith("/"):
+                server = server[:-1]
         except Exception:
             raise SyntaxError(f"The specified env is not a known environment name: {env}")
 
@@ -108,7 +109,7 @@ def get_user_record(server, auth):
     """
 
     user_url = server + "/me?format=json"
-    user_record_response = requests.get(user_url, auth=auth)
+    user_record_response = portal_request_get(user_url, auth=auth, headers=STANDARD_HTTP_HEADERS)
     try:
         user_record = user_record_response.json()
     except Exception:
@@ -122,7 +123,7 @@ def get_user_record(server, auth):
         raise CGAPPermissionError(server=server)
     user_record_response.raise_for_status()
     user_record = user_record_response.json()
-    show("The server %s recognizes you as %s <%s>."
+    show("The server %s recognizes you as: %s <%s>"
          % (server, user_record['title'], user_record['contact_email']))
     return user_record
 
@@ -181,7 +182,7 @@ def get_defaulted_award(award, user_record, error_if_none=False):
 
     :param award: the @id of an award, or None
     :param user_record: the user record for the authorized user
-    :param error_if_none: boolean true if failure to infer an award should an raise error, and false otherwise.
+    :param error_if_none: boolean true if failure to infer an award should raise an error, and false otherwise.
     :return: the @id of an award to use
     """
 
@@ -220,7 +221,7 @@ def get_defaulted_lab(lab, user_record, error_if_none=False):
 
     :param lab: the @id of a lab, or None
     :param user_record: the user record for the authorized user
-    :param error_if_none: boolean true if failure to infer a lab should an raise error, and false otherwise.
+    :param error_if_none: boolean true if failure to infer a lab should raise an error, and false otherwise.
     :return: the @id of a lab to use
     """
 
@@ -248,10 +249,15 @@ APP_ARG_DEFAULTERS = {
 
 
 def do_app_arg_defaulting(app_args, user_record):
-    for arg, val in app_args.items():
+    for arg in list(app_args.keys()):
+        val = app_args[arg]
         defaulter = APP_ARG_DEFAULTERS.get(arg)
         if defaulter:
-            app_args[arg] = defaulter(val, user_record)
+            val = defaulter(val, user_record)
+            if val:
+                app_args[arg] = val
+            elif val is None:
+                del app_args[arg]
 
 
 PROGRESS_CHECK_INTERVAL = 15  # seconds
@@ -351,18 +357,12 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
         old_style_submission_url = url_path_join(server, "submit_for_ingestion")
         old_style_post_data = dict(creation_post_data, **submission_post_data)
 
-        response = requests.post(old_style_submission_url,
-                                 auth=keypair,
-                                 data=old_style_post_data,
-                                 headers={'Content-type': 'application/json'},
-                                 files=_post_files_data(submission_protocol=submission_protocol,
-                                                        ingestion_filename=ingestion_filename))
-
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT("old_style_submission_url=", old_style_submission_url)
-            PRINT("old_style_post_data=", json.dumps(old_style_post_data, indent=2))
-            PRINT("keypair=", keypair)
-            PRINT("response=", response)
+        response = portal_request_post(old_style_submission_url,
+                                       auth=keypair,
+                                       headers=None,
+                                       data=old_style_post_data,
+                                       files=_post_files_data(submission_protocol=submission_protocol,
+                                                              ingestion_filename=ingestion_filename))
 
         if response.status_code != 404:
 
@@ -376,38 +376,33 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
             if DEBUG_PROTOCOL:  # pragma: no cover
                 PRINT("Retrying with new protocol.")
 
-    creation_post_headers = {
-        'Content-type': 'application/json',
-        'Accept': 'application/json',
-    }
     creation_post_url = url_path_join(server, "IngestionSubmission")
     if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT("creation_post_data=", json.dumps(creation_post_data, indent=2))
-        PRINT("creation_post_url=", creation_post_url)
-    creation_response = requests.post(creation_post_url, auth=keypair,
-                                      headers=creation_post_headers,
-                                      json=creation_post_data
-                                      # data=json.dumps(creation_post_data)
-                                      )
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT("headers:", creation_response.request.headers)
+        PRINT("Creating IngestionSubmission (bundle) type object ...")
+    if submission_protocol == SubmissionProtocol.S3:
+        # New with Fourfront ontology ingestion work (March 2023).
+        # Store the submission data in the parameters of the IngestionSubmission object
+        # here (it will get there later anyways via patch in ingester process), so that we can
+        # get at this info via show-upload-info, before the ingester picks this up; specifically,
+        # this is the FileOther object info, its uuid and associated data file, which was uploaded
+        # in this case (SubmissionProtocol.S3) directly to S3 from submit-ontology.
+        creation_post_data["parameters"] = submission_post_data
+    creation_response = portal_request_post(creation_post_url,
+                                            auth=keypair,
+                                            headers=STANDARD_HTTP_HEADERS,
+                                            json=creation_post_data)
     creation_response.raise_for_status()
     [submission] = creation_response.json()['@graph']
     submission_id = submission['@id']
-
     if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT("server=", server, "submission_id=", submission_id)
+        show(f"Created IngestionSubmission (bundle) type object: {submission.get('uuid', 'not-found')}")
     new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT("submitting new_style_submission_url=", new_style_submission_url)
-        PRINT(f"data=submission_post_data={json.dumps(submission_post_data, indent=2)}")
-    response = requests.post(new_style_submission_url, auth=keypair, data=submission_post_data,
-                             files=_post_files_data(submission_protocol=submission_protocol,
-                                                    ingestion_filename=ingestion_filename))
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT("response received for submission post:", response)
-        PRINT("response.content:", response.content)
-
+    response = portal_request_post(new_style_submission_url,
+                                   auth=keypair,
+                                   headers=None,
+                                   data=submission_post_data,
+                                   files=_post_files_data(submission_protocol=submission_protocol,
+                                                          ingestion_filename=ingestion_filename))
     return response
 
 
@@ -579,49 +574,55 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
     uuid = res['submission_id']
 
-    show("Bundle uploaded, assigned uuid %s for tracking. Awaiting processing..." % uuid, with_time=True)
+    show("Bundle uploaded. Checking ingestion process using IngestionSubmission uuid: %s ..." % uuid, with_time=True)
 
-    tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
-
-    outcome = None
-    tries_left = ATTEMPTS_BEFORE_TIMEOUT
-    done = False
-    while tries_left > 0:
-        # Pointless to hit the queue immediately, so we avoid some
-        # server stress by sleeping even before the first try.
-        time.sleep(PROGRESS_CHECK_INTERVAL)
-        res = requests.get(tracking_url, auth=keypair).json()
-        processing_status = res['processing_status']
-        done = processing_status['state'] == 'done'
-        if done:
-            outcome = processing_status['outcome']
-            break
+    def check_ingestion_progress():
+        """
+        Calls endpoint to get this status of the IngestionSubmission uuid (in outer scope);
+        this is used as an argument to check_repeatedly below to call over and over.
+        Returns tuple with: done-indicator (True or False), short-status (str), full-response (dict)
+        From outer scope: server, keypair, uuid (of IngestionSubmission)
+        """
+        tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
+        response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS).json()
+        # FYI this processing_status and its state, progress, outcome properties were ultimately set
+        # from within the ingester process, from within types.ingestion.SubmissionFolio.processing_status.
+        status = response["processing_status"]
+        if status.get("state") == "done":
+            outcome = status["outcome"]
+            return True, outcome, response
         else:
-            progress = processing_status['progress']
-            show("Progress is %s. Continuing to wait..." % progress, with_time=True)
-        tries_left -= 1
+            progress = status["progress"]
+            return False, progress, response
 
-    if not done:
-        show("Timed out after %d tries." % ATTEMPTS_BEFORE_TIMEOUT, with_time=True)
+    # Check the ingestion processing repeatedly, up to ATTEMPTS_BEFORE_TIMEOUT times,
+    # and waiting PROGRESS_CHECK_INTERVAL seconds between each check.
+    [check_done, check_status, check_response] = (
+        check_repeatedly(check_ingestion_progress,
+                         wait_seconds=PROGRESS_CHECK_INTERVAL,
+                         repeat_count=ATTEMPTS_BEFORE_TIMEOUT)
+    )
+
+    if not check_done:
+        show("Exiting after check processing timeout | Check status using: TODO")
         exit(1)
 
-    show("Final status: %s" % outcome, with_time=True)
+    show("Final status: %s" % check_status.title(), with_time=True)
 
-    if outcome == 'error' and res.get('errors'):
-        show_section(res, 'errors')
+    if check_status == "error" and check_response.get("errors"):
+        show_section(check_response, "errors")
 
-    caveat_outcome = None if outcome == 'success' else outcome
-
-    show_section(res, 'validation_output', caveat_outcome=caveat_outcome)
+    caveat_check_status = None if check_status == "success" else check_status
+    show_section(check_response, "validation_output", caveat_outcome=caveat_check_status)
 
     if validate_only:
         exit(0)
 
-    show_section(res, 'post_output', caveat_outcome=caveat_outcome)
+    show_section(check_response, "post_output", caveat_outcome=caveat_check_status)
 
-    if outcome == 'success':
-        show_section(res, 'upload_info')
-        do_any_uploads(res, keydict=keydict, ingestion_filename=ingestion_filename,
+    if check_status == "success":
+        show_section(check_response, "upload_info")
+        do_any_uploads(check_response, keydict=keydict, ingestion_filename=ingestion_filename,
                        upload_folder=upload_folder, no_query=no_query,
                        subfolders=subfolders)
 
@@ -650,12 +651,12 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
         'datafile_source_filename': os.path.basename(ingestion_filename),
         **other_args  # validate_only, and any of institution, project, lab, or award that caller gave us
     }
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT(f"submission_post_data={json.dumps(submission_post_data, indent=2)}")
     return submission_post_data
 
 
-def show_upload_info(uuid, server=None, env=None, keydict=None):
+def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
+                     show_upload_info=True, show_validation_output=True,
+                     show_processing_status=True, show_parameters=True):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -666,20 +667,51 @@ def show_upload_info(uuid, server=None, env=None, keydict=None):
     :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
     """
 
+    if app is None:
+        app = DEFAULT_APP
+    if KEY_MANAGER.selected_app != app:
+        with KEY_MANAGER.locally_selected_app(app):
+            return show_upload_info(uuid=uuid, server=server, env=env, keydict=keydict, app=app,
+                                    show_upload_info=show_upload_info, show_validation_output=show_validation_output,
+                                    show_processing_status=show_processing_status, show_parameters=show_parameters)
+
     server = resolve_server(server=server, env=env)
     keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
     url = ingestion_submission_item_url(server, uuid)
-    response = requests.get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict))
+    response = portal_request_get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict), headers=STANDARD_HTTP_HEADERS)
     response.raise_for_status()
     res = response.json()
-    if get_section(res, 'upload_info'):
+    if show_upload_info and get_section(res, 'upload_info'):
         show_section(res, 'upload_info')
     else:
-        show("No uploads.")
+        show("Uploads: None")
+
+    # New March 2023 ...
+
+    if show_validation_output and get_section(res, 'validation_output'):
+        PRINT()  # start on a fresh line
+        show_section(res, 'validation_output')
+
+    if show_processing_status and res.get('processing_status'):
+        show("----- Status -----")
+        state = res['processing_status'].get('state')
+        if state:
+            show(f"State: {state.title()}")
+        outcome = res['processing_status'].get('outcome')
+        if outcome:
+            show(f"Outcome: {outcome.title()}")
+        progress = res['processing_status'].get('progress')
+        if progress:
+            show(f"Progress: {progress.title()}")
+
+    if show_parameters and res.get('parameters'):
+        datafile_url = res['parameters'].get('datafile_url')
+        if datafile_url:
+            show("----- FileObject -----")
+            PRINT(datafile_url)
 
 
-def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
-                   no_query=False, subfolders=False):
+def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False, subfolders=False):
     upload_info = get_section(res, 'upload_info')
     folder = upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None)
     if upload_info:
@@ -714,7 +746,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
     url = ingestion_submission_item_url(server, uuid)
     keypair = KEY_MANAGER.keydict_to_keypair(keydict)
-    response = requests.get(url, auth=keypair)
+    response = portal_request_get(url, auth=keypair, headers=STANDARD_HTTP_HEADERS)
     response.raise_for_status()
     do_any_uploads(response.json(),
                    keydict=keydict,
@@ -777,25 +809,23 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
     try:
         source = path
         target = upload_credentials['upload_url']
-        show("Going to upload %s to %s." % (source, target))
+        show("Uploading local file %s directly (via AWS CLI) to: %s" % (source, target))
         command = ['aws', 's3', 'cp']
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
         command = command + ['--only-show-errors', source, target]
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f"Executing: {command}")
-            PRINT(f" ==> {' '.join(command)}")
-            PRINT(f"Environment variables include {conjoined_list(list(extra_env.keys()))}.")
         options = {}
         if running_on_windows_native():
             options = {"shell": True}
+        if DEBUG_PROTOCOL:  # pragma: no cover
+            PRINT(f"DEBUG CLI: {' '.join(command)} | ENV INCLUDES: {conjoined_list(list(extra_env.keys()))}")
         subprocess.check_call(command, env=env, **options)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("Upload failed with exit code %d" % e.returncode)
     else:
         end = time.time()
         duration = end - start
-        show("Uploaded in %.2f seconds" % duration)
+        show("Upload duration: %.2f seconds" % duration)
 
 
 def running_on_windows_native():
@@ -825,7 +855,12 @@ def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
 
     post_item = compute_file_post_data(filename=filename, context_attributes=context_attributes)
 
-    response = ff_utils.post_metadata(post_item=post_item, schema_name=schema_name, key=auth)
+    if DEBUG_PROTOCOL:  # pragma: no cover
+        show("Creating FileOther type object ...")
+    response = portal_metadata_post(schema=schema_name, data=post_item, auth=auth)
+    if DEBUG_PROTOCOL:  # pragma: no cover
+        type_object_message = f" {response.get('@graph', [{'uuid': 'not-found'}])[0].get('uuid', 'not-found')}"
+        show(f"Created FileOther type object: {type_object_message}")
 
     metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
                                                                            method='POST', schema_name=schema_name,
@@ -851,7 +886,7 @@ def upload_file_to_uuid(filename, uuid, auth):
     # filename here should not include path
     patch_data = {'filename': os.path.basename(filename)}
 
-    response = ff_utils.patch_metadata(patch_data, uuid, key=auth)
+    response = portal_metadata_patch(uuid=uuid, data=patch_data, auth=auth)
 
     metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
                                                                            method='PATCH', uuid=uuid,
@@ -911,10 +946,10 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
         uuid = upload_spec['uuid']
         uploader_wrapper = UploadMessageWrapper(uuid, no_query=no_query)
         wrapped_upload_file_to_uuid = uploader_wrapper.wrap_upload_function(
-            upload_file_to_uuid, file_path
+            upload_file_to_uuid, file_path,
         )
         file_metadata = wrapped_upload_file_to_uuid(
-            filename=file_path, uuid=uuid, auth=auth
+            filename=file_path, uuid=uuid, auth=auth,
         )
         if file_metadata:
             extra_files_credentials = file_metadata.get("extra_files_creds", [])
@@ -1031,9 +1066,7 @@ def upload_extra_files(
         wrapped_execute_prearranged_upload = uploader_wrapper.wrap_upload_function(
             execute_prearranged_upload, extra_file_path
         )
-        wrapped_execute_prearranged_upload(
-            extra_file_path, extra_file_credentials, auth=auth
-        )
+        wrapped_execute_prearranged_upload(extra_file_path, extra_file_credentials, auth=auth)
 
 
 def upload_item_data(item_filename, uuid, server, env, no_query=False):

@@ -1,11 +1,10 @@
 import pytest
-
 from dcicutils.creds_utils import CGAPKeyManager
 from unittest import mock
 from .. import submission as submission_module
 from ..scripts import submit_ontology as submit_ontology_module
 from ..scripts.submit_ontology import main as submit_ontology_main
-from .testing_helpers import system_exit_expected, argparse_errors_muffled
+from .testing_helpers import system_exit_expected, argparse_errors_muffled, temporary_json_file
 
 
 INGESTION_TYPE = "ontology"
@@ -37,32 +36,38 @@ def test_submit_ontology_script(keyfile):
                             assert output == []
 
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
-    test_it(args_in=['some-file'], expect_exit_code=0, expect_called=True, expect_call_args={
-        'ontology_filename': 'some-file',
-        'ingestion_type': INGESTION_TYPE,
-        'env': None,
-        'server': None,
-        'lab': None,
-        'award': None,
-        'validate_only': False,
-    })
-    expect_call_args = {
-        'ontology_filename': 'some-file',
-        'ingestion_type': INGESTION_TYPE,
-        'env': "some-env",
-        'server': "some-server",
-        'lab': "some-lab",
-        'award': "some-award",
-        'validate_only': True,
-    }
-    test_it(args_in=["--env", "some-env", "--lab", "some-lab",
-                     "-s", "some-server", "-v", "-a", "some-award",
-                     "some-file"],
-            expect_exit_code=0,
-            expect_called=True,
-            expect_call_args=expect_call_args)
-    test_it(args_in=["some-file", "--env", "some-env", "--lab", "some-lab",
-                     "-s", "some-server", "--validate-only", "-a", "some-award"],
-            expect_exit_code=0,
-            expect_called=True,
-            expect_call_args=expect_call_args)
+
+    with temporary_json_file({"ontology_term": []}) as ontology_filename:
+
+        test_it(args_in=[ontology_filename], expect_exit_code=0, expect_called=True, expect_call_args={
+            'ontology_filename': ontology_filename,
+            'ingestion_type': INGESTION_TYPE,
+            'env': None,
+            'server': None,
+            'lab': None,
+            'award': None,
+            'validate_only': False,
+        })
+
+        expect_call_args = {
+            'ontology_filename': ontology_filename,
+            'ingestion_type': INGESTION_TYPE,
+            'env': "some-env",
+            'server': "some-server",
+            'lab': "some-lab",
+            'award': "some-award",
+            'validate_only': True,
+        }
+
+        test_it(args_in=["--env", "some-env", "--lab", "some-lab",
+                         "-s", "some-server", "-v", "-a", "some-award",
+                         ontology_filename],
+                expect_exit_code=0,
+                expect_called=True,
+                expect_call_args=expect_call_args)
+
+        test_it(args_in=[ontology_filename, "--env", "some-env", "--lab", "some-lab",
+                         "-s", "some-server", "--validate-only", "-a", "some-award"],
+                expect_exit_code=0,
+                expect_called=True,
+                expect_call_args=expect_call_args)

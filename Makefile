@@ -27,10 +27,12 @@ tag-and-push:  # tags the branch and pushes it
 	@scripts/tag-and-push
 
 publish:
-	scripts/publish
+	# New Python based publish script in dcicutils (2023-04-25).
+	poetry run publish-to-pypi
 
 publish-for-ga:
-	scripts/publish --noconfirm
+	# New Python based publish script in dcicutils (2023-04-25).
+	poetry run publish-to-pypi --noconfirm
 
 help:
 	@make info

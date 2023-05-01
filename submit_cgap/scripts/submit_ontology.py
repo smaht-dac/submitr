@@ -1,8 +1,12 @@
 import argparse
-
+import json
+import io
+import os
 from dcicutils.common import APP_FOURFRONT, ORCHESTRATED_APPS
+from dcicutils.command_utils import ScriptFailure
+from dcicutils.misc_utils import get_error_message
 from ..submission import submit_any_ingestion, SubmissionProtocol, SUBMISSION_PROTOCOLS
-from ..utils import script_catch_errors
+from ..utils import script_catch_errors, show
 
 
 EPILOG = __doc__
@@ -27,10 +31,11 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--submission_protocol', '--submission-protocol', '-sp',
                         choices=SUBMISSION_PROTOCOLS, default=SubmissionProtocol.S3,
                         help=f"the submission protocol (default {SubmissionProtocol.S3!r})")
-
     args = parser.parse_args(args=simulated_args_for_testing)
 
     with script_catch_errors():
+
+        verify_ontology_file(args.ontology_filename)
 
         return submit_any_ingestion(
                 ingestion_filename=args.ontology_filename,
@@ -43,6 +48,19 @@ def main(simulated_args_for_testing=None):
                 app=args.app,
                 submission_protocol=args.submission_protocol,
         )
+
+
+def verify_ontology_file(ontology_filename: str) -> bool:
+    if not os.path.exists(ontology_filename):
+        raise ScriptFailure(f"Specified ontology file does not exist: {ontology_filename}")
+    try:
+        with io.open(ontology_filename, "r") as f:
+            ontology_json = json.load(f)
+            ontology_term_count = len(ontology_json["ontology_term"])  # xyzzy
+    except Exception as e:
+        raise ScriptFailure(f"Cannot load specified ontology (JSON) file: {ontology_filename} | {get_error_message(e)}")
+    show(f"Verified specified ontology (JSON) file: {ontology_filename} (ontology terms: {ontology_term_count})")
+    return True
 
 
 if __name__ == '__main__':

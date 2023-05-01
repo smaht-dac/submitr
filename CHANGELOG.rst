@@ -23,6 +23,16 @@ Change Log
 
 * Use poetry 1.3.2 for building. Update other dependencies.
 
+* -------
+
+* Verify ontology file first before processing in submit-ontology.
+
+* Added --verbose and --debug options to submit-xyz and show-upload-info.
+
+* Fixed show-upload-info to work with new --app option etc.
+
+* Updated show-upload-info to show more info on the given ingestion uuid.
+
 
 3.1.0
 =====
