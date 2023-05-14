@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 import time
+from typing import Tuple
 
 # get_env_real_url would rely on env_utils
 # from dcicutils.env_utils import get_env_real_url
@@ -13,7 +14,7 @@ from dcicutils.common import APP_CGAP, APP_FOURFRONT, OrchestratedApp
 # We're not going to use full_cgap_env_name now, we'll just rely on the keys file to say what the name is.
 # from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.exceptions import InvalidParameterError
-from dcicutils.ff_utils import get_health_page
+from dcicutils.ff_utils import get_health_page as get_portal_health_page
 from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join, ignorable, remove_prefix
 from dcicutils.s3_utils import HealthPageKey
@@ -24,6 +25,7 @@ from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER
 from .exceptions import CGAPPermissionError
 from .portal_network_access import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
 from .utils import show, keyword_as_title, check_repeatedly
+from dcicutils.function_cache_decorator import function_cache
 
 
 class SubmissionProtocol:
@@ -262,6 +264,9 @@ def do_app_arg_defaulting(app_args, user_record):
 
 PROGRESS_CHECK_INTERVAL = 15  # seconds
 ATTEMPTS_BEFORE_TIMEOUT = 40
+#xyzzy
+PROGRESS_CHECK_INTERVAL = 1  # seconds
+ATTEMPTS_BEFORE_TIMEOUT = 2
 
 
 def get_section(res, section):
@@ -443,6 +448,8 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
                          institution=None, project=None, lab=None, award=None, app: OrchestratedApp = None,
                          upload_folder=None, no_query=False, subfolders=False,
                          submission_protocol=DEFAULT_SUBMISSION_PROTOCOL):
+    print('xyzzy/........')
+    print(env)
     """
     Does the core action of submitting a metadata bundle.
 
@@ -491,6 +498,8 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
     keydict = KEY_MANAGER.get_keydict_for_server(server)
     keypair = KEY_MANAGER.keydict_to_keypair(keydict)
+
+    metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
 
     user_record = get_user_record(server, auth=keypair)
 
@@ -574,9 +583,82 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
     uuid = res['submission_id']
 
+    show(f"Created IngestionSubmission object: s3://{metadata_bundles_bucket}/{uuid}")
     show("Bundle uploaded. Checking ingestion process using IngestionSubmission uuid: %s ..." % uuid, with_time=True)
 
-    def check_ingestion_progress():
+    check_done, check_status, check_response = check_submit_ingestion(uuid, server, env, app)
+
+#   def check_ingestion_progress():
+#       """
+#       Calls endpoint to get this status of the IngestionSubmission uuid (in outer scope);
+#       this is used as an argument to check_repeatedly below to call over and over.
+#       Returns tuple with: done-indicator (True or False), short-status (str), full-response (dict)
+#       From outer scope: server, keypair, uuid (of IngestionSubmission)
+#       """
+#       tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
+#       response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS).json()
+#       # FYI this processing_status and its state, progress, outcome properties were ultimately set
+#       # from within the ingester process, from within types.ingestion.SubmissionFolio.processing_status.
+#       status = response["processing_status"]
+#       if status.get("state") == "done":
+#           outcome = status["outcome"]
+#           return True, outcome, response
+#       else:
+#           progress = status["progress"]
+#           return False, progress, response
+
+#   # Check the ingestion processing repeatedly, up to ATTEMPTS_BEFORE_TIMEOUT times,
+#   # and waiting PROGRESS_CHECK_INTERVAL seconds between each check.
+#   [check_done, check_status, check_response] = (
+#       check_repeatedly(check_ingestion_progress,
+#                        wait_seconds=PROGRESS_CHECK_INTERVAL,
+#                        repeat_count=ATTEMPTS_BEFORE_TIMEOUT)
+#   )
+#
+#   if not check_done:
+#       show("Exiting after check processing timeout | Check status using: TODO")
+#       exit(1)
+#
+#   show("Final status: %s" % check_status.title(), with_time=True)
+#
+#   if check_status == "error" and check_response.get("errors"):
+#       show_section(check_response, "errors")
+#
+#   caveat_check_status = None if check_status == "success" else check_status
+#   show_section(check_response, "validation_output", caveat_outcome=caveat_check_status)
+#
+#   if validate_only:
+#       exit(0)
+#
+#   show_section(check_response, "post_output", caveat_outcome=caveat_check_status)
+
+    if validate_only:
+        exit(0)
+
+    if check_status == "success":
+        show_section(check_response, "upload_info")
+        do_any_uploads(check_response, keydict=keydict, ingestion_filename=ingestion_filename,
+                       upload_folder=upload_folder, no_query=no_query,
+                       subfolders=subfolders)
+
+    exit(0)
+
+
+def check_submit_ingestion(uuid: str, server: str, env: str, app: OrchestratedApp = None) -> Tuple[bool, str, dict]:
+
+    if app is None:  # For legacy reasons, SubmitCGAP was the first so didn't expect this arg was needed
+        app = DEFAULT_APP
+    if KEY_MANAGER.selected_app != app:
+        with KEY_MANAGER.locally_selected_app(app):
+            return check_submit_ingestion(uuid, server, env, app)
+
+    server = resolve_server(server=server, env=env if not server else None)
+    keydict = KEY_MANAGER.get_keydict_for_server(server)
+    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
+
+    show("Checking ingestion process for IngestionSubmission uuid: %s ..." % uuid, with_time=True)
+
+    def check_ingestion_progress() -> Tuple[bool, str, dict]:
         """
         Calls endpoint to get this status of the IngestionSubmission uuid (in outer scope);
         this is used as an argument to check_repeatedly below to call over and over.
@@ -604,7 +686,11 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     )
 
     if not check_done:
-        show("Exiting after check processing timeout | Check status using: TODO")
+        show("Exiting after check processing timeout")
+        if env:
+            show(f"Check status using: check-submit --app {app} --env {env} {uuid}")
+        else:
+            show(f"Check status using: check-submit --app {app} --server {server} {uuid}")
         exit(1)
 
     show("Final status: %s" % check_status.title(), with_time=True)
@@ -614,19 +700,17 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
     caveat_check_status = None if check_status == "success" else check_status
     show_section(check_response, "validation_output", caveat_outcome=caveat_check_status)
-
-    if validate_only:
-        exit(0)
-
     show_section(check_response, "post_output", caveat_outcome=caveat_check_status)
 
     if check_status == "success":
         show_section(check_response, "upload_info")
-        do_any_uploads(check_response, keydict=keydict, ingestion_filename=ingestion_filename,
-                       upload_folder=upload_folder, no_query=no_query,
-                       subfolders=subfolders)
+        # Note that for check-submit we do not currently do this part where we
+        # upload the ingestion file AFTER the main part of the submission is complete.
+        # do_any_uploads(check_response, keydict=keydict, ingestion_filename=ingestion_filename,
+        #                upload_folder=upload_folder, no_query=no_query,
+        #                subfolders=subfolders)
 
-    exit(0)
+    return check_done, check_status, check_response
 
 
 def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, **other_args):
@@ -756,10 +840,18 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                    subfolders=subfolders)
 
 
+@function_cache(serialize_key=True)
+def get_health_page(key: dict) -> dict:
+    return get_portal_health_page(key=key)
+
+
+def get_metadata_bundles_bucket_from_health_path(key: dict) -> str:
+    return get_health_page(key=key).get("metadata_bundles_bucket")
+
+
 def get_s3_encrypt_key_id_from_health_page(auth):
     try:
-        health = get_health_page(key=auth)
-        return health.get(HealthPageKey.S3_ENCRYPT_KEY_ID)
+        return get_health_page(key=auth).get(HealthPageKey.S3_ENCRYPT_KEY_ID)
     except Exception:  # pragma: no cover
         # We don't actually unit test this section because get_health_page realistically always returns
         # a dictionary, and so health.get(...) always succeeds, possibly returning None, which should
