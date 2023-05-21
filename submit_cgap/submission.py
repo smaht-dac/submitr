@@ -264,9 +264,6 @@ def do_app_arg_defaulting(app_args, user_record):
 
 PROGRESS_CHECK_INTERVAL = 15  # seconds
 ATTEMPTS_BEFORE_TIMEOUT = 40
-#xyzzy
-PROGRESS_CHECK_INTERVAL = 1  # seconds
-ATTEMPTS_BEFORE_TIMEOUT = 2
 
 
 def get_section(res, section):
@@ -448,8 +445,6 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
                          institution=None, project=None, lab=None, award=None, app: OrchestratedApp = None,
                          upload_folder=None, no_query=False, subfolders=False,
                          submission_protocol=DEFAULT_SUBMISSION_PROTOCOL):
-    print('xyzzy/........')
-    print(env)
     """
     Does the core action of submitting a metadata bundle.
 
@@ -588,55 +583,10 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
     check_done, check_status, check_response = check_submit_ingestion(uuid, server, env, app)
 
-#   def check_ingestion_progress():
-#       """
-#       Calls endpoint to get this status of the IngestionSubmission uuid (in outer scope);
-#       this is used as an argument to check_repeatedly below to call over and over.
-#       Returns tuple with: done-indicator (True or False), short-status (str), full-response (dict)
-#       From outer scope: server, keypair, uuid (of IngestionSubmission)
-#       """
-#       tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
-#       response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS).json()
-#       # FYI this processing_status and its state, progress, outcome properties were ultimately set
-#       # from within the ingester process, from within types.ingestion.SubmissionFolio.processing_status.
-#       status = response["processing_status"]
-#       if status.get("state") == "done":
-#           outcome = status["outcome"]
-#           return True, outcome, response
-#       else:
-#           progress = status["progress"]
-#           return False, progress, response
-
-#   # Check the ingestion processing repeatedly, up to ATTEMPTS_BEFORE_TIMEOUT times,
-#   # and waiting PROGRESS_CHECK_INTERVAL seconds between each check.
-#   [check_done, check_status, check_response] = (
-#       check_repeatedly(check_ingestion_progress,
-#                        wait_seconds=PROGRESS_CHECK_INTERVAL,
-#                        repeat_count=ATTEMPTS_BEFORE_TIMEOUT)
-#   )
-#
-#   if not check_done:
-#       show("Exiting after check processing timeout | Check status using: TODO")
-#       exit(1)
-#
-#   show("Final status: %s" % check_status.title(), with_time=True)
-#
-#   if check_status == "error" and check_response.get("errors"):
-#       show_section(check_response, "errors")
-#
-#   caveat_check_status = None if check_status == "success" else check_status
-#   show_section(check_response, "validation_output", caveat_outcome=caveat_check_status)
-#
-#   if validate_only:
-#       exit(0)
-#
-#   show_section(check_response, "post_output", caveat_outcome=caveat_check_status)
-
     if validate_only:
         exit(0)
 
     if check_status == "success":
-        show_section(check_response, "upload_info")
         do_any_uploads(check_response, keydict=keydict, ingestion_filename=ingestion_filename,
                        upload_folder=upload_folder, no_query=no_query,
                        subfolders=subfolders)
@@ -704,11 +654,6 @@ def check_submit_ingestion(uuid: str, server: str, env: str, app: OrchestratedAp
 
     if check_status == "success":
         show_section(check_response, "upload_info")
-        # Note that for check-submit we do not currently do this part where we
-        # upload the ingestion file AFTER the main part of the submission is complete.
-        # do_any_uploads(check_response, keydict=keydict, ingestion_filename=ingestion_filename,
-        #                upload_folder=upload_folder, no_query=no_query,
-        #                subfolders=subfolders)
 
     return check_done, check_status, check_response
 
