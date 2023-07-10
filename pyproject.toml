@@ -90,7 +90,7 @@ submit-metadata-bundle = "submit_cgap.scripts.submit_metadata_bundle:main"
 upload-item-data = "submit_cgap.scripts.upload_item_data:main"
 submit-genelist = "submit_cgap.scripts.submit_genelist:main"
 submit-ontology = "submit_cgap.scripts.submit_ontology:main"
-check-submit= "submit_cgap.scripts.check_submit:main"
+check-ontoloy= "submit_cgap.ontoloy.check_ontoloy:main"
 
 [tool.coverage.report]
 
