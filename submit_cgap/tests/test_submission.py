@@ -1202,7 +1202,8 @@ class Scenario:
     START_TIME_FOR_TESTS = "12:00:00"
     WAIT_TIME_FOR_TEST_UPDATES_SECONDS = 1
 
-    def __init__(self, start_time=None, wait_time_delta=None):
+    def __init__(self, start_time=None, wait_time_delta=None, bundles_bucket=None):
+        self.bundles_bucket = bundles_bucket
         self.start_time = start_time or self.START_TIME_FOR_TESTS
         self.wait_time_delta = wait_time_delta or self.WAIT_TIME_FOR_TEST_UPDATES_SECONDS
 
@@ -1215,18 +1216,24 @@ class Scenario:
 
     def make_uploaded_lines(self):
         uploaded_time = self.get_time_after_wait()
-        return [
-            f"The server {SOME_SERVER} recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>",
-            (
-                (f"{uploaded_time} Bundle uploaded."
-                 f" Checking ingestion process using IngestionSubmission uuid: {SOME_UUID} ...")
-            ),
-        ]
-
-    def make_wait_lines(self, wait_attempts, outcome: str = None):
         result = []
-        uploaded_time = self.get_time_after_wait()
+        result.append(f"The server {SOME_SERVER} recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>")
+        if submission_module.DEBUG_PROTOCOL:
+            result.append(f"Created IngestionSubmission object: s3://{self.bundles_bucket}/{SOME_UUID}")
+        result.append(f"{uploaded_time} Bundle uploaded to bucket {self.bundles_bucket},"
+                      f" assigned uuid {SOME_UUID} for tracking. Awaiting processing...")
+        return result
+
+    def make_wait_lines(self, wait_attempts, outcome: str = None, start_delta: int = 0):
+        result = []
         time_delta_from_start = 0
+        uploaded_time = self.get_time_after_wait()
+
+        adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
+        wait_time = adjusted_scenario.get_time_after_wait()
+        result.append(f"{wait_time} Checking ingestion process for IngestionSubmission uuid {SOME_UUID} ...")
+        time_delta_from_start += 1
+
         nchecks = 0
         ERASE_LINE = "\033[K"
         for idx in range(wait_attempts + 1):
@@ -1264,11 +1271,11 @@ class Scenario:
         return result
 
     def make_timeout_lines(self, *, get_attempts=ATTEMPTS_BEFORE_TIMEOUT):
-        wait_time = self.get_elapsed_time_for_get_attempts(get_attempts)
-        adjusted_scenario = Scenario(start_time=wait_time, wait_time_delta=self.wait_time_delta)
-        time_out_time = adjusted_scenario.get_time_after_wait()
-        return [f"Exiting after check processing timeout | Check status using: TODO"]
-        return [f"{time_out_time} Timed out after {get_attempts} tries."]
+        # wait_time = self.get_elapsed_time_for_get_attempts(get_attempts)
+        # adjusted_scenario = Scenario(start_time=wait_time, wait_time_delta=self.wait_time_delta)
+        # time_out_time = adjusted_scenario.get_time_after_wait()
+        return [f"Exiting after check processing timeout"
+                f" using 'check-submit --app cgap --server {SOME_SERVER} {SOME_UUID}'."]
 
     def make_outcome_lines(self, get_attempts, *, outcome):
         end_time = self.get_elapsed_time_for_get_attempts(get_attempts)
@@ -1277,8 +1284,11 @@ class Scenario:
     def get_elapsed_time_for_get_attempts(self, get_attempts):
         initial_check_time_delta = self.wait_time_delta
         # Extra PROGRESS_CHECK_INTERVAL for the 1-second sleep loop in utils.check_repeatedly,
-        # via make_wait_lines; and extra 2 for the extra (first/last) lines in make_wait_lines.
-        wait_time_delta = (PROGRESS_CHECK_INTERVAL + self.wait_time_delta) * get_attempts + PROGRESS_CHECK_INTERVAL + 2
+        # via make_wait_lines; and extra 3 for the extra (first/last) lines in make_wait_lines and a header line.
+        extra_waits = 3
+        wait_time_delta = ((PROGRESS_CHECK_INTERVAL + self.wait_time_delta) * get_attempts
+                           + PROGRESS_CHECK_INTERVAL
+                           + extra_waits)
         elapsed_time_delta = initial_check_time_delta + wait_time_delta
         adjusted_scenario = Scenario(start_time=self.start_time, wait_time_delta=elapsed_time_delta)
         return adjusted_scenario.get_time_after_wait()
@@ -1288,9 +1298,9 @@ class Scenario:
         scenario = Scenario()
         result = []
         wait_attempts = get_attempts - 1
-        result += scenario.make_uploaded_lines()
+        result += scenario.make_uploaded_lines()  # uses one tick, so we start wait lines offset by 1
         if wait_attempts > 0:
-            result += scenario.make_wait_lines(wait_attempts, outcome=outcome)
+            result += scenario.make_wait_lines(wait_attempts, outcome=outcome, start_delta=1)
         result += scenario.make_outcome_lines(get_attempts, outcome=outcome)
         return result
 
@@ -1306,12 +1316,13 @@ class Scenario:
     def make_timeout_submission_lines(cls):
         scenario = Scenario()
         result = []
-        result += scenario.make_uploaded_lines()
-        result += scenario.make_wait_lines(ATTEMPTS_BEFORE_TIMEOUT - 1, outcome="timeout")
+        result += scenario.make_uploaded_lines()  # uses one tick, so we start wait lines offset by 1
+        result += scenario.make_wait_lines(ATTEMPTS_BEFORE_TIMEOUT - 1, outcome="timeout", start_delta=1)
         result += scenario.make_timeout_lines()
         return result
 
 
+@mock.patch.object(submission_module, "DEBUG_PROTOCOL", False)
 def test_submit_any_ingestion_old_protocol():
 
     with shown_output() as shown:
@@ -1835,6 +1846,7 @@ def test_submit_any_ingestion_old_protocol():
         assert shown.lines == Scenario.make_timeout_submission_lines()
 
 
+@mock.patch.object(submission_module, "DEBUG_PROTOCOL", False)
 def test_submit_any_ingestion_new_protocol():
 
     with shown_output() as shown:

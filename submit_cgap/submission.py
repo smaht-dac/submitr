@@ -578,8 +578,11 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
     uuid = res['submission_id']
 
-    show(f"Created IngestionSubmission object: s3://{metadata_bundles_bucket}/{uuid}")
-    show("Bundle uploaded. Checking ingestion process using IngestionSubmission uuid: %s ..." % uuid, with_time=True)
+    if DEBUG_PROTOCOL:  # pragma: no cover
+        show(f"Created IngestionSubmission object: s3://{metadata_bundles_bucket}/{uuid}", with_time=True)
+    show(f"Bundle uploaded to bucket {metadata_bundles_bucket}, assigned uuid {uuid} for tracking."
+         f" Awaiting processing...",
+         with_time=True)
 
     check_done, check_status, check_response = check_submit_ingestion(uuid, server, env, app)
 
@@ -606,7 +609,7 @@ def check_submit_ingestion(uuid: str, server: str, env: str, app: OrchestratedAp
     keydict = KEY_MANAGER.get_keydict_for_server(server)
     keypair = KEY_MANAGER.keydict_to_keypair(keydict)
 
-    show("Checking ingestion process for IngestionSubmission uuid: %s ..." % uuid, with_time=True)
+    show("Checking ingestion process for IngestionSubmission uuid %s ..." % uuid, with_time=True)
 
     def check_ingestion_progress() -> Tuple[bool, str, dict]:
         """
@@ -636,11 +639,11 @@ def check_submit_ingestion(uuid: str, server: str, env: str, app: OrchestratedAp
     )
 
     if not check_done:
-        show("Exiting after check processing timeout")
         if env:
-            show(f"Check status using: check-submit --app {app} --env {env} {uuid}")
+            command_summary = f"check-submit --app {app} --env {env} {uuid}"
         else:
-            show(f"Check status using: check-submit --app {app} --server {server} {uuid}")
+            command_summary = f"check-submit --app {app} --server {server} {uuid}"
+        show(f"Exiting after check processing timeout using {command_summary!r}.")
         exit(1)
 
     show("Final status: %s" % check_status.title(), with_time=True)

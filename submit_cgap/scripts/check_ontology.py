@@ -1,12 +1,7 @@
 import argparse
-import json
-import io
-import os
 from dcicutils.common import APP_FOURFRONT, ORCHESTRATED_APPS
-from dcicutils.command_utils import ScriptFailure
-from dcicutils.misc_utils import get_error_message
-from ..submission import check_submit_ingestion, SubmissionProtocol, SUBMISSION_PROTOCOLS
-from ..utils import script_catch_errors, show
+from ..submission import check_submit_ingestion
+from ..utils import script_catch_errors
 
 
 EPILOG = __doc__
