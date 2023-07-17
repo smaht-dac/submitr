@@ -1,5 +1,5 @@
 import argparse
-from dcicutils.common import APP_CGAP, ORCHESTRATED_APPS
+from dcicutils.common import ORCHESTRATED_APPS
 from dcicutils.env_utils import EnvUtils
 from ..submission import check_submit_ingestion
 from ..utils import script_catch_errors
