@@ -9,11 +9,11 @@ EPILOG = __doc__
 
 def main():
     parser = argparse.ArgumentParser(  # noqa - PyCharm wrongly thinks the formatter_class is invalid
-        description="Check previously submitted ontology",
+        description="Check previously submitted submission.",
         epilog=EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument('submission_uuid', help='uuid of previously submitted ontology')
+    parser.add_argument('submission_uuid', help='uuid of previously submitted submission.')
     parser.add_argument('--app', choices=ORCHESTRATED_APPS, default=APP_FOURFRONT,
                         help=f"An application (default {APP_FOURFRONT!r}. Only for debugging."
                              f" Normally this should not be given.")
