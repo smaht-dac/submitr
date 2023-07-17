@@ -1322,8 +1322,11 @@ class Scenario:
         return result
 
 
+@mock.patch.object(submission_module, "get_health_page")
 @mock.patch.object(submission_module, "DEBUG_PROTOCOL", False)
-def test_submit_any_ingestion_old_protocol():
+def test_submit_any_ingestion_old_protocol(mock_get_health_page):
+
+    mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: TEST_ENCRYPT_KEY}
 
     with shown_output() as shown:
         with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
@@ -1846,8 +1849,11 @@ def test_submit_any_ingestion_old_protocol():
         assert shown.lines == Scenario.make_timeout_submission_lines()
 
 
+@mock.patch.object(submission_module, "get_health_page")
 @mock.patch.object(submission_module, "DEBUG_PROTOCOL", False)
-def test_submit_any_ingestion_new_protocol():
+def test_submit_any_ingestion_new_protocol(mock_get_health_page):
+
+    mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: TEST_ENCRYPT_KEY}
 
     with shown_output() as shown:
         with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
