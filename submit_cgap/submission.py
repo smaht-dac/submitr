@@ -10,7 +10,7 @@ from typing import Tuple
 # get_env_real_url would rely on env_utils
 # from dcicutils.env_utils import get_env_real_url
 from dcicutils.command_utils import yes_or_no
-from dcicutils.common import APP_CGAP, APP_FOURFRONT, OrchestratedApp
+from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 # We're not going to use full_cgap_env_name now, we'll just rely on the keys file to say what the name is.
 # from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.exceptions import InvalidParameterError
@@ -21,7 +21,7 @@ from dcicutils.s3_utils import HealthPageKey
 from typing import BinaryIO, Dict, Optional
 from typing_extensions import Literal
 from urllib.parse import urlparse
-from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER
+from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER, DEFAULT_APP
 from .exceptions import CGAPPermissionError
 from .portal_network_access import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
 from .utils import show, keyword_as_title, check_repeatedly
@@ -410,20 +410,30 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
 
 DEFAULT_INGESTION_TYPE = 'metadata_bundle'
 
-DEFAULT_APP = APP_CGAP
-
 GENERIC_SCHEMA_TYPE = 'FileOther'
 
 
-def _resolve_app_args(institution, project, lab, award, app):
+def _resolve_app_args(institution, project, lab, award, app, consortium, submission_center):
 
     app_args = {}
     if app == APP_CGAP:
         required_args = {'institution': institution, 'project': project}
-        unwanted_args = {'lab': lab, 'award': award}
+        unwanted_args = {'lab': lab, 'award': award,
+                         'consortium': consortium, 'submission_center': submission_center}
     elif app == APP_FOURFRONT:
         required_args = {'lab': lab, 'award': award}
-        unwanted_args = {'institution': institution, 'project': project}
+        unwanted_args = {'institution': institution, 'project': project,
+                         'consortium': consortium, 'submission_center': submission_center}
+    elif app == APP_SMAHT:
+
+        def splitter(x):
+            return None if x is None else [y for y in [x.strip() for x in x.split(',')] if y]
+
+        consortia = None if consortium is None else splitter(consortium)
+        submission_centers = None if submission_center is None else splitter(submission_center)
+        required_args = {'consortia': consortia, 'submission_centers': submission_centers}
+        unwanted_args = {'institution': institution, 'project': project,
+                         'lab': lab, 'award': award}
     else:
         raise ValueError(f"Unknown application: {app}")
 
@@ -442,7 +452,9 @@ def _resolve_app_args(institution, project, lab, award, app):
 
 
 def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, validate_only,
-                         institution=None, project=None, lab=None, award=None, app: OrchestratedApp = None,
+                         institution=None, project=None, lab=None, award=None,
+                         consortium=None, submission_center=None,
+                         app: OrchestratedApp = None,
                          upload_folder=None, no_query=False, subfolders=False,
                          submission_protocol=DEFAULT_SUBMISSION_PROTOCOL):
     """
@@ -458,6 +470,8 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     :param project: the @id of the project for which the submission is being done (when app='cgap' or None)
     :param lab: the @id of the lab for which the submission is being done (when app='fourfront')
     :param award: the @id of the award for which the submission is being done (when app='fourfront')
+    :param consortium: the @id of the consortium for which the submission is being done (when app='smaht')
+    :param submission_center: the @id of the submission_center for which the submission is being done (when app='smaht')
     :param upload_folder: folder in which to find files to upload (default: same as bundle_filename)
     :param no_query: bool to suppress requests for user input
     :param subfolders: bool to search subdirectories within upload_folder for files
@@ -472,10 +486,12 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
             return submit_any_ingestion(ingestion_filename=ingestion_filename, ingestion_type=ingestion_type,
                                         server=server, env=env, validate_only=validate_only,
                                         institution=institution, project=project, lab=lab, award=award, app=app,
+                                        consortium=consortium, submission_center=submission_center,
                                         upload_folder=upload_folder, no_query=no_query, subfolders=subfolders,
                                         submission_protocol=submission_protocol)
 
-    app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app)
+    app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app,
+                                 consortium=consortium, submission_center=submission_center)
 
     server = resolve_server(server=server, env=env)
 
