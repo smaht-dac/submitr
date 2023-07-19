@@ -704,8 +704,10 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
 
 
 def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
-                     show_upload_info=True, show_validation_output=True,
-                     show_processing_status=True, show_parameters=True):
+                     show_primary_result=True,
+                     show_validation_output=True,
+                     show_processing_status=True,
+                     show_parameters_section=True):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -721,8 +723,10 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     if KEY_MANAGER.selected_app != app:
         with KEY_MANAGER.locally_selected_app(app):
             return show_upload_info(uuid=uuid, server=server, env=env, keydict=keydict, app=app,
-                                    show_upload_info=show_upload_info, show_validation_output=show_validation_output,
-                                    show_processing_status=show_processing_status, show_parameters=show_parameters)
+                                    show_primary_result=show_primary_result,
+                                    show_validation_output=show_validation_output,
+                                    show_processing_status=show_processing_status,
+                                    show_parameters_section=show_parameters_section)
 
     server = resolve_server(server=server, env=env)
     keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
@@ -730,34 +734,48 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     response = portal_request_get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict), headers=STANDARD_HTTP_HEADERS)
     response.raise_for_status()
     res = response.json()
-    if show_upload_info and get_section(res, 'upload_info'):
-        show_section(res, 'upload_info')
-    else:
-        show("Uploads: None")
+    show_upload_result(res,
+                       show_primary_result=show_primary_result,
+                       show_validation_output=show_validation_output,
+                       show_processing_status=show_processing_status,
+                       show_datafile_url=show_parameters_section)
+
+
+def show_upload_result(result,
+                       show_primary_result=True,
+                       show_validation_output=True,
+                       show_processing_status=True,
+                       show_datafile_url=True):
+
+    if show_primary_result:
+        if get_section(result, 'upload_info'):
+            show_section(result, 'upload_info')
+        else:
+            show("Uploads: None")
 
     # New March 2023 ...
 
-    if show_validation_output and get_section(res, 'validation_output'):
+    if show_validation_output and get_section(result, 'validation_output'):
         PRINT()  # start on a fresh line
-        show_section(res, 'validation_output')
+        show_section(result, 'validation_output')
 
-    if show_processing_status and res.get('processing_status'):
-        show("----- Status -----")
-        state = res['processing_status'].get('state')
+    if show_processing_status and result.get('processing_status'):
+        show("----- Processing Status -----")
+        state = result['processing_status'].get('state')
         if state:
             show(f"State: {state.title()}")
-        outcome = res['processing_status'].get('outcome')
+        outcome = result['processing_status'].get('outcome')
         if outcome:
             show(f"Outcome: {outcome.title()}")
-        progress = res['processing_status'].get('progress')
+        progress = result['processing_status'].get('progress')
         if progress:
             show(f"Progress: {progress.title()}")
 
-    if show_parameters and res.get('parameters'):
-        datafile_url = res['parameters'].get('datafile_url')
+    if show_datafile_url and result.get('parameters'):
+        datafile_url = result['parameters'].get('datafile_url')
         if datafile_url:
-            show("----- FileObject -----")
-            PRINT(datafile_url)
+            show("----- DataFile URL -----")
+            show(datafile_url)
 
 
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False, subfolders=False):

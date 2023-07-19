@@ -5,12 +5,13 @@ import os
 import platform
 import pytest
 import re
-from unittest import mock
 
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
 from dcicutils.misc_utils import ignored, local_attrs, override_environ, NamedObject
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
+from typing import List, Dict
+from unittest import mock
 
 from .test_utils import shown_output
 from .test_upload_item_data import TEST_ENCRYPT_KEY
@@ -20,7 +21,7 @@ from ..base import PRODUCTION_SERVER, KEY_MANAGER
 from ..exceptions import CGAPPermissionError
 from ..submission import (
     SERVER_REGEXP, PROGRESS_CHECK_INTERVAL, ATTEMPTS_BEFORE_TIMEOUT,
-    get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info,
+    get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info, show_upload_result,
     execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url,
     resolve_server, resume_uploads, show_section, submit_any_ingestion,
     upload_file_to_uuid, upload_item_data,
@@ -421,6 +422,7 @@ def test_show_upload_info():
     json_result = None  # Actual value comes later
 
     def mocked_get(url, *, auth, **kwargs):
+        ignored(kwargs)
         assert url.startswith(SOME_UUID_UPLOAD_URL)
         assert auth == SOME_AUTH
         return FakeResponse(200, json=json_result)
@@ -438,6 +440,89 @@ def test_show_upload_info():
                 show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
                 expected_lines = ['----- Upload Info -----', *map(str, SOME_UPLOAD_INFO)]
                 assert shown.lines == expected_lines
+
+
+def test_show_upload_result():
+
+    # The primary output is handled a bit differently than other parts, so capture that nuance...
+    upload_info_items: List
+    for upload_info_items in [[], ['alpha', 'bravo']]:
+        with shown_output() as shown:
+            show_upload_result({'upload_info': upload_info_items},
+                               show_primary_result=True,
+                               show_validation_output=False,
+                               show_processing_status=False,
+                               show_datafile_url=False)
+            assert shown.lines == upload_info_items or "Uploads: None"  # special case for no uploads
+
+    sample_validation_output = ['yep', 'uh huh', 'wait, what?']
+    for show_validation in [False, True]:
+        with shown_output() as shown:
+            show_upload_result({'validation_output': sample_validation_output},
+                               show_primary_result=False,
+                               show_validation_output=show_validation,
+                               show_processing_status=False,
+                               show_datafile_url=False)
+            assert shown.lines == (['----- Validation Output -----'] + sample_validation_output
+                                   if show_validation
+                                   else [])
+
+    # Special case for 'parameters' relates to presence or absence of 'datafile_url' within it
+    sample_non_data_parameters = {'some_key': 'some_value'}
+    sample_datafile_url = 'some-datafile-url'
+    test_cases = [
+        (False, {}),
+        (True, {'datafile_url': sample_datafile_url}),
+        (False, {'datafile_url': ''}),
+        (False, {'datafile_url': None})]
+    sample_data_parameters: Dict
+    for datafile_should_be_shown, sample_data_parameters in test_cases:
+        with shown_output() as shown:
+            show_upload_result({'parameters': dict(sample_non_data_parameters, **sample_data_parameters)},
+                               show_primary_result=False,
+                               show_validation_output=False,
+                               show_processing_status=False,
+                               show_datafile_url=True)
+            if datafile_should_be_shown:
+                assert shown.lines == [
+                    "----- DataFile URL -----",
+                    sample_datafile_url,
+                ]
+            else:
+                assert shown.lines == []
+
+    for show_it in [False, True]:
+        with shown_output() as shown:
+            show_upload_result({
+                'processing_status': {
+                    'state': 'some-state',
+                    'outcome': 'some-outcome',
+                    'progress': 'some-progress',
+                }},
+                show_primary_result=False,
+                show_validation_output=False,
+                show_processing_status=show_it,
+                show_datafile_url=False)
+            assert bool(shown.lines) is show_it
+
+    for state in ['some-state', None]:
+        n = 1 if state else 0
+        for outcome in ['some-outcome', None]:
+            n += 1 if outcome else 0
+            for progress in ['some-progress', None]:
+                n += 1 if progress else 0
+                with shown_output() as shown:
+                    show_upload_result({
+                        'processing_status': {
+                            'state': state, 'outcome': outcome, 'progress': progress
+                        }},
+                        show_primary_result=False,
+                        show_validation_output=False,
+                        show_processing_status=True,
+                        show_datafile_url=False)
+                    # Heading is shown if there are an times, so that's the +1
+                    # Otherwise one output line is shown for each non-null item
+                    assert len(shown.lines) == 0 if n == 0 else n + 1
 
 
 def test_show_section_without_caveat():
