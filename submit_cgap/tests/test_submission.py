@@ -7,7 +7,7 @@ import pytest
 import re
 from unittest import mock
 
-from dcicutils.common import APP_CGAP, APP_FOURFRONT
+from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
 from dcicutils.misc_utils import ignored, local_attrs, override_environ, NamedObject
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
@@ -2583,53 +2583,89 @@ def test_resolve_app_args():
 
     # No arguments specified. Presumably they'll later be defaulted.
 
-    res = _resolve_app_args(institution=None, project=None, lab=None, award=None, app=APP_CGAP)
+    res = _resolve_app_args(institution=None, project=None, lab=None, award=None,
+                            consortium=None, submission_center=None, app=APP_CGAP)
     assert res == {'institution': None, 'project': None}
 
-    res = _resolve_app_args(institution=None, project=None, lab=None, award=None, app=APP_FOURFRONT)
+    res = _resolve_app_args(institution=None, project=None, lab=None, award=None,
+                            consortium=None, submission_center=None, app=APP_FOURFRONT)
     assert res == {'lab': None, 'award': None}
+
+    res = _resolve_app_args(institution=None, project=None, lab=None, award=None,
+                            consortium=None, submission_center=None, app=APP_SMAHT)
+    assert res == {'consortia': None, 'submission_centers': None}
+
+    res = _resolve_app_args(institution=None, project=None, lab=None, award=None,
+                            consortium="", submission_center="", app=APP_SMAHT)
+    assert res == {'consortia': [], 'submission_centers': []}
 
     # Exactly the right arguments.
 
-    res = _resolve_app_args(institution='foo', project='bar', lab=None, award=None, app=APP_CGAP)
+    res = _resolve_app_args(institution='foo', project='bar', lab=None, award=None,
+                            consortium=None, submission_center=None, app=APP_CGAP)
     assert res == {'institution': 'foo', 'project': 'bar'}
 
-    res = _resolve_app_args(institution=None, project=None, lab='foo', award='bar', app=APP_FOURFRONT)
+    res = _resolve_app_args(institution=None, project=None, lab='foo', award='bar',
+                            consortium=None, submission_center=None, app=APP_FOURFRONT)
     assert res == {'lab': 'foo', 'award': 'bar'}
+
+    sample_consortium = 'C1'
+    sample_consortia = 'C1,C2'
+    sample_consortia_list = ['C1', 'C2']
+    sample_submission_center = 'SC1'
+    sample_submission_centers = 'SC1,SC2'
+    sample_submission_centers_list = ['SC1', 'SC2']
+
+    res = _resolve_app_args(consortium=sample_consortium, submission_center=sample_submission_center,
+                            institution=None, project=None, lab=None, award=None,
+                            app=APP_SMAHT)
+    assert res == {'consortia': [sample_consortium], 'submission_centers': [sample_submission_center]}
+
+    res = _resolve_app_args(consortium=sample_consortia, submission_center=sample_submission_centers,
+                            institution=None, project=None, lab=None, award=None,
+                            app=APP_SMAHT)
+    assert res == {'consortia': sample_consortia_list, 'submission_centers': sample_submission_centers_list}
 
     # Bad arguments for CGAP.
 
     with pytest.raises(ValueError) as exc:
-        _resolve_app_args(institution=None, project=None, lab='foo', award='bar', app=APP_CGAP)
+        _resolve_app_args(institution=None, project=None, lab='foo', award='bar',
+                          consortium=None, submission_center=None, app=APP_CGAP)
     assert str(exc.value) == 'There are 2 inappropriate arguments: --lab and --award.'
 
     with pytest.raises(ValueError) as exc:
-        _resolve_app_args(institution=None, project=None, lab='foo', award=None, app=APP_CGAP)
+        _resolve_app_args(institution=None, project=None, lab='foo', award=None,
+                          consortium=None, submission_center=None, app=APP_CGAP)
     assert str(exc.value) == 'There is 1 inappropriate argument: --lab.'
 
     with pytest.raises(ValueError) as exc:
-        _resolve_app_args(institution=None, project=None, lab=None, award='bar', app=APP_CGAP)
+        _resolve_app_args(institution=None, project=None, lab=None, award='bar',
+                          consortium=None, submission_center=None, app=APP_CGAP)
     assert str(exc.value) == 'There is 1 inappropriate argument: --award.'
 
     # Bad arguments for Fourfront
 
     with pytest.raises(ValueError) as exc:
-        _resolve_app_args(institution='foo', project='bar', lab=None, award=None, app=APP_FOURFRONT)
+        _resolve_app_args(institution='foo', project='bar', lab=None, award=None,
+                          consortium=None, submission_center=None, app=APP_FOURFRONT)
     assert str(exc.value) == 'There are 2 inappropriate arguments: --institution and --project.'
 
     with pytest.raises(ValueError) as exc:
-        _resolve_app_args(institution='foo', project=None, lab=None, award=None, app=APP_FOURFRONT)
+        _resolve_app_args(institution='foo', project=None, lab=None, award=None,
+                          consortium=None, submission_center=None, app=APP_FOURFRONT)
     assert str(exc.value) == 'There is 1 inappropriate argument: --institution.'
 
     with pytest.raises(ValueError) as exc:
-        _resolve_app_args(institution=None, project='bar', lab=None, award=None, app=APP_FOURFRONT)
+        _resolve_app_args(institution=None, project='bar', lab=None, award=None,
+                          consortium=None, submission_center=None, app=APP_FOURFRONT)
     assert str(exc.value) == 'There is 1 inappropriate argument: --project.'
 
     # Bogus application name
 
     with pytest.raises(ValueError) as exc:
         invalid_app = APP_CGAP + APP_FOURFRONT  # make a bogus app name
-        _resolve_app_args(institution=None, project=None, lab=None, award=None, app=invalid_app)
+        _resolve_app_args(institution=None, project=None, lab=None, award=None,
+                          consortium=None, submission_center=None, app=invalid_app)
     assert str(exc.value) == f"Unknown application: {invalid_app}"
 
 
@@ -2643,7 +2679,7 @@ def test_submit_any_ingestion():
     class StopEarly(BaseException):
         pass
 
-    def mocked_resolve_app_args(institution, project, lab, award, app):
+    def mocked_resolve_app_args(institution, project, lab, award, app, consortium, submission_center):
         ignored(institution, project, award, lab)
         assert app == expected_app
         raise StopEarly()
