@@ -214,14 +214,20 @@ def test_resolve_server():
     #     else:
     #         raise ValueError("Unexpected beanstalk env: %s" % env)
 
-    def mocked_get_keydict_for_env(env):
+    def mocked_get_generic_keydict_for_env(env, with_trailing_slash=False):
         # We don't HAVE to be mocking this function, but it's slow so this will speed up testing. -kmp 4-Sep-2020
         if env == 'fourfront-cgap':
-            return {"server": PRODUCTION_SERVER}
+            server = PRODUCTION_SERVER
         elif env in ['fourfront-cgapdev', 'fourfront-cgapwolf', 'fourfront-cgaptest']:
-            return {"server": 'http://' + env + ".something.elasticbeanstalk.com"}
+            server = 'http://' + env + ".something.elasticbeanstalk.com"
         else:
             raise ValueError("Unexpected beanstalk env: %s" % env)
+        if with_trailing_slash:
+            server += '/'
+        return {"server": server}
+
+    def mocked_get_slashed_keydict_for_env(env):
+        return mocked_get_generic_keydict_for_env(env, with_trailing_slash=True)
 
     def mocked_get_keydict_for_server(server):
         # We don't HAVE to be mocking this function, but it's slow so this will speed up testing. -kmp 4-Sep-2020
@@ -234,54 +240,54 @@ def test_resolve_server():
                     return {"server": url}
             raise ValueError("Unexpected beanstalk env: %s" % env)
 
-    with mock.patch.object(KEY_MANAGER, "get_keydict_for_env", mocked_get_keydict_for_env):
-        with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", mocked_get_keydict_for_server):
+    for mocked_get_keydict_for_env in [mocked_get_generic_keydict_for_env, mocked_get_slashed_keydict_for_env]:
 
-            # with mock.patch.object(submission_module, "get_beanstalk_real_url", mocked_get_beanstalk_real_url):
+        with mock.patch.object(KEY_MANAGER, "get_keydict_for_env", mocked_get_keydict_for_env):
+            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", mocked_get_keydict_for_server):
 
-            with pytest.raises(SyntaxError):
-                resolve_server(env='something', server='something_else')
+                with pytest.raises(SyntaxError):
+                    resolve_server(env='something', server='something_else')
 
-            with override_environ(SUBMIT_CGAP_DEFAULT_ENV=None):
+                with override_environ(SUBMIT_CGAP_DEFAULT_ENV=None):
 
-                with mock.patch.object(submission_module, "DEFAULT_ENV", None):
+                    with mock.patch.object(submission_module, "DEFAULT_ENV", None):
 
-                    assert resolve_server(env=None, server=None) == PRODUCTION_SERVER
+                        assert resolve_server(env=None, server=None) == PRODUCTION_SERVER
 
-                with mock.patch.object(submission_module, "DEFAULT_ENV", 'fourfront-cgapdev'):
+                    with mock.patch.object(submission_module, "DEFAULT_ENV", 'fourfront-cgapdev'):
 
-                    cgap_dev_server = resolve_server(env=None, server=None)
+                        cgap_dev_server = resolve_server(env=None, server=None)
 
-                    assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
-                                    cgap_dev_server)
+                        assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
+                                        cgap_dev_server)
 
-            with pytest.raises(SyntaxError):
-                resolve_server(env='fourfront-cgapfoo', server=None)
+                with pytest.raises(SyntaxError):
+                    resolve_server(env='fourfront-cgapfoo', server=None)
 
-            with pytest.raises(SyntaxError):
-                resolve_server(env='cgapfoo', server=None)
+                with pytest.raises(SyntaxError):
+                    resolve_server(env='cgapfoo', server=None)
 
-            with pytest.raises(ValueError):
-                resolve_server(server="http://foo.bar", env=None)
+                with pytest.raises(ValueError):
+                    resolve_server(server="http://foo.bar", env=None)
 
-            assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
-                            resolve_server(env='fourfront-cgapdev', server=None))
+                assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
+                                resolve_server(env='fourfront-cgapdev', server=None))
 
-            # Since we're not using env_Utils.full_cgap_env_name, we can't know the answer to this:
-            #
-            # assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
-            #                 resolve_server(env='cgapdev', server=None))  # Omitting 'fourfront-' is allowed
+                # Since we're not using env_Utils.full_cgap_env_name, we can't know the answer to this:
+                #
+                # assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
+                #                 resolve_server(env='cgapdev', server=None))  # Omitting 'fourfront-' is allowed
 
-            with pytest.raises(SyntaxError) as exc:
-                resolve_server(env='cgapdev', server=None)
-            assert str(exc.value) == "The specified env is not a known environment name: cgapdev"
+                with pytest.raises(SyntaxError) as exc:
+                    resolve_server(env='cgapdev', server=None)
+                assert str(exc.value) == "The specified env is not a known environment name: cgapdev"
 
-            assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
-                            resolve_server(server=cgap_dev_server, env=None))  # Identity operation
+                assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
+                                resolve_server(server=cgap_dev_server, env=None))  # Identity operation
 
-            for orchestrated_server in SOME_ORCHESTRATED_SERVERS:
-                assert re.match("http://cgap-[a-z]+.+amazonaws.com",
-                                resolve_server(server=orchestrated_server, env=None))  # non-fourfront environments
+                for orchestrated_server in SOME_ORCHESTRATED_SERVERS:
+                    assert re.match("http://cgap-[a-z]+.+amazonaws.com",
+                                    resolve_server(server=orchestrated_server, env=None))  # non-fourfront environments
 
 
 def make_user_record(title='J Doe',
