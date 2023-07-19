@@ -442,6 +442,33 @@ def test_show_upload_info():
                 assert shown.lines == expected_lines
 
 
+def test_show_upload_info_with_app():
+
+    expected_app = APP_FOURFRONT
+    assert KEY_MANAGER.selected_app != expected_app
+
+    class TestFinished(BaseException):
+        pass
+
+    def mocked_get(url, *, auth, **kwargs):
+        ignored(url, auth, kwargs)
+        # This checks that the recursive call in show_upload_info actually happened, binding the selected_app
+        # to the given app. Once we've verified that, this test is done.
+        assert KEY_MANAGER.selected_app == expected_app
+        raise TestFinished
+
+    with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+        with mock.patch("requests.get") as mock_get:
+            mock_get.side_effect = mocked_get
+            with mock.patch.object(submission_module, "show_upload_result"):
+                assert mock_get.call_count == 0
+                assert KEY_MANAGER.selected_app != expected_app
+                with pytest.raises(TestFinished):
+                    show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT, app=expected_app)
+                assert KEY_MANAGER.selected_app != expected_app
+                assert mock_get.call_count == 1
+
+
 def test_show_upload_result():
 
     # The primary output is handled a bit differently than other parts, so capture that nuance...
