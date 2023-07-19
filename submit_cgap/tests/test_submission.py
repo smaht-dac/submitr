@@ -1218,7 +1218,7 @@ class Scenario:
         uploaded_time = self.get_time_after_wait()
         result = []
         result.append(f"The server {SOME_SERVER} recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>")
-        if submission_module.DEBUG_PROTOCOL:
+        if submission_module.DEBUG_PROTOCOL:  # pragma: no cover - useful if it happens to help, but not a big deal
             result.append(f"Created IngestionSubmission object: s3://{self.bundles_bucket}/{SOME_UUID}")
         result.append(f"{uploaded_time} Bundle uploaded to bucket {self.bundles_bucket},"
                       f" assigned uuid {SOME_UUID} for tracking. Awaiting processing...")

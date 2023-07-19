@@ -613,7 +613,8 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     exit(0)
 
 
-def check_submit_ingestion(uuid: str, server: str, env: str, app: OrchestratedApp = None) -> Tuple[bool, str, dict]:
+def check_submit_ingestion(uuid: str, server: str, env: str,
+                           app: Optional[OrchestratedApp] = None) -> Tuple[bool, str, dict]:
 
     if app is None:  # For legacy reasons, SubmitCGAP was the first so didn't expect this arg was needed
         app = DEFAULT_APP
