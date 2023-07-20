@@ -707,10 +707,7 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     )
 
     if not check_done:
-        if env:
-            command_summary = f"check-submit --app {app} --env {env} {uuid}"
-        else:
-            command_summary = f"check-submit --app {app} --server {server} {uuid}"
+        command_summary = summarize_submission(uuid=uuid, server=server, env=env, app=app)
         show(f"Exiting after check processing timeout using {command_summary!r}.")
         exit(1)
 
@@ -727,6 +724,16 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
         show_section(check_response, "upload_info")
 
     return check_done, check_status, check_response
+
+
+def summarize_submission(uuid: str, app: str, server: Optional[str] = None, env: Optional[str] = None):
+    if env:
+        command_summary = f"check-submit --app {app} --env {env} {uuid}"
+    elif server:
+        command_summary = f"check-submit --app {app} --server {server} {uuid}"
+    else:  # unsatisfying, but not worth raising an error
+        command_summary = f"check-submit --app {app} {uuid}"
+    return command_summary
 
 
 def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, **other_args):

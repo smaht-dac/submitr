@@ -30,7 +30,7 @@ from ..submission import (
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
     _post_files_data,  # noQA - again, testing a protected member
     get_defaulted_lab, get_defaulted_award, SubmissionProtocol, compute_file_post_data,
-    upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE, DEFAULT_APP,
+    upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE, DEFAULT_APP, summarize_submission,
     get_defaulted_submission_centers, get_defaulted_consortia, do_app_arg_defaulting, check_submit_ingestion,
 )
 from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
@@ -3194,3 +3194,22 @@ def test_check_submit_ingestion_with_app_None():
                 check_submit_ingestion(uuid='some-uuid', server='some-server', env='some-env', app=None)
             assert KEY_MANAGER.selected_app == APP_FOURFRONT
         assert KEY_MANAGER.selected_app == APP_CGAP
+
+
+def test_summarize_submission():
+
+    # env supplied
+    summary = summarize_submission(uuid='some-uuid', env='some-env', app='some-app')
+    assert summary == "check-submit --app some-app --env some-env some-uuid"
+
+    # server supplied
+    summary = summarize_submission(uuid='some-uuid', server='some-server', app='some-app')
+    assert summary == "check-submit --app some-app --server some-server some-uuid"
+
+    # If both are supplied, env wins.
+    summary = summarize_submission(uuid='some-uuid', server='some-server', env='some-env', app='some-app')
+    assert summary == "check-submit --app some-app --env some-env some-uuid"
+
+    # If neither is supplied, well, that shouldn't really happen, but we'll see this:
+    summary = summarize_submission(uuid='some-uuid', server=None, env=None, app='some-app')
+    assert summary == "check-submit --app some-app some-uuid"
