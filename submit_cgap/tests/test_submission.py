@@ -31,7 +31,7 @@ from ..submission import (
     _post_files_data,  # noQA - again, testing a protected member
     get_defaulted_lab, get_defaulted_award, SubmissionProtocol, compute_file_post_data,
     upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE,
-    get_defaulted_submission_centers, get_defaulted_consortia, APP_ARG_DEFAULTERS, do_app_arg_defaulting,
+    get_defaulted_submission_centers, get_defaulted_consortia, do_app_arg_defaulting,
 )
 from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
