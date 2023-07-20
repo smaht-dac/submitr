@@ -7,7 +7,7 @@ import pytest
 import re
 
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
-from dcicutils.misc_utils import ignored, local_attrs, override_environ, NamedObject
+from dcicutils.misc_utils import ignored, ignorable, local_attrs, override_environ, NamedObject
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
 from typing import List, Dict
@@ -3142,4 +3142,12 @@ def test_do_app_arg_defaulting():
         args4 = {'bar': 2}
         user4 = {}
         do_app_arg_defaulting(args4, user4)
+        assert args4 == {'bar': 2}
+
+        # If the defaulter returns None, the argument is removed rather than be None
+        default_default_foo = None  # make defaulter return None if default not found on the user
+        ignorable(default_default_foo)  # it gets used in the closure, PyCharm should know
+        args5 = {'foo': None, 'bar': 2}
+        user5 = {}
+        do_app_arg_defaulting(args5, user5)
         assert args4 == {'bar': 2}
