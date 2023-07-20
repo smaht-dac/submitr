@@ -31,6 +31,7 @@ from ..submission import (
     _post_files_data,  # noQA - again, testing a protected member
     get_defaulted_lab, get_defaulted_award, SubmissionProtocol, compute_file_post_data,
     upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE,
+    get_defaulted_submission_centers, get_defaulted_consortia,
 )
 from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
@@ -58,6 +59,12 @@ SOME_KEY_ID, SOME_SECRET = SOME_AUTH
 SOME_INSTITUTION = '/institutions/hms-dbmi/'
 
 SOME_OTHER_INSTITUTION = '/institutions/big-pharma/'
+
+SOME_CONSORTIUM = '/lab/good-consortium/'
+SOME_CONSORTIA = [SOME_CONSORTIUM]
+
+SOME_SUBMISSION_CENTER = '/lab/good-submission-center/'
+SOME_SUBMISSION_CENTERS = [SOME_SUBMISSION_CENTER]
 
 SOME_LAB = '/lab/good-lab/'
 
@@ -2901,6 +2908,52 @@ def test_get_defaulted_award():
     with pytest.raises(Exception) as exc:
         get_defaulted_award(award=None, user_record=make_user_record(), error_if_none=True)
     assert str(exc.value).startswith("Your user profile declares no lab with awards.")
+
+
+def test_get_defaulted_consortia():
+
+    assert get_defaulted_consortia(consortia=SOME_CONSORTIA, user_record='does-not-matter') == SOME_CONSORTIA
+    assert get_defaulted_consortia(consortia=['anything'], user_record='does-not-matter') == ['anything']
+
+    user_record = make_user_record(consortia=[{'@id': SOME_CONSORTIUM}])
+
+    successful_result = get_defaulted_consortia(consortia=None, user_record=user_record)
+
+    print("successful_result=", successful_result)
+
+    assert successful_result == SOME_CONSORTIA
+
+    assert get_defaulted_consortia(consortia=None, user_record=make_user_record()) == []
+    assert get_defaulted_consortia(consortia=None, user_record=make_user_record(),
+                                   error_if_none=False) == []
+
+    with pytest.raises(Exception) as exc:
+        get_defaulted_consortia(consortia=None, user_record=make_user_record(), error_if_none=True)
+    assert str(exc.value).startswith("Your user profile has no consortium")
+
+
+def test_get_defaulted_submission_centers():
+
+    assert get_defaulted_submission_centers(submission_centers=SOME_SUBMISSION_CENTERS,
+                                            user_record='does-not-matter') == SOME_SUBMISSION_CENTERS
+    assert get_defaulted_submission_centers(submission_centers=['anything'],
+                                            user_record='does-not-matter') == ['anything']
+
+    user_record = make_user_record(submission_centers=[{'@id': SOME_SUBMISSION_CENTER}])
+
+    successful_result = get_defaulted_submission_centers(submission_centers=None, user_record=user_record)
+
+    print("successful_result=", successful_result)
+
+    assert successful_result == SOME_SUBMISSION_CENTERS
+
+    assert get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record()) == []
+    assert get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(),
+                                            error_if_none=False) == []
+
+    with pytest.raises(Exception) as exc:
+        get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(), error_if_none=True)
+    assert str(exc.value).startswith("Your user profile has no submission center")
 
 
 def test_post_files_data():

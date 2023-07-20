@@ -233,7 +233,6 @@ def get_defaulted_lab(lab, user_record, error_if_none=False):
             if error_if_none:
                 raise SyntaxError("Your user profile has no lab declared,"
                                   " so you must specify --lab explicitly.")
-        if not lab:
             show("No lab was inferred.")
         else:
             show("Using inferred lab:", lab)
@@ -242,11 +241,63 @@ def get_defaulted_lab(lab, user_record, error_if_none=False):
     return lab
 
 
+def get_defaulted_consortia(consortia, user_record, error_if_none=False):
+    """
+    Returns the given consortia or else if none is specified, it tries to infer any consortia.
+
+    :param consortia: a list of @id's of consortia, or None
+    :param user_record: the user record for the authorized user
+    :param error_if_none: boolean true if failure to infer any consortia should raise an error, and false otherwise.
+    :return: the @id of a consortium to use (or a comma-separated list)
+    """
+    consortia = consortia
+    if not consortia:
+        consortia = [consortium.get('@id', None)
+                     for consortium in user_record.get('consortia', {})]
+        if not consortia:
+            if error_if_none:
+                raise SyntaxError("Your user profile has no consortium declared,"
+                                  " so you must specify --consortium explicitly.")
+            show("No consortium was inferred.")
+        else:
+            show("Using inferred consortium:", ','.join(consortia))
+    else:
+        show("Using given consortium:", ','.join(consortia))
+    return consortia
+
+
+def get_defaulted_submission_centers(submission_centers, user_record, error_if_none=False):
+    """
+    Returns the given submission center or else if none is specified, it tries to infer a submission center.
+
+    :param submission_centers: the @id of a submission center, or None
+    :param user_record: the user record for the authorized user
+    :param error_if_none: boolean true if failure to infer a submission center should raise an error,
+        and false otherwise.
+    :return: the @id of a submission center to use
+    """
+    if not submission_centers:
+        submission_centers = [submission_center.get('@id', None)
+                              for submission_center in user_record.get('submission_centers', {})]
+        if not submission_centers:
+            if error_if_none:
+                raise SyntaxError("Your user profile has no submission center declared,"
+                                  " so you must specify --submission-center explicitly.")
+            show("No submission center was inferred.")
+        else:
+            show("Using inferred submission center:", submission_centers)
+    else:
+        show("Using given submission center:", submission_centers)
+    return submission_centers
+
+
 APP_ARG_DEFAULTERS = {
     'institution': get_defaulted_institution,
     'project': get_defaulted_project,
     'lab': get_defaulted_lab,
     'award': get_defaulted_award,
+    'consortia': get_defaulted_consortia,
+    'submission_centers': get_defaulted_submission_centers,
 }
 
 
