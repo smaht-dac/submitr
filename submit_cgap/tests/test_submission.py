@@ -31,7 +31,7 @@ from ..submission import (
     _post_files_data,  # noQA - again, testing a protected member
     get_defaulted_lab, get_defaulted_award, SubmissionProtocol, compute_file_post_data,
     upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE,
-    get_defaulted_submission_centers, get_defaulted_consortia,
+    get_defaulted_submission_centers, get_defaulted_consortia, APP_ARG_DEFAULTERS, do_app_arg_defaulting,
 )
 from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
@@ -3108,3 +3108,38 @@ def test_compute_s3_submission_post_data():
         'datafile_source_filename': mocked_good_filename,
         **other_args
     }
+
+
+def test_do_app_arg_defaulting():
+
+    default_default_foo = 17
+
+    def get_defaulted_foo(foo, user_record, error_if_none=False):
+        return user_record.get('default-foo', default_default_foo) if foo is None else foo
+
+    defaulters_for_testing = {
+        'foo': get_defaulted_foo,
+    }
+
+    with mock.patch.object(submission_module, "APP_ARG_DEFAULTERS", defaulters_for_testing):
+
+        args1 = {'foo': 1, 'bar': 2}
+        user1 = {'default-foo': 4}
+        do_app_arg_defaulting(args1, user1)
+        assert args1 == {'foo': 1, 'bar': 2}
+
+        args2 = {'foo': None, 'bar': 2}
+        user2 = {'default-foo': 4}
+        do_app_arg_defaulting(args2, user2)
+        assert args2 == {'foo': 4, 'bar': 2}
+
+        args3 = {'foo': None, 'bar': 2}
+        user3 = {}
+        do_app_arg_defaulting(args3, user3)
+        assert args3 == {'foo': 17, 'bar': 2}
+
+        # Only the args already expressly present are defaulted
+        args4 = {'bar': 2}
+        user4 = {}
+        do_app_arg_defaulting(args4, user4)
+        assert args4 == {'bar': 2}
