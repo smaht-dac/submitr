@@ -30,8 +30,8 @@ from ..submission import (
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
     _post_files_data,  # noQA - again, testing a protected member
     get_defaulted_lab, get_defaulted_award, SubmissionProtocol, compute_file_post_data,
-    upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE,
-    get_defaulted_submission_centers, get_defaulted_consortia, do_app_arg_defaulting,
+    upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE, DEFAULT_APP,
+    get_defaulted_submission_centers, get_defaulted_consortia, do_app_arg_defaulting, check_submit_ingestion,
 )
 from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
@@ -3151,3 +3151,46 @@ def test_do_app_arg_defaulting():
         user5 = {}
         do_app_arg_defaulting(args5, user5)
         assert args4 == {'bar': 2}
+
+
+def test_check_submit_ingestion_with_app():
+
+    expected_app = APP_FOURFRONT
+    assert KEY_MANAGER.selected_app != expected_app
+
+    class TestFinished(BaseException):
+        pass
+
+    def mocked_resolve_server(*args, **kwargs):
+        ignored(args, kwargs)
+        assert KEY_MANAGER.selected_app == expected_app
+        raise TestFinished()
+
+    with mock.patch.object(submission_module, "resolve_server", mocked_resolve_server):
+        assert KEY_MANAGER.selected_app != expected_app
+        with pytest.raises(TestFinished):
+            check_submit_ingestion(uuid='some-uuid', server='some-server', env='some-env', app=expected_app)
+        assert KEY_MANAGER.selected_app != expected_app
+
+
+def test_check_submit_ingestion_with_app_None():
+
+    expected_app = DEFAULT_APP
+    assert KEY_MANAGER.selected_app == expected_app == DEFAULT_APP == APP_CGAP
+
+    class TestFinished(BaseException):
+        pass
+
+    def mocked_resolve_server(*args, **kwargs):
+        ignored(args, kwargs)
+        assert KEY_MANAGER.selected_app == APP_CGAP
+        raise TestFinished()
+
+    with mock.patch.object(submission_module, "resolve_server", mocked_resolve_server):
+        assert KEY_MANAGER.selected_app == APP_CGAP
+        with KEY_MANAGER.locally_selected_app(APP_FOURFRONT):
+            assert KEY_MANAGER.selected_app == APP_FOURFRONT
+            with pytest.raises(TestFinished):
+                check_submit_ingestion(uuid='some-uuid', server='some-server', env='some-env', app=None)
+            assert KEY_MANAGER.selected_app == APP_FOURFRONT
+        assert KEY_MANAGER.selected_app == APP_CGAP
