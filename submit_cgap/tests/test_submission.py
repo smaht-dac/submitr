@@ -354,7 +354,7 @@ def test_get_defaulted_institution():
                                                   user_record=make_user_record(
                                                       # this is the old-fashioned place for it - a decoy
                                                       institution={'@id': SOME_OTHER_INSTITUTION},
-                                                      # this is the right place to find he info
+                                                      # this is the right place to find the info
                                                       user_institution={'@id': SOME_INSTITUTION}
                                                   ))
 
@@ -561,7 +561,7 @@ def test_show_upload_result():
                         show_validation_output=False,
                         show_processing_status=True,
                         show_datafile_url=False)
-                    # Heading is shown if there are an times, so that's the +1
+                    # Heading is shown if there are n times, so that's the +1
                     # Otherwise one output line is shown for each non-null item
                     assert len(shown.lines) == 0 if n == 0 else n + 1
 
@@ -1342,8 +1342,7 @@ class Scenario:
 
     def make_uploaded_lines(self):
         uploaded_time = self.get_time_after_wait()
-        result = []
-        result.append(f"The server {SOME_SERVER} recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>")
+        result = [f"The server {SOME_SERVER} recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>"]
         if submission_module.DEBUG_PROTOCOL:  # pragma: no cover - useful if it happens to help, but not a big deal
             result.append(f"Created IngestionSubmission object: s3://{self.bundles_bucket}/{SOME_UUID}")
         result.append(f"{uploaded_time} Bundle uploaded to bucket {self.bundles_bucket},"
@@ -1396,7 +1395,8 @@ class Scenario:
                 result.append(wait_line)
         return result
 
-    def make_timeout_lines(self, *, get_attempts=ATTEMPTS_BEFORE_TIMEOUT):
+    @classmethod
+    def make_timeout_lines(cls, *, get_attempts=ATTEMPTS_BEFORE_TIMEOUT):
         # wait_time = self.get_elapsed_time_for_get_attempts(get_attempts)
         # adjusted_scenario = Scenario(start_time=wait_time, wait_time_delta=self.wait_time_delta)
         # time_out_time = adjusted_scenario.get_time_after_wait()
@@ -1477,8 +1477,9 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                     assert shown.lines == ["Aborting submission."]
 
     def mocked_post(url, auth, data, headers, files, **kwargs):
-        # We only expect requests.post to be called on one particular URL, so this definition is very specialized
-        # mostly just to check that we're being called on what we think so we can return something highly specific
+        assert not kwargs, "The mock named mocked_post did not expect keyword arguments."
+        # We only expect requests.post to be called on one particular URL, so this definition is very specialized,
+        # mostly just to check that we're being called on what we think, so we can return something highly specific
         # with some degree of confidence. -kmp 6-Sep-2020
         assert url.endswith('/submit_for_ingestion')
         assert auth == SOME_AUTH
@@ -1535,6 +1536,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
         response_maker = make_alternator(*responses)
 
         def mocked_get(url, auth, **kwargs):
+            assert set(kwargs.keys()) == {'headers'}, "The mock named mocked_get expected only 'headers' among kwargs."
             print("in mocked_get, url=", url, "auth=", auth)
             assert auth == SOME_AUTH
             if url.endswith("/me?format=json"):
@@ -1619,7 +1621,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                                  subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
-                                                            # This is just in case. In fact it's more likely
+                                                            # This is just in case. In fact, it's more likely
                                                             # that a normal 'return' not 'exit' was done.
                                                             assert e.code == 0
 
@@ -1677,7 +1679,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                                  subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
-                                                            # This is just in case. In fact it's more likely
+                                                            # This is just in case. In fact, it's more likely
                                                             # that a normal 'return' not 'exit' was done.
                                                             assert e.code == 0
 
@@ -1725,7 +1727,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                              subfolders=False,
                                                                              )
                                                     except SystemExit as e:  # pragma: no cover
-                                                        # This is just in case. In fact it's more likely
+                                                        # This is just in case. In fact, it's more likely
                                                         # that a normal 'return' not 'exit' was done.
                                                         assert e.code == 0
 
@@ -1884,7 +1886,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                                  subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
-                                                            # This is just in case. In fact it's more likely
+                                                            # This is just in case. In fact, it's more likely
                                                             # that a normal 'return' not 'exit' was done.
                                                             assert e.code == 0
 
@@ -2005,6 +2007,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
     expect_datafile_for_mocked_post = True
 
     def mocked_post(url, auth, data=None, json=None, files=None, headers=None, **kwargs):
+        assert not kwargs, "The mock named mocked_post did not expect keyword arguments."
         ignored(data, json)
         content_type = headers and headers.get('Content-type')
         if content_type:
@@ -2035,8 +2038,8 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                     ]
                                 })
         elif url.endswith("/submit_for_ingestion"):
-            # We only expect requests.post to be called on one particular URL, so this definition is very specialized
-            # mostly just to check that we're being called on what we think so we can return something highly specific
+            # We only expect requests.post to be called on one particular URL, so this definition is very specialized,
+            # mostly just to check that we're being called on what we think, so we can return something highly specific
             # with some degree of confidence. -kmp 6-Sep-2020
             m = re.match(".*/ingestion-submissions/([a-f0-9-]*)/submit_for_ingestion$", url)
             if m:
@@ -2099,6 +2102,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
         response_maker = make_alternator(*responses)
 
         def mocked_get(url, auth, **kwargs):
+            assert set(kwargs.keys()) == {'headers'}, "The mock named mocked_get expected only 'headers' among kwargs."
             print("in mocked_get, url=", url, "auth=", auth)
             assert auth == SOME_AUTH
             if url.endswith("/me?format=json"):
@@ -2184,7 +2188,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                                  no_query=False,
                                                                                  subfolders=False)
                                                         except SystemExit as e:  # pragma: no cover
-                                                            # This is just in case. In fact it's more likely
+                                                            # This is just in case. In fact, it's more likely
                                                             # that a normal 'return' not 'exit' was done.
                                                             assert e.code == 0
 
@@ -2227,6 +2231,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                                ) as mock_upload_file_to_new_uuid:
                                                             def mocked_upload_file_to_new_uuid(filename, schema_name,
                                                                                                auth, **app_args):
+                                                                ignored(app_args)  # not relevant to this test
                                                                 assert filename == SOME_BUNDLE_FILENAME
                                                                 assert schema_name == expected_schema_name
                                                                 assert auth['key'] == SOME_KEY_ID
@@ -2257,7 +2262,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                     submission_protocol=SubmissionProtocol.S3,
                                                                 )
                                                             except SystemExit as e:  # pragma: no cover
-                                                                # This is just in case. In fact it's more likely
+                                                                # This is just in case. In fact, it's more likely
                                                                 # that a normal 'return' not 'exit' was done.
                                                                 assert e.code == 0
 
@@ -2464,7 +2469,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                                  subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
-                                                            # This is just in case. In fact it's more likely
+                                                            # This is just in case. In fact, it's more likely
                                                             # that a normal 'return' not 'exit' was done.
                                                             assert e.code == 0
 
@@ -2806,7 +2811,7 @@ def test_submit_any_ingestion():
         pass
 
     def mocked_resolve_app_args(institution, project, lab, award, app, consortium, submission_center):
-        ignored(institution, project, award, lab)
+        ignored(institution, project, award, lab, consortium, submission_center)  # not relevant to this mock
         assert app == expected_app
         raise StopEarly()
 
@@ -3035,6 +3040,7 @@ expected_schema_name = GENERIC_SCHEMA_TYPE
 def test_upload_file_to_new_uuid():
 
     def mocked_execute_prearranged_upload(filename, upload_credentials, auth, **kwargs):
+        assert not kwargs, "kwargs were not expected for mock of mocked_execute_prearranged_upload"
         assert filename == mocked_good_filename
         assert upload_credentials == mocked_good_upload_credentials
         assert auth == mocked_good_auth
@@ -3116,6 +3122,7 @@ def test_do_app_arg_defaulting():
     default_default_foo = 17
 
     def get_defaulted_foo(foo, user_record, error_if_none=False):
+        ignored(error_if_none)  # not needed for this mock
         return user_record.get('default-foo', default_default_foo) if foo is None else foo
 
     defaulters_for_testing = {
