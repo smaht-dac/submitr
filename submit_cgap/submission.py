@@ -435,7 +435,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     if submission_protocol == SubmissionProtocol.S3:
         # New with Fourfront ontology ingestion work (March 2023).
         # Store the submission data in the parameters of the IngestionSubmission object
-        # here (it will get there later anyways via patch in ingester process), so that we can
+        # here (it will get there later anyway via patch in ingester process), so that we can
         # get at this info via show-upload-info, before the ingester picks this up; specifically,
         # this is the FileOther object info, its uuid and associated data file, which was uploaded
         # in this case (SubmissionProtocol.S3) directly to S3 from submit-ontology.
@@ -664,6 +664,26 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     exit(0)
 
 
+def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict]:
+    """
+    Calls endpoint to get this status of the IngestionSubmission uuid (in outer scope);
+    this is used as an argument to check_repeatedly below to call over and over.
+    Returns tuple with: done-indicator (True or False), short-status (str), full-response (dict)
+    From outer scope: server, keypair, uuid (of IngestionSubmission)
+    """
+    tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
+    response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS).json()
+    # FYI this processing_status and its state, progress, outcome properties were ultimately set
+    # from within the ingester process, from within types.ingestion.SubmissionFolio.processing_status.
+    status = response.get("processing_status", {})
+    if status.get("state") == "done":
+        outcome = status.get("outcome")
+        return True, outcome, response
+    else:
+        progress = status.get("progress")
+        return False, progress, response
+
+
 def check_submit_ingestion(uuid: str, server: str, env: str,
                            app: Optional[OrchestratedApp] = None) -> Tuple[bool, str, dict]:
 
@@ -679,24 +699,8 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
 
     show("Checking ingestion process for IngestionSubmission uuid %s ..." % uuid, with_time=True)
 
-    def check_ingestion_progress() -> Tuple[bool, str, dict]:
-        """
-        Calls endpoint to get this status of the IngestionSubmission uuid (in outer scope);
-        this is used as an argument to check_repeatedly below to call over and over.
-        Returns tuple with: done-indicator (True or False), short-status (str), full-response (dict)
-        From outer scope: server, keypair, uuid (of IngestionSubmission)
-        """
-        tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
-        response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS).json()
-        # FYI this processing_status and its state, progress, outcome properties were ultimately set
-        # from within the ingester process, from within types.ingestion.SubmissionFolio.processing_status.
-        status = response["processing_status"]
-        if status.get("state") == "done":
-            outcome = status["outcome"]
-            return True, outcome, response
-        else:
-            progress = status["progress"]
-            return False, progress, response
+    def check_ingestion_progress():
+        return _check_ingestion_progress(uuid, keypair=keypair, server=server)
 
     # Check the ingestion processing repeatedly, up to ATTEMPTS_BEFORE_TIMEOUT times,
     # and waiting PROGRESS_CHECK_INTERVAL seconds between each check.
@@ -765,7 +769,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
                      show_primary_result=True,
                      show_validation_output=True,
                      show_processing_status=True,
-                     show_parameters_section=True):
+                     show_datafile_url=True):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -774,6 +778,13 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     :param server: the server to upload to
     :param env: the beanstalk environment to upload to
     :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
+    :param app: the name of the app to use
+        e.g., affects whether to expect --lab, --award, --institution, --project, --consortium or --submission_center
+              and whether to use .fourfront-keys.json, .cgap-keys.json, or .smaht-keys.json
+    :param show_primary_result: bool controls whether the primary result is shown
+    :param show_validation_output: bool controls whether to show output resulting from validation checks
+    :param show_processing_status: bool controls whether to show the current processing status
+    :param show_datafile_url: bool controls whether to show the datafile_url parameter from the parameters.
     """
 
     if app is None:
@@ -784,7 +795,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
                                     show_primary_result=show_primary_result,
                                     show_validation_output=show_validation_output,
                                     show_processing_status=show_processing_status,
-                                    show_parameters_section=show_parameters_section)
+                                    show_datafile_url=show_datafile_url)
 
     server = resolve_server(server=server, env=env)
     keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
@@ -796,7 +807,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
                        show_primary_result=show_primary_result,
                        show_validation_output=show_validation_output,
                        show_processing_status=show_processing_status,
-                       show_datafile_url=show_parameters_section)
+                       show_datafile_url=show_datafile_url)
 
 
 def show_upload_result(result,
@@ -1101,7 +1112,7 @@ def search_for_file(directory, file_name, recursive=False):
 
     :param directory: Directory path
     :param file_name: Name of file to find
-    :param recursive: Whether to search sub-directories of given
+    :param recursive: Whether to search subdirectories of given
         directory
     :returns: (Path to file or None, Error message or None)
     """
@@ -1183,7 +1194,7 @@ def upload_extra_files(
     :param uploader_wrapper: UploadMessageWrapper instance
     :param folder: Directory to search for files
     :param auth: CGAP authorization tuple
-    :param recursive: Whether to search sub-directories for file
+    :param recursive: Whether to search subdirectories for file
     """
     for extra_file_item in credentials:
         extra_file_name = extra_file_item.get("filename")

@@ -29,6 +29,7 @@ from ..submission import (
     search_for_file, UploadMessageWrapper, upload_extra_files,
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
     _post_files_data,  # noQA - again, testing a protected member
+    _check_ingestion_progress,  # noQA - again, testing a protected member
     get_defaulted_lab, get_defaulted_award, SubmissionProtocol, compute_file_post_data,
     upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE, DEFAULT_APP, summarize_submission,
     get_defaulted_submission_centers, get_defaulted_consortia, do_app_arg_defaulting, check_submit_ingestion,
@@ -3213,3 +3214,27 @@ def test_summarize_submission():
     # If neither is supplied, well, that shouldn't really happen, but we'll see this:
     summary = summarize_submission(uuid='some-uuid', server=None, env=None, app='some-app')
     assert summary == "check-submit --app some-app some-uuid"
+
+
+def test_check_ingestion_progress():
+
+    with mock.patch.object(submission_module, "portal_request_get") as mock_portal_request_get:
+
+        def test_it(data, *, expect_done, expect_short_status):
+            api_response = FakeResponse(status_code=200, json=data)
+            mock_portal_request_get.return_value = api_response
+            res = _check_ingestion_progress('some-uuid', keypair='some-keypair', server='some-server')
+            assert res == (expect_done, expect_short_status, data)
+
+        test_it({}, expect_done=False, expect_short_status=None)
+        test_it({'processing_status': {}}, expect_done=False, expect_short_status=None)
+        test_it({'processing_status': {'progress': '13%'}}, expect_done=False, expect_short_status='13%')
+        test_it({'processing_status': {'progress': 'working'}}, expect_done=False, expect_short_status='working')
+        test_it({'processing_status': {'state': 'started', 'outcome': 'indexed'}},
+                expect_done=False, expect_short_status=None)
+        test_it({'processing_status': {'state': 'started'}},
+                expect_done=False, expect_short_status=None)
+        test_it({'processing_status': {'state': 'done', 'outcome': 'indexed'}},
+                expect_done=True, expect_short_status='indexed')
+        test_it({'processing_status': {'state': 'done'}},
+                expect_done=True, expect_short_status=None)
