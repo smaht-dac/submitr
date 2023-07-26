@@ -253,7 +253,7 @@ def get_defaulted_consortia(consortia, user_record, error_if_none=False):
     consortia = consortia
     if not consortia:
         consortia = [consortium.get('@id', None)
-                     for consortium in user_record.get('consortia', {})]
+                     for consortium in user_record.get('consortia', [])]
         if not consortia:
             if error_if_none:
                 raise SyntaxError("Your user profile has no consortium declared,"
