@@ -5,12 +5,13 @@ import os
 import platform
 import pytest
 import re
-from unittest import mock
 
-from dcicutils.common import APP_CGAP, APP_FOURFRONT
-from dcicutils.misc_utils import ignored, local_attrs, override_environ, NamedObject
+from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
+from dcicutils.misc_utils import ignored, ignorable, local_attrs, override_environ, NamedObject
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
+from typing import List, Dict
+from unittest import mock
 
 from .test_utils import shown_output
 from .test_upload_item_data import TEST_ENCRYPT_KEY
@@ -20,7 +21,7 @@ from ..base import PRODUCTION_SERVER, KEY_MANAGER
 from ..exceptions import CGAPPermissionError
 from ..submission import (
     SERVER_REGEXP, PROGRESS_CHECK_INTERVAL, ATTEMPTS_BEFORE_TIMEOUT,
-    get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info,
+    get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info, show_upload_result,
     execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url,
     resolve_server, resume_uploads, show_section, submit_any_ingestion,
     upload_file_to_uuid, upload_item_data,
@@ -28,8 +29,10 @@ from ..submission import (
     search_for_file, UploadMessageWrapper, upload_extra_files,
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
     _post_files_data,  # noQA - again, testing a protected member
+    _check_ingestion_progress,  # noQA - again, testing a protected member
     get_defaulted_lab, get_defaulted_award, SubmissionProtocol, compute_file_post_data,
-    upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE,
+    upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE, DEFAULT_APP, summarize_submission,
+    get_defaulted_submission_centers, get_defaulted_consortia, do_app_arg_defaulting, check_submit_ingestion,
 )
 from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
 
@@ -57,6 +60,12 @@ SOME_KEY_ID, SOME_SECRET = SOME_AUTH
 SOME_INSTITUTION = '/institutions/hms-dbmi/'
 
 SOME_OTHER_INSTITUTION = '/institutions/big-pharma/'
+
+SOME_CONSORTIUM = '/lab/good-consortium/'
+SOME_CONSORTIA = [SOME_CONSORTIUM]
+
+SOME_SUBMISSION_CENTER = '/lab/good-submission-center/'
+SOME_SUBMISSION_CENTERS = [SOME_SUBMISSION_CENTER]
 
 SOME_LAB = '/lab/good-lab/'
 
@@ -213,14 +222,20 @@ def test_resolve_server():
     #     else:
     #         raise ValueError("Unexpected beanstalk env: %s" % env)
 
-    def mocked_get_keydict_for_env(env):
+    def mocked_get_generic_keydict_for_env(env, with_trailing_slash=False):
         # We don't HAVE to be mocking this function, but it's slow so this will speed up testing. -kmp 4-Sep-2020
         if env == 'fourfront-cgap':
-            return {"server": PRODUCTION_SERVER}
+            server = PRODUCTION_SERVER
         elif env in ['fourfront-cgapdev', 'fourfront-cgapwolf', 'fourfront-cgaptest']:
-            return {"server": 'http://' + env + ".something.elasticbeanstalk.com"}
+            server = 'http://' + env + ".something.elasticbeanstalk.com"
         else:
             raise ValueError("Unexpected beanstalk env: %s" % env)
+        if with_trailing_slash:
+            server += '/'
+        return {"server": server}
+
+    def mocked_get_slashed_keydict_for_env(env):
+        return mocked_get_generic_keydict_for_env(env, with_trailing_slash=True)
 
     def mocked_get_keydict_for_server(server):
         # We don't HAVE to be mocking this function, but it's slow so this will speed up testing. -kmp 4-Sep-2020
@@ -233,54 +248,54 @@ def test_resolve_server():
                     return {"server": url}
             raise ValueError("Unexpected beanstalk env: %s" % env)
 
-    with mock.patch.object(KEY_MANAGER, "get_keydict_for_env", mocked_get_keydict_for_env):
-        with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", mocked_get_keydict_for_server):
+    for mocked_get_keydict_for_env in [mocked_get_generic_keydict_for_env, mocked_get_slashed_keydict_for_env]:
 
-            # with mock.patch.object(submission_module, "get_beanstalk_real_url", mocked_get_beanstalk_real_url):
+        with mock.patch.object(KEY_MANAGER, "get_keydict_for_env", mocked_get_keydict_for_env):
+            with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", mocked_get_keydict_for_server):
 
-            with pytest.raises(SyntaxError):
-                resolve_server(env='something', server='something_else')
+                with pytest.raises(SyntaxError):
+                    resolve_server(env='something', server='something_else')
 
-            with override_environ(SUBMIT_CGAP_DEFAULT_ENV=None):
+                with override_environ(SUBMIT_CGAP_DEFAULT_ENV=None):
 
-                with mock.patch.object(submission_module, "DEFAULT_ENV", None):
+                    with mock.patch.object(submission_module, "DEFAULT_ENV", None):
 
-                    assert resolve_server(env=None, server=None) == PRODUCTION_SERVER
+                        assert resolve_server(env=None, server=None) == PRODUCTION_SERVER
 
-                with mock.patch.object(submission_module, "DEFAULT_ENV", 'fourfront-cgapdev'):
+                    with mock.patch.object(submission_module, "DEFAULT_ENV", 'fourfront-cgapdev'):
 
-                    cgap_dev_server = resolve_server(env=None, server=None)
+                        cgap_dev_server = resolve_server(env=None, server=None)
 
-                    assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
-                                    cgap_dev_server)
+                        assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
+                                        cgap_dev_server)
 
-            with pytest.raises(SyntaxError):
-                resolve_server(env='fourfront-cgapfoo', server=None)
+                with pytest.raises(SyntaxError):
+                    resolve_server(env='fourfront-cgapfoo', server=None)
 
-            with pytest.raises(SyntaxError):
-                resolve_server(env='cgapfoo', server=None)
+                with pytest.raises(SyntaxError):
+                    resolve_server(env='cgapfoo', server=None)
 
-            with pytest.raises(ValueError):
-                resolve_server(server="http://foo.bar", env=None)
+                with pytest.raises(ValueError):
+                    resolve_server(server="http://foo.bar", env=None)
 
-            assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
-                            resolve_server(env='fourfront-cgapdev', server=None))
+                assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
+                                resolve_server(env='fourfront-cgapdev', server=None))
 
-            # Since we're not using env_Utils.full_cgap_env_name, we can't know the answer to this:
-            #
-            # assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
-            #                 resolve_server(env='cgapdev', server=None))  # Omitting 'fourfront-' is allowed
+                # Since we're not using env_Utils.full_cgap_env_name, we can't know the answer to this:
+                #
+                # assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
+                #                 resolve_server(env='cgapdev', server=None))  # Omitting 'fourfront-' is allowed
 
-            with pytest.raises(SyntaxError) as exc:
-                resolve_server(env='cgapdev', server=None)
-            assert str(exc.value) == "The specified env is not a known environment name: cgapdev"
+                with pytest.raises(SyntaxError) as exc:
+                    resolve_server(env='cgapdev', server=None)
+                assert str(exc.value) == "The specified env is not a known environment name: cgapdev"
 
-            assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
-                            resolve_server(server=cgap_dev_server, env=None))  # Identity operation
+                assert re.match("http://fourfront-cgapdev[.].*[.]elasticbeanstalk.com",
+                                resolve_server(server=cgap_dev_server, env=None))  # Identity operation
 
-            for orchestrated_server in SOME_ORCHESTRATED_SERVERS:
-                assert re.match("http://cgap-[a-z]+.+amazonaws.com",
-                                resolve_server(server=orchestrated_server, env=None))  # non-fourfront environments
+                for orchestrated_server in SOME_ORCHESTRATED_SERVERS:
+                    assert re.match("http://cgap-[a-z]+.+amazonaws.com",
+                                    resolve_server(server=orchestrated_server, env=None))  # non-fourfront environments
 
 
 def make_user_record(title='J Doe',
@@ -339,7 +354,7 @@ def test_get_defaulted_institution():
                                                   user_record=make_user_record(
                                                       # this is the old-fashioned place for it - a decoy
                                                       institution={'@id': SOME_OTHER_INSTITUTION},
-                                                      # this is the right place to find he info
+                                                      # this is the right place to find the info
                                                       user_institution={'@id': SOME_INSTITUTION}
                                                   ))
 
@@ -421,6 +436,7 @@ def test_show_upload_info():
     json_result = None  # Actual value comes later
 
     def mocked_get(url, *, auth, **kwargs):
+        ignored(kwargs)
         assert url.startswith(SOME_UUID_UPLOAD_URL)
         assert auth == SOME_AUTH
         return FakeResponse(200, json=json_result)
@@ -438,6 +454,116 @@ def test_show_upload_info():
                 show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
                 expected_lines = ['----- Upload Info -----', *map(str, SOME_UPLOAD_INFO)]
                 assert shown.lines == expected_lines
+
+
+def test_show_upload_info_with_app():
+
+    expected_app = APP_FOURFRONT
+    assert KEY_MANAGER.selected_app != expected_app
+
+    class TestFinished(BaseException):
+        pass
+
+    def mocked_get(url, *, auth, **kwargs):
+        ignored(url, auth, kwargs)
+        # This checks that the recursive call in show_upload_info actually happened, binding the selected_app
+        # to the given app. Once we've verified that, this test is done.
+        assert KEY_MANAGER.selected_app == expected_app
+        raise TestFinished
+
+    with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+        with mock.patch("requests.get") as mock_get:
+            mock_get.side_effect = mocked_get
+            with mock.patch.object(submission_module, "show_upload_result"):
+                assert mock_get.call_count == 0
+                assert KEY_MANAGER.selected_app != expected_app
+                with pytest.raises(TestFinished):
+                    show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT, app=expected_app)
+                assert KEY_MANAGER.selected_app != expected_app
+                assert mock_get.call_count == 1
+
+
+def test_show_upload_result():
+
+    # The primary output is handled a bit differently than other parts, so capture that nuance...
+    upload_info_items: List
+    for upload_info_items in [[], ['alpha', 'bravo']]:
+        with shown_output() as shown:
+            show_upload_result({'upload_info': upload_info_items},
+                               show_primary_result=True,
+                               show_validation_output=False,
+                               show_processing_status=False,
+                               show_datafile_url=False)
+            assert shown.lines == upload_info_items or "Uploads: None"  # special case for no uploads
+
+    sample_validation_output = ['yep', 'uh huh', 'wait, what?']
+    for show_validation in [False, True]:
+        with shown_output() as shown:
+            show_upload_result({'validation_output': sample_validation_output},
+                               show_primary_result=False,
+                               show_validation_output=show_validation,
+                               show_processing_status=False,
+                               show_datafile_url=False)
+            assert shown.lines == (['----- Validation Output -----'] + sample_validation_output
+                                   if show_validation
+                                   else [])
+
+    # Special case for 'parameters' relates to presence or absence of 'datafile_url' within it
+    sample_non_data_parameters = {'some_key': 'some_value'}
+    sample_datafile_url = 'some-datafile-url'
+    test_cases = [
+        (False, {}),
+        (True, {'datafile_url': sample_datafile_url}),
+        (False, {'datafile_url': ''}),
+        (False, {'datafile_url': None})]
+    sample_data_parameters: Dict
+    for datafile_should_be_shown, sample_data_parameters in test_cases:
+        with shown_output() as shown:
+            show_upload_result({'parameters': dict(sample_non_data_parameters, **sample_data_parameters)},
+                               show_primary_result=False,
+                               show_validation_output=False,
+                               show_processing_status=False,
+                               show_datafile_url=True)
+            if datafile_should_be_shown:
+                assert shown.lines == [
+                    "----- DataFile URL -----",
+                    sample_datafile_url,
+                ]
+            else:
+                assert shown.lines == []
+
+    for show_it in [False, True]:
+        with shown_output() as shown:
+            show_upload_result({
+                'processing_status': {
+                    'state': 'some-state',
+                    'outcome': 'some-outcome',
+                    'progress': 'some-progress',
+                }},
+                show_primary_result=False,
+                show_validation_output=False,
+                show_processing_status=show_it,
+                show_datafile_url=False)
+            assert bool(shown.lines) is show_it
+
+    for state in ['some-state', None]:
+        n = 1 if state else 0
+        for outcome in ['some-outcome', None]:
+            n += 1 if outcome else 0
+            for progress in ['some-progress', None]:
+                n += 1 if progress else 0
+                with shown_output() as shown:
+                    show_upload_result({
+                        'processing_status': {
+                            'state': state, 'outcome': outcome, 'progress': progress
+                        }},
+                        show_primary_result=False,
+                        show_validation_output=False,
+                        show_processing_status=True,
+                        show_datafile_url=False)
+                    # Heading is shown if there are n times, so that's the +1
+                    # Otherwise one output line is shown for each non-null item
+                    assert len(shown.lines) == 0 if n == 0 else n + 1
 
 
 def test_show_section_without_caveat():
@@ -1202,7 +1328,8 @@ class Scenario:
     START_TIME_FOR_TESTS = "12:00:00"
     WAIT_TIME_FOR_TEST_UPDATES_SECONDS = 1
 
-    def __init__(self, start_time=None, wait_time_delta=None):
+    def __init__(self, start_time=None, wait_time_delta=None, bundles_bucket=None):
+        self.bundles_bucket = bundles_bucket
         self.start_time = start_time or self.START_TIME_FOR_TESTS
         self.wait_time_delta = wait_time_delta or self.WAIT_TIME_FOR_TEST_UPDATES_SECONDS
 
@@ -1215,18 +1342,23 @@ class Scenario:
 
     def make_uploaded_lines(self):
         uploaded_time = self.get_time_after_wait()
-        return [
-            f"The server {SOME_SERVER} recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>",
-            (
-                (f"{uploaded_time} Bundle uploaded."
-                 f" Checking ingestion process using IngestionSubmission uuid: {SOME_UUID} ...")
-            ),
-        ]
+        result = [f"The server {SOME_SERVER} recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>"]
+        if submission_module.DEBUG_PROTOCOL:  # pragma: no cover - useful if it happens to help, but not a big deal
+            result.append(f"Created IngestionSubmission object: s3://{self.bundles_bucket}/{SOME_UUID}")
+        result.append(f"{uploaded_time} Bundle uploaded to bucket {self.bundles_bucket},"
+                      f" assigned uuid {SOME_UUID} for tracking. Awaiting processing...")
+        return result
 
-    def make_wait_lines(self, wait_attempts, outcome: str = None):
+    def make_wait_lines(self, wait_attempts, outcome: str = None, start_delta: int = 0):
         result = []
-        uploaded_time = self.get_time_after_wait()
         time_delta_from_start = 0
+        uploaded_time = self.get_time_after_wait()
+
+        adjusted_scenario = Scenario(start_time=uploaded_time, wait_time_delta=time_delta_from_start)
+        wait_time = adjusted_scenario.get_time_after_wait()
+        result.append(f"{wait_time} Checking ingestion process for IngestionSubmission uuid {SOME_UUID} ...")
+        time_delta_from_start += 1
+
         nchecks = 0
         ERASE_LINE = "\033[K"
         for idx in range(wait_attempts + 1):
@@ -1263,12 +1395,13 @@ class Scenario:
                 result.append(wait_line)
         return result
 
-    def make_timeout_lines(self, *, get_attempts=ATTEMPTS_BEFORE_TIMEOUT):
-        wait_time = self.get_elapsed_time_for_get_attempts(get_attempts)
-        adjusted_scenario = Scenario(start_time=wait_time, wait_time_delta=self.wait_time_delta)
-        time_out_time = adjusted_scenario.get_time_after_wait()
-        return [f"Exiting after check processing timeout | Check status using: TODO"]
-        return [f"{time_out_time} Timed out after {get_attempts} tries."]
+    @classmethod
+    def make_timeout_lines(cls, *, get_attempts=ATTEMPTS_BEFORE_TIMEOUT):
+        # wait_time = self.get_elapsed_time_for_get_attempts(get_attempts)
+        # adjusted_scenario = Scenario(start_time=wait_time, wait_time_delta=self.wait_time_delta)
+        # time_out_time = adjusted_scenario.get_time_after_wait()
+        return [f"Exiting after check processing timeout"
+                f" using 'check-submit --app cgap --server {SOME_SERVER} {SOME_UUID}'."]
 
     def make_outcome_lines(self, get_attempts, *, outcome):
         end_time = self.get_elapsed_time_for_get_attempts(get_attempts)
@@ -1277,8 +1410,11 @@ class Scenario:
     def get_elapsed_time_for_get_attempts(self, get_attempts):
         initial_check_time_delta = self.wait_time_delta
         # Extra PROGRESS_CHECK_INTERVAL for the 1-second sleep loop in utils.check_repeatedly,
-        # via make_wait_lines; and extra 2 for the extra (first/last) lines in make_wait_lines.
-        wait_time_delta = (PROGRESS_CHECK_INTERVAL + self.wait_time_delta) * get_attempts + PROGRESS_CHECK_INTERVAL + 2
+        # via make_wait_lines; and extra 3 for the extra (first/last) lines in make_wait_lines and a header line.
+        extra_waits = 3
+        wait_time_delta = ((PROGRESS_CHECK_INTERVAL + self.wait_time_delta) * get_attempts
+                           + PROGRESS_CHECK_INTERVAL
+                           + extra_waits)
         elapsed_time_delta = initial_check_time_delta + wait_time_delta
         adjusted_scenario = Scenario(start_time=self.start_time, wait_time_delta=elapsed_time_delta)
         return adjusted_scenario.get_time_after_wait()
@@ -1288,9 +1424,9 @@ class Scenario:
         scenario = Scenario()
         result = []
         wait_attempts = get_attempts - 1
-        result += scenario.make_uploaded_lines()
+        result += scenario.make_uploaded_lines()  # uses one tick, so we start wait lines offset by 1
         if wait_attempts > 0:
-            result += scenario.make_wait_lines(wait_attempts, outcome=outcome)
+            result += scenario.make_wait_lines(wait_attempts, outcome=outcome, start_delta=1)
         result += scenario.make_outcome_lines(get_attempts, outcome=outcome)
         return result
 
@@ -1306,13 +1442,17 @@ class Scenario:
     def make_timeout_submission_lines(cls):
         scenario = Scenario()
         result = []
-        result += scenario.make_uploaded_lines()
-        result += scenario.make_wait_lines(ATTEMPTS_BEFORE_TIMEOUT - 1, outcome="timeout")
+        result += scenario.make_uploaded_lines()  # uses one tick, so we start wait lines offset by 1
+        result += scenario.make_wait_lines(ATTEMPTS_BEFORE_TIMEOUT - 1, outcome="timeout", start_delta=1)
         result += scenario.make_timeout_lines()
         return result
 
 
-def test_submit_any_ingestion_old_protocol():
+@mock.patch.object(submission_module, "get_health_page")
+@mock.patch.object(submission_module, "DEBUG_PROTOCOL", False)
+def test_submit_any_ingestion_old_protocol(mock_get_health_page):
+
+    mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: TEST_ENCRYPT_KEY}
 
     with shown_output() as shown:
         with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
@@ -1337,8 +1477,9 @@ def test_submit_any_ingestion_old_protocol():
                     assert shown.lines == ["Aborting submission."]
 
     def mocked_post(url, auth, data, headers, files, **kwargs):
-        # We only expect requests.post to be called on one particular URL, so this definition is very specialized
-        # mostly just to check that we're being called on what we think so we can return something highly specific
+        assert not kwargs, "The mock named mocked_post did not expect keyword arguments."
+        # We only expect requests.post to be called on one particular URL, so this definition is very specialized,
+        # mostly just to check that we're being called on what we think, so we can return something highly specific
         # with some degree of confidence. -kmp 6-Sep-2020
         assert url.endswith('/submit_for_ingestion')
         assert auth == SOME_AUTH
@@ -1395,6 +1536,7 @@ def test_submit_any_ingestion_old_protocol():
         response_maker = make_alternator(*responses)
 
         def mocked_get(url, auth, **kwargs):
+            assert set(kwargs.keys()) == {'headers'}, "The mock named mocked_get expected only 'headers' among kwargs."
             print("in mocked_get, url=", url, "auth=", auth)
             assert auth == SOME_AUTH
             if url.endswith("/me?format=json"):
@@ -1479,7 +1621,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
-                                                            # This is just in case. In fact it's more likely
+                                                            # This is just in case. In fact, it's more likely
                                                             # that a normal 'return' not 'exit' was done.
                                                             assert e.code == 0
 
@@ -1537,7 +1679,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
-                                                            # This is just in case. In fact it's more likely
+                                                            # This is just in case. In fact, it's more likely
                                                             # that a normal 'return' not 'exit' was done.
                                                             assert e.code == 0
 
@@ -1585,7 +1727,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                              subfolders=False,
                                                                              )
                                                     except SystemExit as e:  # pragma: no cover
-                                                        # This is just in case. In fact it's more likely
+                                                        # This is just in case. In fact, it's more likely
                                                         # that a normal 'return' not 'exit' was done.
                                                         assert e.code == 0
 
@@ -1744,7 +1886,7 @@ def test_submit_any_ingestion_old_protocol():
                                                                                  subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
-                                                            # This is just in case. In fact it's more likely
+                                                            # This is just in case. In fact, it's more likely
                                                             # that a normal 'return' not 'exit' was done.
                                                             assert e.code == 0
 
@@ -1835,7 +1977,11 @@ def test_submit_any_ingestion_old_protocol():
         assert shown.lines == Scenario.make_timeout_submission_lines()
 
 
-def test_submit_any_ingestion_new_protocol():
+@mock.patch.object(submission_module, "get_health_page")
+@mock.patch.object(submission_module, "DEBUG_PROTOCOL", False)
+def test_submit_any_ingestion_new_protocol(mock_get_health_page):
+
+    mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: TEST_ENCRYPT_KEY}
 
     with shown_output() as shown:
         with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
@@ -1861,6 +2007,7 @@ def test_submit_any_ingestion_new_protocol():
     expect_datafile_for_mocked_post = True
 
     def mocked_post(url, auth, data=None, json=None, files=None, headers=None, **kwargs):
+        assert not kwargs, "The mock named mocked_post did not expect keyword arguments."
         ignored(data, json)
         content_type = headers and headers.get('Content-type')
         if content_type:
@@ -1891,8 +2038,8 @@ def test_submit_any_ingestion_new_protocol():
                                     ]
                                 })
         elif url.endswith("/submit_for_ingestion"):
-            # We only expect requests.post to be called on one particular URL, so this definition is very specialized
-            # mostly just to check that we're being called on what we think so we can return something highly specific
+            # We only expect requests.post to be called on one particular URL, so this definition is very specialized,
+            # mostly just to check that we're being called on what we think, so we can return something highly specific
             # with some degree of confidence. -kmp 6-Sep-2020
             m = re.match(".*/ingestion-submissions/([a-f0-9-]*)/submit_for_ingestion$", url)
             if m:
@@ -1955,6 +2102,7 @@ def test_submit_any_ingestion_new_protocol():
         response_maker = make_alternator(*responses)
 
         def mocked_get(url, auth, **kwargs):
+            assert set(kwargs.keys()) == {'headers'}, "The mock named mocked_get expected only 'headers' among kwargs."
             print("in mocked_get, url=", url, "auth=", auth)
             assert auth == SOME_AUTH
             if url.endswith("/me?format=json"):
@@ -2040,7 +2188,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                  no_query=False,
                                                                                  subfolders=False)
                                                         except SystemExit as e:  # pragma: no cover
-                                                            # This is just in case. In fact it's more likely
+                                                            # This is just in case. In fact, it's more likely
                                                             # that a normal 'return' not 'exit' was done.
                                                             assert e.code == 0
 
@@ -2083,6 +2231,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                ) as mock_upload_file_to_new_uuid:
                                                             def mocked_upload_file_to_new_uuid(filename, schema_name,
                                                                                                auth, **app_args):
+                                                                ignored(app_args)  # not relevant to this test
                                                                 assert filename == SOME_BUNDLE_FILENAME
                                                                 assert schema_name == expected_schema_name
                                                                 assert auth['key'] == SOME_KEY_ID
@@ -2113,7 +2262,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                     submission_protocol=SubmissionProtocol.S3,
                                                                 )
                                                             except SystemExit as e:  # pragma: no cover
-                                                                # This is just in case. In fact it's more likely
+                                                                # This is just in case. In fact, it's more likely
                                                                 # that a normal 'return' not 'exit' was done.
                                                                 assert e.code == 0
 
@@ -2320,7 +2469,7 @@ def test_submit_any_ingestion_new_protocol():
                                                                                  subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
-                                                            # This is just in case. In fact it's more likely
+                                                            # This is just in case. In fact, it's more likely
                                                             # that a normal 'return' not 'exit' was done.
                                                             assert e.code == 0
 
@@ -2565,53 +2714,89 @@ def test_resolve_app_args():
 
     # No arguments specified. Presumably they'll later be defaulted.
 
-    res = _resolve_app_args(institution=None, project=None, lab=None, award=None, app=APP_CGAP)
+    res = _resolve_app_args(institution=None, project=None, lab=None, award=None,
+                            consortium=None, submission_center=None, app=APP_CGAP)
     assert res == {'institution': None, 'project': None}
 
-    res = _resolve_app_args(institution=None, project=None, lab=None, award=None, app=APP_FOURFRONT)
+    res = _resolve_app_args(institution=None, project=None, lab=None, award=None,
+                            consortium=None, submission_center=None, app=APP_FOURFRONT)
     assert res == {'lab': None, 'award': None}
+
+    res = _resolve_app_args(institution=None, project=None, lab=None, award=None,
+                            consortium=None, submission_center=None, app=APP_SMAHT)
+    assert res == {'consortia': None, 'submission_centers': None}
+
+    res = _resolve_app_args(institution=None, project=None, lab=None, award=None,
+                            consortium="", submission_center="", app=APP_SMAHT)
+    assert res == {'consortia': [], 'submission_centers': []}
 
     # Exactly the right arguments.
 
-    res = _resolve_app_args(institution='foo', project='bar', lab=None, award=None, app=APP_CGAP)
+    res = _resolve_app_args(institution='foo', project='bar', lab=None, award=None,
+                            consortium=None, submission_center=None, app=APP_CGAP)
     assert res == {'institution': 'foo', 'project': 'bar'}
 
-    res = _resolve_app_args(institution=None, project=None, lab='foo', award='bar', app=APP_FOURFRONT)
+    res = _resolve_app_args(institution=None, project=None, lab='foo', award='bar',
+                            consortium=None, submission_center=None, app=APP_FOURFRONT)
     assert res == {'lab': 'foo', 'award': 'bar'}
+
+    sample_consortium = 'C1'
+    sample_consortia = 'C1,C2'
+    sample_consortia_list = ['C1', 'C2']
+    sample_submission_center = 'SC1'
+    sample_submission_centers = 'SC1,SC2'
+    sample_submission_centers_list = ['SC1', 'SC2']
+
+    res = _resolve_app_args(consortium=sample_consortium, submission_center=sample_submission_center,
+                            institution=None, project=None, lab=None, award=None,
+                            app=APP_SMAHT)
+    assert res == {'consortia': [sample_consortium], 'submission_centers': [sample_submission_center]}
+
+    res = _resolve_app_args(consortium=sample_consortia, submission_center=sample_submission_centers,
+                            institution=None, project=None, lab=None, award=None,
+                            app=APP_SMAHT)
+    assert res == {'consortia': sample_consortia_list, 'submission_centers': sample_submission_centers_list}
 
     # Bad arguments for CGAP.
 
     with pytest.raises(ValueError) as exc:
-        _resolve_app_args(institution=None, project=None, lab='foo', award='bar', app=APP_CGAP)
+        _resolve_app_args(institution=None, project=None, lab='foo', award='bar',
+                          consortium=None, submission_center=None, app=APP_CGAP)
     assert str(exc.value) == 'There are 2 inappropriate arguments: --lab and --award.'
 
     with pytest.raises(ValueError) as exc:
-        _resolve_app_args(institution=None, project=None, lab='foo', award=None, app=APP_CGAP)
+        _resolve_app_args(institution=None, project=None, lab='foo', award=None,
+                          consortium=None, submission_center=None, app=APP_CGAP)
     assert str(exc.value) == 'There is 1 inappropriate argument: --lab.'
 
     with pytest.raises(ValueError) as exc:
-        _resolve_app_args(institution=None, project=None, lab=None, award='bar', app=APP_CGAP)
+        _resolve_app_args(institution=None, project=None, lab=None, award='bar',
+                          consortium=None, submission_center=None, app=APP_CGAP)
     assert str(exc.value) == 'There is 1 inappropriate argument: --award.'
 
     # Bad arguments for Fourfront
 
     with pytest.raises(ValueError) as exc:
-        _resolve_app_args(institution='foo', project='bar', lab=None, award=None, app=APP_FOURFRONT)
+        _resolve_app_args(institution='foo', project='bar', lab=None, award=None,
+                          consortium=None, submission_center=None, app=APP_FOURFRONT)
     assert str(exc.value) == 'There are 2 inappropriate arguments: --institution and --project.'
 
     with pytest.raises(ValueError) as exc:
-        _resolve_app_args(institution='foo', project=None, lab=None, award=None, app=APP_FOURFRONT)
+        _resolve_app_args(institution='foo', project=None, lab=None, award=None,
+                          consortium=None, submission_center=None, app=APP_FOURFRONT)
     assert str(exc.value) == 'There is 1 inappropriate argument: --institution.'
 
     with pytest.raises(ValueError) as exc:
-        _resolve_app_args(institution=None, project='bar', lab=None, award=None, app=APP_FOURFRONT)
+        _resolve_app_args(institution=None, project='bar', lab=None, award=None,
+                          consortium=None, submission_center=None, app=APP_FOURFRONT)
     assert str(exc.value) == 'There is 1 inappropriate argument: --project.'
 
     # Bogus application name
 
     with pytest.raises(ValueError) as exc:
         invalid_app = APP_CGAP + APP_FOURFRONT  # make a bogus app name
-        _resolve_app_args(institution=None, project=None, lab=None, award=None, app=invalid_app)
+        _resolve_app_args(institution=None, project=None, lab=None, award=None,
+                          consortium=None, submission_center=None, app=invalid_app)
     assert str(exc.value) == f"Unknown application: {invalid_app}"
 
 
@@ -2625,8 +2810,8 @@ def test_submit_any_ingestion():
     class StopEarly(BaseException):
         pass
 
-    def mocked_resolve_app_args(institution, project, lab, award, app):
-        ignored(institution, project, award, lab)
+    def mocked_resolve_app_args(institution, project, lab, award, app, consortium, submission_center):
+        ignored(institution, project, award, lab, consortium, submission_center)  # not relevant to this mock
         assert app == expected_app
         raise StopEarly()
 
@@ -2731,6 +2916,52 @@ def test_get_defaulted_award():
     assert str(exc.value).startswith("Your user profile declares no lab with awards.")
 
 
+def test_get_defaulted_consortia():
+
+    assert get_defaulted_consortia(consortia=SOME_CONSORTIA, user_record='does-not-matter') == SOME_CONSORTIA
+    assert get_defaulted_consortia(consortia=['anything'], user_record='does-not-matter') == ['anything']
+
+    user_record = make_user_record(consortia=[{'@id': SOME_CONSORTIUM}])
+
+    successful_result = get_defaulted_consortia(consortia=None, user_record=user_record)
+
+    print("successful_result=", successful_result)
+
+    assert successful_result == SOME_CONSORTIA
+
+    assert get_defaulted_consortia(consortia=None, user_record=make_user_record()) == []
+    assert get_defaulted_consortia(consortia=None, user_record=make_user_record(),
+                                   error_if_none=False) == []
+
+    with pytest.raises(Exception) as exc:
+        get_defaulted_consortia(consortia=None, user_record=make_user_record(), error_if_none=True)
+    assert str(exc.value).startswith("Your user profile has no consortium")
+
+
+def test_get_defaulted_submission_centers():
+
+    assert get_defaulted_submission_centers(submission_centers=SOME_SUBMISSION_CENTERS,
+                                            user_record='does-not-matter') == SOME_SUBMISSION_CENTERS
+    assert get_defaulted_submission_centers(submission_centers=['anything'],
+                                            user_record='does-not-matter') == ['anything']
+
+    user_record = make_user_record(submission_centers=[{'@id': SOME_SUBMISSION_CENTER}])
+
+    successful_result = get_defaulted_submission_centers(submission_centers=None, user_record=user_record)
+
+    print("successful_result=", successful_result)
+
+    assert successful_result == SOME_SUBMISSION_CENTERS
+
+    assert get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record()) == []
+    assert get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(),
+                                            error_if_none=False) == []
+
+    with pytest.raises(Exception) as exc:
+        get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(), error_if_none=True)
+    assert str(exc.value).startswith("Your user profile has no submission center")
+
+
 def test_post_files_data():
 
     with mock.patch("io.open") as mock_open:
@@ -2809,6 +3040,7 @@ expected_schema_name = GENERIC_SCHEMA_TYPE
 def test_upload_file_to_new_uuid():
 
     def mocked_execute_prearranged_upload(filename, upload_credentials, auth, **kwargs):
+        assert not kwargs, "kwargs were not expected for mock of mocked_execute_prearranged_upload"
         assert filename == mocked_good_filename
         assert upload_credentials == mocked_good_upload_credentials
         assert auth == mocked_good_auth
@@ -2883,3 +3115,133 @@ def test_compute_s3_submission_post_data():
         'datafile_source_filename': mocked_good_filename,
         **other_args
     }
+
+
+def test_do_app_arg_defaulting():
+
+    default_default_foo = 17
+
+    def get_defaulted_foo(foo, user_record, error_if_none=False):
+        ignored(error_if_none)  # not needed for this mock
+        return user_record.get('default-foo', default_default_foo) if foo is None else foo
+
+    defaulters_for_testing = {
+        'foo': get_defaulted_foo,
+    }
+
+    with mock.patch.object(submission_module, "APP_ARG_DEFAULTERS", defaulters_for_testing):
+
+        args1 = {'foo': 1, 'bar': 2}
+        user1 = {'default-foo': 4}
+        do_app_arg_defaulting(args1, user1)
+        assert args1 == {'foo': 1, 'bar': 2}
+
+        args2 = {'foo': None, 'bar': 2}
+        user2 = {'default-foo': 4}
+        do_app_arg_defaulting(args2, user2)
+        assert args2 == {'foo': 4, 'bar': 2}
+
+        args3 = {'foo': None, 'bar': 2}
+        user3 = {}
+        do_app_arg_defaulting(args3, user3)
+        assert args3 == {'foo': 17, 'bar': 2}
+
+        # Only the args already expressly present are defaulted
+        args4 = {'bar': 2}
+        user4 = {}
+        do_app_arg_defaulting(args4, user4)
+        assert args4 == {'bar': 2}
+
+        # If the defaulter returns None, the argument is removed rather than be None
+        default_default_foo = None  # make defaulter return None if default not found on the user
+        ignorable(default_default_foo)  # it gets used in the closure, PyCharm should know
+        args5 = {'foo': None, 'bar': 2}
+        user5 = {}
+        do_app_arg_defaulting(args5, user5)
+        assert args4 == {'bar': 2}
+
+
+def test_check_submit_ingestion_with_app():
+
+    expected_app = APP_FOURFRONT
+    assert KEY_MANAGER.selected_app != expected_app
+
+    class TestFinished(BaseException):
+        pass
+
+    def mocked_resolve_server(*args, **kwargs):
+        ignored(args, kwargs)
+        assert KEY_MANAGER.selected_app == expected_app
+        raise TestFinished()
+
+    with mock.patch.object(submission_module, "resolve_server", mocked_resolve_server):
+        assert KEY_MANAGER.selected_app != expected_app
+        with pytest.raises(TestFinished):
+            check_submit_ingestion(uuid='some-uuid', server='some-server', env='some-env', app=expected_app)
+        assert KEY_MANAGER.selected_app != expected_app
+
+
+def test_check_submit_ingestion_with_app_None():
+
+    expected_app = DEFAULT_APP
+    assert KEY_MANAGER.selected_app == expected_app == DEFAULT_APP == APP_CGAP
+
+    class TestFinished(BaseException):
+        pass
+
+    def mocked_resolve_server(*args, **kwargs):
+        ignored(args, kwargs)
+        assert KEY_MANAGER.selected_app == APP_CGAP
+        raise TestFinished()
+
+    with mock.patch.object(submission_module, "resolve_server", mocked_resolve_server):
+        assert KEY_MANAGER.selected_app == APP_CGAP
+        with KEY_MANAGER.locally_selected_app(APP_FOURFRONT):
+            assert KEY_MANAGER.selected_app == APP_FOURFRONT
+            with pytest.raises(TestFinished):
+                check_submit_ingestion(uuid='some-uuid', server='some-server', env='some-env', app=None)
+            assert KEY_MANAGER.selected_app == APP_FOURFRONT
+        assert KEY_MANAGER.selected_app == APP_CGAP
+
+
+def test_summarize_submission():
+
+    # env supplied
+    summary = summarize_submission(uuid='some-uuid', env='some-env', app='some-app')
+    assert summary == "check-submit --app some-app --env some-env some-uuid"
+
+    # server supplied
+    summary = summarize_submission(uuid='some-uuid', server='some-server', app='some-app')
+    assert summary == "check-submit --app some-app --server some-server some-uuid"
+
+    # If both are supplied, env wins.
+    summary = summarize_submission(uuid='some-uuid', server='some-server', env='some-env', app='some-app')
+    assert summary == "check-submit --app some-app --env some-env some-uuid"
+
+    # If neither is supplied, well, that shouldn't really happen, but we'll see this:
+    summary = summarize_submission(uuid='some-uuid', server=None, env=None, app='some-app')
+    assert summary == "check-submit --app some-app some-uuid"
+
+
+def test_check_ingestion_progress():
+
+    with mock.patch.object(submission_module, "portal_request_get") as mock_portal_request_get:
+
+        def test_it(data, *, expect_done, expect_short_status):
+            api_response = FakeResponse(status_code=200, json=data)
+            mock_portal_request_get.return_value = api_response
+            res = _check_ingestion_progress('some-uuid', keypair='some-keypair', server='some-server')
+            assert res == (expect_done, expect_short_status, data)
+
+        test_it({}, expect_done=False, expect_short_status=None)
+        test_it({'processing_status': {}}, expect_done=False, expect_short_status=None)
+        test_it({'processing_status': {'progress': '13%'}}, expect_done=False, expect_short_status='13%')
+        test_it({'processing_status': {'progress': 'working'}}, expect_done=False, expect_short_status='working')
+        test_it({'processing_status': {'state': 'started', 'outcome': 'indexed'}},
+                expect_done=False, expect_short_status=None)
+        test_it({'processing_status': {'state': 'started'}},
+                expect_done=False, expect_short_status=None)
+        test_it({'processing_status': {'state': 'done', 'outcome': 'indexed'}},
+                expect_done=True, expect_short_status='indexed')
+        test_it({'processing_status': {'state': 'done'}},
+                expect_done=True, expect_short_status=None)

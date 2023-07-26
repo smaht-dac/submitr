@@ -6,7 +6,9 @@ from dcicutils.misc_utils import ignored, override_environ, environ_bool
 from unittest import mock
 
 from .. import utils as utils_module
-from ..utils import show, keyword_as_title, FakeResponse, script_catch_errors, ERROR_HERALD
+from ..utils import (
+    show, keyword_as_title, FakeResponse, script_catch_errors, ERROR_HERALD, ERASE_LINE, TIMESTAMP_REGEXP,
+)
 
 
 @contextlib.contextmanager
@@ -30,7 +32,18 @@ def shown_output():
         yield shown
 
 
+ERASE_LINE_REGEXP = re.escape(ERASE_LINE)
+
+SHOW_RAW_STRING_PATTERN = re.compile("^(.*)$")
+SHOW_TIMESTAMP_PATTERN = re.compile(f"^{TIMESTAMP_REGEXP} (.*)$")
+
+SHOW_ERASE_LINE_PATTERN = re.compile(f"^{ERASE_LINE_REGEXP}(.*)\r$")
+SHOW_ERASE_LINE_TIMESTAMP_PATTERN = re.compile(f"^{ERASE_LINE_REGEXP}{TIMESTAMP_REGEXP} (.*)\r$")
+
+
 def test_show():
+
+    print()  # start on a fresh line
 
     # Test uses WITHOUT timestamps
     with shown_output() as shown:
@@ -39,8 +52,6 @@ def test_show():
 
         assert shown.lines == ["This is a test.", "This, too."]
 
-    timestamp_pattern = re.compile(r'^[0-9][0-9]:[0-9][0-9]:[0-9][0-9] (.*)$')
-
     # Test uses WITH timestamps
     with shown_output() as shown:
         show("This", "is", "a", "test.", with_time=True)
@@ -48,18 +59,38 @@ def test_show():
 
         trimmed = []
         for line in shown.lines:
-            matched = timestamp_pattern.match(line)
-            assert matched, "Timestamp missing or in bad form: %s" % line
+            matched = SHOW_TIMESTAMP_PATTERN.match(line)
+            assert matched, f"pattern={SHOW_TIMESTAMP_PATTERN!r}\n{line!r}\nTimestamp missing or in bad form."
             trimmed.append(matched.group(1))
 
         assert trimmed == ["This is a test.", "This, too."]
 
-    with shown_output() as shown:
-        show("This", "is", "a", "test.", with_time=True)
-        show("This, too.")
+    #  Tester for full range of arg patterns.
+    def check_output(pattern, with_time=False, same_line=False):
 
-        assert timestamp_pattern.match(shown.lines[0])
-        assert not timestamp_pattern.match(shown.lines[1])
+        with shown_output() as shown:
+
+            fragment_lists = [["This", "is", "a", "test."],
+                              ["This, too."],
+                              ["This is also", "part of", "the test."]]
+
+            expected_lines = []
+
+            for fragment_list in fragment_lists:
+                show(*fragment_list, with_time=with_time, same_line=same_line)
+                expected_line = " ".join(fragment_list)
+                expected_lines.append(expected_line)
+
+            for i, line in enumerate(shown.lines):
+                m = pattern.match(line)
+                assert m
+                assert m.group(1) == expected_lines[i]
+
+    # Check all four argument patterns...
+    check_output(SHOW_RAW_STRING_PATTERN)
+    check_output(SHOW_TIMESTAMP_PATTERN, with_time=True)
+    check_output(SHOW_ERASE_LINE_PATTERN, same_line=True)
+    check_output(SHOW_ERASE_LINE_TIMESTAMP_PATTERN, with_time=True, same_line=True)
 
 
 def test_keyword_as_title():

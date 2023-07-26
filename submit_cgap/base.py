@@ -1,8 +1,8 @@
 import contextlib
 import os
 
-from dcicutils.common import OrchestratedApp, APP_CGAP, APP_FOURFRONT, ORCHESTRATED_APPS
-from dcicutils.creds_utils import KeyManager, CGAPKeyManager, FourfrontKeyManager
+from dcicutils.common import OrchestratedApp, APP_CGAP, APP_FOURFRONT, APP_SMAHT, ORCHESTRATED_APPS
+from dcicutils.creds_utils import KeyManager, CGAPKeyManager, FourfrontKeyManager, SMaHTKeyManager
 from dcicutils.exceptions import InvalidParameterError
 
 
@@ -15,13 +15,22 @@ PRODUCTION_SERVER = 'https://cgap.hms.harvard.edu'
 PRODUCTION_ENV = 'fourfront-cgap'
 
 DEFAULT_ENV_VAR = 'SUBMITCGAP_ENV'
+DEFAULT_APP_VAR = 'SUBMITCGAP_APP'
+
+DEFAULT_DEFAULT_ENV = PRODUCTION_ENV
+DEFAULT_DEFAULT_APP = APP_CGAP
 
 
-def _compute_default_env():
-    return os.environ.get(DEFAULT_ENV_VAR, PRODUCTION_ENV)
+def _compute_default_env():  # factored out as a function for testing
+    return os.environ.get(DEFAULT_ENV_VAR, DEFAULT_DEFAULT_ENV)
+
+
+def _compute_default_app():  # factored out as a function for testing
+    return os.environ.get(DEFAULT_APP_VAR, DEFAULT_DEFAULT_APP)
 
 
 DEFAULT_ENV = _compute_default_env()
+DEFAULT_APP = _compute_default_app()
 
 
 class GenericKeyManager:
@@ -32,14 +41,17 @@ class GenericKeyManager:
     def __init__(self):
         self._cgap_key_manager: KeyManager = CGAPKeyManager()
         self._fourfront_key_manager: KeyManager = FourfrontKeyManager()
+        self._smaht_key_manager: KeyManager = SMaHTKeyManager()
         self._key_manager: KeyManager = self._cgap_key_manager
-        self._selected_app = APP_CGAP
+        self._selected_app = DEFAULT_APP
 
     def select_app(self, app: OrchestratedApp):
         if app == APP_CGAP:
             self._key_manager = self._cgap_key_manager
         elif app == APP_FOURFRONT:
             self._key_manager = self._fourfront_key_manager
+        elif app == APP_SMAHT:
+            self._key_manager = self._smaht_key_manager
         else:
             raise InvalidParameterError(parameter='app', value=app, options=ORCHESTRATED_APPS)
         self._selected_app = app

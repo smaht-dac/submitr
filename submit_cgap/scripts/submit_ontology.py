@@ -21,6 +21,10 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('ontology_filename', help='a file of ontology data')
     parser.add_argument('--lab', '-l', '-L', help='lab identifier', default=None)
     parser.add_argument('--award', '-a', help='award identifier', default=None)
+    parser.add_argument('--consortium', '-c', default=None,
+                        help='consortium identifier (comma-separated if several)')
+    parser.add_argument('--submission-center', '-sc', default=None,
+                        help='submission center intifier (comma-separated if several)')
     parser.add_argument('--server', '-s', help="an http or https address of the server to use", default=None)
     parser.add_argument('--env', '-e', help="a CGAP beanstalk environment name for the server to use", default=None)
     parser.add_argument('--validate-only', '-v', action="store_true",
@@ -42,6 +46,8 @@ def main(simulated_args_for_testing=None):
                 ingestion_type='ontology',
                 lab=args.lab,
                 award=args.award,
+                consortium=args.consortium,
+                submission_center=args.submission_center,
                 server=args.server,
                 env=args.env,
                 validate_only=args.validate_only,
@@ -56,7 +62,7 @@ def verify_ontology_file(ontology_filename: str) -> bool:
     try:
         with io.open(ontology_filename, "r") as f:
             ontology_json = json.load(f)
-            ontology_term_count = len(ontology_json["ontology_term"])  # xyzzy
+            ontology_term_count = len(ontology_json["ontology_term"])
     except Exception as e:
         raise ScriptFailure(f"Cannot load specified ontology (JSON) file: {ontology_filename} | {get_error_message(e)}")
     show(f"Verified specified ontology (JSON) file: {ontology_filename} (ontology terms: {ontology_term_count})")

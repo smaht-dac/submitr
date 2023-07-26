@@ -5,25 +5,27 @@ import os
 import re
 import subprocess
 import time
+from typing import Tuple
 
 # get_env_real_url would rely on env_utils
 # from dcicutils.env_utils import get_env_real_url
 from dcicutils.command_utils import yes_or_no
-from dcicutils.common import APP_CGAP, APP_FOURFRONT, OrchestratedApp
+from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 # We're not going to use full_cgap_env_name now, we'll just rely on the keys file to say what the name is.
 # from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.exceptions import InvalidParameterError
-from dcicutils.ff_utils import get_health_page
+from dcicutils.ff_utils import get_health_page as get_portal_health_page
 from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join, ignorable, remove_prefix
 from dcicutils.s3_utils import HealthPageKey
 from typing import BinaryIO, Dict, Optional
 from typing_extensions import Literal
 from urllib.parse import urlparse
-from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER
+from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER, DEFAULT_APP
 from .exceptions import CGAPPermissionError
 from .portal_network_access import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
 from .utils import show, keyword_as_title, check_repeatedly
+from dcicutils.function_cache_decorator import function_cache
 
 
 class SubmissionProtocol:
@@ -231,7 +233,6 @@ def get_defaulted_lab(lab, user_record, error_if_none=False):
             if error_if_none:
                 raise SyntaxError("Your user profile has no lab declared,"
                                   " so you must specify --lab explicitly.")
-        if not lab:
             show("No lab was inferred.")
         else:
             show("Using inferred lab:", lab)
@@ -240,11 +241,63 @@ def get_defaulted_lab(lab, user_record, error_if_none=False):
     return lab
 
 
+def get_defaulted_consortia(consortia, user_record, error_if_none=False):
+    """
+    Returns the given consortia or else if none is specified, it tries to infer any consortia.
+
+    :param consortia: a list of @id's of consortia, or None
+    :param user_record: the user record for the authorized user
+    :param error_if_none: boolean true if failure to infer any consortia should raise an error, and false otherwise.
+    :return: the @id of a consortium to use (or a comma-separated list)
+    """
+    consortia = consortia
+    if not consortia:
+        consortia = [consortium.get('@id', None)
+                     for consortium in user_record.get('consortia', [])]
+        if not consortia:
+            if error_if_none:
+                raise SyntaxError("Your user profile has no consortium declared,"
+                                  " so you must specify --consortium explicitly.")
+            show("No consortium was inferred.")
+        else:
+            show("Using inferred consortium:", ','.join(consortia))
+    else:
+        show("Using given consortium:", ','.join(consortia))
+    return consortia
+
+
+def get_defaulted_submission_centers(submission_centers, user_record, error_if_none=False):
+    """
+    Returns the given submission center or else if none is specified, it tries to infer a submission center.
+
+    :param submission_centers: the @id of a submission center, or None
+    :param user_record: the user record for the authorized user
+    :param error_if_none: boolean true if failure to infer a submission center should raise an error,
+        and false otherwise.
+    :return: the @id of a submission center to use
+    """
+    if not submission_centers:
+        submission_centers = [submission_center.get('@id', None)
+                              for submission_center in user_record.get('submission_centers', {})]
+        if not submission_centers:
+            if error_if_none:
+                raise SyntaxError("Your user profile has no submission center declared,"
+                                  " so you must specify --submission-center explicitly.")
+            show("No submission center was inferred.")
+        else:
+            show("Using inferred submission center:", submission_centers)
+    else:
+        show("Using given submission center:", submission_centers)
+    return submission_centers
+
+
 APP_ARG_DEFAULTERS = {
     'institution': get_defaulted_institution,
     'project': get_defaulted_project,
     'lab': get_defaulted_lab,
     'award': get_defaulted_award,
+    'consortia': get_defaulted_consortia,
+    'submission_centers': get_defaulted_submission_centers,
 }
 
 
@@ -382,7 +435,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     if submission_protocol == SubmissionProtocol.S3:
         # New with Fourfront ontology ingestion work (March 2023).
         # Store the submission data in the parameters of the IngestionSubmission object
-        # here (it will get there later anyways via patch in ingester process), so that we can
+        # here (it will get there later anyway via patch in ingester process), so that we can
         # get at this info via show-upload-info, before the ingester picks this up; specifically,
         # this is the FileOther object info, its uuid and associated data file, which was uploaded
         # in this case (SubmissionProtocol.S3) directly to S3 from submit-ontology.
@@ -408,20 +461,30 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
 
 DEFAULT_INGESTION_TYPE = 'metadata_bundle'
 
-DEFAULT_APP = APP_CGAP
-
 GENERIC_SCHEMA_TYPE = 'FileOther'
 
 
-def _resolve_app_args(institution, project, lab, award, app):
+def _resolve_app_args(institution, project, lab, award, app, consortium, submission_center):
 
     app_args = {}
     if app == APP_CGAP:
         required_args = {'institution': institution, 'project': project}
-        unwanted_args = {'lab': lab, 'award': award}
+        unwanted_args = {'lab': lab, 'award': award,
+                         'consortium': consortium, 'submission_center': submission_center}
     elif app == APP_FOURFRONT:
         required_args = {'lab': lab, 'award': award}
-        unwanted_args = {'institution': institution, 'project': project}
+        unwanted_args = {'institution': institution, 'project': project,
+                         'consortium': consortium, 'submission_center': submission_center}
+    elif app == APP_SMAHT:
+
+        def splitter(x):
+            return None if x is None else [y for y in [x.strip() for x in x.split(',')] if y]
+
+        consortia = None if consortium is None else splitter(consortium)
+        submission_centers = None if submission_center is None else splitter(submission_center)
+        required_args = {'consortia': consortia, 'submission_centers': submission_centers}
+        unwanted_args = {'institution': institution, 'project': project,
+                         'lab': lab, 'award': award}
     else:
         raise ValueError(f"Unknown application: {app}")
 
@@ -440,7 +503,9 @@ def _resolve_app_args(institution, project, lab, award, app):
 
 
 def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, validate_only,
-                         institution=None, project=None, lab=None, award=None, app: OrchestratedApp = None,
+                         institution=None, project=None, lab=None, award=None,
+                         consortium=None, submission_center=None,
+                         app: OrchestratedApp = None,
                          upload_folder=None, no_query=False, subfolders=False,
                          submission_protocol=DEFAULT_SUBMISSION_PROTOCOL):
     """
@@ -456,6 +521,8 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     :param project: the @id of the project for which the submission is being done (when app='cgap' or None)
     :param lab: the @id of the lab for which the submission is being done (when app='fourfront')
     :param award: the @id of the award for which the submission is being done (when app='fourfront')
+    :param consortium: the @id of the consortium for which the submission is being done (when app='smaht')
+    :param submission_center: the @id of the submission_center for which the submission is being done (when app='smaht')
     :param upload_folder: folder in which to find files to upload (default: same as bundle_filename)
     :param no_query: bool to suppress requests for user input
     :param subfolders: bool to search subdirectories within upload_folder for files
@@ -470,10 +537,12 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
             return submit_any_ingestion(ingestion_filename=ingestion_filename, ingestion_type=ingestion_type,
                                         server=server, env=env, validate_only=validate_only,
                                         institution=institution, project=project, lab=lab, award=award, app=app,
+                                        consortium=consortium, submission_center=submission_center,
                                         upload_folder=upload_folder, no_query=no_query, subfolders=subfolders,
                                         submission_protocol=submission_protocol)
 
-    app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app)
+    app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app,
+                                 consortium=consortium, submission_center=submission_center)
 
     server = resolve_server(server=server, env=env)
 
@@ -491,6 +560,8 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
     keydict = KEY_MANAGER.get_keydict_for_server(server)
     keypair = KEY_MANAGER.keydict_to_keypair(keydict)
+
+    metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
 
     user_record = get_user_record(server, auth=keypair)
 
@@ -574,26 +645,62 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
     uuid = res['submission_id']
 
-    show("Bundle uploaded. Checking ingestion process using IngestionSubmission uuid: %s ..." % uuid, with_time=True)
+    if DEBUG_PROTOCOL:  # pragma: no cover
+        show(f"Created IngestionSubmission object: s3://{metadata_bundles_bucket}/{uuid}", with_time=True)
+    show(f"Bundle uploaded to bucket {metadata_bundles_bucket}, assigned uuid {uuid} for tracking."
+         f" Awaiting processing...",
+         with_time=True)
+
+    check_done, check_status, check_response = check_submit_ingestion(uuid, server, env, app)
+
+    if validate_only:
+        exit(0)
+
+    if check_status == "success":
+        do_any_uploads(check_response, keydict=keydict, ingestion_filename=ingestion_filename,
+                       upload_folder=upload_folder, no_query=no_query,
+                       subfolders=subfolders)
+
+    exit(0)
+
+
+def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict]:
+    """
+    Calls endpoint to get this status of the IngestionSubmission uuid (in outer scope);
+    this is used as an argument to check_repeatedly below to call over and over.
+    Returns tuple with: done-indicator (True or False), short-status (str), full-response (dict)
+    From outer scope: server, keypair, uuid (of IngestionSubmission)
+    """
+    tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
+    response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS).json()
+    # FYI this processing_status and its state, progress, outcome properties were ultimately set
+    # from within the ingester process, from within types.ingestion.SubmissionFolio.processing_status.
+    status = response.get("processing_status", {})
+    if status.get("state") == "done":
+        outcome = status.get("outcome")
+        return True, outcome, response
+    else:
+        progress = status.get("progress")
+        return False, progress, response
+
+
+def check_submit_ingestion(uuid: str, server: str, env: str,
+                           app: Optional[OrchestratedApp] = None) -> Tuple[bool, str, dict]:
+
+    if app is None:  # For legacy reasons, SubmitCGAP was the first so didn't expect this arg was needed
+        app = DEFAULT_APP
+    if KEY_MANAGER.selected_app != app:
+        with KEY_MANAGER.locally_selected_app(app):
+            return check_submit_ingestion(uuid, server, env, app)
+
+    server = resolve_server(server=server, env=env if not server else None)
+    keydict = KEY_MANAGER.get_keydict_for_server(server)
+    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
+
+    show("Checking ingestion process for IngestionSubmission uuid %s ..." % uuid, with_time=True)
 
     def check_ingestion_progress():
-        """
-        Calls endpoint to get this status of the IngestionSubmission uuid (in outer scope);
-        this is used as an argument to check_repeatedly below to call over and over.
-        Returns tuple with: done-indicator (True or False), short-status (str), full-response (dict)
-        From outer scope: server, keypair, uuid (of IngestionSubmission)
-        """
-        tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
-        response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS).json()
-        # FYI this processing_status and its state, progress, outcome properties were ultimately set
-        # from within the ingester process, from within types.ingestion.SubmissionFolio.processing_status.
-        status = response["processing_status"]
-        if status.get("state") == "done":
-            outcome = status["outcome"]
-            return True, outcome, response
-        else:
-            progress = status["progress"]
-            return False, progress, response
+        return _check_ingestion_progress(uuid, keypair=keypair, server=server)
 
     # Check the ingestion processing repeatedly, up to ATTEMPTS_BEFORE_TIMEOUT times,
     # and waiting PROGRESS_CHECK_INTERVAL seconds between each check.
@@ -604,7 +711,8 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     )
 
     if not check_done:
-        show("Exiting after check processing timeout | Check status using: TODO")
+        command_summary = summarize_submission(uuid=uuid, server=server, env=env, app=app)
+        show(f"Exiting after check processing timeout using {command_summary!r}.")
         exit(1)
 
     show("Final status: %s" % check_status.title(), with_time=True)
@@ -614,19 +722,22 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
     caveat_check_status = None if check_status == "success" else check_status
     show_section(check_response, "validation_output", caveat_outcome=caveat_check_status)
-
-    if validate_only:
-        exit(0)
-
     show_section(check_response, "post_output", caveat_outcome=caveat_check_status)
 
     if check_status == "success":
         show_section(check_response, "upload_info")
-        do_any_uploads(check_response, keydict=keydict, ingestion_filename=ingestion_filename,
-                       upload_folder=upload_folder, no_query=no_query,
-                       subfolders=subfolders)
 
-    exit(0)
+    return check_done, check_status, check_response
+
+
+def summarize_submission(uuid: str, app: str, server: Optional[str] = None, env: Optional[str] = None):
+    if env:
+        command_summary = f"check-submit --app {app} --env {env} {uuid}"
+    elif server:
+        command_summary = f"check-submit --app {app} --server {server} {uuid}"
+    else:  # unsatisfying, but not worth raising an error
+        command_summary = f"check-submit --app {app} {uuid}"
+    return command_summary
 
 
 def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, **other_args):
@@ -655,8 +766,10 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
 
 
 def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
-                     show_upload_info=True, show_validation_output=True,
-                     show_processing_status=True, show_parameters=True):
+                     show_primary_result=True,
+                     show_validation_output=True,
+                     show_processing_status=True,
+                     show_datafile_url=True):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -665,6 +778,13 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     :param server: the server to upload to
     :param env: the beanstalk environment to upload to
     :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
+    :param app: the name of the app to use
+        e.g., affects whether to expect --lab, --award, --institution, --project, --consortium or --submission_center
+              and whether to use .fourfront-keys.json, .cgap-keys.json, or .smaht-keys.json
+    :param show_primary_result: bool controls whether the primary result is shown
+    :param show_validation_output: bool controls whether to show output resulting from validation checks
+    :param show_processing_status: bool controls whether to show the current processing status
+    :param show_datafile_url: bool controls whether to show the datafile_url parameter from the parameters.
     """
 
     if app is None:
@@ -672,8 +792,10 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     if KEY_MANAGER.selected_app != app:
         with KEY_MANAGER.locally_selected_app(app):
             return show_upload_info(uuid=uuid, server=server, env=env, keydict=keydict, app=app,
-                                    show_upload_info=show_upload_info, show_validation_output=show_validation_output,
-                                    show_processing_status=show_processing_status, show_parameters=show_parameters)
+                                    show_primary_result=show_primary_result,
+                                    show_validation_output=show_validation_output,
+                                    show_processing_status=show_processing_status,
+                                    show_datafile_url=show_datafile_url)
 
     server = resolve_server(server=server, env=env)
     keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
@@ -681,34 +803,48 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     response = portal_request_get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict), headers=STANDARD_HTTP_HEADERS)
     response.raise_for_status()
     res = response.json()
-    if show_upload_info and get_section(res, 'upload_info'):
-        show_section(res, 'upload_info')
-    else:
-        show("Uploads: None")
+    show_upload_result(res,
+                       show_primary_result=show_primary_result,
+                       show_validation_output=show_validation_output,
+                       show_processing_status=show_processing_status,
+                       show_datafile_url=show_datafile_url)
+
+
+def show_upload_result(result,
+                       show_primary_result=True,
+                       show_validation_output=True,
+                       show_processing_status=True,
+                       show_datafile_url=True):
+
+    if show_primary_result:
+        if get_section(result, 'upload_info'):
+            show_section(result, 'upload_info')
+        else:
+            show("Uploads: None")
 
     # New March 2023 ...
 
-    if show_validation_output and get_section(res, 'validation_output'):
+    if show_validation_output and get_section(result, 'validation_output'):
         PRINT()  # start on a fresh line
-        show_section(res, 'validation_output')
+        show_section(result, 'validation_output')
 
-    if show_processing_status and res.get('processing_status'):
-        show("----- Status -----")
-        state = res['processing_status'].get('state')
+    if show_processing_status and result.get('processing_status'):
+        show("----- Processing Status -----")
+        state = result['processing_status'].get('state')
         if state:
             show(f"State: {state.title()}")
-        outcome = res['processing_status'].get('outcome')
+        outcome = result['processing_status'].get('outcome')
         if outcome:
             show(f"Outcome: {outcome.title()}")
-        progress = res['processing_status'].get('progress')
+        progress = result['processing_status'].get('progress')
         if progress:
             show(f"Progress: {progress.title()}")
 
-    if show_parameters and res.get('parameters'):
-        datafile_url = res['parameters'].get('datafile_url')
+    if show_datafile_url and result.get('parameters'):
+        datafile_url = result['parameters'].get('datafile_url')
         if datafile_url:
-            show("----- FileObject -----")
-            PRINT(datafile_url)
+            show("----- DataFile URL -----")
+            show(datafile_url)
 
 
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False, subfolders=False):
@@ -756,10 +892,18 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                    subfolders=subfolders)
 
 
+@function_cache(serialize_key=True)
+def get_health_page(key: dict) -> dict:
+    return get_portal_health_page(key=key)
+
+
+def get_metadata_bundles_bucket_from_health_path(key: dict) -> str:
+    return get_health_page(key=key).get("metadata_bundles_bucket")
+
+
 def get_s3_encrypt_key_id_from_health_page(auth):
     try:
-        health = get_health_page(key=auth)
-        return health.get(HealthPageKey.S3_ENCRYPT_KEY_ID)
+        return get_health_page(key=auth).get(HealthPageKey.S3_ENCRYPT_KEY_ID)
     except Exception:  # pragma: no cover
         # We don't actually unit test this section because get_health_page realistically always returns
         # a dictionary, and so health.get(...) always succeeds, possibly returning None, which should
@@ -968,7 +1112,7 @@ def search_for_file(directory, file_name, recursive=False):
 
     :param directory: Directory path
     :param file_name: Name of file to find
-    :param recursive: Whether to search sub-directories of given
+    :param recursive: Whether to search subdirectories of given
         directory
     :returns: (Path to file or None, Error message or None)
     """
@@ -1050,7 +1194,7 @@ def upload_extra_files(
     :param uploader_wrapper: UploadMessageWrapper instance
     :param folder: Directory to search for files
     :param auth: CGAP authorization tuple
-    :param recursive: Whether to search sub-directories for file
+    :param recursive: Whether to search subdirectories for file
     """
     for extra_file_item in credentials:
         extra_file_name = extra_file_item.get("filename")

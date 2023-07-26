@@ -7,6 +7,11 @@ from dcicutils.misc_utils import PRINT, environ_bool
 from json import dumps as json_dumps, loads as json_loads
 
 
+ERASE_LINE = "\033[K"
+TIMESTAMP_PATTERN = "%H:%M:%S"
+TIMESTAMP_REGEXP = "[0-2][0-9]:[0-5][0-9]:[0-5][0-9]"
+
+
 # Programmatic output will use 'show' so that debugging statements using regular 'print' are more easily found.
 def show(*args, with_time: bool = False, same_line: bool = False):
     """
@@ -14,11 +19,13 @@ def show(*args, with_time: bool = False, same_line: bool = False):
 
     :param args: an object to be printed
     :param with_time: a boolean specifying whether to prepend a timestamp
+    :param same_line: a boolean saying whether to do this output in a way that erases the current line
+        and returns to the start of the line without advancing vertically so that subsequent same_line=True
+        requests will erase (and so replace) the current line.
     """
-    ERASE_LINE = "\033[K"
     output = io.StringIO()
     if with_time:
-        hh_mm_ss = str(datetime.datetime.now().strftime("%H:%M:%S"))
+        hh_mm_ss = str(datetime.datetime.now().strftime(TIMESTAMP_PATTERN))
         print(hh_mm_ss, *args, end="", file=output)
     else:
         print(*args, end="", file=output)

@@ -2,8 +2,8 @@ import contextlib
 import pytest
 import re
 
-from dcicutils.common import APP_CGAP, APP_FOURFRONT
-from dcicutils.creds_utils import CGAPKeyManager, FourfrontKeyManager, KeyManager
+from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
+from dcicutils.creds_utils import CGAPKeyManager, FourfrontKeyManager, SMaHTKeyManager, KeyManager
 from dcicutils.misc_utils import override_environ
 from unittest import mock
 from .. import base as base_module
@@ -55,6 +55,13 @@ def test_generic_key_manager():
         manager.select_app(invalid_app)
 
     with manager.locally_selected_app(APP_CGAP):
+        assert manager.selected_app == APP_CGAP
+        assert isinstance(key_manager(manager), CGAPKeyManager)
+
+        with manager.locally_selected_app(APP_SMAHT):
+            assert manager.selected_app == APP_SMAHT
+            assert isinstance(key_manager(manager), SMaHTKeyManager)
+
         assert manager.selected_app == APP_CGAP
         assert isinstance(key_manager(manager), CGAPKeyManager)
 

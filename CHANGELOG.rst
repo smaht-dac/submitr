@@ -7,6 +7,16 @@ Change Log
 ----------
 
 
+4.1.0
+=====
+
+* Support for a check-submission command.
+* Very basic support for SMaHT.
+  * Commands can now take ``--app smaht`` (which will use ``~/.smaht-keys.json``)
+  * submit-ontology takes ``--consortium`` and ``submission_center`` arguments.
+  * Some other functionality may still be missing. Send email if you're missing something you need.
+
+
 4.0.0
 =====
 
