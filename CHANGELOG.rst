@@ -7,6 +7,14 @@ Change Log
 ----------
 
 
+0.2.0
+=====
+
+* Fix a bug in the project-association in Sphinx config file.
+* Add a warning about preliminary nature in README.rst
+* Enable auto-publish to readthedocs on checkin to master.
+* Enable auto-publish to pypi on tag.
+
 0.1.1
 =====
 

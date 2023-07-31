@@ -17,9 +17,9 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Submit-CGAP'
-copyright = '2020, HMS-DBMI-4DN'
-author = 'HMS-DBMI-4DN'
+project = 'submitr'
+copyright = '2020-2023 President and Fellows of Harvard College'
+author = 'Harvard Medical School / DBMI / SMaHT DAC Team'
 master_doc = 'index'
 
 # -- General configuration ---------------------------------------------------

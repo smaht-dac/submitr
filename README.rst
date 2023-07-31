@@ -18,6 +18,11 @@ A file submission tool for SMAHT
    :target: https://submitr.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
+.. warning::
+
+   THIS IS A PRE-RELEASE VERSION.
+
+   It was recently forked. It is not yet ready for normal use. Watch for version 1.0.
 
 Description
 ===========
