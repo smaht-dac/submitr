@@ -1,21 +1,23 @@
-===========
+========
 Overview
-===========
+========
 
-File submission for SMaHT
--------------------------
+
+File submission for submitr
+---------------------------
 
 .. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
-   :target: https://github.com/smaht-dac/submitr/actions
-   :alt: Build Status
+    :target: https://github.com/smaht-dac/submitr/actions
+    :alt: Build Status
 
 .. image:: https://coveralls.io/repos/github/dbmi-bgm/submitr/badge.svg
-   :target: https://coveralls.io/github/smaht-dac/submitr
-   :alt: Coverage
+    :target: https://coveralls.io/github/smaht-dac/submitr
+    :alt: Coverage
 
 .. image:: https://readthedocs.org/projects/submitr/badge/?version=latest
-   :target: https://submitr.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
+    :target: https://submitr.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
 
 Description
 ===========
