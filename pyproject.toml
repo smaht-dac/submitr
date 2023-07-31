@@ -1,15 +1,15 @@
 [tool.poetry]
-name = "submit_cgap"
-version = "4.1.0"
-description = "Support for uploading file submissions to the Clinical Genomics Analysis Platform (CGAP)."
+name = "submitr"
+version = "0.1.0"  # forked from SubmitCGAP 4.1.0
+description = "Support for uploading file submissions to SMAHT."
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
 readme = "README.rst"
-keywords = ["submit-cgap"]
-homepage = "https://github.com/dbmi-bgm/SubmitCGAP"
-repository = "https://github.com/dbmi-bgm/SubmitCGAP.git"
+keywords = ["submitr", "smaht"]
+homepage = "https://github.com/smaht-dac/submitr"
+repository = "https://github.com/smaht-dac/submitr.git"
 packages = [
-  { include="submit_cgap", from="." }
+  { include="submitr", from="." }
 ]
 
 classifiers = [
@@ -81,16 +81,16 @@ sphinx-rtd-theme = ">=1.2.0"
 
 [tool.poetry.scripts]
 
-check-submission= "submit_cgap.scripts.check_submission:main"
-make-sample-fastq-file = "submit_cgap.scripts.make_sample_fastq_file:main"
+check-submission= "submitr.scripts.check_submission:main"
+make-sample-fastq-file = "submitr.scripts.make_sample_fastq_file:main"
 publish-to-pypi = "dcicutils.scripts.publish_to_pypi:main"
-resume-uploads = "submit_cgap.scripts.resume_uploads:main"
-show-submission-info = "submit_cgap.scripts.show_submission_info:main"
-show-upload-info = "submit_cgap.scripts.show_upload_info:main"
-submit-genelist = "submit_cgap.scripts.submit_genelist:main"
-submit-metadata-bundle = "submit_cgap.scripts.submit_metadata_bundle:main"
-submit-ontology = "submit_cgap.scripts.submit_ontology:main"
-upload-item-data = "submit_cgap.scripts.upload_item_data:main"
+resume-uploads = "submitr.scripts.resume_uploads:main"
+show-submission-info = "submitr.scripts.show_submission_info:main"
+show-upload-info = "submitr.scripts.show_upload_info:main"
+submit-genelist = "submitr.scripts.submit_genelist:main"
+submit-metadata-bundle = "submitr.scripts.submit_metadata_bundle:main"
+submit-ontology = "submitr.scripts.submit_ontology:main"
+upload-item-data = "submitr.scripts.upload_item_data:main"
 
 [tool.coverage.report]
 

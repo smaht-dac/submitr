@@ -1,4 +1,4 @@
-submit\_cgap package
+submitr package
 ====================
 
 Subpackages
@@ -7,48 +7,48 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   submit_cgap.scripts
-   submit_cgap.tests
+   submitr.scripts
+   submitr.tests
 
 Submodules
 ----------
 
-submit\_cgap.auth module
+submitr.auth module
 ------------------------
 
-.. automodule:: submit_cgap.auth
+.. automodule:: submitr.auth
    :members:
    :undoc-members:
    :show-inheritance:
 
-submit\_cgap.base module
+submitr.base module
 ------------------------
 
-.. automodule:: submit_cgap.base
+.. automodule:: submitr.base
    :members:
    :undoc-members:
    :show-inheritance:
 
-submit\_cgap.exceptions module
+submitr.exceptions module
 ------------------------------
 
-.. automodule:: submit_cgap.exceptions
+.. automodule:: submitr.exceptions
    :members:
    :undoc-members:
    :show-inheritance:
 
-submit\_cgap.submission module
+submitr.submission module
 ------------------------------
 
-.. automodule:: submit_cgap.submission
+.. automodule:: submitr.submission
    :members:
    :undoc-members:
    :show-inheritance:
 
-submit\_cgap.utils module
+submitr.utils module
 -------------------------
 
-.. automodule:: submit_cgap.utils
+.. automodule:: submitr.utils
    :members:
    :undoc-members:
    :show-inheritance:
@@ -56,7 +56,7 @@ submit\_cgap.utils module
 Module contents
 ---------------
 
-.. automodule:: submit_cgap
+.. automodule:: submitr
    :members:
    :undoc-members:
    :show-inheritance:

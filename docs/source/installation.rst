@@ -1,13 +1,21 @@
-=====================
-Installing SubmitCGAP
-=====================
+==================
+Installing submitr
+==================
+
+
+System Requirements
+===================
+
+* Python 3.7, 3.8 or 3.9
+* ``pip`` (>=20.0.0)
+* ``virtualenv`` (>=16.0.0)
 
 
 Setting Up a Virtual Environment (OPTIONAL)
 ===========================================
 
-This is optional. See also the basic setup instructions for doing this setup with `pyenv`
-If you use Poetry and do not create a virtual environment, Poetry will make one for you.
+This action is optional.
+If you do not create a virtual environment, Poetry will make one for you.
 But there are still good reasons you might want to make your own, so here
 are three ways to do it:
 
@@ -49,90 +57,80 @@ However, if you want to deactivate an active environment, just do::
 
    deactivate
 
-Installing SubmitCGAP in a Virtual Environment
-==============================================
 
-**End Users:** Submit-CGAP can be installed with a simple pip install::
+Installing in a Virtual Environment
+==========================================
 
-   pip install submit-cgap
+Installation for Developers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Developers:** Once you have created a virtual environment, or have decided to just let Poetry handle that,
-install with poetry::
+If you are a developer, you'll be installing with Poetry.
+Once you have created a virtual environment, or have decided to just let Poetry handle that,
+go ahead with the installation. To do that, make sure your current directory is the source repository and do::
 
-   poetry install
+   make build
+
+
+.. tip::
+
+   Poetry is the substrate that our build scripts rely on.
+   You won't be calling it directly, but ``make build`` will call it.
+
+
+Installation for End Users (non-Developers)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you're an end user,
+once you have created and activated the virtual environment,
+just do::
+
+   pip install submitr
 
 
 Setting Up Credentials
 ======================
 
-Credentials can be placed in a file named ``~/.cgap-keys.json``. The file format is::
+Credentials can be placed in the file ``~/.smaht-keys.json``. The file format is::
 
    {"envname1": {"key": ..., "secret": ..., "server": ...}, "envname2": ..., ...}
 
-For most CGAP environments, the envname to use is the part of the url preceding
-``.hms.harvard.edu``, such as ``cgap-mgb`` or ``cgap-devtest``.
-For end users, reach out to your contact on the CGAP team or at
-`cgap-support@hms-dbmi.atlassian.net <mailto:cgap-support@hms-dbmi.atlassian.net>`_
-if you're not sure which server you need to submit to.
-A typical file might look like below for end users (replace the example environment
-and server with your own envname and server)::
+There is not currently a separate dev environment for SMaHT, so use "staging" or "data".
+The envname to use for local debugging (for developers) is "smaht-local".
+For end users, reach out to your contact on the SMaHT DAC team if you're not sure which server you
+need to submit to.
 
-    {
-        "cgap-main": {
-            "key": "some_key",
-            "secret": "some_secret",
-            "server": "https://cgap-main.hms.harvard.edu"
-        }
-    }
+A typical key file might look like this below. If you are not a developer, you will probably
+only have one key rather than several, and almost certainly none of the URLs will be on ``localhost``::
 
-The easiest way to modify this file is with TextEdit, which you can open from the Terminal with:
+   {
+       "staging": {
+           "key": "some_key",
+           "secret": "some_secret",
+           "server": "https://data.smaht.org"
+       },
+       "smaht-local": {
+           "key": "some_other_key",
+           "secret": "some_other_secret",
+           "server": "http://localhost:8000"
+       }
+   }
+
+The easiest way to create or modify a file like this is with TextEdit, which you can open from a MacOS Terminal window with:
 
 .. code-block::
 
     $ open -a TextEdit ~/.cgap-keys.json
-
-For developers, the suggested envname to use for local debugging (for developers) is "fourfront-cgaplocal".
-You will probably have several keys in your credential file. An example keyfile is shown below
-(note that the CGAP servers used are just example urls)::
-
-   {
-       "cgap-main": {
-           "key": "some_key",
-           "secret": "some_secret",
-           "server": "https://cgap-main.hms.harvard.edu"
-       },
-       "fourfront-cgaplocal": {
-           "key": "some_other_key",
-           "secret": "some_other_secret",
-           "server": "http://localhost:8000"
-       },
-       "cgap-testing": {
-           "key": "some_third_key",
-           "secret": "some_third_secret",
-           "server": "https://cgap-testing.hms.harvard.edu"
-       }
-   }
 
 This file should _not_ be readable by others than yourself.
 Set its permissions accordingly by using ``chmod 600``,
 which sets the file to be readable and writable only by yourself,
 and to give no one else (but the system superuser) any permissions at all::
 
-   $ ls -dal ~/.cgap-keys.json
-   -rw-r--r--  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keys.json
+   $ ls -dal ~/.smaht-keys.json
+   -rw-r--r--  1 smahtuser  staff  297 Sep  4 13:14 /Users/smahtuser/.smaht-keys.json
 
-   $ chmod 600 ~/.cgap-keys.json
+   $ chmod 600 ~/.smaht-keys.json
 
-   $ ls -dal ~/.cgap-keys.json
-   -rw-------  1 jqcgapuser  staff  297 Sep  4 13:14 /Users/jqcgapuser/.cgap-keys.json
+   $ ls -dal ~/.smaht-keys.json
+   -rw-------  1 smahtuser  staff  297 Sep  4 13:14 /Users/smahtuser/.smaht-keys.json
 
-
-Generating Credentials
-======================
-
-Access keys for using SubmitCGAP are generated from the Web UI. Upon logging in, there is a user profile
-in the top right corner - select it and from the drop down navigate to profile. Once on your user profile
-there is an Access Keys box where you can add an access key. Click the green "Add Access Key" button and
-a pop up will show up with the ID and Secret. Copy these into your `~/.cgap-keys.json` file and SubmitCGAP
-will automatically detect and use them. You will need to reset the credential every 90 days as after that
-time the key will expire.

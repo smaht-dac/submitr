@@ -2,25 +2,25 @@
 Overview
 ===========
 
-File submission for CGAP
-------------------------
+File submission for SMaHT
+-------------------------
 
-.. image:: https://travis-ci.org/dbmi-bgm/SubmitCGAP.svg
-   :target: https://travis-ci.org/dbmi-bgm/SubmitCGAP
+.. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
+   :target: https://github.com/smaht-dac/submitr/actions
    :alt: Build Status
 
-.. image:: https://coveralls.io/repos/github/dbmi-bgm/SubmitCGAP/badge.svg
-   :target: https://coveralls.io/github/dbmi-bgm/SubmitCGAP
+.. image:: https://coveralls.io/repos/github/dbmi-bgm/submitr/badge.svg
+   :target: https://coveralls.io/github/smaht-dac/submitr
    :alt: Coverage
 
-.. image:: https://readthedocs.org/projects/submitcgap/badge/?version=latest
-   :target: https://submitcgap.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/submitr/badge/?version=latest
+   :target: https://submitr.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
 Description
 ===========
 
-This is a tool for uploading files to CGAP.
+This is a tool for uploading files to SMaHT.
 
 
 System Requirements
@@ -47,4 +47,4 @@ basics for working with the terminal and installing the dependencies to run this
   basic_setup
   installation
   getting_started
-  submit_cgap
+  submitr

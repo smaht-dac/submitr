@@ -12,8 +12,7 @@ Formatting Files for Submission
 ===============================
 
 For details on what file formats are accepted and how the information should be structured,
-see our submission help pages at `the main CGAP server <https://cgap-training.hms.harvard.edu/help/submission>`_
-or at <your-cgap-server>/help/submission .
+see our submission help pages at `the SMaHT portal <https://data.smaht.org/>`_.
 
 Metadata Bundles
 ================
@@ -32,16 +31,16 @@ For help about arguments, do::
 
 However, it should suffice for many cases to specify
 the bundle file you want to upload and either a site or a
-CGAP beanstalk environment.
+SMaHT environment name (such as ``data`` or ``staging``).
 For example::
 
    submit-metadata-bundle mymetadata.xlsx --server <server_url>
 
 This command should do everything, including upload referenced files
 if they are in the same directory. (It will ask for confirmation.) If you belong to
-multiple projects and/or institutions, you can also add the ``--project <project>``
-and ``--institution <institution>`` options; if you belong to only one project/institution
-in CGAP, the system will automatically detect them.
+multiple consortia and/or submission centers, you can also add the ``--consortium <consortium>``
+and ``--submission-center <submission-center>`` options; if you belong to only one of either,
+SMaHT will automatically detect and use it.
 
 To invoke it for validation only, without submitting anything, do::
 
@@ -104,3 +103,4 @@ and to submit a gene list for validation only, do::
 For most situations, simply specify the gene list you want to upload, e.g.::
 
    submit-genelist mygenelist.xlsx --server <server_url>
+

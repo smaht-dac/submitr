@@ -1,37 +1,37 @@
-submit\_cgap.scripts package
+submitr.scripts package
 ============================
 
 Submodules
 ----------
 
-submit\_cgap.scripts.make\_sample\_fastq\_file module
+submitr.scripts.make\_sample\_fastq\_file module
 -----------------------------------------------------
 
-.. automodule:: submit_cgap.scripts.make_sample_fastq_file
+.. automodule:: submitr.scripts.make_sample_fastq_file
    :members:
    :undoc-members:
    :show-inheritance:
 
-submit\_cgap.scripts.resume\_uploads module
+submitr.scripts.resume\_uploads module
 -------------------------------------------
 
-.. automodule:: submit_cgap.scripts.resume_uploads
+.. automodule:: submitr.scripts.resume_uploads
    :members:
    :undoc-members:
    :show-inheritance:
 
-submit\_cgap.scripts.submit\_metadata\_bundle module
+submitr.scripts.submit\_metadata\_bundle module
 ----------------------------------------------------
 
-.. automodule:: submit_cgap.scripts.submit_metadata_bundle
+.. automodule:: submitr.scripts.submit_metadata_bundle
    :members:
    :undoc-members:
    :show-inheritance:
 
-submit\_cgap.scripts.upload\_item\_data module
+submitr.scripts.upload\_item\_data module
 ----------------------------------------------
 
-.. automodule:: submit_cgap.scripts.upload_item_data
+.. automodule:: submitr.scripts.upload_item_data
    :members:
    :undoc-members:
    :show-inheritance:
@@ -39,7 +39,7 @@ submit\_cgap.scripts.upload\_item\_data module
 Module contents
 ---------------
 
-.. automodule:: submit_cgap.scripts
+.. automodule:: submitr.scripts
    :members:
    :undoc-members:
    :show-inheritance:
