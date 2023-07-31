@@ -1,17 +1,21 @@
-==========
-SubmitCGAP
-==========
+=======
+submitr
+=======
 
 
 A file submission tool for SMAHT
 ================================
 
-.. image:: https://coveralls.io/repos/github/dbmi-bgm/SubmitCGAP/badge.svg
-   :target: https://coveralls.io/github/dbmi-bgm/SubmitCGAP
+.. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
+   :target: https://github.com/smaht-dac/submitr/actions
+   :alt: Build Status
+
+.. image:: https://coveralls.io/repos/github/dbmi-bgm/submitr/badge.svg
+   :target: https://coveralls.io/github/smaht-dac/submitr
    :alt: Coverage
 
-.. image:: https://readthedocs.org/projects/submitcgap/badge/?version=latest
-   :target: https://submitcgap.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/submitr/badge/?version=latest
+   :target: https://submitr.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
 Description
@@ -43,9 +47,9 @@ Installing this system involves these steps:
    Otherwise, do "``make build``".
 4. Set up a ``~/.smaht-keys.json`` credentials file.
 
-For now, see detailed information about these installation steps at
-`Installing SubmitCGAP <https://submitcgap.readthedocs.io/en/latest/installation.html>`_.
-Soon we will have SMaHT-specific documentation.
+See detailed information about these installation steps at
+`Installing submitr <https://submitr.readthedocs.io/en/latest/installation.html>`_.
+
 
 
 Testing
@@ -65,4 +69,4 @@ Getting Started
 Once you have finished installing this library into your virtual environment,
 you should have access to the ``submit-metadata-bundle`` and the ``submit-genelist``
 commands. For more information about how to format files for submission and how to
-use these commands, see `Getting Started <https://submitcgap.readthedocs.io/en/latest/getting_started.html>`_.
+use these commands, see `Getting Started <https://submitr.readthedocs.io/en/latest/getting_started.html>`_.
