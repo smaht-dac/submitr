@@ -1,8 +1,11 @@
-==================
-Testing SubmitCGAP
-==================
+===============
+Testing submitr
+===============
 
 This document describes various ways to test this repository.
+
+**NOTE WELL: This documentation is under construction and still refers to SubmitCGAP. It should not yet be trusted.**
+
 
 Unit Testing
 ============
@@ -18,7 +21,7 @@ This is just syntactic sugar for::
 Suggested Interactive Tests
 ===========================
 
-There are various commands in ``submit_cgap/scripts``
+There are various commands in ``submitr/scripts``
 that you might want to execute at a
 command shell. You may need to make small adjustments
 to these examples to make them work for you.

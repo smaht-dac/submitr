@@ -8,7 +8,7 @@ configure:  # does any pre-requisite installs
 	pip install poetry==1.3.2
 
 lint:
-	flake8 submit_cgap
+	flake8 submitr
 
 build:  # builds
 	make configure

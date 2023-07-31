@@ -1,4 +1,4 @@
-# Build for SubmitCGAP
+# Build for submitr
 
 name: CI
 
@@ -17,7 +17,7 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   build:
-    name: Test SubmitCGAP with Python ${{ matrix.python_version }}
+    name: Test submitr with Python ${{ matrix.python_version }}
 
     # The type of runner that the job will run on
     runs-on: ubuntu-20.04
@@ -40,11 +40,11 @@ jobs:
       - name: Build
         run: |
           poetry install
-          poetry run flake8 submit_cgap
+          poetry run flake8 submitr
       
       - name: CI
         run: |
-          poetry run coverage run --source submit_cgap -m pytest -vv
+          poetry run coverage run --source submitr -m pytest -vv
 
       - name: Coveralls
         env:
