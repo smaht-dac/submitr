@@ -3,24 +3,24 @@ Awscli/Rclone Submission (experimental)
 =======================================
 
 For some use cases we are trialing a more streamlined submission process that does
-not involve the installation of Python or SubmitCGAP and instead involves transferring
-files directly into a `PUBLIC-WRITE` S3 bucket defined by us. The idea is you will source
+not involve the installation of Python or ``submitr`` and instead involves transferring
+files directly into a ``PUBLIC-WRITE`` S3 bucket defined by us. The idea is you will source
 credentials associated with the datastore where your files are kept and sync them
 directly into the submission bucket, along with the submission Excel (for data
 accessioning).
 
-These instructions are intended to support both `awscli` if transferring directly from
-`AWS S3` or `rclone` if you are transferring from other Cloud Providers (still compatible
-with `AWS S3`). At this time we recommend using `rclone`, since it is compatible with
+These instructions are intended to support both ``awscli`` if transferring directly from
+``AWS S3`` or ``rclone`` if you are transferring from other Cloud Providers (still compatible
+with ``AWS S3``). At this time we recommend using ``rclone``, since it is compatible with
 most popular Cloud Providers.
 
 
 Installing rclone
 -----------------
 
-Navigate to the `rclone` `download page <https://rclone.org/downloads/>`_ and click the
+Navigate to the ``rclone`` `download page <https://rclone.org/downloads/>`_ and click the
 download button that corresponds to the operating system you are running. Once installed
-you should see the `rclone` command in your path.
+you should see the ``rclone`` command in your path.
 
 .. code-block:: console
 
@@ -30,12 +30,12 @@ you should see the `rclone` command in your path.
 Configuring Anonymous S3 Remote
 -------------------------------
 
-The `rclone` `S3 documentation page <https://rclone.org/s3/>`_ has detailed information
+The ``rclone`` `S3 documentation page <https://rclone.org/s3/>`_ has detailed information
 on how to configure S3 remotes. If your submission files are not on AWS S3, you will need
 to create an anonymous S3 remote for use with the transfer. The bucket name we will give
 you will allow anyone to submit files to it but will only us internally to read the files.
 
-Upon running `rclone config` you should be greeted with detailed setup instructions that
+Upon running ``rclone config`` you should be greeted with detailed setup instructions that
 the below block emulates to walk you through the process. Our submission bucket will be
 in us-east-1, but be aware if transferring from another AZ on S3 you will incur S3
 egress charges when transferring into our bucket.
@@ -54,7 +54,7 @@ to our buckets, though that can be arranged if it is preferred.
     s) Set configuration password
     q) Quit config
     n/s/q> n
-    name> cgap_s3_submission
+    name> smaht_s3_submission
     Type of storage to configure.
     Choose a number from below, or type in your own value
     [snip]
@@ -226,7 +226,7 @@ to our buckets, though that can be arranged if it is preferred.
     storage_class> 1
     Remote config
     --------------------
-    [cgap_s3_submission]
+    [smaht_s3_submission]
     type = s3
     provider = AWS
     env_auth = false
@@ -256,15 +256,15 @@ prefix for the current submission. Transfer the spreadsheet with:
 
 .. code-block:: console
 
-    $ rclone copy ~/Documents/submit_cgap/case0001/case0001_accessioning.xls cgap_s3_submission:cgap-submission-bucket/case0001/case0001_accessioning.xls
+    $ rclone copy ~/Documents/submitr/case0001/case0001_accessioning.xls smaht_s3_submission:smaht-submission-bucket/case0001/case0001_accessioning.xls
 
 
 If successful, continue by transferring the raw files into the submission bucket.
 
 .. code-block:: console
 
-    $ rclone copy cgap_s3_submission:your-private-s3-bucket/fastq1.fastq.gz cgap_s3_submission:cgap-submission-bucket/case0001/fastq1.fastq.gz
-    $ rclone copy cgap_s3_submission:your-private-s3-bucket/fastq2.fastq.gz cgap_s3_submission:cgap-submission-bucket/case0001/fastq2.fastq.gz
+    $ rclone copy smaht_s3_submission:your-private-s3-bucket/fastq1.fastq.gz smaht_s3_submission:smaht-submission-bucket/case0001/fastq1.fastq.gz
+    $ rclone copy smaht_s3_submission:your-private-s3-bucket/fastq2.fastq.gz smaht_s3_submission:smaht-submission-bucket/case0001/fastq2.fastq.gz
 
 
 If you are not using AWS S3 as your storage provider, see the following instructions.
@@ -273,11 +273,11 @@ If you are not using AWS S3 as your storage provider, see the following instruct
 Transferring from Another Cloud
 -------------------------------
 
-As mentioned previously, `rclone` is a cross-platform compatible file transfer tool.
+As mentioned previously, ``rclone`` is a cross-platform compatible file transfer tool.
 This allows you to submit files to our S3 buckets that live in other cloud platforms.
 To do this, you will need to locate your cloud provider on the main
 `rclone documentation page <https://rclone.org/>`_
-and click the `config` button then follow the configuration instructions for `rclone` on
+and click the ``config`` button then follow the configuration instructions for ``rclone`` on
 the subsequent page.
 
 
@@ -288,7 +288,7 @@ A common use-case is to transfer files that live in Google Cloud to us on S3. Si
 the S3 remote setup needed to communicate with our submission bucket, you must do a
 similar sort of
 `configuration <https://rclone.org/googlecloudstorage/>`_
-for communicating with Google Cloud. Run `rclone config` as before.
+for communicating with Google Cloud. Run ``rclone config`` as before.
 
 .. code-block:: console
 
@@ -297,7 +297,7 @@ for communicating with Google Cloud. Run `rclone config` as before.
     d) Delete remote
     q) Quit config
     e/n/d/q> n
-    name> remote_files_for_cgap_submission
+    name> remote_files_for_smaht_submission
     Type of storage to configure.
     Choose a number from below, or type in your own value
     [snip]
@@ -399,7 +399,7 @@ for communicating with Google Cloud. Run `rclone config` as before.
     Waiting for code...
     Got code
     --------------------
-    [remote_files_for_cgap_submission]
+    [remote_files_for_smaht_submission]
     type = google cloud storage
     client_id =
     client_secret =
@@ -419,8 +419,8 @@ to submit your submission files directly.
 
 .. code-block:: console
 
-    $ rclone copy remote_files_for_cgap_submission:your-private-gcloud-bucket/fastq1.fastq.gz cgap_s3_submission:cgap-submission-bucket/case0001/fastq1.fastq.gz
-    $ rclone copy remote_files_for_cgap_submission:your-private-gcloud-bucket/fastq2.fastq.gz cgap_s3_submission:cgap-submission-bucket/case0001/fastq2.fastq.gz
+    $ rclone copy remote_files_for_smaht_submission:your-private-gcloud-bucket/fastq1.fastq.gz smaht_s3_submission:smaht-submission-bucket/case0001/fastq1.fastq.gz
+    $ rclone copy remote_files_for_smaht_submission:your-private-gcloud-bucket/fastq2.fastq.gz smaht_s3_submission:smaht-submission-bucket/case0001/fastq2.fastq.gz
 
 
 These transfers may take some significant time but should still be faster than if

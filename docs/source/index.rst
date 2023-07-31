@@ -49,4 +49,4 @@ basics for working with the terminal and installing the dependencies to run this
   basic_setup
   installation
   getting_started
-  submit_cgap
+  submitr
