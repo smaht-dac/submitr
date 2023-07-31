@@ -7,6 +7,12 @@ Change Log
 ----------
 
 
+0.1.1
+=====
+
+* Additional tweaks mostly related to readthedocs.
+
+
 0.1.0
 =====
 
