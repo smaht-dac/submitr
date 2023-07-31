@@ -6,19 +6,6 @@ SubmitCGAP
 A file submission tool for CGAP
 ===============================
 
-<<<<<<< Updated upstream
-.. image:: https://travis-ci.org/dbmi-bgm/SubmitCGAP.svg
-   :target: https://travis-ci.org/dbmi-bgm/SubmitCGAP
-   :alt: Build Status
-
-.. image:: https://coveralls.io/repos/github/dbmi-bgm/SubmitCGAP/badge.svg
-   :target: https://coveralls.io/github/dbmi-bgm/SubmitCGAP
-   :alt: Coverage
-
-.. image:: https://readthedocs.org/projects/submitcgap/badge/?version=latest
-   :target: https://submitcgap.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
-=======
 .. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
      :target: https://github.com/smaht-dac/submitr/actions
      :alt: Build Status
@@ -30,7 +17,7 @@ A file submission tool for CGAP
 .. image:: https://readthedocs.org/projects/submitr/badge/?version=latest
     :target: https://submitr.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
->>>>>>> Stashed changes
+
 
 Description
 ===========
