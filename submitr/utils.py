@@ -1,9 +1,8 @@
-import contextlib
 import datetime
 import io
 import time
 from typing import Any, Callable, Tuple, Union
-from dcicutils.misc_utils import PRINT, environ_bool
+from dcicutils.misc_utils import ignored, PRINT
 from json import dumps as json_dumps, loads as json_loads
 
 
@@ -78,26 +77,6 @@ class FakeResponse:
             raise Exception(f"{self} raised for status.")
 
 
-DEBUG_CGAP = environ_bool("DEBUG_CGAP")
-
-ERROR_HERALD = "Command exited in an unusual way. Please feel free to report this, citing the following message."
-
-
-@contextlib.contextmanager
-def script_catch_errors():
-    try:
-        yield
-        exit(0)
-    except Exception as e:
-        if DEBUG_CGAP:
-            # If debugging, let the error propagate, do not trap it.
-            raise
-        else:
-            show(ERROR_HERALD)
-            show(f"{e.__class__.__name__}: {e}")
-            exit(1)
-
-
 # TODO: If deemed generally useful then move to dcicutils.
 def check_repeatedly(check_function: Callable,
                      wait_seconds: int = 10,
@@ -119,9 +98,11 @@ def check_repeatedly(check_function: Callable,
 
     If the messages argument is True (default) then a message to the stdout will be printed indicating each time
     the function is called, how long (in seconds) till the next call, and how many times in total it has been called.
-    Additionally if the response_message argument is True (default) then if the function finally returns a truthy
+    Additionally, if the response_message argument is True (default) then if the function finally returns a truthy
     value, then that value will be printed to the stdout.
     """
+    ignored(response_message)  # TODO: Why is this not used? -kmp 2-Aug-2023
+
     def output(message):
         show(message, with_time=verbose, same_line=True)
     if not check_message:
@@ -153,7 +134,7 @@ def check_repeatedly(check_function: Callable,
                 output(f"{done_message} {f'| Status: {check_status.title()}' if check_status else ''}"
                        f" | Checked: {ntimes} time{'s' if ntimes != 1 else ''}\n")
             return check_function_response
-        if repeat_count > 0 and ntimes >= repeat_count:
+        if ntimes >= repeat_count > 0:
             if messages:
                 output(f"{stop_message} {f'| Status: {check_status.title()}' if check_status else ''}"
                        f" | Checked: {ntimes} time{'s' if ntimes != 1 else ''}\n")

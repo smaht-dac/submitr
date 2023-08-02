@@ -2,11 +2,12 @@ import argparse
 import json
 import io
 import os
+
+from dcicutils.command_utils import script_catch_errors, ScriptFailure
 from dcicutils.common import APP_FOURFRONT, ORCHESTRATED_APPS
-from dcicutils.command_utils import ScriptFailure
 from dcicutils.misc_utils import get_error_message
 from ..submission import submit_any_ingestion, SubmissionProtocol, SUBMISSION_PROTOCOLS
-from ..utils import script_catch_errors, show
+from ..utils import show
 
 
 EPILOG = __doc__
@@ -26,7 +27,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--submission-center', '-sc', default=None,
                         help='submission center intifier (comma-separated if several)')
     parser.add_argument('--server', '-s', help="an http or https address of the server to use", default=None)
-    parser.add_argument('--env', '-e', help="a CGAP beanstalk environment name for the server to use", default=None)
+    parser.add_argument('--env', '-e', help="a portal environment name for the server to use", default=None)
     parser.add_argument('--validate-only', '-v', action="store_true",
                         help="whether to stop after validating without submitting", default=False)
     parser.add_argument('--app', choices=ORCHESTRATED_APPS, default=APP_FOURFRONT,

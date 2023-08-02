@@ -9,16 +9,16 @@ from dcicutils.exceptions import InvalidParameterError
 # TODO: Integrate this better with dcicutils.env_utils
 
 LOCAL_SERVER = "http://localhost:8000"
-LOCAL_PSEUDOENV = 'fourfront-cgaplocal'
+LOCAL_PSEUDOENV = 'smaht-local'
 
-PRODUCTION_SERVER = 'https://cgap.hms.harvard.edu'
-PRODUCTION_ENV = 'fourfront-cgap'
+PRODUCTION_SERVER = 'https://data.smaht.org'
+PRODUCTION_ENV = 'data'
 
-DEFAULT_ENV_VAR = 'SUBMITCGAP_ENV'
-DEFAULT_APP_VAR = 'SUBMITCGAP_APP'
+DEFAULT_ENV_VAR = 'SUBMITR_ENV'
+DEFAULT_APP_VAR = 'SUBMITR_APP'
 
 DEFAULT_DEFAULT_ENV = PRODUCTION_ENV
-DEFAULT_DEFAULT_APP = APP_CGAP
+DEFAULT_DEFAULT_APP = APP_SMAHT
 
 
 def _compute_default_env():  # factored out as a function for testing
@@ -42,7 +42,7 @@ class GenericKeyManager:
         self._cgap_key_manager: KeyManager = CGAPKeyManager()
         self._fourfront_key_manager: KeyManager = FourfrontKeyManager()
         self._smaht_key_manager: KeyManager = SMaHTKeyManager()
-        self._key_manager: KeyManager = self._cgap_key_manager
+        self._key_manager: KeyManager = self._smaht_key_manager
         self._selected_app = DEFAULT_APP
 
     def select_app(self, app: OrchestratedApp):

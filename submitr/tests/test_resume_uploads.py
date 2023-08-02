@@ -5,7 +5,7 @@ from dcicutils.misc_utils import ignored, override_environ
 from dcicutils.qa_utils import MockResponse
 from unittest import mock
 from .. import submission as submission_module
-from dcicutils.creds_utils import CGAPKeyManager
+from dcicutils.creds_utils import SMaHTKeyManager
 from ..scripts.resume_uploads import main as resume_uploads_main
 from ..scripts import resume_uploads as resume_uploads_module
 from .testing_helpers import system_exit_expected, argparse_errors_muffled
@@ -17,12 +17,12 @@ def test_resume_uploads_script(keyfile):
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
         output = []
         with argparse_errors_muffled():
-            with CGAPKeyManager.default_keys_file_for_testing(keyfile):
+            with SMaHTKeyManager.default_keys_file_for_testing(keyfile):
                 with mock.patch.object(resume_uploads_module, "print") as mock_print:
                     mock_print.side_effect = lambda *args: output.append(" ".join(args))
                     with mock.patch.object(resume_uploads_module, "resume_uploads") as mock_resume_uploads:
                         with system_exit_expected(exit_code=expect_exit_code):
-                            key_manager = CGAPKeyManager()
+                            key_manager = SMaHTKeyManager()
                             if keyfile:
                                 assert key_manager.keys_file == keyfile
                             assert key_manager.keys_file == (keyfile or key_manager.KEYS_FILE)
@@ -163,7 +163,7 @@ def test_c4_383_regression_action():
     the parent directory.
     """
     output = []
-    with override_environ(CGAP_KEYS_FILE=None):
+    with override_environ(SMAHT_KEYS_FILE=None):
         with mock.patch.object(resume_uploads_module, "print") as mock_print:
             mock_print.side_effect = lambda *args: output.append(" ".join(args))
             # This is the directory we expect the uploaded file to get merged against.
@@ -187,20 +187,20 @@ def test_c4_383_regression_action():
                                 'secret': 'my-secret',
                                 'server': local_server,
                             }
-                            with mock.patch.object(CGAPKeyManager, "get_keydict_for_server",
+                            with mock.patch.object(SMaHTKeyManager, "get_keydict_for_server",
                                                    return_value=fake_keydict):
                                 try:
-                                    # Outside of the call, we will always see the default filename for cgap keys
+                                    # Outside the call, we will always see the default filename for SMaHT keys
                                     # but inside the call, because of a decorator, the default might be different.
                                     # See additional test below.
-                                    assert CGAPKeyManager().keys_file == CGAPKeyManager._default_keys_file()
+                                    assert SMaHTKeyManager().keys_file == SMaHTKeyManager._default_keys_file()
 
                                     resume_uploads_main(["2eab76cd-666c-4b04-9335-22f9c6084303",
                                                          '--server', local_server])
                                 except SystemExit as e:
                                     assert e.code == 0
                                 joined_filename = os.path.join(current_dir, SAMPLE_UPLOAD_INFO[-1]['filename'])
-                                # Make sure this is dong what we expect.
+                                # Make sure this is doing what we expect.
                                 assert current_dir + "/" in joined_filename
                                 # Make sure the inner upload actually uploads to the current dir.
                                 mock_upload_file_to_uuid.assert_called_with(auth=fake_keydict,

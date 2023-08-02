@@ -1,4 +1,4 @@
-class CGAPPermissionError(PermissionError):
+class PortalPermissionError(PermissionError):
 
     def __init__(self, server):
         self.server = server

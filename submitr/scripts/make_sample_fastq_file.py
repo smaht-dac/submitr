@@ -1,7 +1,7 @@
 import argparse
 
+from dcicutils.command_utils import script_catch_errors
 from dcicutils.data_utils import generate_sample_fastq_file
-from ..utils import script_catch_errors
 
 
 EPILOG = __doc__

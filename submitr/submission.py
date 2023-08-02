@@ -22,7 +22,7 @@ from typing import BinaryIO, Dict, Optional
 from typing_extensions import Literal
 from urllib.parse import urlparse
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER, DEFAULT_APP
-from .exceptions import CGAPPermissionError
+from .exceptions import PortalPermissionError
 from .portal_network_access import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
 from .utils import show, keyword_as_title, check_repeatedly
 from dcicutils.function_cache_decorator import function_cache
@@ -57,12 +57,12 @@ SERVER_REGEXP = re.compile(
 
 def resolve_server(server, env):
     """
-    Given a server spec or a beanstalk environment (or neither, but not both), returns a server spec.
+    Given a server spec or a portal environment (or neither, but not both), returns a server spec.
 
     :param server: a server spec or None
       A server is the first part of a URL (containing the schema, host and, optionally, port).
       e.g., http://cgap.hms.harvard.edu or http://localhost:8000
-    :param env: a cgap beanstalk environment
+    :param env: a portal environment
     :return: a server spec
     """
 
@@ -122,7 +122,7 @@ def get_user_record(server, auth):
     except Exception:
         pass
     if user_record_response.status_code in (401, 403):
-        raise CGAPPermissionError(server=server)
+        raise PortalPermissionError(server=server)
     user_record_response.raise_for_status()
     user_record = user_record_response.json()
     show("The server %s recognizes you as: %s <%s>"
@@ -285,9 +285,9 @@ def get_defaulted_submission_centers(submission_centers, user_record, error_if_n
                                   " so you must specify --submission-center explicitly.")
             show("No submission center was inferred.")
         else:
-            show("Using inferred submission center:", submission_centers)
+            show("Using inferred submission center:", ','.join(submission_centers))
     else:
-        show("Using given submission center:", submission_centers)
+        show("Using given submission center:", ','.join(submission_centers))
     return submission_centers
 
 
@@ -514,7 +514,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     :param ingestion_filename: the name of the main data file to be ingested
     :param ingestion_type: the type of ingestion to be performed (an ingestion_type in the IngestionSubmission schema)
     :param server: the server to upload to
-    :param env: the beanstalk environment to upload to
+    :param env: the portal environment to upload to
     :param validate_only: whether to do stop after validation instead of proceeding to post metadata
     :param app: either 'cgap' (the default) or 'fourfront'
     :param institution: the @id of the institution for which the submission is being done (when app='cgap' or None)
@@ -776,7 +776,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
 
     :param uuid: a string guid that identifies the ingestion submission
     :param server: the server to upload to
-    :param env: the beanstalk environment to upload to
+    :param env: the portal environment to upload to
     :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
     :param app: the name of the app to use
         e.g., affects whether to expect --lab, --award, --institution, --project, --consortium or --submission_center
@@ -870,7 +870,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
 
     :param uuid: a string guid that identifies the ingestion submission
     :param server: the server to upload to
-    :param env: the beanstalk environment to upload to
+    :param env: the portal environment to upload to
     :param bundle_filename: the bundle file to be uploaded
     :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
     :param upload_folder: folder in which to find files to upload (default: same as ingestion_filename)
@@ -1222,7 +1222,7 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
     :param item_filename: the name of a file to be uploaded
     :param uuid: the UUID of the Item with which the uploaded data is to be associated
     :param server: the server to upload to (where the Item is defined)
-    :param env: the beanstalk environment to upload to (where the Item is defined)
+    :param env: the portal environment to upload to (where the Item is defined)
     :param no_query: bool to suppress requests for user input
     :return:
     """

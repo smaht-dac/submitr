@@ -1,6 +1,7 @@
 import argparse
+
+from dcicutils.command_utils import script_catch_errors
 from ..submission import resume_uploads
-from ..utils import script_catch_errors
 
 
 EPILOG = __doc__
@@ -14,7 +15,7 @@ def main(simulated_args_for_testing=None):
     )
     parser.add_argument('uuid', help='uuid identifier')
     parser.add_argument('--server', '-s', help="an http or https address of the server to use", default=None)
-    parser.add_argument('--env', '-e', help="a CGAP beanstalk environment name for the server to use", default=None)
+    parser.add_argument('--env', '-e', help="a portal environment name for the server to use", default=None)
     parser.add_argument('--bundle_filename', '-b', help="location of the original Excel submission file", default=None)
     parser.add_argument('--upload_folder', '-u', help="location of the upload files", default=None)
     parser.add_argument('--no_query', '-nq', action="store_true",

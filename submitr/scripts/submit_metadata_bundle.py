@@ -1,9 +1,10 @@
 import argparse
-from dcicutils.common import APP_CGAP
+
+from dcicutils.command_utils import script_catch_errors
+from ..base import DEFAULT_APP
 from ..submission import (
     submit_any_ingestion, DEFAULT_INGESTION_TYPE, DEFAULT_SUBMISSION_PROTOCOL, SUBMISSION_PROTOCOLS
 )
-from ..utils import script_catch_errors
 
 
 EPILOG = __doc__
@@ -19,7 +20,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--institution', '-i', help='institution identifier', default=None)
     parser.add_argument('--project', '-p', help='project identifier', default=None)
     parser.add_argument('--server', '-s', help="an http or https address of the server to use", default=None)
-    parser.add_argument('--env', '-e', help="a CGAP beanstalk environment name for the server to use", default=None)
+    parser.add_argument('--env', '-e', help="a portal environment name for the server to use", default=None)
     parser.add_argument('--validate-only', '-v', action="store_true",
                         help="whether to stop after validating without submitting", default=False)
     parser.add_argument('--upload_folder', '-u', help="location of the upload files", default=None)
@@ -29,8 +30,8 @@ def main(simulated_args_for_testing=None):
                         help="suppress requests for user input", default=False)
     parser.add_argument('--subfolders', '-sf', action="store_true",
                         help="search subfolders of folder for upload files", default=False)
-    parser.add_argument('--app', default=APP_CGAP,
-                        help=f"An application (default {APP_CGAP!r}. Only for debugging."
+    parser.add_argument('--app', default=DEFAULT_APP,
+                        help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")
     parser.add_argument('--submission_protocol', '--submission-protocol', '-sp',
                         choices=SUBMISSION_PROTOCOLS, default=DEFAULT_SUBMISSION_PROTOCOL,
