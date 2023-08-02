@@ -1,7 +1,7 @@
 from ..exceptions import PortalPermissionError
 
 
-def test_cgap_permission_error():
+def test_portal_permission_error():
 
     server = "http://localhost:8888"  # Not an address we use, but that shouldn't matter.
     error = PortalPermissionError(server)

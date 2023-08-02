@@ -213,15 +213,6 @@ def test_server_regexp():
 
 def test_resolve_server():
 
-    # def mocked_get_beanstalk_real_url(env):
-    #     # We don't HAVE to be mocking this function, but it's slow so this will speed up testing. -kmp 4-Sep-2020
-    #     if env == 'fourfront-cgap':
-    #         return PRODUCTION_SERVER
-    #     elif env in ['fourfront-cgapdev', 'fourfront-cgapwolf', 'fourfront-cgaptest']:
-    #         return 'http://' + env + ".something.elasticbeanstalk.com"
-    #     else:
-    #         raise ValueError("Unexpected beanstalk env: %s" % env)
-
     def mocked_get_generic_keydict_for_env(env, with_trailing_slash=False):
         # We don't HAVE to be mocking this function, but it's slow so this will speed up testing. -kmp 4-Sep-2020
         if env == PRODUCTION_ENV:
@@ -1097,7 +1088,7 @@ def test_do_uploads(tmp_path):
                 'Upload of ./baz.fastq.gz to item 3456 was successful.',
             ]
 
-    with local_attrs(submission_module, CGAP_SELECTIVE_UPLOADS=True):
+    with local_attrs(submission_module, SUBMITR_SELECTIVE_UPLOADS=True):
         with mock.patch.object(submission_module, "yes_or_no", make_alternator(True, False)):
             with mock_uploads() as mock_uploaded:
                 with shown_output() as shown:
@@ -2584,7 +2575,7 @@ def test_search_for_file(
 
 
 @pytest.mark.parametrize(
-    "no_query,cgap_selective_uploads,yes_or_no_result,error_raised,expected_result",
+    "no_query,submitr_selective_uploads,yes_or_no_result,error_raised,expected_result",
     [
         (False, True, False, None, None),
         (False, False, False, None, None),
@@ -2595,7 +2586,7 @@ def test_search_for_file(
     ]
 )
 def test_wrap_upload_function(
-    no_query, cgap_selective_uploads, yes_or_no_result, error_raised, expected_result
+    no_query, submitr_selective_uploads, yes_or_no_result, error_raised, expected_result
 ):
     """Test UploadMessageWrapper.wrap_upload_function creates
     appropriate messages on given upload function.
@@ -2607,11 +2598,7 @@ def test_wrap_upload_function(
         with mock.patch.object(
             submission_module, "yes_or_no", return_value=yes_or_no_result
         ) as mocked_yes_or_no:
-            with mock.patch.object(
-                submission_module,
-                "CGAP_SELECTIVE_UPLOADS",
-                cgap_selective_uploads,
-            ):
+            with mock.patch.object(submission_module, "SUBMITR_SELECTIVE_UPLOADS", submitr_selective_uploads):
                 side_effect = None
                 if error_raised:
                     side_effect = RuntimeError("Error occurred")
@@ -2629,7 +2616,7 @@ def test_wrap_upload_function(
                 result = wrapped_function(input_arg, error_raised=error_raised)
 
                 expected_lines = []
-                if not no_query and cgap_selective_uploads and not yes_or_no_result:
+                if not no_query and submitr_selective_uploads and not yes_or_no_result:
                     mocked_yes_or_no.assert_called_once()
                     expected_lines.append("OK, not uploading it.")
                     simple_function.assert_not_called()

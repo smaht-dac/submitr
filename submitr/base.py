@@ -84,3 +84,5 @@ class GenericKeyManager:
 
 
 KEY_MANAGER = GenericKeyManager()
+
+DefaultKeyManager = SMaHTKeyManager

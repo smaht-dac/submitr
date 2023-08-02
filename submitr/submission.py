@@ -50,7 +50,8 @@ SERVER_REGEXP = re.compile(
     # exception for localhost debugging. You're on your own to make sure the right server is connected there.
     # -kmp 16-Aug-2020
     r"^(https?://localhost(:[0-9]+)?"
-    r"|https?://(fourfront-cgap|cgap-)[a-z0-9.-]*"
+    r"|https?://(fourfront-cgap|cgap-|smaht-)[a-z0-9.-]*"
+    r"|https?://([a-z-]+[.])*smaht[.]org"
     r"|https?://([a-z-]+[.])*cgap[.]hms[.]harvard[.]edu)/?$"
 )
 
@@ -1060,7 +1061,7 @@ def extract_metadata_and_upload_credentials(response, filename, method, payload_
 
 
 # This can be set to True in unusual situations, but normally will be False to avoid unnecessary querying.
-CGAP_SELECTIVE_UPLOADS = environ_bool("CGAP_SELECTIVE_UPLOADS")
+SUBMITR_SELECTIVE_UPLOADS = environ_bool("SUBMITR_SELECTIVE_UPLOADS")
 
 
 def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=False):
@@ -1160,7 +1161,7 @@ class UploadMessageWrapper:
             perform_upload = True
             if not self.no_query:
                 if (
-                    CGAP_SELECTIVE_UPLOADS
+                    SUBMITR_SELECTIVE_UPLOADS
                     and not yes_or_no(f"Upload {file_name}?")
                 ):
                     show("OK, not uploading it.")
