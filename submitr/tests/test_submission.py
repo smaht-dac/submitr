@@ -121,6 +121,8 @@ SOME_UPLOAD_INFO_RESULT = {
 }
 
 SOME_USER = "jdoe"
+SOME_USER_TITLE = 'J Doe'
+SOME_USER_EMAIL = "jdoe@testing.hms.harvard.edu"
 
 SOME_USER_HOMEDIR = os.path.join('/home', SOME_USER)
 
@@ -290,8 +292,8 @@ def test_resolve_server():
                                     resolve_server(server=orchestrated_server, env=None))  # non-fourfront environments
 
 
-def make_user_record(title='J Doe',
-                     contact_email='jdoe@cgap.hms.harvard.edu',
+def make_user_record(title=SOME_USER_TITLE,
+                     contact_email=SOME_USER_EMAIL,
                      **kwargs):
     user_record = {
         'title': title,
@@ -309,7 +311,7 @@ def test_get_user_record():
             ignored(url, kwargs)
             if auth != SOME_AUTH:
                 return FakeResponse(status_code=auth_failure_code, json={'Title': 'Not logged in.'})
-            return FakeResponse(status_code=200, json={'title': 'J Doe', 'contact_email': 'jdoe@cgap.hms.harvard.edu'})
+            return FakeResponse(status_code=200, json={'title': SOME_USER_TITLE, 'contact_email': SOME_USER_EMAIL})
         return mocked_get
 
     with mock.patch("requests.get", return_value=FakeResponse(401, content='["not dictionary"]')):
@@ -1313,7 +1315,7 @@ class Scenario:
     def make_uploaded_lines(self):
         uploaded_time = self.get_time_after_wait()
         result = [
-            f"The server {SOME_SERVER} recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>",
+            f"The server {SOME_SERVER} recognizes you as: {SOME_USER_TITLE} <{SOME_USER_EMAIL}>",
             f'Using given consortium: {SOME_CONSORTIUM}',
             f'Using given submission center: {SOME_SUBMISSION_CENTER}',
         ]
@@ -1767,7 +1769,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
                                                         assert mock_do_any_uploads.call_count == 0
         assert shown.lines == [
-            f"The server http://localhost:7777 recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>",
+            f"The server http://localhost:7777 recognizes you as: {SOME_USER_TITLE} <{SOME_USER_EMAIL}>",
             f"Using given consortium: {SOME_CONSORTIUM}",
             f"Using given submission center: {SOME_SUBMISSION_CENTER}",
             f"Unsupported Media Type: Request content type multipart/form-data is not 'application/json'",
@@ -1822,7 +1824,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
                                                         assert mock_do_any_uploads.call_count == 0
         assert shown.lines == [
-            f"The server http://localhost:7777 recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>",
+            f"The server http://localhost:7777 recognizes you as: {SOME_USER_TITLE} <{SOME_USER_EMAIL}>",
             f"Using given consortium: {SOME_CONSORTIUM}",
             f"Using given submission center: {SOME_SUBMISSION_CENTER}",
             f"Mysterious Error: If I told you, there'd be no mystery.",
@@ -2350,7 +2352,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
 
                                                         assert mock_do_any_uploads.call_count == 0
         assert shown.lines == [
-            f"The server http://localhost:7777 recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>",
+            f"The server http://localhost:7777 recognizes you as: {SOME_USER_TITLE} <{SOME_USER_EMAIL}>",
             f"Using given consortium: {SOME_CONSORTIUM}",
             f"Using given submission center: {SOME_SUBMISSION_CENTER}",
             f"Unsupported Media Type: Request content type multipart/form-data is not 'application/json'",
@@ -2406,7 +2408,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
 
                                                         assert mock_do_any_uploads.call_count == 0
         assert shown.lines == [
-            f"The server http://localhost:7777 recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>",
+            f"The server http://localhost:7777 recognizes you as: {SOME_USER_TITLE} <{SOME_USER_EMAIL}>",
             f"Using given consortium: {SOME_CONSORTIUM}",
             f"Using given submission center: {SOME_SUBMISSION_CENTER}",
             f"Mysterious Error: If I told you, there'd be no mystery.",

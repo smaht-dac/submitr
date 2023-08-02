@@ -6,6 +6,13 @@ submitr
 Change Log
 ----------
 
+0.2.1
+=====
+
+* Some commands will now default the app to 'smaht' better.
+* In general, a lot of rewriting of 'cgap' references to
+  be either SMaHT or to reference a centrally defined default.
+
 
 0.2.0
 =====
