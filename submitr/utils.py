@@ -1,6 +1,5 @@
 import datetime
 import io
-import os
 import time
 from typing import Any, Callable, Tuple, Union
 from dcicutils.misc_utils import ignored, PRINT
