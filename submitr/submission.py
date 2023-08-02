@@ -11,8 +11,6 @@ from typing import Tuple
 # from dcicutils.env_utils import get_env_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
-# We're not going to use full_cgap_env_name now, we'll just rely on the keys file to say what the name is.
-# from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.exceptions import InvalidParameterError
 from dcicutils.ff_utils import get_health_page as get_portal_health_page
 from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
@@ -56,6 +54,7 @@ SERVER_REGEXP = re.compile(
 )
 
 
+# TODO: Probably should simplify this to just trust what's in the key file and ignore all other servers. -kmp 2-Aug-2023
 def resolve_server(server, env):
     """
     Given a server spec or a portal environment (or neither, but not both), returns a server spec.
@@ -79,7 +78,6 @@ def resolve_server(server, env):
 
     if env:
         try:
-            env = env  # was full_cgap_env_name(env), but we don't want to rely on env_utils for this tool
             server = KEY_MANAGER.get_keydict_for_env(env)['server']
             if server.endswith("/"):
                 server = server[:-1]
@@ -93,7 +91,7 @@ def resolve_server(server, env):
     except Exception:
         matched = SERVER_REGEXP.match(server)
         if not matched:
-            raise ValueError("The server should be 'http://localhost:<port>' or 'https://<cgap-hostname>', not: %s"
+            raise ValueError("The server should be 'http://localhost:<port>' or 'https://<portal-hostname>', not: %s"
                              % server)
         server = matched.group(1)
 
@@ -495,7 +493,10 @@ def _resolve_app_args(institution, project, lab, award, app, consortium, submiss
     extra_keys = []
     for argname, argvalue in unwanted_args.items():
         if argvalue:
-            extra_keys.append(f"--{argname}")
+            # We use '-', not '_' in the user interface for argument names,
+            # so --submission_center will need --submission-center
+            ui_argname = argname.replace('_', '-')
+            extra_keys.append(f"--{ui_argname}")
 
     if extra_keys:
         raise ValueError(there_are(extra_keys, kind="inappropriate argument", joiner=conjoined_list, punctuate=True))
@@ -517,9 +518,9 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     :param server: the server to upload to
     :param env: the portal environment to upload to
     :param validate_only: whether to do stop after validation instead of proceeding to post metadata
-    :param app: either 'cgap' (the default) or 'fourfront'
-    :param institution: the @id of the institution for which the submission is being done (when app='cgap' or None)
-    :param project: the @id of the project for which the submission is being done (when app='cgap' or None)
+    :param app: an orchestrated app name
+    :param institution: the @id of the institution for which the submission is being done (when app='cgap')
+    :param project: the @id of the project for which the submission is being done (when app='cgap')
     :param lab: the @id of the lab for which the submission is being done (when app='fourfront')
     :param award: the @id of the award for which the submission is being done (when app='fourfront')
     :param consortium: the @id of the consortium for which the submission is being done (when app='smaht')
@@ -530,7 +531,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     :param submission_protocol: which submission protocol to use (default: 's3')
     """
 
-    if app is None:  # For legacy reasons, SubmitCGAP was the first so didn't expect this arg was needed
+    if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
 
     if KEY_MANAGER.selected_app != app:
@@ -619,7 +620,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     except Exception:
         if res is not None:
             # For example, if you call this on an old version of cgap-portal that does not support this request,
-            # the error will be a 415 error, because the tween code defaultly insists on applicatoin/json:
+            # the error will be a 415 error, because the tween code defaultly insists on application/json:
             # {
             #     "@type": ["HTTPUnsupportedMediaType", "Error"],
             #     "status": "error",
@@ -688,7 +689,7 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
 def check_submit_ingestion(uuid: str, server: str, env: str,
                            app: Optional[OrchestratedApp] = None) -> Tuple[bool, str, dict]:
 
-    if app is None:  # For legacy reasons, SubmitCGAP was the first so didn't expect this arg was needed
+    if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
     if KEY_MANAGER.selected_app != app:
         with KEY_MANAGER.locally_selected_app(app):
@@ -788,7 +789,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     :param show_datafile_url: bool controls whether to show the datafile_url parameter from the parameters.
     """
 
-    if app is None:
+    if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
     if KEY_MANAGER.selected_app != app:
         with KEY_MANAGER.locally_selected_app(app):
@@ -1194,7 +1195,7 @@ def upload_extra_files(
     :param credentials: AWS credentials dictionary
     :param uploader_wrapper: UploadMessageWrapper instance
     :param folder: Directory to search for files
-    :param auth: CGAP authorization tuple
+    :param auth: a portal authorization tuple
     :param recursive: Whether to search subdirectories for file
     """
     for extra_file_item in credentials:

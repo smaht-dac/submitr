@@ -1,8 +1,8 @@
 import pytest
 
-from dcicutils.creds_utils import CGAPKeyManager
 from unittest import mock
 from .. import submission as submission_module
+from ..base import DefaultKeyManager
 from ..scripts import submit_genelist as submit_genelist_module
 from ..scripts.submit_genelist import main as submit_genelist_main
 from .testing_helpers import system_exit_expected, argparse_errors_muffled
@@ -17,14 +17,14 @@ def test_submit_genelist_script(keyfile):
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
         output = []
         with argparse_errors_muffled():
-            with CGAPKeyManager.default_keys_file_for_testing(keyfile):
+            with DefaultKeyManager.default_keys_file_for_testing(keyfile):
                 with mock.patch.object(submit_genelist_module, "submit_any_ingestion") as mock_submit_any_ingestion:
                     with mock.patch.object(submission_module, "print") as mock_print:
                         mock_print.side_effect = lambda *args: output.append(" ".join(args))
                         with mock.patch.object(submission_module, "yes_or_no") as mock_yes_or_no:
                             mock_yes_or_no.return_value = True
                             with system_exit_expected(exit_code=expect_exit_code):
-                                key_manager = CGAPKeyManager()
+                                key_manager = DefaultKeyManager()
                                 if keyfile:
                                     assert key_manager.keys_file == keyfile
                                 assert key_manager.keys_file == (keyfile or key_manager.KEYS_FILE)

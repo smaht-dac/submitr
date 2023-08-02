@@ -212,6 +212,7 @@ def test_server_regexp():
 
 
 def test_resolve_server():
+    # TODO: Testing this is messy. See notes on proposed simplification at definition of resolve_server.
 
     def mocked_get_generic_keydict_for_env(env, with_trailing_slash=False):
         # We don't HAVE to be mocking this function, but it's slow so this will speed up testing. -kmp 4-Sep-2020
@@ -2711,6 +2712,10 @@ def test_resolve_app_args():
                             consortium=None, submission_center=None, app=APP_FOURFRONT)
     assert res == {'lab': 'foo', 'award': 'bar'}
 
+    # Testing this for consortium= and submission_center= is slightly more elaborate because we allow
+    # comma-separated values. We use the singular in the keywords since it looks better, but you can
+    # say not just consortium=C1 but also consortium=C1,C2. Same for submission_centers=SC1 or ...=SC1,SC2.
+
     sample_consortium = 'C1'
     sample_consortia = 'C1,C2'
     sample_consortia_list = ['C1', 'C2']
@@ -2740,10 +2745,15 @@ def test_resolve_app_args():
                           consortium=None, submission_center=None, app=APP_CGAP)
     assert str(exc.value) == 'There is 1 inappropriate argument: --lab.'
 
-    with pytest.raises(ValueError) as exc:
-        _resolve_app_args(institution=None, project=None, lab=None, award='bar',
-                          consortium=None, submission_center=None, app=APP_CGAP)
-    assert str(exc.value) == 'There is 1 inappropriate argument: --award.'
+    for argname in ['award', 'consortium', 'submission_center']:
+
+        with pytest.raises(ValueError) as exc:
+            kwargs = {'institution': None, 'project': None, 'lab': None, 'award': None,
+                      'consortium': None, 'submission_center': None}
+            kwargs[argname] = 'foo'
+            _resolve_app_args(**kwargs, app=APP_CGAP)
+        ui_argname = argname.replace('_', '-')
+        assert str(exc.value) == f'There is 1 inappropriate argument: --{ui_argname}.'
 
     # Bad arguments for Fourfront
 
@@ -2765,7 +2775,7 @@ def test_resolve_app_args():
     # Bogus application name
 
     with pytest.raises(ValueError) as exc:
-        invalid_app = APP_CGAP + APP_FOURFRONT  # make a bogus app name
+        invalid_app = 'NOT-' + DEFAULT_APP  # make a bogus app name
         _resolve_app_args(institution=None, project=None, lab=None, award=None,
                           consortium=None, submission_center=None, app=invalid_app)
     assert str(exc.value) == f"Unknown application: {invalid_app}"
@@ -2781,7 +2791,7 @@ def test_submit_any_ingestion():
     class StopEarly(BaseException):
         pass
 
-    def mocked_resolve_app_args(institution, project, lab, award, app, consortium, submission_center):
+    def mocked_resolve_app_args(*, institution, project, lab, award, consortium, submission_center, app):
         ignored(institution, project, award, lab, consortium, submission_center)  # not relevant to this mock
         assert app == expected_app
         raise StopEarly()
@@ -2802,7 +2812,9 @@ def test_submit_any_ingestion():
                     mock_submit_any_ingestion(ingestion_filename=SOME_FILENAME,
                                               ingestion_type=SOME_INGESTION_TYPE, server=SOME_SERVER, env=SOME_ENV,
                                               validate_only=True, institution=SOME_INSTITUTION, project=SOME_PROJECT,
-                                              lab=SOME_LAB, award=SOME_AWARD, upload_folder=SOME_FILENAME,
+                                              lab=SOME_LAB, award=SOME_AWARD,
+                                              consortium=SOME_CONSORTIUM, submission_center=SOME_SUBMISSION_CENTER,
+                                              upload_folder=SOME_FILENAME,
                                               no_query=True, subfolders=False,
                                               # This is what we're testing...
                                               app=expected_app)

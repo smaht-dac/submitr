@@ -1,8 +1,8 @@
 import pytest
 
-from dcicutils.creds_utils import CGAPKeyManager
 from unittest import mock
 from .. import submission as submission_module
+from ..base import DefaultKeyManager
 from ..submission import DEFAULT_INGESTION_TYPE
 from ..scripts.submit_metadata_bundle import main as submit_metadata_bundle_main
 from ..scripts import submit_metadata_bundle as submit_metadata_bundle_module
@@ -16,13 +16,13 @@ def test_submit_metadata_bundle_script(keyfile):
 
         output = []
         with argparse_errors_muffled():
-            with CGAPKeyManager.default_keys_file_for_testing(keyfile):
+            with DefaultKeyManager.default_keys_file_for_testing(keyfile):
                 with mock.patch.object(submit_metadata_bundle_module,
                                        "submit_any_ingestion") as mock_submit_any_ingestion:
                     with mock.patch.object(submission_module, "print") as mock_print:
                         mock_print.side_effect = lambda *args: output.append(" ".join(args))
                         with system_exit_expected(exit_code=expect_exit_code):
-                            key_manager = CGAPKeyManager()
+                            key_manager = DefaultKeyManager()
                             if keyfile:
                                 assert key_manager.keys_file == keyfile
                             assert key_manager.keys_file == (keyfile or key_manager.KEYS_FILE)
