@@ -1,9 +1,9 @@
 import pytest
 
-from dcicutils.creds_utils import CGAPKeyManager
 from dcicutils.s3_utils import HealthPageKey
 from unittest import mock
 from .. import submission as submission_module
+from ..base import DefaultKeyManager
 from ..scripts.upload_item_data import main as upload_item_data_main
 from ..scripts import upload_item_data as upload_item_data_module
 from .testing_helpers import system_exit_expected, argparse_errors_muffled
@@ -20,13 +20,17 @@ def test_upload_item_data_script(keyfile, mocked_s3_encrypt_key_id):
 
         output = []
         with argparse_errors_muffled():
-            with CGAPKeyManager.default_keys_file_for_testing(keyfile):
+            with DefaultKeyManager.default_keys_file_for_testing(keyfile):
                 with mock.patch.object(upload_item_data_module,
                                        "upload_item_data") as mock_upload_item_data:
                     with mock.patch.object(submission_module, "get_health_page") as mock_get_health_page:
                         mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: mocked_s3_encrypt_key_id}
                         with mock.patch.object(submission_module, "print") as mock_print:
                             mock_print.side_effect = lambda *args: output.append(" ".join(args))
+                            key_manager = DefaultKeyManager()
+                            if keyfile:
+                                assert key_manager.keys_file == keyfile
+                            assert key_manager.keys_file == (keyfile or key_manager.KEYS_FILE)
                             with system_exit_expected(exit_code=expect_exit_code):
                                 upload_item_data_main(args_in)
                                 raise AssertionError(  # pragma: no cover
