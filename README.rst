@@ -6,13 +6,11 @@
 
 |
 
-.. warning::
+**THIS IS A PRE-RELEASE VERSION.**
 
-   **THIS IS A PRE-RELEASE VERSION.**
+This was recently forked from SubmitCGAP and is not yet ready for normal use.
 
-   This was recently forked from SubmitCGAP and is not yet ready for normal use.
-
-   Watch for version 1.0.
+Watch for version 1.0.
 
 
 =======
