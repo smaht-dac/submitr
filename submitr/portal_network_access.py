@@ -1,4 +1,4 @@
-# This file contains centralized functions for all Portal interactions used by SubmitCGAP.
+# This file contains centralized functions for all Portal interactions used by submitr.
 
 import requests
 from typing import Tuple

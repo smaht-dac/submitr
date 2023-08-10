@@ -1,7 +1,7 @@
 import pytest
 
-from dcicutils.creds_utils import CGAPKeyManager
 from unittest import mock
+from ..base import DefaultKeyManager
 from ..scripts.show_upload_info import main as show_upload_info_main
 from ..scripts import show_upload_info as show_upload_info_module
 from .testing_helpers import system_exit_expected, argparse_errors_muffled
@@ -13,12 +13,12 @@ def test_show_upload_info_script(keyfile):
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
         output = []
         with argparse_errors_muffled():
-            with CGAPKeyManager.default_keys_file_for_testing(keyfile):
+            with DefaultKeyManager.default_keys_file_for_testing(keyfile):
                 with mock.patch.object(show_upload_info_module, "print") as mock_print:
                     mock_print.side_effect = lambda *args: output.append(" ".join(args))
                     with mock.patch.object(show_upload_info_module, "show_upload_info") as mock_show_upload_info:
                         with system_exit_expected(exit_code=expect_exit_code):
-                            key_manager = CGAPKeyManager()
+                            key_manager = DefaultKeyManager()
                             if keyfile:
                                 assert key_manager.keys_file == keyfile
                             assert key_manager.keys_file == (keyfile or key_manager.KEYS_FILE)

@@ -11,8 +11,6 @@ from typing import Tuple
 # from dcicutils.env_utils import get_env_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
-# We're not going to use full_cgap_env_name now, we'll just rely on the keys file to say what the name is.
-# from dcicutils.env_utils import full_cgap_env_name
 from dcicutils.exceptions import InvalidParameterError
 from dcicutils.ff_utils import get_health_page as get_portal_health_page
 from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
@@ -22,7 +20,7 @@ from typing import BinaryIO, Dict, Optional
 from typing_extensions import Literal
 from urllib.parse import urlparse
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER, DEFAULT_APP
-from .exceptions import CGAPPermissionError
+from .exceptions import PortalPermissionError
 from .portal_network_access import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
 from .utils import show, keyword_as_title, check_repeatedly
 from dcicutils.function_cache_decorator import function_cache
@@ -50,19 +48,21 @@ SERVER_REGEXP = re.compile(
     # exception for localhost debugging. You're on your own to make sure the right server is connected there.
     # -kmp 16-Aug-2020
     r"^(https?://localhost(:[0-9]+)?"
-    r"|https?://(fourfront-cgap|cgap-)[a-z0-9.-]*"
+    r"|https?://(fourfront-cgap|cgap-|smaht-)[a-z0-9.-]*"
+    r"|https?://([a-z-]+[.])*smaht[.]org"
     r"|https?://([a-z-]+[.])*cgap[.]hms[.]harvard[.]edu)/?$"
 )
 
 
+# TODO: Probably should simplify this to just trust what's in the key file and ignore all other servers. -kmp 2-Aug-2023
 def resolve_server(server, env):
     """
-    Given a server spec or a beanstalk environment (or neither, but not both), returns a server spec.
+    Given a server spec or a portal environment (or neither, but not both), returns a server spec.
 
     :param server: a server spec or None
       A server is the first part of a URL (containing the schema, host and, optionally, port).
       e.g., http://cgap.hms.harvard.edu or http://localhost:8000
-    :param env: a cgap beanstalk environment
+    :param env: a portal environment
     :return: a server spec
     """
 
@@ -78,7 +78,6 @@ def resolve_server(server, env):
 
     if env:
         try:
-            env = env  # was full_cgap_env_name(env), but we don't want to rely on env_utils for this tool
             server = KEY_MANAGER.get_keydict_for_env(env)['server']
             if server.endswith("/"):
                 server = server[:-1]
@@ -92,7 +91,7 @@ def resolve_server(server, env):
     except Exception:
         matched = SERVER_REGEXP.match(server)
         if not matched:
-            raise ValueError("The server should be 'http://localhost:<port>' or 'https://<cgap-hostname>', not: %s"
+            raise ValueError("The server should be 'http://localhost:<port>' or 'https://<portal-hostname>', not: %s"
                              % server)
         server = matched.group(1)
 
@@ -122,7 +121,7 @@ def get_user_record(server, auth):
     except Exception:
         pass
     if user_record_response.status_code in (401, 403):
-        raise CGAPPermissionError(server=server)
+        raise PortalPermissionError(server=server)
     user_record_response.raise_for_status()
     user_record = user_record_response.json()
     show("The server %s recognizes you as: %s <%s>"
@@ -285,9 +284,9 @@ def get_defaulted_submission_centers(submission_centers, user_record, error_if_n
                                   " so you must specify --submission-center explicitly.")
             show("No submission center was inferred.")
         else:
-            show("Using inferred submission center:", submission_centers)
+            show("Using inferred submission center:", ','.join(submission_centers))
     else:
-        show("Using given submission center:", submission_centers)
+        show("Using given submission center:", ','.join(submission_centers))
     return submission_centers
 
 
@@ -494,7 +493,10 @@ def _resolve_app_args(institution, project, lab, award, app, consortium, submiss
     extra_keys = []
     for argname, argvalue in unwanted_args.items():
         if argvalue:
-            extra_keys.append(f"--{argname}")
+            # We use '-', not '_' in the user interface for argument names,
+            # so --submission_center will need --submission-center
+            ui_argname = argname.replace('_', '-')
+            extra_keys.append(f"--{ui_argname}")
 
     if extra_keys:
         raise ValueError(there_are(extra_keys, kind="inappropriate argument", joiner=conjoined_list, punctuate=True))
@@ -514,11 +516,11 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     :param ingestion_filename: the name of the main data file to be ingested
     :param ingestion_type: the type of ingestion to be performed (an ingestion_type in the IngestionSubmission schema)
     :param server: the server to upload to
-    :param env: the beanstalk environment to upload to
+    :param env: the portal environment to upload to
     :param validate_only: whether to do stop after validation instead of proceeding to post metadata
-    :param app: either 'cgap' (the default) or 'fourfront'
-    :param institution: the @id of the institution for which the submission is being done (when app='cgap' or None)
-    :param project: the @id of the project for which the submission is being done (when app='cgap' or None)
+    :param app: an orchestrated app name
+    :param institution: the @id of the institution for which the submission is being done (when app='cgap')
+    :param project: the @id of the project for which the submission is being done (when app='cgap')
     :param lab: the @id of the lab for which the submission is being done (when app='fourfront')
     :param award: the @id of the award for which the submission is being done (when app='fourfront')
     :param consortium: the @id of the consortium for which the submission is being done (when app='smaht')
@@ -529,7 +531,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     :param submission_protocol: which submission protocol to use (default: 's3')
     """
 
-    if app is None:  # For legacy reasons, SubmitCGAP was the first so didn't expect this arg was needed
+    if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
 
     if KEY_MANAGER.selected_app != app:
@@ -618,7 +620,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     except Exception:
         if res is not None:
             # For example, if you call this on an old version of cgap-portal that does not support this request,
-            # the error will be a 415 error, because the tween code defaultly insists on applicatoin/json:
+            # the error will be a 415 error, because the tween code defaultly insists on application/json:
             # {
             #     "@type": ["HTTPUnsupportedMediaType", "Error"],
             #     "status": "error",
@@ -687,7 +689,7 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
 def check_submit_ingestion(uuid: str, server: str, env: str,
                            app: Optional[OrchestratedApp] = None) -> Tuple[bool, str, dict]:
 
-    if app is None:  # For legacy reasons, SubmitCGAP was the first so didn't expect this arg was needed
+    if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
     if KEY_MANAGER.selected_app != app:
         with KEY_MANAGER.locally_selected_app(app):
@@ -776,7 +778,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
 
     :param uuid: a string guid that identifies the ingestion submission
     :param server: the server to upload to
-    :param env: the beanstalk environment to upload to
+    :param env: the portal environment to upload to
     :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
     :param app: the name of the app to use
         e.g., affects whether to expect --lab, --award, --institution, --project, --consortium or --submission_center
@@ -787,7 +789,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     :param show_datafile_url: bool controls whether to show the datafile_url parameter from the parameters.
     """
 
-    if app is None:
+    if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
     if KEY_MANAGER.selected_app != app:
         with KEY_MANAGER.locally_selected_app(app):
@@ -870,7 +872,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
 
     :param uuid: a string guid that identifies the ingestion submission
     :param server: the server to upload to
-    :param env: the beanstalk environment to upload to
+    :param env: the portal environment to upload to
     :param bundle_filename: the bundle file to be uploaded
     :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
     :param upload_folder: folder in which to find files to upload (default: same as ingestion_filename)
@@ -1060,7 +1062,7 @@ def extract_metadata_and_upload_credentials(response, filename, method, payload_
 
 
 # This can be set to True in unusual situations, but normally will be False to avoid unnecessary querying.
-CGAP_SELECTIVE_UPLOADS = environ_bool("CGAP_SELECTIVE_UPLOADS")
+SUBMITR_SELECTIVE_UPLOADS = environ_bool("SUBMITR_SELECTIVE_UPLOADS")
 
 
 def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=False):
@@ -1160,7 +1162,7 @@ class UploadMessageWrapper:
             perform_upload = True
             if not self.no_query:
                 if (
-                    CGAP_SELECTIVE_UPLOADS
+                    SUBMITR_SELECTIVE_UPLOADS
                     and not yes_or_no(f"Upload {file_name}?")
                 ):
                     show("OK, not uploading it.")
@@ -1193,7 +1195,7 @@ def upload_extra_files(
     :param credentials: AWS credentials dictionary
     :param uploader_wrapper: UploadMessageWrapper instance
     :param folder: Directory to search for files
-    :param auth: CGAP authorization tuple
+    :param auth: a portal authorization tuple
     :param recursive: Whether to search subdirectories for file
     """
     for extra_file_item in credentials:
@@ -1222,7 +1224,7 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
     :param item_filename: the name of a file to be uploaded
     :param uuid: the UUID of the Item with which the uploaded data is to be associated
     :param server: the server to upload to (where the Item is defined)
-    :param env: the beanstalk environment to upload to (where the Item is defined)
+    :param env: the portal environment to upload to (where the Item is defined)
     :param no_query: bool to suppress requests for user input
     :return:
     """

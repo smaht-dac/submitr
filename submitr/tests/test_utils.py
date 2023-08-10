@@ -2,13 +2,10 @@ import contextlib
 import pytest
 import re
 
-from dcicutils.misc_utils import ignored, override_environ, environ_bool
 from unittest import mock
 
 from .. import utils as utils_module
-from ..utils import (
-    show, keyword_as_title, FakeResponse, script_catch_errors, ERROR_HERALD, ERASE_LINE, TIMESTAMP_REGEXP,
-)
+from ..utils import show, keyword_as_title, FakeResponse, ERASE_LINE, TIMESTAMP_REGEXP
 
 
 @contextlib.contextmanager
@@ -141,44 +138,3 @@ def test_fake_response():
 
     with pytest.raises(Exception):
         error_response.raise_for_status()
-
-
-def test_script_catch_errors():
-
-    with shown_output() as shown:
-        with pytest.raises(SystemExit) as caught:
-            with script_catch_errors():
-                print("foo")
-        # foo = sys.exc_info()
-        assert caught.value.code == 0
-        assert shown.lines == []
-
-    with shown_output() as shown:
-        with pytest.raises(SystemExit) as caught:
-            with script_catch_errors():
-                raise Exception("Foo")
-        assert caught.value.code == 1
-        assert shown.lines == [ERROR_HERALD, "Exception: Foo"]
-
-    # Not enough to override env var DEBUG_CGAP, since the module is already loaded and the env var's value
-    # is already seen and parsed. We must change module value at this point if we want to exercise the relevant
-    # code path.
-    with mock.patch.object(utils_module, "DEBUG_CGAP", True):
-        with shown_output() as shown:
-            with pytest.raises(Exception) as caught:
-                ignored(caught)
-                with script_catch_errors():
-                    raise Exception("Foo")
-            assert shown.lines == []  # The value was not trapped, so not shown
-
-    # Since we couldn't override the setting of the variable in the preceding code, we at least verify that setting
-    # the value would have produced the right effect.
-    with override_environ(DEBUG_CGAP=None):
-        assert not environ_bool("DEBUG_CGAP")  # Unset, the value is False
-    with override_environ(DEBUG_CGAP=""):
-        assert not environ_bool("DEBUG_CGAP")  # Set to empty string, the value is False
-    with override_environ(DEBUG_CGAP="FALSE"):
-        assert not environ_bool("DEBUG_CGAP")  # Set to "FALSE", the value is False
-    with override_environ(DEBUG_CGAP="TRUE"):
-        assert environ_bool("DEBUG_CGAP")      # Set to "TRUE", the value is True
-    # As it happens, random other values are false, but we just don't care about that.

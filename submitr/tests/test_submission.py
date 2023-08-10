@@ -6,6 +6,7 @@ import platform
 import pytest
 import re
 
+from dcicutils import command_utils as command_utils_module
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
 from dcicutils.misc_utils import ignored, ignorable, local_attrs, override_environ, NamedObject
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
@@ -16,9 +17,8 @@ from unittest import mock
 from .test_utils import shown_output
 from .test_upload_item_data import TEST_ENCRYPT_KEY
 from .. import submission as submission_module
-from .. import utils as utils_module
-from ..base import PRODUCTION_SERVER, KEY_MANAGER
-from ..exceptions import CGAPPermissionError
+from ..base import PRODUCTION_ENV, PRODUCTION_SERVER, KEY_MANAGER, DEFAULT_ENV_VAR
+from ..exceptions import PortalPermissionError
 from ..submission import (
     SERVER_REGEXP, PROGRESS_CHECK_INTERVAL, ATTEMPTS_BEFORE_TIMEOUT,
     get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info, show_upload_result,
@@ -34,7 +34,7 @@ from ..submission import (
     upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE, DEFAULT_APP, summarize_submission,
     get_defaulted_submission_centers, get_defaulted_consortia, do_app_arg_defaulting, check_submit_ingestion,
 )
-from ..utils import FakeResponse, script_catch_errors, ERROR_HERALD
+from ..utils import FakeResponse
 
 
 SOME_INGESTION_TYPE = 'metadata_bundle'
@@ -61,10 +61,10 @@ SOME_INSTITUTION = '/institutions/hms-dbmi/'
 
 SOME_OTHER_INSTITUTION = '/institutions/big-pharma/'
 
-SOME_CONSORTIUM = '/lab/good-consortium/'
+SOME_CONSORTIUM = '/consortium/good-consortium/'
 SOME_CONSORTIA = [SOME_CONSORTIUM]
 
-SOME_SUBMISSION_CENTER = '/lab/good-submission-center/'
+SOME_SUBMISSION_CENTER = '/submission_center/good-submission-center/'
 SOME_SUBMISSION_CENTERS = [SOME_SUBMISSION_CENTER]
 
 SOME_LAB = '/lab/good-lab/'
@@ -121,6 +121,8 @@ SOME_UPLOAD_INFO_RESULT = {
 }
 
 SOME_USER = "jdoe"
+SOME_USER_TITLE = 'J Doe'
+SOME_USER_EMAIL = "jdoe@testing.hms.harvard.edu"
 
 SOME_USER_HOMEDIR = os.path.join('/home', SOME_USER)
 
@@ -212,24 +214,16 @@ def test_server_regexp():
 
 
 def test_resolve_server():
-
-    # def mocked_get_beanstalk_real_url(env):
-    #     # We don't HAVE to be mocking this function, but it's slow so this will speed up testing. -kmp 4-Sep-2020
-    #     if env == 'fourfront-cgap':
-    #         return PRODUCTION_SERVER
-    #     elif env in ['fourfront-cgapdev', 'fourfront-cgapwolf', 'fourfront-cgaptest']:
-    #         return 'http://' + env + ".something.elasticbeanstalk.com"
-    #     else:
-    #         raise ValueError("Unexpected beanstalk env: %s" % env)
+    # TODO: Testing this is messy. See notes on proposed simplification at definition of resolve_server.
 
     def mocked_get_generic_keydict_for_env(env, with_trailing_slash=False):
         # We don't HAVE to be mocking this function, but it's slow so this will speed up testing. -kmp 4-Sep-2020
-        if env == 'fourfront-cgap':
+        if env == PRODUCTION_ENV:
             server = PRODUCTION_SERVER
         elif env in ['fourfront-cgapdev', 'fourfront-cgapwolf', 'fourfront-cgaptest']:
             server = 'http://' + env + ".something.elasticbeanstalk.com"
         else:
-            raise ValueError("Unexpected beanstalk env: %s" % env)
+            raise ValueError("Unexpected portal env: %s" % env)
         if with_trailing_slash:
             server += '/'
         return {"server": server}
@@ -246,7 +240,7 @@ def test_resolve_server():
                 url = 'http://' + env + ".something.elasticbeanstalk.com"
                 if server == url:
                     return {"server": url}
-            raise ValueError("Unexpected beanstalk env: %s" % env)
+            raise ValueError("Unexpected portal env: %s" % env)
 
     for mocked_get_keydict_for_env in [mocked_get_generic_keydict_for_env, mocked_get_slashed_keydict_for_env]:
 
@@ -256,7 +250,7 @@ def test_resolve_server():
                 with pytest.raises(SyntaxError):
                     resolve_server(env='something', server='something_else')
 
-                with override_environ(SUBMIT_CGAP_DEFAULT_ENV=None):
+                with override_environ(**{DEFAULT_ENV_VAR: None}):
 
                     with mock.patch.object(submission_module, "DEFAULT_ENV", None):
 
@@ -298,8 +292,8 @@ def test_resolve_server():
                                     resolve_server(server=orchestrated_server, env=None))  # non-fourfront environments
 
 
-def make_user_record(title='J Doe',
-                     contact_email='jdoe@cgap.hms.harvard.edu',
+def make_user_record(title=SOME_USER_TITLE,
+                     contact_email=SOME_USER_EMAIL,
                      **kwargs):
     user_record = {
         'title': title,
@@ -317,19 +311,19 @@ def test_get_user_record():
             ignored(url, kwargs)
             if auth != SOME_AUTH:
                 return FakeResponse(status_code=auth_failure_code, json={'Title': 'Not logged in.'})
-            return FakeResponse(status_code=200, json={'title': 'J Doe', 'contact_email': 'jdoe@cgap.hms.harvard.edu'})
+            return FakeResponse(status_code=200, json={'title': SOME_USER_TITLE, 'contact_email': SOME_USER_EMAIL})
         return mocked_get
 
     with mock.patch("requests.get", return_value=FakeResponse(401, content='["not dictionary"]')):
-        with pytest.raises(CGAPPermissionError):
+        with pytest.raises(PortalPermissionError):
             get_user_record(server="http://localhost:12345", auth=None)
 
     with mock.patch("requests.get", make_mocked_get(auth_failure_code=401)):
-        with pytest.raises(CGAPPermissionError):
+        with pytest.raises(PortalPermissionError):
             get_user_record(server="http://localhost:12345", auth=None)
 
     with mock.patch("requests.get", make_mocked_get(auth_failure_code=403)):
-        with pytest.raises(CGAPPermissionError):
+        with pytest.raises(PortalPermissionError):
             get_user_record(server="http://localhost:12345", auth=None)
 
     with mock.patch("requests.get", make_mocked_get()):
@@ -441,7 +435,7 @@ def test_show_upload_info():
         assert auth == SOME_AUTH
         return FakeResponse(200, json=json_result)
 
-    with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+    with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch("requests.get", mocked_get):
 
             json_result = {}
@@ -471,7 +465,7 @@ def test_show_upload_info_with_app():
         assert KEY_MANAGER.selected_app == expected_app
         raise TestFinished
 
-    with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+    with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch("requests.get") as mock_get:
             mock_get.side_effect = mocked_get
             with mock.patch.object(submission_module, "show_upload_result"):
@@ -679,28 +673,6 @@ def test_show_section_with_caveat():
         assert shown.lines == []  # Nothing shown if there is a caveat specified
 
 
-def test_script_catch_errors():
-    try:
-        with script_catch_errors():
-            pass
-    except SystemExit as e:
-        assert e.code == 0, "Expected status code 0, but got %s." % e.code
-    else:
-        raise AssertionError("SystemExit not raised.")  # pragma: no cover - we hope never to see this executed
-
-    with shown_output() as shown:
-
-        try:
-            with script_catch_errors():
-                raise RuntimeError("Some error")
-        except SystemExit as e:
-            assert e.code == 1, "Expected status code 1, but got %s." % e.code
-        else:
-            raise AssertionError("SystemExit not raised.")  # pragma: no cover - we hope never to see this executed
-
-        assert shown.lines == [ERROR_HERALD, "RuntimeError: Some error"]
-
-
 def test_do_any_uploads():
 
     # With no files, nothing to query about or load
@@ -819,7 +791,7 @@ def test_do_any_uploads():
 
 def test_resume_uploads():
 
-    with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+    with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT):
                 some_response_json = {'some': 'json'}
@@ -836,7 +808,7 @@ def test_resume_uploads():
                             subfolders=False
                         )
 
-    with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+    with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT):
                 with mock.patch("requests.get", return_value=FakeResponse(401, json=SOME_BAD_RESULT)):
@@ -1119,7 +1091,7 @@ def test_do_uploads(tmp_path):
                 'Upload of ./baz.fastq.gz to item 3456 was successful.',
             ]
 
-    with local_attrs(submission_module, CGAP_SELECTIVE_UPLOADS=True):
+    with local_attrs(submission_module, SUBMITR_SELECTIVE_UPLOADS=True):
         with mock.patch.object(submission_module, "yes_or_no", make_alternator(True, False)):
             with mock_uploads() as mock_uploaded:
                 with shown_output() as shown:
@@ -1342,7 +1314,11 @@ class Scenario:
 
     def make_uploaded_lines(self):
         uploaded_time = self.get_time_after_wait()
-        result = [f"The server {SOME_SERVER} recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>"]
+        result = [
+            f"The server {SOME_SERVER} recognizes you as: {SOME_USER_TITLE} <{SOME_USER_EMAIL}>",
+            f'Using given consortium: {SOME_CONSORTIUM}',
+            f'Using given submission center: {SOME_SUBMISSION_CENTER}',
+        ]
         if submission_module.DEBUG_PROTOCOL:  # pragma: no cover - useful if it happens to help, but not a big deal
             result.append(f"Created IngestionSubmission object: s3://{self.bundles_bucket}/{SOME_UUID}")
         result.append(f"{uploaded_time} Bundle uploaded to bucket {self.bundles_bucket},"
@@ -1350,6 +1326,7 @@ class Scenario:
         return result
 
     def make_wait_lines(self, wait_attempts, outcome: str = None, start_delta: int = 0):
+        ignored(start_delta)
         result = []
         time_delta_from_start = 0
         uploaded_time = self.get_time_after_wait()
@@ -1397,11 +1374,12 @@ class Scenario:
 
     @classmethod
     def make_timeout_lines(cls, *, get_attempts=ATTEMPTS_BEFORE_TIMEOUT):
+        ignored(get_attempts)
         # wait_time = self.get_elapsed_time_for_get_attempts(get_attempts)
         # adjusted_scenario = Scenario(start_time=wait_time, wait_time_delta=self.wait_time_delta)
         # time_out_time = adjusted_scenario.get_time_after_wait()
         return [f"Exiting after check processing timeout"
-                f" using 'check-submit --app cgap --server {SOME_SERVER} {SOME_UUID}'."]
+                f" using 'check-submit --app {DEFAULT_APP} --server {SOME_SERVER} {SOME_UUID}'."]
 
     def make_outcome_lines(self, get_attempts, *, outcome):
         end_time = self.get_elapsed_time_for_get_attempts(get_attempts)
@@ -1455,15 +1433,17 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
     mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: TEST_ENCRYPT_KEY}
 
     with shown_output() as shown:
-        with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+        with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                 with mock.patch.object(submission_module, "yes_or_no", return_value=False):
                     try:
                         submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                              ingestion_type='metadata_bundle',
-                                             institution=SOME_INSTITUTION,
-                                             project=SOME_PROJECT,
+                                             consortium=SOME_CONSORTIUM,
+                                             submission_center=SOME_SUBMISSION_CENTER,
                                              server=SOME_SERVER,
+                                             # institution=SOME_INSTITUTION,
+                                             # project=SOME_PROJECT,
                                              env=None,
                                              validate_only=False,
                                              no_query=False,
@@ -1541,10 +1521,12 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
             assert auth == SOME_AUTH
             if url.endswith("/me?format=json"):
                 return FakeResponse(200, json=make_user_record(
-                    project=SOME_PROJECT,
-                    user_institution=[
-                        {'@id': SOME_INSTITUTION}
-                    ]
+                    consortium=SOME_CONSORTIUM,
+                    submission_center=SOME_SUBMISSION_CENTER,
+                    # project=SOME_PROJECT,
+                    # user_institution=[
+                    #     {'@id': SOME_INSTITUTION}
+                    # ]
                 ))
             else:
                 assert url.endswith('/ingestion-submissions/' + SOME_UUID + "?format=json")
@@ -1558,7 +1540,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
     # TODO: Will says he wants explanatory doc here and elsewhere with a big cascade like this.
     with mock.patch("os.path.exists", mfs.exists):
         with mock.patch("io.open", mfs.open):
-            with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+            with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                 with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                     with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                         with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -1570,8 +1552,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                             try:
                                                 submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                      ingestion_type='metadata_bundle',
-                                                                     institution=SOME_INSTITUTION,
-                                                                     project=SOME_PROJECT,
+                                                                     **SOME_ORG_ARGS,
                                                                      server=SOME_SERVER,
                                                                      env=None,
                                                                      validate_only=False,
@@ -1596,7 +1577,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -1612,8 +1593,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                         try:
                                                             submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                                  ingestion_type='metadata_bundle',
-                                                                                 institution=SOME_INSTITUTION,
-                                                                                 project=SOME_PROJECT,
+                                                                                 **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=False,
@@ -1651,7 +1631,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no",
                                                side_effect=make_mocked_yes_or_no(f"Submit {SOME_BUNDLE_FILENAME}"
@@ -1670,8 +1650,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                         try:
                                                             submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                                  ingestion_type=ANOTHER_INGESTION_TYPE,
-                                                                                 institution=SOME_INSTITUTION,
-                                                                                 project=SOME_PROJECT,
+                                                                                 **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=False,
@@ -1703,7 +1682,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                return_value=SOME_KEYDICT):
@@ -1718,8 +1697,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                     try:
                                                         submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                              ingestion_type='metadata_bundle',
-                                                                             institution=SOME_INSTITUTION,
-                                                                             project=SOME_PROJECT,
+                                                                             **SOME_ORG_ARGS,
                                                                              server=SOME_SERVER,
                                                                              env=None,
                                                                              validate_only=False,
@@ -1760,7 +1738,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -1777,8 +1755,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                         try:
                                                             submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                                  ingestion_type='metadata_bundle',
-                                                                                 institution=SOME_INSTITUTION,
-                                                                                 project=SOME_PROJECT,
+                                                                                 **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=False,
@@ -1792,9 +1769,11 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
                                                         assert mock_do_any_uploads.call_count == 0
         assert shown.lines == [
-            "The server http://localhost:7777 recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>",
-            "Unsupported Media Type: Request content type multipart/form-data is not 'application/json'",
-            "NOTE: This error is known to occur if the server does not support metadata bundle submission."
+            f"The server http://localhost:7777 recognizes you as: {SOME_USER_TITLE} <{SOME_USER_EMAIL}>",
+            f"Using given consortium: {SOME_CONSORTIUM}",
+            f"Using given submission center: {SOME_SUBMISSION_CENTER}",
+            f"Unsupported Media Type: Request content type multipart/form-data is not 'application/json'",
+            f"NOTE: This error is known to occur if the server does not support metadata bundle submission."
         ]
 
     dt.reset_datetime()
@@ -1814,7 +1793,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -1831,8 +1810,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                         try:
                                                             submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                                  ingestion_type='metadata_bundle',
-                                                                                 institution=SOME_INSTITUTION,
-                                                                                 project=SOME_PROJECT,
+                                                                                 **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=False,
@@ -1846,8 +1824,10 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
                                                         assert mock_do_any_uploads.call_count == 0
         assert shown.lines == [
-            "The server http://localhost:7777 recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>",
-            "Mysterious Error: If I told you, there'd be no mystery.",
+            f"The server http://localhost:7777 recognizes you as: {SOME_USER_TITLE} <{SOME_USER_EMAIL}>",
+            f"Using given consortium: {SOME_CONSORTIUM}",
+            f"Using given submission center: {SOME_SUBMISSION_CENTER}",
+            f"Mysterious Error: If I told you, there'd be no mystery.",
         ]
 
     dt.reset_datetime()
@@ -1859,7 +1839,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -1876,8 +1856,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                         try:
                                                             submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                                  ingestion_type='metadata_bundle',
-                                                                                 institution=SOME_INSTITUTION,
-                                                                                 project=SOME_PROJECT,
+                                                                                 **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=False,
@@ -1902,7 +1881,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -1918,8 +1897,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                         try:
                                                             submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                                  ingestion_type='metadata_bundle',
-                                                                                 institution=SOME_INSTITUTION,
-                                                                                 project=SOME_PROJECT,
+                                                                                 **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=True,
@@ -1944,7 +1922,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -1960,8 +1938,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                         try:
                                                             submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                                  ingestion_type='metadata_bundle',
-                                                                                 institution=SOME_INSTITUTION,
-                                                                                 project=SOME_PROJECT,
+                                                                                 **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=False,
@@ -1977,6 +1954,10 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
         assert shown.lines == Scenario.make_timeout_submission_lines()
 
 
+# SOME_ORG_ARGS = {'institution': SOME_INSTITUTION, 'project': SOME_PROJECT}
+SOME_ORG_ARGS = {'consortium': SOME_CONSORTIUM, 'submission_center': SOME_SUBMISSION_CENTER}
+
+
 @mock.patch.object(submission_module, "get_health_page")
 @mock.patch.object(submission_module, "DEBUG_PROTOCOL", False)
 def test_submit_any_ingestion_new_protocol(mock_get_health_page):
@@ -1984,14 +1965,13 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
     mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: TEST_ENCRYPT_KEY}
 
     with shown_output() as shown:
-        with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+        with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                 with mock.patch.object(submission_module, "yes_or_no", return_value=False):
                     try:
                         submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                              ingestion_type='metadata_bundle',
-                                             institution=SOME_INSTITUTION,
-                                             project=SOME_PROJECT,
+                                             **SOME_ORG_ARGS,
                                              server=SOME_SERVER,
                                              env=None,
                                              validate_only=False,
@@ -2107,10 +2087,12 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
             assert auth == SOME_AUTH
             if url.endswith("/me?format=json"):
                 return FakeResponse(200, json=make_user_record(
-                    project=SOME_PROJECT,
-                    user_institution=[
-                        {'@id': SOME_INSTITUTION}
-                    ]
+                    consortium=SOME_CONSORTIUM,
+                    submission_center=SOME_SUBMISSION_CENTER,
+                    # project=SOME_PROJECT,
+                    # user_institution=[
+                    #     {'@id': SOME_INSTITUTION}
+                    # ]
                 ))
             else:
                 assert url.endswith('/ingestion-submissions/' + SOME_UUID + "?format=json")
@@ -2125,7 +2107,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
 
     with mock.patch("os.path.exists", mfs.exists):
         with mock.patch("io.open", mfs.open):
-            with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+            with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                 with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                     with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                         with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -2138,8 +2120,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                             try:
                                                 submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                      ingestion_type='metadata_bundle',
-                                                                     institution=SOME_INSTITUTION,
-                                                                     project=SOME_PROJECT,
+                                                                     **SOME_ORG_ARGS,
                                                                      server=SOME_SERVER,
                                                                      env=None,
                                                                      validate_only=False,
@@ -2163,7 +2144,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -2179,8 +2160,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                         try:
                                                             submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                                  ingestion_type='metadata_bundle',
-                                                                                 institution=SOME_INSTITUTION,
-                                                                                 project=SOME_PROJECT,
+                                                                                 **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=False,
@@ -2213,7 +2193,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -2251,8 +2231,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                 submit_any_ingestion(
                                                                     SOME_BUNDLE_FILENAME,
                                                                     ingestion_type='metadata_bundle',
-                                                                    institution=SOME_INSTITUTION,
-                                                                    project=SOME_PROJECT,
+                                                                    **SOME_ORG_ARGS,
                                                                     server=SOME_SERVER,
                                                                     env=None,
                                                                     validate_only=False,
@@ -2283,11 +2262,12 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
     expect_datafile_for_mocked_post = False
 
     with shown_output() as shown:
+        ignored(shown)  # should it be ignored? -kmp 2-Aug-2023
         with mock.patch("os.path.exists", mfs.exists):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -2307,8 +2287,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                 submit_any_ingestion(
                                                                     SOME_BUNDLE_FILENAME,
                                                                     ingestion_type='metadata_bundle',
-                                                                    institution=SOME_INSTITUTION,
-                                                                    project=SOME_PROJECT,
+                                                                    **SOME_ORG_ARGS,
                                                                     server=SOME_SERVER,
                                                                     env=None,
                                                                     validate_only=False,
@@ -2341,7 +2320,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -2358,8 +2337,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                         try:
                                                             submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                                  ingestion_type='metadata_bundle',
-                                                                                 institution=SOME_INSTITUTION,
-                                                                                 project=SOME_PROJECT,
+                                                                                 **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=False,
@@ -2374,9 +2352,11 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
 
                                                         assert mock_do_any_uploads.call_count == 0
         assert shown.lines == [
-            "The server http://localhost:7777 recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>",
-            "Unsupported Media Type: Request content type multipart/form-data is not 'application/json'",
-            "NOTE: This error is known to occur if the server does not support metadata bundle submission."
+            f"The server http://localhost:7777 recognizes you as: {SOME_USER_TITLE} <{SOME_USER_EMAIL}>",
+            f"Using given consortium: {SOME_CONSORTIUM}",
+            f"Using given submission center: {SOME_SUBMISSION_CENTER}",
+            f"Unsupported Media Type: Request content type multipart/form-data is not 'application/json'",
+            f"NOTE: This error is known to occur if the server does not support metadata bundle submission."
         ]
 
     dt.reset_datetime()
@@ -2396,7 +2376,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -2413,8 +2393,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                         try:
                                                             submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                                  ingestion_type='metadata_bundle',
-                                                                                 institution=SOME_INSTITUTION,
-                                                                                 project=SOME_PROJECT,
+                                                                                 **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=False,
@@ -2429,8 +2408,10 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
 
                                                         assert mock_do_any_uploads.call_count == 0
         assert shown.lines == [
-            "The server http://localhost:7777 recognizes you as: J Doe <jdoe@cgap.hms.harvard.edu>",
-            "Mysterious Error: If I told you, there'd be no mystery.",
+            f"The server http://localhost:7777 recognizes you as: {SOME_USER_TITLE} <{SOME_USER_EMAIL}>",
+            f"Using given consortium: {SOME_CONSORTIUM}",
+            f"Using given submission center: {SOME_SUBMISSION_CENTER}",
+            f"Mysterious Error: If I told you, there'd be no mystery.",
         ]
 
     dt.reset_datetime()
@@ -2442,7 +2423,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -2459,8 +2440,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                         try:
                                                             submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                                  ingestion_type='metadata_bundle',
-                                                                                 institution=SOME_INSTITUTION,
-                                                                                 project=SOME_PROJECT,
+                                                                                 **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=False,
@@ -2485,7 +2465,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -2501,8 +2481,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                         try:
                                                             submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                                  ingestion_type='metadata_bundle',
-                                                                                 institution=SOME_INSTITUTION,
-                                                                                 project=SOME_PROJECT,
+                                                                                 **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=True,
@@ -2527,7 +2506,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
-                with mock.patch.object(utils_module, "script_catch_errors", script_dont_catch_errors):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
@@ -2545,8 +2524,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                         try:
                                                             submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                                  ingestion_type='metadata_bundle',
-                                                                                 institution=SOME_INSTITUTION,
-                                                                                 project=SOME_PROJECT,
+                                                                                 **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
                                                                                  validate_only=False,
@@ -2600,7 +2578,7 @@ def test_search_for_file(
 
 
 @pytest.mark.parametrize(
-    "no_query,cgap_selective_uploads,yes_or_no_result,error_raised,expected_result",
+    "no_query,submitr_selective_uploads,yes_or_no_result,error_raised,expected_result",
     [
         (False, True, False, None, None),
         (False, False, False, None, None),
@@ -2611,7 +2589,7 @@ def test_search_for_file(
     ]
 )
 def test_wrap_upload_function(
-    no_query, cgap_selective_uploads, yes_or_no_result, error_raised, expected_result
+    no_query, submitr_selective_uploads, yes_or_no_result, error_raised, expected_result
 ):
     """Test UploadMessageWrapper.wrap_upload_function creates
     appropriate messages on given upload function.
@@ -2623,11 +2601,7 @@ def test_wrap_upload_function(
         with mock.patch.object(
             submission_module, "yes_or_no", return_value=yes_or_no_result
         ) as mocked_yes_or_no:
-            with mock.patch.object(
-                submission_module,
-                "CGAP_SELECTIVE_UPLOADS",
-                cgap_selective_uploads,
-            ):
+            with mock.patch.object(submission_module, "SUBMITR_SELECTIVE_UPLOADS", submitr_selective_uploads):
                 side_effect = None
                 if error_raised:
                     side_effect = RuntimeError("Error occurred")
@@ -2645,7 +2619,7 @@ def test_wrap_upload_function(
                 result = wrapped_function(input_arg, error_raised=error_raised)
 
                 expected_lines = []
-                if not no_query and cgap_selective_uploads and not yes_or_no_result:
+                if not no_query and submitr_selective_uploads and not yes_or_no_result:
                     mocked_yes_or_no.assert_called_once()
                     expected_lines.append("OK, not uploading it.")
                     simple_function.assert_not_called()
@@ -2740,6 +2714,10 @@ def test_resolve_app_args():
                             consortium=None, submission_center=None, app=APP_FOURFRONT)
     assert res == {'lab': 'foo', 'award': 'bar'}
 
+    # Testing this for consortium= and submission_center= is slightly more elaborate because we allow
+    # comma-separated values. We use the singular in the keywords since it looks better, but you can
+    # say not just consortium=C1 but also consortium=C1,C2. Same for submission_centers=SC1 or ...=SC1,SC2.
+
     sample_consortium = 'C1'
     sample_consortia = 'C1,C2'
     sample_consortia_list = ['C1', 'C2']
@@ -2769,10 +2747,15 @@ def test_resolve_app_args():
                           consortium=None, submission_center=None, app=APP_CGAP)
     assert str(exc.value) == 'There is 1 inappropriate argument: --lab.'
 
-    with pytest.raises(ValueError) as exc:
-        _resolve_app_args(institution=None, project=None, lab=None, award='bar',
-                          consortium=None, submission_center=None, app=APP_CGAP)
-    assert str(exc.value) == 'There is 1 inappropriate argument: --award.'
+    for argname in ['award', 'consortium', 'submission_center']:
+
+        with pytest.raises(ValueError) as exc:
+            kwargs = {'institution': None, 'project': None, 'lab': None, 'award': None,
+                      'consortium': None, 'submission_center': None}
+            kwargs[argname] = 'foo'
+            _resolve_app_args(**kwargs, app=APP_CGAP)
+        ui_argname = argname.replace('_', '-')
+        assert str(exc.value) == f'There is 1 inappropriate argument: --{ui_argname}.'
 
     # Bad arguments for Fourfront
 
@@ -2794,7 +2777,7 @@ def test_resolve_app_args():
     # Bogus application name
 
     with pytest.raises(ValueError) as exc:
-        invalid_app = APP_CGAP + APP_FOURFRONT  # make a bogus app name
+        invalid_app = 'NOT-' + DEFAULT_APP  # make a bogus app name
         _resolve_app_args(institution=None, project=None, lab=None, award=None,
                           consortium=None, submission_center=None, app=invalid_app)
     assert str(exc.value) == f"Unknown application: {invalid_app}"
@@ -2810,7 +2793,7 @@ def test_submit_any_ingestion():
     class StopEarly(BaseException):
         pass
 
-    def mocked_resolve_app_args(institution, project, lab, award, app, consortium, submission_center):
+    def mocked_resolve_app_args(*, institution, project, lab, award, consortium, submission_center, app):
         ignored(institution, project, award, lab, consortium, submission_center)  # not relevant to this mock
         assert app == expected_app
         raise StopEarly()
@@ -2831,7 +2814,9 @@ def test_submit_any_ingestion():
                     mock_submit_any_ingestion(ingestion_filename=SOME_FILENAME,
                                               ingestion_type=SOME_INGESTION_TYPE, server=SOME_SERVER, env=SOME_ENV,
                                               validate_only=True, institution=SOME_INSTITUTION, project=SOME_PROJECT,
-                                              lab=SOME_LAB, award=SOME_AWARD, upload_folder=SOME_FILENAME,
+                                              lab=SOME_LAB, award=SOME_AWARD,
+                                              consortium=SOME_CONSORTIUM, submission_center=SOME_SUBMISSION_CENTER,
+                                              upload_folder=SOME_FILENAME,
                                               no_query=True, subfolders=False,
                                               # This is what we're testing...
                                               app=expected_app)
@@ -3184,24 +3169,25 @@ def test_check_submit_ingestion_with_app():
 def test_check_submit_ingestion_with_app_None():
 
     expected_app = DEFAULT_APP
-    assert KEY_MANAGER.selected_app == expected_app == DEFAULT_APP == APP_CGAP
+    assert KEY_MANAGER.selected_app == expected_app == DEFAULT_APP == APP_SMAHT
 
     class TestFinished(BaseException):
         pass
 
     def mocked_resolve_server(*args, **kwargs):
         ignored(args, kwargs)
-        assert KEY_MANAGER.selected_app == APP_CGAP
+        assert KEY_MANAGER.selected_app == DEFAULT_APP
         raise TestFinished()
 
     with mock.patch.object(submission_module, "resolve_server", mocked_resolve_server):
-        assert KEY_MANAGER.selected_app == APP_CGAP
+        assert KEY_MANAGER.selected_app == DEFAULT_APP
         with KEY_MANAGER.locally_selected_app(APP_FOURFRONT):
+            assert KEY_MANAGER.selected_app != DEFAULT_APP
             assert KEY_MANAGER.selected_app == APP_FOURFRONT
             with pytest.raises(TestFinished):
                 check_submit_ingestion(uuid='some-uuid', server='some-server', env='some-env', app=None)
             assert KEY_MANAGER.selected_app == APP_FOURFRONT
-        assert KEY_MANAGER.selected_app == APP_CGAP
+        assert KEY_MANAGER.selected_app == DEFAULT_APP
 
 
 def test_summarize_submission():

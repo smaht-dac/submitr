@@ -2,11 +2,12 @@ import contextlib
 import pytest
 import re
 
-from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
-from dcicutils.creds_utils import CGAPKeyManager, FourfrontKeyManager, SMaHTKeyManager, KeyManager
+from dcicutils.common import APP_FOURFRONT, APP_SMAHT
+from dcicutils.creds_utils import FourfrontKeyManager, SMaHTKeyManager, KeyManager
 from dcicutils.misc_utils import override_environ
 from unittest import mock
 from .. import base as base_module
+from ..base import DEFAULT_APP
 
 
 # The SUBMITCGAP_ENV environment variable is used at application startup to compute a value of DEFAULT_ENV
@@ -35,13 +36,15 @@ def test_defaults():
 
 def test_generic_key_manager():
 
+    assert DEFAULT_APP == APP_SMAHT
+
     def key_manager(generic_key_manager):
         return generic_key_manager._key_manager  # noQA - protected member access
 
     manager = base_module.GenericKeyManager()
     assert isinstance(manager, base_module.GenericKeyManager)
-    assert manager.selected_app == APP_CGAP
-    assert isinstance(key_manager(manager), CGAPKeyManager)
+    assert manager.selected_app == APP_SMAHT
+    assert isinstance(key_manager(manager), SMaHTKeyManager)
     assert isinstance(key_manager(manager), KeyManager)
 
     manager.select_app(APP_FOURFRONT)
@@ -49,21 +52,21 @@ def test_generic_key_manager():
     assert isinstance(key_manager(manager), FourfrontKeyManager)
     assert isinstance(key_manager(manager), KeyManager)
 
-    invalid_app = APP_CGAP + APP_FOURFRONT
+    invalid_app = 'NOT-' + DEFAULT_APP
 
     with pytest.raises(ValueError):
         manager.select_app(invalid_app)
 
-    with manager.locally_selected_app(APP_CGAP):
-        assert manager.selected_app == APP_CGAP
-        assert isinstance(key_manager(manager), CGAPKeyManager)
+    with manager.locally_selected_app(APP_SMAHT):
+        assert manager.selected_app == APP_SMAHT
+        assert isinstance(key_manager(manager), SMaHTKeyManager)
 
         with manager.locally_selected_app(APP_SMAHT):
             assert manager.selected_app == APP_SMAHT
             assert isinstance(key_manager(manager), SMaHTKeyManager)
 
-        assert manager.selected_app == APP_CGAP
-        assert isinstance(key_manager(manager), CGAPKeyManager)
+        assert manager.selected_app == APP_SMAHT
+        assert isinstance(key_manager(manager), SMaHTKeyManager)
 
     assert manager.selected_app == APP_FOURFRONT
     assert isinstance(key_manager(manager), FourfrontKeyManager)

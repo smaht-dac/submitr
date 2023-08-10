@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "submitr"
-version = "0.2.0"
+version = "0.2.1"
 description = "Support for uploading file submissions to SMAHT."
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
@@ -48,7 +48,7 @@ python = ">=3.7.0,<3.10"
 
 awscli = "^1.27.79"
 # boto3 = "^1.26.79"
-dcicutils = "^7.6.0"
+dcicutils = "^7.7.1"
 requests = "^2.28.2"
 
 [tool.poetry.dev-dependencies]
@@ -65,6 +65,8 @@ coverage = ">=6.5.0"
 
 # Linting generally
 flake8 = ">=3.9.2"
+
+pip-licenses = ">=3.5.5"
 
 # pygments is used by PyCharm
 pygments = ">=2.14.0"
@@ -99,6 +101,12 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "pragma: no cover"
 ]
+
+[tool.pytest.ini_options]
+markers = [
+  "static: a test that tests the static form of code, not its runtime functionality"
+]
+
 
 [build-system]
 

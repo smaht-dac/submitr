@@ -34,8 +34,8 @@ def test_check_submission_script():
         if app != DEFAULT_APP:
             sample_app = app
     assert sample_app, "sample_app did not get properly set."
-    sample_server = 'https://cgap-foo'
-    sample_env = 'cgap-foo'
+    sample_server = 'https://some-portal'
+    sample_env = 'some-env'
     test_it(args_in=['--server', sample_server, SAMPLE_GUID],
             expect_exit_code=0,
             expect_called=True,

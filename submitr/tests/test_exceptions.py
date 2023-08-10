@@ -1,13 +1,13 @@
-from ..exceptions import CGAPPermissionError
+from ..exceptions import PortalPermissionError
 
 
-def test_cgap_permission_error():
+def test_portal_permission_error():
 
     server = "http://localhost:8888"  # Not an address we use, but that shouldn't matter.
-    error = CGAPPermissionError(server)
+    error = PortalPermissionError(server)
 
     assert isinstance(error, PermissionError)
-    assert isinstance(error, CGAPPermissionError)
+    assert isinstance(error, PortalPermissionError)
 
     assert error.server == server
 

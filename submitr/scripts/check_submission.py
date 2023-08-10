@@ -1,8 +1,8 @@
 import argparse
+from dcicutils.command_utils import script_catch_errors
 from dcicutils.common import ORCHESTRATED_APPS
 from ..base import DEFAULT_APP
 from ..submission import check_submit_ingestion
-from ..utils import script_catch_errors
 
 
 EPILOG = __doc__
@@ -20,7 +20,7 @@ def main(simulated_args_for_testing=None):
                         help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")
     parser.add_argument('--server', '-s', help="an http or https address of the server to use", default=None)
-    parser.add_argument('--env', '-e', help="a CGAP beanstalk environment name for the server to use", default=None)
+    parser.add_argument('--env', '-e', help="a portal environment name for the server to use", default=None)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     with script_catch_errors():
