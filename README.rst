@@ -1,5 +1,5 @@
 
-.. image:: /_static/images/submitr-banner.png
+.. image:: docs/source/_static/images/submitr-banner.png
     :target: https://pypi.org/project/submitr/
     :alt: SMaHT remote Metadata Submission Tool: submitr
     :align: center
