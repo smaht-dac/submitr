@@ -6,6 +6,14 @@ submitr
 Change Log
 ----------
 
+0.3.0
+=====
+
+* Add a pretty logo
+* Warn about not yet being still experimental.
+* Better badges.
+
+
 0.2.1
 =====
 
