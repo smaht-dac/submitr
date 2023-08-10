@@ -1,10 +1,17 @@
+.. image:: /_static/images/submitr-banner.png
+    :target: https://pypi.org/project/submitr/
+    :alt: SMaHT remote Metadata Submission Tool: submitr
+    :align: center
+
+|
+
 ========
 Overview
 ========
 
-
-File submission for submitr
----------------------------
+----------------------------------------
+submitr: remote file submitter for SMaHT
+----------------------------------------
 
 .. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
     :target: https://github.com/smaht-dac/submitr/actions

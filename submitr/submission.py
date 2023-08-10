@@ -782,7 +782,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
     :param app: the name of the app to use
         e.g., affects whether to expect --lab, --award, --institution, --project, --consortium or --submission_center
-              and whether to use .fourfront-keys.json, .cgap-keys.json, or .smaht-keys.json
+        and whether to use .fourfront-keys.json, .cgap-keys.json, or .smaht-keys.json
     :param show_primary_result: bool controls whether the primary result is shown
     :param show_validation_output: bool controls whether to show output resulting from validation checks
     :param show_processing_status: bool controls whether to show the current processing status

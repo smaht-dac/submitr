@@ -13,14 +13,6 @@ Subpackages
 Submodules
 ----------
 
-submitr.auth module
-------------------------
-
-.. automodule:: submitr.auth
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 submitr.base module
 ------------------------
 
