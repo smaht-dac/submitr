@@ -6,12 +6,15 @@
 
 |
 
+------------
+
 **THIS IS A PRE-RELEASE VERSION.**
 
 This was recently forked from SubmitCGAP and is not yet ready for normal use.
 
 Watch for version 1.0.
 
+------------
 
 =======
 submitr
