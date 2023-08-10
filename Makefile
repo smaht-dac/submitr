@@ -26,6 +26,10 @@ update:  # updates dependencies
 tag-and-push:  # tags the branch and pushes it
 	@scripts/tag-and-push
 
+preview-locally:
+	sphinx-build -b html docs/source docs/html
+	open docs/html/index.html
+
 publish:
 	# New Python based publish script in dcicutils (2023-04-25).
 	poetry run publish-to-pypi
@@ -42,6 +46,7 @@ info:
 	   $(info - Use 'make configure' to install poetry, though 'make build' will do it automatically.)
 	   $(info - Use 'make lint' to check style with flake8.)
 	   $(info - Use 'make build' to install dependencies using poetry.)
+	   $(info - Use 'make preview-locally' to build and a local doc tree and open it for preview.)
 	   $(info - Use 'make publish' to publish this library, but only if auto-publishing has failed.)
 	   $(info - Use 'make retest' to run failing tests from the previous test run.)
 	   $(info - Use 'make test' to run tests with the normal options we use for CI/CD like GA.)

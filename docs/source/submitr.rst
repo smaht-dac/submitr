@@ -1,5 +1,5 @@
 submitr package
-====================
+===============
 
 Subpackages
 -----------
@@ -14,7 +14,7 @@ Submodules
 ----------
 
 submitr.base module
-------------------------
+-------------------
 
 .. automodule:: submitr.base
    :members:
@@ -22,7 +22,7 @@ submitr.base module
    :show-inheritance:
 
 submitr.exceptions module
-------------------------------
+-------------------------
 
 .. automodule:: submitr.exceptions
    :members:
@@ -30,7 +30,7 @@ submitr.exceptions module
    :show-inheritance:
 
 submitr.submission module
-------------------------------
+-------------------------
 
 .. automodule:: submitr.submission
    :members:
@@ -38,7 +38,7 @@ submitr.submission module
    :show-inheritance:
 
 submitr.utils module
--------------------------
+--------------------
 
 .. automodule:: submitr.utils
    :members:

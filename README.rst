@@ -10,19 +10,23 @@ A file submission tool for SMAHT
    :target: https://github.com/smaht-dac/submitr/actions
    :alt: Build Status
 
-.. image:: https://coveralls.io/repos/github/dbmi-bgm/submitr/badge.svg
-   :target: https://coveralls.io/github/smaht-dac/submitr
-   :alt: Coverage
+.. image:: https://coveralls.io/repos/github/smaht-dac/submitr/badge.svg
+    :target: https://coveralls.io/github/smaht-dac/submitr
+    :alt: Coverage Percentage
 
 .. image:: https://readthedocs.org/projects/submitr/badge/?version=latest
    :target: https://submitr.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
+
 .. warning::
 
-   THIS IS A PRE-RELEASE VERSION.
+   **THIS IS A PRE-RELEASE VERSION.**
 
-   It was recently forked. It is not yet ready for normal use. Watch for version 1.0.
+   This was recently forked from SubmitCGAP and is not yet ready for normal use.
+
+   Watch for version 1.0.
+
 
 Description
 ===========

@@ -5,6 +5,15 @@
 
 |
 
+.. warning::
+
+   **THIS IS A PRE-RELEASE VERSION.**
+
+   This was recently forked from SubmitCGAP and is not yet ready for normal use.
+
+   Watch for version 1.0.
+
+
 ========
 Overview
 ========
@@ -17,9 +26,9 @@ submitr: remote file submitter for SMaHT
     :target: https://github.com/smaht-dac/submitr/actions
     :alt: Build Status
 
-.. image:: https://coveralls.io/repos/github/dbmi-bgm/submitr/badge.svg
+.. image:: https://coveralls.io/repos/github/smaht-dac/submitr/badge.svg
     :target: https://coveralls.io/github/smaht-dac/submitr
-    :alt: Coverage
+    :alt: Coverage Percentage
 
 .. image:: https://readthedocs.org/projects/submitr/badge/?version=latest
     :target: https://submitr.readthedocs.io/en/latest/?badge=latest
