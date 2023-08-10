@@ -6,8 +6,6 @@
 
 |
 
-------------
-
 **THIS IS A PRE-RELEASE VERSION.**
 
 This was recently forked from SubmitCGAP and is not yet ready for normal use.
