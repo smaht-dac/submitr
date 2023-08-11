@@ -4,14 +4,6 @@ submitr.tests package
 Submodules
 ----------
 
-submitr.tests.test\_auth module
-------------------------------------
-
-.. automodule:: submitr.tests.test_auth
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 submitr.tests.test\_base module
 ------------------------------------
 
