@@ -67,11 +67,3 @@ submitr.tests.test\_utils module
    :members:
    :undoc-members:
    :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: submitr.tests
-   :members:
-   :undoc-members:
-   :show-inheritance:

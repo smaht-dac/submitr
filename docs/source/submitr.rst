@@ -44,11 +44,3 @@ submitr.utils module
    :members:
    :undoc-members:
    :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: submitr
-   :members:
-   :undoc-members:
-   :show-inheritance:
