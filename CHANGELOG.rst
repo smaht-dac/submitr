@@ -6,10 +6,15 @@ submitr
 Change Log
 ----------
 
-0.4.0
+0.3.1
 =====
 
 * Auto-submit to readthedocs on any non-beta version tag push (v* except v*b*).
+* Fix a bug in readthedocs submission where we were using branches=master and getting an error saying
+  ``{"detail":"Parameter \"ref\" is required"}``. ChatGPT thinks this is because we wanted a curl
+  parameter of ``-d "ref=master"`` rather than ``-d "branches=master"`` like we had.
+* Remove spurious "Module Contents" headings in three places.
+  We do not put code in ``__init__.py`` so these sections would always be empty (and confusing).
 
 
 0.3.0
