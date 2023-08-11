@@ -6,6 +6,12 @@ submitr
 Change Log
 ----------
 
+0.4.0
+=====
+
+* Auto-submit to readthedocs on any non-beta version tag push (v* except v*b*).
+
+
 0.3.0
 =====
 

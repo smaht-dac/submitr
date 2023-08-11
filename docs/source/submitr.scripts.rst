@@ -35,11 +35,3 @@ submitr.scripts.upload\_item\_data module
    :members:
    :undoc-members:
    :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: submitr.scripts
-   :members:
-   :undoc-members:
-   :show-inheritance:
