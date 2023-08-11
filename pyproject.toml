@@ -2,6 +2,7 @@
 name = "submitr"
 version = "0.3.0"
 description = "Support for uploading file submissions to SMAHT."
+# TODO: Update this email address when a more specific one is available for SMaHT.
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]
 license = "MIT"
 readme = "README.rst"
@@ -49,6 +50,16 @@ python = ">=3.7.0,<3.10"
 awscli = "^1.27.79"
 # boto3 = "^1.26.79"
 dcicutils = "^7.7.1"
+# TODO: Consider an upgrade to PyYAML 6.
+# David wanted PyYAML 5 pinned at 5.3.1 for M1, but noted we should investigate upgrading to PyYAML 6.
+# Specifically, on https://github.com/smaht-dac/submitr/pull/5, he wrote:
+#   << Looks like at least for M1 will have to pin pyyaml to 5.3.1 (or 6.0 but dcicutils has restriction on that). >>
+# Kent asked whether 5.3.1 or ^5.3.1, and also if PyYAML 6 has incompatibilities. David wrote:
+#   << M1 only 5.3.1 specifically or 6.0 or 6.0.1 installs without error.
+#      At least according the pyyaml change log (https://github.com/yaml/pyyaml/blob/master/CHANGES)
+#      I don't see anything too scary WRT updating generally (e.g. dcicutils)
+#      to 6.0.1 (except maybe "always require Loader arg to yaml.load()"). >>
+PyYAML = "5.3.1"  # pinned for M1. See notes above.
 requests = "^2.28.2"
 
 [tool.poetry.dev-dependencies]
