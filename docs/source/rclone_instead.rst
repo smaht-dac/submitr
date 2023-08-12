@@ -1,18 +1,24 @@
-================================
-rclone submission (experimental)
-================================
+===================================
+Using rclone instead (experimental)
+===================================
 
-For some use cases we are trialing a more streamlined submission process that does
+Background on this rclone option
+--------------------------------
+
+Presently ``submitr`` uses ``awscli`` internally, but
+for some use cases we are trialing a more streamlined submission process that does
 not involve the installation of Python or ``submitr`` and instead involves transferring
 files directly into a ``PUBLIC-WRITE`` S3 bucket defined by us. The idea is you will source
 credentials associated with the datastore where your files are kept and sync them
 directly into the submission bucket, along with the submission Excel (for data
 accessioning).
 
-These instructions are intended to support both ``awscli`` if transferring directly from
-``AWS S3`` or ``rclone`` if you are transferring from other Cloud Providers (still compatible
-with ``AWS S3``). At this time we recommend using ``rclone``, since it is compatible with
-most popular Cloud Providers.
+.. note::
+
+   These instructions are intended to support both ``awscli`` if transferring directly from
+   ``AWS S3`` or ``rclone`` if you are transferring from other Cloud Providers (still compatible
+   with ``AWS S3``). At this time we recommend using ``rclone``, since it is compatible with
+   most popular Cloud Providers.
 
 
 Installing rclone

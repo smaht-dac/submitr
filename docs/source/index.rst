@@ -62,6 +62,6 @@ basics for working with the terminal and installing the dependencies to run this
 
   installing_prerequisites
   installation
-  getting_started
+  usage
   submitr
-  rclone
+  rclone_instead
