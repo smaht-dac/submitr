@@ -1,6 +1,6 @@
-===========
-Basic Setup
-===========
+========================
+Installing Prerequisites
+========================
 
 ``submitr`` is a Python based tool and requires a Python installation with version >=3.7.
 This document is intended for users who are not very familiar with the command line or Python.

@@ -60,9 +60,8 @@ basics for working with the terminal and installing the dependencies to run this
 .. toctree::
   :maxdepth: 4
 
-  self
-  rclone
-  basic_setup
+  installing_prerequisites
   installation
   getting_started
   submitr
+  rclone

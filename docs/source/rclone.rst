@@ -1,6 +1,6 @@
-=======================================
-Awscli/Rclone Submission (experimental)
-=======================================
+================================
+rclone submission (experimental)
+================================
 
 For some use cases we are trialing a more streamlined submission process that does
 not involve the installation of Python or ``submitr`` and instead involves transferring

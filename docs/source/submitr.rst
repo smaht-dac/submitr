@@ -36,7 +36,7 @@ submitr.utils module
 -------------------------
 
 submitr subpackages
------------
+-------------------
 
 .. toctree::
    :maxdepth: 4
