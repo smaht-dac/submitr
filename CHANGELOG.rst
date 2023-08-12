@@ -6,6 +6,15 @@ submitr
 Change Log
 ----------
 
+0.3.3
+=====
+
+* Make the heading for "Basic Setup" to be "Installing Prerequisites" since that naming is more standard.
+* Reorganize to make experimental rclone support not be first thing you see in this doc, since non-experimental stuff needs to be first.
+* Make rclone section not pretend to tell you about awscli in the heading since the actual text barely mentions awscli.
+* Remove a useless link to the overview on the first page.
+
+
 0.3.2
 =====
 
