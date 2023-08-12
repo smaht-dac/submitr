@@ -28,10 +28,14 @@ jobs:
         with:
           # For publication, we're not testing anything, so use latest allowable version of Python
           python-version: 3.9
+
+      - name: Build
+        run: |
+          make build
+
       - name: Publish
         env:
           PYPI_USER: ${{ secrets.PYPI_USER }}
           PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: | 
-          make configure
           make publish-for-ga

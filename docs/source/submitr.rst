@@ -1,18 +1,6 @@
 submitr package
 ===============
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   submitr.scripts
-   submitr.tests
-
-Submodules
-----------
-
 submitr.base module
 -------------------
 
@@ -44,3 +32,14 @@ submitr.utils module
    :members:
    :undoc-members:
    :show-inheritance:
+
+-------------------------
+
+submitr subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   submitr.scripts
+   submitr.tests
