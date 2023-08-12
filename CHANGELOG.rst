@@ -6,6 +6,12 @@ submitr
 Change Log
 ----------
 
+0.3.2
+=====
+
+* Fix auto-publish on pushing a tag.
+
+
 0.3.1
 =====
 
