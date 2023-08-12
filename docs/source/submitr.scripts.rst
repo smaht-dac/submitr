@@ -1,11 +1,8 @@
 submitr.scripts package
 ============================
 
-Submodules
-----------
-
 submitr.scripts.make\_sample\_fastq\_file module
------------------------------------------------------
+------------------------------------------------
 
 .. automodule:: submitr.scripts.make_sample_fastq_file
    :members:
@@ -13,7 +10,7 @@ submitr.scripts.make\_sample\_fastq\_file module
    :show-inheritance:
 
 submitr.scripts.resume\_uploads module
--------------------------------------------
+--------------------------------------
 
 .. automodule:: submitr.scripts.resume_uploads
    :members:
@@ -21,7 +18,7 @@ submitr.scripts.resume\_uploads module
    :show-inheritance:
 
 submitr.scripts.submit\_metadata\_bundle module
-----------------------------------------------------
+-----------------------------------------------
 
 .. automodule:: submitr.scripts.submit_metadata_bundle
    :members:
@@ -29,7 +26,7 @@ submitr.scripts.submit\_metadata\_bundle module
    :show-inheritance:
 
 submitr.scripts.upload\_item\_data module
-----------------------------------------------
+-----------------------------------------
 
 .. automodule:: submitr.scripts.upload_item_data
    :members:

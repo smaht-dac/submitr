@@ -1,11 +1,8 @@
 submitr.tests package
 ==========================
 
-Submodules
-----------
-
 submitr.tests.test\_base module
-------------------------------------
+-------------------------------
 
 .. automodule:: submitr.tests.test_base
    :members:
@@ -13,7 +10,7 @@ submitr.tests.test\_base module
    :show-inheritance:
 
 submitr.tests.test\_exceptions module
-------------------------------------------
+-------------------------------------
 
 .. automodule:: submitr.tests.test_exceptions
    :members:
@@ -21,7 +18,7 @@ submitr.tests.test\_exceptions module
    :show-inheritance:
 
 submitr.tests.test\_make\_sample\_fastq\_file module
----------------------------------------------------------
+----------------------------------------------------
 
 .. automodule:: submitr.tests.test_make_sample_fastq_file
    :members:
@@ -29,7 +26,7 @@ submitr.tests.test\_make\_sample\_fastq\_file module
    :show-inheritance:
 
 submitr.tests.test\_resume\_uploads module
------------------------------------------------
+------------------------------------------
 
 .. automodule:: submitr.tests.test_resume_uploads
    :members:
@@ -37,7 +34,7 @@ submitr.tests.test\_resume\_uploads module
    :show-inheritance:
 
 submitr.tests.test\_submission module
-------------------------------------------
+-------------------------------------
 
 .. automodule:: submitr.tests.test_submission
    :members:
@@ -45,7 +42,7 @@ submitr.tests.test\_submission module
    :show-inheritance:
 
 submitr.tests.test\_submit\_metadata\_bundle module
---------------------------------------------------------
+---------------------------------------------------
 
 .. automodule:: submitr.tests.test_submit_metadata_bundle
    :members:
@@ -53,7 +50,7 @@ submitr.tests.test\_submit\_metadata\_bundle module
    :show-inheritance:
 
 submitr.tests.test\_upload\_item\_data module
---------------------------------------------------
+---------------------------------------------
 
 .. automodule:: submitr.tests.test_upload_item_data
    :members:
@@ -61,7 +58,7 @@ submitr.tests.test\_upload\_item\_data module
    :show-inheritance:
 
 submitr.tests.test\_utils module
--------------------------------------
+--------------------------------
 
 .. automodule:: submitr.tests.test_utils
    :members:
