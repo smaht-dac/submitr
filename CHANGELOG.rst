@@ -10,6 +10,8 @@ Change Log
 =====
 
 * Fix auto-publish on pushing a tag.
+* Disabled ``scripts/publish`` since we're using functionality from ``dcicutils.scripts`` now.
+* Adjusted headings to present with better indentation and better recursive header presentation.
 
 
 0.3.1
