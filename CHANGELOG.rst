@@ -9,7 +9,6 @@ Change Log
 0.3.3
 =====
 
-* Remove a useless link to the "Overview" on the first page.
 * Make the heading for "Basic Setup" to be "Installing Prerequisites",
   since that naming is more standard.
 * Rename the "Getting Started" option to more standard "Using submitr",
