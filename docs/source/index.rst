@@ -62,7 +62,7 @@ and installing the dependencies to run this package.
 
 Although at some point **submitr** might offer the ability to
 use **rclone** invisibly, for now it uses **awscli** only.
-But we do now experimentally offer some isntructions for
+But we do now experimentally offer some instructions for
 **Using rclone instead** at the end of this documentation
 in case that's an option you want to pursue.
 
