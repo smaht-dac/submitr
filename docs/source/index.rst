@@ -70,4 +70,3 @@ and installing the dependencies to run this package.
   installation
   usage
   submitr
-  rclone_instead
