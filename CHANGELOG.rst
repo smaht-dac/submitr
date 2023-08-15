@@ -6,6 +6,24 @@ submitr
 Change Log
 ----------
 
+0.3.3
+=====
+
+* Make the heading for "Basic Setup" to be "Installing Prerequisites",
+  since that naming is more standard.
+* Rename the "Getting Started" option to more standard "Using submitr",
+  since getting started is ambiguous between installation and usage.
+* Add an "Implementation of submitr" heading on the implementation part
+  to make it clear to end users they don't need to look at this.
+* Reorganize to make experimental ``rclone`` support *not* be the first thing
+  that you see in this doc,
+  since non-experimental stuff needs to be first.
+* Make ``rclone`` section not pretend to tell you about ``awscli``
+  in the heading, since the actual text barely mentions ``awscli``.
+* Light editing on the opening of the section about ``rclone`` to make
+  the motivational part clearer.
+
+
 0.3.2
 =====
 

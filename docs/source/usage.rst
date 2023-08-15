@@ -1,6 +1,6 @@
-===============
-Getting Started
-===============
+=============
+Using submitr
+=============
 
 Once you have finished installing this library into your virtual environment,
 you should have access to the ``submit-metadata-bundle`` and the ``submit-genelist``
@@ -12,7 +12,8 @@ Formatting Files for Submission
 ===============================
 
 For details on what file formats are accepted and how the information should be structured,
-see our submission help pages at `the SMaHT portal <https://data.smaht.org/>`_.
+see our submission help pages at
+`the SMaHT portal <https://data.smaht.org/>`_.
 
 Metadata Bundles
 ================
