@@ -76,7 +76,7 @@ Creating the Working Directory and Credentials File
 
 To get started we will create an empty file to hold the submission credentials and a directory
 for storing the submission Excel files and associated raw sequencing files. At this time, the sequencing
-files need to be on your local machine to be submitted to SMaHT. Do this by using the `touch` and `mkdir`
+files need to be on your local machine to be submitted to SMaHT. Do this by using the ``touch`` and ``mkdir``
 commands described above. Use the exact command below for creating the credential file, but you can
 create the directory for the submission files anywhere, just note the location (you can check with `pwd`).
 
@@ -172,9 +172,9 @@ This creates a virtual environment called ``submitr38`` using Python version 3.8
 the end to indicate it is a 3.8 environment. Feel free to name your virtual environment whatever
 name is most convenient for you. When in doubt you can run ``pyenv versions`` to see a list of
 virtual environments you have created. The ``pyenv local`` command ensures that whenever you ``cd`` into
-your submitr directory you automatically enter the associated virtual environment. If successful, at
-this point you can transition to the installation docs section Installing submitr                                                                                                              in a Virtual
-Environment.
+your ``submitr`` directory you automatically enter the associated virtual environment. If successful, at
+this point you can transition to the installation docs section
+Installing submitr in a Virtual Environment.
 
 
 Reporting Issues
