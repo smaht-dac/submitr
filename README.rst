@@ -1,8 +1,10 @@
+.. raw:: html
 
-.. image:: docs/source/_static/images/submitr-banner.png
-    :target: https://pypi.org/project/submitr/
-    :alt: SMaHT remote Metadata Submission Tool: submitr
-    :align: center
+   <div style="width: 100%; text-align: center;">
+     <iframe src="docs/source/_static/logo.html" style="width: 575px; height: 220px; border: none; margin: 0; padding: 0;" />
+      [SMaHT submitr logo]
+     </iframe>
+   </div>
 
 |
 
