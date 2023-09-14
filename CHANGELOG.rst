@@ -6,6 +6,12 @@ submitr
 Change Log
 ----------
 
+0.4.0
+=====
+
+* Added --details option so submit-metadata-bundle and show-upload-info
+  to fetch and show detailed information from S3.
+
 0.3.3
 =====
 
