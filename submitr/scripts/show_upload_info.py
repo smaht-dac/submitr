@@ -20,11 +20,12 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--app', choices=ORCHESTRATED_APPS, default=APP_FOURFRONT,
                         help=f"An application (default {APP_FOURFRONT!r}. Only for debugging."
                              f" Normally this should not be given.")
+    parser.add_argument('--details', '-d', action="store_true", help="retrieve and display detailed info", default=None)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     with script_catch_errors():
 
-        show_upload_info(uuid=args.uuid, server=args.server, env=args.env, app=args.app)
+        show_upload_info(uuid=args.uuid, server=args.server, env=args.env, app=args.app, show_details=args.details)
 
 
 if __name__ == '__main__':

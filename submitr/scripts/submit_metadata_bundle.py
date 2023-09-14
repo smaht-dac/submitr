@@ -36,6 +36,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--submission_protocol', '--submission-protocol', '-sp',
                         choices=SUBMISSION_PROTOCOLS, default=DEFAULT_SUBMISSION_PROTOCOL,
                         help=f"the submission protocol (default {DEFAULT_SUBMISSION_PROTOCOL!r})")
+    parser.add_argument('--details', '-d', action="store_true", help="retrieve and display detailed info", default=None)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     with script_catch_errors():
@@ -45,7 +46,8 @@ def main(simulated_args_for_testing=None):
                              server=args.server, env=args.env,
                              validate_only=args.validate_only, upload_folder=args.upload_folder,
                              no_query=args.no_query, subfolders=args.subfolders, app=args.app,
-                             submission_protocol=args.submission_protocol)
+                             submission_protocol=args.submission_protocol,
+                             show_details=args.details)
 
 
 if __name__ == '__main__':

@@ -49,7 +49,7 @@ python = ">=3.7.0,<3.10"
 
 awscli = "^1.27.79"
 # boto3 = "^1.26.79"
-dcicutils = "^7.7.1"
+dcicutils = "7.11.0.1b9"
 # TODO: Consider an upgrade to PyYAML 6.
 # David wanted PyYAML 5 pinned at 5.3.1 for M1, but noted we should investigate upgrading to PyYAML 6.
 # Specifically, on https://github.com/smaht-dac/submitr/pull/5, he wrote:

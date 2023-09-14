@@ -1,9 +1,11 @@
+import boto3
 import glob
 import io
 import json
 import os
 import re
 import subprocess
+import sys
 import time
 from typing import Tuple
 
@@ -349,10 +351,10 @@ def show_section(res, section, caveat_outcome=None):
         caveat = " (prior to %s)" % caveat_outcome
     else:
         caveat = ""
-    show("----- %s%s -----" % (keyword_as_title(section), caveat))
     if not section_data:
-        show("Nothing to show.")
-    elif isinstance(section_data, dict):
+        return
+    show("----- %s%s -----" % (keyword_as_title(section), caveat))
+    if isinstance(section_data, dict):
         show(json.dumps(section_data, indent=2))
     elif isinstance(section_data, list):
         for line in section_data:
@@ -509,7 +511,8 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
                          consortium=None, submission_center=None,
                          app: OrchestratedApp = None,
                          upload_folder=None, no_query=False, subfolders=False,
-                         submission_protocol=DEFAULT_SUBMISSION_PROTOCOL):
+                         submission_protocol=DEFAULT_SUBMISSION_PROTOCOL,
+                         show_details=False):
     """
     Does the core action of submitting a metadata bundle.
 
@@ -529,6 +532,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     :param no_query: bool to suppress requests for user input
     :param subfolders: bool to search subdirectories within upload_folder for files
     :param submission_protocol: which submission protocol to use (default: 's3')
+    :param show_details: bool controls whether to show the details from the results file in S3.
     """
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
@@ -541,7 +545,8 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
                                         institution=institution, project=project, lab=lab, award=award, app=app,
                                         consortium=consortium, submission_center=submission_center,
                                         upload_folder=upload_folder, no_query=no_query, subfolders=subfolders,
-                                        submission_protocol=submission_protocol)
+                                        submission_protocol=submission_protocol,
+                                        show_details=show_details)
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app,
                                  consortium=consortium, submission_center=submission_center)
@@ -653,7 +658,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
          f" Awaiting processing...",
          with_time=True)
 
-    check_done, check_status, check_response = check_submit_ingestion(uuid, server, env, app)
+    check_done, check_status, check_response = check_submit_ingestion(uuid, server, env, app, show_details)
 
     if validate_only:
         exit(0)
@@ -687,7 +692,8 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
 
 
 def check_submit_ingestion(uuid: str, server: str, env: str,
-                           app: Optional[OrchestratedApp] = None) -> Tuple[bool, str, dict]:
+                           app: Optional[OrchestratedApp] = None,
+                           show_details: bool = False) -> Tuple[bool, str, dict]:
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
@@ -725,9 +731,14 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     caveat_check_status = None if check_status == "success" else check_status
     show_section(check_response, "validation_output", caveat_outcome=caveat_check_status)
     show_section(check_response, "post_output", caveat_outcome=caveat_check_status)
+    show_section(check_response, "result")
 
     if check_status == "success":
         show_section(check_response, "upload_info")
+
+    if show_details:
+        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
+        show_detailed_results(uuid, metadata_bundles_bucket)
 
     return check_done, check_status, check_response
 
@@ -771,7 +782,8 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
                      show_primary_result=True,
                      show_validation_output=True,
                      show_processing_status=True,
-                     show_datafile_url=True):
+                     show_datafile_url=True,
+                     show_details=True):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -787,6 +799,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     :param show_validation_output: bool controls whether to show output resulting from validation checks
     :param show_processing_status: bool controls whether to show the current processing status
     :param show_datafile_url: bool controls whether to show the datafile_url parameter from the parameters.
+    :param show_details: bool controls whether to show the details from the results file in S3.
     """
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
@@ -809,14 +822,19 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
                        show_primary_result=show_primary_result,
                        show_validation_output=show_validation_output,
                        show_processing_status=show_processing_status,
-                       show_datafile_url=show_datafile_url)
+                       show_datafile_url=show_datafile_url,
+                       show_details=show_details)
+    if show_details:
+        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
+        show_detailed_results(uuid, metadata_bundles_bucket)
 
 
 def show_upload_result(result,
                        show_primary_result=True,
                        show_validation_output=True,
                        show_processing_status=True,
-                       show_datafile_url=True):
+                       show_datafile_url=True,
+                       show_details=True):
 
     if show_primary_result:
         if get_section(result, 'upload_info'):
@@ -1241,3 +1259,38 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
             exit(1)
 
     upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=keydict)
+
+
+def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
+    results = fetch_detailed_results(uuid, metadata_bundles_bucket)
+    print(f"----- Detailed Info -----")
+    s3_detailed_results_location = f"s3://{metadata_bundles_bucket}/{uuid}/submission.json"
+    print(f"From: {s3_detailed_results_location}")
+    if not results:
+        print("Cannot fetch detailed info or none available.")
+        return
+    if results.get("create"):
+        print("Creates:")
+        [print(result) for result in results["create"]]
+    if results.get("update"):
+        print("Updates:")
+        [print(result) for result in results["update"]]
+    if results.get("skip"):
+        print("Skipped:")
+        [print(result) for result in results["skip"]]
+    if results.get("validate"):
+        print("Validated:")
+        [print(result) for result in results["validate"]]
+    if results.get("error"):
+        print("Errored:")
+        [print(result) for result in results["error"]]
+
+
+def fetch_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
+    try:
+        s3 = boto3.client("s3")
+        response = s3.get_object(Bucket=metadata_bundles_bucket, Key=f"{uuid}/submission.json")
+        return json.loads(response['Body'].read().decode('utf-8'))
+    except Exception:
+        return None
+    
