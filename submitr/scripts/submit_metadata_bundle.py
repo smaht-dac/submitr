@@ -1,6 +1,10 @@
 import argparse
+import json
+import os
+from typing import Optional
 
 from dcicutils.command_utils import script_catch_errors
+from dcicutils.misc_utils import PRINT
 from ..base import DEFAULT_APP
 from ..submission import (
     submit_any_ingestion, DEFAULT_INGESTION_TYPE, DEFAULT_SUBMISSION_PROTOCOL, SUBMISSION_PROTOCOLS
@@ -41,6 +45,9 @@ def main(simulated_args_for_testing=None):
 
     with script_catch_errors():
 
+        if not sanity_check_submitted_file(args.bundle_filename):
+            exit(1)
+
         submit_any_ingestion(ingestion_filename=args.bundle_filename, ingestion_type=args.ingestion_type,
                              institution=args.institution, project=args.project,
                              server=args.server, env=args.env,
@@ -48,6 +55,53 @@ def main(simulated_args_for_testing=None):
                              no_query=args.no_query, subfolders=args.subfolders, app=args.app,
                              submission_protocol=args.submission_protocol,
                              show_details=args.details)
+
+
+def sanity_check_submitted_file(file_name: str) -> bool:
+
+    def get_unpackable_file_extension(file_name: str) -> Optional[str]:
+        UNPACKABLE_EXTENSIONS = [".tar.gz", ".tar", ".tgz", ".gz", ".zip"]
+        for extension in UNPACKABLE_EXTENSIONS:
+            if file_name.endswith(extension):
+                return extension
+        return None
+
+    def is_unpackable_file(file_name: str) -> bool:
+        return get_unpackable_file_extension(file_name) is not None
+
+    def is_properly_named_unpackable_file(file_name: str) -> bool:
+        unpackable_extension = get_unpackable_file_extension(file_name)
+        if not unpackable_extension:
+            return False
+        base_file_name = file_name[:-len(unpackable_extension)]
+        return base_file_name.endswith("-inserts") or base_file_name.endswith("_inserts")
+
+    if not os.path.exists(file_name):
+        PRINT(f"File does not exist: {file_name}")
+        return False
+
+    if file_name.endswith(".json"):
+        try:
+            with open(file_name, "r") as f:
+                json.load(f)
+        except Exception:
+            PRINT(f"Cannot load JSON from file: {file_name}")
+            return False
+
+    sanity_check_passed = True
+    if is_unpackable_file(file_name):
+        extension = get_unpackable_file_extension(file_name)
+        PRINT(f"NOTE: If this archive ({extension[1:]}) file is intended to contain multiple files then: ")
+        PRINT(f"- The archive file must be named like: ANYNAME-inserts{extension}", end="")
+        if not is_properly_named_unpackable_file(file_name):
+            PRINT(f" -> And it is NOT.")
+            sanity_check_passed = False
+        else:
+            PRINT(f" -> And it is.")
+        PRINT(f"- The archive file must contain ONLY a directory with your files directly within it.")
+        PRINT(f"- And that directory name must be the same as the base name (e.g. ANYNAME-inserts) of your file name.")
+
+    return sanity_check_passed
 
 
 if __name__ == '__main__':

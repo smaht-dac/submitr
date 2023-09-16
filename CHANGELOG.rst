@@ -11,6 +11,7 @@ Change Log
 
 * Added --details option so submit-metadata-bundle and show-upload-info
   to fetch and show detailed information from S3.
+* Added sanity checks for submitted file.
 
 0.3.3
 =====

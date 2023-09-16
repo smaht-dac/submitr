@@ -5,9 +5,9 @@ import json
 import os
 import re
 import subprocess
-import sys
 import time
 from typing import Tuple
+import yaml
 
 # get_env_real_url would rely on env_utils
 # from dcicutils.env_utils import get_env_real_url
@@ -1262,35 +1262,74 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
 
 
 def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
-    results = fetch_detailed_results(uuid, metadata_bundles_bucket)
+
     print(f"----- Detailed Info -----")
-    s3_detailed_results_location = f"s3://{metadata_bundles_bucket}/{uuid}/submission.json"
-    print(f"From: {s3_detailed_results_location}")
-    if not results:
-        print("Cannot fetch detailed info or none available.")
+
+    submission_results_location, submission_results = fetch_submission_results(uuid, metadata_bundles_bucket)
+    exception_results_location, exception_results = fetch_exception_results(uuid, metadata_bundles_bucket)
+
+    if not submission_results and not exception_results:
+        print(f"Neither submission not exception results found!")
+        print(f"-> {submission_results_location}")
+        print(f"-> {exception_results_location}")
         return
-    if results.get("create"):
-        print("Creates:")
-        [print(result) for result in results["create"]]
-    if results.get("update"):
-        print("Updates:")
-        [print(result) for result in results["update"]]
-    if results.get("skip"):
-        print("Skipped:")
-        [print(result) for result in results["skip"]]
-    if results.get("validate"):
-        print("Validated:")
-        [print(result) for result in results["validate"]]
-    if results.get("error"):
-        print("Errored:")
-        [print(result) for result in results["error"]]
+
+    if submission_results:
+        print(f"From: {submission_results_location}")
+        if any(result_name in submission_results for result_name in ["create", "update", "skip", "validate", "error"]):
+            if submission_results.get("create"):
+                print("Creates:")
+                [print(result) for result in submission_results["create"]]
+            if submission_results.get("update"):
+                print("Updates:")
+                [print(result) for result in submission_results["update"]]
+            if submission_results.get("skip"):
+                print("Skipped:")
+                [print(result) for result in submission_results["skip"]]
+            if submission_results.get("validate"):
+                print("Validated:")
+                [print(result) for result in submission_results["validate"]]
+            if submission_results.get("error"):
+                print("Errored:")
+                [print(result) for result in submission_results["error"]]
+        else:
+            print("Some problems found during schema validation:")
+            if "unidentified" in submission_results:
+                print("Unidentified objects found during schema validation:")
+                print(yaml.dump(submission_results["unidentified"], sort_keys=False))
+            if "missing" in submission_results:
+                print("Missing required properties found during schema validation:")
+                print(yaml.dump(submission_results["missing"], sort_keys=False))
+            if "extraneous" in submission_results:
+                print("Extranous properties found during schema validation:")
+                print(yaml.dump(submission_results["extraneous"], sort_keys=False))
+            if "error" in submission_results:
+                print("Errors found during schema validation:")
+                print(yaml.dump(submission_results["error"], sort_keys=False))
+
+    if exception_results:
+        print("Exception during schema ingestion processing:")
+        print(f"From: {exception_results_location}")
+        print(exception_results)
 
 
-def fetch_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
+def fetch_submission_results(uuid: str, metadata_bundles_bucket: str) -> Optional[tuple[str, dict]]:
+    results_key = f"{uuid}/submission.json"
+    results_location = f"s3://{metadata_bundles_bucket}/{results_key}"
     try:
         s3 = boto3.client("s3")
-        response = s3.get_object(Bucket=metadata_bundles_bucket, Key=f"{uuid}/submission.json")
-        return json.loads(response['Body'].read().decode('utf-8'))
+        response = s3.get_object(Bucket=metadata_bundles_bucket, Key=results_key)
+        return (results_location, json.loads(response['Body'].read().decode('utf-8')))
     except Exception:
-        return None
-    
+        return (results_location, None)
+
+
+def fetch_exception_results(uuid: str, metadata_bundles_bucket: str) -> Optional[tuple[str, str]]:
+    results_key = f"{uuid}/traceback.txt"
+    results_location = f"s3://{metadata_bundles_bucket}/{results_key}"
+    try:
+        s3 = boto3.client("s3")
+        response = s3.get_object(Bucket=metadata_bundles_bucket, Key=f"{uuid}/traceback.txt")
+        return (results_location, response['Body'].read().decode('utf-8'))
+    except Exception:
+        return (results_location, None)
