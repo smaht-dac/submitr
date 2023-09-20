@@ -16,7 +16,10 @@ from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 from dcicutils.exceptions import InvalidParameterError
 from dcicutils.ff_utils import get_health_page as get_portal_health_page
 from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
-from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join, ignorable, remove_prefix
+from dcicutils.misc_utils import (
+    check_true, environ_bool, get_error_message,
+    PRINT, url_path_join, ignorable, remove_prefix
+)
 from dcicutils.s3_utils import HealthPageKey
 from typing import BinaryIO, Dict, Optional
 from typing_extensions import Literal
@@ -1276,36 +1279,36 @@ def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
 
     if submission_results:
         print(f"From: {submission_results_location}")
-        if any(result_name in submission_results for result_name in ["create", "update", "skip", "validate", "error"]):
-            if submission_results.get("create"):
+        if any(result_name in submission_results for result_name in ["created", "updated", "skipped", "validated", "errors"]):
+            if submission_results.get("created"):
                 print("Creates:")
-                [print(result) for result in submission_results["create"]]
-            if submission_results.get("update"):
+                [print(result) for result in submission_results["created"]]
+            if submission_results.get("updated"):
                 print("Updates:")
-                [print(result) for result in submission_results["update"]]
-            if submission_results.get("skip"):
+                [print(result) for result in submission_results["updated"]]
+            if submission_results.get("skipped"):
                 print("Skipped:")
-                [print(result) for result in submission_results["skip"]]
-            if submission_results.get("validate"):
+                [print(result) for result in submission_results["skipped"]]
+            if submission_results.get("validated"):
                 print("Validated:")
-                [print(result) for result in submission_results["validate"]]
-            if submission_results.get("error"):
+                [print(result) for result in submission_results["validated"]]
+            if submission_results.get("errors"):
                 print("Errored:")
-                [print(result) for result in submission_results["error"]]
+                [print(result) for result in submission_results["errors"]]
         else:
             print("Some problems found during schema validation:")
             if "unidentified" in submission_results:
                 print("Unidentified objects found during schema validation:")
                 print(yaml.dump(submission_results["unidentified"], sort_keys=False))
-            if "missing" in submission_results:
+            if "missing_properties" in submission_results:
                 print("Missing required properties found during schema validation:")
-                print(yaml.dump(submission_results["missing"], sort_keys=False))
-            if "extraneous" in submission_results:
+                print(yaml.dump(submission_results["missing_properties"], sort_keys=False))
+            if "extraneous_properties" in submission_results:
                 print("Extranous properties found during schema validation:")
-                print(yaml.dump(submission_results["extraneous"], sort_keys=False))
-            if "error" in submission_results:
+                print(yaml.dump(submission_results["extraneous_properties"], sort_keys=False))
+            if "errors" in submission_results:
                 print("Errors found during schema validation:")
-                print(yaml.dump(submission_results["error"], sort_keys=False))
+                print(yaml.dump(submission_results["errors"], sort_keys=False))
 
     if exception_results:
         print("Exception during schema ingestion processing:")
@@ -1320,7 +1323,9 @@ def fetch_submission_results(uuid: str, metadata_bundles_bucket: str) -> Optiona
         s3 = boto3.client("s3")
         response = s3.get_object(Bucket=metadata_bundles_bucket, Key=results_key)
         return (results_location, json.loads(response['Body'].read().decode('utf-8')))
-    except Exception:
+    except Exception as e:
+        if hasattr(e, "response") and e.response.get("Error", {}).get("Code", "").lower() == "accessdenied":
+            PRINT(f"Access denied fetching: {results_location}")
         return (results_location, None)
 
 
@@ -1331,5 +1336,7 @@ def fetch_exception_results(uuid: str, metadata_bundles_bucket: str) -> Optional
         s3 = boto3.client("s3")
         response = s3.get_object(Bucket=metadata_bundles_bucket, Key=f"{uuid}/traceback.txt")
         return (results_location, response['Body'].read().decode('utf-8'))
-    except Exception:
+    except Exception as e:
+        if hasattr(e, "response") and e.response.get("Error", {}).get("Code", "").lower() == "accessdenied":
+            PRINT(f"Access denied fetching: {results_location}")
         return (results_location, None)
