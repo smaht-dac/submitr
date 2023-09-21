@@ -1,4 +1,5 @@
 import boto3
+from botocore.exceptions import NoCredentialsError as BotoNoCredentialsError
 import glob
 import io
 import json
@@ -1268,8 +1269,8 @@ def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
 
     print(f"----- Detailed Info -----")
 
-    submission_results_location, submission_results = fetch_submission_results(uuid, metadata_bundles_bucket)
-    exception_results_location, exception_results = fetch_exception_results(uuid, metadata_bundles_bucket)
+    submission_results_location, submission_results = _fetch_submission_results(metadata_bundles_bucket, uuid)
+    exception_results_location, exception_results = _fetch_exception_results(metadata_bundles_bucket, uuid)
 
     if not submission_results and not exception_results:
         print(f"Neither submission not exception results found!")
@@ -1316,26 +1317,26 @@ def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
         print(exception_results)
 
 
-def fetch_submission_results(uuid: str, metadata_bundles_bucket: str) -> Optional[tuple[str, dict]]:
-    results_key = f"{uuid}/submission.json"
+def _fetch_submission_results(metadata_bundles_bucket: str, uuid: str) -> Optional[tuple[str, dict]]:
+    return _fetch_results(metadata_bundles_bucket, uuid, "submission.json")
+
+
+def _fetch_exception_results(metadata_bundles_bucket: str, uuid: str) -> Optional[tuple[str, str]]:
+    return _fetch_results(metadata_bundles_bucket, uuid, "traceback.txt")
+
+
+def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Optional[tuple[str, str]]:
+    results_key = f"{uuid}/{file}"
     results_location = f"s3://{metadata_bundles_bucket}/{results_key}"
     try:
         s3 = boto3.client("s3")
-        response = s3.get_object(Bucket=metadata_bundles_bucket, Key=results_key)
-        return (results_location, json.loads(response['Body'].read().decode('utf-8')))
-    except Exception as e:
-        if hasattr(e, "response") and e.response.get("Error", {}).get("Code", "").lower() == "accessdenied":
-            PRINT(f"Access denied fetching: {results_location}")
-        return (results_location, None)
-
-
-def fetch_exception_results(uuid: str, metadata_bundles_bucket: str) -> Optional[tuple[str, str]]:
-    results_key = f"{uuid}/traceback.txt"
-    results_location = f"s3://{metadata_bundles_bucket}/{results_key}"
-    try:
-        s3 = boto3.client("s3")
-        response = s3.get_object(Bucket=metadata_bundles_bucket, Key=f"{uuid}/traceback.txt")
-        return (results_location, response['Body'].read().decode('utf-8'))
+        response = s3.get_object(Bucket=metadata_bundles_bucket, Key=f"{uuid}/{file}")
+        results = response['Body'].read().decode('utf-8')
+        if file.endswith(".json"):
+            results = json.loads(results)
+        return (results_location, results)
+    except BotoNoCredentialsError:
+        PRINT(f"No credentials found for fetching: {results_location}")
     except Exception as e:
         if hasattr(e, "response") and e.response.get("Error", {}).get("Code", "").lower() == "accessdenied":
             PRINT(f"Access denied fetching: {results_location}")
