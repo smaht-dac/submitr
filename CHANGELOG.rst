@@ -6,6 +6,14 @@ submitr
 Change Log
 ----------
 
+
+0.3.4
+=====
+
+* Documentation refactor for ReadTheDocs to use an iframe for the logo.
+
+
+
 0.3.3
 =====
 
