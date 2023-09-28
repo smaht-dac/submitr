@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "submitr"
-version = "0.3.3.1b1"  # TODO: To become 0.5.0
+version = "0.3.3.1b2"  # TODO: To become 0.4.0
 description = "Support for uploading file submissions to SMAHT."
 # TODO: Update this email address when a more specific one is available for SMaHT.
 authors = ["4DN-DCIC Team <support@4dnucleome.org>"]

@@ -14,6 +14,13 @@ Change Log
   to fetch and show detailed information from S3.
 * Added sanity checks for submitted file.
 
+
+0.3.4
+=====
+
+* Documentation refactor for ReadTheDocs to use an iframe for the logo.
+
+
 0.3.3
 =====
 
