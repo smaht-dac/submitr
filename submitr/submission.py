@@ -18,7 +18,7 @@ from dcicutils.exceptions import InvalidParameterError
 from dcicutils.ff_utils import get_health_page as get_portal_health_page
 from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
-    check_true, environ_bool, get_error_message,
+    check_true, environ_bool,
     PRINT, url_path_join, ignorable, remove_prefix
 )
 from dcicutils.s3_utils import HealthPageKey
@@ -1280,7 +1280,11 @@ def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
 
     if submission_results:
         print(f"From: {submission_results_location}")
-        if any(result_name in submission_results for result_name in ["created", "updated", "skipped", "validated", "errors"]):
+        if any(result_name in submission_results for result_name in ["created",
+                                                                     "updated",
+                                                                     "skipped",
+                                                                     "validated",
+                                                                     "errors"]):
             if submission_results.get("created"):
                 print("Creates:")
                 [print(result) for result in submission_results["created"]]
