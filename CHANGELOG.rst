@@ -9,7 +9,7 @@ Change Log
 0.4.0
 =====
 
-* Upgrade to Python 3.11.
+* Upgrade to Python 3.11; and 3.7 no longer supported.
 * Added --details option so submit-metadata-bundle and show-upload-info
   to fetch and show detailed information from S3.
 * Added sanity checks for submitted file.
