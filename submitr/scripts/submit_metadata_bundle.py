@@ -58,6 +58,13 @@ def main(simulated_args_for_testing=None):
 
 
 def sanity_check_submitted_file(file_name: str) -> bool:
+    """
+    Performs some basic sanity checking on the specified file.
+    If it is a JSON file (i.e. with a .json file extension) make sure it can load.
+    If it is a zip file (or .tar.gz or other type of archive file) then tell the user
+    that it must contain a single directory whose name is the base name of the file
+    with a "-inserts" suffix. Returns True if passed sanity check otherwise False.
+    """
 
     def get_unpackable_file_extension(file_name: str) -> Optional[str]:
         UNPACKABLE_EXTENSIONS = [".tar.gz", ".tar", ".tgz", ".gz", ".zip"]
@@ -99,7 +106,8 @@ def sanity_check_submitted_file(file_name: str) -> bool:
         else:
             PRINT(f" -> And it is.")
         PRINT(f"- The archive file must contain ONLY a directory with your files directly within it.")
-        PRINT(f"- And that directory name must be the same as the base name (e.g. ANYNAME-inserts) of your file name.")
+        PRINT(f"- And that directory name must be named for the base name")
+        PRINT(f"  of your file with a -inserts suffix, e.g. ANYNAME-inserts.")
 
     return sanity_check_passed
 
