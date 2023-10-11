@@ -562,10 +562,7 @@ def test_show_upload_result():
 
 def test_show_section_without_caveat():
 
-    nothing_to_show = [
-        '----- Foo -----',
-        'Nothing to show.'
-    ]
+    nothing_to_show = []
 
     # Lines section available, without caveat.
     with shown_output() as shown:
