@@ -1321,15 +1321,15 @@ def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
         print(exception_results)
 
 
-def _fetch_submission_results(metadata_bundles_bucket: str, uuid: str) -> Optional[tuple[str, dict]]:
+def _fetch_submission_results(metadata_bundles_bucket: str, uuid: str) -> Optional[Tuple[str, dict]]:
     return _fetch_results(metadata_bundles_bucket, uuid, "submission.json")
 
 
-def _fetch_exception_results(metadata_bundles_bucket: str, uuid: str) -> Optional[tuple[str, str]]:
+def _fetch_exception_results(metadata_bundles_bucket: str, uuid: str) -> Optional[Tuple[str, str]]:
     return _fetch_results(metadata_bundles_bucket, uuid, "traceback.txt")
 
 
-def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Optional[tuple[str, str]]:
+def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Optional[Tuple[str, str]]:
     results_key = f"{uuid}/{file}"
     results_location = f"s3://{metadata_bundles_bucket}/{results_key}"
     try:
