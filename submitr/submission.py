@@ -510,13 +510,26 @@ def _resolve_app_args(institution, project, lab, award, app, consortium, submiss
     return app_args
 
 
-def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, validate_only,
-                         institution=None, project=None, lab=None, award=None,
-                         consortium=None, submission_center=None,
+def submit_any_ingestion(ingestion_filename, *,
+                         ingestion_type,
+                         server,
+                         env,
+                         institution=None,
+                         project=None,
+                         lab=None,
+                         award=None,
+                         consortium=None,
+                         submission_center=None,
                          app: OrchestratedApp = None,
-                         upload_folder=None, no_query=False, subfolders=False,
+                         upload_folder=None,
+                         no_query=False,
+                         subfolders=False,
                          submission_protocol=DEFAULT_SUBMISSION_PROTOCOL,
-                         show_details=False):
+                         show_details=False,
+                         post_only=False,
+                         patch_only=False,
+                         validate_only=False,
+                         sheet_utils=False):
     """
     Does the core action of submitting a metadata bundle.
 
@@ -545,12 +558,16 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     if KEY_MANAGER.selected_app != app:
         with KEY_MANAGER.locally_selected_app(app):
             return submit_any_ingestion(ingestion_filename=ingestion_filename, ingestion_type=ingestion_type,
-                                        server=server, env=env, validate_only=validate_only,
+                                        server=server, env=env,
                                         institution=institution, project=project, lab=lab, award=award, app=app,
                                         consortium=consortium, submission_center=submission_center,
                                         upload_folder=upload_folder, no_query=no_query, subfolders=subfolders,
                                         submission_protocol=submission_protocol,
-                                        show_details=show_details)
+                                        show_details=show_details,
+                                        patch_only=patch_only,
+                                        post_only=post_only,
+                                        validate_only=validate_only,
+                                        sheet_utils=sheet_utils)
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app,
                                  consortium=consortium, submission_center=submission_center)
@@ -603,6 +620,9 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
         submission_post_data = {
             'validate_only': validate_only,
+            'post_only': post_only,
+            'patch_only': patch_only,
+            'sheet_utils': sheet_utils
         }
 
     else:
@@ -1280,6 +1300,8 @@ def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
 
     if submission_results:
         print(f"From: {submission_results_location}")
+        print(yaml.dump(submission_results))
+        """
         if any(result_name in submission_results for result_name in ["created",
                                                                      "updated",
                                                                      "skipped",
@@ -1287,19 +1309,19 @@ def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
                                                                      "errors"]):
             if submission_results.get("created"):
                 print("Creates:")
-                [print(result) for result in submission_results["created"]]
+                print(yaml.dump(submission_results["created"]))
             if submission_results.get("updated"):
                 print("Updates:")
-                [print(result) for result in submission_results["updated"]]
+                print(yaml.dump(submission_results["updated"]))
             if submission_results.get("skipped"):
                 print("Skipped:")
-                [print(result) for result in submission_results["skipped"]]
+                print(yaml.dump(submission_results["skipped"]))
             if submission_results.get("validated"):
                 print("Validated:")
-                [print(result) for result in submission_results["validated"]]
+                print(yaml.dump(submission_results["validated"]))
             if submission_results.get("errors"):
                 print("Errored:")
-                [print(result) for result in submission_results["errors"]]
+                print(yaml.dump(submission_results["errors"]))
         else:
             print("Some problems found during schema validation:")
             if "unidentified" in submission_results:
@@ -1314,6 +1336,7 @@ def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
             if "errors" in submission_results:
                 print("Errors found during schema validation:")
                 print(yaml.dump(submission_results["errors"], sort_keys=False))
+        """
 
     if exception_results:
         print("Exception during schema ingestion processing:")

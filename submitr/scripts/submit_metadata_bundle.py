@@ -25,8 +25,14 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--project', '-p', help='project identifier', default=None)
     parser.add_argument('--server', '-s', help="an http or https address of the server to use", default=None)
     parser.add_argument('--env', '-e', help="a portal environment name for the server to use", default=None)
+    parser.add_argument('--post-only', action="store_true",
+                        help="Only perform creates (POST) for submitted data.", default=False)
+    parser.add_argument('--patch-only', action="store_true",
+                        help="Only perform updates (PATCH) for submitted data.", default=False)
     parser.add_argument('--validate-only', '-v', action="store_true",
-                        help="whether to stop after validating without submitting", default=False)
+                        help="Only perform validation of submitted data.", default=False)
+    parser.add_argument('--sheet-utils', action="store_true",
+                        help="Used sheet_utils rather than the new structured_data to data parsing.", default=False)
     parser.add_argument('--upload_folder', '-u', help="location of the upload files", default=None)
     parser.add_argument('--ingestion_type', '--ingestion-type', '-t', help="the ingestion type",
                         default=DEFAULT_INGESTION_TYPE)
@@ -51,10 +57,14 @@ def main(simulated_args_for_testing=None):
         submit_any_ingestion(ingestion_filename=args.bundle_filename, ingestion_type=args.ingestion_type,
                              institution=args.institution, project=args.project,
                              server=args.server, env=args.env,
-                             validate_only=args.validate_only, upload_folder=args.upload_folder,
                              no_query=args.no_query, subfolders=args.subfolders, app=args.app,
                              submission_protocol=args.submission_protocol,
-                             show_details=args.details)
+                             upload_folder=args.upload_folder,
+                             show_details=args.details,
+                             post_only=args.post_only,
+                             patch_only=args.patch_only,
+                             validate_only=args.validate_only,
+                             sheet_utils=args.sheet_utils)
 
 
 def sanity_check_submitted_file(file_name: str) -> bool:
