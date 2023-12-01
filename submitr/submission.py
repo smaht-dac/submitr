@@ -703,7 +703,11 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
     From outer scope: server, keypair, uuid (of IngestionSubmission)
     """
     tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
-    response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS).json()
+    response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS)
+    response_status_code = response.status_code
+    response = response.json()
+    if response_status_code == 404:
+        return True, f"Not found - {uuid}", response
     # FYI this processing_status and its state, progress, outcome properties were ultimately set
     # from within the ingester process, from within types.ingestion.SubmissionFolio.processing_status.
     status = response.get("processing_status", {})
