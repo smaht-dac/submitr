@@ -21,6 +21,8 @@ def main(simulated_args_for_testing=None):
                              f" Normally this should not be given.")
     parser.add_argument('--server', '-s', help="an http or https address of the server to use", default=None)
     parser.add_argument('--env', '-e', help="a portal environment name for the server to use", default=None)
+    parser.add_argument('--details', action="store_true", help="detailed output", default=False)
+    parser.add_argument('--verbose', action="store_true", help="verbose output", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     with script_catch_errors():
@@ -28,7 +30,8 @@ def main(simulated_args_for_testing=None):
                 args.submission_uuid,
                 server=args.server,
                 env=args.env,
-                app=args.app
+                app=args.app,
+                show_details=(args.verbose or args.details)
         )
 
 
