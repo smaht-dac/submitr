@@ -40,15 +40,20 @@ def main(simulated_args_for_testing=None):
                         help="suppress requests for user input", default=False)
     parser.add_argument('--subfolders', '-sf', action="store_true",
                         help="search subfolders of folder for upload files", default=False)
-    parser.add_argument('--app', default=DEFAULT_APP,
+    parser.add_argument('--app', default=None,
                         help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")
     parser.add_argument('--submission_protocol', '--submission-protocol', '-sp',
                         choices=SUBMISSION_PROTOCOLS, default=DEFAULT_SUBMISSION_PROTOCOL,
                         help=f"the submission protocol (default {DEFAULT_SUBMISSION_PROTOCOL!r})")
-    parser.add_argument('--details', '-d', action="store_true", help="retrieve and display detailed info", default=None)
-    parser.add_argument('--verbose', action="store_true", help="verbose output", default=None)
+    parser.add_argument('--details', '-d', action="store_true", help="retrieve and display detailed info", default=False)
+    parser.add_argument('--verbose', action="store_true", help="verbose output", default=False)
+    parser.add_argument('--validate-local', action="store_true", help="validate file locally before submission", default=False)
+    parser.add_argument('--validate-local-only', action="store_true", help="validate file locally only (no submission)", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
+
+    if args.validate_local_only:
+        args.validate_local = True
 
     with script_catch_errors():
 
@@ -65,6 +70,8 @@ def main(simulated_args_for_testing=None):
                              post_only=args.post_only,
                              patch_only=args.patch_only,
                              validate_only=args.validate_only,
+                             validate_local=args.validate_local,
+                             validate_local_only=args.validate_local_only,
                              sheet_utils=args.sheet_utils)
 
 

@@ -22,6 +22,7 @@ from dcicutils.misc_utils import (
     PRINT, url_path_join, ignorable, remove_prefix
 )
 from dcicutils.s3_utils import HealthPageKey
+from dcicutils.structured_data import Portal, StructuredDataSet
 from typing import BinaryIO, Dict, Optional
 from typing_extensions import Literal
 from urllib.parse import urlparse
@@ -76,11 +77,13 @@ def resolve_server(server, env):
 
     if not server and not env:
         if DEFAULT_ENV:
-            show(f"Defaulting to environment {env!r} because {DEFAULT_ENV_VAR} is set.")
+            show(f"Environment name defaulting to \"{DEFAULT_ENV}\" because neither --env nor --server specified.")
             env = DEFAULT_ENV
         else:
             # Production default needs no explanation.
             env = PRODUCTION_ENV
+    elif env:
+        show(f"Environment name is: {env}")
 
     if env:
         try:
@@ -529,6 +532,8 @@ def submit_any_ingestion(ingestion_filename, *,
                          post_only=False,
                          patch_only=False,
                          validate_only=False,
+                         validate_local=False,
+                         validate_local_only=False,
                          sheet_utils=False):
     """
     Does the core action of submitting a metadata bundle.
@@ -554,6 +559,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
+        show(f"App name defaulting \"{app}\" because --app not specified.")
 
     if KEY_MANAGER.selected_app != app:
         with KEY_MANAGER.locally_selected_app(app):
@@ -567,10 +573,35 @@ def submit_any_ingestion(ingestion_filename, *,
                                         patch_only=patch_only,
                                         post_only=post_only,
                                         validate_only=validate_only,
+                                        validate_local=validate_local,
+                                        validate_local_only=validate_local_only,
                                         sheet_utils=sheet_utils)
+    PRINT(f"App name is: {app}")
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app,
                                  consortium=consortium, submission_center=submission_center)
+
+    if validate_local:
+        PRINT(f"> Validating {'ONLY' if validate_local_only else ''} file locally because" +
+              f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
+        data = StructuredDataSet.load(ingestion_filename, Portal(env, app=app))
+        PRINT(f"> Dumping JSON for loaded file: {ingestion_filename}")
+        PRINT(json.dumps(data.data, indent=4))
+        PRINT(f"> Validation results for loaded file: {ingestion_filename}")
+        if (issues := data.validate()):
+            PRINT(f"> Validation errors found for loaded file: {ingestion_filename}")
+            [PRINT(f"  - {issue}") for issue in issues]
+        else:
+            PRINT(f"  - OK")
+        refs_resolved, refs_unresolved = data.refs()
+        if refs_resolved:
+            PRINT(f"> Resolved references for loaded file: {ingestion_filename}")
+            [PRINT(f"  - {ref}") for ref in refs_resolved]
+        if refs_unresolved:
+            PRINT(f"> Unresolved references for loaded file: {ingestion_filename}")
+            [PRINT(f"  - {ref}") for ref in refs_unresolved]
+        if validate_local_only:
+            exit(0 if not issues else 1)
 
     server = resolve_server(server=server, env=env)
 
