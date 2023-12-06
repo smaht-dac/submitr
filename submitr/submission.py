@@ -362,6 +362,12 @@ def show_section(res, section, caveat_outcome=None):
         return
     show("----- %s%s -----" % (keyword_as_title(section), caveat))
     if isinstance(section_data, dict):
+        if file := section_data.get("file"):
+            PRINT(f"File: {file}")
+        if s3_file := section_data.get("s3_file"):
+            PRINT(f"S3 File: {s3_file}")
+        if details := section_data.get("details"):
+            PRINT(f"Details: {details}")
         for item in section_data:
             if isinstance(section_data[item], list) and section_data[item]:
                 if item == "reader":
@@ -373,7 +379,7 @@ def show_section(res, section, caveat_outcome=None):
                 else:
                     continue
                 for issue in section_data[item]:
-                    PRINT(f"  - {StructuredDataSet.format_issue(issue)}")
+                    PRINT(f"  - {StructuredDataSet.format_issue(issue, file)}")
     elif isinstance(section_data, list):
         for line in section_data:
             show(line)

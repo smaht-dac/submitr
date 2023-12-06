@@ -92,6 +92,7 @@ def sanity_check_submitted_file(file_name: str) -> bool:
         return None
 
     def is_unpackable_file(file_name: str) -> bool:
+        return False
         return get_unpackable_file_extension(file_name) is not None
 
     def is_properly_named_unpackable_file(file_name: str) -> bool:
