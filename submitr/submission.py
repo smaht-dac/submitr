@@ -582,26 +582,7 @@ def submit_any_ingestion(ingestion_filename, *,
                                  consortium=consortium, submission_center=submission_center)
 
     if validate_local:
-        PRINT(f"> Validating {'ONLY' if validate_local_only else ''} file locally because" +
-              f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
-        data = StructuredDataSet.load(ingestion_filename, Portal(env, app=app))
-        PRINT(f"> Dumping JSON for loaded file: {ingestion_filename}")
-        PRINT(json.dumps(data.data, indent=4))
-        PRINT(f"> Validation results for loaded file: {ingestion_filename}")
-        if (issues := data.validate()):
-            PRINT(f"> Validation errors found for loaded file: {ingestion_filename}")
-            [PRINT(f"  - {issue}") for issue in issues]
-        else:
-            PRINT(f"  - OK")
-        refs_resolved, refs_unresolved = data.refs()
-        if refs_resolved:
-            PRINT(f"> Resolved references for loaded file: {ingestion_filename}")
-            [PRINT(f"  - {ref}") for ref in refs_resolved]
-        if refs_unresolved:
-            PRINT(f"> Unresolved references for loaded file: {ingestion_filename}")
-            [PRINT(f"  - {ref}") for ref in refs_unresolved]
-        if validate_local_only:
-            exit(0 if not issues else 1)
+        _validate_locally(ingestion_filename, app, env, validate_local_only)
 
     server = resolve_server(server=server, env=env)
 
@@ -1403,3 +1384,33 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
         if hasattr(e, "response") and e.response.get("Error", {}).get("Code", "").lower() == "accessdenied":
             PRINT(f"Access denied fetching: {results_location}")
         return (results_location, None)
+
+
+def _validate_locally(ingestion_filename: str, app: str, env: str, validate_local_only: bool = False) -> int:
+    PRINT(f"> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
+          f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
+    structured_data = StructuredDataSet.load(ingestion_filename, Portal(env, app=app))
+    PRINT(f"> Dumping JSON for loaded file: {ingestion_filename}")
+    PRINT(json.dumps(structured_data.data, indent=4))
+    structured_data.validate()
+    PRINT(f"> Validation results for loaded file: {ingestion_filename}")
+    if (validation_errors := structured_data.validation_errors):
+        PRINT(f"> Validation errors found for loaded file: {ingestion_filename}")
+        for validation_error in validation_errors:
+            PRINT(f"  - {structured_data.format_issue(validation_error, ingestion_filename)}")
+    else:
+        PRINT(f"  - OK")
+    if (ref_errors := structured_data.ref_errors):
+        PRINT(f"> Reference (linkTo) errors found for loaded file: {ingestion_filename}")
+        for ref_error in ref_errors:
+            PRINT(f"  - {structured_data.format_issue(ref_error, ingestion_filename)}")
+    if (reader_warnings := structured_data.reader_warnings):
+        PRINT(f"> Parsing warnings found for loaded file: {ingestion_filename}")
+        for reader_warning in reader_warnings:
+            PRINT(f"  - {structured_data.format_issue(reader_warning, ingestion_filename)}")
+    if (resolved_refs := structured_data.resolved_refs):
+        PRINT(f"> Resolved references (FYI) for loaded file: {ingestion_filename}")
+        for resolved_ref in sorted(resolved_refs):
+            PRINT(f"  - {resolved_ref}")
+    if validate_local_only:
+        exit(0 if not structured_data.errors else 1)
