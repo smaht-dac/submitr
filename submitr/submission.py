@@ -362,7 +362,18 @@ def show_section(res, section, caveat_outcome=None):
         return
     show("----- %s%s -----" % (keyword_as_title(section), caveat))
     if isinstance(section_data, dict):
-        show(json.dumps(section_data, indent=2))
+        for item in section_data:
+            if isinstance(section_data[item], list) and section_data[item]:
+                if item == "reader":
+                    PRINT(f"Parser Warnings:")
+                elif item == "validation":
+                    PRINT(f"Validation Erros:")
+                elif item == "ref":
+                    PRINT(f"Reference (linkTo) Errors:")
+                else:
+                    continue
+                for issue in section_data[item]:
+                    PRINT(f"  - {StructuredDataSet.format_issue(issue)}")
     elif isinstance(section_data, list):
         for line in section_data:
             show(line)
