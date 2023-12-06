@@ -373,7 +373,7 @@ def show_section(res, section, caveat_outcome=None):
                 if item == "reader":
                     PRINT(f"Parser Warnings:")
                 elif item == "validation":
-                    PRINT(f"Validation Erros:")
+                    PRINT(f"Validation Errors:")
                 elif item == "ref":
                     PRINT(f"Reference (linkTo) Errors:")
                 else:
