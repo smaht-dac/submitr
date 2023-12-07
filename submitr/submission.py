@@ -321,8 +321,8 @@ def do_app_arg_defaulting(app_args, user_record):
                 del app_args[arg]
 
 
-PROGRESS_CHECK_INTERVAL = 14  # seconds
-ATTEMPTS_BEFORE_TIMEOUT = 30
+PROGRESS_CHECK_INTERVAL = 3  # seconds
+ATTEMPTS_BEFORE_TIMEOUT = 40
 
 
 def get_section(res, section):
