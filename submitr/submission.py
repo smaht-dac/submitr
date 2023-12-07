@@ -321,8 +321,8 @@ def do_app_arg_defaulting(app_args, user_record):
                 del app_args[arg]
 
 
-PROGRESS_CHECK_INTERVAL = 15  # seconds
-ATTEMPTS_BEFORE_TIMEOUT = 40
+PROGRESS_CHECK_INTERVAL = 14  # seconds
+ATTEMPTS_BEFORE_TIMEOUT = 30
 
 
 def get_section(res, section):
@@ -360,7 +360,7 @@ def show_section(res, section, caveat_outcome=None):
         caveat = ""
     if not section_data:
         return
-    show("----- %s%s -----" % (keyword_as_title(section), caveat))
+    show("\n----- %s%s -----" % (keyword_as_title(section), caveat))
     if isinstance(section_data, dict):
         if file := section_data.get("file"):
             PRINT(f"File: {file}")
@@ -381,8 +381,10 @@ def show_section(res, section, caveat_outcome=None):
                 for issue in section_data[item]:
                     PRINT(f"  - {StructuredDataSet.format_issue(issue, file)}")
     elif isinstance(section_data, list):
-        for line in section_data:
-            show(line)
+        if section == "upload_info":
+            show(yaml.dump(section_data))
+        else:
+            [show(line) for line in section_data]
     else:  # We don't expect this, but such should be shown as-is, mostly to see what it is.
         show(section_data)
 
