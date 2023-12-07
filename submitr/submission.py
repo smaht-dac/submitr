@@ -379,7 +379,7 @@ def show_section(res, section, caveat_outcome=None):
                 else:
                     continue
                 for issue in section_data[item]:
-                    PRINT(f"  - {StructuredDataSet.format_issue(issue, file)}")
+                    PRINT(f"  - {_format_issue(issue, file)}")
     elif isinstance(section_data, list):
         if section == "upload_info":
             show(yaml.dump(section_data))
@@ -1416,20 +1416,62 @@ def _validate_locally(ingestion_filename: str, app: str, env: str, validate_loca
     if (validation_errors := structured_data.validation_errors):
         PRINT(f"> Validation errors found for loaded file: {ingestion_filename}")
         for validation_error in validation_errors:
-            PRINT(f"  - {structured_data.format_issue(validation_error, ingestion_filename)}")
+            PRINT(f"  - {_format_issue(validation_error, ingestion_filename)}")
     else:
         PRINT(f"  - OK")
     if (ref_errors := structured_data.ref_errors):
         PRINT(f"> Reference (linkTo) errors found for loaded file: {ingestion_filename}")
         for ref_error in ref_errors:
-            PRINT(f"  - {structured_data.format_issue(ref_error, ingestion_filename)}")
+            PRINT(f"  - {_format_issue(ref_error, ingestion_filename)}")
     if (reader_warnings := structured_data.reader_warnings):
         PRINT(f"> Parsing warnings found for loaded file: {ingestion_filename}")
         for reader_warning in reader_warnings:
-            PRINT(f"  - {structured_data.format_issue(reader_warning, ingestion_filename)}")
+            PRINT(f"  - {_format_issue(reader_warning, ingestion_filename)}")
     if (resolved_refs := structured_data.resolved_refs):
         PRINT(f"> Resolved references (FYI) for loaded file: {ingestion_filename}")
         for resolved_ref in sorted(resolved_refs):
             PRINT(f"  - {resolved_ref}")
     if validate_local_only:
         exit(0 if not structured_data.errors else 1)
+
+
+def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
+    def src_string(issue: dict) -> str:
+        if not isinstance(issue, dict) or not isinstance(issue_src := issue.get("src"), dict):
+            return ""
+        show_file = original_file and (original_file.endswith(".zip") or
+                                       original_file.endswith(".tgz") or original_file.endswith(".gz"))
+        src_file = issue_src.get("file") if show_file else ""
+        src_type = issue_src.get("type")
+        src_column = issue_src.get("column")
+        src_row = issue_src.get("row", 0)
+        if src_file:
+            src = f"{os.path.basename(src_file)}"
+            sep = ":"
+        else:
+            src = ""
+            sep = "."
+        if src_type:
+            src += (sep if src else "") + src_type
+            sep = "."
+        if src_column:
+            src += (sep if src else "") + src_column
+        if src_row > 0:
+            src += (" " if src else "") + f"[{src_row}]"
+        if not src:
+            if issue.get("warning"):
+                src = "Warning"
+            elif issue.get("error"):
+                src = "Error"
+            else:
+                src = "Issue"
+        return src
+    issue_message = None
+    if issue:
+        if error := issue.get("error"):
+            issue_message = error
+        elif warning := issue.get("warning"):
+            issue_message = warning
+        elif issue.get("truncated"):
+            return f"Truncated result set | More: {issue.get('more')} | See: {issue.get('details')}"
+    return f"{src_string(issue)}: {issue_message}" if issue_message else ""
