@@ -337,7 +337,7 @@ def get_section(res, section):
     return res.get(section) or res.get('additional_data', {}).get(section)
 
 
-def show_section(res, section, caveat_outcome=None):
+def show_section(res, section, caveat_outcome=None, portal=None):
     """
     Shows a given named section from a description of an ingestion submission.
 
@@ -382,7 +382,15 @@ def show_section(res, section, caveat_outcome=None):
                     PRINT(f"  - {_format_issue(issue, file)}")
     elif isinstance(section_data, list):
         if section == "upload_info":
-            show(yaml.dump(section_data))
+            for info in section_data:
+                display_filename = None
+                if (filename := info.get("filename")) and (uuid := info.get("uuid")):
+                    if portal and (fileobject := portal.get(f"/{uuid}")):
+                        display_filename = fileobject.json().get("display_title")
+                    message = f"File: {filename} ({uuid})"
+                    if display_filename:
+                        message += f" -> {display_filename}"
+                    show(message)
         else:
             [show(line) for line in section_data]
     else:  # We don't expect this, but such should be shown as-is, mostly to see what it is.
@@ -793,7 +801,7 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     show_section(check_response, "result")
 
     if check_status == "success":
-        show_section(check_response, "upload_info")
+        show_section(check_response, "upload_info", portal=Portal(keydict))
 
     if show_details:
         metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
@@ -882,7 +890,8 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
                        show_validation_output=show_validation_output,
                        show_processing_status=show_processing_status,
                        show_datafile_url=show_datafile_url,
-                       show_details=show_details)
+                       show_details=show_details,
+                       portal=Portal(keydict))
     if show_details:
         metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
         show_detailed_results(uuid, metadata_bundles_bucket)
@@ -893,22 +902,22 @@ def show_upload_result(result,
                        show_validation_output=True,
                        show_processing_status=True,
                        show_datafile_url=True,
-                       show_details=True):
+                       show_details=True,
+                       portal=None):
 
     if show_primary_result:
         if get_section(result, 'upload_info'):
-            show_section(result, 'upload_info')
+            show_section(result, 'upload_info', portal=portal)
         else:
             show("Uploads: None")
 
     # New March 2023 ...
 
     if show_validation_output and get_section(result, 'validation_output'):
-        PRINT()  # start on a fresh line
         show_section(result, 'validation_output')
 
     if show_processing_status and result.get('processing_status'):
-        show("----- Processing Status -----")
+        show("\n----- Processing Status -----")
         state = result['processing_status'].get('state')
         if state:
             show(f"State: {state.title()}")
@@ -1322,7 +1331,7 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
 
 def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
 
-    print(f"----- Detailed Info -----")
+    print(f"\n----- Detailed Info -----")
 
     submission_results_location, submission_results = _fetch_submission_results(metadata_bundles_bucket, uuid)
     exception_results_location, exception_results = _fetch_exception_results(metadata_bundles_bucket, uuid)
