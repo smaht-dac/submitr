@@ -1326,7 +1326,7 @@ def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
     exception_results_location, exception_results = _fetch_exception_results(metadata_bundles_bucket, uuid)
 
     if not submission_results and not exception_results:
-        print(f"Neither submission not exception results found!")
+        print(f"Neither submission nor exception results found!")
         print(f"-> {submission_results_location}")
         print(f"-> {exception_results_location}")
         return
