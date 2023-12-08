@@ -22,7 +22,7 @@ from dcicutils.misc_utils import (
     PRINT, url_path_join, ignorable, remove_prefix
 )
 from dcicutils.s3_utils import HealthPageKey
-from dcicutils.structured_data import Portal, StructuredDataSet
+from dcicutils.structured_data import Portal, Schema, StructuredDataSet
 from typing import BinaryIO, Dict, Optional
 from typing_extensions import Literal
 from urllib.parse import urlparse
@@ -383,14 +383,21 @@ def show_section(res, section, caveat_outcome=None, portal=None):
     elif isinstance(section_data, list):
         if section == "upload_info":
             for info in section_data:
-                display_filename = None
+                display_name = None
                 if (filename := info.get("filename")) and (uuid := info.get("uuid")):
-                    if portal and (fileobject := portal.get(f"/{uuid}")):
-                        display_filename = fileobject.json().get("display_title")
-                    message = f"File: {filename} ({uuid})"
-                    if display_filename:
-                        message += f" -> {display_filename}"
-                    show(message)
+                    if portal and (fileobject := portal.get(f"/{uuid}")) and (fileobject := fileobject.json()):
+                        if (display_title := fileobject.get("display_title")):
+                            info["target"] = display_title
+                        if (data_type := fileobject.get("data_type")):
+                            if isinstance(data_type, list) and len(data_type) > 0:
+                                data_type = data_type[0]
+                            elif isinstance(data_type, str):
+                                data_type = data_type
+                            else:
+                                data_type = None
+                            if data_type:
+                                info["type"] = Schema.type_name(data_type)
+            print(yaml.dump(section_data))
         else:
             [show(line) for line in section_data]
     else:  # We don't expect this, but such should be shown as-is, mostly to see what it is.
@@ -1331,7 +1338,7 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
 
 def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
 
-    print(f"\n----- Detailed Info -----")
+    print(f"----- Detailed Info -----")
 
     submission_results_location, submission_results = _fetch_submission_results(metadata_bundles_bucket, uuid)
     exception_results_location, exception_results = _fetch_exception_results(metadata_bundles_bucket, uuid)
