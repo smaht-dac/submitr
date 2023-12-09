@@ -23,7 +23,7 @@ from dcicutils.misc_utils import (
 )
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.structured_data import Portal, Schema, StructuredDataSet
-from typing import BinaryIO, Dict, Optional
+from typing import BinaryIO, Dict, Optional, Union
 from typing_extensions import Literal
 from urllib.parse import urlparse
 from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER, DEFAULT_APP
@@ -1425,30 +1425,43 @@ def _validate_locally(ingestion_filename: str, app: str, env: str, validate_loca
     PRINT(f"> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
           f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
     structured_data = StructuredDataSet.load(ingestion_filename, Portal(env, app=app))
-    PRINT(f"> Dumping JSON for loaded file: {ingestion_filename}")
-    PRINT(json.dumps(structured_data.data, indent=4))
+    PRINT(f"> Parsed JSON:")
+    _print_json_with_prefix(structured_data.data, "  ")
     structured_data.validate()
-    PRINT(f"> Validation results for loaded file: {ingestion_filename}")
+    PRINT(f"\r> Types referenced:")
+    for type_name in sorted(structured_data.data):
+        PRINT(f"  - {type_name}: {len(structured_data.data[type_name])} object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
+    PRINT(f"> Validation results:")
     if (validation_errors := structured_data.validation_errors):
-        PRINT(f"> Validation errors found for loaded file: {ingestion_filename}")
+        PRINT(f"> Validation errors:")
         for validation_error in validation_errors:
             PRINT(f"  - {_format_issue(validation_error, ingestion_filename)}")
     else:
         PRINT(f"  - OK")
+    if (files := structured_data.upload_files):
+        PRINT(f"\r> File references:")
+        [PRINT(f"  - {file.get('type')}: {file.get('file')}") for file in files]
     if (ref_errors := structured_data.ref_errors):
-        PRINT(f"> Reference (linkTo) errors found for loaded file: {ingestion_filename}")
+        PRINT(f"> Reference (linkTo) errors:")
         for ref_error in ref_errors:
             PRINT(f"  - {_format_issue(ref_error, ingestion_filename)}")
     if (reader_warnings := structured_data.reader_warnings):
-        PRINT(f"> Parsing warnings found for loaded file: {ingestion_filename}")
+        PRINT(f"> Parser warnings:")
         for reader_warning in reader_warnings:
             PRINT(f"  - {_format_issue(reader_warning, ingestion_filename)}")
     if (resolved_refs := structured_data.resolved_refs):
-        PRINT(f"> Resolved references (FYI) for loaded file: {ingestion_filename}")
+        PRINT(f"> Resolved object references:")
         for resolved_ref in sorted(resolved_refs):
             PRINT(f"  - {resolved_ref}")
     if validate_local_only:
         exit(0 if not structured_data.errors else 1)
+
+
+def _print_json_with_prefix(data, prefix):
+    json_string = json.dumps(data, indent=4)
+    json_string = f"\n{prefix}".join(json_string.split("\n"))
+    PRINT(prefix, end="")
+    PRINT(json_string)
 
 
 def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
