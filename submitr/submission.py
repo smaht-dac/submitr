@@ -83,7 +83,7 @@ def resolve_server(server, env):
             # Production default needs no explanation.
             env = PRODUCTION_ENV
     elif env:
-        show(f"Environment name is: {env}")
+        show(f"App environment name is: {env}")
 
     if env:
         try:
@@ -625,6 +625,8 @@ def submit_any_ingestion(ingestion_filename, *,
     maybe_ingestion_type = ''
     if ingestion_type != DEFAULT_INGESTION_TYPE:
         maybe_ingestion_type = " (%s)" % ingestion_type
+
+    PRINT(f"App key file is: {KEY_MANAGER.keys_file}")
 
     if not no_query:
         if not yes_or_no("Submit %s%s to %s%s?"
