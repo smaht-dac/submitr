@@ -10,4 +10,4 @@ TEST_FILE=test_uw_gcc_colo829bl_submission_20231117.xlsx
 TEST_FILE_DIR=$THIS_DIR/../testdata/demo
 TEST_FILE_PATH=`realpath $TEST_FILE_DIR/$TEST_FILE`
 
-submit-metadata-bundle $TEST_FILE_PATH --env smaht-localhost
+submit-metadata-bundle $TEST_FILE_PATH --env smaht-localhost $*

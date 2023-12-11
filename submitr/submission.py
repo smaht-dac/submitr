@@ -1352,42 +1352,6 @@ def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
     if submission_results:
         print(f"From: {submission_results_location}")
         print(yaml.dump(submission_results))
-        """
-        if any(result_name in submission_results for result_name in ["created",
-                                                                     "updated",
-                                                                     "skipped",
-                                                                     "validated",
-                                                                     "errors"]):
-            if submission_results.get("created"):
-                print("Creates:")
-                print(yaml.dump(submission_results["created"]))
-            if submission_results.get("updated"):
-                print("Updates:")
-                print(yaml.dump(submission_results["updated"]))
-            if submission_results.get("skipped"):
-                print("Skipped:")
-                print(yaml.dump(submission_results["skipped"]))
-            if submission_results.get("validated"):
-                print("Validated:")
-                print(yaml.dump(submission_results["validated"]))
-            if submission_results.get("errors"):
-                print("Errored:")
-                print(yaml.dump(submission_results["errors"]))
-        else:
-            print("Some problems found during schema validation:")
-            if "unidentified" in submission_results:
-                print("Unidentified objects found during schema validation:")
-                print(yaml.dump(submission_results["unidentified"], sort_keys=False))
-            if "missing_properties" in submission_results:
-                print("Missing required properties found during schema validation:")
-                print(yaml.dump(submission_results["missing_properties"], sort_keys=False))
-            if "extraneous_properties" in submission_results:
-                print("Extranous properties found during schema validation:")
-                print(yaml.dump(submission_results["extraneous_properties"], sort_keys=False))
-            if "errors" in submission_results:
-                print("Errors found during schema validation:")
-                print(yaml.dump(submission_results["errors"], sort_keys=False))
-        """
 
     if exception_results:
         print("Exception during schema ingestion processing:")
