@@ -615,10 +615,16 @@ def submit_any_ingestion(ingestion_filename, *,
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app,
                                  consortium=consortium, submission_center=submission_center)
 
+    server = resolve_server(server=server, env=env)
+    keydict = KEY_MANAGER.get_keydict_for_server(server)
+    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
+    portal = Portal(keydict)
+    if not portal.ping():
+        PRINT(f"Portal credentials do not seem to work: {KEY_MANAGER.keys_file} ({env})")
+        exit(1)
+
     if validate_local:
         _validate_locally(ingestion_filename, app, env, validate_local_only)
-
-    server = resolve_server(server=server, env=env)
 
     validation_qualifier = " (for validation only)" if validate_only else ""
 
@@ -633,9 +639,6 @@ def submit_any_ingestion(ingestion_filename, *,
                          % (ingestion_filename, maybe_ingestion_type, server, validation_qualifier)):
             show("Aborting submission.")
             exit(1)
-
-    keydict = KEY_MANAGER.get_keydict_for_server(server)
-    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
 
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
 
