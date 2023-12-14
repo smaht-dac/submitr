@@ -646,6 +646,18 @@ def submit_any_ingestion(ingestion_filename, *,
 
     do_app_arg_defaulting(app_args, user_record)
 
+    autoadd = None
+    if app_args and isinstance(submission_centers := app_args.get("submission_centers"), list):
+        if len(submission_centers) == 1:
+            def extract_identifying_value_from_path(path: str) -> str:
+                if path.endswith("/"):
+                    path = path[:-1]
+                parts = path.split("/")
+                return parts[-1] if parts else ""
+            autoadd = {"submission_centers": [extract_identifying_value_from_path(submission_centers[0])]}
+        elif len(submission_centers) > 1:
+            PRINT(f"Multiple submission centers: {', '.join(submission_centers)}")
+
     if not os.path.exists(ingestion_filename):
         raise ValueError("The file '%s' does not exist." % ingestion_filename)
 
@@ -673,7 +685,8 @@ def submit_any_ingestion(ingestion_filename, *,
             'validate_only': validate_only,
             'post_only': post_only,
             'patch_only': patch_only,
-            'sheet_utils': sheet_utils
+            'sheet_utils': sheet_utils,
+            'autoadd': json.dumps(autoadd)
         }
 
     else:
