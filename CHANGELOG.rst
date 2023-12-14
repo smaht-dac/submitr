@@ -10,7 +10,7 @@ Change Log
 0.5.0
 =====
 
-* SMaHT ingestion related work.
+* Lotsa SMaHT ingestion related work.
 
 
 0.4.0

@@ -618,7 +618,7 @@ def submit_any_ingestion(ingestion_filename, *,
     keydict = KEY_MANAGER.get_keydict_for_server(server)
     keypair = KEY_MANAGER.keydict_to_keypair(keydict)
     portal = Portal(keydict)
-    if not portal.ping():
+    if portal.get("/health").status_code != 200: # TODO: with newer version dcicutils do: if not portal.ping():
         show(f"Portal credentials do not seem to work: {KEY_MANAGER.keys_file} ({env})")
         exit(1)
 
