@@ -1435,7 +1435,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
     mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: TEST_ENCRYPT_KEY}
 
-    with shown_output() as shown:
+    with shown_output():  # as shown:
         with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                 with mock.patch.object(submission_module, "yes_or_no", return_value=False):
@@ -1513,7 +1513,10 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
         response_maker = make_alternator(*responses)
 
         def mocked_get(url, auth, **kwargs):
-            #assert (set(kwargs.keys()) == {'headers', 'allow_redirects'}, "The mock named mocked_get expected only 'headers' among kwargs.") or (set(kwargs.keys()) == {'headers'}, "The mock named mocked_get expected only 'headers' among kwargs.")
+            assert ((set(kwargs.keys()) == {'headers', 'allow_redirects'},
+                     "The mock named mocked_get expected only 'headers' among kwargs.") or
+                    (set(kwargs.keys()) == {'headers'},
+                     "The mock named mocked_get expected only 'headers' among kwargs."))
             print("in mocked_get, url=", url, "auth=", auth)
             assert auth == SOME_AUTH
             if url.endswith("/me?format=json"):
@@ -1526,8 +1529,6 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                     # ]
                 ))
             else:
-                #assert url.endswith('/health')
-                #assert url.endswith('/ingestion-submissions/' + SOME_UUID + "?format=json")
                 return FakeResponse(200, json=response_maker())
         return mocked_get
 
@@ -1568,7 +1569,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
     # This tests the normal case with validate_only=False and a successful result.
 
     get_request_attempts = 3
-    with shown_output() as shown:
+    with shown_output():  # as shown:
         with mock.patch("os.path.exists", mfs.exists):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
@@ -1613,7 +1614,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
             return True
         return _yes_or_no
 
-    with shown_output() as shown:
+    with shown_output():  # as shown:
         with mock.patch("os.path.exists", mfs.exists):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
@@ -1655,7 +1656,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
     # Test for suppression of user input when submission with no_query=True.
 
-    with shown_output() as shown:
+    with shown_output():  # as shown:
         with mock.patch("os.path.exists", mfs.exists):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
@@ -1702,7 +1703,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
             "detail": "Request content type multipart/form-data is not 'application/json'"
         })
 
-    with shown_output() as shown:
+    with shown_output():  # as shown:
         with mock.patch("os.path.exists", mfs.exists):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
@@ -1754,7 +1755,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
             "detail": "If I told you, there'd be no mystery."
         })
 
-    with shown_output() as shown:
+    with shown_output():  # as shown:
         with mock.patch("os.path.exists", mfs.exists):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
@@ -1795,7 +1796,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
     # This tests the normal case with validate_only=False and an error result.
 
-    with shown_output() as shown:
+    with shown_output():  # as shown:
         with mock.patch("os.path.exists", mfs.exists):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
@@ -1837,7 +1838,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
     # This tests the normal case with validate_only=True
 
-    with shown_output() as shown:
+    with shown_output():  # as shown:
         with mock.patch("os.path.exists", mfs.exists):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
@@ -1878,7 +1879,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
     # This tests what happens if the normal case times out.
 
-    with shown_output() as shown:
+    with shown_output():  # as shown:
         with mock.patch("os.path.exists", mfs.exists):
             with mock.patch("io.open", mfs.open):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
@@ -2043,8 +2044,10 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
         response_maker = make_alternator(*responses)
 
         def mocked_get(url, auth, **kwargs):
-            assert ((set(kwargs.keys()) == {'headers'}, "The mock named mocked_get expected only 'headers' among kwargs.") or
-                    (set(kwargs.keys()) == {'headers','allow_redirects'}, "The mock named mocked_get expected only 'headers' among kwargs."))
+            assert ((set(kwargs.keys()) == {'headers'},
+                     "The mock named mocked_get expected only 'headers' among kwargs.") or
+                    (set(kwargs.keys()) == {'headers', 'allow_redirects'},
+                     "The mock named mocked_get expected only 'headers' among kwargs."))
             print("in mocked_get, url=", url, "auth=", auth)
             assert auth == SOME_AUTH
             if url.endswith("/me?format=json") or url.endswith("/health"):
