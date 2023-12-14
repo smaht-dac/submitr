@@ -429,24 +429,34 @@ def test_show_upload_info():
 
     json_result = None  # Actual value comes later
 
+    index = 0
     def mocked_get(url, *, auth, **kwargs):
+        nonlocal index
         ignored(kwargs)
-        assert url.startswith(SOME_UUID_UPLOAD_URL)
+        URLS = [
+            f"{SOME_SERVER}/ingestion-submissions/{SOME_UUID}?format=json",
+            f"{SOME_SERVER}/{SOME_UPLOAD_INFO[0]['uuid']}",
+            f"{SOME_SERVER}/{SOME_UPLOAD_INFO[1]['uuid']}"
+        ]
+        assert url == URLS[index]
         assert auth == SOME_AUTH
+        index += 1
         return FakeResponse(200, json=json_result)
 
     with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch("requests.get", mocked_get):
 
+            index = 0
             json_result = {}
             with shown_output() as shown:
                 show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
                 assert shown.lines == ['Uploads: None']
 
+            index = 0
             json_result = SOME_UPLOAD_INFO_RESULT
             with shown_output() as shown:
                 show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
-                expected_lines = ['----- Upload Info -----', *map(str, SOME_UPLOAD_INFO)]
+                expected_lines = ['\n----- Upload Info -----']
                 assert shown.lines == expected_lines
 
 
