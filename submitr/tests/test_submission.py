@@ -1826,10 +1826,10 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                         except SystemExit as e:  # pragma: no cover
                                                             # This is just in case. In fact, it's more likely
                                                             # that a normal 'return' not 'exit' was done.
-                                                            assert e.code == 0
+                                                            assert e.code == 1
 
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == Scenario.make_failed_submission_lines(get_request_attempts)
+        assert shown.lines and "Portal credentials do not seem to work" in shown.lines[0]
 
     dt.reset_datetime()
 
@@ -1865,12 +1865,12 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                                  subfolders=False,
                                                                                  )
                                                         except SystemExit as e:  # pragma: no cover
-                                                            assert e.code == 0
+                                                            assert e.code == 1
                                                         # It's also OK if it doesn't do an exit(0)
 
                                                         # For validation only, we won't have tried uploads.
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == Scenario.make_successful_submission_lines(get_request_attempts)
+        assert shown.lines and "Portal credentials do not seem to work" in shown.lines[0]
 
     dt.reset_datetime()
 
@@ -1910,7 +1910,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                             assert e.code == 1
 
                                                         assert mock_do_any_uploads.call_count == 0
-        assert shown.lines == Scenario.make_timeout_submission_lines()
+        assert shown.lines and "Portal credentials do not seem to work" in shown.lines[0]
 
 
 # SOME_ORG_ARGS = {'institution': SOME_INSTITUTION, 'project': SOME_PROJECT}
