@@ -7,6 +7,12 @@ Change Log
 ----------
 
 
+0.5.1
+=====
+
+* Thug commit to initiate  publish.
+
+
 0.5.0
 =====
 
