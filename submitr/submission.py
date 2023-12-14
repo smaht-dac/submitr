@@ -384,7 +384,7 @@ def show_section(res, section, caveat_outcome=None, portal=None):
         if section == "upload_info":
             for info in section_data:
                 display_name = None
-                if (filename := info.get("filename")) and (uuid := info.get("uuid")):
+                if isinstance(info, dict) and (filename := info.get("filename")) and (uuid := info.get("uuid")):
                     if portal and (fileobject := portal.get(f"/{uuid}")) and (fileobject := fileobject.json()):
                         if (display_title := fileobject.get("display_title")):
                             info["target"] = display_title
@@ -616,7 +616,6 @@ def submit_any_ingestion(ingestion_filename, *,
                                  consortium=consortium, submission_center=submission_center)
 
     server = resolve_server(server=server, env=env)
-    #import pdb ; pdb.set_trace()
     keydict = KEY_MANAGER.get_keydict_for_server(server)
     keypair = KEY_MANAGER.keydict_to_keypair(keydict)
     portal = Portal(keydict)
