@@ -21,8 +21,6 @@ def main(simulated_args_for_testing=None):
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument('bundle_filename', help='a local Excel filename that is the data bundle')
-    parser.add_argument('--institution', '-i', help='institution identifier', default=None)
-    parser.add_argument('--project', '-p', help='project identifier', default=None)
     parser.add_argument('--server', '-s', help="an http or https address of the server to use", default=None)
     parser.add_argument('--env', '-e', help="a portal environment name for the server to use", default=None)
     parser.add_argument('--post-only', action="store_true",
@@ -64,7 +62,6 @@ def main(simulated_args_for_testing=None):
             exit(1)
 
         submit_any_ingestion(ingestion_filename=args.bundle_filename, ingestion_type=args.ingestion_type,
-                             institution=args.institution, project=args.project,
                              server=args.server, env=args.env,
                              no_query=args.no_query, subfolders=args.subfolders, app=args.app,
                              submission_protocol=args.submission_protocol,
