@@ -46,10 +46,13 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--submission_protocol', '--submission-protocol', '-sp',
                         choices=SUBMISSION_PROTOCOLS, default=DEFAULT_SUBMISSION_PROTOCOL,
                         help=f"the submission protocol (default {DEFAULT_SUBMISSION_PROTOCOL!r})")
-    parser.add_argument('--details', '-d', action="store_true", help="retrieve and display detailed info", default=False)
+    parser.add_argument('--details', '-d', action="store_true",
+                        help="retrieve and display detailed info", default=False)
     parser.add_argument('--verbose', action="store_true", help="verbose output", default=False)
-    parser.add_argument('--validate-local', action="store_true", help="validate file locally before submission", default=False)
-    parser.add_argument('--validate-local-only', action="store_true", help="validate file locally only (no submission)", default=False)
+    parser.add_argument('--validate-local', action="store_true",
+                        help="validate file locally before submission", default=False)
+    parser.add_argument('--validate-local-only', action="store_true",
+                        help="validate file locally only (no submission)", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     if args.validate_local_only:

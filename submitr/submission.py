@@ -23,10 +23,10 @@ from dcicutils.misc_utils import (
 )
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.structured_data import Portal, Schema, StructuredDataSet
-from typing import BinaryIO, Dict, Optional, Union
+from typing import BinaryIO, Dict, Optional
 from typing_extensions import Literal
 from urllib.parse import urlparse
-from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER, DEFAULT_APP
+from .base import DEFAULT_ENV, PRODUCTION_ENV, KEY_MANAGER, DEFAULT_APP
 from .exceptions import PortalPermissionError
 from .portal_network_access import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
 from .utils import show, keyword_as_title, check_repeatedly
@@ -383,8 +383,7 @@ def show_section(res, section, caveat_outcome=None, portal=None):
     elif isinstance(section_data, list):
         if section == "upload_info":
             for info in section_data:
-                display_name = None
-                if isinstance(info, dict) and (filename := info.get("filename")) and (uuid := info.get("uuid")):
+                if isinstance(info, dict) and info.get("filename") and (uuid := info.get("uuid")):
                     if portal and (fileobject := portal.get(f"/{uuid}")) and (fileobject := fileobject.json()):
                         if (display_title := fileobject.get("display_title")):
                             info["target"] = display_title
@@ -1412,7 +1411,8 @@ def _validate_locally(ingestion_filename: str, app: str, env: str, validate_loca
     structured_data.validate()
     PRINT(f"\r> Types referenced:")
     for type_name in sorted(structured_data.data):
-        PRINT(f"  - {type_name}: {len(structured_data.data[type_name])} object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
+        PRINT(f"  - {type_name}: {len(structured_data.data[type_name])}"
+              f"object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
     PRINT(f"> Validation results:")
     if (validation_errors := structured_data.validation_errors):
         PRINT(f"> Validation errors:")

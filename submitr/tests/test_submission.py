@@ -431,6 +431,7 @@ def test_show_upload_info():
     json_result = None  # Actual value comes later
 
     index = 0
+
     def mocked_get(url, *, auth, **kwargs):
         nonlocal index
         ignored(kwargs)
@@ -1555,7 +1556,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                      no_query=False,
                                                                      subfolders=False,
                                                                      )
-                                            except SystemExit as e:
+                                            except SystemExit:
                                                 assert True is True
                                                 pass
                                             else:  # pragma: no cover
@@ -1938,7 +1939,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                              subfolders=False)
                     except SystemExit as e:
                         assert e.code == 1
-                    except AppServerKeyMissing as e:
+                    except AppServerKeyMissing:
                         assert True is True
                     else:
                         raise AssertionError("Expected SystemExit did not happen.")  # pragma: no cover
@@ -2396,7 +2397,6 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
 
                                                         assert mock_do_any_uploads.call_count == 0
         assert shown.lines and "Portal credentials do not seem to work" in shown.lines[0]
-        #assert shown.lines == Scenario.make_failed_submission_lines(get_request_attempts)
 
     dt.reset_datetime()
 
