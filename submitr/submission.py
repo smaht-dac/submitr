@@ -1,3 +1,5 @@
+import boto3
+from botocore.exceptions import NoCredentialsError as BotoNoCredentialsError
 import glob
 import io
 import json
@@ -6,6 +8,7 @@ import re
 import subprocess
 import time
 from typing import Tuple
+import yaml
 
 # get_env_real_url would rely on env_utils
 # from dcicutils.env_utils import get_env_real_url
@@ -14,12 +17,16 @@ from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 from dcicutils.exceptions import InvalidParameterError
 from dcicutils.ff_utils import get_health_page as get_portal_health_page
 from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
-from dcicutils.misc_utils import check_true, environ_bool, PRINT, url_path_join, ignorable, remove_prefix
+from dcicutils.misc_utils import (
+    check_true, environ_bool,
+    PRINT, url_path_join, ignorable, remove_prefix
+)
 from dcicutils.s3_utils import HealthPageKey
+from dcicutils.structured_data import Portal, Schema, StructuredDataSet
 from typing import BinaryIO, Dict, Optional
 from typing_extensions import Literal
 from urllib.parse import urlparse
-from .base import DEFAULT_ENV, DEFAULT_ENV_VAR, PRODUCTION_ENV, KEY_MANAGER, DEFAULT_APP
+from .base import DEFAULT_ENV, PRODUCTION_ENV, KEY_MANAGER, DEFAULT_APP
 from .exceptions import PortalPermissionError
 from .portal_network_access import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
 from .utils import show, keyword_as_title, check_repeatedly
@@ -70,11 +77,13 @@ def resolve_server(server, env):
 
     if not server and not env:
         if DEFAULT_ENV:
-            show(f"Defaulting to environment {env!r} because {DEFAULT_ENV_VAR} is set.")
+            PRINT(f"Environment name defaulting to \"{DEFAULT_ENV}\" because neither --env nor --server specified.")
             env = DEFAULT_ENV
         else:
             # Production default needs no explanation.
             env = PRODUCTION_ENV
+    elif env:
+        show(f"App environment name is: {env}")
 
     if env:
         try:
@@ -312,8 +321,8 @@ def do_app_arg_defaulting(app_args, user_record):
                 del app_args[arg]
 
 
-PROGRESS_CHECK_INTERVAL = 15  # seconds
-ATTEMPTS_BEFORE_TIMEOUT = 40
+PROGRESS_CHECK_INTERVAL = 7  # seconds
+ATTEMPTS_BEFORE_TIMEOUT = 100
 
 
 def get_section(res, section):
@@ -328,7 +337,7 @@ def get_section(res, section):
     return res.get(section) or res.get('additional_data', {}).get(section)
 
 
-def show_section(res, section, caveat_outcome=None):
+def show_section(res, section, caveat_outcome=None, portal=None):
     """
     Shows a given named section from a description of an ingestion submission.
 
@@ -349,14 +358,47 @@ def show_section(res, section, caveat_outcome=None):
         caveat = " (prior to %s)" % caveat_outcome
     else:
         caveat = ""
-    show("----- %s%s -----" % (keyword_as_title(section), caveat))
     if not section_data:
-        show("Nothing to show.")
-    elif isinstance(section_data, dict):
-        show(json.dumps(section_data, indent=2))
+        return
+    show("\n----- %s%s -----" % (keyword_as_title(section), caveat))
+    if isinstance(section_data, dict):
+        if file := section_data.get("file"):
+            PRINT(f"File: {file}")
+        if s3_file := section_data.get("s3_file"):
+            PRINT(f"S3 File: {s3_file}")
+        if details := section_data.get("details"):
+            PRINT(f"Details: {details}")
+        for item in section_data:
+            if isinstance(section_data[item], list) and section_data[item]:
+                if item == "reader":
+                    PRINT(f"Parser Warnings:")
+                elif item == "validation":
+                    PRINT(f"Validation Errors:")
+                elif item == "ref":
+                    PRINT(f"Reference (linkTo) Errors:")
+                else:
+                    continue
+                for issue in section_data[item]:
+                    PRINT(f"  - {_format_issue(issue, file)}")
     elif isinstance(section_data, list):
-        for line in section_data:
-            show(line)
+        if section == "upload_info":
+            for info in section_data:
+                if isinstance(info, dict) and info.get("filename") and (uuid := info.get("uuid")):
+                    if portal and (fileobject := portal.get(f"/{uuid}")) and (fileobject := fileobject.json()):
+                        if (display_title := fileobject.get("display_title")):
+                            info["target"] = display_title
+                        if (data_type := fileobject.get("data_type")):
+                            if isinstance(data_type, list) and len(data_type) > 0:
+                                data_type = data_type[0]
+                            elif isinstance(data_type, str):
+                                data_type = data_type
+                            else:
+                                data_type = None
+                            if data_type:
+                                info["type"] = Schema.type_name(data_type)
+            print(yaml.dump(section_data))
+        else:
+            [show(line) for line in section_data]
     else:  # We don't expect this, but such should be shown as-is, mostly to see what it is.
         show(section_data)
 
@@ -504,12 +546,28 @@ def _resolve_app_args(institution, project, lab, award, app, consortium, submiss
     return app_args
 
 
-def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, validate_only,
-                         institution=None, project=None, lab=None, award=None,
-                         consortium=None, submission_center=None,
+def submit_any_ingestion(ingestion_filename, *,
+                         ingestion_type,
+                         server,
+                         env,
+                         institution=None,
+                         project=None,
+                         lab=None,
+                         award=None,
+                         consortium=None,
+                         submission_center=None,
                          app: OrchestratedApp = None,
-                         upload_folder=None, no_query=False, subfolders=False,
-                         submission_protocol=DEFAULT_SUBMISSION_PROTOCOL):
+                         upload_folder=None,
+                         no_query=False,
+                         subfolders=False,
+                         submission_protocol=DEFAULT_SUBMISSION_PROTOCOL,
+                         show_details=False,
+                         post_only=False,
+                         patch_only=False,
+                         validate_only=False,
+                         validate_local=False,
+                         validate_local_only=False,
+                         sheet_utils=False):
     """
     Does the core action of submitting a metadata bundle.
 
@@ -529,24 +587,43 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     :param no_query: bool to suppress requests for user input
     :param subfolders: bool to search subdirectories within upload_folder for files
     :param submission_protocol: which submission protocol to use (default: 's3')
+    :param show_details: bool controls whether to show the details from the results file in S3.
     """
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
+        PRINT(f"App name defaulting to \"{app}\" because --app not specified.")
 
     if KEY_MANAGER.selected_app != app:
         with KEY_MANAGER.locally_selected_app(app):
             return submit_any_ingestion(ingestion_filename=ingestion_filename, ingestion_type=ingestion_type,
-                                        server=server, env=env, validate_only=validate_only,
+                                        server=server, env=env,
                                         institution=institution, project=project, lab=lab, award=award, app=app,
                                         consortium=consortium, submission_center=submission_center,
                                         upload_folder=upload_folder, no_query=no_query, subfolders=subfolders,
-                                        submission_protocol=submission_protocol)
+                                        submission_protocol=submission_protocol,
+                                        show_details=show_details,
+                                        patch_only=patch_only,
+                                        post_only=post_only,
+                                        validate_only=validate_only,
+                                        validate_local=validate_local,
+                                        validate_local_only=validate_local_only,
+                                        sheet_utils=sheet_utils)
+    PRINT(f"App name is: {app}")
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app,
                                  consortium=consortium, submission_center=submission_center)
 
     server = resolve_server(server=server, env=env)
+    keydict = KEY_MANAGER.get_keydict_for_server(server)
+    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
+    portal = Portal(keydict)
+    if portal.get("/health").status_code != 200:  # TODO: with newer version dcicutils do: if not portal.ping():
+        show(f"Portal credentials do not seem to work: {KEY_MANAGER.keys_file} ({env})")
+        exit(1)
+
+    if validate_local:
+        _validate_locally(ingestion_filename, app, env, validate_local_only)
 
     validation_qualifier = " (for validation only)" if validate_only else ""
 
@@ -554,20 +631,31 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
     if ingestion_type != DEFAULT_INGESTION_TYPE:
         maybe_ingestion_type = " (%s)" % ingestion_type
 
+    PRINT(f"App key file is: {KEY_MANAGER.keys_file}")
+
     if not no_query:
         if not yes_or_no("Submit %s%s to %s%s?"
                          % (ingestion_filename, maybe_ingestion_type, server, validation_qualifier)):
             show("Aborting submission.")
             exit(1)
 
-    keydict = KEY_MANAGER.get_keydict_for_server(server)
-    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
-
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
 
     user_record = get_user_record(server, auth=keypair)
 
     do_app_arg_defaulting(app_args, user_record)
+
+    autoadd = None
+    if app_args and isinstance(submission_centers := app_args.get("submission_centers"), list):
+        if len(submission_centers) == 1:
+            def extract_identifying_value_from_path(path: str) -> str:
+                if path.endswith("/"):
+                    path = path[:-1]
+                parts = path.split("/")
+                return parts[-1] if parts else ""
+            autoadd = {"submission_centers": [extract_identifying_value_from_path(submission_centers[0])]}
+        elif len(submission_centers) > 1:
+            PRINT(f"Multiple submission centers: {', '.join(submission_centers)}")
 
     if not os.path.exists(ingestion_filename):
         raise ValueError("The file '%s' does not exist." % ingestion_filename)
@@ -594,6 +682,10 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
 
         submission_post_data = {
             'validate_only': validate_only,
+            'post_only': post_only,
+            'patch_only': patch_only,
+            'sheet_utils': sheet_utils,
+            'autoadd': json.dumps(autoadd)
         }
 
     else:
@@ -653,7 +745,7 @@ def submit_any_ingestion(ingestion_filename, *, ingestion_type, server, env, val
          f" Awaiting processing...",
          with_time=True)
 
-    check_done, check_status, check_response = check_submit_ingestion(uuid, server, env, app)
+    check_done, check_status, check_response = check_submit_ingestion(uuid, server, env, app, show_details)
 
     if validate_only:
         exit(0)
@@ -674,7 +766,11 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
     From outer scope: server, keypair, uuid (of IngestionSubmission)
     """
     tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
-    response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS).json()
+    response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS)
+    response_status_code = response.status_code
+    response = response.json()
+    if response_status_code == 404:
+        return True, f"Not found - {uuid}", response
     # FYI this processing_status and its state, progress, outcome properties were ultimately set
     # from within the ingester process, from within types.ingestion.SubmissionFolio.processing_status.
     status = response.get("processing_status", {})
@@ -687,7 +783,8 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
 
 
 def check_submit_ingestion(uuid: str, server: str, env: str,
-                           app: Optional[OrchestratedApp] = None) -> Tuple[bool, str, dict]:
+                           app: Optional[OrchestratedApp] = None,
+                           show_details: bool = False) -> Tuple[bool, str, dict]:
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
@@ -725,9 +822,14 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     caveat_check_status = None if check_status == "success" else check_status
     show_section(check_response, "validation_output", caveat_outcome=caveat_check_status)
     show_section(check_response, "post_output", caveat_outcome=caveat_check_status)
+    show_section(check_response, "result")
 
     if check_status == "success":
-        show_section(check_response, "upload_info")
+        show_section(check_response, "upload_info", portal=Portal(keydict))
+
+    if show_details:
+        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
+        show_detailed_results(uuid, metadata_bundles_bucket)
 
     return check_done, check_status, check_response
 
@@ -771,7 +873,8 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
                      show_primary_result=True,
                      show_validation_output=True,
                      show_processing_status=True,
-                     show_datafile_url=True):
+                     show_datafile_url=True,
+                     show_details=True):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -787,6 +890,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     :param show_validation_output: bool controls whether to show output resulting from validation checks
     :param show_processing_status: bool controls whether to show the current processing status
     :param show_datafile_url: bool controls whether to show the datafile_url parameter from the parameters.
+    :param show_details: bool controls whether to show the details from the results file in S3.
     """
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
@@ -809,29 +913,35 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
                        show_primary_result=show_primary_result,
                        show_validation_output=show_validation_output,
                        show_processing_status=show_processing_status,
-                       show_datafile_url=show_datafile_url)
+                       show_datafile_url=show_datafile_url,
+                       show_details=show_details,
+                       portal=Portal(keydict))
+    if show_details:
+        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
+        show_detailed_results(uuid, metadata_bundles_bucket)
 
 
 def show_upload_result(result,
                        show_primary_result=True,
                        show_validation_output=True,
                        show_processing_status=True,
-                       show_datafile_url=True):
+                       show_datafile_url=True,
+                       show_details=True,
+                       portal=None):
 
     if show_primary_result:
         if get_section(result, 'upload_info'):
-            show_section(result, 'upload_info')
+            show_section(result, 'upload_info', portal=portal)
         else:
             show("Uploads: None")
 
     # New March 2023 ...
 
     if show_validation_output and get_section(result, 'validation_output'):
-        PRINT()  # start on a fresh line
         show_section(result, 'validation_output')
 
     if show_processing_status and result.get('processing_status'):
-        show("----- Processing Status -----")
+        show("\n----- Processing Status -----")
         state = result['processing_status'].get('state')
         if state:
             show(f"State: {state.title()}")
@@ -1241,3 +1351,138 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
             exit(1)
 
     upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=keydict)
+
+
+def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
+
+    print(f"----- Detailed Info -----")
+
+    submission_results_location, submission_results = _fetch_submission_results(metadata_bundles_bucket, uuid)
+    exception_results_location, exception_results = _fetch_exception_results(metadata_bundles_bucket, uuid)
+
+    if not submission_results and not exception_results:
+        print(f"Neither submission nor exception results found!")
+        print(f"-> {submission_results_location}")
+        print(f"-> {exception_results_location}")
+        return
+
+    if submission_results:
+        print(f"From: {submission_results_location}")
+        print(yaml.dump(submission_results))
+
+    if exception_results:
+        print("Exception during schema ingestion processing:")
+        print(f"From: {exception_results_location}")
+        print(exception_results)
+
+
+def _fetch_submission_results(metadata_bundles_bucket: str, uuid: str) -> Optional[Tuple[str, dict]]:
+    return _fetch_results(metadata_bundles_bucket, uuid, "submission.json")
+
+
+def _fetch_exception_results(metadata_bundles_bucket: str, uuid: str) -> Optional[Tuple[str, str]]:
+    return _fetch_results(metadata_bundles_bucket, uuid, "traceback.txt")
+
+
+def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Optional[Tuple[str, str]]:
+    results_key = f"{uuid}/{file}"
+    results_location = f"s3://{metadata_bundles_bucket}/{results_key}"
+    try:
+        s3 = boto3.client("s3")
+        response = s3.get_object(Bucket=metadata_bundles_bucket, Key=f"{uuid}/{file}")
+        results = response['Body'].read().decode('utf-8')
+        if file.endswith(".json"):
+            results = json.loads(results)
+        return (results_location, results)
+    except BotoNoCredentialsError:
+        PRINT(f"No credentials found for fetching: {results_location}")
+    except Exception as e:
+        if hasattr(e, "response") and e.response.get("Error", {}).get("Code", "").lower() == "accessdenied":
+            PRINT(f"Access denied fetching: {results_location}")
+        return (results_location, None)
+
+
+def _validate_locally(ingestion_filename: str, app: str, env: str, validate_local_only: bool = False) -> int:
+    PRINT(f"> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
+          f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
+    structured_data = StructuredDataSet.load(ingestion_filename, Portal(env, app=app))
+    PRINT(f"> Parsed JSON:")
+    _print_json_with_prefix(structured_data.data, "  ")
+    structured_data.validate()
+    PRINT(f"\r> Types referenced:")
+    for type_name in sorted(structured_data.data):
+        PRINT(f"  - {type_name}: {len(structured_data.data[type_name])}"
+              f"object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
+    PRINT(f"> Validation results:")
+    if (validation_errors := structured_data.validation_errors):
+        PRINT(f"> Validation errors:")
+        for validation_error in validation_errors:
+            PRINT(f"  - {_format_issue(validation_error, ingestion_filename)}")
+    else:
+        PRINT(f"  - OK")
+    if (files := structured_data.upload_files):
+        PRINT(f"\r> File references:")
+        [PRINT(f"  - {file.get('type')}: {file.get('file')}") for file in files]
+    if (ref_errors := structured_data.ref_errors):
+        PRINT(f"> Reference (linkTo) errors:")
+        for ref_error in ref_errors:
+            PRINT(f"  - {_format_issue(ref_error, ingestion_filename)}")
+    if (reader_warnings := structured_data.reader_warnings):
+        PRINT(f"> Parser warnings:")
+        for reader_warning in reader_warnings:
+            PRINT(f"  - {_format_issue(reader_warning, ingestion_filename)}")
+    if (resolved_refs := structured_data.resolved_refs):
+        PRINT(f"> Resolved object references:")
+        for resolved_ref in sorted(resolved_refs):
+            PRINT(f"  - {resolved_ref}")
+    if validate_local_only:
+        exit(0 if not structured_data.errors else 1)
+
+
+def _print_json_with_prefix(data, prefix):
+    json_string = json.dumps(data, indent=4)
+    json_string = f"\n{prefix}".join(json_string.split("\n"))
+    PRINT(prefix, end="")
+    PRINT(json_string)
+
+
+def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
+    def src_string(issue: dict) -> str:
+        if not isinstance(issue, dict) or not isinstance(issue_src := issue.get("src"), dict):
+            return ""
+        show_file = original_file and (original_file.endswith(".zip") or
+                                       original_file.endswith(".tgz") or original_file.endswith(".gz"))
+        src_file = issue_src.get("file") if show_file else ""
+        src_type = issue_src.get("type")
+        src_column = issue_src.get("column")
+        src_row = issue_src.get("row", 0)
+        if src_file:
+            src = f"{os.path.basename(src_file)}"
+            sep = ":"
+        else:
+            src = ""
+            sep = "."
+        if src_type:
+            src += (sep if src else "") + src_type
+            sep = "."
+        if src_column:
+            src += (sep if src else "") + src_column
+        if src_row > 0:
+            src += (" " if src else "") + f"[{src_row}]"
+        if not src:
+            if issue.get("warning"):
+                src = "Warning"
+            elif issue.get("error"):
+                src = "Error"
+            else:
+                src = "Issue"
+        return src
+    issue_message = None
+    if issue:
+        if error := issue.get("error"):
+            issue_message = error
+        elif warning := issue.get("warning"):
+            issue_message = warning
+        elif issue.get("truncated"):
+            return f"Truncated result set | More: {issue.get('more')} | See: {issue.get('details')}"
+    return f"{src_string(issue)}: {issue_message}" if issue_message else ""

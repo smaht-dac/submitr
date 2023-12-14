@@ -1,5 +1,5 @@
 import pytest
-
+import tempfile
 from unittest import mock
 from .. import submission as submission_module
 from ..base import DefaultKeyManager
@@ -34,127 +34,137 @@ def test_submit_metadata_bundle_script(keyfile):
                             assert mock_submit_any_ingestion.called_with(**expect_call_args)
                         assert output == []
 
+    some_file = _create_some_temporary_file()
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
-    test_it(args_in=['some-file'], expect_exit_code=0, expect_called=True, expect_call_args={
-        'ingestion_filename': 'some-file',
+    test_it(args_in=[some_file], expect_exit_code=0, expect_called=True, expect_call_args={
+        'ingestion_filename': some_file,
         'ingestion_type': DEFAULT_INGESTION_TYPE,
         'env': None,
         'server': None,
-        'institution': None,
-        'project': None,
+        # 'institution': None,
+        # 'project': None,
         'validate_only': False,
         'upload_folder': None,
         'no_query': False,
         'subfolders': False,
     })
     expect_call_args = {
-        'ingestion_filename': 'some-file',
+        'ingestion_filename': some_file,
         'ingestion_type': DEFAULT_INGESTION_TYPE,
         'env': "some-env",
         'server': "some-server",
-        'institution': "some-institution",
-        'project': "some-project",
+        # 'institution': "some-institution",
+        # 'project': "some-project",
         'validate_only': True,
         'upload_folder': None,
         'no_query': False,
         'subfolders': False,
     }
-    test_it(args_in=["--env", "some-env", "--institution", "some-institution",
-                     "-s", "some-server", "-v", "-p", "some-project",
-                     'some-file'],
+    test_it(args_in=["--env", "some-env",  # "--institution", "some-institution",
+                     "-s", "some-server", "-v",  # "-p", "some-project",
+                     some_file],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=["some-file", "--env", "some-env", "--institution", "some-institution",
-                     "-s", "some-server", "--validate-only", "--project", "some-project"],
+    test_it(args_in=[some_file, "--env", "some-env",  # "--institution", "some-institution",
+                     "-s", "some-server", "--validate-only"],  # , "--project", "some-project"],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'ingestion_filename': 'some-file',
+        'ingestion_filename': some_file,
         'ingestion_type': DEFAULT_INGESTION_TYPE,
         'env': "some-env",
         'server': "some-server",
-        'institution': "some-institution",
-        'project': "some-project",
+        # 'institution': "some-institution",
+        # 'project': "some-project",
         'validate_only': False,
         'upload_folder': 'a-folder',
         'no_query': False,
         'subfolders': False,
     }
     test_it(args_in=["--env", "some-env",
-                     "--institution", "some-institution",
+                     # "--institution", "some-institution",
                      "-s", "some-server",
-                     "-p", "some-project",
+                     # "-p", "some-project",
                      '-u', 'a-folder',
-                     'some-file'],
+                     some_file],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=["some-file",
+    test_it(args_in=[some_file,
                      "--env", "some-env",
-                     "--institution", "some-institution",
+                     # "--institution", "some-institution",
                      "-s", "some-server",
-                     "--project", "some-project",
+                     # "--project", "some-project",
                      '--upload_folder', 'a-folder'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'ingestion_filename': 'some-file',
+        'ingestion_filename': some_file,
         'ingestion_type': 'simulated_bundle',
         'env': "some-env",
         'server': "some-server",
-        'institution': "some-institution",
-        'project': "some-project",
+        # 'institution': "some-institution",
+        # 'project': "some-project",
         'validate_only': True,
         'upload_folder': 'a-folder',
         'no_query': False,
         'subfolders': False,
     }
     test_it(args_in=["--env", "some-env",
-                     "--institution", "some-institution",
+                     # "--institution", "some-institution",
                      "-s", "some-server",
                      "-v",
-                     "-p", "some-project",
+                     # "-p", "some-project",
                      '-u', 'a-folder',
                      '-t', 'simulated_bundle',
-                     'some-file'],
+                     some_file],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=["some-file",
+    test_it(args_in=[some_file,
                      "--env", "some-env",
-                     "--institution", "some-institution",
+                     # "--institution", "some-institution",
                      "-s", "some-server",
                      "--validate-only",
-                     "--project", "some-project",
+                     # "--project", "some-project",
                      '--upload_folder', 'a-folder',
                      '--ingestion_type', 'simulated_bundle'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'ingestion_filename': 'some-file',
+        'ingestion_filename': some_file,
         'ingestion_type': DEFAULT_INGESTION_TYPE,
         'env': "some-env",
         'server': "some-server",
-        'institution': "some-institution",
-        'project': "some-project",
+        # 'institution': "some-institution",
+        # 'project': "some-project",
         'validate_only': True,
         'upload_folder': None,
         'no_query': True,
         'subfolders': True,
     }
-    test_it(args_in=["--env", "some-env", "--institution", "some-institution",
-                     "-s", "some-server", "-v", "-p", "some-project",
-                     'some-file', '-nq', '-sf'],
+    test_it(args_in=["--env", "some-env",  # "--institution", "some-institution",
+                     "-s", "some-server", "-v",  # "-p", "some-project",
+                     some_file, '-nq', '-sf'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=["--env", "some-env", "--institution", "some-institution",
-                     "-s", "some-server", "-v", "-p", "some-project",
-                     'some-file', '--no_query', '--subfolders'],
+    test_it(args_in=["--env", "some-env",  # "--institution", "some-institution",
+                     "-s", "some-server", "-v",  # "-p", "some-project",
+                     some_file, '--no_query', '--subfolders'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
+
+
+def _create_some_temporary_file() -> str:
+    some_file = tempfile.NamedTemporaryFile(delete=False)
+    try:
+        some_file.write(b"")
+    finally:
+        some_file.close()
+    return some_file.name
