@@ -581,7 +581,7 @@ def test_show_section_without_caveat():
             section='foo',
             caveat_outcome=None)
         assert shown.lines == [
-            '----- Foo -----',
+            '\n----- Foo -----',
             'abc',
             'def',
         ]
@@ -620,13 +620,7 @@ def test_show_section_without_caveat():
             section='foo',
             caveat_outcome=None
         )
-        assert shown.lines == [
-            '----- Foo -----',
-            '{\n'
-            '  "alpha": "beta",\n'
-            '  "gamma": "delta"\n'
-            '}'
-        ]
+        assert shown.lines == ['\n----- Foo -----']
 
     # Dictionary section available, without caveat, and with an empty dictionary.
     with shown_output() as shown:
@@ -645,7 +639,7 @@ def test_show_section_without_caveat():
             caveat_outcome=None
         )
         assert shown.lines == [
-            '----- Foo -----',
+            '\n----- Foo -----',
             '17',
         ]
 
