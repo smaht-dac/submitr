@@ -77,7 +77,7 @@ def resolve_server(server, env):
 
     if not server and not env:
         if DEFAULT_ENV:
-            show(f"Environment name defaulting to \"{DEFAULT_ENV}\" because neither --env nor --server specified.")
+            PRINT(f"Environment name defaulting to \"{DEFAULT_ENV}\" because neither --env nor --server specified.")
             env = DEFAULT_ENV
         else:
             # Production default needs no explanation.
@@ -593,7 +593,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
-        show(f"App name defaulting to \"{app}\" because --app not specified.")
+        PRINT(f"App name defaulting to \"{app}\" because --app not specified.")
 
     if KEY_MANAGER.selected_app != app:
         with KEY_MANAGER.locally_selected_app(app):
@@ -621,7 +621,7 @@ def submit_any_ingestion(ingestion_filename, *,
     keypair = KEY_MANAGER.keydict_to_keypair(keydict)
     portal = Portal(keydict)
     if not portal.ping():
-        PRINT(f"Portal credentials do not seem to work: {KEY_MANAGER.keys_file} ({env})")
+        show(f"Portal credentials do not seem to work: {KEY_MANAGER.keys_file} ({env})")
         exit(1)
 
     if validate_local:
