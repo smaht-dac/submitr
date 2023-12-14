@@ -8,6 +8,7 @@ import re
 
 from dcicutils import command_utils as command_utils_module
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
+from dcicutils.exceptions import AppServerKeyMissing
 from dcicutils.misc_utils import ignored, ignorable, local_attrs, override_environ, NamedObject
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
@@ -1437,7 +1438,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
         with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                 with mock.patch.object(submission_module, "yes_or_no", return_value=False):
-                    try:
+                    with pytest.raises(AppServerKeyMissing):
                         submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                              ingestion_type='metadata_bundle',
                                              consortium=SOME_CONSORTIUM,
@@ -1450,12 +1451,6 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                              no_query=False,
                                              subfolders=False,
                                              )
-                    except SystemExit as e:
-                        assert e.code == 1
-                    else:
-                        raise AssertionError("Expected SystemExit did not happen.")  # pragma: no cover
-
-                    assert shown.lines == ["Aborting submission."]
 
     def mocked_post(url, auth, data, headers, files, **kwargs):
         assert not kwargs, "The mock named mocked_post did not expect keyword arguments."

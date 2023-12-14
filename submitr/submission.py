@@ -593,7 +593,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
-        show(f"App name defaulting \"{app}\" because --app not specified.")
+        show(f"App name defaulting to \"{app}\" because --app not specified.")
 
     if KEY_MANAGER.selected_app != app:
         with KEY_MANAGER.locally_selected_app(app):
@@ -616,6 +616,7 @@ def submit_any_ingestion(ingestion_filename, *,
                                  consortium=consortium, submission_center=submission_center)
 
     server = resolve_server(server=server, env=env)
+    #import pdb ; pdb.set_trace()
     keydict = KEY_MANAGER.get_keydict_for_server(server)
     keypair = KEY_MANAGER.keydict_to_keypair(keydict)
     portal = Portal(keydict)
