@@ -2440,7 +2440,6 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
         assert shown.lines and "Portal credentials do not seem to work" in shown.lines[0]
 
     dt.reset_datetime()
-    import pdb ; pdb.set_trace()
 
     # This tests what happens if the normal case times out.
 
