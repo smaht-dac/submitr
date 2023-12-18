@@ -437,8 +437,8 @@ def test_show_upload_info():
         ignored(kwargs)
         URLS = [
             f"{SOME_SERVER}/ingestion-submissions/{SOME_UUID}?format=json",
-            f"{SOME_SERVER}//{SOME_UPLOAD_INFO[0]['uuid']}",  # TODO: double slash
-            f"{SOME_SERVER}//{SOME_UPLOAD_INFO[1]['uuid']}"  # TODO: double slash
+            f"{SOME_SERVER}/{SOME_UPLOAD_INFO[0]['uuid']}",
+            f"{SOME_SERVER}/{SOME_UPLOAD_INFO[1]['uuid']}"
         ]
         assert url == URLS[index]
         assert auth == SOME_AUTH
