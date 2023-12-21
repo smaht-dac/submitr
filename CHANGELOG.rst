@@ -10,7 +10,7 @@ Change Log
 0.5.2
 =====
 
-* Update dcicutils.
+* Update dcicutils and other minor updates.
 
 
 0.5.1
