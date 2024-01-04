@@ -21,6 +21,7 @@ from dcicutils.misc_utils import (
     check_true, environ_bool,
     PRINT, url_path_join, ignorable, remove_prefix
 )
+from dcicutils.portal_utils import Portal
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.structured_data import Portal, Schema, StructuredDataSet
 from typing import BinaryIO, Dict, Optional
@@ -41,6 +42,7 @@ class SubmissionProtocol:
 SUBMISSION_PROTOCOLS = [SubmissionProtocol.S3, SubmissionProtocol.UPLOAD]
 DEFAULT_SUBMISSION_PROTOCOL = SubmissionProtocol.UPLOAD
 STANDARD_HTTP_HEADERS = {"Content-type": "application/json"}
+INGESTION_SUBMISSION_TYPE_NAME = "IngestionSubmission"
 
 
 # TODO: Will asks whether some of the errors in this file that are called "SyntaxError" really should be something else.
@@ -470,9 +472,9 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
             if DEBUG_PROTOCOL:  # pragma: no cover
                 PRINT("Retrying with new protocol.")
 
-    creation_post_url = url_path_join(server, "IngestionSubmission")
+    creation_post_url = url_path_join(server, INGESTION_SUBMISSION_TYPE_NAME)
     if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT("Creating IngestionSubmission (bundle) type object ...")
+        PRINT(f"Creating {INGESTION_SUBMISSION_TYPE_NAME} (bundle) type object ...")
     if submission_protocol == SubmissionProtocol.S3:
         # New with Fourfront ontology ingestion work (March 2023).
         # Store the submission data in the parameters of the IngestionSubmission object
@@ -489,7 +491,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     [submission] = creation_response.json()['@graph']
     submission_id = submission['@id']
     if DEBUG_PROTOCOL:  # pragma: no cover
-        show(f"Created IngestionSubmission (bundle) type object: {submission.get('uuid', 'not-found')}")
+        show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} (bundle) type object: {submission.get('uuid', 'not-found')}")
     new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
     response = portal_request_post(new_style_submission_url,
                                    auth=keypair,
@@ -685,7 +687,8 @@ def submit_any_ingestion(ingestion_filename, *,
             'post_only': post_only,
             'patch_only': patch_only,
             'sheet_utils': sheet_utils,
-            'autoadd': json.dumps(autoadd)
+            'autoadd': json.dumps(autoadd),
+            'ingestion_directory': os.path.dirname(ingestion_filename)
         }
 
     else:
@@ -740,7 +743,7 @@ def submit_any_ingestion(ingestion_filename, *,
     uuid = res['submission_id']
 
     if DEBUG_PROTOCOL:  # pragma: no cover
-        show(f"Created IngestionSubmission object: s3://{metadata_bundles_bucket}/{uuid}", with_time=True)
+        show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} object: s3://{metadata_bundles_bucket}/{uuid}", with_time=True)
     show(f"Bundle uploaded to bucket {metadata_bundles_bucket}, assigned uuid {uuid} for tracking."
          f" Awaiting processing...",
          with_time=True)
@@ -796,7 +799,7 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     keydict = KEY_MANAGER.get_keydict_for_server(server)
     keypair = KEY_MANAGER.keydict_to_keypair(keydict)
 
-    show("Checking ingestion process for IngestionSubmission uuid %s ..." % uuid, with_time=True)
+    show(f"Checking ingestion process for {INGESTION_SUBMISSION_TYPE_NAME} uuid %s ..." % uuid, with_time=True)
 
     def check_ingestion_progress():
         return _check_ingestion_progress(uuid, keypair=keypair, server=server)
@@ -990,12 +993,13 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     :param subfolders: bool to search subdirectories within upload_folder for files
     """
 
-    server = resolve_server(server=server, env=env)
-    keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
-    url = ingestion_submission_item_url(server, uuid)
-    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
-    response = portal_request_get(url, auth=keypair, headers=STANDARD_HTTP_HEADERS)
-    response.raise_for_status()
+    # TODO: Eventually replace all key/auth lookup stuff with Portal object.
+    portal = Portal(env, server=server)
+    url = ingestion_submission_item_url(portal.server, uuid)
+    response = portal.get(url, raise_for_status=True)
+    if not portal.is_schema_type(response.json(), INGESTION_SUBMISSION_TYPE_NAME):
+        PRINT(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid}")
+        # return xyzzy
     do_any_uploads(response.json(),
                    keydict=keydict,
                    ingestion_filename=bundle_filename,
@@ -1230,7 +1234,7 @@ def search_for_file(directory, file_name, recursive=False):
     """
     file_path_found = None
     msg = None
-    file_path = os.path.join(directory, file_name)
+    file_path = os.path.normpath(os.path.join(directory, file_name))
     file_search = glob.glob(file_path, recursive=recursive)
     if len(file_search) == 1:
         [file_path_found] = file_search
@@ -1241,7 +1245,7 @@ def search_for_file(directory, file_name, recursive=False):
             % (file_name, directory, ", ".join(file_search))
         )
     else:
-        file_path_found = file_path
+        msg = f"Upload file not found: {file_path}"
     return file_path_found, msg
 
 
