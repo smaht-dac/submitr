@@ -12,7 +12,6 @@ from dcicutils.exceptions import AppServerKeyMissing
 from dcicutils.misc_utils import ignored, ignorable, local_attrs, override_environ, NamedObject
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
-from dcicutils.portal_utils import Portal
 from typing import List, Dict
 from unittest import mock
 

@@ -21,7 +21,6 @@ from dcicutils.misc_utils import (
     check_true, environ_bool,
     PRINT, url_path_join, ignorable, remove_prefix
 )
-from dcicutils.portal_utils import Portal
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.structured_data import Portal, Schema, StructuredDataSet
 from typing import BinaryIO, Dict, Optional
@@ -1242,7 +1241,7 @@ def search_for_file(directory, file_name, recursive=False):
     """
     file_path_found = None
     msg = None
-    #file_path = os.path.normpath(os.path.join(directory, file_name))
+    # file_path = os.path.normpath(os.path.join(directory, file_name))
     file_path = os.path.join(directory, file_name)
     file_search = glob.glob(file_path, recursive=recursive)
     if len(file_search) == 1:
@@ -1254,7 +1253,7 @@ def search_for_file(directory, file_name, recursive=False):
             % (file_name, directory, ", ".join(file_search))
         )
     else:
-        #msg = f"Upload file not found: {file_path}"
+        # msg = f"Upload file not found: {file_path}"
         file_path_found = file_path
     return file_path_found, msg
 
