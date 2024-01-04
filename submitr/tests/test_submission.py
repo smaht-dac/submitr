@@ -1051,11 +1051,11 @@ def test_do_uploads(tmp_path):
                 do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_BAD_AUTH)
                 assert mock_uploaded == {}  # Nothing uploaded because of bad auth
                 assert shown.lines == [
-                    'Uploading ./foo.fastq.gz to item 1234 ...',
+                    'Uploading foo.fastq.gz to item 1234 ...',
                     'Exception: Bad auth',
-                    'Uploading ./bar.fastq.gz to item 2345 ...',
+                    'Uploading bar.fastq.gz to item 2345 ...',
                     'Exception: Bad auth',
-                    'Uploading ./baz.fastq.gz to item 3456 ...',
+                    'Uploading baz.fastq.gz to item 3456 ...',
                     'Exception: Bad auth'
                 ]
 
@@ -1063,34 +1063,34 @@ def test_do_uploads(tmp_path):
             with shown_output() as shown:
                 do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_AUTH)
                 assert mock_uploaded == {
-                    '1234': './foo.fastq.gz',
-                    '2345': './bar.fastq.gz',
-                    '3456': './baz.fastq.gz'
+                    '1234': 'foo.fastq.gz',
+                    '2345': 'bar.fastq.gz',
+                    '3456': 'baz.fastq.gz'
                 }
                 assert shown.lines == [
-                    'Uploading ./foo.fastq.gz to item 1234 ...',
-                    'Upload of ./foo.fastq.gz to item 1234 was successful.',
-                    'Uploading ./bar.fastq.gz to item 2345 ...',
-                    'Upload of ./bar.fastq.gz to item 2345 was successful.',
-                    'Uploading ./baz.fastq.gz to item 3456 ...',
-                    'Upload of ./baz.fastq.gz to item 3456 was successful.',
+                    'Uploading foo.fastq.gz to item 1234 ...',
+                    'Upload of foo.fastq.gz to item 1234 was successful.',
+                    'Uploading bar.fastq.gz to item 2345 ...',
+                    'Upload of bar.fastq.gz to item 2345 was successful.',
+                    'Uploading baz.fastq.gz to item 3456 ...',
+                    'Upload of baz.fastq.gz to item 3456 was successful.',
                 ]
 
     with mock_uploads() as mock_uploaded:
         with shown_output() as shown:
             do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_AUTH, no_query=True)
             assert mock_uploaded == {
-                '1234': './foo.fastq.gz',
-                '2345': './bar.fastq.gz',
-                '3456': './baz.fastq.gz'
+                '1234': 'foo.fastq.gz',
+                '2345': 'bar.fastq.gz',
+                '3456': 'baz.fastq.gz'
             }
             assert shown.lines == [
-                'Uploading ./foo.fastq.gz to item 1234 ...',
-                'Upload of ./foo.fastq.gz to item 1234 was successful.',
-                'Uploading ./bar.fastq.gz to item 2345 ...',
-                'Upload of ./bar.fastq.gz to item 2345 was successful.',
-                'Uploading ./baz.fastq.gz to item 3456 ...',
-                'Upload of ./baz.fastq.gz to item 3456 was successful.',
+                'Uploading foo.fastq.gz to item 1234 ...',
+                'Upload of foo.fastq.gz to item 1234 was successful.',
+                'Uploading bar.fastq.gz to item 2345 ...',
+                'Upload of bar.fastq.gz to item 2345 was successful.',
+                'Uploading baz.fastq.gz to item 3456 ...',
+                'Upload of baz.fastq.gz to item 3456 was successful.',
             ]
 
     with local_attrs(submission_module, SUBMITR_SELECTIVE_UPLOADS=True):

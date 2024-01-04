@@ -1241,8 +1241,8 @@ def search_for_file(directory, file_name, recursive=False):
     """
     file_path_found = None
     msg = None
-    # file_path = os.path.normpath(os.path.join(directory, file_name))
-    file_path = os.path.join(directory, file_name)
+    file_path = os.path.normpath(os.path.join(directory, file_name))
+    # file_path = os.path.join(directory, file_name)
     file_search = glob.glob(file_path, recursive=recursive)
     if len(file_search) == 1:
         [file_path_found] = file_search
@@ -1253,6 +1253,7 @@ def search_for_file(directory, file_name, recursive=False):
             % (file_name, directory, ", ".join(file_search))
         )
     else:
+        # TODO
         # msg = f"Upload file not found: {file_path}"
         file_path_found = file_path
     return file_path_found, msg
