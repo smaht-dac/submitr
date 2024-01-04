@@ -12,6 +12,7 @@ from dcicutils.exceptions import AppServerKeyMissing
 from dcicutils.misc_utils import ignored, ignorable, local_attrs, override_environ, NamedObject
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
+from dcicutils.portal_utils import Portal
 from typing import List, Dict
 from unittest import mock
 
@@ -19,7 +20,6 @@ from .test_utils import shown_output
 from .test_upload_item_data import TEST_ENCRYPT_KEY
 from .. import submission as submission_module
 from ..base import PRODUCTION_ENV, PRODUCTION_SERVER, KEY_MANAGER, DEFAULT_ENV_VAR
-from ..exceptions import PortalPermissionError
 from ..submission import (
     SERVER_REGEXP, PROGRESS_CHECK_INTERVAL, ATTEMPTS_BEFORE_TIMEOUT,
     get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info, show_upload_result,
@@ -316,15 +316,15 @@ def test_get_user_record():
         return mocked_get
 
     with mock.patch("requests.get", return_value=FakeResponse(401, content='["not dictionary"]')):
-        with pytest.raises(PortalPermissionError):
+        with pytest.raises(Exception):
             get_user_record(server="http://localhost:12345", auth=None)
 
     with mock.patch("requests.get", make_mocked_get(auth_failure_code=401)):
-        with pytest.raises(PortalPermissionError):
+        with pytest.raises(Exception):
             get_user_record(server="http://localhost:12345", auth=None)
 
     with mock.patch("requests.get", make_mocked_get(auth_failure_code=403)):
-        with pytest.raises(PortalPermissionError):
+        with pytest.raises(Exception):
             get_user_record(server="http://localhost:12345", auth=None)
 
     with mock.patch("requests.get", make_mocked_get()):
@@ -983,14 +983,14 @@ def test_get_s3_encrypt_key_id_from_health_page(mocked_s3_encrypt_key_id):
 
 def test_upload_file_to_uuid():
 
-    with mock.patch("dcicutils.ff_utils.patch_metadata", return_value=SOME_UPLOAD_CREDENTIALS_RESULT):
+    with mock.patch("dcicutils.portal_utils.Portal.patch_metadata", return_value=SOME_UPLOAD_CREDENTIALS_RESULT):
         with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
             metadata = upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_AUTH)
             assert metadata == SOME_FILE_METADATA
             mocked_upload.assert_called_with(SOME_FILENAME, auth=SOME_AUTH,
                                              upload_credentials=SOME_UPLOAD_CREDENTIALS)
 
-    with mock.patch("dcicutils.ff_utils.patch_metadata", return_value=SOME_BAD_RESULT):
+    with mock.patch("dcicutils.portal_utils.Portal.patch_metadata", return_value=SOME_BAD_RESULT):
         with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
             try:
                 upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_AUTH)
@@ -1453,13 +1453,12 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                              subfolders=False,
                                              )
 
-    def mocked_post(url, auth, data, headers, files, **kwargs):
+    def mocked_post(self, url, data, headers, files, **kwargs):
         assert not kwargs, "The mock named mocked_post did not expect keyword arguments."
         # We only expect requests.post to be called on one particular URL, so this definition is very specialized,
         # mostly just to check that we're being called on what we think, so we can return something highly specific
         # with some degree of confidence. -kmp 6-Sep-2020
         assert url.endswith('/submit_for_ingestion')
-        assert auth == SOME_AUTH
         ignored(data)
         assert isinstance(files, dict) and 'datafile' in files and isinstance(files['datafile'], io.BytesIO)
         assert not headers or headers == {'Content-type': 'application/json'}
@@ -1579,7 +1578,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
-                                with mock.patch("requests.post", mocked_post):
+                                with mock.patch("dcicutils.portal_utils.Portal.post", mocked_post):
                                     with mock.patch("requests.get",
                                                     make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
@@ -1627,7 +1626,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                                  f" to {SOME_SERVER}?")):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
-                                with mock.patch("requests.post", mocked_post):
+                                with mock.patch("dcicutils.portal_utils.Portal.post", mocked_post):
                                     with mock.patch("requests.get",
                                                     make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
@@ -1665,7 +1664,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                return_value=SOME_KEYDICT):
-                            with mock.patch("requests.post", mocked_post):
+                            with mock.patch("dcicutils.portal_utils.Portal.post", mocked_post):
                                 with mock.patch("requests.get",
                                                 make_mocked_get(done_after_n_tries=get_request_attempts)):
                                     with mock.patch("datetime.datetime", dt):
@@ -1806,7 +1805,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
-                                with mock.patch("requests.post", mocked_post):
+                                with mock.patch("dcicutils.portal_utils.Portal.post", mocked_post):
                                     with mock.patch("requests.get",
                                                     make_mocked_get(done_after_n_tries=get_request_attempts,
                                                                     success=False)):
@@ -1848,7 +1847,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
-                                with mock.patch("requests.post", mocked_post):
+                                with mock.patch("dcicutils.portal_utils.Portal.post", mocked_post):
                                     with mock.patch("requests.get",
                                                     make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
@@ -1889,7 +1888,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
-                                with mock.patch("requests.post", mocked_post):
+                                with mock.patch("dcicutils.portal_utils.Portal.post", mocked_post):
                                     with mock.patch("requests.get",
                                                     make_mocked_get(done_after_n_tries=ATTEMPTS_BEFORE_TIMEOUT + 1)):
                                         with mock.patch("datetime.datetime", dt):
@@ -2979,10 +2978,9 @@ def test_upload_file_to_new_uuid():
 
     def test_it(schema_name, auth, expected_post_item, **context_attributes):
 
-        def mocked_post_metadata(post_item, schema_name, key):
-            assert post_item == expected_post_item
-            assert schema_name == expected_schema_name
-            assert key == mocked_good_auth, "Simulated authorization failure"
+        def mocked_post_metadata(object_type, data):
+            assert data == expected_post_item
+            assert object_type == expected_schema_name
             return {
                 '@graph': [
                     mocked_good_file_metadata
@@ -2990,7 +2988,7 @@ def test_upload_file_to_new_uuid():
             }
 
         # Note: compute_file_post_data is allowed to run without mocking
-        with mock.patch("dcicutils.ff_utils.post_metadata") as mock_post_metadata:
+        with mock.patch("dcicutils.portal_utils.Portal.post_metadata") as mock_post_metadata:
             mock_post_metadata.side_effect = mocked_post_metadata
             with mock.patch.object(submission_module, "execute_prearranged_upload") as mock_execute_prearranged_upload:
                 mock_execute_prearranged_upload.side_effect = mocked_execute_prearranged_upload

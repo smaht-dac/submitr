@@ -2,7 +2,7 @@
 
 import requests
 from typing import Tuple
-# from dcicutils import ff_utils
+from dcicutils import ff_utils
 from dcicutils.trace_utils import Trace
 from dcicutils.portal_utils import Portal
 
