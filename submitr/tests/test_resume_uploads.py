@@ -188,8 +188,8 @@ def test_c4_383_regression_action():
                                 'secret': 'my-secret',
                                 'server': local_server,
                             }
-#                           with mock.patch.object(SMaHTKeyManager, "get_keydict_for_server", return_value=fake_keydict):
-                            with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                            with mock.patch.object(Portal, "key",
+                                                   new_callable=mock.PropertyMock) as mocked_portal_key_property:
                                 mocked_portal_key_property.return_value = fake_keydict
                                 try:
                                     # Outside the call, we will always see the default filename for SMaHT keys
