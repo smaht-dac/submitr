@@ -754,7 +754,8 @@ def submit_any_ingestion(ingestion_filename, *,
          f" Awaiting processing...",
          with_time=True)
 
-    check_done, check_status, check_response = check_submit_ingestion(uuid, portal.server, portal.env, app, show_details)
+    check_done, check_status, check_response = check_submit_ingestion(
+            uuid, portal.server, portal.env, app, show_details)
 
     if validate_only:
         exit(0)

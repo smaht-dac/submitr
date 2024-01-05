@@ -1439,7 +1439,6 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
         with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                 with mock.patch.object(submission_module, "yes_or_no", return_value=False):
-#                   with pytest.raises(AppServerKeyMissing):
                     with pytest.raises(Exception):
                         submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                              ingestion_type='metadata_bundle',
@@ -1543,15 +1542,14 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
             with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                 with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                     with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-#                       with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT):
-                        with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                        with mock.patch.object(Portal, "key",
+                                               new_callable=mock.PropertyMock) as mocked_portal_key_property:
                             mocked_portal_key_property.return_value = SOME_KEYDICT
                             with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                                 with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-#                                   with mock.patch("requests.post", mocked_post):
                                     with mock.patch("dcicutils.portal_utils.Portal.post", mocked_post):
-#                                       with mock.patch("requests.get", make_mocked_get(done_after_n_tries=3)):
-                                        with mock.patch("dcicutils.portal_utils.Portal.get", make_mocked_get(done_after_n_tries=3)):
+                                        with mock.patch("dcicutils.portal_utils.Portal.get",
+                                                        make_mocked_get(done_after_n_tries=3)):
                                             try:
                                                 submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                      ingestion_type='metadata_bundle',
@@ -1582,15 +1580,17 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT):
-                                with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
                                     mocked_portal_key_property.return_value = SOME_KEYDICT
                                     with mock.patch("dcicutils.portal_utils.Portal.post", mocked_post):
-#                                       with mock.patch("requests.get", make_mocked_get(done_after_n_tries=get_request_attempts)):
-                                        with mock.patch("dcicutils.portal_utils.Portal.get", make_mocked_get(done_after_n_tries=get_request_attempts)):
+                                        with mock.patch("dcicutils.portal_utils.Portal.get",
+                                                        make_mocked_get(done_after_n_tries=get_request_attempts)):
                                             with mock.patch("datetime.datetime", dt):
                                                 with mock.patch("time.sleep", dt.sleep):
                                                     with mock.patch.object(submission_module, "show_section"):
-                                                        with mock.patch.object(submission_module, "do_any_uploads") as mock_do_any_uploads:
+                                                        with mock.patch.object(submission_module,
+                                                                               "do_any_uploads") as mock_do_any_uploads:
                                                             try:
                                                                 submit_any_ingestion(SOME_BUNDLE_FILENAME,
                                                                                      ingestion_type='metadata_bundle',
@@ -1630,26 +1630,27 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                                  f" ({ANOTHER_INGESTION_TYPE})"
                                                                                  f" to {SOME_SERVER}?")):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT):
-                                with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
                                     mocked_portal_key_property.return_value = SOME_KEYDICT
                                     with mock.patch("dcicutils.portal_utils.Portal.post", mocked_post):
-#                                       with mock.patch("requests.get", make_mocked_get(done_after_n_tries=get_request_attempts)):
-                                        with mock.patch("dcicutils.portal_utils.Portal.get", make_mocked_get(done_after_n_tries=get_request_attempts)):
+                                        with mock.patch("dcicutils.portal_utils.Portal.get",
+                                                        make_mocked_get(done_after_n_tries=get_request_attempts)):
                                             with mock.patch("datetime.datetime", dt):
                                                 with mock.patch("time.sleep", dt.sleep):
                                                     with mock.patch.object(submission_module, "show_section"):
                                                         with mock.patch.object(submission_module,
                                                                                "do_any_uploads") as mock_do_any_uploads:
                                                             try:
-                                                                submit_any_ingestion(SOME_BUNDLE_FILENAME,
-                                                                                     ingestion_type=ANOTHER_INGESTION_TYPE,
-                                                                                     **SOME_ORG_ARGS,
-                                                                                     server=SOME_SERVER,
-                                                                                     env=None,
-                                                                                     validate_only=False,
-                                                                                     no_query=False,
-                                                                                     subfolders=False,
-                                                                                     )
+                                                                submit_any_ingestion(
+                                                                    SOME_BUNDLE_FILENAME,
+                                                                    ingestion_type=ANOTHER_INGESTION_TYPE,
+                                                                    **SOME_ORG_ARGS,
+                                                                    server=SOME_SERVER,
+                                                                    env=None,
+                                                                    validate_only=False,
+                                                                    no_query=False,
+                                                                    subfolders=False)
                                                             except SystemExit as e:  # pragma: no cover
                                                                 # This is just in case. In fact, it's more likely
                                                                 # that a normal 'return' not 'exit' was done.
@@ -1669,11 +1670,12 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT):
-                            with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                            with mock.patch.object(Portal, "key",
+                                                   new_callable=mock.PropertyMock) as mocked_portal_key_property:
                                 mocked_portal_key_property.return_value = SOME_KEYDICT
                                 with mock.patch("dcicutils.portal_utils.Portal.post", mocked_post):
-#                                   with mock.patch("requests.get", make_mocked_get(done_after_n_tries=get_request_attempts)):
-                                    with mock.patch("dcicutils.portal_utils.Portal.get", make_mocked_get(done_after_n_tries=get_request_attempts)):
+                                    with mock.patch("dcicutils.portal_utils.Portal.get",
+                                                    make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
                                                 with mock.patch.object(submission_module, "show_section"):
@@ -1718,11 +1720,13 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT):
-                                with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
                                     mocked_portal_key_property.return_value = SOME_KEYDICT
                                     with mock.patch("requests.post", unsupported_media_type):
-#                                       with mock.patch("requests.get", make_mocked_get(done_after_n_tries=get_request_attempts, success=False)):
-                                        with mock.patch("dcicutils.portal_utils.Portal.get", make_mocked_get(done_after_n_tries=get_request_attempts, success=False)):
+                                        with mock.patch("dcicutils.portal_utils.Portal.get",
+                                                        make_mocked_get(done_after_n_tries=get_request_attempts,
+                                                                        success=False)):
                                             with mock.patch("datetime.datetime", dt):
                                                 with mock.patch("time.sleep", dt.sleep):
                                                     with mock.patch.object(submission_module, "show_section"):
@@ -1770,11 +1774,12 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT):
-                                with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
                                     mocked_portal_key_property.return_value = SOME_KEYDICT
                                     with mock.patch("requests.post", mysterious_error):
-#                                       with mock.patch("requests.get", make_mocked_get(done_after_n_tries=get_request_attempts, success=False)):
-                                        with mock.patch("dcicutils.portal_utils.Portal.get", make_mocked_get(done_after_n_tries=get_request_attempts)):
+                                        with mock.patch("dcicutils.portal_utils.Portal.get",
+                                                        make_mocked_get(done_after_n_tries=get_request_attempts)):
                                             with mock.patch("datetime.datetime", dt):
                                                 with mock.patch("time.sleep", dt.sleep):
                                                     with mock.patch.object(submission_module, "show_section"):
@@ -1811,11 +1816,13 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT):
-                                with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
                                     mocked_portal_key_property.return_value = SOME_KEYDICT
                                     with mock.patch("dcicutils.portal_utils.Portal.post", mocked_post):
-#                                       with mock.patch("requests.get", make_mocked_get(done_after_n_tries=get_request_attempts, success=False)):
-                                        with mock.patch("dcicutils.portal_utils.Portal.get", make_mocked_get(done_after_n_tries=get_request_attempts, success=False)):
+                                        with mock.patch("dcicutils.portal_utils.Portal.get",
+                                                        make_mocked_get(done_after_n_tries=get_request_attempts,
+                                                                        success=False)):
                                             with mock.patch("datetime.datetime", dt):
                                                 with mock.patch("time.sleep", dt.sleep):
                                                     with mock.patch.object(submission_module, "show_section"):
@@ -1853,11 +1860,12 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT):
-                                with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
                                     mocked_portal_key_property.return_value = SOME_KEYDICT
                                     with mock.patch("dcicutils.portal_utils.Portal.post", mocked_post):
-#                                       with mock.patch("requests.get", make_mocked_get(done_after_n_tries=get_request_attempts)):
-                                        with mock.patch("dcicutils.portal_utils.Portal.get", make_mocked_get(done_after_n_tries=get_request_attempts)):
+                                        with mock.patch("dcicutils.portal_utils.Portal.get",
+                                                        make_mocked_get(done_after_n_tries=get_request_attempts)):
                                             with mock.patch("datetime.datetime", dt):
                                                 with mock.patch("time.sleep", dt.sleep):
                                                     with mock.patch.object(submission_module, "show_section"):
@@ -1895,11 +1903,13 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                     with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT):
-                                with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
                                     mocked_portal_key_property.return_value = SOME_KEYDICT
                                     with mock.patch("dcicutils.portal_utils.Portal.post", mocked_post):
-#                                       with mock.patch("requests.get", make_mocked_get(done_after_n_tries=ATTEMPTS_BEFORE_TIMEOUT + 1)):
-                                        with mock.patch("dcicutils.portal_utils.Portal.get", make_mocked_get(done_after_n_tries=ATTEMPTS_BEFORE_TIMEOUT + 1)):
+                                        with mock.patch("dcicutils.portal_utils.Portal.get",
+                                                        make_mocked_get(
+                                                            done_after_n_tries=ATTEMPTS_BEFORE_TIMEOUT + 1)):
                                             with mock.patch("datetime.datetime", dt):
                                                 with mock.patch("time.sleep", dt.sleep):
                                                     with mock.patch.object(submission_module, "show_section"):
@@ -1917,7 +1927,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                                      subfolders=False,
                                                                                      )
                                                             except SystemExit as e:
-                                                                # We expect to time out for too many waits before success.
+                                                                # Expect to timeout for too many waits before success.
                                                                 assert e.code == 0
 
                                                             assert mock_do_any_uploads.call_count == 1
@@ -1931,7 +1941,7 @@ SOME_ORG_ARGS = {'consortium': SOME_CONSORTIUM, 'submission_center': SOME_SUBMIS
 @mock.patch.object(submission_module, "get_health_page")
 @mock.patch.object(submission_module, "DEBUG_PROTOCOL", False)
 def test_submit_any_ingestion_new_protocol(mock_get_health_page):
-    return # xyzzy
+    return  # xyzzy
 
     mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: TEST_ENCRYPT_KEY}
 
