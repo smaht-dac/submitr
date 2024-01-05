@@ -619,7 +619,6 @@ def submit_any_ingestion(ingestion_filename, *,
     # keydict = KEY_MANAGER.get_keydict_for_server(server)
     # keypair = KEY_MANAGER.keydict_to_keypair(keydict)
     # portal = Portal(keydict, env=env, server=server)
-    # import pdb ; pdb.set_trace()
     portal = Portal(env=env, server=server)
     if not portal.key:
         raise Exception("No portal key defined.")

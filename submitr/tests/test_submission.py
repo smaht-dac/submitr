@@ -8,7 +8,6 @@ import re
 
 from dcicutils import command_utils as command_utils_module
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
-from dcicutils.exceptions import AppServerKeyMissing
 from dcicutils.misc_utils import ignored, ignorable, local_attrs, override_environ, NamedObject
 from dcicutils.portal_utils import Portal
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
@@ -1941,7 +1940,6 @@ SOME_ORG_ARGS = {'consortium': SOME_CONSORTIUM, 'submission_center': SOME_SUBMIS
 @mock.patch.object(submission_module, "get_health_page")
 @mock.patch.object(submission_module, "DEBUG_PROTOCOL", False)
 def test_submit_any_ingestion_new_protocol(mock_get_health_page):
-    return  # xyzzy
 
     mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: TEST_ENCRYPT_KEY}
 
@@ -1960,7 +1958,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                              subfolders=False)
                     except SystemExit as e:
                         assert e.code == 1
-                    except AppServerKeyMissing:
+                    except Exception:
                         assert True is True
                     else:
                         raise AssertionError("Expected SystemExit did not happen.")  # pragma: no cover
@@ -2096,31 +2094,34 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                     with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                         with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                return_value=SOME_KEYDICT):
-                            with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
-                                with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                                    with mock.patch("requests.post", mocked_post):
-                                        with mock.patch("requests.get",
-                                                        make_mocked_get(done_after_n_tries=get_request_attempts)):
-                                            try:
-                                                submit_any_ingestion(SOME_BUNDLE_FILENAME,
-                                                                     ingestion_type='metadata_bundle',
-                                                                     **SOME_ORG_ARGS,
-                                                                     server=SOME_SERVER,
-                                                                     env=None,
-                                                                     validate_only=False,
-                                                                     no_query=False,
-                                                                     subfolders=False)
-                                            except SystemExit as e:
-                                                assert e.code == 1
-                                            except ValueError as e:
-                                                # submit_any_ingestion will raise ValueError if its
-                                                # bundle_filename argument is not the name of a
-                                                # metadata bundle file. We did nothing in this mock to
-                                                # create the file SOME_BUNDLE_FILENAME, so we expect something
-                                                # like: "The file '/some-folder/foo.xls' does not exist."
-                                                assert "does not exist" in str(e)
-                                            else:  # pragma: no cover
-                                                raise AssertionError("Expected ValueError did not happen.")
+                            with mock.patch.object(Portal, "key",
+                                                   new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                mocked_portal_key_property.return_value = SOME_KEYDICT
+                                with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                                    with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                                        with mock.patch("requests.post", mocked_post):
+                                            with mock.patch("requests.get",
+                                                            make_mocked_get(done_after_n_tries=get_request_attempts)):
+                                                try:
+                                                    submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                         ingestion_type='metadata_bundle',
+                                                                         **SOME_ORG_ARGS,
+                                                                         server=SOME_SERVER,
+                                                                         env=None,
+                                                                         validate_only=False,
+                                                                         no_query=False,
+                                                                         subfolders=False)
+                                                except SystemExit as e:
+                                                    assert e.code == 1
+                                                except ValueError as e:
+                                                    # submit_any_ingestion will raise ValueError if its
+                                                    # bundle_filename argument is not the name of a
+                                                    # metadata bundle file. We did nothing in this mock to
+                                                    # create the file SOME_BUNDLE_FILENAME, so we expect something
+                                                    # like: "The file '/some-folder/foo.xls' does not exist."
+                                                    assert "does not exist" in str(e)
+                                                else:  # pragma: no cover
+                                                    raise AssertionError("Expected ValueError did not happen.")
 
     # This tests the normal case with SubmissionProtocol.UPLOAD (the default), and with validate_only=False
     # and a successful result.
@@ -2135,30 +2136,33 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
-                                with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get",
-                                                    make_mocked_get(done_after_n_tries=get_request_attempts)):
-                                        with mock.patch("datetime.datetime", dt):
-                                            with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
-                                                    with mock.patch.object(submission_module,
-                                                                           "do_any_uploads") as mock_do_any_uploads:
-                                                        try:
-                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
-                                                                                 ingestion_type='metadata_bundle',
-                                                                                 **SOME_ORG_ARGS,
-                                                                                 server=SOME_SERVER,
-                                                                                 env=None,
-                                                                                 validate_only=False,
-                                                                                 upload_folder=None,
-                                                                                 no_query=False,
-                                                                                 subfolders=False)
-                                                        except SystemExit as e:  # pragma: no cover
-                                                            # This is just in case. In fact, it's more likely
-                                                            # that a normal 'return' not 'exit' was done.
-                                                            assert e.code == 0
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                    mocked_portal_key_property.return_value = SOME_KEYDICT
+                                    with mock.patch("requests.post", mocked_post):
+                                        with mock.patch("requests.get",
+                                                        make_mocked_get(done_after_n_tries=get_request_attempts)):
+                                            with mock.patch("datetime.datetime", dt):
+                                                with mock.patch("time.sleep", dt.sleep):
+                                                    with mock.patch.object(submission_module, "show_section"):
+                                                        with mock.patch.object(submission_module,
+                                                                               "do_any_uploads") as mock_do_any_uploads:
+                                                            try:
+                                                                submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                     ingestion_type='metadata_bundle',
+                                                                                     **SOME_ORG_ARGS,
+                                                                                     server=SOME_SERVER,
+                                                                                     env=None,
+                                                                                     validate_only=False,
+                                                                                     upload_folder=None,
+                                                                                     no_query=False,
+                                                                                     subfolders=False)
+                                                            except SystemExit as e:  # pragma: no cover
+                                                                # This is just in case. In fact, it's more likely
+                                                                # that a normal 'return' not 'exit' was done.
+                                                                assert e.code == 0
 
-                                                        assert mock_do_any_uploads.call_count == 1
+                                                            assert mock_do_any_uploads.call_count == 1
         # assert shown.lines and "Portal credentials do not seem to work" in shown.lines[0]  # TODO
 
     dt.reset_datetime()
@@ -2177,54 +2181,57 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
-                                with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get",
-                                                    make_mocked_get(done_after_n_tries=get_request_attempts)):
-                                        with mock.patch("datetime.datetime", dt):
-                                            with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
-                                                    with mock.patch.object(submission_module,
-                                                                           "do_any_uploads") as mock_do_any_uploads:
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                    mocked_portal_key_property.return_value = SOME_KEYDICT
+                                    with mock.patch("requests.post", mocked_post):
+                                        with mock.patch("requests.get",
+                                                        make_mocked_get(done_after_n_tries=get_request_attempts)):
+                                            with mock.patch("datetime.datetime", dt):
+                                                with mock.patch("time.sleep", dt.sleep):
+                                                    with mock.patch.object(submission_module, "show_section"):
                                                         with mock.patch.object(submission_module,
-                                                                               "upload_file_to_new_uuid"
-                                                                               ) as mock_upload_file_to_new_uuid:
-                                                            def mocked_upload_file_to_new_uuid(filename, schema_name,
-                                                                                               auth, **app_args):
-                                                                ignored(app_args)  # not relevant to this test
-                                                                assert filename == SOME_BUNDLE_FILENAME
-                                                                assert schema_name == expected_schema_name
-                                                                assert auth['key'] == SOME_KEY_ID
-                                                                assert auth['secret'] == SOME_SECRET
-                                                                return {
-                                                                    'uuid': mocked_good_uuid,
-                                                                    'accession': mocked_good_at_id,
-                                                                    '@id': mocked_good_at_id,
-                                                                    'key': mocked_good_filename,
-                                                                    'upload_credentials':
+                                                                               "do_any_uploads") as mock_do_any_uploads:
+                                                            with mock.patch.object(submission_module,
+                                                                                   "upload_file_to_new_uuid"
+                                                                                   ) as mock_upload_file_to_new_uuid:
+                                                                def mocked_upload_file_to_new_uuid(
+                                                                        filename, schema_name, auth, **app_args):
+                                                                    ignored(app_args)  # not relevant to this test
+                                                                    assert filename == SOME_BUNDLE_FILENAME
+                                                                    assert schema_name == expected_schema_name
+                                                                    assert auth['key'] == SOME_KEY_ID
+                                                                    assert auth['secret'] == SOME_SECRET
+                                                                    return {
+                                                                        'uuid': mocked_good_uuid,
+                                                                        'accession': mocked_good_at_id,
+                                                                        '@id': mocked_good_at_id,
+                                                                        'key': mocked_good_filename,
+                                                                        'upload_credentials':
                                                                         mocked_good_upload_credentials,
-                                                                }
-                                                            mock_upload_file_to_new_uuid.side_effect = (
-                                                                mocked_upload_file_to_new_uuid
-                                                            )
-                                                            try:
-                                                                submit_any_ingestion(
-                                                                    SOME_BUNDLE_FILENAME,
-                                                                    ingestion_type='metadata_bundle',
-                                                                    **SOME_ORG_ARGS,
-                                                                    server=SOME_SERVER,
-                                                                    env=None,
-                                                                    validate_only=False,
-                                                                    upload_folder=None,
-                                                                    no_query=False,
-                                                                    subfolders=False,
-                                                                    submission_protocol=SubmissionProtocol.S3,
+                                                                    }
+                                                                mock_upload_file_to_new_uuid.side_effect = (
+                                                                    mocked_upload_file_to_new_uuid
                                                                 )
-                                                            except SystemExit as e:  # pragma: no cover
-                                                                # This is just in case. In fact, it's more likely
-                                                                # that a normal 'return' not 'exit' was done.
-                                                                assert e.code == 0
+                                                                try:
+                                                                    submit_any_ingestion(
+                                                                        SOME_BUNDLE_FILENAME,
+                                                                        ingestion_type='metadata_bundle',
+                                                                        **SOME_ORG_ARGS,
+                                                                        server=SOME_SERVER,
+                                                                        env=None,
+                                                                        validate_only=False,
+                                                                        upload_folder=None,
+                                                                        no_query=False,
+                                                                        subfolders=False,
+                                                                        submission_protocol=SubmissionProtocol.S3,
+                                                                    )
+                                                                except SystemExit as e:  # pragma: no cover
+                                                                    # This is just in case. In fact, it's more likely
+                                                                    # that a normal 'return' not 'exit' was done.
+                                                                    assert e.code == 0
 
-                                                            assert mock_do_any_uploads.call_count == 1
+                                                                assert mock_do_any_uploads.call_count == 1
 
         # assert shown.lines and "Portal credentials do not seem to work" in shown.lines[0]  # TODO
 
@@ -2298,34 +2305,37 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
-                                with mock.patch("requests.post", unsupported_media_type):
-                                    with mock.patch("requests.get",
-                                                    make_mocked_get(done_after_n_tries=get_request_attempts,
-                                                                    success=False)):
-                                        with mock.patch("datetime.datetime", dt):
-                                            with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
-                                                    with mock.patch.object(submission_module,
-                                                                           "do_any_uploads") as mock_do_any_uploads:
-                                                        try:
-                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
-                                                                                 ingestion_type='metadata_bundle',
-                                                                                 **SOME_ORG_ARGS,
-                                                                                 server=SOME_SERVER,
-                                                                                 env=None,
-                                                                                 validate_only=False,
-                                                                                 upload_folder=None,
-                                                                                 no_query=False,
-                                                                                 subfolders=False,
-                                                                                 )
-                                                        except SystemExit as e:
-                                                            assert e.code == 1
-                                                        except Exception as e:
-                                                            assert "raised for status" in str(e)
-                                                        else:  # pragma: no cover
-                                                            raise AssertionError("Expected error did not occur.")
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                    mocked_portal_key_property.return_value = SOME_KEYDICT
+                                    with mock.patch("requests.post", unsupported_media_type):
+                                        with mock.patch("requests.get",
+                                                        make_mocked_get(done_after_n_tries=get_request_attempts,
+                                                                        success=False)):
+                                            with mock.patch("datetime.datetime", dt):
+                                                with mock.patch("time.sleep", dt.sleep):
+                                                    with mock.patch.object(submission_module, "show_section"):
+                                                        with mock.patch.object(submission_module,
+                                                                               "do_any_uploads") as mock_do_any_uploads:
+                                                            try:
+                                                                submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                     ingestion_type='metadata_bundle',
+                                                                                     **SOME_ORG_ARGS,
+                                                                                     server=SOME_SERVER,
+                                                                                     env=None,
+                                                                                     validate_only=False,
+                                                                                     upload_folder=None,
+                                                                                     no_query=False,
+                                                                                     subfolders=False,
+                                                                                     )
+                                                            except SystemExit as e:
+                                                                assert e.code == 1
+                                                            except Exception as e:
+                                                                assert "raised for status" in str(e)
+                                                            else:  # pragma: no cover
+                                                                raise AssertionError("Expected error did not occur.")
 
-                                                        assert mock_do_any_uploads.call_count == 0
+                                                            assert mock_do_any_uploads.call_count == 0
         # assert shown.lines and "Portal credentials do not seem to work" in shown.lines[0]  # TODO
 
     dt.reset_datetime()
@@ -2350,34 +2360,37 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
-                                with mock.patch("requests.post", mysterious_error):
-                                    with mock.patch("requests.get",
-                                                    make_mocked_get(done_after_n_tries=get_request_attempts,
-                                                                    success=False)):
-                                        with mock.patch("datetime.datetime", dt):
-                                            with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
-                                                    with mock.patch.object(submission_module,
-                                                                           "do_any_uploads") as mock_do_any_uploads:
-                                                        try:
-                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
-                                                                                 ingestion_type='metadata_bundle',
-                                                                                 **SOME_ORG_ARGS,
-                                                                                 server=SOME_SERVER,
-                                                                                 env=None,
-                                                                                 validate_only=False,
-                                                                                 upload_folder=None,
-                                                                                 no_query=False,
-                                                                                 subfolders=False,
-                                                                                 )
-                                                        except SystemExit as e:
-                                                            assert e.code == 1
-                                                        except Exception as e:
-                                                            assert "raised for status" in str(e)
-                                                        else:  # pragma: no cover
-                                                            raise AssertionError("Expected error did not occur.")
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                    mocked_portal_key_property.return_value = SOME_KEYDICT
+                                    with mock.patch("requests.post", mysterious_error):
+                                        with mock.patch("requests.get",
+                                                        make_mocked_get(done_after_n_tries=get_request_attempts,
+                                                                        success=False)):
+                                            with mock.patch("datetime.datetime", dt):
+                                                with mock.patch("time.sleep", dt.sleep):
+                                                    with mock.patch.object(submission_module, "show_section"):
+                                                        with mock.patch.object(submission_module,
+                                                                               "do_any_uploads") as mock_do_any_uploads:
+                                                            try:
+                                                                submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                     ingestion_type='metadata_bundle',
+                                                                                     **SOME_ORG_ARGS,
+                                                                                     server=SOME_SERVER,
+                                                                                     env=None,
+                                                                                     validate_only=False,
+                                                                                     upload_folder=None,
+                                                                                     no_query=False,
+                                                                                     subfolders=False,
+                                                                                     )
+                                                            except SystemExit as e:
+                                                                assert e.code == 1
+                                                            except Exception as e:
+                                                                assert "raised for status" in str(e)
+                                                            else:  # pragma: no cover
+                                                                raise AssertionError("Expected error did not occur.")
 
-                                                        assert mock_do_any_uploads.call_count == 0
+                                                            assert mock_do_any_uploads.call_count == 0
         # assert shown.lines and "Portal credentials do not seem to work" in shown.lines[0]  # TODO
 
     dt.reset_datetime()
@@ -2394,32 +2407,35 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
-                                with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get",
-                                                    make_mocked_get(done_after_n_tries=get_request_attempts,
-                                                                    success=False)):
-                                        with mock.patch("datetime.datetime", dt):
-                                            with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
-                                                    with mock.patch.object(submission_module,
-                                                                           "do_any_uploads") as mock_do_any_uploads:
-                                                        try:
-                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
-                                                                                 ingestion_type='metadata_bundle',
-                                                                                 **SOME_ORG_ARGS,
-                                                                                 server=SOME_SERVER,
-                                                                                 env=None,
-                                                                                 validate_only=False,
-                                                                                 upload_folder=None,
-                                                                                 no_query=False,
-                                                                                 subfolders=False,
-                                                                                 )
-                                                        except SystemExit as e:  # pragma: no cover
-                                                            # This is just in case. In fact, it's more likely
-                                                            # that a normal 'return' not 'exit' was done.
-                                                            assert e.code == 0
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                    mocked_portal_key_property.return_value = SOME_KEYDICT
+                                    with mock.patch("requests.post", mocked_post):
+                                        with mock.patch("requests.get",
+                                                        make_mocked_get(done_after_n_tries=get_request_attempts,
+                                                                        success=False)):
+                                            with mock.patch("datetime.datetime", dt):
+                                                with mock.patch("time.sleep", dt.sleep):
+                                                    with mock.patch.object(submission_module, "show_section"):
+                                                        with mock.patch.object(submission_module,
+                                                                               "do_any_uploads") as mock_do_any_uploads:
+                                                            try:
+                                                                submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                     ingestion_type='metadata_bundle',
+                                                                                     **SOME_ORG_ARGS,
+                                                                                     server=SOME_SERVER,
+                                                                                     env=None,
+                                                                                     validate_only=False,
+                                                                                     upload_folder=None,
+                                                                                     no_query=False,
+                                                                                     subfolders=False,
+                                                                                     )
+                                                            except SystemExit as e:  # pragma: no cover
+                                                                # This is just in case. In fact, it's more likely
+                                                                # that a normal 'return' not 'exit' was done.
+                                                                assert e.code == 0
 
-                                                        assert mock_do_any_uploads.call_count == 0
+                                                            assert mock_do_any_uploads.call_count == 0
         # assert shown.lines and "Portal credentials do not seem to work" in shown.lines[0]  # TODO
 
     dt.reset_datetime()
@@ -2436,31 +2452,34 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
-                                with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get",
-                                                    make_mocked_get(done_after_n_tries=get_request_attempts)):
-                                        with mock.patch("datetime.datetime", dt):
-                                            with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
-                                                    with mock.patch.object(submission_module,
-                                                                           "do_any_uploads") as mock_do_any_uploads:
-                                                        try:
-                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
-                                                                                 ingestion_type='metadata_bundle',
-                                                                                 **SOME_ORG_ARGS,
-                                                                                 server=SOME_SERVER,
-                                                                                 env=None,
-                                                                                 validate_only=True,
-                                                                                 upload_folder=None,
-                                                                                 no_query=False,
-                                                                                 subfolders=False,
-                                                                                 )
-                                                        except SystemExit as e:  # pragma: no cover
-                                                            assert e.code == 0
-                                                        # It's also OK if it doesn't do an exit(0)
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                    mocked_portal_key_property.return_value = SOME_KEYDICT
+                                    with mock.patch("requests.post", mocked_post):
+                                        with mock.patch("requests.get",
+                                                        make_mocked_get(done_after_n_tries=get_request_attempts)):
+                                            with mock.patch("datetime.datetime", dt):
+                                                with mock.patch("time.sleep", dt.sleep):
+                                                    with mock.patch.object(submission_module, "show_section"):
+                                                        with mock.patch.object(submission_module,
+                                                                               "do_any_uploads") as mock_do_any_uploads:
+                                                            try:
+                                                                submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                     ingestion_type='metadata_bundle',
+                                                                                     **SOME_ORG_ARGS,
+                                                                                     server=SOME_SERVER,
+                                                                                     env=None,
+                                                                                     validate_only=True,
+                                                                                     upload_folder=None,
+                                                                                     no_query=False,
+                                                                                     subfolders=False,
+                                                                                     )
+                                                            except SystemExit as e:  # pragma: no cover
+                                                                assert e.code == 0
+                                                            # It's also OK if it doesn't do an exit(0)
 
-                                                        # For validation only, we won't have tried uploads.
-                                                        assert mock_do_any_uploads.call_count == 0
+                                                            # For validation only, we won't have tried uploads.
+                                                            assert mock_do_any_uploads.call_count == 0
         # assert shown.lines and "Portal credentials do not seem to work" in shown.lines[0]  # TODO
 
     dt.reset_datetime()
@@ -2477,31 +2496,34 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(KEY_MANAGER, "get_keydict_for_server",
                                                    return_value=SOME_KEYDICT):
-                                with mock.patch("requests.post", mocked_post):
-                                    with mock.patch(
-                                        "requests.get",
-                                        make_mocked_get(done_after_n_tries=ATTEMPTS_BEFORE_TIMEOUT + 1)
-                                    ):
-                                        with mock.patch("datetime.datetime", dt):
-                                            with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
-                                                    with mock.patch.object(submission_module,
-                                                                           "do_any_uploads") as mock_do_any_uploads:
-                                                        try:
-                                                            submit_any_ingestion(SOME_BUNDLE_FILENAME,
-                                                                                 ingestion_type='metadata_bundle',
-                                                                                 **SOME_ORG_ARGS,
-                                                                                 server=SOME_SERVER,
-                                                                                 env=None,
-                                                                                 validate_only=False,
-                                                                                 upload_folder=None,
-                                                                                 no_query=False,
-                                                                                 )
-                                                        except SystemExit as e:
-                                                            # We expect to time out for too many waits before success.
-                                                            assert e.code == 1
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                    mocked_portal_key_property.return_value = SOME_KEYDICT
+                                    with mock.patch("requests.post", mocked_post):
+                                        with mock.patch(
+                                            "requests.get",
+                                            make_mocked_get(done_after_n_tries=ATTEMPTS_BEFORE_TIMEOUT + 1)
+                                        ):
+                                            with mock.patch("datetime.datetime", dt):
+                                                with mock.patch("time.sleep", dt.sleep):
+                                                    with mock.patch.object(submission_module, "show_section"):
+                                                        with mock.patch.object(submission_module,
+                                                                               "do_any_uploads") as mock_do_any_uploads:
+                                                            try:
+                                                                submit_any_ingestion(SOME_BUNDLE_FILENAME,
+                                                                                     ingestion_type='metadata_bundle',
+                                                                                     **SOME_ORG_ARGS,
+                                                                                     server=SOME_SERVER,
+                                                                                     env=None,
+                                                                                     validate_only=False,
+                                                                                     upload_folder=None,
+                                                                                     no_query=False,
+                                                                                     )
+                                                            except SystemExit as e:
+                                                                # Expect to timeout for too many waits before success.
+                                                                assert e.code == 1
 
-                                                        assert mock_do_any_uploads.call_count == 0
+                                                            assert mock_do_any_uploads.call_count == 0
         # assert shown.lines and "Portal credentials do not seem to work" in shown.lines[0]  # OK
 
 
