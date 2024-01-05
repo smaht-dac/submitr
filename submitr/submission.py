@@ -615,16 +615,23 @@ def submit_any_ingestion(ingestion_filename, *,
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app,
                                  consortium=consortium, submission_center=submission_center)
 
-    server = resolve_server(server=server, env=env)
-    keydict = KEY_MANAGER.get_keydict_for_server(server)
-    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
-    portal = Portal(keydict, env=env, server=server)
+    # server = resolve_server(server=server, env=env)
+    # keydict = KEY_MANAGER.get_keydict_for_server(server)
+    # keypair = KEY_MANAGER.keydict_to_keypair(keydict)
+    # portal = Portal(keydict, env=env, server=server)
+    # import pdb ; pdb.set_trace()
+    portal = Portal(env=env, server=server)
+    if not portal.key:
+        raise Exception("No portal key defined.")
+
+    # portal = Portal(env=env, server=server)
+
     if portal.get("/health").status_code != 200:  # TODO: with newer version dcicutils do: if not portal.ping():
         show(f"Portal credentials do not seem to work: {KEY_MANAGER.keys_file} ({env})")
         exit(1)
 
     if validate_local:
-        _validate_locally(ingestion_filename, app, env, validate_local_only)
+        _validate_locally(ingestion_filename, app, portal.env, validate_local_only)
 
     validation_qualifier = " (for validation only)" if validate_only else ""
 
@@ -632,17 +639,17 @@ def submit_any_ingestion(ingestion_filename, *,
     if ingestion_type != DEFAULT_INGESTION_TYPE:
         maybe_ingestion_type = " (%s)" % ingestion_type
 
-    PRINT(f"App key file is: {KEY_MANAGER.keys_file}")
+    PRINT(f"App key file is: {portal.keys_file}")
 
     if not no_query:
         if not yes_or_no("Submit %s%s to %s%s?"
-                         % (ingestion_filename, maybe_ingestion_type, server, validation_qualifier)):
+                         % (ingestion_filename, maybe_ingestion_type, portal.server, validation_qualifier)):
             show("Aborting submission.")
             exit(1)
 
-    metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
+    metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
 
-    user_record = get_user_record(server, auth=keypair)
+    user_record = get_user_record(portal.server, auth=portal.key_pair)
 
     do_app_arg_defaulting(app_args, user_record)
 
@@ -672,7 +679,7 @@ def submit_any_ingestion(ingestion_filename, *,
     if submission_protocol == SubmissionProtocol.S3:
 
         upload_result = upload_file_to_new_uuid(filename=ingestion_filename, schema_name=GENERIC_SCHEMA_TYPE,
-                                                auth=keydict, **app_args)
+                                                auth=portal.key, **app_args)
 
         submission_post_data = compute_s3_submission_post_data(ingestion_filename=ingestion_filename,
                                                                ingestion_post_result=upload_result,
@@ -695,7 +702,7 @@ def submit_any_ingestion(ingestion_filename, *,
         raise InvalidParameterError(parameter='submission_protocol', value=submission_protocol,
                                     options=SUBMISSION_PROTOCOLS)
 
-    response = _post_submission(server=server, keypair=keypair,
+    response = _post_submission(server=portal.server, keypair=portal.key_pair,
                                 ingestion_filename=ingestion_filename,
                                 creation_post_data=creation_post_data,
                                 submission_post_data=submission_post_data,
@@ -747,13 +754,13 @@ def submit_any_ingestion(ingestion_filename, *,
          f" Awaiting processing...",
          with_time=True)
 
-    check_done, check_status, check_response = check_submit_ingestion(uuid, server, env, app, show_details)
+    check_done, check_status, check_response = check_submit_ingestion(uuid, portal.server, portal.env, app, show_details)
 
     if validate_only:
         exit(0)
 
     if check_status == "success":
-        do_any_uploads(check_response, keydict=keydict, ingestion_filename=ingestion_filename,
+        do_any_uploads(check_response, keydict=portal.key, ingestion_filename=ingestion_filename,
                        upload_folder=upload_folder, no_query=no_query,
                        subfolders=subfolders)
 
@@ -995,9 +1002,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     # TODO: Eventually replace all key/auth lookup stuff with Portal object.
     # TODO: Need these next 2 lines for now short short term until fix test failure ...
     # submitr/tests/test_resume_uploads.py::test_c4_383_regression_action
-    server = resolve_server(server=server, env=env)
-    keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
-
+    # server = resolve_server(server=server, env=env)
+    # keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
     portal = Portal(keydict, env=env, server=server)
     url = ingestion_submission_item_url(portal.server, uuid)
     response = portal.get(url, raise_for_status=True)
@@ -1008,7 +1014,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
         # submitr/tests/test_resume_uploads.py::test_c4_383_regression_action
         # submitr/tests/test_submission.py::test_resume_uploads
     do_any_uploads(response.json(),
-                   keydict=keydict,
+                   keydict=portal.key,
                    ingestion_filename=bundle_filename,
                    upload_folder=upload_folder,
                    no_query=no_query,

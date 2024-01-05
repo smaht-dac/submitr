@@ -2,6 +2,7 @@ import os
 import pytest
 
 from dcicutils.misc_utils import ignored, override_environ
+from dcicutils.portal_utils import Portal
 from dcicutils.qa_utils import MockResponse
 from unittest import mock
 from .. import submission as submission_module
@@ -187,8 +188,9 @@ def test_c4_383_regression_action():
                                 'secret': 'my-secret',
                                 'server': local_server,
                             }
-                            with mock.patch.object(SMaHTKeyManager, "get_keydict_for_server",
-                                                   return_value=fake_keydict):
+#                           with mock.patch.object(SMaHTKeyManager, "get_keydict_for_server", return_value=fake_keydict):
+                            with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                mocked_portal_key_property.return_value = fake_keydict
                                 try:
                                     # Outside the call, we will always see the default filename for SMaHT keys
                                     # but inside the call, because of a decorator, the default might be different.
