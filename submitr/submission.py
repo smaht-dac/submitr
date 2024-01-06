@@ -961,6 +961,7 @@ def show_upload_result(result,
 
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False, subfolders=False):
     upload_info = get_section(res, 'upload_info')
+    original_ingestion_directory = res.get("parameters", {}).get("ingestion_directory")
     folder = upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None)
     if upload_info:
         if no_query:
@@ -1246,9 +1247,7 @@ def search_for_file(directory, file_name, recursive=False):
             % (file_name, directory, ", ".join(file_search))
         )
     else:
-        # TODO
-        # msg = f"Upload file not found: {file_path}"
-        file_path_found = file_path
+        msg = f"Upload file not found: {file_path}"
     return file_path_found, msg
 
 

@@ -12,6 +12,7 @@ from dcicutils.misc_utils import ignored, ignorable, local_attrs, override_envir
 from dcicutils.portal_utils import Portal
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
+from dcicutils.tmpfile_utils import temporary_directory
 from typing import List, Dict
 from unittest import mock
 
@@ -1046,82 +1047,90 @@ def test_do_uploads(tmp_path):
             {'uuid': '3456', 'filename': 'baz.fastq.gz'}
         ]
 
-        with mock_uploads() as mock_uploaded:
-            with shown_output() as shown:
-                do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_BAD_AUTH)
-                assert mock_uploaded == {}  # Nothing uploaded because of bad auth
-                assert shown.lines == [
-                    'Uploading foo.fastq.gz to item 1234 ...',
-                    'Exception: Bad auth',
-                    'Uploading bar.fastq.gz to item 2345 ...',
-                    'Exception: Bad auth',
-                    'Uploading baz.fastq.gz to item 3456 ...',
-                    'Exception: Bad auth'
-                ]
-
-        with mock_uploads() as mock_uploaded:
-            with shown_output() as shown:
-                do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_AUTH)
-                assert mock_uploaded == {
-                    '1234': 'foo.fastq.gz',
-                    '2345': 'bar.fastq.gz',
-                    '3456': 'baz.fastq.gz'
-                }
-                assert shown.lines == [
-                    'Uploading foo.fastq.gz to item 1234 ...',
-                    'Upload of foo.fastq.gz to item 1234 was successful.',
-                    'Uploading bar.fastq.gz to item 2345 ...',
-                    'Upload of bar.fastq.gz to item 2345 was successful.',
-                    'Uploading baz.fastq.gz to item 3456 ...',
-                    'Upload of baz.fastq.gz to item 3456 was successful.',
-                ]
-
-    with mock_uploads() as mock_uploaded:
-        with shown_output() as shown:
-            do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_AUTH, no_query=True)
-            assert mock_uploaded == {
-                '1234': 'foo.fastq.gz',
-                '2345': 'bar.fastq.gz',
-                '3456': 'baz.fastq.gz'
-            }
-            assert shown.lines == [
-                'Uploading foo.fastq.gz to item 1234 ...',
-                'Upload of foo.fastq.gz to item 1234 was successful.',
-                'Uploading bar.fastq.gz to item 2345 ...',
-                'Upload of bar.fastq.gz to item 2345 was successful.',
-                'Uploading baz.fastq.gz to item 3456 ...',
-                'Upload of baz.fastq.gz to item 3456 was successful.',
-            ]
-
-    with local_attrs(submission_module, SUBMITR_SELECTIVE_UPLOADS=True):
-        with mock.patch.object(submission_module, "yes_or_no", make_alternator(True, False)):
+        with temporary_directory() as tmpdir:
+            for some_upload_to_do in some_uploads_to_do:
+                some_upload_to_do["filename"] = os.path.join(tmpdir, some_upload_to_do["filename"])
+                open(some_upload_to_do["filename"], "w")
             with mock_uploads() as mock_uploaded:
                 with shown_output() as shown:
-                    do_uploads(
-                        upload_spec_list=[
-                            {'uuid': '1234', 'filename': 'foo.fastq.gz'},
-                            {'uuid': '2345', 'filename': 'bar.fastq.gz'},
-                            {'uuid': '3456', 'filename': 'baz.fastq.gz'}
-                        ],
-                        auth=SOME_AUTH,
-                        folder='/x/yy/zzz/'
-                    )
+                    do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_BAD_AUTH)
+                    assert mock_uploaded == {}  # Nothing uploaded because of bad auth
+                    assert shown.lines == [
+                        f"Uploading {os.path.join(tmpdir, 'foo.fastq.gz')} to item 1234 ...",
+                        'Exception: Bad auth',
+                        f"Uploading {os.path.join(tmpdir, 'bar.fastq.gz')} to item 2345 ...",
+                        'Exception: Bad auth',
+                        f"Uploading {os.path.join(tmpdir, 'baz.fastq.gz')} to item 3456 ...",
+                        'Exception: Bad auth'
+                    ]
+
+            with mock_uploads() as mock_uploaded:
+                with shown_output() as shown:
+                    do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_AUTH)
                     assert mock_uploaded == {
-                        '1234': '/x/yy/zzz/foo.fastq.gz',
-                        # The mock yes_or_no will have omitted this element.
-                        # '2345': './bar.fastq.gz',
-                        '3456': '/x/yy/zzz/baz.fastq.gz'
+                        '1234': f"{os.path.join(tmpdir, 'foo.fastq.gz')}",
+                        '2345': f"{os.path.join(tmpdir, 'bar.fastq.gz')}",
+                        '3456': f"{os.path.join(tmpdir, 'baz.fastq.gz')}"
                     }
                     assert shown.lines == [
-                        'Uploading /x/yy/zzz/foo.fastq.gz to item 1234 ...',
-                        'Upload of /x/yy/zzz/foo.fastq.gz to item 1234 was successful.',
-                        # The query about uploading bar.fastq has been mocked out here
-                        # in favor of an unconditional False result, so the question does no I/O.
-                        # The only output is the result of simulating a 'no' answer.
-                        'OK, not uploading it.',
-                        'Uploading /x/yy/zzz/baz.fastq.gz to item 3456 ...',
-                        'Upload of /x/yy/zzz/baz.fastq.gz to item 3456 was successful.',
+                        f"Uploading {os.path.join(tmpdir, 'foo.fastq.gz')} to item 1234 ...",
+                        f"Upload of {os.path.join(tmpdir, 'foo.fastq.gz')} to item 1234 was successful.",
+                        f"Uploading {os.path.join(tmpdir, 'bar.fastq.gz')} to item 2345 ...",
+                        f"Upload of {os.path.join(tmpdir, 'bar.fastq.gz')} to item 2345 was successful.",
+                        f"Uploading {os.path.join(tmpdir, 'baz.fastq.gz')} to item 3456 ...",
+                        f"Upload of {os.path.join(tmpdir, 'baz.fastq.gz')} to item 3456 was successful.",
                     ]
+
+            with mock_uploads() as mock_uploaded:
+                with shown_output() as shown:
+                    do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_AUTH, no_query=True)
+                    assert mock_uploaded == {
+                        '1234': f"{os.path.join(tmpdir, 'foo.fastq.gz')}",
+                        '2345': f"{os.path.join(tmpdir, 'bar.fastq.gz')}",
+                        '3456': f"{os.path.join(tmpdir, 'baz.fastq.gz')}"
+                    }
+                    assert shown.lines == [
+                        f"Uploading {os.path.join(tmpdir, 'foo.fastq.gz')} to item 1234 ...",
+                        f"Upload of {os.path.join(tmpdir, 'foo.fastq.gz')} to item 1234 was successful.",
+                        f"Uploading {os.path.join(tmpdir, 'bar.fastq.gz')} to item 2345 ...",
+                        f"Upload of {os.path.join(tmpdir, 'bar.fastq.gz')} to item 2345 was successful.",
+                        f"Uploading {os.path.join(tmpdir, 'baz.fastq.gz')} to item 3456 ...",
+                        f"Upload of {os.path.join(tmpdir, 'baz.fastq.gz')} to item 3456 was successful.",
+                    ]
+
+            with local_attrs(submission_module, SUBMITR_SELECTIVE_UPLOADS=True):
+                with mock.patch.object(submission_module, "yes_or_no", make_alternator(True, False)):
+                    with mock_uploads() as mock_uploaded:
+                        with shown_output() as shown:
+                            do_uploads(
+                                upload_spec_list=[
+                                    {'uuid': '1234', 'filename': f"{'foo.fastq.gz'}"},
+                                    {'uuid': '2345', 'filename': f"{'bar.fastq.gz'}"},
+                                    {'uuid': '3456', 'filename': f"{'baz.fastq.gz'}"}
+                                ],
+                                auth=SOME_AUTH,
+                                # folder='/x/yy/zzz/'
+                                folder=tmpdir
+                            )
+                            assert mock_uploaded == {
+                                '1234': f"{os.path.join(tmpdir, 'foo.fastq.gz')}",
+                                # The mock yes_or_no will have omitted this element.
+                                # '2345': './bar.fastq.gz',
+                                '3456': f"{os.path.join(tmpdir, 'baz.fastq.gz')}"
+                            }
+                            assert shown.lines == [
+                                f"Uploading {os.path.join(tmpdir, 'foo.fastq.gz')} to item 1234 ...",
+                                f"Upload of {os.path.join(tmpdir, 'foo.fastq.gz')} to item 1234 was successful.",
+                                # The query about uploading bar.fastq has been mocked out here
+                                # in favor of an unconditional False result, so the question does no I/O.
+                                # The only output is the result of simulating a 'no' answer.
+                                'OK, not uploading it.',
+                                f"Uploading {os.path.join(tmpdir, 'baz.fastq.gz')} to item 3456 ...",
+                                f"Upload of {os.path.join(tmpdir, 'baz.fastq.gz')} to item 3456 was successful.",
+                            ]
+
+
+def test_do_uploads2(tmp_path):
 
     folder = tmp_path / "to_upload"
     folder.mkdir()
@@ -1148,19 +1157,17 @@ def test_do_uploads(tmp_path):
             auth=SOME_AUTH
         )
 
-    with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
-        # File not found, so pass join of folder and file.
-        do_uploads(
-            upload_spec_list,
-            auth=SOME_AUTH,
-            folder=folder,
-            no_query=True,
-        )
-        mock_upload.assert_called_with(
-            filename=(folder.as_posix() + "/" + filename),
-            uuid=uuid,
-            auth=SOME_AUTH
-        )
+    with shown_output() as shown:
+        with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
+            # File not found, so pass join of folder and file.
+            do_uploads(
+                upload_spec_list,
+                auth=SOME_AUTH,
+                folder=folder,
+                no_query=True,
+            )
+            assert shown.lines == [
+                f"Upload file not found: {os.path.join(folder, upload_spec_list[0]['filename'])}"]
 
     with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
         # File found within subfolder and upload called.
@@ -2537,8 +2544,8 @@ def test_running_on_windows_native():
 @pytest.mark.parametrize(
     "directory,file_name,recursive,glob_results,expected_file_path,expected_msg",
     [
-        ("foo", "bar", False, [], "foo/bar", False),
-        ("foo", "bar", True, [], "foo/bar", False),
+        ("foo", "bar", False, [], None, f"Upload file not found: foo/bar"),
+        ("foo", "bar", True, [], None, f"Upload file not found: foo/bar"),
         ("foo", "bar", False, ["foo/bar"], "foo/bar", False),
         ("foo", "bar", False, ["foo/bar", "fu/foo/bar"], None, True),
     ]
@@ -2557,10 +2564,12 @@ def test_search_for_file(
             directory + "/" + file_name, recursive=recursive
         )
         assert file_path_found == expected_file_path
-        if expected_msg:
+        if expected_msg is True:
             assert error_msg.startswith(
                 f"No upload attempted for file {file_name}"
             )
+        elif expected_msg:
+            assert error_msg == expected_msg
         else:
             assert not error_msg, "Error message found when not expected"
 
