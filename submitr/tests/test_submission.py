@@ -1250,49 +1250,31 @@ def test_do_uploads2(tmp_path):
 
 def test_upload_item_data():
 
-    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER) as mock_resolve:
-        with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
-            with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
-
-                    pass
-                    upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
-
-                    mock_resolve.assert_called_with(env=SOME_ENV, server=SOME_SERVER)
-                    mock_get.assert_called_with(SOME_SERVER)
-                    mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_KEYDICT)
-
-    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER) as mock_resolve:
-        with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
-            with mock.patch.object(submission_module, "yes_or_no", return_value=False):
-                with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
-
-                    with shown_output() as shown:
-
-                        try:
-                            upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER,
-                                             env=SOME_ENV)
-                        except SystemExit as e:
-                            assert e.code == 1
-                        else:
-                            raise AssertionError("Expected SystemExit not raised.")  # pragma: no cover
-
-                        assert shown.lines == ['Aborting submission.']
-
-                    mock_resolve.assert_called_with(env=SOME_ENV, server=SOME_SERVER)
-                    mock_get.assert_called_with(SOME_SERVER)
-                    assert mock_upload.call_count == 0
-
-    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER) as mock_resolve:
-        with mock.patch.object(KEY_MANAGER, "get_keydict_for_server", return_value=SOME_KEYDICT) as mock_get:
+    with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+        mocked_portal_key_property.return_value = SOME_KEYDICT
+        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
             with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
-
-                upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID,
-                                 server=SOME_SERVER, env=SOME_ENV, no_query=True)
-
-                mock_resolve.assert_called_with(env=SOME_ENV, server=SOME_SERVER)
-                mock_get.assert_called_with(SOME_SERVER)
+                upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
                 mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_KEYDICT)
+
+    with mock.patch.object(submission_module, "yes_or_no", return_value=False):
+        with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
+            with shown_output() as shown:
+                try:
+                    upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
+                except SystemExit as e:
+                    assert e.code == 1
+                else:
+                    raise AssertionError("Expected SystemExit not raised.")  # pragma: no cover
+                assert shown.lines == ['Aborting submission.']
+            assert mock_upload.call_count == 0
+
+    with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+        mocked_portal_key_property.return_value = SOME_KEYDICT
+        with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
+            upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID,
+                             server=SOME_SERVER, env=SOME_ENV, no_query=True)
+            mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_KEYDICT)
 
 
 def get_today_datetime_for_time(time_to_use):

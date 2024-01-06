@@ -1347,9 +1347,9 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
     :return:
     """
 
-    server = resolve_server(server=server, env=env)
-
-    keydict = KEY_MANAGER.get_keydict_for_server(server)
+    portal = Portal(env=env, server=server)
+#   server = resolve_server(server=server, env=env)
+#   keydict = KEY_MANAGER.get_keydict_for_server(server)
 
     # print("keydict=", json.dumps(keydict, indent=2))
 
@@ -1358,7 +1358,8 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
             show("Aborting submission.")
             exit(1)
 
-    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=keydict)
+#   upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=keydict)
+    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=portal.key)
 
 
 def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
