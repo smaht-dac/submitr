@@ -615,15 +615,9 @@ def submit_any_ingestion(ingestion_filename, *,
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app,
                                  consortium=consortium, submission_center=submission_center)
 
-    # server = resolve_server(server=server, env=env)
-    # keydict = KEY_MANAGER.get_keydict_for_server(server)
-    # keypair = KEY_MANAGER.keydict_to_keypair(keydict)
-    # portal = Portal(keydict, env=env, server=server)
     portal = Portal(env=env, server=server)
     if not portal.key:
         raise Exception("No portal key defined.")
-
-    # portal = Portal(env=env, server=server)
 
     if portal.get("/health").status_code != 200:  # TODO: with newer version dcicutils do: if not portal.ping():
         show(f"Portal credentials do not seem to work: {KEY_MANAGER.keys_file} ({env})")
@@ -801,14 +795,12 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
         with KEY_MANAGER.locally_selected_app(app):
             return check_submit_ingestion(uuid, server, env, app)
 
-    server = resolve_server(server=server, env=env if not server else None)
-    keydict = KEY_MANAGER.get_keydict_for_server(server)
-    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
+    portal = Portal(env=env, server=server)
 
     show(f"Checking ingestion process for {INGESTION_SUBMISSION_TYPE_NAME} uuid %s ..." % uuid, with_time=True)
 
     def check_ingestion_progress():
-        return _check_ingestion_progress(uuid, keypair=keypair, server=server)
+        return _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server)
 
     # Check the ingestion processing repeatedly, up to ATTEMPTS_BEFORE_TIMEOUT times,
     # and waiting PROGRESS_CHECK_INTERVAL seconds between each check.
@@ -834,10 +826,10 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     show_section(check_response, "result")
 
     if check_status == "success":
-        show_section(check_response, "upload_info", portal=Portal(keydict))
+        show_section(check_response, "upload_info", portal=Portal(portal.key))
 
     if show_details:
-        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
+        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
         show_detailed_results(uuid, metadata_bundles_bucket)
 
     return check_done, check_status, check_response
@@ -912,10 +904,9 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
                                     show_processing_status=show_processing_status,
                                     show_datafile_url=show_datafile_url)
 
-    server = resolve_server(server=server, env=env)
-    keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
-    url = ingestion_submission_item_url(server, uuid)
-    response = portal_request_get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict), headers=STANDARD_HTTP_HEADERS)
+    portal = Portal(keydict, env=env, server=server)
+    url = ingestion_submission_item_url(portal.server, uuid)
+    response = portal.get(url)
     response.raise_for_status()
     res = response.json()
     show_upload_result(res,
@@ -924,9 +915,9 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
                        show_processing_status=show_processing_status,
                        show_datafile_url=show_datafile_url,
                        show_details=show_details,
-                       portal=Portal(keydict))
+                       portal=portal)
     if show_details:
-        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
+        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
         show_detailed_results(uuid, metadata_bundles_bucket)
 
 
@@ -1000,10 +991,6 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     """
 
     # TODO: Eventually replace all key/auth lookup stuff with Portal object.
-    # TODO: Need these next 2 lines for now short short term until fix test failure ...
-    # submitr/tests/test_resume_uploads.py::test_c4_383_regression_action
-    # server = resolve_server(server=server, env=env)
-    # keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
     portal = Portal(keydict, env=env, server=server)
     url = ingestion_submission_item_url(portal.server, uuid)
     response = portal.get(url, raise_for_status=True)

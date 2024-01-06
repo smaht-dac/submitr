@@ -3141,16 +3141,17 @@ def test_check_submit_ingestion_with_app():
     class TestFinished(BaseException):
         pass
 
-    def mocked_resolve_server(*args, **kwargs):
-        ignored(args, kwargs)
+    def mocked_resolve_server():
         assert KEY_MANAGER.selected_app == expected_app
         raise TestFinished()
 
     with mock.patch.object(submission_module, "resolve_server", mocked_resolve_server):
-        assert KEY_MANAGER.selected_app != expected_app
-        with pytest.raises(TestFinished):
-            check_submit_ingestion(uuid='some-uuid', server='some-server', env='some-env', app=expected_app)
-        assert KEY_MANAGER.selected_app != expected_app
+        with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+            mocked_portal_key_property.side_effect = mocked_resolve_server
+            assert KEY_MANAGER.selected_app != expected_app
+            with pytest.raises(TestFinished):
+                check_submit_ingestion(uuid='some-uuid', server='some-server', env='some-env', app=expected_app)
+            assert KEY_MANAGER.selected_app != expected_app
 
 
 def test_check_submit_ingestion_with_app_None():
@@ -3162,19 +3163,20 @@ def test_check_submit_ingestion_with_app_None():
         pass
 
     def mocked_resolve_server(*args, **kwargs):
-        ignored(args, kwargs)
         assert KEY_MANAGER.selected_app == DEFAULT_APP
         raise TestFinished()
 
     with mock.patch.object(submission_module, "resolve_server", mocked_resolve_server):
-        assert KEY_MANAGER.selected_app == DEFAULT_APP
-        with KEY_MANAGER.locally_selected_app(APP_FOURFRONT):
-            assert KEY_MANAGER.selected_app != DEFAULT_APP
-            assert KEY_MANAGER.selected_app == APP_FOURFRONT
-            with pytest.raises(TestFinished):
-                check_submit_ingestion(uuid='some-uuid', server='some-server', env='some-env', app=None)
-            assert KEY_MANAGER.selected_app == APP_FOURFRONT
-        assert KEY_MANAGER.selected_app == DEFAULT_APP
+        with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+            mocked_portal_key_property.side_effect = mocked_resolve_server
+            assert KEY_MANAGER.selected_app == DEFAULT_APP
+            with KEY_MANAGER.locally_selected_app(APP_FOURFRONT):
+                assert KEY_MANAGER.selected_app != DEFAULT_APP
+                assert KEY_MANAGER.selected_app == APP_FOURFRONT
+                with pytest.raises(TestFinished):
+                    check_submit_ingestion(uuid='some-uuid', server='some-server', env='some-env', app=None)
+                assert KEY_MANAGER.selected_app == APP_FOURFRONT
+            assert KEY_MANAGER.selected_app == DEFAULT_APP
 
 
 def test_summarize_submission():
