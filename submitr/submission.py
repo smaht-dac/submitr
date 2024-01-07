@@ -79,7 +79,8 @@ def get_user_record(server, auth):
     """
 
     user_url = server + "/me?format=json"
-    user_record_response = portal_request_get(user_url, auth=auth, headers=STANDARD_HTTP_HEADERS)
+#   user_record_response = portal_request_get(user_url, auth=auth, headers=STANDARD_HTTP_HEADERS)
+    user_record_response = Portal(auth).get(user_url)
     try:
         user_record = user_record_response.json()
     except Exception:
@@ -405,18 +406,23 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     :param submission_post_data: data to become part of the post data for the ingestion
     :return: the results of the ingestion call (whether by the one-step or two-step process)
     """
+    portal = Portal(keypair, server=server)
 
     if submission_protocol == SubmissionProtocol.UPLOAD and TRY_OLD_PROTOCOL:
 
         old_style_submission_url = url_path_join(server, "submit_for_ingestion")
         old_style_post_data = dict(creation_post_data, **submission_post_data)
 
-        response = portal_request_post(old_style_submission_url,
-                                       auth=keypair,
-                                       headers=None,
-                                       data=old_style_post_data,
-                                       files=_post_files_data(submission_protocol=submission_protocol,
-                                                              ingestion_filename=ingestion_filename))
+#       response = portal_request_post(old_style_submission_url,
+#                                      auth=keypair,
+#                                      headers=None,
+#                                      data=old_style_post_data,
+#                                      files=_post_files_data(submission_protocol=submission_protocol,
+#                                                             ingestion_filename=ingestion_filename))
+        response = portal.post(old_style_submission_url,
+                               data=old_style_post_data,
+                               files=_post_files_data(submission_protocol=submission_protocol,
+                                                      ingestion_filename=ingestion_filename), headers=None)
 
         if response.status_code != 404:
 
@@ -441,22 +447,27 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
         # this is the FileOther object info, its uuid and associated data file, which was uploaded
         # in this case (SubmissionProtocol.S3) directly to S3 from submit-ontology.
         creation_post_data["parameters"] = submission_post_data
-    creation_response = portal_request_post(creation_post_url,
-                                            auth=keypair,
-                                            headers=STANDARD_HTTP_HEADERS,
-                                            json=creation_post_data)
-    creation_response.raise_for_status()
+#   creation_response = portal_request_post(creation_post_url,
+#                                           auth=keypair,
+#                                           headers=STANDARD_HTTP_HEADERS,
+#                                           json=creation_post_data)
+#   creation_response.raise_for_status()
+    creation_response = portal.post(creation_post_url, json=creation_post_data, raise_for_status=True)
     [submission] = creation_response.json()['@graph']
     submission_id = submission['@id']
     if DEBUG_PROTOCOL:  # pragma: no cover
         show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} (bundle) type object: {submission.get('uuid', 'not-found')}")
     new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
-    response = portal_request_post(new_style_submission_url,
-                                   auth=keypair,
-                                   headers=None,
-                                   data=submission_post_data,
-                                   files=_post_files_data(submission_protocol=submission_protocol,
-                                                          ingestion_filename=ingestion_filename))
+#   response = portal_request_post(new_style_submission_url,
+#                                  auth=keypair,
+#                                  headers=None,
+#                                  data=submission_post_data,
+#                                  files=_post_files_data(submission_protocol=submission_protocol,
+#                                                         ingestion_filename=ingestion_filename))
+    response = portal.post(new_style_submission_url,
+                           data=submission_post_data,
+                           files=_post_files_data(submission_protocol=submission_protocol,
+                                                  ingestion_filename=ingestion_filename), headers=None)
     return response
 
 
@@ -711,7 +722,8 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
     From outer scope: server, keypair, uuid (of IngestionSubmission)
     """
     tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
-    response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS)
+#   response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS)
+    response = Portal(keypair).get(tracking_url)
     response_status_code = response.status_code
     response = response.json()
     if response_status_code == 404:
@@ -948,7 +960,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
 
 @function_cache(serialize_key=True)
 def get_health_page(key: dict) -> dict:
-    return get_portal_health_page(key=key)
+#   return get_portal_health_page(key=key)
+    return Portal(key).get_health().json()
 
 
 def get_metadata_bundles_bucket_from_health_path(key: dict) -> str:
@@ -1055,7 +1068,8 @@ def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
 
     if DEBUG_PROTOCOL:  # pragma: no cover
         show("Creating FileOther type object ...")
-    response = portal_metadata_post(schema=schema_name, data=post_item, auth=auth)
+#   response = portal_metadata_post(schema=schema_name, data=post_item, auth=auth)
+    response = Portal(auth).post_metadata(object_type=schema_name, data=post_item)
     if DEBUG_PROTOCOL:  # pragma: no cover
         type_object_message = f" {response.get('@graph', [{'uuid': 'not-found'}])[0].get('uuid', 'not-found')}"
         show(f"Created FileOther type object: {type_object_message}")
@@ -1084,7 +1098,8 @@ def upload_file_to_uuid(filename, uuid, auth):
     # filename here should not include path
     patch_data = {'filename': os.path.basename(filename)}
 
-    response = portal_metadata_patch(uuid=uuid, data=patch_data, auth=auth)
+#   response = portal_metadata_patch(uuid=uuid, data=patch_data, auth=auth)
+    response = Portal(auth).patch_metadata(object_id=uuid, data=patch_data)
 
     metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
                                                                            method='PATCH', uuid=uuid,

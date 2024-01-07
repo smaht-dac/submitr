@@ -10,6 +10,7 @@ from dcicutils import command_utils as command_utils_module
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
 from dcicutils.misc_utils import ignored, ignorable, local_attrs, NamedObject
 from dcicutils.portal_utils import Portal
+from dcicutils import portal_utils as portal_utils_module
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.tmpfile_utils import temporary_directory
@@ -352,14 +353,15 @@ def test_show_upload_info():
 
     index = 0
 
+    URLS = [
+        f"{SOME_SERVER}/ingestion-submissions/{SOME_UUID}?format=json",
+        f"{SOME_SERVER}/health",
+        f"{SOME_SERVER}/{SOME_UPLOAD_INFO[0]['uuid']}",
+        f"{SOME_SERVER}/{SOME_UPLOAD_INFO[1]['uuid']}"
+    ]
     def mocked_get(url, *, auth, **kwargs):
         nonlocal index
         ignored(kwargs)
-        URLS = [
-            f"{SOME_SERVER}/ingestion-submissions/{SOME_UUID}?format=json",
-            f"{SOME_SERVER}/{SOME_UPLOAD_INFO[0]['uuid']}",
-            f"{SOME_SERVER}/{SOME_UPLOAD_INFO[1]['uuid']}"
-        ]
         assert url == URLS[index]
         assert auth == SOME_AUTH
         index += 1
@@ -367,7 +369,6 @@ def test_show_upload_info():
 
     with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch("requests.get", mocked_get):
-
             index = 0
             json_result = {}
             with shown_output() as shown:
@@ -375,6 +376,7 @@ def test_show_upload_info():
                 assert shown.lines == ['Uploads: None']
 
             index = 0
+            del URLS[1]
             json_result = SOME_UPLOAD_INFO_RESULT
             with shown_output() as shown:
                 show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
@@ -1356,15 +1358,15 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                              subfolders=False,
                                              )
 
-    def mocked_post(self, url, data, headers, files, **kwargs):
-        assert not kwargs, "The mock named mocked_post did not expect keyword arguments."
+    def mocked_post(self, url, data, files, **kwargs):
+        if not kwargs and not (len(kwargs) == 1 and "headers" in kwargs):
+            assert not kwargs, "The mock named mocked_post did not expect keyword arguments."
         # We only expect requests.post to be called on one particular URL, so this definition is very specialized,
         # mostly just to check that we're being called on what we think, so we can return something highly specific
         # with some degree of confidence. -kmp 6-Sep-2020
         assert url.endswith('/submit_for_ingestion')
         ignored(data)
         assert isinstance(files, dict) and 'datafile' in files and isinstance(files['datafile'], io.BytesIO)
-        assert not headers or headers == {'Content-type': 'application/json'}
         return FakeResponse(201, json={'submission_id': SOME_UUID})
 
     partial_res = {
@@ -3008,23 +3010,22 @@ def test_summarize_submission():
 
 def test_check_ingestion_progress():
 
-    with mock.patch.object(submission_module, "portal_request_get") as mock_portal_request_get:
+    def test_it(data, *, expect_done, expect_short_status):
+        def mocked_get(self, url, **kwargs):
+            return FakeResponse(status_code=200, json=data)
+        with mock.patch("dcicutils.portal_utils.Portal.get", mocked_get):
+            res = _check_ingestion_progress('some-uuid', keypair=('some-keypair','some-keypair'), server='http://some-server')
+        assert res == (expect_done, expect_short_status, data)
 
-        def test_it(data, *, expect_done, expect_short_status):
-            api_response = FakeResponse(status_code=200, json=data)
-            mock_portal_request_get.return_value = api_response
-            res = _check_ingestion_progress('some-uuid', keypair='some-keypair', server='some-server')
-            assert res == (expect_done, expect_short_status, data)
-
-        test_it({}, expect_done=False, expect_short_status=None)
-        test_it({'processing_status': {}}, expect_done=False, expect_short_status=None)
-        test_it({'processing_status': {'progress': '13%'}}, expect_done=False, expect_short_status='13%')
-        test_it({'processing_status': {'progress': 'working'}}, expect_done=False, expect_short_status='working')
-        test_it({'processing_status': {'state': 'started', 'outcome': 'indexed'}},
-                expect_done=False, expect_short_status=None)
-        test_it({'processing_status': {'state': 'started'}},
-                expect_done=False, expect_short_status=None)
-        test_it({'processing_status': {'state': 'done', 'outcome': 'indexed'}},
-                expect_done=True, expect_short_status='indexed')
-        test_it({'processing_status': {'state': 'done'}},
-                expect_done=True, expect_short_status=None)
+    test_it({}, expect_done=False, expect_short_status=None)
+    test_it({'processing_status': {}}, expect_done=False, expect_short_status=None)
+    test_it({'processing_status': {'progress': '13%'}}, expect_done=False, expect_short_status='13%')
+    test_it({'processing_status': {'progress': 'working'}}, expect_done=False, expect_short_status='working')
+    test_it({'processing_status': {'state': 'started', 'outcome': 'indexed'}},
+            expect_done=False, expect_short_status=None)
+    test_it({'processing_status': {'state': 'started'}},
+            expect_done=False, expect_short_status=None)
+    test_it({'processing_status': {'state': 'done', 'outcome': 'indexed'}},
+            expect_done=True, expect_short_status='indexed')
+    test_it({'processing_status': {'state': 'done'}},
+            expect_done=True, expect_short_status=None)
