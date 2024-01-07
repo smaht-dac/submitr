@@ -553,22 +553,6 @@ def submit_any_ingestion(ingestion_filename, *,
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
         PRINT(f"App name defaulting to \"{app}\" because --app not specified.")
-
-#   if KEY_MANAGER.selected_app != app:
-#       with KEY_MANAGER.locally_selected_app(app):
-#           return submit_any_ingestion(ingestion_filename=ingestion_filename, ingestion_type=ingestion_type,
-#                                       server=server, env=env,
-#                                       institution=institution, project=project, lab=lab, award=award, app=app,
-#                                       consortium=consortium, submission_center=submission_center,
-#                                       upload_folder=upload_folder, no_query=no_query, subfolders=subfolders,
-#                                       submission_protocol=submission_protocol,
-#                                       show_details=show_details,
-#                                       patch_only=patch_only,
-#                                       post_only=post_only,
-#                                       validate_only=validate_only,
-#                                       validate_local=validate_local,
-#                                       validate_local_only=validate_local_only,
-#                                       sheet_utils=sheet_utils)
     PRINT(f"App name is: {app}")
 
     portal = Portal(env=env, server=server, app=app)
@@ -749,9 +733,6 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
-#   if KEY_MANAGER.selected_app != app:
-#       with KEY_MANAGER.locally_selected_app(app):
-#           return check_submit_ingestion(uuid, server, env, app)
 
     portal = Portal(env=env, server=server, app=app)
 
@@ -854,13 +835,6 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
-#   if KEY_MANAGER.selected_app != app:
-#       with KEY_MANAGER.locally_selected_app(app):
-#           return show_upload_info(uuid=uuid, server=server, env=env, keydict=keydict, app=app,
-#                                   show_primary_result=show_primary_result,
-#                                   show_validation_output=show_validation_output,
-#                                   show_processing_status=show_processing_status,
-#                                   show_datafile_url=show_datafile_url)
 
     portal = Portal(keydict, env=env, server=server, app=app)
     url = ingestion_submission_item_url(portal.server, uuid)
