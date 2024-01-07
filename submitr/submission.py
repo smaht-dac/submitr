@@ -15,7 +15,6 @@ import yaml
 from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 from dcicutils.exceptions import InvalidParameterError
-from dcicutils.ff_utils import get_health_page as get_portal_health_page
 from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
     environ_bool,
@@ -28,7 +27,6 @@ from typing_extensions import Literal
 from urllib.parse import urlparse
 from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
-from .portal_network_access import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
 from .utils import show, keyword_as_title, check_repeatedly
 from dcicutils.function_cache_decorator import function_cache
 
@@ -960,7 +958,6 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
 
 @function_cache(serialize_key=True)
 def get_health_page(key: dict) -> dict:
-#   return get_portal_health_page(key=key)
     return Portal(key).get_health().json()
 
 
@@ -1068,7 +1065,6 @@ def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
 
     if DEBUG_PROTOCOL:  # pragma: no cover
         show("Creating FileOther type object ...")
-#   response = portal_metadata_post(schema=schema_name, data=post_item, auth=auth)
     response = Portal(auth).post_metadata(object_type=schema_name, data=post_item)
     if DEBUG_PROTOCOL:  # pragma: no cover
         type_object_message = f" {response.get('@graph', [{'uuid': 'not-found'}])[0].get('uuid', 'not-found')}"
@@ -1098,7 +1094,6 @@ def upload_file_to_uuid(filename, uuid, auth):
     # filename here should not include path
     patch_data = {'filename': os.path.basename(filename)}
 
-#   response = portal_metadata_patch(uuid=uuid, data=patch_data, auth=auth)
     response = Portal(auth).patch_metadata(object_id=uuid, data=patch_data)
 
     metadata, upload_credentials = extract_metadata_and_upload_credentials(response,

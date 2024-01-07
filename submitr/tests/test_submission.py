@@ -10,7 +10,6 @@ from dcicutils import command_utils as command_utils_module
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
 from dcicutils.misc_utils import ignored, ignorable, local_attrs, NamedObject
 from dcicutils.portal_utils import Portal
-from dcicutils import portal_utils as portal_utils_module
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.tmpfile_utils import temporary_directory
@@ -359,6 +358,7 @@ def test_show_upload_info():
         f"{SOME_SERVER}/{SOME_UPLOAD_INFO[0]['uuid']}",
         f"{SOME_SERVER}/{SOME_UPLOAD_INFO[1]['uuid']}"
     ]
+
     def mocked_get(url, *, auth, **kwargs):
         nonlocal index
         ignored(kwargs)
@@ -3014,7 +3014,8 @@ def test_check_ingestion_progress():
         def mocked_get(self, url, **kwargs):
             return FakeResponse(status_code=200, json=data)
         with mock.patch("dcicutils.portal_utils.Portal.get", mocked_get):
-            res = _check_ingestion_progress('some-uuid', keypair=('some-keypair','some-keypair'), server='http://some-server')
+            res = _check_ingestion_progress('some-uuid',
+                                            keypair=('some-keypair', 'some-keypair'), server='http://some-server')
         assert res == (expect_done, expect_short_status, data)
 
     test_it({}, expect_done=False, expect_short_status=None)
