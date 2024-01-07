@@ -18,7 +18,7 @@ from dcicutils.exceptions import InvalidParameterError
 from dcicutils.ff_utils import get_health_page as get_portal_health_page
 from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
-    check_true, environ_bool,
+    environ_bool,
     PRINT, url_path_join, ignorable, remove_prefix
 )
 from dcicutils.s3_utils import HealthPageKey
@@ -26,8 +26,7 @@ from dcicutils.structured_data import Portal, Schema, StructuredDataSet
 from typing import BinaryIO, Dict, Optional
 from typing_extensions import Literal
 from urllib.parse import urlparse
-#from .base import DEFAULT_ENV, PRODUCTION_ENV, KEY_MANAGER, DEFAULT_APP
-from .base import DEFAULT_ENV, PRODUCTION_ENV, DEFAULT_APP
+from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
 from .portal_network_access import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
 from .utils import show, keyword_as_title, check_repeatedly
@@ -579,7 +578,6 @@ def submit_any_ingestion(ingestion_filename, *,
         raise Exception("No portal key defined.")
 
     if portal.get("/health").status_code != 200:  # TODO: with newer version dcicutils do: if not portal.ping():
-#       show(f"Portal credentials do not seem to work: {KEY_MANAGER.keys_file} ({env})")
         show(f"Portal credentials do not seem to work: {portal.keys_file} ({env})")
         exit(1)
 

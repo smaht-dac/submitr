@@ -20,7 +20,7 @@ from .test_utils import shown_output
 from .test_upload_item_data import TEST_ENCRYPT_KEY
 from .. import submission as submission_module
 from ..base import PRODUCTION_ENV, PRODUCTION_SERVER, KEY_MANAGER, DEFAULT_ENV_VAR
-from ..submission import (
+from ..submission import (  # noqa
     SERVER_REGEXP, PROGRESS_CHECK_INTERVAL, ATTEMPTS_BEFORE_TIMEOUT,
     get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info, show_upload_result,
     execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url,
@@ -33,7 +33,7 @@ from ..submission import (
     _check_ingestion_progress,  # noQA - again, testing a protected member
     get_defaulted_lab, get_defaulted_award, SubmissionProtocol, compute_file_post_data,
     upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE, DEFAULT_APP, summarize_submission,
-    get_defaulted_submission_centers, get_defaulted_consortia, do_app_arg_defaulting, check_submit_ingestion,
+    get_defaulted_submission_centers, get_defaulted_consortia, do_app_arg_defaulting, check_submit_ingestion
 )
 from ..utils import FakeResponse
 
@@ -2792,15 +2792,16 @@ def test_submit_any_ingestion():
                     mock_resolve_app_args.side_effect = mocked_resolve_app_args
                     with KEY_MANAGER.locally_selected_app(initial_app):
                         print(f"current={KEY_MANAGER.selected_app}")
-                        mock_submit_any_ingestion(ingestion_filename=SOME_FILENAME,
-                                                  ingestion_type=SOME_INGESTION_TYPE, server=SOME_SERVER, env=SOME_ENV,
-                                                  validate_only=True, institution=SOME_INSTITUTION, project=SOME_PROJECT,
-                                                  lab=SOME_LAB, award=SOME_AWARD,
-                                                  consortium=SOME_CONSORTIUM, submission_center=SOME_SUBMISSION_CENTER,
-                                                  upload_folder=SOME_FILENAME,
-                                                  no_query=True, subfolders=False,
-                                                  # This is what we're testing...
-                                                  app=expected_app)
+                        mock_submit_any_ingestion(
+                            ingestion_filename=SOME_FILENAME,
+                            ingestion_type=SOME_INGESTION_TYPE, server=SOME_SERVER, env=SOME_ENV,
+                            validate_only=True, institution=SOME_INSTITUTION, project=SOME_PROJECT,
+                            lab=SOME_LAB, award=SOME_AWARD,
+                            consortium=SOME_CONSORTIUM, submission_center=SOME_SUBMISSION_CENTER,
+                            upload_folder=SOME_FILENAME,
+                            no_query=True, subfolders=False,
+                            # This is what we're testing...
+                            app=expected_app)
                 except StopEarly:
                     assert mock_submit_any_ingestion.call_count == 1
                     pass  # in this case, it also means pass the test
