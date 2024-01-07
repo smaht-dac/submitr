@@ -1170,17 +1170,19 @@ def test_upload_item_data():
                 upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
                 mock_upload.assert_called_with(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_KEYDICT)
 
-    with mock.patch.object(submission_module, "yes_or_no", return_value=False):
-        with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
-            with shown_output() as shown:
-                try:
-                    upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
-                except SystemExit as e:
-                    assert e.code == 1
-                else:
-                    raise AssertionError("Expected SystemExit not raised.")  # pragma: no cover
-                assert shown.lines == ['Aborting submission.']
-            assert mock_upload.call_count == 0
+    with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+        mocked_portal_key_property.return_value = SOME_KEYDICT
+        with mock.patch.object(submission_module, "yes_or_no", return_value=False):
+            with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
+                with shown_output() as shown:
+                    try:
+                        upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
+                    except SystemExit as e:
+                        assert e.code == 1
+                    else:
+                        raise AssertionError("Expected SystemExit not raised.")  # pragma: no cover
+                    assert shown.lines == ['Aborting submission.']
+                assert mock_upload.call_count == 0
 
     with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
         mocked_portal_key_property.return_value = SOME_KEYDICT
@@ -2642,25 +2644,27 @@ def test_submit_any_ingestion():
         return original_submit_any_ingestion(*args, **kwargs)
 
     mfs = MockFileSystem()
-    with mock.patch("os.path.exists", mfs.exists):
-        with mock.patch.object(submission_module, 'submit_any_ingestion') as mock_submit_any_ingestion:
-            mock_submit_any_ingestion.side_effect = wrapped_submit_any_ingestion
-            with mock.patch.object(submission_module, "_resolve_app_args") as mock_resolve_app_args:
-                try:
-                    mock_resolve_app_args.side_effect = mocked_resolve_app_args
-                    mock_submit_any_ingestion(
-                        ingestion_filename=SOME_FILENAME,
-                        ingestion_type=SOME_INGESTION_TYPE, server=SOME_SERVER, env=SOME_ENV,
-                        validate_only=True, institution=SOME_INSTITUTION, project=SOME_PROJECT,
-                        lab=SOME_LAB, award=SOME_AWARD,
-                        consortium=SOME_CONSORTIUM, submission_center=SOME_SUBMISSION_CENTER,
-                        upload_folder=SOME_FILENAME,
-                        no_query=True, subfolders=False,
-                        # This is what we're testing...
-                        app=expected_app)
-                except StopEarly:
-                    assert mock_submit_any_ingestion.call_count == 1
-                    pass  # in this case, it also means pass the test
+    with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
+        mocked_portal_key_property.return_value = SOME_KEYDICT
+        with mock.patch("os.path.exists", mfs.exists):
+            with mock.patch.object(submission_module, 'submit_any_ingestion') as mock_submit_any_ingestion:
+                mock_submit_any_ingestion.side_effect = wrapped_submit_any_ingestion
+                with mock.patch.object(submission_module, "_resolve_app_args") as mock_resolve_app_args:
+                    try:
+                        mock_resolve_app_args.side_effect = mocked_resolve_app_args
+                        mock_submit_any_ingestion(
+                            ingestion_filename=SOME_FILENAME,
+                            ingestion_type=SOME_INGESTION_TYPE, server=SOME_SERVER, env=SOME_ENV,
+                            validate_only=True, institution=SOME_INSTITUTION, project=SOME_PROJECT,
+                            lab=SOME_LAB, award=SOME_AWARD,
+                            consortium=SOME_CONSORTIUM, submission_center=SOME_SUBMISSION_CENTER,
+                            upload_folder=SOME_FILENAME,
+                            no_query=True, subfolders=False,
+                            # This is what we're testing...
+                            app=expected_app)
+                    except StopEarly:
+                        assert mock_submit_any_ingestion.call_count == 1
+                        pass  # in this case, it also means pass the test
 
 
 def test_get_defaulted_lab():

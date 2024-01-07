@@ -555,18 +555,18 @@ def submit_any_ingestion(ingestion_filename, *,
         PRINT(f"App name defaulting to \"{app}\" because --app not specified.")
     PRINT(f"App name is: {app}")
 
-    portal = Portal(env=env, server=server, app=app)
+    if not (portal := Portal(env=env, server=server, app=app)).key:
+        raise Exception("No portal key defined.")
+
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=portal.app,
                                  consortium=consortium, submission_center=submission_center)
-    if not portal.key:
-        raise Exception("No portal key defined.")
 
     if portal.get("/health").status_code != 200:  # TODO: with newer version dcicutils do: if not portal.ping():
         show(f"Portal credentials do not seem to work: {portal.keys_file} ({env})")
         exit(1)
 
     if validate_local:
-        _validate_locally(ingestion_filename, portal.app, portal.env, validate_local_only)
+        _validate_locally(ingestion_filename, portal, validate_local_only)
 
     validation_qualifier = " (for validation only)" if validate_only else ""
 
@@ -734,7 +734,8 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
 
-    portal = Portal(env=env, server=server, app=app)
+    if not (portal := Portal(env=env, server=server, app=app)).key:
+        raise Exception("No portal key defined.")
 
     show(f"Checking ingestion process for {INGESTION_SUBMISSION_TYPE_NAME} uuid %s ..." % uuid, with_time=True)
 
@@ -836,7 +837,8 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
 
-    portal = Portal(keydict, env=env, server=server, app=app)
+    if not (portal := Portal(keydict, env=env, server=server, app=app)).key:
+        raise Exception("No portal key defined.")
     url = ingestion_submission_item_url(portal.server, uuid)
     response = portal.get(url)
     response.raise_for_status()
@@ -926,7 +928,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     """
 
     # TODO: Eventually replace all key/auth lookup stuff with Portal object.
-    portal = Portal(keydict, env=env, server=server)
+    if not (portal := Portal(keydict, env=env, server=server)).key:
+        raise Exception("No portal key defined.")
     url = ingestion_submission_item_url(portal.server, uuid)
     response = portal.get(url, raise_for_status=True)
     if not portal.is_schema_type(response.json(), INGESTION_SUBMISSION_TYPE_NAME):
@@ -1279,7 +1282,8 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
     :return:
     """
 
-    portal = Portal(env=env, server=server)
+    if not (portal := Portal(env=env, server=server)).key:
+        raise Exception("No portal key defined.")
 
     if not no_query:
         if not yes_or_no("Upload %s to %s?" % (item_filename, server)):
@@ -1338,10 +1342,10 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
         return (results_location, None)
 
 
-def _validate_locally(ingestion_filename: str, app: str, env: str, validate_local_only: bool = False) -> int:
+def _validate_locally(ingestion_filename: str, portal: Portal, validate_local_only: bool = False) -> int:
     PRINT(f"> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
           f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
-    structured_data = StructuredDataSet.load(ingestion_filename, Portal(env=env, app=app))
+    structured_data = StructuredDataSet.load(ingestion_filename, portal)
     PRINT(f"> Parsed JSON:")
     _print_json_with_prefix(structured_data.data, "  ")
     structured_data.validate()
