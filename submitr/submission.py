@@ -765,7 +765,7 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     show_section(check_response, "result")
 
     if check_status == "success":
-        show_section(check_response, "upload_info", portal=Portal(portal.key))
+        show_section(check_response, "upload_info", portal=portal)
 
     if show_details:
         metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
