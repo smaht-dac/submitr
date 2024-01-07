@@ -1,13 +1,9 @@
 import contextlib
-import pytest
 import re
 
-from dcicutils.common import APP_FOURFRONT, APP_SMAHT
-from dcicutils.creds_utils import FourfrontKeyManager, SMaHTKeyManager, KeyManager
 from dcicutils.misc_utils import override_environ
 from unittest import mock
 from .. import base as base_module
-from ..base import DEFAULT_APP
 
 
 # The SUBMITCGAP_ENV environment variable is used at application startup to compute a value of DEFAULT_ENV

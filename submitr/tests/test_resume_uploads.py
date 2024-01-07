@@ -6,7 +6,6 @@ from dcicutils.portal_utils import Portal
 from dcicutils.qa_utils import MockResponse
 from unittest import mock
 from .. import submission as submission_module
-from dcicutils.creds_utils import SMaHTKeyManager
 from dcicutils.tmpfile_utils import temporary_directory
 from ..scripts.resume_uploads import main as resume_uploads_main
 from ..scripts import resume_uploads as resume_uploads_module
@@ -19,21 +18,16 @@ def test_resume_uploads_script(keyfile):
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
         output = []
         with argparse_errors_muffled():
-            with SMaHTKeyManager.default_keys_file_for_testing(keyfile):
-                with mock.patch.object(resume_uploads_module, "print") as mock_print:
-                    mock_print.side_effect = lambda *args: output.append(" ".join(args))
-                    with mock.patch.object(resume_uploads_module, "resume_uploads") as mock_resume_uploads:
-                        with system_exit_expected(exit_code=expect_exit_code):
-                            key_manager = SMaHTKeyManager()
-                            if keyfile:
-                                assert key_manager.keys_file == keyfile
-                            assert key_manager.keys_file == (keyfile or key_manager.KEYS_FILE)
-                            resume_uploads_main(args_in)
-                            raise AssertionError("resume_uploads_main should not exit normally.")  # pragma: no cover
-                        assert mock_resume_uploads.call_count == (1 if expect_called else 0)
-                        if expect_called:
-                            assert mock_resume_uploads.called_with(**expect_call_args)
-                        assert output == []
+            with mock.patch.object(resume_uploads_module, "print") as mock_print:
+                mock_print.side_effect = lambda *args: output.append(" ".join(args))
+                with mock.patch.object(resume_uploads_module, "resume_uploads") as mock_resume_uploads:
+                    with system_exit_expected(exit_code=expect_exit_code):
+                        resume_uploads_main(args_in)
+                        raise AssertionError("resume_uploads_main should not exit normally.")  # pragma: no cover
+                    assert mock_resume_uploads.call_count == (1 if expect_called else 0)
+                    if expect_called:
+                        assert mock_resume_uploads.called_with(**expect_call_args)
+                    assert output == []
 
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
     test_it(args_in=['some-guid'], expect_exit_code=0, expect_called=True, expect_call_args={
@@ -199,8 +193,6 @@ def test_c4_383_regression_action():
                                         # Outside the call, we will always see the default filename for SMaHT keys
                                         # but inside the call, because of a decorator, the default might be different.
                                         # See additional test below.
-                                        assert SMaHTKeyManager().keys_file == SMaHTKeyManager._default_keys_file()
-
                                         resume_uploads_main(["2eab76cd-666c-4b04-9335-22f9c6084303",
                                                              '--server', local_server])
                                     except SystemExit as e:

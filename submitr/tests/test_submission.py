@@ -8,7 +8,7 @@ import re
 
 from dcicutils import command_utils as command_utils_module
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
-from dcicutils.misc_utils import ignored, ignorable, local_attrs, override_environ, NamedObject
+from dcicutils.misc_utils import ignored, ignorable, local_attrs, NamedObject
 from dcicutils.portal_utils import Portal
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
@@ -19,7 +19,6 @@ from unittest import mock
 from .test_utils import shown_output
 from .test_upload_item_data import TEST_ENCRYPT_KEY
 from .. import submission as submission_module
-from ..base import PRODUCTION_ENV, PRODUCTION_SERVER, KEY_MANAGER, DEFAULT_ENV_VAR
 from ..submission import (  # noqa
     SERVER_REGEXP, PROGRESS_CHECK_INTERVAL, ATTEMPTS_BEFORE_TIMEOUT,
     get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info, show_upload_result,
@@ -2627,7 +2626,6 @@ def test_submit_any_ingestion():
 
     print()  # start on a fresh line
 
-    initial_app = APP_CGAP
     expected_app = APP_FOURFRONT
 
     class StopEarly(BaseException):
@@ -2650,18 +2648,16 @@ def test_submit_any_ingestion():
             with mock.patch.object(submission_module, "_resolve_app_args") as mock_resolve_app_args:
                 try:
                     mock_resolve_app_args.side_effect = mocked_resolve_app_args
-                    with KEY_MANAGER.locally_selected_app(initial_app):
-                        print(f"current={KEY_MANAGER.selected_app}")
-                        mock_submit_any_ingestion(
-                            ingestion_filename=SOME_FILENAME,
-                            ingestion_type=SOME_INGESTION_TYPE, server=SOME_SERVER, env=SOME_ENV,
-                            validate_only=True, institution=SOME_INSTITUTION, project=SOME_PROJECT,
-                            lab=SOME_LAB, award=SOME_AWARD,
-                            consortium=SOME_CONSORTIUM, submission_center=SOME_SUBMISSION_CENTER,
-                            upload_folder=SOME_FILENAME,
-                            no_query=True, subfolders=False,
-                            # This is what we're testing...
-                            app=expected_app)
+                    mock_submit_any_ingestion(
+                        ingestion_filename=SOME_FILENAME,
+                        ingestion_type=SOME_INGESTION_TYPE, server=SOME_SERVER, env=SOME_ENV,
+                        validate_only=True, institution=SOME_INSTITUTION, project=SOME_PROJECT,
+                        lab=SOME_LAB, award=SOME_AWARD,
+                        consortium=SOME_CONSORTIUM, submission_center=SOME_SUBMISSION_CENTER,
+                        upload_folder=SOME_FILENAME,
+                        no_query=True, subfolders=False,
+                        # This is what we're testing...
+                        app=expected_app)
                 except StopEarly:
                     assert mock_submit_any_ingestion.call_count == 1
                     pass  # in this case, it also means pass the test
