@@ -2,10 +2,11 @@ import os
 import pytest
 
 from dcicutils.misc_utils import ignored, override_environ
+from dcicutils.portal_utils import Portal
 from dcicutils.qa_utils import MockResponse
 from unittest import mock
 from .. import submission as submission_module
-from dcicutils.creds_utils import SMaHTKeyManager
+from dcicutils.tmpfile_utils import temporary_directory
 from ..scripts.resume_uploads import main as resume_uploads_main
 from ..scripts import resume_uploads as resume_uploads_module
 from .testing_helpers import system_exit_expected, argparse_errors_muffled
@@ -17,21 +18,16 @@ def test_resume_uploads_script(keyfile):
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
         output = []
         with argparse_errors_muffled():
-            with SMaHTKeyManager.default_keys_file_for_testing(keyfile):
-                with mock.patch.object(resume_uploads_module, "print") as mock_print:
-                    mock_print.side_effect = lambda *args: output.append(" ".join(args))
-                    with mock.patch.object(resume_uploads_module, "resume_uploads") as mock_resume_uploads:
-                        with system_exit_expected(exit_code=expect_exit_code):
-                            key_manager = SMaHTKeyManager()
-                            if keyfile:
-                                assert key_manager.keys_file == keyfile
-                            assert key_manager.keys_file == (keyfile or key_manager.KEYS_FILE)
-                            resume_uploads_main(args_in)
-                            raise AssertionError("resume_uploads_main should not exit normally.")  # pragma: no cover
-                        assert mock_resume_uploads.call_count == (1 if expect_called else 0)
-                        if expect_called:
-                            assert mock_resume_uploads.called_with(**expect_call_args)
-                        assert output == []
+            with mock.patch.object(resume_uploads_module, "print") as mock_print:
+                mock_print.side_effect = lambda *args: output.append(" ".join(args))
+                with mock.patch.object(resume_uploads_module, "resume_uploads") as mock_resume_uploads:
+                    with system_exit_expected(exit_code=expect_exit_code):
+                        resume_uploads_main(args_in)
+                        raise AssertionError("resume_uploads_main should not exit normally.")  # pragma: no cover
+                    assert mock_resume_uploads.call_count == (1 if expect_called else 0)
+                    if expect_called:
+                        assert mock_resume_uploads.called_with(**expect_call_args)
+                    assert output == []
 
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
     test_it(args_in=['some-guid'], expect_exit_code=0, expect_called=True, expect_call_args={
@@ -163,47 +159,49 @@ def test_c4_383_regression_action():
     the parent directory.
     """
     output = []
-    with override_environ(SMAHT_KEYS_FILE=None):
-        with mock.patch.object(resume_uploads_module, "print") as mock_print:
-            mock_print.side_effect = lambda *args: output.append(" ".join(args))
-            # This is the directory we expect the uploaded file to get merged against.
-            # We want to really run the code logic to make sure it does this,
-            # so we have to mock out all the effects.
-            current_dir = "/my/cur/dir"
-            with mock.patch.object(os.path, "curdir", current_dir):
-                with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                    with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload_file_to_uuid:
-                        with mock.patch("requests.get") as mock_requests_get:
+    with temporary_directory() as current_dir:
+        for upload_info in SAMPLE_UPLOAD_INFO:
+            upload_info["filename"] = os.path.join(current_dir, upload_info["filename"])
+            open(upload_info["filename"], "w")
+        with override_environ(SMAHT_KEYS_FILE=None):
+            with mock.patch.object(resume_uploads_module, "print") as mock_print:
+                mock_print.side_effect = lambda *args: output.append(" ".join(args))
+                # This is the directory we expect the uploaded file to get merged against.
+                # We want to really run the code logic to make sure it does this,
+                # so we have to mock out all the effects.
+                with mock.patch.object(os.path, "curdir", current_dir):
+                    with mock.patch.object(submission_module, "yes_or_no", return_value=True):
+                        with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload_file_to_uuid:
+                            with mock.patch("requests.get") as mock_requests_get:
 
-                            def mocked_requests_get(url, *args, **kwargs):
-                                ignored(args, kwargs)
-                                assert "ingestion-submissions" in url
-                                return MockResponse(200, json=INGESTION_FRAGMENT_WITH_UPLOAD_INFO)
+                                def mocked_requests_get(url, *args, **kwargs):
+                                    ignored(args, kwargs)
+                                    assert "ingestion-submissions" in url
+                                    return MockResponse(200, json=INGESTION_FRAGMENT_WITH_UPLOAD_INFO)
 
-                            mock_requests_get.side_effect = mocked_requests_get
-                            local_server = "http://localhost:8000"
-                            fake_keydict = {
-                                'key': 'my-key',
-                                'secret': 'my-secret',
-                                'server': local_server,
-                            }
-                            with mock.patch.object(SMaHTKeyManager, "get_keydict_for_server",
-                                                   return_value=fake_keydict):
-                                try:
-                                    # Outside the call, we will always see the default filename for SMaHT keys
-                                    # but inside the call, because of a decorator, the default might be different.
-                                    # See additional test below.
-                                    assert SMaHTKeyManager().keys_file == SMaHTKeyManager._default_keys_file()
-
-                                    resume_uploads_main(["2eab76cd-666c-4b04-9335-22f9c6084303",
-                                                         '--server', local_server])
-                                except SystemExit as e:
-                                    assert e.code == 0
-                                joined_filename = os.path.join(current_dir, SAMPLE_UPLOAD_INFO[-1]['filename'])
-                                # Make sure this is doing what we expect.
-                                assert current_dir + "/" in joined_filename
-                                # Make sure the inner upload actually uploads to the current dir.
-                                mock_upload_file_to_uuid.assert_called_with(auth=fake_keydict,
-                                                                            filename=joined_filename,
-                                                                            uuid=SAMPLE_UPLOAD_INFO[-1]['uuid'])
-                                assert output == []
+                                mock_requests_get.side_effect = mocked_requests_get
+                                local_server = "http://localhost:8000"
+                                fake_keydict = {
+                                    'key': 'my-key',
+                                    'secret': 'my-secret',
+                                    'server': local_server,
+                                }
+                                with mock.patch.object(Portal, "key",
+                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                    mocked_portal_key_property.return_value = fake_keydict
+                                    try:
+                                        # Outside the call, we will always see the default filename for SMaHT keys
+                                        # but inside the call, because of a decorator, the default might be different.
+                                        # See additional test below.
+                                        resume_uploads_main(["2eab76cd-666c-4b04-9335-22f9c6084303",
+                                                             '--server', local_server])
+                                    except SystemExit as e:
+                                        assert e.code == 0
+                                    joined_filename = os.path.join(current_dir, SAMPLE_UPLOAD_INFO[-1]['filename'])
+                                    # Make sure this is doing what we expect.
+                                    assert current_dir + "/" in joined_filename
+                                    # Make sure the inner upload actually uploads to the current dir.
+                                    mock_upload_file_to_uuid.assert_called_with(auth=fake_keydict,
+                                                                                filename=joined_filename,
+                                                                                uuid=SAMPLE_UPLOAD_INFO[-1]['uuid'])
+                                    assert output == []

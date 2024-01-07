@@ -2,7 +2,6 @@ import pytest
 import tempfile
 from unittest import mock
 from .. import submission as submission_module
-from ..base import DefaultKeyManager
 from ..submission import DEFAULT_INGESTION_TYPE
 from ..scripts.submit_metadata_bundle import main as submit_metadata_bundle_main
 from ..scripts import submit_metadata_bundle as submit_metadata_bundle_module
@@ -16,23 +15,18 @@ def test_submit_metadata_bundle_script(keyfile):
 
         output = []
         with argparse_errors_muffled():
-            with DefaultKeyManager.default_keys_file_for_testing(keyfile):
-                with mock.patch.object(submit_metadata_bundle_module,
-                                       "submit_any_ingestion") as mock_submit_any_ingestion:
-                    with mock.patch.object(submission_module, "print") as mock_print:
-                        mock_print.side_effect = lambda *args: output.append(" ".join(args))
-                        with system_exit_expected(exit_code=expect_exit_code):
-                            key_manager = DefaultKeyManager()
-                            if keyfile:
-                                assert key_manager.keys_file == keyfile
-                            assert key_manager.keys_file == (keyfile or key_manager.KEYS_FILE)
-                            submit_metadata_bundle_main(args_in)
-                            raise AssertionError(  # pragma: no cover
-                                "submit_metadata_bundle_main should not exit normally.")
-                        assert mock_submit_any_ingestion.call_count == (1 if expect_called else 0)
-                        if expect_called:
-                            assert mock_submit_any_ingestion.called_with(**expect_call_args)
-                        assert output == []
+            with mock.patch.object(submit_metadata_bundle_module,
+                                   "submit_any_ingestion") as mock_submit_any_ingestion:
+                with mock.patch.object(submission_module, "print") as mock_print:
+                    mock_print.side_effect = lambda *args: output.append(" ".join(args))
+                    with system_exit_expected(exit_code=expect_exit_code):
+                        submit_metadata_bundle_main(args_in)
+                        raise AssertionError(  # pragma: no cover
+                            "submit_metadata_bundle_main should not exit normally.")
+                    assert mock_submit_any_ingestion.call_count == (1 if expect_called else 0)
+                    if expect_called:
+                        assert mock_submit_any_ingestion.called_with(**expect_call_args)
+                    assert output == []
 
     some_file = _create_some_temporary_file()
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args

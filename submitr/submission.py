@@ -15,10 +15,9 @@ import yaml
 from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 from dcicutils.exceptions import InvalidParameterError
-from dcicutils.ff_utils import get_health_page as get_portal_health_page
 from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
-    check_true, environ_bool,
+    environ_bool,
     PRINT, url_path_join, ignorable, remove_prefix
 )
 from dcicutils.s3_utils import HealthPageKey
@@ -26,9 +25,8 @@ from dcicutils.structured_data import Portal, Schema, StructuredDataSet
 from typing import BinaryIO, Dict, Optional
 from typing_extensions import Literal
 from urllib.parse import urlparse
-from .base import DEFAULT_ENV, PRODUCTION_ENV, KEY_MANAGER, DEFAULT_APP
+from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
-from .portal_network_access import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
 from .utils import show, keyword_as_title, check_repeatedly
 from dcicutils.function_cache_decorator import function_cache
 
@@ -41,6 +39,7 @@ class SubmissionProtocol:
 SUBMISSION_PROTOCOLS = [SubmissionProtocol.S3, SubmissionProtocol.UPLOAD]
 DEFAULT_SUBMISSION_PROTOCOL = SubmissionProtocol.UPLOAD
 STANDARD_HTTP_HEADERS = {"Content-type": "application/json"}
+INGESTION_SUBMISSION_TYPE_NAME = "IngestionSubmission"
 
 
 # TODO: Will asks whether some of the errors in this file that are called "SyntaxError" really should be something else.
@@ -63,48 +62,7 @@ SERVER_REGEXP = re.compile(
 
 # TODO: Probably should simplify this to just trust what's in the key file and ignore all other servers. -kmp 2-Aug-2023
 def resolve_server(server, env):
-    """
-    Given a server spec or a portal environment (or neither, but not both), returns a server spec.
-
-    :param server: a server spec or None
-      A server is the first part of a URL (containing the schema, host and, optionally, port).
-      e.g., http://cgap.hms.harvard.edu or http://localhost:8000
-    :param env: a portal environment
-    :return: a server spec
-    """
-
-    check_true(not server or not env, "You may not specify both 'server' and 'env'.", error_class=SyntaxError)
-
-    if not server and not env:
-        if DEFAULT_ENV:
-            PRINT(f"Environment name defaulting to \"{DEFAULT_ENV}\" because neither --env nor --server specified.")
-            env = DEFAULT_ENV
-        else:
-            # Production default needs no explanation.
-            env = PRODUCTION_ENV
-    elif env:
-        show(f"App environment name is: {env}")
-
-    if env:
-        try:
-            server = KEY_MANAGER.get_keydict_for_env(env)['server']
-            if server.endswith("/"):
-                server = server[:-1]
-        except Exception:
-            raise SyntaxError(f"The specified env is not a known environment name: {env}")
-
-    try:
-        if server:
-            # Called for effect. This will err if it's not there.
-            KEY_MANAGER.get_keydict_for_server(server)
-    except Exception:
-        matched = SERVER_REGEXP.match(server)
-        if not matched:
-            raise ValueError("The server should be 'http://localhost:<port>' or 'https://<portal-hostname>', not: %s"
-                             % server)
-        server = matched.group(1)
-
-    return server
+    return  # no longer used - using dcicutils.portal_utils.Portal instead
 
 
 def get_user_record(server, auth):
@@ -119,7 +77,7 @@ def get_user_record(server, auth):
     """
 
     user_url = server + "/me?format=json"
-    user_record_response = portal_request_get(user_url, auth=auth, headers=STANDARD_HTTP_HEADERS)
+    user_record_response = Portal(auth).get(user_url)
     try:
         user_record = user_record_response.json()
     except Exception:
@@ -445,18 +403,17 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     :param submission_post_data: data to become part of the post data for the ingestion
     :return: the results of the ingestion call (whether by the one-step or two-step process)
     """
+    portal = Portal(keypair, server=server)
 
     if submission_protocol == SubmissionProtocol.UPLOAD and TRY_OLD_PROTOCOL:
 
         old_style_submission_url = url_path_join(server, "submit_for_ingestion")
         old_style_post_data = dict(creation_post_data, **submission_post_data)
 
-        response = portal_request_post(old_style_submission_url,
-                                       auth=keypair,
-                                       headers=None,
-                                       data=old_style_post_data,
-                                       files=_post_files_data(submission_protocol=submission_protocol,
-                                                              ingestion_filename=ingestion_filename))
+        response = portal.post(old_style_submission_url,
+                               data=old_style_post_data,
+                               files=_post_files_data(submission_protocol=submission_protocol,
+                                                      ingestion_filename=ingestion_filename), headers=None)
 
         if response.status_code != 404:
 
@@ -470,9 +427,9 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
             if DEBUG_PROTOCOL:  # pragma: no cover
                 PRINT("Retrying with new protocol.")
 
-    creation_post_url = url_path_join(server, "IngestionSubmission")
+    creation_post_url = url_path_join(server, INGESTION_SUBMISSION_TYPE_NAME)
     if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT("Creating IngestionSubmission (bundle) type object ...")
+        PRINT(f"Creating {INGESTION_SUBMISSION_TYPE_NAME} (bundle) type object ...")
     if submission_protocol == SubmissionProtocol.S3:
         # New with Fourfront ontology ingestion work (March 2023).
         # Store the submission data in the parameters of the IngestionSubmission object
@@ -481,22 +438,16 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
         # this is the FileOther object info, its uuid and associated data file, which was uploaded
         # in this case (SubmissionProtocol.S3) directly to S3 from submit-ontology.
         creation_post_data["parameters"] = submission_post_data
-    creation_response = portal_request_post(creation_post_url,
-                                            auth=keypair,
-                                            headers=STANDARD_HTTP_HEADERS,
-                                            json=creation_post_data)
-    creation_response.raise_for_status()
+    creation_response = portal.post(creation_post_url, json=creation_post_data, raise_for_status=True)
     [submission] = creation_response.json()['@graph']
     submission_id = submission['@id']
     if DEBUG_PROTOCOL:  # pragma: no cover
-        show(f"Created IngestionSubmission (bundle) type object: {submission.get('uuid', 'not-found')}")
+        show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} (bundle) type object: {submission.get('uuid', 'not-found')}")
     new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
-    response = portal_request_post(new_style_submission_url,
-                                   auth=keypair,
-                                   headers=None,
-                                   data=submission_post_data,
-                                   files=_post_files_data(submission_protocol=submission_protocol,
-                                                          ingestion_filename=ingestion_filename))
+    response = portal.post(new_style_submission_url,
+                           data=submission_post_data,
+                           files=_post_files_data(submission_protocol=submission_protocol,
+                                                  ingestion_filename=ingestion_filename), headers=None)
     return response
 
 
@@ -593,37 +544,20 @@ def submit_any_ingestion(ingestion_filename, *,
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
         PRINT(f"App name defaulting to \"{app}\" because --app not specified.")
-
-    if KEY_MANAGER.selected_app != app:
-        with KEY_MANAGER.locally_selected_app(app):
-            return submit_any_ingestion(ingestion_filename=ingestion_filename, ingestion_type=ingestion_type,
-                                        server=server, env=env,
-                                        institution=institution, project=project, lab=lab, award=award, app=app,
-                                        consortium=consortium, submission_center=submission_center,
-                                        upload_folder=upload_folder, no_query=no_query, subfolders=subfolders,
-                                        submission_protocol=submission_protocol,
-                                        show_details=show_details,
-                                        patch_only=patch_only,
-                                        post_only=post_only,
-                                        validate_only=validate_only,
-                                        validate_local=validate_local,
-                                        validate_local_only=validate_local_only,
-                                        sheet_utils=sheet_utils)
     PRINT(f"App name is: {app}")
 
-    app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app,
+    if not (portal := Portal(env=env, server=server, app=app)).key:
+        raise Exception("No portal key defined.")
+
+    app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=portal.app,
                                  consortium=consortium, submission_center=submission_center)
 
-    server = resolve_server(server=server, env=env)
-    keydict = KEY_MANAGER.get_keydict_for_server(server)
-    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
-    portal = Portal(keydict)
     if portal.get("/health").status_code != 200:  # TODO: with newer version dcicutils do: if not portal.ping():
-        show(f"Portal credentials do not seem to work: {KEY_MANAGER.keys_file} ({env})")
+        show(f"Portal credentials do not seem to work: {portal.keys_file} ({env})")
         exit(1)
 
     if validate_local:
-        _validate_locally(ingestion_filename, app, env, validate_local_only)
+        _validate_locally(ingestion_filename, portal, validate_local_only)
 
     validation_qualifier = " (for validation only)" if validate_only else ""
 
@@ -631,17 +565,17 @@ def submit_any_ingestion(ingestion_filename, *,
     if ingestion_type != DEFAULT_INGESTION_TYPE:
         maybe_ingestion_type = " (%s)" % ingestion_type
 
-    PRINT(f"App key file is: {KEY_MANAGER.keys_file}")
+    PRINT(f"App key file is: {portal.keys_file}")
 
     if not no_query:
         if not yes_or_no("Submit %s%s to %s%s?"
-                         % (ingestion_filename, maybe_ingestion_type, server, validation_qualifier)):
+                         % (ingestion_filename, maybe_ingestion_type, portal.server, validation_qualifier)):
             show("Aborting submission.")
             exit(1)
 
-    metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
+    metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
 
-    user_record = get_user_record(server, auth=keypair)
+    user_record = get_user_record(portal.server, auth=portal.key_pair)
 
     do_app_arg_defaulting(app_args, user_record)
 
@@ -671,7 +605,7 @@ def submit_any_ingestion(ingestion_filename, *,
     if submission_protocol == SubmissionProtocol.S3:
 
         upload_result = upload_file_to_new_uuid(filename=ingestion_filename, schema_name=GENERIC_SCHEMA_TYPE,
-                                                auth=keydict, **app_args)
+                                                auth=portal.key, **app_args)
 
         submission_post_data = compute_s3_submission_post_data(ingestion_filename=ingestion_filename,
                                                                ingestion_post_result=upload_result,
@@ -685,7 +619,8 @@ def submit_any_ingestion(ingestion_filename, *,
             'post_only': post_only,
             'patch_only': patch_only,
             'sheet_utils': sheet_utils,
-            'autoadd': json.dumps(autoadd)
+            'autoadd': json.dumps(autoadd),
+            'ingestion_directory': os.path.dirname(ingestion_filename)
         }
 
     else:
@@ -693,7 +628,7 @@ def submit_any_ingestion(ingestion_filename, *,
         raise InvalidParameterError(parameter='submission_protocol', value=submission_protocol,
                                     options=SUBMISSION_PROTOCOLS)
 
-    response = _post_submission(server=server, keypair=keypair,
+    response = _post_submission(server=portal.server, keypair=portal.key_pair,
                                 ingestion_filename=ingestion_filename,
                                 creation_post_data=creation_post_data,
                                 submission_post_data=submission_post_data,
@@ -740,18 +675,19 @@ def submit_any_ingestion(ingestion_filename, *,
     uuid = res['submission_id']
 
     if DEBUG_PROTOCOL:  # pragma: no cover
-        show(f"Created IngestionSubmission object: s3://{metadata_bundles_bucket}/{uuid}", with_time=True)
+        show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} object: s3://{metadata_bundles_bucket}/{uuid}", with_time=True)
     show(f"Bundle uploaded to bucket {metadata_bundles_bucket}, assigned uuid {uuid} for tracking."
          f" Awaiting processing...",
          with_time=True)
 
-    check_done, check_status, check_response = check_submit_ingestion(uuid, server, env, app, show_details)
+    check_done, check_status, check_response = check_submit_ingestion(
+            uuid, portal.server, portal.env, portal.app, show_details)
 
     if validate_only:
         exit(0)
 
     if check_status == "success":
-        do_any_uploads(check_response, keydict=keydict, ingestion_filename=ingestion_filename,
+        do_any_uploads(check_response, keydict=portal.key, ingestion_filename=ingestion_filename,
                        upload_folder=upload_folder, no_query=no_query,
                        subfolders=subfolders)
 
@@ -766,7 +702,7 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
     From outer scope: server, keypair, uuid (of IngestionSubmission)
     """
     tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
-    response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS)
+    response = Portal(keypair).get(tracking_url)
     response_status_code = response.status_code
     response = response.json()
     if response_status_code == 404:
@@ -788,18 +724,14 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
-    if KEY_MANAGER.selected_app != app:
-        with KEY_MANAGER.locally_selected_app(app):
-            return check_submit_ingestion(uuid, server, env, app)
 
-    server = resolve_server(server=server, env=env if not server else None)
-    keydict = KEY_MANAGER.get_keydict_for_server(server)
-    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
+    if not (portal := Portal(env=env, server=server, app=app)).key:
+        raise Exception("No portal key defined.")
 
-    show("Checking ingestion process for IngestionSubmission uuid %s ..." % uuid, with_time=True)
+    show(f"Checking ingestion process for {INGESTION_SUBMISSION_TYPE_NAME} uuid %s ..." % uuid, with_time=True)
 
     def check_ingestion_progress():
-        return _check_ingestion_progress(uuid, keypair=keypair, server=server)
+        return _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server)
 
     # Check the ingestion processing repeatedly, up to ATTEMPTS_BEFORE_TIMEOUT times,
     # and waiting PROGRESS_CHECK_INTERVAL seconds between each check.
@@ -810,7 +742,7 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     )
 
     if not check_done:
-        command_summary = summarize_submission(uuid=uuid, server=server, env=env, app=app)
+        command_summary = summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
         show(f"Exiting after check processing timeout using {command_summary!r}.")
         exit(1)
 
@@ -825,10 +757,10 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     show_section(check_response, "result")
 
     if check_status == "success":
-        show_section(check_response, "upload_info", portal=Portal(keydict))
+        show_section(check_response, "upload_info", portal=portal)
 
     if show_details:
-        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
+        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
         show_detailed_results(uuid, metadata_bundles_bucket)
 
     return check_done, check_status, check_response
@@ -895,18 +827,11 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
-    if KEY_MANAGER.selected_app != app:
-        with KEY_MANAGER.locally_selected_app(app):
-            return show_upload_info(uuid=uuid, server=server, env=env, keydict=keydict, app=app,
-                                    show_primary_result=show_primary_result,
-                                    show_validation_output=show_validation_output,
-                                    show_processing_status=show_processing_status,
-                                    show_datafile_url=show_datafile_url)
 
-    server = resolve_server(server=server, env=env)
-    keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
-    url = ingestion_submission_item_url(server, uuid)
-    response = portal_request_get(url, auth=KEY_MANAGER.keydict_to_keypair(keydict), headers=STANDARD_HTTP_HEADERS)
+    if not (portal := Portal(keydict, env=env, server=server, app=app)).key:
+        raise Exception("No portal key defined.")
+    url = ingestion_submission_item_url(portal.server, uuid)
+    response = portal.get(url)
     response.raise_for_status()
     res = response.json()
     show_upload_result(res,
@@ -915,9 +840,9 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
                        show_processing_status=show_processing_status,
                        show_datafile_url=show_datafile_url,
                        show_details=show_details,
-                       portal=Portal(keydict))
+                       portal=portal)
     if show_details:
-        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=keydict)
+        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
         show_detailed_results(uuid, metadata_bundles_bucket)
 
 
@@ -961,6 +886,8 @@ def show_upload_result(result,
 
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False, subfolders=False):
     upload_info = get_section(res, 'upload_info')
+    if not upload_folder:
+        upload_folder = res.get("parameters", {}).get("ingestion_directory")
     folder = upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None)
     if upload_info:
         if no_query:
@@ -990,14 +917,19 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     :param subfolders: bool to search subdirectories within upload_folder for files
     """
 
-    server = resolve_server(server=server, env=env)
-    keydict = keydict or KEY_MANAGER.get_keydict_for_server(server)
-    url = ingestion_submission_item_url(server, uuid)
-    keypair = KEY_MANAGER.keydict_to_keypair(keydict)
-    response = portal_request_get(url, auth=keypair, headers=STANDARD_HTTP_HEADERS)
-    response.raise_for_status()
+    # TODO: Eventually replace all key/auth lookup stuff with Portal object.
+    if not (portal := Portal(keydict, env=env, server=server)).key:
+        raise Exception("No portal key defined.")
+    url = ingestion_submission_item_url(portal.server, uuid)
+    response = portal.get(url, raise_for_status=True)
+    if not portal.is_schema_type(response.json(), INGESTION_SUBMISSION_TYPE_NAME):
+        PRINT(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid}")
+        # TODO
+        # return causes test failures ...
+        # submitr/tests/test_resume_uploads.py::test_c4_383_regression_action
+        # submitr/tests/test_submission.py::test_resume_uploads
     do_any_uploads(response.json(),
-                   keydict=keydict,
+                   keydict=portal.key,
                    ingestion_filename=bundle_filename,
                    upload_folder=upload_folder,
                    no_query=no_query,
@@ -1006,7 +938,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
 
 @function_cache(serialize_key=True)
 def get_health_page(key: dict) -> dict:
-    return get_portal_health_page(key=key)
+    return Portal(key).get_health().json()
 
 
 def get_metadata_bundles_bucket_from_health_path(key: dict) -> str:
@@ -1113,7 +1045,7 @@ def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
 
     if DEBUG_PROTOCOL:  # pragma: no cover
         show("Creating FileOther type object ...")
-    response = portal_metadata_post(schema=schema_name, data=post_item, auth=auth)
+    response = Portal(auth).post_metadata(object_type=schema_name, data=post_item)
     if DEBUG_PROTOCOL:  # pragma: no cover
         type_object_message = f" {response.get('@graph', [{'uuid': 'not-found'}])[0].get('uuid', 'not-found')}"
         show(f"Created FileOther type object: {type_object_message}")
@@ -1142,7 +1074,7 @@ def upload_file_to_uuid(filename, uuid, auth):
     # filename here should not include path
     patch_data = {'filename': os.path.basename(filename)}
 
-    response = portal_metadata_patch(uuid=uuid, data=patch_data, auth=auth)
+    response = Portal(auth).patch_metadata(object_id=uuid, data=patch_data)
 
     metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
                                                                            method='PATCH', uuid=uuid,
@@ -1230,7 +1162,8 @@ def search_for_file(directory, file_name, recursive=False):
     """
     file_path_found = None
     msg = None
-    file_path = os.path.join(directory, file_name)
+    file_path = os.path.normpath(os.path.join(directory, file_name))
+    # file_path = os.path.join(directory, file_name)
     file_search = glob.glob(file_path, recursive=recursive)
     if len(file_search) == 1:
         [file_path_found] = file_search
@@ -1241,7 +1174,7 @@ def search_for_file(directory, file_name, recursive=False):
             % (file_name, directory, ", ".join(file_search))
         )
     else:
-        file_path_found = file_path
+        msg = f"Upload file not found: {file_path}"
     return file_path_found, msg
 
 
@@ -1339,18 +1272,15 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
     :return:
     """
 
-    server = resolve_server(server=server, env=env)
-
-    keydict = KEY_MANAGER.get_keydict_for_server(server)
-
-    # print("keydict=", json.dumps(keydict, indent=2))
+    if not (portal := Portal(env=env, server=server)).key:
+        raise Exception("No portal key defined.")
 
     if not no_query:
         if not yes_or_no("Upload %s to %s?" % (item_filename, server)):
             show("Aborting submission.")
             exit(1)
 
-    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=keydict)
+    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=portal.key)
 
 
 def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
@@ -1402,10 +1332,10 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
         return (results_location, None)
 
 
-def _validate_locally(ingestion_filename: str, app: str, env: str, validate_local_only: bool = False) -> int:
+def _validate_locally(ingestion_filename: str, portal: Portal, validate_local_only: bool = False) -> int:
     PRINT(f"> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
           f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
-    structured_data = StructuredDataSet.load(ingestion_filename, Portal(env, app=app))
+    structured_data = StructuredDataSet.load(ingestion_filename, portal)
     PRINT(f"> Parsed JSON:")
     _print_json_with_prefix(structured_data.data, "  ")
     structured_data.validate()

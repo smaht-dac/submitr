@@ -1,13 +1,9 @@
 import contextlib
-import pytest
 import re
 
-from dcicutils.common import APP_FOURFRONT, APP_SMAHT
-from dcicutils.creds_utils import FourfrontKeyManager, SMaHTKeyManager, KeyManager
 from dcicutils.misc_utils import override_environ
 from unittest import mock
 from .. import base as base_module
-from ..base import DEFAULT_APP
 
 
 # The SUBMITCGAP_ENV environment variable is used at application startup to compute a value of DEFAULT_ENV
@@ -32,63 +28,3 @@ def test_defaults():
     assert base_module.DEFAULT_ENV == base_module.PRODUCTION_ENV
     with default_env_for_testing(base_module.LOCAL_PSEUDOENV):
         assert base_module.DEFAULT_ENV == base_module.LOCAL_PSEUDOENV
-
-
-def test_generic_key_manager():
-
-    assert DEFAULT_APP == APP_SMAHT
-
-    def key_manager(generic_key_manager):
-        return generic_key_manager._key_manager  # noQA - protected member access
-
-    manager = base_module.GenericKeyManager()
-    assert isinstance(manager, base_module.GenericKeyManager)
-    assert manager.selected_app == APP_SMAHT
-    assert isinstance(key_manager(manager), SMaHTKeyManager)
-    assert isinstance(key_manager(manager), KeyManager)
-
-    manager.select_app(APP_FOURFRONT)
-    assert manager.selected_app == APP_FOURFRONT
-    assert isinstance(key_manager(manager), FourfrontKeyManager)
-    assert isinstance(key_manager(manager), KeyManager)
-
-    invalid_app = 'NOT-' + DEFAULT_APP
-
-    with pytest.raises(ValueError):
-        manager.select_app(invalid_app)
-
-    with manager.locally_selected_app(APP_SMAHT):
-        assert manager.selected_app == APP_SMAHT
-        assert isinstance(key_manager(manager), SMaHTKeyManager)
-
-        with manager.locally_selected_app(APP_SMAHT):
-            assert manager.selected_app == APP_SMAHT
-            assert isinstance(key_manager(manager), SMaHTKeyManager)
-
-        assert manager.selected_app == APP_SMAHT
-        assert isinstance(key_manager(manager), SMaHTKeyManager)
-
-    assert manager.selected_app == APP_FOURFRONT
-    assert isinstance(key_manager(manager), FourfrontKeyManager)
-
-    mocked_envname = 'some-env'
-    mocked_server = 'some-server'
-    mocked_keydict = {'key': 'mykey', 'secret': 'mysecret', 'server': mocked_server}
-
-    with mock.patch.object(FourfrontKeyManager, "get_keydict_for_env") as mock_get_keydict_for_env:
-        def mocked_get_keydict_for_env(env):
-            assert env == mocked_envname
-            return mocked_keydict
-        mock_get_keydict_for_env.side_effect = mocked_get_keydict_for_env
-        res = manager.get_keydict_for_env(mocked_envname)
-        assert res == mocked_keydict
-
-    with mock.patch.object(FourfrontKeyManager, "get_keydict_for_server") as mock_get_keydict_for_server:
-        def mocked_get_keydict_for_server(server):
-            assert server == mocked_server
-            return mocked_keydict
-        mock_get_keydict_for_server.side_effect = mocked_get_keydict_for_server
-        res = manager.get_keydict_for_server(mocked_server)
-        assert res == mocked_keydict
-
-    assert manager.keys_file == key_manager(manager).keys_file
