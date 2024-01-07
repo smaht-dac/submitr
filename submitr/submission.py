@@ -77,7 +77,6 @@ def get_user_record(server, auth):
     """
 
     user_url = server + "/me?format=json"
-#   user_record_response = portal_request_get(user_url, auth=auth, headers=STANDARD_HTTP_HEADERS)
     user_record_response = Portal(auth).get(user_url)
     try:
         user_record = user_record_response.json()
@@ -411,12 +410,6 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
         old_style_submission_url = url_path_join(server, "submit_for_ingestion")
         old_style_post_data = dict(creation_post_data, **submission_post_data)
 
-#       response = portal_request_post(old_style_submission_url,
-#                                      auth=keypair,
-#                                      headers=None,
-#                                      data=old_style_post_data,
-#                                      files=_post_files_data(submission_protocol=submission_protocol,
-#                                                             ingestion_filename=ingestion_filename))
         response = portal.post(old_style_submission_url,
                                data=old_style_post_data,
                                files=_post_files_data(submission_protocol=submission_protocol,
@@ -445,23 +438,12 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
         # this is the FileOther object info, its uuid and associated data file, which was uploaded
         # in this case (SubmissionProtocol.S3) directly to S3 from submit-ontology.
         creation_post_data["parameters"] = submission_post_data
-#   creation_response = portal_request_post(creation_post_url,
-#                                           auth=keypair,
-#                                           headers=STANDARD_HTTP_HEADERS,
-#                                           json=creation_post_data)
-#   creation_response.raise_for_status()
     creation_response = portal.post(creation_post_url, json=creation_post_data, raise_for_status=True)
     [submission] = creation_response.json()['@graph']
     submission_id = submission['@id']
     if DEBUG_PROTOCOL:  # pragma: no cover
         show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} (bundle) type object: {submission.get('uuid', 'not-found')}")
     new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
-#   response = portal_request_post(new_style_submission_url,
-#                                  auth=keypair,
-#                                  headers=None,
-#                                  data=submission_post_data,
-#                                  files=_post_files_data(submission_protocol=submission_protocol,
-#                                                         ingestion_filename=ingestion_filename))
     response = portal.post(new_style_submission_url,
                            data=submission_post_data,
                            files=_post_files_data(submission_protocol=submission_protocol,
@@ -720,7 +702,6 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
     From outer scope: server, keypair, uuid (of IngestionSubmission)
     """
     tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
-#   response = portal_request_get(tracking_url, auth=keypair, headers=STANDARD_HTTP_HEADERS)
     response = Portal(keypair).get(tracking_url)
     response_status_code = response.status_code
     response = response.json()
