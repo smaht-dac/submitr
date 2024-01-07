@@ -26,7 +26,8 @@ from dcicutils.structured_data import Portal, Schema, StructuredDataSet
 from typing import BinaryIO, Dict, Optional
 from typing_extensions import Literal
 from urllib.parse import urlparse
-from .base import DEFAULT_ENV, PRODUCTION_ENV, KEY_MANAGER, DEFAULT_APP
+#from .base import DEFAULT_ENV, PRODUCTION_ENV, KEY_MANAGER, DEFAULT_APP
+from .base import DEFAULT_ENV, PRODUCTION_ENV, DEFAULT_APP
 from .exceptions import PortalPermissionError
 from .portal_network_access import portal_metadata_post, portal_metadata_patch, portal_request_get, portal_request_post
 from .utils import show, keyword_as_title, check_repeatedly
@@ -64,48 +65,7 @@ SERVER_REGEXP = re.compile(
 
 # TODO: Probably should simplify this to just trust what's in the key file and ignore all other servers. -kmp 2-Aug-2023
 def resolve_server(server, env):
-    """
-    Given a server spec or a portal environment (or neither, but not both), returns a server spec.
-
-    :param server: a server spec or None
-      A server is the first part of a URL (containing the schema, host and, optionally, port).
-      e.g., http://cgap.hms.harvard.edu or http://localhost:8000
-    :param env: a portal environment
-    :return: a server spec
-    """
-
-    check_true(not server or not env, "You may not specify both 'server' and 'env'.", error_class=SyntaxError)
-
-    if not server and not env:
-        if DEFAULT_ENV:
-            PRINT(f"Environment name defaulting to \"{DEFAULT_ENV}\" because neither --env nor --server specified.")
-            env = DEFAULT_ENV
-        else:
-            # Production default needs no explanation.
-            env = PRODUCTION_ENV
-    elif env:
-        show(f"App environment name is: {env}")
-
-    if env:
-        try:
-            server = KEY_MANAGER.get_keydict_for_env(env)['server']
-            if server.endswith("/"):
-                server = server[:-1]
-        except Exception:
-            raise SyntaxError(f"The specified env is not a known environment name: {env}")
-
-    try:
-        if server:
-            # Called for effect. This will err if it's not there.
-            KEY_MANAGER.get_keydict_for_server(server)
-    except Exception:
-        matched = SERVER_REGEXP.match(server)
-        if not matched:
-            raise ValueError("The server should be 'http://localhost:<port>' or 'https://<portal-hostname>', not: %s"
-                             % server)
-        server = matched.group(1)
-
-    return server
+    return  # no longer used - using dcicutils.portal_utils.Portal instead
 
 
 def get_user_record(server, auth):
@@ -595,36 +555,36 @@ def submit_any_ingestion(ingestion_filename, *,
         app = DEFAULT_APP
         PRINT(f"App name defaulting to \"{app}\" because --app not specified.")
 
-    if KEY_MANAGER.selected_app != app:
-        with KEY_MANAGER.locally_selected_app(app):
-            return submit_any_ingestion(ingestion_filename=ingestion_filename, ingestion_type=ingestion_type,
-                                        server=server, env=env,
-                                        institution=institution, project=project, lab=lab, award=award, app=app,
-                                        consortium=consortium, submission_center=submission_center,
-                                        upload_folder=upload_folder, no_query=no_query, subfolders=subfolders,
-                                        submission_protocol=submission_protocol,
-                                        show_details=show_details,
-                                        patch_only=patch_only,
-                                        post_only=post_only,
-                                        validate_only=validate_only,
-                                        validate_local=validate_local,
-                                        validate_local_only=validate_local_only,
-                                        sheet_utils=sheet_utils)
+#   if KEY_MANAGER.selected_app != app:
+#       with KEY_MANAGER.locally_selected_app(app):
+#           return submit_any_ingestion(ingestion_filename=ingestion_filename, ingestion_type=ingestion_type,
+#                                       server=server, env=env,
+#                                       institution=institution, project=project, lab=lab, award=award, app=app,
+#                                       consortium=consortium, submission_center=submission_center,
+#                                       upload_folder=upload_folder, no_query=no_query, subfolders=subfolders,
+#                                       submission_protocol=submission_protocol,
+#                                       show_details=show_details,
+#                                       patch_only=patch_only,
+#                                       post_only=post_only,
+#                                       validate_only=validate_only,
+#                                       validate_local=validate_local,
+#                                       validate_local_only=validate_local_only,
+#                                       sheet_utils=sheet_utils)
     PRINT(f"App name is: {app}")
 
-    app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=app,
+    portal = Portal(env=env, server=server, app=app)
+    app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=portal.app,
                                  consortium=consortium, submission_center=submission_center)
-
-    portal = Portal(env=env, server=server)
     if not portal.key:
         raise Exception("No portal key defined.")
 
     if portal.get("/health").status_code != 200:  # TODO: with newer version dcicutils do: if not portal.ping():
-        show(f"Portal credentials do not seem to work: {KEY_MANAGER.keys_file} ({env})")
+#       show(f"Portal credentials do not seem to work: {KEY_MANAGER.keys_file} ({env})")
+        show(f"Portal credentials do not seem to work: {portal.keys_file} ({env})")
         exit(1)
 
     if validate_local:
-        _validate_locally(ingestion_filename, app, portal.env, validate_local_only)
+        _validate_locally(ingestion_filename, portal.app, portal.env, validate_local_only)
 
     validation_qualifier = " (for validation only)" if validate_only else ""
 
@@ -748,7 +708,7 @@ def submit_any_ingestion(ingestion_filename, *,
          with_time=True)
 
     check_done, check_status, check_response = check_submit_ingestion(
-            uuid, portal.server, portal.env, app, show_details)
+            uuid, portal.server, portal.env, portal.app, show_details)
 
     if validate_only:
         exit(0)
@@ -791,11 +751,11 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
-    if KEY_MANAGER.selected_app != app:
-        with KEY_MANAGER.locally_selected_app(app):
-            return check_submit_ingestion(uuid, server, env, app)
+#   if KEY_MANAGER.selected_app != app:
+#       with KEY_MANAGER.locally_selected_app(app):
+#           return check_submit_ingestion(uuid, server, env, app)
 
-    portal = Portal(env=env, server=server)
+    portal = Portal(env=env, server=server, app=app)
 
     show(f"Checking ingestion process for {INGESTION_SUBMISSION_TYPE_NAME} uuid %s ..." % uuid, with_time=True)
 
@@ -811,7 +771,7 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     )
 
     if not check_done:
-        command_summary = summarize_submission(uuid=uuid, server=server, env=env, app=app)
+        command_summary = summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
         show(f"Exiting after check processing timeout using {command_summary!r}.")
         exit(1)
 
@@ -896,15 +856,15 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
-    if KEY_MANAGER.selected_app != app:
-        with KEY_MANAGER.locally_selected_app(app):
-            return show_upload_info(uuid=uuid, server=server, env=env, keydict=keydict, app=app,
-                                    show_primary_result=show_primary_result,
-                                    show_validation_output=show_validation_output,
-                                    show_processing_status=show_processing_status,
-                                    show_datafile_url=show_datafile_url)
+#   if KEY_MANAGER.selected_app != app:
+#       with KEY_MANAGER.locally_selected_app(app):
+#           return show_upload_info(uuid=uuid, server=server, env=env, keydict=keydict, app=app,
+#                                   show_primary_result=show_primary_result,
+#                                   show_validation_output=show_validation_output,
+#                                   show_processing_status=show_processing_status,
+#                                   show_datafile_url=show_datafile_url)
 
-    portal = Portal(keydict, env=env, server=server)
+    portal = Portal(keydict, env=env, server=server, app=app)
     url = ingestion_submission_item_url(portal.server, uuid)
     response = portal.get(url)
     response.raise_for_status()
@@ -1348,17 +1308,12 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
     """
 
     portal = Portal(env=env, server=server)
-#   server = resolve_server(server=server, env=env)
-#   keydict = KEY_MANAGER.get_keydict_for_server(server)
-
-    # print("keydict=", json.dumps(keydict, indent=2))
 
     if not no_query:
         if not yes_or_no("Upload %s to %s?" % (item_filename, server)):
             show("Aborting submission.")
             exit(1)
 
-#   upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=keydict)
     upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=portal.key)
 
 
@@ -1414,7 +1369,7 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
 def _validate_locally(ingestion_filename: str, app: str, env: str, validate_local_only: bool = False) -> int:
     PRINT(f"> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
           f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
-    structured_data = StructuredDataSet.load(ingestion_filename, Portal(env, app=app))
+    structured_data = StructuredDataSet.load(ingestion_filename, Portal(env=env, app=app))
     PRINT(f"> Parsed JSON:")
     _print_json_with_prefix(structured_data.data, "  ")
     structured_data.validate()
