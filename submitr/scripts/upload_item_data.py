@@ -20,7 +20,6 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--no_query', '-nq', action="store_true",
                         help="suppress requests for user input", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
-    import pdb ; pdb.set_trace()
 
     with script_catch_errors():
 
