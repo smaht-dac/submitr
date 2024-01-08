@@ -1182,7 +1182,8 @@ def test_upload_item_data():
                     with mock.patch("dcicutils.portal_utils.Portal.get_schemas", return_value={}):
                         with shown_output() as shown:
                             try:
-                                upload_item_data(item_filename=SOME_FILENAME, uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
+                                upload_item_data(item_filename=SOME_FILENAME,
+                                                 uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
                             except SystemExit as e:
                                 assert e.code == 1
                             else:
