@@ -1278,7 +1278,7 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
     if not (uuid_metadata := portal.get_metadata(uuid)):
         raise Exception(f"Cannot find object given uuid: {uuid}")
 
-    if not portal.is_schema(uuid_metadata, "File"):
+    if not portal.is_schema_type(uuid_metadata, "File"):
         raise Exception(f"Given uuid is not a file type: {uuid}")
 
     if not item_filename:
