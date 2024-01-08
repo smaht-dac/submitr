@@ -1275,6 +1275,15 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
     if not (portal := Portal(env=env, server=server)).key:
         raise Exception("No portal key defined.")
 
+    if not (uuid_metadata := portal.get_metadata(uuid)):
+        raise Exception(f"Cannot find object given uuid: {uuid}")
+
+    if not portal.is_schema(uuid_metadata, "File"):
+        raise Exception(f"Given uuid is not a file type: {uuid}")
+
+    if not item_filename:
+        item_filename = uuid_metadata.get("filename")
+
     if not no_query:
         if not yes_or_no("Upload %s to %s?" % (item_filename, server)):
             show("Aborting submission.")
