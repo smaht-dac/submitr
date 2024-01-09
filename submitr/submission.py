@@ -922,7 +922,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     url = ingestion_submission_item_url(portal.server, uuid)
     response = portal.get(url, raise_for_status=True)
     if not portal.is_schema_type(response.json(), INGESTION_SUBMISSION_TYPE_NAME):
-        raise Exception(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({portal.get_schema_type(response.json())})")
+        undesired_type = portal.get_schema_type(response.json())
+        raise Exception(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
     do_any_uploads(response.json(),
                    keydict=portal.key,
                    ingestion_filename=bundle_filename,
