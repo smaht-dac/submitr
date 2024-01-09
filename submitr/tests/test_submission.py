@@ -1175,7 +1175,8 @@ def test_upload_item_data():
                 with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
                     with mock.patch("dcicutils.portal_utils.Portal.get_metadata", return_value={"@type": "File"}):
                         with mock.patch("dcicutils.portal_utils.Portal.get_schemas", return_value={}):
-                            upload_item_data(item_filename=some_filename,uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
+                            upload_item_data(item_filename=some_filename,
+                                             uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
                             mock_upload.assert_called_with(filename=some_filename, uuid=SOME_UUID, auth=SOME_KEYDICT)
 
         with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
