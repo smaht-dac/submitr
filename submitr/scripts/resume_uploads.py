@@ -24,7 +24,7 @@ def main(simulated_args_for_testing=None):
                         help="search subfolders of folder for upload files", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
-    if args.bundle_filename and not os.path.isdir(os.path.dirname(args.bundle_filename)):
+    if args.bundle_filename and not os.path.isdir(os.path.normpath(os.path.dirname(args.bundle_filename))):
         print(f"Specified bundle file not found: {args.bundle_filename}")
         exit(1)
 

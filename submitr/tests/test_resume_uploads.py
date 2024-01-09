@@ -18,16 +18,22 @@ def test_resume_uploads_script(keyfile):
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
         output = []
         with argparse_errors_muffled():
-            with mock.patch.object(resume_uploads_module, "print") as mock_print:
-                mock_print.side_effect = lambda *args: output.append(" ".join(args))
-                with mock.patch.object(resume_uploads_module, "resume_uploads") as mock_resume_uploads:
-                    with system_exit_expected(exit_code=expect_exit_code):
-                        resume_uploads_main(args_in)
-                        raise AssertionError("resume_uploads_main should not exit normally.")  # pragma: no cover
-                    assert mock_resume_uploads.call_count == (1 if expect_called else 0)
-                    if expect_called:
-                        assert mock_resume_uploads.called_with(**expect_call_args)
-                    assert output == []
+            with temporary_directory() as tmpdir:
+                open(os.path.join(tmpdir, "some.file"), "w")
+                os.mkdir(os.path.join(tmpdir, "a-folder"))
+                for i in range(len(args_in)):
+                    if "${tmpdir}" in args_in[i]:
+                        args_in[i] = args_in[i].replace("${tmpdir}", tmpdir)
+                with mock.patch.object(resume_uploads_module, "print") as mock_print:
+                    mock_print.side_effect = lambda *args: output.append(" ".join(args))
+                    with mock.patch.object(resume_uploads_module, "resume_uploads") as mock_resume_uploads:
+                        with system_exit_expected(exit_code=expect_exit_code):
+                            resume_uploads_main(args_in)
+                            raise AssertionError("resume_uploads_main should not exit normally.")  # pragma: no cover
+                        assert mock_resume_uploads.call_count == (1 if expect_called else 0)
+                        if expect_called:
+                            assert mock_resume_uploads.called_with(**expect_call_args)
+                        assert output == []
 
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
     test_it(args_in=['some-guid'], expect_exit_code=0, expect_called=True, expect_call_args={
@@ -40,7 +46,7 @@ def test_resume_uploads_script(keyfile):
         'subfolders': False,
     })
     expect_call_args = {
-        'bundle_filename': 'some.file',
+        'bundle_filename': '${tmpdir}/some.file',
         'env': None,
         'server': None,
         'uuid': 'some-guid',
@@ -48,7 +54,7 @@ def test_resume_uploads_script(keyfile):
         'no_query': False,
         'subfolders': False,
     }
-    test_it(args_in=['-b', 'some.file', 'some-guid'],
+    test_it(args_in=['-b', '${tmpdir}/some.file', 'some-guid'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
@@ -57,7 +63,7 @@ def test_resume_uploads_script(keyfile):
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': 'some.file',
+        'bundle_filename': '${tmpdir}/some.file',
         'env': 'some-env',
         'server': None,
         'uuid': 'some-guid',
@@ -69,12 +75,12 @@ def test_resume_uploads_script(keyfile):
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=['-b', 'some.file', '-e', 'some-env', 'some-guid'],
+    test_it(args_in=['-b', '${tmpdir}/some.file', '-e', 'some-env', 'some-guid'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': 'some.file',
+        'bundle_filename': '${tmpdir}/some.file',
         'env': 'some-env',
         'server': 'http://some.server',
         'uuid': 'some-guid',
@@ -82,55 +88,58 @@ def test_resume_uploads_script(keyfile):
         'no_query': False,
         'subfolders': False,
     }
-    test_it(args_in=['some-guid', '-b', 'some.file', '-e', 'some-env', '-s', 'http://some.server'],
+    test_it(args_in=['some-guid', '-b', '${tmpdir}/some.file', '-e', 'some-env', '-s', 'http://some.server'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=['-b', 'some.file', '-e', 'some-env', '-s', 'http://some.server', 'some-guid'],
+    test_it(args_in=['-b', '${tmpdir}/some.file', '-e', 'some-env', '-s', 'http://some.server', 'some-guid'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': 'some.file',
+        'bundle_filename': '${tmpdir}/some.file',
         'env': 'some-env',
         'server': 'http://some.server',
         'uuid': 'some-guid',
-        'upload_folder': 'a-folder',
+        'upload_folder': '${tmpdir}/a-folder',
         'no_query': False,
         'subfolders': False,
     }
-    test_it(args_in=['some-guid', '-b', 'some.file', '-e', 'some-env', '-s', 'http://some.server', '-u', 'a-folder'],
+    test_it(args_in=['some-guid', '-b',
+                     '${tmpdir}/some.file', '-e', 'some-env', '-s', 'http://some.server', '-u', '${tmpdir}/a-folder'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=['-b', 'some.file', '-e', 'some-env', '-s', 'http://some.server', 'some-guid',
-                     '--upload_folder', 'a-folder'],
+    test_it(args_in=['-b', '${tmpdir}/some.file', '-e', 'some-env', '-s', 'http://some.server', 'some-guid',
+                     '--upload_folder', '${tmpdir}/a-folder'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': 'some.file',
+        'bundle_filename': '${tmpdir}/some.file',
         'env': None,
         'server': 'http://some.server',
         'uuid': 'some-guid',
-        'upload_folder': 'a-folder',
+        'upload_folder': '${tmpdir}/a-folder',
         'no_query': True,
         'subfolders': False,
     }
-    test_it(args_in=['some-guid', '-b', 'some.file', '-s', 'http://some.server', '-u', 'a-folder', '-nq'],
+    test_it(args_in=['some-guid', '-b',
+                     '${tmpdir}/some.file', '-s', 'http://some.server', '-u', '${tmpdir}/a-folder', '-nq'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': 'some.file',
+        'bundle_filename': '${tmpdir}/some.file',
         'env': None,
         'server': 'http://some.server',
         'uuid': 'some-guid',
-        'upload_folder': 'a-folder',
+        'upload_folder': '${tmpdir}/a-folder',
         'no_query': True,
         'subfolders': True,
     }
-    test_it(args_in=['some-guid', '-b', 'some.file', '-s', 'http://some.server', '-u', 'a-folder', '-nq', '-sf'],
+    test_it(args_in=['some-guid', '-b',
+                     '${tmpdir}/some.file', '-s', 'http://some.server', '-u', '${tmpdir}/a-folder', '-nq', '-sf'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
