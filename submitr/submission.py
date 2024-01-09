@@ -887,7 +887,9 @@ def show_upload_result(result,
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False, subfolders=False):
     upload_info = get_section(res, 'upload_info')
     if not upload_folder:
-        upload_folder = res.get("parameters", {}).get("ingestion_directory")
+        if ingestion_directory := res.get("parameters", {}).get("ingestion_directory"):
+            if os.path.isdir(ingestion_directory):
+                upload_folder = ingestion_directory
     folder = upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None)
     if upload_info:
         if no_query:
