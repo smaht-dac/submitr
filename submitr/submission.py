@@ -1280,9 +1280,17 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False, **kwargs)
 
     directory = kwargs.get("directory")
 
-    if not uuid and is_uuid(item_filename):
-        uuid = item_filename
-        item_filename = None
+    # Allow the given "file name" to be the uuid for the submitted File object,
+    # or associated accession ID, or the (S3) accession ID based file name.
+    if not uuid:
+        if is_uuid(item_filename) or _is_accession_id(item_filename):
+            uuid = item_filename
+            item_filename = None
+        else:
+            base_filename, _ = os.path.splitext(item_filename)
+            if _is_accession_id(base_filename):
+                uuid = base_filename
+                item_filename = None
 
     """
     Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
@@ -1456,6 +1464,10 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
         elif issue.get("truncated"):
             return f"Truncated result set | More: {issue.get('more')} | See: {issue.get('details')}"
     return f"{src_string(issue)}: {issue_message}" if issue_message else ""
+
+
+def _is_accession_id(value: str) -> bool:
+    return isinstance(value, str) and re.match(r"^[A-Z0-9]{12}$", value) is not None
 
 
 def _pytesting():
