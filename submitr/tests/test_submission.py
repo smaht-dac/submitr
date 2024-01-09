@@ -367,21 +367,24 @@ def test_show_upload_info():
         index += 1
         return FakeResponse(200, json=json_result)
 
-    with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-        with mock.patch("requests.get", mocked_get):
-            index = 0
-            json_result = {}
-            with shown_output() as shown:
-                show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
-                assert shown.lines == ['Uploads: None']
-
-            index = 0
-            del URLS[1]
-            json_result = SOME_UPLOAD_INFO_RESULT
-            with shown_output() as shown:
-                show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
-                expected_lines = ['\n----- Upload Info -----']
-                assert shown.lines == expected_lines
+    with mock.patch("dcicutils.portal_utils.Portal.get_schemas", return_value={"dummy": "dummy"}):
+        with mock.patch("dcicutils.portal_utils.Portal.get_metadata", return_value={"dummy": "dummy"}):
+            with mock.patch("dcicutils.portal_utils.Portal.is_schema_type", return_value=True):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch("requests.get", mocked_get):
+                        index = 0
+                        json_result = {}
+                        with shown_output() as shown:
+                            show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
+                            assert shown.lines == ['Uploads: None']
+            
+                        index = 0
+                        del URLS[1]
+                        json_result = SOME_UPLOAD_INFO_RESULT
+                        with shown_output() as shown:
+                            show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
+                            expected_lines = ['\n----- Upload Info -----']
+                            assert shown.lines == expected_lines
 
 
 def test_show_upload_info_with_app():
@@ -397,14 +400,17 @@ def test_show_upload_info_with_app():
         # to the given app. Once we've verified that, this test is done.
         raise TestFinished
 
-    with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-        with mock.patch("requests.get") as mock_get:
-            mock_get.side_effect = mocked_get
-            with mock.patch.object(submission_module, "show_upload_result"):
-                assert mock_get.call_count == 0
-                with pytest.raises(TestFinished):
-                    show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT, app=expected_app)
-                assert mock_get.call_count == 1
+    with mock.patch("dcicutils.portal_utils.Portal.get_schemas", return_value={"dummy": "dummy"}):
+        with mock.patch("dcicutils.portal_utils.Portal.get_metadata", return_value={"dummy": "dummy"}):
+            with mock.patch("dcicutils.portal_utils.Portal.is_schema_type", return_value=True):
+                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
+                    with mock.patch("requests.get") as mock_get:
+                        mock_get.side_effect = mocked_get
+                        with mock.patch.object(submission_module, "show_upload_result"):
+                            assert mock_get.call_count == 0
+                            with pytest.raises(TestFinished):
+                                show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT, app=expected_app)
+                            assert mock_get.call_count == 1
 
 
 def test_show_upload_result():

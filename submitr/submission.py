@@ -6,6 +6,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import time
 from typing import Tuple
 import yaml
@@ -40,6 +41,7 @@ SUBMISSION_PROTOCOLS = [SubmissionProtocol.S3, SubmissionProtocol.UPLOAD]
 DEFAULT_SUBMISSION_PROTOCOL = SubmissionProtocol.UPLOAD
 STANDARD_HTTP_HEADERS = {"Content-type": "application/json"}
 INGESTION_SUBMISSION_TYPE_NAME = "IngestionSubmission"
+FILE_TYPE_NAME = "File"
 
 
 # TODO: Will asks whether some of the errors in this file that are called "SyntaxError" really should be something else.
@@ -728,6 +730,13 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     if not (portal := Portal(env=env, server=server, app=app)).key:
         raise Exception("No portal key defined.")
 
+    if not _pytesting():
+        if not (uuid_metadata := portal.get_metadata(uuid)):
+            raise Exception(f"Cannot find object given uuid: {uuid}")
+        if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
+            undesired_type = portal.get_schema_type(uuid_metadata)
+            raise Exception(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
+
     show(f"Checking ingestion process for {INGESTION_SUBMISSION_TYPE_NAME} uuid %s ..." % uuid, with_time=True)
 
     def check_ingestion_progress():
@@ -830,6 +839,16 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
 
     if not (portal := Portal(keydict, env=env, server=server, app=app)).key:
         raise Exception("No portal key defined.")
+
+    if not (uuid_metadata := portal.get_metadata(uuid)):
+        import pdb ; pdb.set_trace()
+        raise Exception(f"Cannot find object given uuid: {uuid}")
+
+    if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
+        import pdb ; pdb.set_trace()
+        undesired_type = portal.get_schema_type(uuid_metadata)
+        raise Exception(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
+
     url = ingestion_submission_item_url(portal.server, uuid)
     response = portal.get(url)
     response.raise_for_status()
@@ -1286,7 +1305,7 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False, **kwargs)
     if not (uuid_metadata := portal.get_metadata(uuid)):
         raise Exception(f"Cannot find object given uuid: {uuid}")
 
-    if not portal.is_schema_type(uuid_metadata, "File"):
+    if not portal.is_schema_type(uuid_metadata, FILE_TYPE_NAME):
         undesired_type = portal.get_schema_type(uuid_metadata)
         raise Exception(f"Given uuid is not a file type: {uuid} ({undesired_type})")
 
@@ -1439,3 +1458,7 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
         elif issue.get("truncated"):
             return f"Truncated result set | More: {issue.get('more')} | See: {issue.get('details')}"
     return f"{src_string(issue)}: {issue_message}" if issue_message else ""
+
+
+def _pytesting():
+    return "pytest" in sys.modules
