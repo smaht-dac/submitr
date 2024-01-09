@@ -377,7 +377,6 @@ def test_show_upload_info():
                         with shown_output() as shown:
                             show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
                             assert shown.lines == ['Uploads: None']
-            
                         index = 0
                         del URLS[1]
                         json_result = SOME_UPLOAD_INFO_RESULT
@@ -409,7 +408,8 @@ def test_show_upload_info_with_app():
                         with mock.patch.object(submission_module, "show_upload_result"):
                             assert mock_get.call_count == 0
                             with pytest.raises(TestFinished):
-                                show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT, app=expected_app)
+                                show_upload_info(SOME_UUID,
+                                                 server=SOME_SERVER, env=None, keydict=SOME_KEYDICT, app=expected_app)
                             assert mock_get.call_count == 1
 
 

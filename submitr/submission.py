@@ -841,11 +841,9 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
         raise Exception("No portal key defined.")
 
     if not (uuid_metadata := portal.get_metadata(uuid)):
-        import pdb ; pdb.set_trace()
         raise Exception(f"Cannot find object given uuid: {uuid}")
 
     if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
-        import pdb ; pdb.set_trace()
         undesired_type = portal.get_schema_type(uuid_metadata)
         raise Exception(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
 
