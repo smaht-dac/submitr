@@ -890,7 +890,11 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
         if ingestion_directory := res.get("parameters", {}).get("ingestion_directory"):
             if os.path.isdir(ingestion_directory):
                 upload_folder = ingestion_directory
-    folder = upload_folder or (os.path.dirname(ingestion_filename) if ingestion_filename else None)
+    if not upload_folder:
+        if ingestion_directory := os.path.dirname(ingestion_filename):
+            if os.path.isdir(ingestion_directory):
+                upload_folder = ingestion_directory
+    folder = upload_folder
     if upload_info:
         if no_query:
             do_uploads(upload_info, auth=keydict, no_query=no_query, folder=folder,

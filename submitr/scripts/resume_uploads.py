@@ -1,5 +1,5 @@
 import argparse
-
+import os
 from dcicutils.command_utils import script_catch_errors
 from ..submission import resume_uploads
 
@@ -23,6 +23,14 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--subfolders', '-sf', action="store_true",
                         help="search subfolders of folder for upload files", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
+
+    if args.bundle_filename and not os.path.isdir(os.path.dirname(args.bundle_filename)):
+        print(f"Specified bundle file not found: {args.bundle_filename}")
+        exit(1)
+
+    if args.upload_folder and not os.path.isdir(args.upload_folder):
+        print(f"Specified upload directory not found: {args.upload_folder}")
+        exit(1)
 
     with script_catch_errors():
 
