@@ -18,6 +18,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--env', '-e', help="a portal environment name for the server to use", default=None)
     parser.add_argument('--bundle_filename', '-b', help="location of the original Excel submission file", default=None)
     parser.add_argument('--upload_folder', '-u', help="location of the upload files", default=None)
+    parser.add_argument('--directory', '-d', help="location of the upload files", default=None)
     parser.add_argument('--no_query', '-nq', action="store_true",
                         help="suppress requests for user input", default=False)
     parser.add_argument('--subfolders', '-sf', action="store_true",
@@ -27,6 +28,9 @@ def main(simulated_args_for_testing=None):
     if args.bundle_filename and not os.path.isdir(os.path.normpath(os.path.dirname(args.bundle_filename))):
         print(f"Specified bundle file not found: {args.bundle_filename}")
         exit(1)
+
+    if not args.upload_folder and args.directory:
+        args.upload_folder = args.directory
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
         print(f"Specified upload directory not found: {args.upload_folder}")

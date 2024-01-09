@@ -17,7 +17,7 @@ from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 from dcicutils.exceptions import InvalidParameterError
 from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
-    environ_bool,
+    environ_bool, is_uuid,
     PRINT, url_path_join, ignorable, remove_prefix
 )
 from dcicutils.s3_utils import HealthPageKey
@@ -1259,7 +1259,14 @@ def upload_extra_files(
         wrapped_execute_prearranged_upload(extra_file_path, extra_file_credentials, auth=auth)
 
 
-def upload_item_data(item_filename, uuid, server, env, no_query=False):
+def upload_item_data(item_filename, uuid, server, env, no_query=False, **kwargs):
+
+    directory = kwargs.get("directory")
+
+    if not uuid and is_uuid(item_filename):
+        uuid = item_filename
+        item_filename = None
+
     """
     Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
 
@@ -1284,7 +1291,12 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False):
         raise Exception(f"Given uuid is not a file type: {uuid} ({undesired_type})")
 
     if not item_filename:
-        item_filename = uuid_metadata.get("filename")
+        if not (item_filename := uuid_metadata.get("filename")):
+            raise Exception(f"Cannot determine file name: {uuid}")
+
+    if not os.path.isfile(item_filename):
+        if directory and not os.path.isfile(item_filename := os.path.join(directory, item_filename)):
+            raise Exception(f"File not found: {item_filename}")
 
     if not no_query:
         if not yes_or_no("Upload %s to %s?" % (item_filename, server)):
