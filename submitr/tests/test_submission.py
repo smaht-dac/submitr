@@ -714,7 +714,7 @@ def test_resume_uploads():
 
     with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
-            some_response_json = {'some': 'json'}
+            some_response_json = {'some': 'json', '@type': 'IngestionSubmission'}
             with mock.patch("requests.get", return_value=FakeResponse(200, json=some_response_json)):
                 with mock.patch.object(submission_module, "do_any_uploads") as mock_do_any_uploads:
                     resume_uploads(SOME_UUID, server=SOME_SERVER, env=None, bundle_filename=SOME_BUNDLE_FILENAME,

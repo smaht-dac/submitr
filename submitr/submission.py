@@ -917,17 +917,12 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     :param subfolders: bool to search subdirectories within upload_folder for files
     """
 
-    # TODO: Eventually replace all key/auth lookup stuff with Portal object.
     if not (portal := Portal(keydict, env=env, server=server)).key:
         raise Exception("No portal key defined.")
     url = ingestion_submission_item_url(portal.server, uuid)
     response = portal.get(url, raise_for_status=True)
     if not portal.is_schema_type(response.json(), INGESTION_SUBMISSION_TYPE_NAME):
-        PRINT(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid}")
-        # TODO
-        # return causes test failures ...
-        # submitr/tests/test_resume_uploads.py::test_c4_383_regression_action
-        # submitr/tests/test_submission.py::test_resume_uploads
+        raise Exception(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({portal.get_schema_type(response.json())})")
     do_any_uploads(response.json(),
                    keydict=portal.key,
                    ingestion_filename=bundle_filename,

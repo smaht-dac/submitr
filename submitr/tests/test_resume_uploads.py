@@ -144,6 +144,7 @@ SAMPLE_UPLOAD_INFO = [
 ]
 
 INGESTION_FRAGMENT_WITH_UPLOAD_INFO = {
+    "@type": "IngestionSubmission",
     "additional_data": {
         "upload_info": SAMPLE_UPLOAD_INFO
     }
@@ -174,7 +175,9 @@ def test_c4_383_regression_action():
                         with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload_file_to_uuid:
                             with mock.patch("requests.get") as mock_requests_get:
 
-                                def mocked_requests_get(url, *args, **kwargs):
+                                def mocked_requests_get(url, raise_for_status=False, *args, **kwargs):
+                                    if "/profiles" in url:
+                                        return MockResponse(200, json={})
                                     ignored(args, kwargs)
                                     assert "ingestion-submissions" in url
                                     return MockResponse(200, json=INGESTION_FRAGMENT_WITH_UPLOAD_INFO)
