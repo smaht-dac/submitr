@@ -20,37 +20,39 @@ def main(simulated_args_for_testing=None):
         epilog=EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument('bundle_filename', help='a local Excel filename that is the data bundle')
-    parser.add_argument('--server', '-s', help="an http or https address of the server to use", default=None)
-    parser.add_argument('--env', '-e', help="a portal environment name for the server to use", default=None)
+    parser.add_argument('bundle_filename', help='Local Excel filename that comprises the data bundle.')
+    parser.add_argument('--server', '-s',
+                        help="HTTP(S) address of Portal server (e.g. in ~/.smaht-keys.json).")
+    parser.add_argument('--env', '-e',
+                        help="Portal environment name for server/credentials (e.g. in ~/.smaht-keys.json).")
     parser.add_argument('--post-only', action="store_true",
                         help="Only perform creates (POST) for submitted data.", default=False)
     parser.add_argument('--patch-only', action="store_true",
                         help="Only perform updates (PATCH) for submitted data.", default=False)
     parser.add_argument('--validate-only', '-v', action="store_true",
                         help="Only perform validation of submitted data.", default=False)
-    parser.add_argument('--sheet-utils', action="store_true",
-                        help="Used sheet_utils rather than the new structured_data to data parsing.", default=False)
-    parser.add_argument('--upload_folder', '-u', help="location of the upload files", default=None)
-    parser.add_argument('--ingestion_type', '--ingestion-type', '-t', help="the ingestion type",
+    parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
+    parser.add_argument('--directory', '-d', help="Directory of the upload files.")
+    parser.add_argument('--ingestion_type', '--ingestion-type', '-t',
+                        help=f"The ingestion type (default: {DEFAULT_INGESTION_TYPE}).",
                         default=DEFAULT_INGESTION_TYPE)
     parser.add_argument('--no_query', '--no-query', '-nq', action="store_true",
-                        help="suppress requests for user input", default=False)
+                        help="Suppress (yes/no) requests for user input.", default=False)
     parser.add_argument('--subfolders', '-sf', action="store_true",
-                        help="search subfolders of folder for upload files", default=False)
-    parser.add_argument('--app', default=None,
+                        help="Search sub-directories of folder for upload files.", default=False)
+    parser.add_argument('--app',
                         help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")
     parser.add_argument('--submission_protocol', '--submission-protocol', '-sp',
                         choices=SUBMISSION_PROTOCOLS, default=DEFAULT_SUBMISSION_PROTOCOL,
                         help=f"the submission protocol (default {DEFAULT_SUBMISSION_PROTOCOL!r})")
-    parser.add_argument('--details', '-d', action="store_true",
-                        help="retrieve and display detailed info", default=False)
-    parser.add_argument('--verbose', action="store_true", help="verbose output", default=False)
+    parser.add_argument('--details', action="store_true",
+                        help="Retrieve and display detailed info.", default=False)
+    parser.add_argument('--verbose', action="store_true", help="Verbose output.", default=False)
     parser.add_argument('--validate-local', action="store_true",
-                        help="validate file locally before submission", default=False)
+                        help="Validate file locally before submission.", default=False)
     parser.add_argument('--validate-local-only', action="store_true",
-                        help="validate file locally only (no submission)", default=False)
+                        help="Validate file locally only (no submission).", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     if args.validate_local_only:
@@ -72,7 +74,7 @@ def main(simulated_args_for_testing=None):
                              validate_only=args.validate_only,
                              validate_local=args.validate_local,
                              validate_local_only=args.validate_local_only,
-                             sheet_utils=args.sheet_utils)
+                             sheet_utils=False)
 
 
 def sanity_check_submitted_file(file_name: str) -> bool:

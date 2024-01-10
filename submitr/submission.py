@@ -93,7 +93,7 @@ def get_user_record(server, auth):
         raise PortalPermissionError(server=server)
     user_record_response.raise_for_status()
     user_record = user_record_response.json()
-    show("The server %s recognizes you as: %s <%s>"
+    show("The server %s recognizes you as: %s (%s)"
          % (server, user_record['title'], user_record['contact_email']))
     return user_record
 
@@ -545,11 +545,11 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
-        PRINT(f"App name defaulting to \"{app}\" because --app not specified.")
-    PRINT(f"App name is: {app}")
+        PRINT(f"App name is: {app} (default as --app not specified)")
+    else:
+        PRINT(f"App name is: {app}")
 
-    if not (portal := Portal(env=env, server=server, app=app)).key:
-        raise Exception("No portal key defined.")
+    portal = _define_portal(env=env, server=server, app=app)
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=portal.app,
                                  consortium=consortium, submission_center=submission_center)
@@ -567,7 +567,7 @@ def submit_any_ingestion(ingestion_filename, *,
     if ingestion_type != DEFAULT_INGESTION_TYPE:
         maybe_ingestion_type = " (%s)" % ingestion_type
 
-    PRINT(f"App key file is: {portal.keys_file}")
+    PRINT(f"App keys file is: {portal.keys_file}")
 
     if not no_query:
         if not yes_or_no("Submit %s%s to %s%s?"
@@ -727,8 +727,7 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
 
-    if not (portal := Portal(env=env, server=server, app=app)).key:
-        raise Exception("No portal key defined.")
+    portal = _define_portal(env=env, server=server, app=app)
 
     if not _pytesting():
         if not (uuid_metadata := portal.get_metadata(uuid)):
@@ -837,8 +836,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
 
-    if not (portal := Portal(keydict, env=env, server=server, app=app)).key:
-        raise Exception("No portal key defined.")
+    portal = _define_portal(key=keydict, env=env, server=server, app=app)
 
     if not (uuid_metadata := portal.get_metadata(uuid)):
         raise Exception(f"Cannot find object given uuid: {uuid}")
@@ -939,8 +937,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     :param subfolders: bool to search subdirectories within upload_folder for files
     """
 
-    if not (portal := Portal(keydict, env=env, server=server)).key:
-        raise Exception("No portal key defined.")
+    portal = _define_portal(key=keydict, env=env, server=server)
 
     if not (response := portal.get_metadata(uuid)):
         if accession_id := _extract_accession_id(uuid):
@@ -949,7 +946,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
 
     if not portal.is_schema_type(response, INGESTION_SUBMISSION_TYPE_NAME):
 
-        # Subsume function of upload-item-data into resume-uploads for convenience;
+        # Subsume function of upload-item-data into resume-uploads for convenience.
         if portal.is_schema_type(response, FILE_TYPE_NAME):
             upload_item_data(item_filename=uuid, uuid=None, server=portal.server,
                              env=portal.env, directory=upload_folder, no_query=no_query)
@@ -1289,19 +1286,6 @@ def upload_extra_files(
 
 
 def upload_item_data(item_filename, uuid, server, env, no_query=False, **kwargs):
-
-    directory = kwargs.get("directory")
-
-    # Allow the given "file name" to be the uuid for the submitted File object,
-    # or associated accession ID, or the (S3) accession ID based file name.
-    if not uuid:
-        if is_uuid(item_filename) or _is_accession_id(item_filename):
-            uuid = item_filename
-            item_filename = None
-        elif accession_id := _extract_accession_id(item_filename):
-            uuid = accession_id
-            item_filename = None
-
     """
     Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
 
@@ -1315,8 +1299,19 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False, **kwargs)
     :return:
     """
 
-    if not (portal := Portal(env=env, server=server)).key:
-        raise Exception("No portal key defined.")
+    directory = kwargs.get("directory")
+
+    # Allow the given "file name" to be uuid for submitted File object, or associated accession
+    # ID (e.g. SMAFIP2PIEDG), or the (S3) accession ID based file name (e.g. SMAFIP2PIEDG.fastq).
+    if not uuid:
+        if is_uuid(item_filename) or _is_accession_id(item_filename):
+            uuid = item_filename
+            item_filename = None
+        elif accession_id := _extract_accession_id(item_filename):
+            uuid = accession_id
+            item_filename = None
+
+    portal = _define_portal(env=env, server=server)
 
     if not (uuid_metadata := portal.get_metadata(uuid)):
         raise Exception(f"Cannot find object given uuid: {uuid}")
@@ -1474,6 +1469,13 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
         elif issue.get("truncated"):
             return f"Truncated result set | More: {issue.get('more')} | See: {issue.get('details')}"
     return f"{src_string(issue)}: {issue_message}" if issue_message else ""
+
+
+def _define_portal(key: Optional[dict] = None,
+                   env: Optional[str] = None, server: Optional[str] = None, app: Optional[str] = None) -> Portal:
+    if not (portal := Portal(key, env=env, server=server, app=app, raise_exception=False)).key:
+        raise Exception(f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file.")
+    return portal
 
 
 def _is_accession_id(value: str) -> bool:

@@ -13,16 +13,18 @@ def main(simulated_args_for_testing=None):
         epilog=EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument('uuid', help='uuid identifier')
-    parser.add_argument('--server', '-s', help="an http or https address of the server to use", default=None)
-    parser.add_argument('--env', '-e', help="a portal environment name for the server to use", default=None)
-    parser.add_argument('--bundle_filename', '-b', help="location of the original Excel submission file", default=None)
-    parser.add_argument('--upload_folder', '-u', help="location of the upload files", default=None)
-    parser.add_argument('--directory', '-d', help="location of the upload files", default=None)
+    parser.add_argument('uuid', help='IngestionSumission UUID (or upload file UUID or accession ID).')
+    parser.add_argument('--server', '-s',
+                        help="HTTP(S) address of Portal server (e.g. in ~/.smaht-keys.json).")
+    parser.add_argument('--env', '-e',
+                        help="Portal environment name for server/credentials (e.g. in ~/.smaht-keys.json).")
+    parser.add_argument('--bundle_filename', '-b', help="location of the original Excel submission file")
+    parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
+    parser.add_argument('--directory', '-d', help="Directory of the upload files.")
     parser.add_argument('--no_query', '-nq', action="store_true",
-                        help="suppress requests for user input", default=False)
+                        help="Suppress (yes/no) requests for user input.", default=False)
     parser.add_argument('--subfolders', '-sf', action="store_true",
-                        help="search subfolders of folder for upload files", default=False)
+                        help="Search sub-directories of folder for upload files.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     if args.bundle_filename and not os.path.isdir(os.path.normpath(os.path.dirname(args.bundle_filename))):
