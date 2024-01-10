@@ -183,37 +183,42 @@ def test_c4_383_regression_action():
                     with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                         with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload_file_to_uuid:
                             with mock.patch("requests.get") as mock_requests_get:
+                                with mock.patch("dcicutils.portal_utils.Portal.get_metadata") as mock_requests_get_metadata:
 
-                                def mocked_requests_get(url, raise_for_status=False, *args, **kwargs):
-                                    if "/profiles" in url:
-                                        return MockResponse(200, json={})
-                                    ignored(args, kwargs)
-                                    assert "ingestion-submissions" in url
-                                    return MockResponse(200, json=INGESTION_FRAGMENT_WITH_UPLOAD_INFO)
+                                    def mocked_requests_get_metadata(url):
+                                        return INGESTION_FRAGMENT_WITH_UPLOAD_INFO
 
-                                mock_requests_get.side_effect = mocked_requests_get
-                                local_server = "http://localhost:8000"
-                                fake_keydict = {
-                                    'key': 'my-key',
-                                    'secret': 'my-secret',
-                                    'server': local_server,
-                                }
-                                with mock.patch.object(Portal, "key",
-                                                       new_callable=mock.PropertyMock) as mocked_portal_key_property:
-                                    mocked_portal_key_property.return_value = fake_keydict
-                                    try:
-                                        # Outside the call, we will always see the default filename for SMaHT keys
-                                        # but inside the call, because of a decorator, the default might be different.
-                                        # See additional test below.
-                                        resume_uploads_main(["2eab76cd-666c-4b04-9335-22f9c6084303",
-                                                             '--server', local_server])
-                                    except SystemExit as e:
-                                        assert e.code == 0
-                                    joined_filename = os.path.join(current_dir, SAMPLE_UPLOAD_INFO[-1]['filename'])
-                                    # Make sure this is doing what we expect.
-                                    assert current_dir + "/" in joined_filename
-                                    # Make sure the inner upload actually uploads to the current dir.
-                                    mock_upload_file_to_uuid.assert_called_with(auth=fake_keydict,
-                                                                                filename=joined_filename,
-                                                                                uuid=SAMPLE_UPLOAD_INFO[-1]['uuid'])
-                                    assert output == []
+                                    def mocked_requests_get(url, raise_for_status=False, *args, **kwargs):
+                                        if "/profiles" in url:
+                                            return MockResponse(200, json={})
+                                        ignored(args, kwargs)
+                                        assert "ingestion-submissions" in url
+                                        return MockResponse(200, json=INGESTION_FRAGMENT_WITH_UPLOAD_INFO)
+
+                                    mock_requests_get_metadata.side_effect = mocked_requests_get_metadata
+                                    mock_requests_get.side_effect = mocked_requests_get
+                                    local_server = "http://localhost:8000"
+                                    fake_keydict = {
+                                        'key': 'my-key',
+                                        'secret': 'my-secret',
+                                        'server': local_server,
+                                    }
+                                    with mock.patch.object(Portal, "key",
+                                                           new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                        mocked_portal_key_property.return_value = fake_keydict
+                                        try:
+                                            # Outside the call, we will always see the default filename for SMaHT keys
+                                            # but inside the call, because of a decorator, the default might be different.
+                                            # See additional test below.
+                                            resume_uploads_main(["2eab76cd-666c-4b04-9335-22f9c6084303",
+                                                                 '--server', local_server])
+                                        except SystemExit as e:
+                                            assert e.code == 0
+                                        joined_filename = os.path.join(current_dir, SAMPLE_UPLOAD_INFO[-1]['filename'])
+                                        # Make sure this is doing what we expect.
+                                        assert current_dir + "/" in joined_filename
+                                        # Make sure the inner upload actually uploads to the current dir.
+                                        mock_upload_file_to_uuid.assert_called_with(auth=fake_keydict,
+                                                                                    filename=joined_filename,
+                                                                                    uuid=SAMPLE_UPLOAD_INFO[-1]['uuid'])
+                                        assert output == []

@@ -941,12 +941,24 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
 
     if not (portal := Portal(keydict, env=env, server=server)).key:
         raise Exception("No portal key defined.")
+
     url = ingestion_submission_item_url(portal.server, uuid)
-    response = portal.get(url, raise_for_status=True)
-    if not portal.is_schema_type(response.json(), INGESTION_SUBMISSION_TYPE_NAME):
-        undesired_type = portal.get_schema_type(response.json())
+
+    if not (response := portal.get_metadata(uuid)):
+        raise Exception(f"Given UUID not found: {uuid}")
+
+    if not portal.is_schema_type(response, INGESTION_SUBMISSION_TYPE_NAME):
+
+        # Subsume function of upload-item-data into resume-uploads for convenience;
+        if portal.is_schema_type(response, FILE_TYPE_NAME):
+            upload_item_data(item_filename=uuid, uuid=None, server=portal.server,
+                             env=portal.env, directory=upload_folder, no_query=no_query)
+            return
+
+        undesired_type = portal.get_schema_type(response)
         raise Exception(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
-    do_any_uploads(response.json(),
+
+    do_any_uploads(response,
                    keydict=portal.key,
                    ingestion_filename=bundle_filename,
                    upload_folder=upload_folder,
