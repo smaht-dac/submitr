@@ -183,7 +183,8 @@ def test_c4_383_regression_action():
                     with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                         with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload_file_to_uuid:
                             with mock.patch("requests.get") as mock_requests_get:
-                                with mock.patch("dcicutils.portal_utils.Portal.get_metadata") as mock_requests_get_metadata:
+                                with mock.patch(
+                                        "dcicutils.portal_utils.Portal.get_metadata") as mock_requests_get_metadata:
 
                                     def mocked_requests_get_metadata(url):
                                         return INGESTION_FRAGMENT_WITH_UPLOAD_INFO
@@ -204,12 +205,13 @@ def test_c4_383_regression_action():
                                         'server': local_server,
                                     }
                                     with mock.patch.object(Portal, "key",
-                                                           new_callable=mock.PropertyMock) as mocked_portal_key_property:
+                                                           new_callable=mock.PropertyMock
+                                                           ) as mocked_portal_key_property:
                                         mocked_portal_key_property.return_value = fake_keydict
                                         try:
                                             # Outside the call, we will always see the default filename for SMaHT keys
-                                            # but inside the call, because of a decorator, the default might be different.
-                                            # See additional test below.
+                                            # but inside the call, because of a decorator, the default might be
+                                            # different. See additional test below.
                                             resume_uploads_main(["2eab76cd-666c-4b04-9335-22f9c6084303",
                                                                  '--server', local_server])
                                         except SystemExit as e:

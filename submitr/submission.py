@@ -942,10 +942,10 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     if not (portal := Portal(keydict, env=env, server=server)).key:
         raise Exception("No portal key defined.")
 
-    url = ingestion_submission_item_url(portal.server, uuid)
-
     if not (response := portal.get_metadata(uuid)):
-        raise Exception(f"Given UUID not found: {uuid}")
+        if accession_id := _extract_accession_id(uuid):
+            if not (response := portal.get_metadata(uuid := accession_id)):
+                raise Exception(f"Given UUID not found: {uuid}")
 
     if not portal.is_schema_type(response, INGESTION_SUBMISSION_TYPE_NAME):
 
@@ -1298,11 +1298,9 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False, **kwargs)
         if is_uuid(item_filename) or _is_accession_id(item_filename):
             uuid = item_filename
             item_filename = None
-        else:
-            base_filename, _ = os.path.splitext(item_filename)
-            if _is_accession_id(base_filename):
-                uuid = base_filename
-                item_filename = None
+        elif accession_id := _extract_accession_id(item_filename):
+            uuid = accession_id
+            item_filename = None
 
     """
     Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
@@ -1480,6 +1478,15 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
 
 def _is_accession_id(value: str) -> bool:
     return isinstance(value, str) and re.match(r"^[A-Z0-9]{12}$", value) is not None
+
+
+def _extract_accession_id(value: str) -> Optional[str]:
+    if isinstance(value, str):
+        if value.endswith(".gz"):
+            value = value[:-3]
+        value, _ = os.path.splitext(value)
+        if _is_accession_id(value):
+            return value
 
 
 def _pytesting():
