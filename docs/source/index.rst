@@ -45,9 +45,11 @@ This is a tool for uploading files to SMaHT.
 System Requirements
 ===================
 
-* Python 3.7, 3.8 or 3.9
-* Pip (>=20.0.0)
-* Virtualenv (>=16.0.0)
+* python (>=3.8 and <=3.11) 
+* pip (>=22.0.0)
+* poetry (>=1.4.0)
+* pyenv (>=2.3.0)
+* smaht-portal (>=1.0.0)
 
 
 What To Do Next

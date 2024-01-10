@@ -2,10 +2,11 @@
 Installing Prerequisites
 ========================
 
-``submitr`` is a Python based tool and requires a Python installation with version >=3.7.
-This document is intended for users who are not very familiar with the command line or Python.
+The SMaHT ingestion submission tool, ``submitr``, is a Python based command-line tool and requires a Python installation with version >=3.8 and <=3.11.
+This document is intended for users who are not very familiar with the command-line or Python.
 The intent is to provide detailed instructions for setting up your local environment for using ``submitr``.
-These instructions are intended to work with Mac OS X. Linux users are presumed advanced and Windows instructions are not available at this time but will be provided in the future.
+These instructions are intended to work with Mac OS X.
+Linux users are presumed advanced and Windows instructions are not available at this time but will be provided in the future.
 
 
 Navigating this Document
@@ -16,8 +17,8 @@ process for installing dependencies necessary to run ``submitr`` while simultane
 getting you setup with some best practices for managing the submissions in your local
 system.
 
-One import note of clarification is  that when you see code blocks that begin with ``\$``,
-this means the commands are meant to be run directly in the ``Terminal`` application
+One import note of clarification is that when you see code blocks that begin with ``\$``,
+this means the commands are meant to be run directly in the (command-line) ``Terminal`` application
 (without the ``\$``). Blocks that do not begin with ``\$`` are intended to be dropped
 directly into files.
 
@@ -25,14 +26,14 @@ directly into files.
 Unix Command Cheatsheet
 -----------------------
 
-Using Unix commands to interact with your system directly requires using the ``Terminal`` application.
-To open the ``Terminal`` application, if not present in your home dock, open Finder, navigate to
-Applications and then to the Utilities sub-folder. Inside the Utilities folder near the bottom should
+Using Unix commands to interact with your system directly requires using the (command-line) ``Terminal`` application.
+To open the ``Terminal`` application, if not present in your home dock, open ``Finder``, navigate to
+Applications folder and then to the Utilities sub-folder. Inside the Utilities folder near the bottom should
 be the ``Terminal`` application, which you should add to your home dock by clicking and dragging for
 future convenience.
 
 Before continuing, once you've opened the `Terminal` ensure in the top it says `bash` and not
-`zsh`. Newer OSX versions package with `zsh` by default, and we want to use `bash`. If you see `zsh`,
+`zsh`. Newer OSX versions package with `zsh` by default, but we want to use `bash`. If you see `zsh`,
 once in the terminal run the following command, close and re-open terminal and you will be using the
 expected `bash` shell
 
@@ -41,13 +42,15 @@ expected `bash` shell
     $ chsh -s /bin/bash
 
 Using this repository and interacting with file submissions assumes some knowledge of the Unix
-filesystem and familiarity with bash. What follows is a list of the essential commands you should
+file-system and familiarity with ``bash``. What follows is a list of the essential commands you should
 know for working with ``submitr``. Whenever in doubt, you can enter "man <cmd>" into the terminal to
 pull up documentation on the command. You can also do such search into your favorite search engine to
 locate the manual pages. Generally you need to know how to look around the file system and create
 directories and files.
 
-* `pwd` will "print working directory" ie: the current location in the Unix file system where the terminal is "located". Whenever you start a new terminal session, odds are you will be sent to your home directory. The `~` character is a global alias for the current active users home directory.
+* `pwd` will "print working directory" i.e: the current location in the Unix file system where the terminal is "located".
+  Whenever you start a new terminal session, odds are you will be sent to your home directory.
+  The `~` character is a global alias for the current active users home directory.
 * `ls` will list all files and directories in the current directory.
 
 

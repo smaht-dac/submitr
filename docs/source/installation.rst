@@ -6,9 +6,10 @@ Installing submitr
 System Requirements
 ===================
 
-* Python 3.7, 3.8 or 3.9
+* Python 3.8, 3.9, 3.10, or 3.11
 * ``pip`` (>=20.0.0)
 * ``virtualenv`` (>=16.0.0)
+* ``poetry`` (>=1.4.0)
 
 
 Setting Up a Virtual Environment (OPTIONAL)
