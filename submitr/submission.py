@@ -682,7 +682,7 @@ def submit_any_ingestion(ingestion_filename, *,
          with_time=True)
 
     check_done, check_status, check_response = check_submit_ingestion(
-            uuid, portal.server, portal.env, portal.app, show_details)
+            uuid, portal.server, portal.env, portal.app, show_details, report=False)
 
     if validate_only:
         exit(0)
@@ -721,12 +721,12 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
 
 def check_submit_ingestion(uuid: str, server: str, env: str,
                            app: Optional[OrchestratedApp] = None,
-                           show_details: bool = False) -> Tuple[bool, str, dict]:
+                           show_details: bool = False, report: bool = True) -> Tuple[bool, str, dict]:
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
 
-    portal = _define_portal(env=env, server=server, app=app, report=True)
+    portal = _define_portal(env=env, server=server, app=app, report=report)
 
     if not _pytesting():
         if not (uuid_metadata := portal.get_metadata(uuid)):
