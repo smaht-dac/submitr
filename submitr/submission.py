@@ -1497,7 +1497,8 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
     else:
         app_default = False
     if not (portal := Portal(key, env=env, server=server, app=app, raise_exception=False)).key:
-        raise Exception(f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")
+        raise Exception(
+            f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")
     if report:
         PRINT(f"App name is{' (default)' if app_default else ''}: {app}")
         PRINT(f"Portal keys file is: {portal.keys_file}")
