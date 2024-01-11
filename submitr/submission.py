@@ -16,7 +16,7 @@ import yaml
 from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 from dcicutils.exceptions import InvalidParameterError
-from dcicutils.lang_utils import n_of, conjoined_list, disjoined_list, there_are
+from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
     environ_bool, is_uuid,
     PRINT, url_path_join, ignorable, remove_prefix
@@ -901,7 +901,7 @@ def show_upload_result(result,
 
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False, subfolders=False):
 
-    def display_file_info(file: str) -> None: # , directory: Optional[str] = None, recursive: bool = False) -> None:
+    def display_file_info(file: str) -> None:
         nonlocal upload_folder, subfolders
         if file:
             file_path, error = search_for_file(directory=upload_folder or ".", file_name=file, recursive=subfolders)
@@ -929,10 +929,11 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
             do_uploads(files_to_upload, auth=keydict, no_query=no_query, folder=upload_folder,
                        subfolders=subfolders)
         else:
-            message = "Upload this file?" if len(files_to_upload) == 1 else f"Upload these {len(files_to_upload)} files?"
+            message = ("Upload this file?" if len(files_to_upload) == 1
+                       else f"Upload these {len(files_to_upload)} files?")
             if yes_or_no(message):
-#           if yes_or_no("Upload these {len(upload_file)} file{}?" % n_of(len(upload_info), "file")):
-                do_uploads(files_to_upload, auth=keydict, no_query=no_query, folder=upload_folder, subfolders=subfolders)
+                do_uploads(files_to_upload, auth=keydict,
+                           no_query=no_query, folder=upload_folder, subfolders=subfolders)
             else:
                 show("No uploads attempted.")
 
@@ -1174,7 +1175,6 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
         if error_msg:
             show(error_msg)
             continue
-        file_size = format_file_size(get_file_size(file_path))
         uuid = upload_spec['uuid']
         uploader_wrapper = UploadMessageWrapper(uuid, no_query=no_query)
         wrapped_upload_file_to_uuid = uploader_wrapper.wrap_upload_function(

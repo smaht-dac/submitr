@@ -652,7 +652,8 @@ def test_do_any_uploads():
                     do_any_uploads(
                         res=SOME_UPLOAD_INFO_RESULT,
                         keydict=SOME_KEYDICT,
-                        ingestion_filename=os.path.join(tmpdir, SOME_BUNDLE_FILENAME),  # from which a folder can be inferred
+                        ingestion_filename=os.path.join(tmpdir,
+                                                        SOME_BUNDLE_FILENAME),  # from which a folder can be inferred
                         upload_folder=tmpdir
                     )
                     mock_yes_or_no.assert_called_with("Upload these %s files?" % n_uploads)
@@ -669,7 +670,8 @@ def test_do_any_uploads():
                     do_any_uploads(
                         res=SOME_UPLOAD_INFO_RESULT,
                         keydict=SOME_KEYDICT,
-                        upload_folder=os.path.join(tmpdir, SOME_OTHER_BUNDLE_FOLDER[1:]),  # rather than ingestion_filename
+                        upload_folder=os.path.join(tmpdir,
+                                                   SOME_OTHER_BUNDLE_FOLDER[1:]),  # rather than ingestion_filename
                     )
                     mock_yes_or_no.assert_called_with("Upload these %s files?" % n_uploads)
                     mock_uploads.assert_called_with(
@@ -702,14 +704,16 @@ def test_do_any_uploads():
                     do_any_uploads(
                         res=SOME_UPLOAD_INFO_RESULT,
                         keydict=SOME_KEYDICT,
-                        ingestion_filename=os.path.join(tmpdir, SOME_BUNDLE_FILENAME[1:]),  # from which a folder can be inferred
+                        # from which a folder can be inferred
+                        ingestion_filename=os.path.join(tmpdir, SOME_BUNDLE_FILENAME[1:]),
                         no_query=False,
                         subfolders=True,
                     )
                     mock_uploads.assert_called_with(
                         SOME_UPLOAD_INFO,
                         auth=SOME_KEYDICT,
-                        folder=os.path.join(tmpdir, SOME_BUNDLE_FILENAME_FOLDER[1:]),  # the folder part of given SOME_BUNDLE_FILENAME
+                        # the folder part of given SOME_BUNDLE_FILENAME
+                        folder=os.path.join(tmpdir, SOME_BUNDLE_FILENAME_FOLDER[1:]),
                         no_query=False,
                         subfolders=True
                     )
@@ -723,13 +727,15 @@ def test_do_any_uploads():
                 do_any_uploads(
                     res=SOME_UPLOAD_INFO_RESULT,
                     keydict=SOME_KEYDICT,
-                    ingestion_filename=os.path.join(tmpdir, SOME_BUNDLE_FILENAME[1:]),  # from which a folder can be inferred
+                    # from which a folder can be inferred
+                    ingestion_filename=os.path.join(tmpdir, SOME_BUNDLE_FILENAME[1:]),
                     no_query=True
                 )
                 mock_uploads.assert_called_with(
                     SOME_UPLOAD_INFO,
                     auth=SOME_KEYDICT,
-                    folder=os.path.join(tmpdir, SOME_BUNDLE_FILENAME_FOLDER[1:]),  # the folder part of given SOME_BUNDLE_FILENAME
+                    # the folder part of given SOME_BUNDLE_FILENAME
+                    folder=os.path.join(tmpdir, SOME_BUNDLE_FILENAME_FOLDER[1:]),
                     no_query=True,
                     subfolders=False
                 )
