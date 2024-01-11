@@ -900,6 +900,18 @@ def show_upload_result(result,
 
 
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False, subfolders=False):
+
+    def display_file_info(file: str) -> None: # , directory: Optional[str] = None, recursive: bool = False) -> None:
+        nonlocal upload_folder, subfolders
+        if file:
+            file_path, error = search_for_file(directory=upload_folder or ".", file_name=file, recursive=subfolders)
+            if file_path and not error:
+                PRINT(f"File to upload: {file_path} ({format_file_size(get_file_size(file_path))})")
+                return True
+            if file:
+                PRINT(f"Cannot find file to upload: {file}")
+        return False
+
     upload_info = get_section(res, 'upload_info')
     if not upload_folder:
         if ingestion_directory := res.get("parameters", {}).get("ingestion_directory"):
@@ -908,15 +920,19 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
     if not upload_folder and ingestion_filename:
         if ingestion_directory := os.path.dirname(ingestion_filename):
             upload_folder = ingestion_directory
-    folder = upload_folder
     if upload_info:
+        files_to_upload = []
+        for upload_file_info in upload_info:
+            if display_file_info(upload_file_info.get("filename")):
+                files_to_upload.append(upload_file_info)
         if no_query:
-            do_uploads(upload_info, auth=keydict, no_query=no_query, folder=folder,
+            do_uploads(files_to_upload, auth=keydict, no_query=no_query, folder=upload_folder,
                        subfolders=subfolders)
         else:
-            if yes_or_no("Upload %s?" % n_of(len(upload_info), "file")):
-                do_uploads(upload_info, auth=keydict, no_query=no_query, folder=folder,
-                           subfolders=subfolders)
+            message = "Upload this file?" if len(files_to_upload) == 1 else f"Upload these {len(files_to_upload)} files?"
+            if yes_or_no(message):
+#           if yes_or_no("Upload these {len(upload_file)} file{}?" % n_of(len(upload_info), "file")):
+                do_uploads(files_to_upload, auth=keydict, no_query=no_query, folder=upload_folder, subfolders=subfolders)
             else:
                 show("No uploads attempted.")
 
@@ -1158,6 +1174,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
         if error_msg:
             show(error_msg)
             continue
+        file_size = format_file_size(get_file_size(file_path))
         uuid = upload_spec['uuid']
         uploader_wrapper = UploadMessageWrapper(uuid, no_query=no_query)
         wrapped_upload_file_to_uuid = uploader_wrapper.wrap_upload_function(
@@ -1190,7 +1207,6 @@ def search_for_file(directory, file_name, recursive=False):
     file_path_found = None
     msg = None
     file_path = os.path.normpath(os.path.join(directory, file_name))
-    # file_path = os.path.join(directory, file_name)
     file_search = glob.glob(file_path, recursive=recursive)
     if len(file_search) == 1:
         [file_path_found] = file_search
@@ -1329,7 +1345,8 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False, **kwargs)
             raise Exception(f"File not found: {item_filename}")
 
     if not no_query:
-        if not yes_or_no("Upload %s to %s?" % (item_filename, server)):
+        file_size = format_file_size(get_file_size(item_filename))
+        if not yes_or_no("Upload %s (%s) to %s?" % (item_filename, file_size, server)):
             show("Aborting submission.")
             exit(1)
 
@@ -1489,6 +1506,18 @@ def _extract_accession_id(value: str) -> Optional[str]:
         value, _ = os.path.splitext(value)
         if _is_accession_id(value):
             return value
+
+
+def get_file_size(file: str) -> int:
+    return os.path.getsize(file)
+
+
+def format_file_size(nbytes: int) -> str:
+    for unit in ["b", "Kb", "Mb", "Gb", "Tb", "Pb", "Eb", "Zb"]:
+        if abs(nbytes) < 1024.0:
+            return f"{nbytes:3.1f}{unit}"
+        nbytes /= 1024.0
+    return f"{nbytes:.1f}Yb"
 
 
 def _pytesting():

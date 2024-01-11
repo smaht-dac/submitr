@@ -613,107 +613,127 @@ def test_do_any_uploads():
             assert mock_yes_or_no.call_count == 0
             assert mock_uploads.call_count == 0
 
-    with mock.patch.object(submission_module, "yes_or_no", return_value=False) as mock_yes_or_no:
+    with temporary_directory() as tmpdir:
+        open(os.path.join(tmpdir, "f1.fastq.gz"), "w")
+        with mock.patch.object(submission_module, "yes_or_no", return_value=False) as mock_yes_or_no:
+            with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
+                with shown_output() as shown:
+                    do_any_uploads(
+                        res={'additional_data': {'upload_info': [{'uuid': '1234', 'filename': 'f1.fastq.gz'}]}},
+                        keydict=SOME_KEYDICT,
+                        ingestion_filename=SOME_BUNDLE_FILENAME,
+                        upload_folder=tmpdir
+                    )
+                    mock_yes_or_no.assert_called_with("Upload this file?")
+                    assert mock_uploads.call_count == 0
+                    assert shown.lines == ['No uploads attempted.']
+
+    with temporary_directory() as tmpdir:
+
+        open(os.path.join(tmpdir, "f1.fastq.gz"), "w")
+        open(os.path.join(tmpdir, "f2.fastq.gz"), "w")
+
+        subtmpdir = os.path.join(tmpdir, os.path.dirname(SOME_BUNDLE_FILENAME)[1:])
+        os.mkdir(subtmpdir)
+        open(os.path.join(subtmpdir, "f1.fastq.gz"), "w")
+        open(os.path.join(subtmpdir, "f2.fastq.gz"), "w")
+        open(os.path.join(subtmpdir, "foo.xls"), "w")
+
+        os.mkdir(os.path.join(tmpdir, SOME_OTHER_BUNDLE_FOLDER[1:]))
+        open(os.path.join(tmpdir, SOME_OTHER_BUNDLE_FOLDER[1:], "f1.fastq.gz"), "w")
+        open(os.path.join(tmpdir, SOME_OTHER_BUNDLE_FOLDER[1:], "f2.fastq.gz"), "w")
+
+        with mock.patch.object(submission_module, "yes_or_no", return_value=True) as mock_yes_or_no:
+            with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
+
+                n_uploads = len(SOME_UPLOAD_INFO)
+
+                with shown_output() as shown:
+                    do_any_uploads(
+                        res=SOME_UPLOAD_INFO_RESULT,
+                        keydict=SOME_KEYDICT,
+                        ingestion_filename=os.path.join(tmpdir, SOME_BUNDLE_FILENAME),  # from which a folder can be inferred
+                        upload_folder=tmpdir
+                    )
+                    mock_yes_or_no.assert_called_with("Upload these %s files?" % n_uploads)
+                    mock_uploads.assert_called_with(
+                        SOME_UPLOAD_INFO,
+                        auth=SOME_KEYDICT,
+                        folder=tmpdir,  # the folder part of given SOME_BUNDLE_FILENAME
+                        no_query=False,
+                        subfolders=False
+                    )
+                    assert shown.lines == []
+
+                with shown_output() as shown:
+                    do_any_uploads(
+                        res=SOME_UPLOAD_INFO_RESULT,
+                        keydict=SOME_KEYDICT,
+                        upload_folder=os.path.join(tmpdir, SOME_OTHER_BUNDLE_FOLDER[1:]),  # rather than ingestion_filename
+                    )
+                    mock_yes_or_no.assert_called_with("Upload these %s files?" % n_uploads)
+                    mock_uploads.assert_called_with(
+                        SOME_UPLOAD_INFO,
+                        auth=SOME_KEYDICT,
+                        folder=os.path.join(tmpdir, SOME_OTHER_BUNDLE_FOLDER[1:]),  # passed straight through
+                        no_query=False,
+                        subfolders=False
+                    )
+                    assert shown.lines == []
+
+                with shown_output() as shown:
+                    do_any_uploads(
+                        res=SOME_UPLOAD_INFO_RESULT,
+                        keydict=SOME_KEYDICT,
+                        upload_folder=tmpdir
+                        # No ingestion_filename or bundle_folder
+                    )
+                    mock_yes_or_no.assert_called_with("Upload these %s files?" % n_uploads)
+                    mock_uploads.assert_called_with(
+                        SOME_UPLOAD_INFO,
+                        auth=SOME_KEYDICT,
+                        folder=tmpdir,  # No folder
+                        no_query=False,
+                        subfolders=False
+                    )
+                    assert shown.lines == []
+
+                with shown_output() as shown:
+                    do_any_uploads(
+                        res=SOME_UPLOAD_INFO_RESULT,
+                        keydict=SOME_KEYDICT,
+                        ingestion_filename=os.path.join(tmpdir, SOME_BUNDLE_FILENAME[1:]),  # from which a folder can be inferred
+                        no_query=False,
+                        subfolders=True,
+                    )
+                    mock_uploads.assert_called_with(
+                        SOME_UPLOAD_INFO,
+                        auth=SOME_KEYDICT,
+                        folder=os.path.join(tmpdir, SOME_BUNDLE_FILENAME_FOLDER[1:]),  # the folder part of given SOME_BUNDLE_FILENAME
+                        no_query=False,
+                        subfolders=True
+                    )
+                    assert shown.lines == []
+
         with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
-            with shown_output() as shown:
-                do_any_uploads(
-                    res={'additional_data': {'upload_info': [{'uuid': '1234', 'filename': 'f1.fastq.gz'}]}},
-                    keydict=SOME_KEYDICT,
-                    ingestion_filename=SOME_BUNDLE_FILENAME
-                )
-                mock_yes_or_no.assert_called_with("Upload 1 file?")
-                assert mock_uploads.call_count == 0
-                assert shown.lines == ['No uploads attempted.']
 
-    with mock.patch.object(submission_module, "yes_or_no", return_value=True) as mock_yes_or_no:
-        with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
-
-            n_uploads = len(SOME_UPLOAD_INFO)
+            # n_uploads = len(SOME_UPLOAD_INFO)
 
             with shown_output() as shown:
                 do_any_uploads(
                     res=SOME_UPLOAD_INFO_RESULT,
                     keydict=SOME_KEYDICT,
-                    ingestion_filename=SOME_BUNDLE_FILENAME,  # from which a folder can be inferred
+                    ingestion_filename=os.path.join(tmpdir, SOME_BUNDLE_FILENAME[1:]),  # from which a folder can be inferred
+                    no_query=True
                 )
-                mock_yes_or_no.assert_called_with("Upload %s files?" % n_uploads)
                 mock_uploads.assert_called_with(
                     SOME_UPLOAD_INFO,
                     auth=SOME_KEYDICT,
-                    folder=SOME_BUNDLE_FILENAME_FOLDER,  # the folder part of given SOME_BUNDLE_FILENAME
-                    no_query=False,
+                    folder=os.path.join(tmpdir, SOME_BUNDLE_FILENAME_FOLDER[1:]),  # the folder part of given SOME_BUNDLE_FILENAME
+                    no_query=True,
                     subfolders=False
                 )
                 assert shown.lines == []
-
-            with shown_output() as shown:
-                do_any_uploads(
-                    res=SOME_UPLOAD_INFO_RESULT,
-                    keydict=SOME_KEYDICT,
-                    upload_folder=SOME_OTHER_BUNDLE_FOLDER,  # rather than ingestion_filename
-                )
-                mock_yes_or_no.assert_called_with("Upload %s files?" % n_uploads)
-                mock_uploads.assert_called_with(
-                    SOME_UPLOAD_INFO,
-                    auth=SOME_KEYDICT,
-                    folder=SOME_OTHER_BUNDLE_FOLDER,  # passed straight through
-                    no_query=False,
-                    subfolders=False
-                )
-                assert shown.lines == []
-
-            with shown_output() as shown:
-                do_any_uploads(
-                    res=SOME_UPLOAD_INFO_RESULT,
-                    keydict=SOME_KEYDICT,
-                    # No ingestion_filename or bundle_folder
-                )
-                mock_yes_or_no.assert_called_with("Upload %s files?" % n_uploads)
-                mock_uploads.assert_called_with(
-                    SOME_UPLOAD_INFO,
-                    auth=SOME_KEYDICT,
-                    folder=None,  # No folder
-                    no_query=False,
-                    subfolders=False
-                )
-                assert shown.lines == []
-
-            with shown_output() as shown:
-                do_any_uploads(
-                    res=SOME_UPLOAD_INFO_RESULT,
-                    keydict=SOME_KEYDICT,
-                    ingestion_filename=SOME_BUNDLE_FILENAME,  # from which a folder can be inferred
-                    no_query=False,
-                    subfolders=True,
-                )
-                mock_uploads.assert_called_with(
-                    SOME_UPLOAD_INFO,
-                    auth=SOME_KEYDICT,
-                    folder=SOME_BUNDLE_FILENAME_FOLDER,  # the folder part of given SOME_BUNDLE_FILENAME
-                    no_query=False,
-                    subfolders=True
-                )
-                assert shown.lines == []
-
-    with mock.patch.object(submission_module, "do_uploads") as mock_uploads:
-
-        # n_uploads = len(SOME_UPLOAD_INFO)
-
-        with shown_output() as shown:
-            do_any_uploads(
-                res=SOME_UPLOAD_INFO_RESULT,
-                keydict=SOME_KEYDICT,
-                ingestion_filename=SOME_BUNDLE_FILENAME,  # from which a folder can be inferred
-                no_query=True
-            )
-            mock_uploads.assert_called_with(
-                SOME_UPLOAD_INFO,
-                auth=SOME_KEYDICT,
-                folder=SOME_BUNDLE_FILENAME_FOLDER,  # the folder part of given SOME_BUNDLE_FILENAME
-                no_query=True,
-                subfolders=False
-            )
-            assert shown.lines == []
 
 
 def test_resume_uploads():
