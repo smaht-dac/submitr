@@ -542,13 +542,16 @@ def submit_any_ingestion(ingestion_filename, *,
     :param show_details: bool controls whether to show the details from the results file in S3.
     """
 
+    """
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
-        PRINT(f"App name is (default): {app}")
+        app_default = True
     else:
+        app_default = False
         PRINT(f"App name is: {app}")
+    """
 
-    portal = _define_portal(env=env, server=server, app=app)
+    portal = _define_portal(env=env, server=server, app=app, report=True)
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=portal.app,
                                  consortium=consortium, submission_center=submission_center)
@@ -565,10 +568,6 @@ def submit_any_ingestion(ingestion_filename, *,
     maybe_ingestion_type = ''
     if ingestion_type != DEFAULT_INGESTION_TYPE:
         maybe_ingestion_type = " (%s)" % ingestion_type
-
-    PRINT(f"Portal keys file is: {portal.keys_file}")
-    PRINT(f"Portal environment (from keys file) is: {portal.env}")
-    PRINT(f"Portal server is: {portal.server}")
 
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
     user_record = get_user_record(portal.server, auth=portal.key_pair)
@@ -727,7 +726,7 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
 
-    portal = _define_portal(env=env, server=server, app=app)
+    portal = _define_portal(env=env, server=server, app=app, report=True)
 
     if not _pytesting():
         if not (uuid_metadata := portal.get_metadata(uuid)):
@@ -836,7 +835,7 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
 
-    portal = _define_portal(key=keydict, env=env, server=server, app=app)
+    portal = _define_portal(key=keydict, env=env, server=server, app=app, report=True)
 
     if not (uuid_metadata := portal.get_metadata(uuid)):
         raise Exception(f"Cannot find object given uuid: {uuid}")
@@ -939,7 +938,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
-                   upload_folder=None, no_query=False, subfolders=False):
+                   upload_folder=None, no_query=False, subfolders=False, app=None):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -954,19 +953,21 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     :param subfolders: bool to search subdirectories within upload_folder for files
     """
 
-    portal = _define_portal(key=keydict, env=env, server=server)
+    portal = _define_portal(key=keydict, env=env, server=server, app=app, report=True)
 
     if not (response := portal.get_metadata(uuid)):
         if accession_id := _extract_accession_id(uuid):
             if not (response := portal.get_metadata(uuid := accession_id)):
-                raise Exception(f"Given UUID not found: {uuid}")
+                raise Exception(f"Given accession ID not found: {uuid}")
+        else:
+            raise Exception(f"Given UUID not found: {uuid}")
 
     if not portal.is_schema_type(response, INGESTION_SUBMISSION_TYPE_NAME):
 
         # Subsume function of upload-item-data into resume-uploads for convenience.
         if portal.is_schema_type(response, FILE_TYPE_NAME):
             upload_item_data(item_filename=uuid, uuid=None, server=portal.server,
-                             env=portal.env, directory=upload_folder, no_query=no_query)
+                             env=portal.env, directory=upload_folder, no_query=no_query, app=app, report=False)
             return
 
         undesired_type = portal.get_schema_type(response)
@@ -1301,7 +1302,7 @@ def upload_extra_files(
         wrapped_execute_prearranged_upload(extra_file_path, extra_file_credentials, auth=auth)
 
 
-def upload_item_data(item_filename, uuid, server, env, no_query=False, **kwargs):
+def upload_item_data(item_filename, uuid, server, env, no_query=False, app=None, report=True, **kwargs):
     """
     Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
 
@@ -1327,7 +1328,7 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False, **kwargs)
             uuid = accession_id
             item_filename = None
 
-    portal = _define_portal(env=env, server=server)
+    portal = _define_portal(env=env, server=server, app=app, report=report)
 
     if not (uuid_metadata := portal.get_metadata(uuid)):
         raise Exception(f"Cannot find object given uuid: {uuid}")
@@ -1488,10 +1489,20 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
     return f"{src_string(issue)}: {issue_message}" if issue_message else ""
 
 
-def _define_portal(key: Optional[dict] = None,
-                   env: Optional[str] = None, server: Optional[str] = None, app: Optional[str] = None) -> Portal:
+def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server: Optional[str] = None,
+                   app: Optional[str] = None, report: bool = False) -> Portal:
+    if not app:
+        app = DEFAULT_APP
+        app_default = True
+    else:
+        app_default = False
     if not (portal := Portal(key, env=env, server=server, app=app, raise_exception=False)).key:
-        raise Exception(f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file.")
+        raise Exception(f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")
+    if report:
+        PRINT(f"App name is{' (default)' if app_default else ''}: {app}")
+        PRINT(f"Portal keys file is: {portal.keys_file}")
+        PRINT(f"Portal environment (from keys file) is: {portal.env}")
+        PRINT(f"Portal server is: {portal.server}")
     return portal
 
 

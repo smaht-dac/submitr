@@ -1,6 +1,7 @@
 import argparse
 import os
 from dcicutils.command_utils import script_catch_errors
+from ..base import DEFAULT_APP
 from ..submission import resume_uploads
 
 
@@ -18,6 +19,9 @@ def main(simulated_args_for_testing=None):
                         help="HTTP(S) address of Portal server (e.g. in ~/.smaht-keys.json).")
     parser.add_argument('--env', '-e',
                         help="Portal environment name for server/credentials (e.g. in ~/.smaht-keys.json).")
+    parser.add_argument('--app',
+                        help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
+                             f" Normally this should not be given.")
     parser.add_argument('--bundle_filename', '-b', help="location of the original Excel submission file")
     parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
@@ -41,7 +45,7 @@ def main(simulated_args_for_testing=None):
     with script_catch_errors():
 
         resume_uploads(uuid=args.uuid, server=args.server, env=args.env, bundle_filename=args.bundle_filename,
-                       upload_folder=args.upload_folder, no_query=args.no_query, subfolders=args.subfolders)
+                       upload_folder=args.upload_folder, no_query=args.no_query, subfolders=args.subfolders, app=args.app)
 
 
 if __name__ == '__main__':

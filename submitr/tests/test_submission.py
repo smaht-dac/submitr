@@ -1203,6 +1203,7 @@ def test_upload_item_data():
         open(os.path.join(tmpdir, "some-filename"), "w")
         some_filename = os.path.join(tmpdir, SOME_FILENAME)
 
+        Portal.KEYS_FILE_DIRECTORY = tmpdir
         with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
             mocked_portal_key_property.return_value = SOME_KEYDICT
             with mock.patch.object(submission_module, "yes_or_no", return_value=True):
