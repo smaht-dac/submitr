@@ -93,8 +93,7 @@ def get_user_record(server, auth):
         raise PortalPermissionError(server=server)
     user_record_response.raise_for_status()
     user_record = user_record_response.json()
-    show("The server %s recognizes you as: %s (%s)"
-         % (server, user_record['title'], user_record['contact_email']))
+    show(f"Portal server recognizes you as: {user_record['title']} ({user_record['contact_email']})")
     return user_record
 
 
@@ -142,7 +141,7 @@ def get_defaulted_project(project, user_record):
         else:
             [project_role] = project_roles
             project = project_role['project']['@id']
-            show("Using project:", project)
+            show("Project is: ", project)
     return project
 
 
@@ -179,9 +178,9 @@ def get_defaulted_award(award, user_record, error_if_none=False):
         if not award:
             show("No award was inferred.")
         else:
-            show("Using inferred award:", award)
+            show("Award is (inferred):", award)
     else:
-        show("Using given award:", award)
+        show("Award is:", award)
     return award
 
 
@@ -203,9 +202,9 @@ def get_defaulted_lab(lab, user_record, error_if_none=False):
                                   " so you must specify --lab explicitly.")
             show("No lab was inferred.")
         else:
-            show("Using inferred lab:", lab)
+            show("Lab is (inferred):", lab)
     else:
-        show("Using given lab:", lab)
+        show("Lab is:", lab)
     return lab
 
 
@@ -228,9 +227,9 @@ def get_defaulted_consortia(consortia, user_record, error_if_none=False):
                                   " so you must specify --consortium explicitly.")
             show("No consortium was inferred.")
         else:
-            show("Using inferred consortium:", ','.join(consortia))
+            show("Consortium is (inferred):", ','.join(consortia))
     else:
-        show("Using given consortium:", ','.join(consortia))
+        show("Consortium is:", ','.join(consortia))
     return consortia
 
 
@@ -253,9 +252,9 @@ def get_defaulted_submission_centers(submission_centers, user_record, error_if_n
                                   " so you must specify --submission-center explicitly.")
             show("No submission center was inferred.")
         else:
-            show("Using inferred submission center:", ','.join(submission_centers))
+            show("Submission center is (inferred):", ','.join(submission_centers))
     else:
-        show("Using given submission center:", ','.join(submission_centers))
+        show("Submission center is:", ','.join(submission_centers))
     return submission_centers
 
 
@@ -545,7 +544,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
-        PRINT(f"App name is: {app} (default as --app not specified)")
+        PRINT(f"App name is (default): {app}")
     else:
         PRINT(f"App name is: {app}")
 
@@ -567,19 +566,20 @@ def submit_any_ingestion(ingestion_filename, *,
     if ingestion_type != DEFAULT_INGESTION_TYPE:
         maybe_ingestion_type = " (%s)" % ingestion_type
 
-    PRINT(f"App keys file is: {portal.keys_file}")
+    PRINT(f"Portal keys file is: {portal.keys_file}")
+    PRINT(f"Portal environment (from keys file) is: {portal.env}")
+    PRINT(f"Portal server is: {portal.server}")
+
+    metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
+    user_record = get_user_record(portal.server, auth=portal.key_pair)
+    do_app_arg_defaulting(app_args, user_record)
+    PRINT(f"Subission file to ingest: {ingestion_filename}")
 
     if not no_query:
         if not yes_or_no("Submit %s%s to %s%s?"
                          % (ingestion_filename, maybe_ingestion_type, portal.server, validation_qualifier)):
             show("Aborting submission.")
             exit(1)
-
-    metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
-
-    user_record = get_user_record(portal.server, auth=portal.key_pair)
-
-    do_app_arg_defaulting(app_args, user_record)
 
     autoadd = None
     if app_args and isinstance(submission_centers := app_args.get("submission_centers"), list):
