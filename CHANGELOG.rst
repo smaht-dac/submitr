@@ -10,7 +10,12 @@ Change Log
 0.5.2
 =====
 
-* Update dcicutils and other minor updates.
+* Refactored to use dcicutils.portal_utils.Portal.
+* Many minor-ish changes to submit-metadata-bundle, resume-uploads, upload-item-data.
+  E.g. sanity checking file paths and uuids, providing more info/feedback to user,
+  allowing accession ID or accession ID based file name, show file sizes, etc.
+* Subsume upload-item-data functionality into resume-uploads for convenience.
+* Starting (readthedocs) documentation updates.
 
 
 0.5.1
