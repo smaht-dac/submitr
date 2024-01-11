@@ -91,32 +91,36 @@ just do::
 Setting Up Credentials
 ======================
 
-Credentials can be placed in the file ``~/.smaht-keys.json``. The file format is::
-
-   {"envname1": {"key": ..., "secret": ..., "server": ...}, "envname2": ..., ...}
-
-There is not currently a separate dev environment for SMaHT, so use "staging" or "data".
-The envname to use for local debugging (for developers) is "smaht-local".
-For end users, reach out to your contact on the SMaHT DAC team if you're not sure which server you
-need to submit to.
-
-A typical key file might look like this below. If you are not a developer, you will probably
-only have one key rather than several, and almost certainly none of the URLs will be on ``localhost``::
+Credentials can be placed in the file ``~/.smaht-keys.json`` which looks like this::
 
    {
-       "staging": {
-           "key": "some_key",
-           "secret": "some_secret",
+       "smaht-staging": {
+           "key": "your-portal-key",
+           "secret": "your-portal-secret",
+           "server": "https://data.smaht.org"
+       },
+       "smaht-data": {
+           "key": "your-portal-key",
+           "secret": "your-portal-secret",
            "server": "https://data.smaht.org"
        },
        "smaht-local": {
-           "key": "some_other_key",
-           "secret": "some_other_secret",
+           "key": "your-local-portal-key",
+           "secret": "your-local-portal-secret",
            "server": "http://localhost:8000"
        }
    }
 
 The easiest way to create or modify a file like this is with TextEdit, which you can open from a MacOS Terminal window with:
+
+The environment names there are of your own choosing; this name will be used
+as the ``--env`` argument to the various `submitr` commands, e.g. ``submit-metadata-bundle`` and ``resume-uploads``.
+If you're not sure which server you should be submitting to, reach out to your contact on the SMaHT DAC Team.
+
+The ``key`` and ``secret`` values are obtained from the `Access Keys` sections of the SMaHT Portal `My Profile` page.
+
+A typical key file might look like the below. If you are not a developer, you will probably
+only have one key rather than several, and almost certainly none of the URLs will be on ``localhost``::
 
 .. code-block::
 
