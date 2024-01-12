@@ -519,7 +519,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          validate_only=False,
                          validate_local=False,
                          validate_local_only=False,
-                         sheet_utils=False):
+                         debug=False):
     """
     Does the core action of submitting a metadata bundle.
 
@@ -619,7 +619,7 @@ def submit_any_ingestion(ingestion_filename, *,
             'validate_only': validate_only,
             'post_only': post_only,
             'patch_only': patch_only,
-            'sheet_utils': sheet_utils,
+            'sheet_utils': False,
             'autoadd': json.dumps(autoadd),
             'ingestion_directory': os.path.dirname(ingestion_filename)
         }

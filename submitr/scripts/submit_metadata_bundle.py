@@ -46,9 +46,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--submission_protocol', '--submission-protocol', '-sp',
                         choices=SUBMISSION_PROTOCOLS, default=DEFAULT_SUBMISSION_PROTOCOL,
                         help=f"the submission protocol (default {DEFAULT_SUBMISSION_PROTOCOL!r})")
-    parser.add_argument('--details', action="store_true",
-                        help="Retrieve and display detailed info.", default=False)
-    parser.add_argument('--verbose', action="store_true", help="Verbose output.", default=False)
+    parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--validate-local', action="store_true",
                         help="Validate file locally before submission.", default=False)
     parser.add_argument('--validate-local-only', action="store_true",
@@ -68,13 +66,13 @@ def main(simulated_args_for_testing=None):
                              no_query=args.no_query, subfolders=args.subfolders, app=args.app,
                              submission_protocol=args.submission_protocol,
                              upload_folder=args.upload_folder,
-                             show_details=(args.verbose or args.details),
+                             show_details=args.debug,
                              post_only=args.post_only,
                              patch_only=args.patch_only,
                              validate_only=args.validate_only,
                              validate_local=args.validate_local,
                              validate_local_only=args.validate_local_only,
-                             sheet_utils=False)
+                             debug=args.debug)
 
 
 def sanity_check_submitted_file(file_name: str) -> bool:
