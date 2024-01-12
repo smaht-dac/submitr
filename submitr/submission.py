@@ -572,7 +572,7 @@ def submit_any_ingestion(ingestion_filename, *,
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
     user_record = get_user_record(portal.server, auth=portal.key_pair)
     do_app_arg_defaulting(app_args, user_record)
-    PRINT(f"Subission file to ingest: {ingestion_filename}")
+    PRINT(f"Submission file to ingest: {ingestion_filename}")
 
     if not no_query:
         if not yes_or_no("Submit %s%s to %s%s?"
