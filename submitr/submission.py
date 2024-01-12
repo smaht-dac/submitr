@@ -1504,6 +1504,8 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         PRINT(f"Portal keys file is: {portal.keys_file}")
         PRINT(f"Portal environment (from keys file) is: {portal.env}")
         PRINT(f"Portal server is: {portal.server}")
+        if portal.key_id and len(portal.key_id) > 2:
+            PRINT(f"Portal key prefix is: {portal.key_id[:2]}******")
     return portal
 
 
