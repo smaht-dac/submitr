@@ -319,6 +319,8 @@ def show_section(res, section, caveat_outcome=None, portal=None):
         caveat = ""
     if not section_data:
         return
+    if section == "validation_output" and (ingestion_submission_uuid := res.get("uuid")):
+        PRINT(f"\nIngestion Submission UUID: {ingestion_submission_uuid}")
     show("\n----- %s%s -----" % (keyword_as_title(section), caveat))
     if isinstance(section_data, dict):
         if file := section_data.get("file"):
@@ -1500,9 +1502,9 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         raise Exception(
             f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")
     if report:
-        PRINT(f"App name is{' (default)' if app_default else ''}: {app}")
-        PRINT(f"Portal keys file is: {portal.keys_file}")
+        PRINT(f"Portal app name is{' (default)' if app_default else ''}: {app}")
         PRINT(f"Portal environment (from keys file) is: {portal.env}")
+        PRINT(f"Portal keys file is: {portal.keys_file}")
         PRINT(f"Portal server is: {portal.server}")
         if portal.key_id and len(portal.key_id) > 2:
             PRINT(f"Portal key prefix is: {portal.key_id[:2]}******")
