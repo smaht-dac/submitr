@@ -926,6 +926,8 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
         for upload_file_info in upload_info:
             if display_file_info(upload_file_info.get("filename")):
                 files_to_upload.append(upload_file_info)
+        if len(files_to_upload) == 0:
+            return
         if no_query:
             do_uploads(files_to_upload, auth=keydict, no_query=no_query, folder=upload_folder,
                        subfolders=subfolders)
