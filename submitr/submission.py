@@ -319,8 +319,8 @@ def show_section(res, section, caveat_outcome=None, portal=None):
         caveat = ""
     if not section_data:
         return
-    if section == "validation_output" and (ingestion_submission_uuid := res.get("uuid")):
-        PRINT(f"\nIngestion Submission UUID: {ingestion_submission_uuid}")
+#   if section == "validation_output" and (ingestion_submission_uuid := res.get("uuid")):
+#       PRINT(f"\nIngestion Submission UUID: {ingestion_submission_uuid}")
     show("\n----- %s%s -----" % (keyword_as_title(section), caveat))
     if isinstance(section_data, dict):
         if file := section_data.get("file"):
@@ -337,10 +337,15 @@ def show_section(res, section, caveat_outcome=None, portal=None):
                     PRINT(f"Validation Errors:")
                 elif item == "ref":
                     PRINT(f"Reference (linkTo) Errors:")
+                elif item == "errors":
+                    PRINT(f"Other Errors:")
                 else:
                     continue
                 for issue in section_data[item]:
-                    PRINT(f"  - {_format_issue(issue, file)}")
+                    if isinstance(issue, dict):
+                        PRINT(f"  - {_format_issue(issue, file)}")
+                    elif isinstance(issue, str):
+                        PRINT(f"  - {issue}")
     elif isinstance(section_data, list):
         if section == "upload_info":
             for info in section_data:
