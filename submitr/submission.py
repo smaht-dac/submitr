@@ -1419,10 +1419,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, validate_local_on
     PRINT(f"> Parsed JSON:")
     _print_json_with_prefix(structured_data.data, "  ")
     structured_data.validate()
-    PRINT(f"\r> Types referenced:")
-    for type_name in sorted(structured_data.data):
-        PRINT(f"  - {type_name}: {len(structured_data.data[type_name])}"
-              f"object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
     PRINT(f"> Validation results:")
     if (validation_errors := structured_data.validation_errors):
         PRINT(f"> Validation errors:")
@@ -1430,6 +1426,10 @@ def _validate_locally(ingestion_filename: str, portal: Portal, validate_local_on
             PRINT(f"  - {_format_issue(validation_error, ingestion_filename)}")
     else:
         PRINT(f"  - OK")
+    PRINT(f"\r> Types referenced:")
+    for type_name in sorted(structured_data.data):
+        PRINT(f"  - {type_name}: {len(structured_data.data[type_name])}"
+              f" object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
     if (files := structured_data.upload_files):
         PRINT(f"\r> File references:")
         [PRINT(f"  - {file.get('type')}: {file.get('file')}") for file in files]
