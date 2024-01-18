@@ -1478,9 +1478,9 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
 def _print_structured_data_status(portal: Portal, structured_data: dict) -> None:
     def _print_object_status(portal: Portal, portal_object: dict, portal_object_type: str) -> None:  # noqa
         portal_object = PortalObject(portal, portal_object, portal_object_type)
-        existing_object, existing_identifying_path = portal_object.lookup(include_identifying_path=True, raw=True)
-        if existing_identifying_path:
-            print(f"  - {existing_identifying_path}")
+        existing_object, identifying_path = portal_object.lookup(include_identifying_path=True, raw=True)
+        if identifying_path:
+            print(f"  - {identifying_path}")
             if existing_object:
                 print(f"     Exists -> {PortalObject.get_uuid(existing_object)} -> Will be UPDATED.")
             else:
