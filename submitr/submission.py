@@ -8,7 +8,7 @@ import re
 import subprocess
 import sys
 import time
-from typing import Tuple
+from typing import BinaryIO, Dict, List, Optional, Tuple, Union
 import yaml
 
 # get_env_real_url would rely on env_utils
@@ -21,9 +21,9 @@ from dcicutils.misc_utils import (
     environ_bool, is_uuid,
     PRINT, url_path_join, ignorable, remove_prefix
 )
+from dcicutils.portal_object_utils import PortalObject
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.structured_data import Portal, Schema, StructuredDataSet
-from typing import BinaryIO, Dict, Optional
 from typing_extensions import Literal
 from urllib.parse import urlparse
 from .base import DEFAULT_APP
@@ -526,6 +526,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          validate_only=False,
                          validate_local=False,
                          validate_local_only=False,
+                         verbose=False,
                          debug=False):
     """
     Does the core action of submitting a metadata bundle.
@@ -568,7 +569,7 @@ def submit_any_ingestion(ingestion_filename, *,
         exit(1)
 
     if validate_local:
-        _validate_locally(ingestion_filename, portal, validate_local_only)
+        _validate_locally(ingestion_filename, portal, validate_local_only, subfolders=subfolders, verbose=verbose)
 
     validation_qualifier = " (for validation only)" if validate_only else ""
 
@@ -912,7 +913,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
         if file:
             file_path, error = search_for_file(directory=upload_folder or ".", file_name=file, recursive=subfolders)
             if file_path and not error:
-                PRINT(f"File to upload: {file_path} ({format_file_size(get_file_size(file_path))})")
+                PRINT(f"File to upload: {file_path} ({_format_file_size(_get_file_size(file_path))})")
                 return True
             if file:
                 PRINT(f"Cannot find file to upload: {file}")
@@ -1355,7 +1356,7 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False, app=None,
             raise Exception(f"File not found: {item_filename}")
 
     if not no_query:
-        file_size = format_file_size(get_file_size(item_filename))
+        file_size = _format_file_size(_get_file_size(item_filename))
         if not yes_or_no("Upload %s (%s) to %s?" % (item_filename, file_size, server)):
             show("Aborting submission.")
             exit(1)
@@ -1412,41 +1413,82 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
         return (results_location, None)
 
 
-def _validate_locally(ingestion_filename: str, portal: Portal, validate_local_only: bool = False) -> int:
-    PRINT(f"> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
+def _validate_locally(ingestion_filename: str, portal: Portal,
+                      validate_local_only: bool = False, subfolders: bool = False, verbose: bool = False) -> int:
+    errors_exist = False
+    PRINT(f"\n> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
           f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
     structured_data = StructuredDataSet.load(ingestion_filename, portal)
-    PRINT(f"> Parsed JSON:")
-    _print_json_with_prefix(structured_data.data, "  ")
+    if verbose:
+        PRINT(f"\n> Parsed JSON:")
+        _print_json_with_prefix(structured_data.data, "  ")
     structured_data.validate()
-    PRINT(f"> Validation results:")
+    PRINT(f"\n> Validation results:")
     if (validation_errors := structured_data.validation_errors):
-        PRINT(f"> Validation errors:")
+        PRINT(f"\n> Validation errors:")
         for validation_error in validation_errors:
             PRINT(f"  - {_format_issue(validation_error, ingestion_filename)}")
     else:
         PRINT(f"  - OK")
-    PRINT(f"\r> Types referenced:")
+    PRINT(f"\n> Types referenced:")
     for type_name in sorted(structured_data.data):
         PRINT(f"  - {type_name}: {len(structured_data.data[type_name])}"
               f" object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
-    if (files := structured_data.upload_files):
-        PRINT(f"\r> File references:")
-        [PRINT(f"  - {file.get('type')}: {file.get('file')}") for file in files]
+    if (resolved_refs := structured_data.resolved_refs):
+        PRINT(f"\n> Resolved object (linkTo) references:")
+        for resolved_ref in sorted(resolved_refs):
+            PRINT(f"  - {resolved_ref}")
     if (ref_errors := structured_data.ref_errors):
-        PRINT(f"> Reference (linkTo) errors:")
+        errors_exist = True
+        PRINT(f"\n> ERROR: Unresolved object (linkTo) references:")
         for ref_error in ref_errors:
             PRINT(f"  - {_format_issue(ref_error, ingestion_filename)}")
     if (reader_warnings := structured_data.reader_warnings):
-        PRINT(f"> Parser warnings:")
+        PRINT(f"\n> WARNING: Parser warnings:")
         for reader_warning in reader_warnings:
             PRINT(f"  - {_format_issue(reader_warning, ingestion_filename)}")
-    if (resolved_refs := structured_data.resolved_refs):
-        PRINT(f"> Resolved object references:")
-        for resolved_ref in sorted(resolved_refs):
-            PRINT(f"  - {resolved_ref}")
+    if files := structured_data.upload_files:
+        files = structured_data.upload_files_located(location=os.path.dirname(ingestion_filename), recursive=subfolders)
+        files_found = [file for file in files if file.get("path")]
+        files_not_found = [file for file in files if not file.get("path")]
+        if files_found:
+            PRINT(f"\n> Resolved file references:")
+            for file in files_found:
+                if path := file.get("path"):
+                    PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}")
+                else:
+                    PRINT(f"  - {file.get('type')}: {file.get('file')} -> NOT FOUND!")
+        if files_not_found:
+            errors_exist = True
+            PRINT(f"\n> ERROR: Unresolved file references:")
+            for file in files_not_found:
+                if path := file.get("path"):
+                    PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}")
+                else:
+                    PRINT(f"  - {file.get('type')}: {file.get('file')} -> Not found!")
+    _print_structured_data_status(portal, structured_data.data)
+    PRINT()
+    if errors_exist:
+        if not yes_or_no("There are some errors outlined above; do you want to continue?"):
+            exit(1)
     if validate_local_only:
-        exit(0 if not structured_data.errors else 1)
+        exit(0 if not errors_exist else 1)
+
+
+def _print_structured_data_status(portal: Portal, structured_data: dict) -> None:
+    def _print_object_status(portal: Portal, portal_object: dict, portal_object_type: str) -> None:  # noqa
+        portal_object = PortalObject(portal, portal_object, portal_object_type)
+        existing_object, existing_identifying_path = portal_object.lookup(include_identifying_path=True, raw=True)
+        if existing_identifying_path:
+            print(f"  - {existing_identifying_path}")
+            if existing_object:
+                print(f"     Exists -> {PortalObject.get_uuid(existing_object)} -> Will be UPDATED.")
+            else:
+                print(f"     Does not exist -> Will be CREATED.")
+    PRINT("\n> Object Create/Update Situation:")
+    for portal_object_type in structured_data:
+        for portal_object in structured_data[portal_object_type]:
+            _print_object_status(portal, portal_object, portal_object_type)
 
 
 def _print_json_with_prefix(data, prefix):
@@ -1531,11 +1573,31 @@ def _extract_accession_id(value: str) -> Optional[str]:
             return value
 
 
-def get_file_size(file: str) -> int:
+def _search_for_file(file: str,
+                     location: Union[str, Optional[List[str]]] = None, recursive: bool = False) -> Optional[str]:
+    if isinstance(file, str) or not file:
+        if not location:
+            location = "."
+        if location:
+            if isinstance(location, str):
+                location = [location]
+            if isinstance(location, list):
+                for directory in location:
+                    if isinstance(directory, str) and os.path.exists(os.path.join(directory, file)):
+                        return os.path.normpath(os.path.join(directory, file))
+        if recursive:
+            if not file.startswith("**/"):
+                file = "**/" + file
+            files = glob.glob(file, recursive=recursive)
+            if files:
+                return files[0]
+
+
+def _get_file_size(file: str) -> int:
     return os.path.getsize(file)
 
 
-def format_file_size(nbytes: int) -> str:
+def _format_file_size(nbytes: int) -> str:
     for unit in ["b", "Kb", "Mb", "Gb", "Tb", "Pb", "Eb", "Zb"]:
         if abs(nbytes) < 1024.0:
             return f"{nbytes:3.1f}{unit}"

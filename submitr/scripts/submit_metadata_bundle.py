@@ -46,6 +46,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--submission_protocol', '--submission-protocol', '-sp',
                         choices=SUBMISSION_PROTOCOLS, default=DEFAULT_SUBMISSION_PROTOCOL,
                         help=f"the submission protocol (default {DEFAULT_SUBMISSION_PROTOCOL!r})")
+    parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--validate-local', action="store_true",
                         help="Validate file locally before submission.", default=False)
@@ -72,6 +73,7 @@ def main(simulated_args_for_testing=None):
                              validate_only=args.validate_only,
                              validate_local=args.validate_local,
                              validate_local_only=args.validate_local_only,
+                             verbose=args.verbose,
                              debug=args.debug)
 
 
