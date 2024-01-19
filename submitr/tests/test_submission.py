@@ -1116,7 +1116,7 @@ def test_do_uploads2(tmp_path):
                 no_query=True,
             )
             assert shown.lines == [
-                f"Upload file not found: {os.path.join(folder, upload_spec_list[0]['filename'])}"]
+                f"Upload file not found: {upload_spec_list[0]['filename']}"]
 
     with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
         # File found within subfolder and upload called.
@@ -2435,39 +2435,6 @@ def test_running_on_windows_native():
 
 
 @pytest.mark.parametrize(
-    "directory,file_name,recursive,glob_results,expected_file_path,expected_msg",
-    [
-        ("foo", "bar", False, [], None, f"Upload file not found: foo/bar"),
-        ("foo", "bar", True, [], None, f"Upload file not found: foo/bar"),
-        ("foo", "bar", False, ["foo/bar"], "foo/bar", False),
-        ("foo", "bar", False, ["foo/bar", "fu/foo/bar"], None, True),
-    ]
-)
-def test_search_for_file(
-    directory, file_name, recursive, glob_results, expected_file_path, expected_msg
-):
-    """Test output file path +/- error message dependent on file search
-    via glob.
-    """
-    with mock.patch.object(
-        submission_module.glob, "glob", return_value=glob_results
-    ) as mocked_glob:
-        file_path_found, error_msg = search_for_file(directory, file_name, recursive)
-        mocked_glob.assert_called_once_with(
-            directory + "/" + file_name, recursive=recursive
-        )
-        assert file_path_found == expected_file_path
-        if expected_msg is True:
-            assert error_msg.startswith(
-                f"No upload attempted for file {file_name}"
-            )
-        elif expected_msg:
-            assert error_msg == expected_msg
-        else:
-            assert not error_msg, "Error message found when not expected"
-
-
-@pytest.mark.parametrize(
     "no_query,submitr_selective_uploads,yes_or_no_result,error_raised,expected_result",
     [
         (False, True, False, None, None),
@@ -2549,12 +2516,11 @@ def test_upload_extra_files(
     recursive = True
     auth = SOME_AUTH
 
-    def mocked_file_search(folder, extra_file_name, **kwargs):
-        ignored(kwargs)
-        if extra_file_name in files_found:
-            return os.path.join(folder, extra_file_name), None
+    def mocked_file_search(file, location, multiple=True, recursive=False):
+        if file in files_found:
+            return [os.path.join(location, file)]
         else:
-            return None, "error"
+            return []
 
     with mock.patch.object(
         submission_module, "search_for_file", side_effect=mocked_file_search

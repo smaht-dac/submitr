@@ -8,7 +8,7 @@ import re
 import subprocess
 import sys
 import time
-from typing import BinaryIO, Dict, List, Optional, Tuple, Union
+from typing import BinaryIO, Dict, Optional, Tuple
 import yaml
 
 # get_env_real_url would rely on env_utils
@@ -16,6 +16,7 @@ import yaml
 from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 from dcicutils.exceptions import InvalidParameterError
+from dcicutils.file_utils import search_for_file
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
     environ_bool, is_uuid,
@@ -911,12 +912,15 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
     def display_file_info(file: str) -> None:
         nonlocal upload_folder, subfolders
         if file:
-            file_path, error = search_for_file(directory=upload_folder or ".", file_name=file, recursive=subfolders)
-            if file_path and not error:
-                PRINT(f"File to upload: {file_path} ({_format_file_size(_get_file_size(file_path))})")
-                return True
-            if file:
-                PRINT(f"Cannot find file to upload: {file}")
+            if file_paths := search_for_file(file, location=upload_folder, recursive=subfolders):
+                if len(file_paths) == 1:
+                    PRINT(f"File to upload: {file_paths[0]} ({_format_file_size(_get_file_size(file_paths[0]))})")
+                    return True
+                else:
+                    PRINT(f"No upload attempted for file {file} because multiple"
+                          f" copies were found in folder {upload_folder}: {', '.join(file_paths)}.")
+                    return False
+            PRINT(f"Cannot find file to upload: {file}")
         return False
 
     upload_info = get_section(res, 'upload_info')
@@ -1182,10 +1186,14 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
         folder = os.path.join(folder, '**')
     for upload_spec in upload_spec_list:
         file_name = upload_spec["filename"]
-        file_path, error_msg = search_for_file(folder, file_name, recursive=subfolders)
-        if error_msg:
-            show(error_msg)
+        if not (file_paths := search_for_file(file_name, location=folder, recursive=subfolders)) or len(file_paths) > 1:
+            if len(file_paths) > 1:
+                show(f"No upload attempted for file {file_name} because multiple copies"
+                     f" were found in folder {folder}: {', '.join(file_paths)}.")
+            else:
+                show(f"Upload file not found: {file_name}")
             continue
+        file_path = file_paths[0]
         uuid = upload_spec['uuid']
         uploader_wrapper = UploadMessageWrapper(uuid, no_query=no_query)
         wrapped_upload_file_to_uuid = uploader_wrapper.wrap_upload_function(
@@ -1204,32 +1212,6 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
                     auth,
                     recursive=subfolders,
                 )
-
-
-def search_for_file(directory, file_name, recursive=False):
-    """Search for file within directory.
-
-    :param directory: Directory path
-    :param file_name: Name of file to find
-    :param recursive: Whether to search subdirectories of given
-        directory
-    :returns: (Path to file or None, Error message or None)
-    """
-    file_path_found = None
-    msg = None
-    file_path = os.path.normpath(os.path.join(directory, file_name))
-    file_search = glob.glob(file_path, recursive=recursive)
-    if len(file_search) == 1:
-        [file_path_found] = file_search
-    elif len(file_search) > 1:
-        msg = (
-            "No upload attempted for file %s because multiple copies were found"
-            " in folder %s: %s."
-            % (file_name, directory, ", ".join(file_search))
-        )
-    else:
-        msg = f"Upload file not found: {file_path}"
-    return file_path_found, msg
 
 
 class UploadMessageWrapper:
@@ -1300,12 +1282,15 @@ def upload_extra_files(
         extra_file_credentials = extra_file_item.get("upload_credentials")
         if not extra_file_name or not extra_file_credentials:
             continue
-        extra_file_path, error_msg = search_for_file(
-            folder, extra_file_name, recursive=recursive
-        )
-        if error_msg:
-            show(error_msg)
+        if (not (extra_file_paths := search_for_file(extra_file_name, location=folder,
+                                                     recursive=recursive)) or len(extra_file_paths) > 1):
+            if len(extra_file_paths) > 1:
+                show(f"No upload attempted for file {extra_file_name} because multiple"
+                     f" copies were found in folder {folder}: {', '.join(extra_file_paths)}.")
+            else:
+                show(f"Upload file not found: {extra_file_name}")
             continue
+        extra_file_path = extra_file_paths[0]
         wrapped_execute_prearranged_upload = uploader_wrapper.wrap_upload_function(
             execute_prearranged_upload, extra_file_path
         )
@@ -1482,9 +1467,11 @@ def _print_structured_data_status(portal: Portal, structured_data: dict) -> None
         if identifying_path:
             print(f"  - {identifying_path}")
             if existing_object:
-                print(f"     Exists -> {PortalObject.get_uuid(existing_object)} -> Will be UPDATED.")
+                diffs = _compare_dictionaries(portal_object._object, existing_object)
+                print(f"     Exists -> {PortalObject.get_uuid(existing_object)} ->"
+                      f" Will be UPDATED (diffs: {len(diffs)} | {', '.join(diffs.keys())})")
             else:
-                print(f"     Does not exist -> Will be CREATED.")
+                print(f"     Does not exist -> Will be CREATED")
     PRINT("\n> Object Create/Update Situation:")
     for portal_object_type in structured_data:
         for portal_object in structured_data[portal_object_type]:
@@ -1573,24 +1560,18 @@ def _extract_accession_id(value: str) -> Optional[str]:
             return value
 
 
-def _search_for_file(file: str,
-                     location: Union[str, Optional[List[str]]] = None, recursive: bool = False) -> Optional[str]:
-    if isinstance(file, str) or not file:
-        if not location:
-            location = "."
-        if location:
-            if isinstance(location, str):
-                location = [location]
-            if isinstance(location, list):
-                for directory in location:
-                    if isinstance(directory, str) and os.path.exists(os.path.join(directory, file)):
-                        return os.path.normpath(os.path.join(directory, file))
-        if recursive:
-            if not file.startswith("**/"):
-                file = "**/" + file
-            files = glob.glob(file, recursive=recursive)
-            if files:
-                return files[0]
+def _compare_dictionaries(a: dict, b: dict, _path: Optional[str] = None) -> dict:
+    diffs = {}
+    for key in a:
+        path = f"{_path}.{key}" if _path else key
+        if key not in b:
+            diffs[path] = {"value": a[key], "missing_value": True}
+        else:
+            if isinstance(a[key], dict) and isinstance(b[key], dict):
+                diffs = {*diffs, *_compare_dictionaries(a[key], b[key], _path=path)}
+            elif a[key] != b[key]:
+                diffs[path] = {"value": a[key], "differing_value": b[key]}
+    return diffs
 
 
 def _get_file_size(file: str) -> int:
