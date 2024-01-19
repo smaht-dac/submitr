@@ -1,6 +1,5 @@
 import boto3
 from botocore.exceptions import NoCredentialsError as BotoNoCredentialsError
-import glob
 import io
 import json
 import os
