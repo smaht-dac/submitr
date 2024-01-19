@@ -2516,7 +2516,7 @@ def test_upload_extra_files(
     recursive = True
     auth = SOME_AUTH
 
-    def mocked_file_search(file, location, multiple=True, recursive=False):
+    def mocked_file_search(file, location, recursive=False, single=False):
         if file in files_found:
             return [os.path.join(location, file)]
         else:

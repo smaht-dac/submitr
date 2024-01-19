@@ -1414,7 +1414,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
             PRINT(f"  - {_format_issue(validation_error, ingestion_filename)}")
     else:
         PRINT(f"  - OK")
-    PRINT(f"\n> Types referenced:")
+    PRINT(f"\n> Types submitting:")
     for type_name in sorted(structured_data.data):
         PRINT(f"  - {type_name}: {len(structured_data.data[type_name])}"
               f" object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
