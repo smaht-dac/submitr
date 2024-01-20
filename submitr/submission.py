@@ -1560,14 +1560,26 @@ def _extract_accession_id(value: str) -> Optional[str]:
 
 
 def _compare_dictionaries(a: dict, b: dict, _path: Optional[str] = None) -> dict:
+    def key_to_path(key: str, _array_key_regular_expression = re.compile(r"^(#\d+)$")) -> Optional[str]:  # noqa
+        nonlocal _path
+        if match := _array_key_regular_expression.search(key):
+            return _path + match.group(1) if _path else match.group(1)
+        return _path + "." + key if _path else key
+    def list_to_dictionary(value: list) -> dict:  # noqa
+        result = {}
+        for index, item in enumerate(sorted(value)):  # ignore array order
+            result[f"#{index}"] = item
+        return result
     diffs = {}
     for key in a:
-        path = f"{_path}.{key}" if _path else key
+        path = key_to_path(key)
         if key not in b:
             diffs[path] = {"value": a[key], "missing_value": True}
         else:
             if isinstance(a[key], dict) and isinstance(b[key], dict):
-                diffs = {*diffs, *_compare_dictionaries(a[key], b[key], _path=path)}
+                diffs.update(_compare_dictionaries(a[key], b[key], _path=path))
+            elif isinstance(a[key], list) and isinstance(b[key], list):
+                diffs.update(_compare_dictionaries(list_to_dictionary(a[key]), list_to_dictionary(b[key]), _path=path))
             elif a[key] != b[key]:
                 diffs[path] = {"value": a[key], "differing_value": b[key]}
     return diffs
