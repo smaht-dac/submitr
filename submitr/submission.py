@@ -1466,7 +1466,7 @@ def _print_structured_data_status(portal: Portal, structured_data: dict) -> None
         if identifying_path:
             print(f"  - {identifying_path}")
             if existing_object:
-                diffs = _compare_dictionaries(portal_object._object, existing_object)
+                diffs = _compare_dictionaries(portal_object.data, existing_object)
                 print(f"     Exists -> {PortalObject.get_uuid(existing_object)} ->"
                       f" Will be UPDATED (diffs: {len(diffs)} | {', '.join(diffs.keys())})")
             else:
