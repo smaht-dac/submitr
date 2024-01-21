@@ -1410,7 +1410,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
     structured_data.validate()
     PRINT(f"\n> Validation results:")
     if (validation_errors := structured_data.validation_errors):
-        PRINT(f"\n> Validation errors:")
+        errors_exist = True
+        PRINT(f"\n> ERROR: Validation violations:")
         for validation_error in validation_errors:
             PRINT(f"  - {_format_issue(validation_error, ingestion_filename)}")
     else:
