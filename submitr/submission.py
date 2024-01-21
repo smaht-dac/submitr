@@ -23,7 +23,8 @@ from dcicutils.misc_utils import (
 )
 from dcicutils.portal_object_utils import PortalObject
 from dcicutils.s3_utils import HealthPageKey
-from dcicutils.structured_data import Portal, Schema, StructuredDataSet
+from dcicutils.schema_utils import Schema
+from dcicutils.structured_data import Portal, StructuredDataSet
 from typing_extensions import Literal
 from urllib.parse import urlparse
 from .base import DEFAULT_APP
@@ -1466,9 +1467,18 @@ def _print_structured_data_status(portal: Portal, structured_data: dict) -> None
         if identifying_path:
             print(f"  - {identifying_path}")
             if existing_object:
-                diffs = _compare_dictionaries(portal_object.data, existing_object)
-                print(f"     Exists -> {PortalObject.get_uuid(existing_object)} ->"
-                      f" Will be UPDATED (diffs: {len(diffs)} | {', '.join(diffs.keys())})")
+                diffs = portal_object.compare(existing_object, consider_link_to=True)
+                print(f"     Exists -> {existing_object.uuid} -> Will be UPDATED", end="")
+                if not diffs:
+                    print(f" (but NO substantive differences)")
+                else:
+                    print(f" (substantive differences itemized below)")
+                    for diff_path in diffs:
+                        diff = diffs[diff_path]
+                        if diff.get("missing_value"):
+                            print(f"       DIFF -> {diff_path}: {diff['value']}")
+                        elif diff.get("differing_value"):
+                            print(f"       DIFF -> {diff_path}: {diff['differing_value']} -> {diff['value']}")
             else:
                 print(f"     Does not exist -> Will be CREATED")
     PRINT("\n> Object Create/Update Situation:")
@@ -1557,32 +1567,6 @@ def _extract_accession_id(value: str) -> Optional[str]:
         value, _ = os.path.splitext(value)
         if _is_accession_id(value):
             return value
-
-
-def _compare_dictionaries(a: dict, b: dict, _path: Optional[str] = None) -> dict:
-    def key_to_path(key: str, _array_key_regular_expression = re.compile(r"^(#\d+)$")) -> Optional[str]:  # noqa
-        nonlocal _path
-        if match := _array_key_regular_expression.search(key):
-            return _path + match.group(1) if _path else match.group(1)
-        return _path + "." + key if _path else key
-    def list_to_dictionary(value: list) -> dict:  # noqa
-        result = {}
-        for index, item in enumerate(sorted(value)):  # ignore array order
-            result[f"#{index}"] = item
-        return result
-    diffs = {}
-    for key in a:
-        path = key_to_path(key)
-        if key not in b:
-            diffs[path] = {"value": a[key], "missing_value": True}
-        else:
-            if isinstance(a[key], dict) and isinstance(b[key], dict):
-                diffs.update(_compare_dictionaries(a[key], b[key], _path=path))
-            elif isinstance(a[key], list) and isinstance(b[key], list):
-                diffs.update(_compare_dictionaries(list_to_dictionary(a[key]), list_to_dictionary(b[key]), _path=path))
-            elif a[key] != b[key]:
-                diffs[path] = {"value": a[key], "differing_value": b[key]}
-    return diffs
 
 
 def _get_file_size(file: str) -> int:
