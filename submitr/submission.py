@@ -1469,17 +1469,17 @@ def _print_structured_data_status(portal: Portal, structured_data: dict) -> None
             print(f"  - {identifying_path}")
             if existing_object:
                 diffs = portal_object.compare(existing_object, consider_link_to=True)
-                print(f"     Exists -> {existing_object.uuid} -> Will be UPDATED", end="")
+                print(f"     Already exists -> {existing_object.uuid} -> Will be UPDATED", end="")
                 if not diffs:
                     print(f" (but NO substantive differences)")
                 else:
-                    print(f" (substantive differences itemized below)")
+                    print(f" (substantive differences below):")
                     for diff_path in diffs:
                         diff = diffs[diff_path]
                         if diff.get("missing_value"):
-                            print(f"       DIFF -> {diff_path}: {diff['value']}")
+                            print(f"       DIFF: {diff_path}: {diff['value']}")
                         elif diff.get("differing_value"):
-                            print(f"       DIFF -> {diff_path}: {diff['differing_value']} -> {diff['value']}")
+                            print(f"       DIFF: {diff_path}: {diff['differing_value']} -> {diff['value']}")
             else:
                 print(f"     Does not exist -> Will be CREATED")
     PRINT("\n> Object Create/Update Situation:")
