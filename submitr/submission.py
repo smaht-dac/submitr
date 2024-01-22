@@ -21,7 +21,6 @@ from dcicutils.misc_utils import (
     environ_bool, is_uuid,
     PRINT, url_path_join, ignorable, remove_prefix
 )
-from dcicutils.portal_object_utils import PortalObject
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.schema_utils import Schema
 from dcicutils.structured_data import Portal, StructuredDataSet
@@ -1452,40 +1451,12 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
                     PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}")
                 else:
                     PRINT(f"  - {file.get('type')}: {file.get('file')} -> Not found!")
-    _print_structured_data_status(portal, structured_data.data)
     PRINT()
     if errors_exist:
         if not yes_or_no("There are some errors outlined above; do you want to continue?"):
             exit(1)
     if validate_local_only:
         exit(0 if not errors_exist else 1)
-
-
-def _print_structured_data_status(portal: Portal, structured_data: dict) -> None:
-    def _print_object_status(portal: Portal, portal_object: dict, portal_object_type: str) -> None:  # noqa
-        portal_object = PortalObject(portal, portal_object, portal_object_type)
-        existing_object, identifying_path = portal_object.lookup(include_identifying_path=True, raw=True)
-        if identifying_path:
-            print(f"  - {identifying_path}")
-            if existing_object:
-                diffs = portal_object.compare(existing_object, consider_link_to=True)
-                print(f"     Already exists -> {existing_object.uuid} -> Will be UPDATED", end="")
-                if not diffs:
-                    print(f" (but NO substantive differences)")
-                else:
-                    print(f" (substantive differences below):")
-                    for diff_path in diffs:
-                        diff = diffs[diff_path]
-                        if diff.get("missing_value"):
-                            print(f"       DIFF: {diff_path}: {diff['value']}")
-                        elif diff.get("differing_value"):
-                            print(f"       DIFF: {diff_path}: {diff['differing_value']} -> {diff['value']}")
-            else:
-                print(f"     Does not exist -> Will be CREATED")
-    PRINT("\n> Object Create/Update Situation:")
-    for portal_object_type in structured_data:
-        for portal_object in structured_data[portal_object_type]:
-            _print_object_status(portal, portal_object, portal_object_type)
 
 
 def _print_json_with_prefix(data, prefix):
