@@ -94,8 +94,13 @@ def get_user_record(server, auth):
         raise PortalPermissionError(server=server)
     user_record_response.raise_for_status()
     user_record = user_record_response.json()
-    show(f"Portal server recognizes you as: {user_record['title']} ({user_record['contact_email']})")
+    show(f"Portal server recognizes you as{' (admin)' if is_admin_user(user_record) else ''}:"
+         f" {user_record['title']} ({user_record['contact_email']})")
     return user_record
+
+
+def is_admin_user(user: dict) -> bool:
+    return "admin" in user.get("groups")
 
 
 def get_defaulted_institution(institution, user_record):
@@ -569,6 +574,16 @@ def submit_any_ingestion(ingestion_filename, *,
         show(f"Portal credentials do not seem to work: {portal.keys_file} ({env})")
         exit(1)
 
+    user_record = get_user_record(portal.server, auth=portal.key_pair)
+    if not is_admin_user(user_record):
+        # If user is not an admin then default to local validation first;
+        # i.e. act as-if the --validate-local flag was specified.
+        validate_local = True
+
+    metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
+    do_app_arg_defaulting(app_args, user_record)
+    PRINT(f"Submission file to ingest: {ingestion_filename}")
+
     if validate_local:
         _validate_locally(ingestion_filename, portal, validate_local_only, subfolders=subfolders, verbose=verbose)
 
@@ -577,11 +592,6 @@ def submit_any_ingestion(ingestion_filename, *,
     maybe_ingestion_type = ''
     if ingestion_type != DEFAULT_INGESTION_TYPE:
         maybe_ingestion_type = " (%s)" % ingestion_type
-
-    metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
-    user_record = get_user_record(portal.server, auth=portal.key_pair)
-    do_app_arg_defaulting(app_args, user_record)
-    PRINT(f"Submission file to ingest: {ingestion_filename}")
 
     if not no_query:
         if not yes_or_no("Submit %s%s to %s%s?"
@@ -1401,8 +1411,9 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
 def _validate_locally(ingestion_filename: str, portal: Portal,
                       validate_local_only: bool = False, subfolders: bool = False, verbose: bool = False) -> int:
     errors_exist = False
-    PRINT(f"\n> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
-          f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
+    if validate_local_only:
+        PRINT(f"\n> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
+              f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
     structured_data = StructuredDataSet.load(ingestion_filename, portal)
     if verbose:
         PRINT(f"\n> Parsed JSON:")
@@ -1477,9 +1488,9 @@ def _print_structured_data_status(portal: Portal, structured_data: dict) -> None
                     for diff_path in diffs:
                         diff = diffs[diff_path]
                         if diff.get("missing_value"):
-                            print(f"       DIFF: {diff_path}: {diff['value']}")
+                            print(f"         NEW {diff_path}: {diff['value']}")
                         elif diff.get("differing_value"):
-                            print(f"       DIFF: {diff_path}: {diff['differing_value']} -> {diff['value']}")
+                            print(f"        DIFF {diff_path}: {diff['differing_value']} -> {diff['value']}")
             else:
                 print(f"     Does not exist -> Will be CREATED")
     PRINT("\n> Object Create/Update Situation:")
