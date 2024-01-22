@@ -1452,7 +1452,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
             PRINT(f"\n> Resolved file references:")
             for file in files_found:
                 if path := file.get("path"):
-                    PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}")
+                    PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path} ({_format_file_size(_get_file_size(path))})")
                 else:
                     PRINT(f"  - {file.get('type')}: {file.get('file')} -> NOT FOUND!")
         if files_not_found:
