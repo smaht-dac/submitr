@@ -28,7 +28,7 @@ tag-and-push:  # tags the branch and pushes it
 
 preview-locally:
 	sphinx-build -b html docs/source docs/html
-	open docs/html/index.html
+	# open docs/html/index.html
 
 publish:
 	# New Python based publish script in dcicutils (2023-04-25).

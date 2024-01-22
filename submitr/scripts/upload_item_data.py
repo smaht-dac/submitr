@@ -1,6 +1,6 @@
 import argparse
-
 from dcicutils.command_utils import script_catch_errors
+from ..base import DEFAULT_APP
 from ..submission import upload_item_data
 
 
@@ -17,6 +17,10 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--uuid', '-u', help='uuid identifier', default=None)
     parser.add_argument('--server', '-s', help="an http or https address of the server to use", default=None)
     parser.add_argument('--env', '-e', help="a portal environment name for the server to use", default=None)
+    parser.add_argument('--app',
+                        help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
+                             f" Normally this should not be given.")
+    parser.add_argument('--directory', '-d', help="location of the upload files", default=None)
     parser.add_argument('--no_query', '-nq', action="store_true",
                         help="suppress requests for user input", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
@@ -24,7 +28,7 @@ def main(simulated_args_for_testing=None):
     with script_catch_errors():
 
         upload_item_data(item_filename=args.part_filename, uuid=args.uuid, server=args.server,
-                         env=args.env, no_query=args.no_query)
+                         env=args.env, directory=args.directory, no_query=args.no_query, app=args.app)
 
 
 if __name__ == '__main__':
