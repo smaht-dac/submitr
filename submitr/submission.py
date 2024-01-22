@@ -22,7 +22,7 @@ from dcicutils.misc_utils import (
     PRINT, url_path_join, ignorable, remove_prefix
 )
 from dcicutils.s3_utils import HealthPageKey
-from dcicutils.schema_utils import Schema
+from dcicutils.structured_data import Schema
 from dcicutils.structured_data import Portal, StructuredDataSet
 from typing_extensions import Literal
 from urllib.parse import urlparse
