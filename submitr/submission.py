@@ -100,7 +100,7 @@ def get_user_record(server, auth):
 
 
 def is_admin_user(user: dict) -> bool:
-    return "admin" in user.get("groups")
+    return "admin" in user.get("groups", [])
 
 
 def get_defaulted_institution(institution, user_record):

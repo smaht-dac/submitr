@@ -219,6 +219,7 @@ def make_user_record(title=SOME_USER_TITLE,
     user_record = {
         'title': title,
         'contact_email': contact_email,
+        'groups': ['admin']
     }
     user_record.update(kwargs)
 
