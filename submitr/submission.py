@@ -14,6 +14,7 @@ import yaml
 # from dcicutils.env_utils import get_env_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
+from dcicutils.data_readers import RowReader
 from dcicutils.exceptions import InvalidParameterError
 from dcicutils.file_utils import search_for_file
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
@@ -1487,11 +1488,13 @@ def _print_structured_data_status(portal: Portal, structured_data: dict) -> None
                 else:
                     print(f" (substantive differences below):")
                     for diff_path in diffs:
-                        diff = diffs[diff_path]
-                        if diff.get("missing_value"):
-                            print(f"         NEW {diff_path}: {diff['value']}")
+                        if (diff := diffs[diff_path]).get("missing_value"):
+                            print(f"      CREATE {diff_path}: {diff['value']}")
                         elif diff.get("differing_value"):
-                            print(f"        DIFF {diff_path}: {diff['differing_value']} -> {diff['value']}")
+                            if diff["value"] == RowReader.DELETION_CELL_VALUE:
+                                print(f"      DELETE {diff_path}: {diff['differing_value']}")
+                            else:
+                                print(f"      UPDATE {diff_path}: {diff['differing_value']} -> {diff['value']}")
             else:
                 print(f"     Does not exist -> Will be CREATED")
     PRINT("\n> Object Create/Update Situation:")
