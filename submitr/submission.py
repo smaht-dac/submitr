@@ -1477,9 +1477,9 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
 def _print_structured_data_status(portal: Portal, structured_data: dict) -> None:
     def _print_object_status(portal: Portal, portal_object: dict, portal_object_type: str) -> None:  # noqa
         portal_object = PortalObject(portal, portal_object, portal_object_type)
-        existing_object, identifying_path = portal_object.lookup(include_identifying_path=True, raw=True)
-        if identifying_path:
-            print(f"  - {identifying_path}")
+        existing_object, existing_identifying_path = portal_object.lookup(include_identifying_path=True, raw=True)
+        if existing_identifying_path:
+            print(f"  - {existing_identifying_path}")
             if existing_object:
                 diffs = portal_object.compare(existing_object, consider_link_to=True)
                 print(f"     Already exists -> {existing_object.uuid} -> Will be UPDATED", end="")
@@ -1488,13 +1488,13 @@ def _print_structured_data_status(portal: Portal, structured_data: dict) -> None
                 else:
                     print(f" (substantive differences below):")
                     for diff_path in diffs:
-                        if (diff := diffs[diff_path]).get("missing_value"):
+                        if (diff := diffs[diff_path]).get("creating_value"):
                             print(f"      CREATE {diff_path}: {diff['value']}")
-                        elif diff.get("differing_value"):
-                            if diff["value"] == RowReader.DELETION_CELL_VALUE:
-                                print(f"      DELETE {diff_path}: {diff['differing_value']}")
-                            else:
-                                print(f"      UPDATE {diff_path}: {diff['differing_value']} -> {diff['value']}")
+                        elif diff.get("updating_value"):
+                            xyzzy = portal_object.compare(existing_object, consider_link_to=True)
+                            print(f"      UPDATE {diff_path}: {diff['updating_value']} -> {diff['value']}")
+                        elif (diff := diffs[diff_path]).get("deleting_value"):
+                            print(f"      DELETE {diff_path}: {diff['value']}")
             else:
                 print(f"     Does not exist -> Will be CREATED")
     PRINT("\n> Object Create/Update Situation:")
