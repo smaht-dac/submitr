@@ -1473,7 +1473,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
         exit(0 if not errors_exist else 1)
 
 
-from dcicutils.data_readers import RowReader
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet) -> None:
     resolved_refs = structured_data.resolved_refs_with_uuids
     structured_data = structured_data.data
