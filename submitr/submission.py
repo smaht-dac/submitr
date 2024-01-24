@@ -1464,7 +1464,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
                     PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}")
                 else:
                     PRINT(f"  - {file.get('type')}: {file.get('file')} -> Not found!")
-    _print_structured_data_status(portal, structured_data.data)
+    _print_structured_data_status(portal, structured_data)
     PRINT()
     if errors_exist:
         if not yes_or_no("There are some errors outlined above; do you want to continue?"):
@@ -1473,14 +1473,19 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
         exit(0 if not errors_exist else 1)
 
 
-def _print_structured_data_status(portal: Portal, structured_data: dict) -> None:
+from dcicutils.data_readers import RowReader
+def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet) -> None:
+    resolved_refs = structured_data.resolved_refs_with_uuids
+    structured_data = structured_data.data
+
     def _print_object_status(portal: Portal, portal_object: dict, portal_object_type: str) -> None:  # noqa
+        nonlocal resolved_refs
         portal_object = PortalObject(portal, portal_object, portal_object_type)
         existing_object, existing_identifying_path = portal_object.lookup(include_identifying_path=True, raw=True)
         if existing_identifying_path:
             print(f"  - {existing_identifying_path}")
             if existing_object:
-                diffs = portal_object.compare(existing_object, consider_link_to=True)
+                diffs = portal_object.compare(existing_object, consider_refs=True, resolved_refs=resolved_refs)
                 print(f"     Already exists -> {existing_object.uuid} -> Will be UPDATED", end="")
                 if not diffs:
                     print(f" (but NO substantive differences)")
@@ -1495,6 +1500,7 @@ def _print_structured_data_status(portal: Portal, structured_data: dict) -> None
                             print(f"      DELETE {diff_path}: {diff['value']}")
             else:
                 print(f"     Does not exist -> Will be CREATED")
+
     PRINT("\n> Object Create/Update Situation:")
     for portal_object_type in structured_data:
         for portal_object in structured_data[portal_object_type]:
