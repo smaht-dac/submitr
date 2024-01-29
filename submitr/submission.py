@@ -21,7 +21,6 @@ from dcicutils.misc_utils import (
     environ_bool, is_uuid,
     PRINT, url_path_join, ignorable, remove_prefix
 )
-from dcicutils.portal_object_utils import PortalObject
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.schema_utils import Schema
 from dcicutils.structured_data import Portal, StructuredDataSet
@@ -1473,36 +1472,27 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
 
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet) -> None:
-    resolved_refs = structured_data.resolved_refs_with_uuids
-    structured_data = structured_data.data
-
-    def _print_object_status(portal: Portal, portal_object: dict, portal_object_type: str) -> None:  # noqa
-        nonlocal resolved_refs
-        portal_object = PortalObject(portal, portal_object, portal_object_type)
-        existing_object, existing_identifying_path = portal_object.lookup(include_identifying_path=True, raw=True)
-        if existing_identifying_path:
-            print(f"  - {existing_identifying_path}")
-            if existing_object:
-                diffs = portal_object.compare(existing_object, consider_refs=True, resolved_refs=resolved_refs)
-                print(f"     Already exists -> {existing_object.uuid} -> Will be UPDATED", end="")
-                if not diffs:
-                    print(f" (but NO substantive diffs)")
+    PRINT("\n> Object Create/Update Situation:")
+    diffs = structured_data.compare()
+    for object_type in diffs:
+        print(f"  TYPE: {object_type}")
+        for object_info in diffs[object_type]:
+            print(f"  - OBJECT: {object_info.path}")
+            if not object_info.uuid:
+                print(f"     Does not exist -> Will be CREATED")
+            else:
+                print(f"     Already exists -> {object_info.uuid} -> Will be UPDATED", end="")
+                if not object_info.diffs:
+                    print(" (but NO substantive diffs)")
                 else:
-                    print(f" (substantive DIFFs below):")
-                    for diff_path in diffs:
-                        if (diff := diffs[diff_path]).creating_value:
+                    print(" (substantive DIFFs below)")
+                    for diff_path in object_info.diffs:
+                        if (diff := object_info.diffs[diff_path]).creating_value:
                             print(f"      CREATE {diff_path}: {diff.value}")
                         elif diff.updating_value:
                             print(f"      UPDATE {diff_path}: {diff.updating_value} -> {diff.value}")
-                        elif (diff := diffs[diff_path]).deleting_value:
+                        elif (diff := object_info.diffs[diff_path]).deleting_value:
                             print(f"      DELETE {diff_path}: {diff.value}")
-            else:
-                print(f"     Does not exist -> Will be CREATED")
-
-    PRINT("\n> Object Create/Update Situation:")
-    for portal_object_type in structured_data:
-        for portal_object in structured_data[portal_object_type]:
-            _print_object_status(portal, portal_object, portal_object_type)
 
 
 def _print_json_with_prefix(data, prefix):
