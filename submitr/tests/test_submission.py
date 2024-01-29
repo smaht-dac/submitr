@@ -1277,7 +1277,6 @@ class Scenario:
         ]
         if submission_module.DEBUG_PROTOCOL:  # pragma: no cover - useful if it happens to help, but not a big deal
             result.append(f"Created IngestionSubmission object: s3://{self.bundles_bucket}/{SOME_UUID}")
-        import pdb ; pdb.set_trace()
         result.append(f"{uploaded_time} Metadata bundle uploaded to bucket ({self.bundles_bucket});"
                       f" tracking UUID: {SOME_UUID} Awaiting processing...")
         return result
