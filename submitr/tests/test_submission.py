@@ -1277,8 +1277,9 @@ class Scenario:
         ]
         if submission_module.DEBUG_PROTOCOL:  # pragma: no cover - useful if it happens to help, but not a big deal
             result.append(f"Created IngestionSubmission object: s3://{self.bundles_bucket}/{SOME_UUID}")
-        result.append(f"{uploaded_time} Bundle uploaded to bucket {self.bundles_bucket},"
-                      f" assigned uuid {SOME_UUID} for tracking. Awaiting processing...")
+        import pdb ; pdb.set_trace()
+        result.append(f"{uploaded_time} Metadata bundle uploaded to bucket ({self.bundles_bucket});"
+                      f" tracking UUID: {SOME_UUID} Awaiting processing...")
         return result
 
     def make_wait_lines(self, wait_attempts, outcome: str = None, start_delta: int = 0):

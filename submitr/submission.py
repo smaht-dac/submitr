@@ -696,9 +696,8 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if DEBUG_PROTOCOL:  # pragma: no cover
         show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} object: s3://{metadata_bundles_bucket}/{uuid}", with_time=True)
-    show(f"Bundle uploaded to bucket {metadata_bundles_bucket}, assigned uuid {uuid} for tracking."
-         f" Awaiting processing...",
-         with_time=True)
+    show(f"Metadata bundle uploaded to bucket ({metadata_bundles_bucket}); tracking UUID: {uuid}", with_time=True)
+    show(f"Awaiting processing ...", with_time=True)
 
     check_done, check_status, check_response = check_submit_ingestion(
             uuid, portal.server, portal.env, portal.app, show_details, report=False)
@@ -1487,16 +1486,16 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 diffs = portal_object.compare(existing_object, consider_refs=True, resolved_refs=resolved_refs)
                 print(f"     Already exists -> {existing_object.uuid} -> Will be UPDATED", end="")
                 if not diffs:
-                    print(f" (but NO substantive differences)")
+                    print(f" (but NO substantive diffs)")
                 else:
-                    print(f" (substantive differences below):")
+                    print(f" (substantive DIFFs below):")
                     for diff_path in diffs:
-                        if (diff := diffs[diff_path]).get("creating_value"):
-                            print(f"      CREATE {diff_path}: {diff['value']}")
-                        elif diff.get("updating_value"):
-                            print(f"      UPDATE {diff_path}: {diff['updating_value']} -> {diff['value']}")
-                        elif (diff := diffs[diff_path]).get("deleting_value"):
-                            print(f"      DELETE {diff_path}: {diff['value']}")
+                        if (diff := diffs[diff_path]).creating_value:
+                            print(f"      CREATE {diff_path}: {diff.value}")
+                        elif diff.updating_value:
+                            print(f"      UPDATE {diff_path}: {diff.updating_value} -> {diff.value}")
+                        elif (diff := diffs[diff_path]).deleting_value:
+                            print(f"      DELETE {diff_path}: {diff.value}")
             else:
                 print(f"     Does not exist -> Will be CREATED")
 
