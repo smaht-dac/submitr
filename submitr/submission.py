@@ -1472,7 +1472,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
 
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet) -> None:
-    PRINT("\n> Object Create/Update Situation:")
+    PRINT("\n> Object create/update situation:")
     diffs = structured_data.compare()
     for object_type in diffs:
         print(f"  TYPE: {object_type}")
