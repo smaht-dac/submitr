@@ -9,9 +9,6 @@
 .. warning::
 
    **THIS IS A PRE-RELEASE VERSION.**
-
-   This was recently forked from SubmitCGAP and is not yet ready for normal use.
-
    Watch for version 1.0.
 
 
@@ -39,23 +36,24 @@ smaht-submitr: A remote file submitter for SMaHT
 Description
 ===========
 
-This is a tool for uploading files to SMaHT.
+The ``smaht-submitr`` is a command-line tool for uploading files to SMaHT.
+It is implemented as Python package and distributed on `PyPi <https://pypi.org/>`_ here: `smaht-submitr <https://pypi.org/project/smaht-submitr/>`_
 
 
 System Requirements
 ===================
 
-* python (>=3.8 and <=3.11) 
-* pip (>=22.0.0)
-* poetry (>=1.4.0)
-* smaht-portal (>=1.0.0)
+* ``python`` (>= ``3.8`` and <= ``3.11``) 
+* ``pip`` (>= ``22.0.0``)
+* ``poetry`` (>= ``1.4.0``)
+* ``smaht-portal`` (>= ``1.0.0``)
 
 
 What To Do Next
 ===============
 
 Advanced users who have already installed Python
-can proceed to instructions for **Installing submitr**.
+can proceed to instructions for **Installing smaht-submitr**.
 
 Less experienced users should start with instructions
 for **Installing Prerequisites**,

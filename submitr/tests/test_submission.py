@@ -809,6 +809,7 @@ def os_simulation(*, simulation_mode):
 
 @pytest.mark.parametrize("os_simulation_mode", OS_SIMULATION_MODE_NAMES)
 def test_execute_prearranged_upload(os_simulation_mode: str):
+    Portal.KEYS_FILE_DIRECTORY = "/dummy"
     with os_simulation(simulation_mode=os_simulation_mode):
         with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
             with shown_output() as shown:

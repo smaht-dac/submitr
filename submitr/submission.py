@@ -1556,7 +1556,7 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
             f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")
     if report:
         PRINT(f"Portal app name is{' (default)' if app_default else ''}: {app}")
-        PRINT(f"Portal environment (from keys file) is: {portal.env}")
+        PRINT(f"Portal environment (in keys file) is: {portal.env}")
         PRINT(f"Portal keys file is: {portal.keys_file}")
         PRINT(f"Portal server is: {portal.server}")
         if portal.key_id and len(portal.key_id) > 2:
