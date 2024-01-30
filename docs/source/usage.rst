@@ -30,17 +30,19 @@ For help about arguments, do::
    submit-metadata-bundle --help
 
 However, it should suffice for many cases to specify
-the bundle file you want to upload and either a site or a
-SMaHT environment name (such as ``data`` or ``staging``).
+the bundle file you want to upload and SMaHT environment name (such as ``data`` or ``staging``).
 For example::
 
-   submit-metadata-bundle mymetadata.xlsx --server <server_url>
+   submit-metadata-bundle mymetadata.xlsx --env data
 
-This command should do everything, including upload referenced files
-if they are in the same directory. (It will ask for confirmation.) If you belong to
+This command should do everything, including upload referenced files (it will prompt first for confirmation);
+by default these referenced files should be in the same directory is the main file; or you can
+specify an alternate directory where these reside using the ``--directory`` option.
+
+If you belong to
 multiple consortia and/or submission centers, you can also add the ``--consortium <consortium>``
 and ``--submission-center <submission-center>`` options; if you belong to only one of either,
-SMaHT will automatically detect and use it.
+the command will automatically detect and use it.
 
 To invoke it for validation only, without submitting anything, do::
 
