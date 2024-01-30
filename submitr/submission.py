@@ -238,7 +238,7 @@ def _get_defaulted_consortia(consortia, user_record, error_if_none=False):
     return consortia
 
 
-def get_defaulted_submission_centers(submission_centers, user_record, error_if_none=False):
+def _get_defaulted_submission_centers(submission_centers, user_record, error_if_none=False):
     """
     Returns the given submission center or else if none is specified, it tries to infer a submission center.
 
@@ -269,7 +269,7 @@ APP_ARG_DEFAULTERS = {
     'lab': _get_defaulted_lab,
     'award': _get_defaulted_award,
     'consortia': _get_defaulted_consortia,
-    'submission_centers': get_defaulted_submission_centers,
+    'submission_centers': _get_defaulted_submission_centers,
 }
 
 

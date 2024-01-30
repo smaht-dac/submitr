@@ -33,7 +33,7 @@ from ..submission import (  # noqa
     _check_ingestion_progress,  # noQA - again, testing a protected member
     _get_defaulted_lab, _get_defaulted_award, SubmissionProtocol, compute_file_post_data,
     upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE, DEFAULT_APP, _summarize_submission,
-    get_defaulted_submission_centers, _get_defaulted_consortia, _do_app_arg_defaulting, _check_submit_ingestion
+    _get_defaulted_submission_centers, _get_defaulted_consortia, _do_app_arg_defaulting, _check_submit_ingestion
 )
 from ..utils import FakeResponse
 
@@ -2785,25 +2785,25 @@ def test_get_defaulted_consortia():
 
 def test_get_defaulted_submission_centers():
 
-    assert get_defaulted_submission_centers(submission_centers=SOME_SUBMISSION_CENTERS,
-                                            user_record='does-not-matter') == SOME_SUBMISSION_CENTERS
-    assert get_defaulted_submission_centers(submission_centers=['anything'],
-                                            user_record='does-not-matter') == ['anything']
+    assert _get_defaulted_submission_centers(submission_centers=SOME_SUBMISSION_CENTERS,
+                                             user_record='does-not-matter') == SOME_SUBMISSION_CENTERS
+    assert _get_defaulted_submission_centers(submission_centers=['anything'],
+                                             user_record='does-not-matter') == ['anything']
 
     user_record = make_user_record(submission_centers=[{'@id': SOME_SUBMISSION_CENTER}])
 
-    successful_result = get_defaulted_submission_centers(submission_centers=None, user_record=user_record)
+    successful_result = _get_defaulted_submission_centers(submission_centers=None, user_record=user_record)
 
     print("successful_result=", successful_result)
 
     assert successful_result == SOME_SUBMISSION_CENTERS
 
-    assert get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record()) == []
-    assert get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(),
-                                            error_if_none=False) == []
+    assert _get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record()) == []
+    assert _get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(),
+                                             error_if_none=False) == []
 
     with pytest.raises(Exception) as exc:
-        get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(), error_if_none=True)
+        _get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(), error_if_none=True)
     assert str(exc.value).startswith("Your user profile has no submission center")
 
 

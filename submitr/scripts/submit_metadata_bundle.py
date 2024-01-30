@@ -25,6 +25,8 @@ def main(simulated_args_for_testing=None):
                         help="HTTP(S) address of Portal server (e.g. in ~/.smaht-keys.json).")
     parser.add_argument('--env', '-e',
                         help="Portal environment name for server/credentials (e.g. in ~/.smaht-keys.json).")
+    parser.add_argument('--consortium', help="Consoritium to use for submission.")
+    parser.add_argument('--submission-center', help="Submission center to use for submission.")
     parser.add_argument('--post-only', action="store_true",
                         help="Only perform creates (POST) for submitted data.", default=False)
     parser.add_argument('--patch-only', action="store_true",
@@ -64,6 +66,8 @@ def main(simulated_args_for_testing=None):
 
         submit_any_ingestion(ingestion_filename=args.bundle_filename, ingestion_type=args.ingestion_type,
                              server=args.server, env=args.env,
+                             consortium=args.consortium,
+                             submission_center=args.submission_center,
                              no_query=args.no_query, subfolders=args.subfolders, app=args.app,
                              submission_protocol=args.submission_protocol,
                              upload_folder=args.upload_folder,
