@@ -15,7 +15,7 @@ def test_check_submission_script():
 
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
         ignored(expect_call_args)
-        with mock.patch.object(check_submission_module, "check_submit_ingestion") as mock_check_submit_ingestion:
+        with mock.patch.object(check_submission_module, "_check_submit_ingestion") as mock_check_submit_ingestion:
             with system_exit_expected(exit_code=expect_exit_code):
                 check_submission_main(args_in)
                 raise AssertionError("check_submission_main should not exit normally.")  # pragma: no cover

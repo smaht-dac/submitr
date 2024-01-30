@@ -1,12 +1,11 @@
 =============
-Using submitr
+Using smaht-submitr
 =============
 
 Once you have finished installing this library into your virtual environment,
-you should have access to the ``submit-metadata-bundle`` and the ``submit-genelist``
-commands. There are 3 types of submissions: accessioning (new cases) and family history (pedigrees)
-both use the ``submit-metadata-bundle`` command, and gene lists use the ``submit-genelist``
-command.
+you should have access to the ``submit-metadata-bundle`` command.
+There are 2 types of submissions: accessioning (new cases) and family history (pedigrees)
+which both use the ``submit-metadata-bundle`` command.
 
 Formatting Files for Submission
 ===============================
@@ -88,20 +87,3 @@ If, after submitting a case, you would also like to submit a family history for 
 you use the same command as described above but add the --ingestion_type flag::
 
     submit-metadata-bundle mypedigree.xlsx --ingestion_type family_history --server <server_url>
-
-Gene Lists
-==========
-
-The ``submit-genelist`` command shares similar features with ``submit-metadata-bundle``.
-For help about arguments, do::
-
-   submit-genelist --help
-
-and to submit a gene list for validation only, do::
-
-   submit-genelist --validate-only
-
-For most situations, simply specify the gene list you want to upload, e.g.::
-
-   submit-genelist mygenelist.xlsx --server <server_url>
-

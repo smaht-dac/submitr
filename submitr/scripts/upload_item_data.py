@@ -1,7 +1,7 @@
 import argparse
 from dcicutils.command_utils import script_catch_errors
 from ..base import DEFAULT_APP
-from ..submission import upload_item_data
+from ..submission import _upload_item_data
 
 
 EPILOG = __doc__
@@ -27,8 +27,8 @@ def main(simulated_args_for_testing=None):
 
     with script_catch_errors():
 
-        upload_item_data(item_filename=args.part_filename, uuid=args.uuid, server=args.server,
-                         env=args.env, directory=args.directory, no_query=args.no_query, app=args.app)
+        _upload_item_data(item_filename=args.part_filename, uuid=args.uuid, server=args.server,
+                          env=args.env, directory=args.directory, no_query=args.no_query, app=args.app)
 
 
 if __name__ == '__main__':

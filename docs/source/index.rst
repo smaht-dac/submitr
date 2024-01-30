@@ -20,7 +20,7 @@ Overview
 ========
 
 ----------------------------------------
-submitr: remote file submitter for SMaHT
+smaht-submitr: A remote file submitter for SMaHT
 ----------------------------------------
 
 .. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
@@ -48,7 +48,6 @@ System Requirements
 * python (>=3.8 and <=3.11) 
 * pip (>=22.0.0)
 * poetry (>=1.4.0)
-* pyenv (>=2.3.0)
 * smaht-portal (>=1.0.0)
 
 

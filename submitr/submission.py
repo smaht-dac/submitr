@@ -63,11 +63,11 @@ SERVER_REGEXP = re.compile(
 
 
 # TODO: Probably should simplify this to just trust what's in the key file and ignore all other servers. -kmp 2-Aug-2023
-def resolve_server(server, env):
+def _resolve_server(server, env):
     return  # no longer used - using dcicutils.portal_utils.Portal instead
 
 
-def get_user_record(server, auth):
+def _get_user_record(server, auth):
     """
     Given a server and some auth info, gets the user record for the authorized user.
 
@@ -93,16 +93,16 @@ def get_user_record(server, auth):
         raise PortalPermissionError(server=server)
     user_record_response.raise_for_status()
     user_record = user_record_response.json()
-    show(f"Portal server recognizes you as{' (admin)' if is_admin_user(user_record) else ''}:"
+    show(f"Portal server recognizes you as{' (admin)' if _is_admin_user(user_record) else ''}:"
          f" {user_record['title']} ({user_record['contact_email']})")
     return user_record
 
 
-def is_admin_user(user: dict) -> bool:
+def _is_admin_user(user: dict) -> bool:
     return "admin" in user.get("groups", [])
 
 
-def get_defaulted_institution(institution, user_record):
+def _get_defaulted_institution(institution, user_record):
     """
     Returns the given institution or else if none is specified, it tries to infer an institution.
 
@@ -120,7 +120,7 @@ def get_defaulted_institution(institution, user_record):
     return institution
 
 
-def get_defaulted_project(project, user_record):
+def _get_defaulted_project(project, user_record):
     """
     Returns the given project or else if none is specified, it tries to infer a project.
 
@@ -150,7 +150,7 @@ def get_defaulted_project(project, user_record):
     return project
 
 
-def get_defaulted_award(award, user_record, error_if_none=False):
+def _get_defaulted_award(award, user_record, error_if_none=False):
     """
     Returns the given award or else if none is specified, it tries to infer an award.
 
@@ -189,7 +189,7 @@ def get_defaulted_award(award, user_record, error_if_none=False):
     return award
 
 
-def get_defaulted_lab(lab, user_record, error_if_none=False):
+def _get_defaulted_lab(lab, user_record, error_if_none=False):
     """
     Returns the given lab or else if none is specified, it tries to infer a lab.
 
@@ -213,7 +213,7 @@ def get_defaulted_lab(lab, user_record, error_if_none=False):
     return lab
 
 
-def get_defaulted_consortia(consortia, user_record, error_if_none=False):
+def _get_defaulted_consortia(consortia, user_record, error_if_none=False):
     """
     Returns the given consortia or else if none is specified, it tries to infer any consortia.
 
@@ -264,16 +264,16 @@ def get_defaulted_submission_centers(submission_centers, user_record, error_if_n
 
 
 APP_ARG_DEFAULTERS = {
-    'institution': get_defaulted_institution,
-    'project': get_defaulted_project,
-    'lab': get_defaulted_lab,
-    'award': get_defaulted_award,
-    'consortia': get_defaulted_consortia,
+    'institution': _get_defaulted_institution,
+    'project': _get_defaulted_project,
+    'lab': _get_defaulted_lab,
+    'award': _get_defaulted_award,
+    'consortia': _get_defaulted_consortia,
     'submission_centers': get_defaulted_submission_centers,
 }
 
 
-def do_app_arg_defaulting(app_args, user_record):
+def _do_app_arg_defaulting(app_args, user_record):
     for arg in list(app_args.keys()):
         val = app_args[arg]
         defaulter = APP_ARG_DEFAULTERS.get(arg)
@@ -289,7 +289,7 @@ PROGRESS_CHECK_INTERVAL = 7  # seconds
 ATTEMPTS_BEFORE_TIMEOUT = 100
 
 
-def get_section(res, section):
+def _get_section(res, section):
     """
     Given a description of an ingestion submission, returns a section name within that ingestion.
 
@@ -301,7 +301,7 @@ def get_section(res, section):
     return res.get(section) or res.get('additional_data', {}).get(section)
 
 
-def show_section(res, section, caveat_outcome=None, portal=None):
+def _show_section(res, section, caveat_outcome=None, portal=None):
     """
     Shows a given named section from a description of an ingestion submission.
 
@@ -314,7 +314,7 @@ def show_section(res, section, caveat_outcome=None, portal=None):
     :param caveat_outcome: a phrase describing some caveat on the output
     """
 
-    section_data = get_section(res, section)
+    section_data = _get_section(res, section)
     if caveat_outcome and not section_data:
         # In the case of non-success, be brief unless there's data to show.
         return
@@ -374,7 +374,7 @@ def show_section(res, section, caveat_outcome=None, portal=None):
         show(section_data)
 
 
-def ingestion_submission_item_url(server, uuid):
+def _ingestion_submission_item_url(server, uuid):
     return url_path_join(server, "ingestion-submissions", uuid) + "?format=json"
 
 
@@ -573,14 +573,14 @@ def submit_any_ingestion(ingestion_filename, *,
         show(f"Portal credentials do not seem to work: {portal.keys_file} ({env})")
         exit(1)
 
-    user_record = get_user_record(portal.server, auth=portal.key_pair)
-    if not is_admin_user(user_record):
+    user_record = _get_user_record(portal.server, auth=portal.key_pair)
+    if not _is_admin_user(user_record):
         # If user is not an admin then default to local validation first;
         # i.e. act as-if the --validate-local flag was specified.
         validate_local = True
 
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
-    do_app_arg_defaulting(app_args, user_record)
+    _do_app_arg_defaulting(app_args, user_record)
     PRINT(f"Submission file to ingest: {ingestion_filename}")
 
     if validate_local:
@@ -698,7 +698,7 @@ def submit_any_ingestion(ingestion_filename, *,
     show(f"Metadata bundle uploaded to bucket ({metadata_bundles_bucket}); tracking UUID: {uuid}", with_time=True)
     show(f"Awaiting processing ...", with_time=True)
 
-    check_done, check_status, check_response = check_submit_ingestion(
+    check_done, check_status, check_response = _check_submit_ingestion(
             uuid, portal.server, portal.env, portal.app, show_details, report=False)
 
     if validate_only:
@@ -719,7 +719,7 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
     Returns tuple with: done-indicator (True or False), short-status (str), full-response (dict)
     From outer scope: server, keypair, uuid (of IngestionSubmission)
     """
-    tracking_url = ingestion_submission_item_url(server=server, uuid=uuid)
+    tracking_url = _ingestion_submission_item_url(server=server, uuid=uuid)
     response = Portal(keypair).get(tracking_url)
     response_status_code = response.status_code
     response = response.json()
@@ -736,9 +736,9 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
         return False, progress, response
 
 
-def check_submit_ingestion(uuid: str, server: str, env: str,
-                           app: Optional[OrchestratedApp] = None,
-                           show_details: bool = False, report: bool = True) -> Tuple[bool, str, dict]:
+def _check_submit_ingestion(uuid: str, server: str, env: str,
+                            app: Optional[OrchestratedApp] = None,
+                            show_details: bool = False, report: bool = True) -> Tuple[bool, str, dict]:
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
@@ -766,31 +766,31 @@ def check_submit_ingestion(uuid: str, server: str, env: str,
     )
 
     if not check_done:
-        command_summary = summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
+        command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
         show(f"Exiting after check processing timeout using {command_summary!r}.")
         exit(1)
 
     show("Final status: %s" % check_status.title(), with_time=True)
 
     if check_status == "error" and check_response.get("errors"):
-        show_section(check_response, "errors")
+        _show_section(check_response, "errors")
 
     caveat_check_status = None if check_status == "success" else check_status
-    show_section(check_response, "validation_output", caveat_outcome=caveat_check_status)
-    show_section(check_response, "post_output", caveat_outcome=caveat_check_status)
-    show_section(check_response, "result")
+    _show_section(check_response, "validation_output", caveat_outcome=caveat_check_status)
+    _show_section(check_response, "post_output", caveat_outcome=caveat_check_status)
+    _show_section(check_response, "result")
 
     if check_status == "success":
-        show_section(check_response, "upload_info", portal=portal)
+        _show_section(check_response, "upload_info", portal=portal)
 
     if show_details:
         metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
-        show_detailed_results(uuid, metadata_bundles_bucket)
+        _show_detailed_results(uuid, metadata_bundles_bucket)
 
     return check_done, check_status, check_response
 
 
-def summarize_submission(uuid: str, app: str, server: Optional[str] = None, env: Optional[str] = None):
+def _summarize_submission(uuid: str, app: str, server: Optional[str] = None, env: Optional[str] = None):
     if env:
         command_summary = f"check-submit --app {app} --env {env} {uuid}"
     elif server:
@@ -825,12 +825,12 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
     return submission_post_data
 
 
-def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
-                     show_primary_result=True,
-                     show_validation_output=True,
-                     show_processing_status=True,
-                     show_datafile_url=True,
-                     show_details=True):
+def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
+                      show_primary_result=True,
+                      show_validation_output=True,
+                      show_processing_status=True,
+                      show_datafile_url=True,
+                      show_details=True):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -861,40 +861,40 @@ def show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
         undesired_type = portal.get_schema_type(uuid_metadata)
         raise Exception(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
 
-    url = ingestion_submission_item_url(portal.server, uuid)
+    url = _ingestion_submission_item_url(portal.server, uuid)
     response = portal.get(url)
     response.raise_for_status()
     res = response.json()
-    show_upload_result(res,
-                       show_primary_result=show_primary_result,
-                       show_validation_output=show_validation_output,
-                       show_processing_status=show_processing_status,
-                       show_datafile_url=show_datafile_url,
-                       show_details=show_details,
-                       portal=portal)
+    _show_upload_result(res,
+                        show_primary_result=show_primary_result,
+                        show_validation_output=show_validation_output,
+                        show_processing_status=show_processing_status,
+                        show_datafile_url=show_datafile_url,
+                        show_details=show_details,
+                        portal=portal)
     if show_details:
         metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
-        show_detailed_results(uuid, metadata_bundles_bucket)
+        _show_detailed_results(uuid, metadata_bundles_bucket)
 
 
-def show_upload_result(result,
-                       show_primary_result=True,
-                       show_validation_output=True,
-                       show_processing_status=True,
-                       show_datafile_url=True,
-                       show_details=True,
-                       portal=None):
+def _show_upload_result(result,
+                        show_primary_result=True,
+                        show_validation_output=True,
+                        show_processing_status=True,
+                        show_datafile_url=True,
+                        show_details=True,
+                        portal=None):
 
     if show_primary_result:
-        if get_section(result, 'upload_info'):
-            show_section(result, 'upload_info', portal=portal)
+        if _get_section(result, 'upload_info'):
+            _show_section(result, 'upload_info', portal=portal)
         else:
             show("Uploads: None")
 
     # New March 2023 ...
 
-    if show_validation_output and get_section(result, 'validation_output'):
-        show_section(result, 'validation_output')
+    if show_validation_output and _get_section(result, 'validation_output'):
+        _show_section(result, 'validation_output')
 
     if show_processing_status and result.get('processing_status'):
         show("\n----- Processing Status -----")
@@ -931,7 +931,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
             PRINT(f"Cannot find file to upload: {file}")
         return False
 
-    upload_info = get_section(res, 'upload_info')
+    upload_info = _get_section(res, 'upload_info')
     if not upload_folder:
         if ingestion_directory := res.get("parameters", {}).get("ingestion_directory"):
             if os.path.isdir(ingestion_directory):
@@ -988,8 +988,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
 
         # Subsume function of upload-item-data into resume-uploads for convenience.
         if portal.is_schema_type(response, FILE_TYPE_NAME):
-            upload_item_data(item_filename=uuid, uuid=None, server=portal.server,
-                             env=portal.env, directory=upload_folder, no_query=no_query, app=app, report=False)
+            _upload_item_data(item_filename=uuid, uuid=None, server=portal.server,
+                              env=portal.env, directory=upload_folder, no_query=no_query, app=app, report=False)
             return
 
         undesired_type = portal.get_schema_type(response)
@@ -1004,19 +1004,19 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
 
 
 @function_cache(serialize_key=True)
-def get_health_page(key: dict) -> dict:
+def _get_health_page(key: dict) -> dict:
     return Portal(key).get_health().json()
 
 
 def get_metadata_bundles_bucket_from_health_path(key: dict) -> str:
-    return get_health_page(key=key).get("metadata_bundles_bucket")
+    return _get_health_page(key=key).get("metadata_bundles_bucket")
 
 
 def get_s3_encrypt_key_id_from_health_page(auth):
     try:
-        return get_health_page(key=auth).get(HealthPageKey.S3_ENCRYPT_KEY_ID)
+        return _get_health_page(key=auth).get(HealthPageKey.S3_ENCRYPT_KEY_ID)
     except Exception:  # pragma: no cover
-        # We don't actually unit test this section because get_health_page realistically always returns
+        # We don't actually unit test this section because _get_health_page realistically always returns
         # a dictionary, and so health.get(...) always succeeds, possibly returning None, which should
         # already be tested. Returning None here amounts to the same and needs no extra unit testing.
         # The presence of this error clause is largely pro forma and probably not really needed.
@@ -1070,7 +1070,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
         command = command + ['--only-show-errors', source, target]
         options = {}
-        if running_on_windows_native():
+        if _running_on_windows_native():
             options = {"shell": True}
         if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f"DEBUG CLI: {' '.join(command)} | ENV INCLUDES: {conjoined_list(list(extra_env.keys()))}")
@@ -1083,7 +1083,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
         show("Upload duration: %.2f seconds" % duration)
 
 
-def running_on_windows_native():
+def _running_on_windows_native():
     return os.name == 'nt'
 
 
@@ -1213,7 +1213,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
         if file_metadata:
             extra_files_credentials = file_metadata.get("extra_files_creds", [])
             if extra_files_credentials:
-                upload_extra_files(
+                _upload_extra_files(
                     extra_files_credentials,
                     uploader_wrapper,
                     folder,
@@ -1268,7 +1268,7 @@ class UploadMessageWrapper:
         return wrapper
 
 
-def upload_extra_files(
+def _upload_extra_files(
     credentials, uploader_wrapper, folder, auth, recursive=False
 ):
     """Attempt upload of all extra files.
@@ -1305,7 +1305,7 @@ def upload_extra_files(
         wrapped_execute_prearranged_upload(extra_file_path, extra_file_credentials, auth=auth)
 
 
-def upload_item_data(item_filename, uuid, server, env, no_query=False, app=None, report=True, **kwargs):
+def _upload_item_data(item_filename, uuid, server, env, no_query=False, app=None, report=True, **kwargs):
     """
     Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
 
@@ -1357,7 +1357,7 @@ def upload_item_data(item_filename, uuid, server, env, no_query=False, app=None,
     upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=portal.key)
 
 
-def show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
+def _show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
 
     print(f"----- Detailed Info -----")
 
