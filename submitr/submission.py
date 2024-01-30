@@ -584,7 +584,8 @@ def submit_any_ingestion(ingestion_filename, *,
     PRINT(f"Submission file to ingest: {ingestion_filename}")
 
     if validate_local:
-        _validate_locally(ingestion_filename, portal, validate_local_only, subfolders=subfolders, verbose=verbose)
+        _validate_locally(ingestion_filename, portal, validate_local_only,
+                          upload_folder=upload_folder, subfolders=subfolders, verbose=verbose)
 
     validation_qualifier = " (for validation only)" if validate_only else ""
 
@@ -1407,7 +1408,8 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
 
 
 def _validate_locally(ingestion_filename: str, portal: Portal,
-                      validate_local_only: bool = False, subfolders: bool = False, verbose: bool = False) -> int:
+                      validate_local_only: bool = False, upload_folder: Optional[str] = None,
+                      subfolders: bool = False, verbose: bool = False) -> int:
     errors_exist = False
     if validate_local_only:
         PRINT(f"\n> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
@@ -1443,7 +1445,9 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
         for reader_warning in reader_warnings:
             PRINT(f"  - {_format_issue(reader_warning, ingestion_filename)}")
     if files := structured_data.upload_files:
-        files = structured_data.upload_files_located(location=os.path.dirname(ingestion_filename), recursive=subfolders)
+        files = structured_data.upload_files_located(location=[upload_folder,
+                                                               os.path.dirname(ingestion_filename)],
+                                                     recursive=subfolders)
         files_found = [file for file in files if file.get("path")]
         files_not_found = [file for file in files if not file.get("path")]
         if files_found:

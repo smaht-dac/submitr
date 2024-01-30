@@ -1,6 +1,6 @@
-=============
+===================
 Using smaht-submitr
-=============
+===================
 
 Once you have finished installing this library into your virtual environment,
 you should have access to the ``submit-metadata-bundle`` command.
@@ -10,31 +10,38 @@ which both use the ``submit-metadata-bundle`` command.
 Formatting Files for Submission
 ===============================
 
-For details on what file formats are accepted and how the information should be structured,
+For more details on what file formats are accepted and how the information should be structured,
 see our submission help pages at the
 `SMaHT Portal <https://data.smaht.org/>`_.
 
-Metadata Bundles
-================
+But briefly, most commonly, the file format recommended is an Excel spreadsheet file (e.g. ``your_metadata_file.xlsx``),
+comprised of one or more sheets, where each sheet name is the name of a SMaHT Portal entity or `object` defined within the system.
 
-There are two types of submissions that fall under "metadata bundles" - namely,
-accessioning (new cases) and family history (pedigrees). The default is accessioning,
-if no ingestion type is specified. If you would like to submit a family history,
-make sure the cases are submitted first.
+Each sheet may contain any number of rows, each representing an instance of the object.
+Each sheet must have as its first row, a special `header` row, which enumerates the names of the object properties as the column names.
 
-Accessioning
-------------
+Note that the first row which is entirely empty marks the end of the input, and any subsequenct rows will be entirely ignored.
 
-For help about arguments, do::
+And similarly, the first column in the header column which is empty marks the end of the header,
+and any subsequent columns will be entirely ignored.
+
+Submission
+==========
+
+The type of submission supported is called a "metadata bundles", or `accessioning`.
+And the name of the command-line tool to initiate a submission is ``submit-metadata-bundle``.
+A brief tour of this command, its arguments, and function is given below.
+To get help about the command, do::
 
    submit-metadata-bundle --help
 
-However, it should suffice for many cases to specify
-the bundle file you want to upload and SMaHT environment name (such as ``data`` or ``staging``).
+For many cases it will suffice simply to specify the metadata bundle file you want to upload,
+and the SMaHT environment name (such as ``data`` or ``staging``) from your ``~/.smaht-keys.json`` keys file).
 For example::
 
-   submit-metadata-bundle mymetadata.xlsx --env data
+   submit-metadata-bundle your_metadata_file.xlsx --env data
 
+You can omit the ``--env`` option entirely if your ``~/.smaht-keys.json`` file has only one entry.
 This command should do everything, including upload referenced files (it will prompt first for confirmation);
 by default these referenced files should be in the same directory is the main file; or you can
 specify an alternate directory where these reside using the ``--directory`` option.
@@ -42,28 +49,42 @@ specify an alternate directory where these reside using the ``--directory`` opti
 If you belong to
 multiple consortia and/or submission centers, you can also add the ``--consortium <consortium>``
 and ``--submission-center <submission-center>`` options; if you belong to only one of either,
-the command will automatically detect and use it.
-
-To invoke it for validation only, without submitting anything, do::
-
-   submit-metadata-bundle mymetadata.xlsx --validate-only --server <server_url>
+the command will automatically detect (based on your user profile) and use those.
 
 To specify a different directory for the files, do::
 
-   submit-metadata-bundle mymetadata.xlsx --upload_folder /path/to/folder --server <server_url>
+   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory /path/to/folder
 
-The above command will only look in the directory specified (and not any subdirectories)
-for the files to upload. To look in the directory and all subdirectories, do::
+The above commands will only look for the files to upload only in the directory specified (and not any sub-directories within).
+To look within subdirectories, do::
 
-   submit-metadata-bundle mymetadata.xlsx --upload_folder /path/to/folder --subfolders --server <server_url>
+   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory /path/to/folder --subfolders
+
+To invoke the submission for validation only, without having SMaHT actually ingest anything into its data store, do::
+
+   submit-metadata-bundle mymetadata.xlsx --env <environment-name> --validate-only
+
+To invoke the submission for with `local` sanity checking, where "local" means before actually submitting to SMaHT, do::
+
+   submit-metadata-bundle mymetadata.xlsx --env <environment-name> --check
+
+And to invoke the submission for with `only` local sanity checking, without actually submitting to SMaHT at all, do::
+
+   submit-metadata-bundle mymetadata.xlsx --env <environment-name> --check-only
+
+These ``--check`` and ``--check-only`` options can be very useful and their use is encouraged,
+ensure that everything is in order before sending the submission off to SMaHT for processing.
+This is actually the default behavior unless your user profile indicates that you are an `admin` user.
+To be more specific, these check the following:
+
 
 You can resume execution with the upload part by doing::
 
-   resume-uploads <uuid> --env <env>
+   resume-uploads <uuid> --env <environment-name>
 
 or::
 
-   resume-uploads <uuid> --server <server_url>
+   resume-uploads <uuid> --env <environment-name>
 
 You can upload individual files separately by doing::
 
@@ -81,11 +102,3 @@ scheduler or in the background, you can pass the ``--no_query`` or ``-nq`` argum
 as::
 
     submit-metadata-bundle mymetadata.xlsx --no_query
-
-Family History
---------------
-
-If, after submitting a case, you would also like to submit a family history for the case,
-you use the same command as described above but add the --ingestion_type flag::
-
-    submit-metadata-bundle mypedigree.xlsx --ingestion_type family_history --server <server_url>
