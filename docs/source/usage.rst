@@ -15,10 +15,11 @@ see our submission help pages at the
 `SMaHT Portal <https://data.smaht.org/>`_.
 
 But briefly, most commonly, the file format recommended is an Excel spreadsheet file (e.g. ``your_metadata_file.xlsx``),
-comprised of one or more sheets, where each sheet name is the name of a SMaHT Portal entity or `object` defined within the system.
+comprised of one or more sheets. Each sheet name must be the name of a SMaHT Portal entity or `object` defined within the system.
 
+Each sheet must have as its first row, a special `header` row, which enumerates the names of the object properties as the column names;
+each column name must match exactly the name of the property for the kkk
 Each sheet may contain any number of rows, each representing an instance of the object.
-Each sheet must have as its first row, a special `header` row, which enumerates the names of the object properties as the column names.
 
 Note that the first row which is entirely empty marks the end of the input, and any subsequenct rows will be entirely ignored.
 
@@ -62,43 +63,46 @@ To look within subdirectories, do::
 
 To invoke the submission for validation only, without having SMaHT actually ingest anything into its data store, do::
 
-   submit-metadata-bundle mymetadata.xlsx --env <environment-name> --validate-only
+   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --validate-only
 
 To invoke the submission for with `local` sanity checking, where "local" means before actually submitting to SMaHT, do::
 
-   submit-metadata-bundle mymetadata.xlsx --env <environment-name> --check
+   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --check
 
 And to invoke the submission for with `only` local sanity checking, without actually submitting to SMaHT at all, do::
 
-   submit-metadata-bundle mymetadata.xlsx --env <environment-name> --check-only
+   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --check-only
 
 These ``--check`` and ``--check-only`` options can be very useful and their use is encouraged,
 ensure that everything is in order before sending the submission off to SMaHT for processing.
 This is actually the default behavior unless your user profile indicates that you are an `admin` user.
 To be more specific, these check the following:
 
+Resuming Uploads
+================
+When using ``submit-metadata-bundle`` you can choose `not` to upload any referenced files.
+In this can you will probably want to manually upload them subsequently using the ``resume-uploads`` command.
 
 You can resume execution with the upload part by doing::
 
-   resume-uploads <uuid> --env <environment-name>
+   resume-uploads --env <environment-name> <uuid>
 
 or::
 
-   resume-uploads <uuid> --env <environment-name>
+   resume-uploads --env <environment-name> <uuid>
 
-You can upload individual files separately by doing::
+where the ``uuid`` argument is the UUID for the submission which should have been displayed in the output of the ``submit-metadata-bundle`` command.
 
-   upload-item-data <filename> --uuid <item-uuid> --env <env>
+You can upload individual files referenced in the original submission separately by doing::
 
-or::
+   resume-uploads --env <env> <filename-or-reference-file-uuid> --uuid <item-uuid>
 
-   upload-item-data <filename> --uuid <item-uuid> --server <server_url>
-
-where the ``<item-uuid>`` is the uuid for the individual item, not the metadata bundle.
+where the ``<filename-or-reference-file-uuid>`` is the uuid (or the file name) of the 
+ndividual file referenced (`not` the submission or metadata bundle UUID) which you wish to upload.
 
 Normally, for the three commands above, you are asked to verify the files you would like
 to upload. If you would like to skip these prompts so the commands can be run by a
 scheduler or in the background, you can pass the ``--no_query`` or ``-nq`` argument, such
 as::
 
-    submit-metadata-bundle mymetadata.xlsx --no_query
+    submit-metadata-bundle your_metadata_file.xlsx --no_query
