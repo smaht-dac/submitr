@@ -94,43 +94,41 @@ Setting Up Credentials
 Credentials can be placed in the file ``~/.smaht-keys.json`` which typically looks something like this::
 
    {
-       "smaht-data": {
+       "data": {
            "key": "your-portal-key",
            "secret": "your-portal-secret",
            "server": "https://data.smaht.org"
        },
-       "smaht-staging": {
+       "staging": {
            "key": "your-portal-key",
            "secret": "your-portal-secret",
            "server": "https://data.smaht.org"
        }
    }
 
-The easiest way to create or modify a file like this is with ``TextEdit``, which you can open from a MacOS Terminal window with:
+Create or modify a file using the text editor of your choice (``vim`` or ``TextEdit`` or whatever),
+for example, using ``TextEdit`` you can do it like can open or create this file from a MacOS Terminal window with:
 
 .. code-block::
 
     $ open -a TextEdit ~/.smaht-keys.json
 
-The environment names (e.g. ``smaht-data``) there are of your own choosing; this name will be used
+The environment names (e.g. ``data``) there are of your own choosing; this name will be used
 as the ``--env`` argument to the various `smaht-submitr` commands, e.g. ``submit-metadata-bundle`` and ``resume-uploads``.
 If you're not sure which ``server`` you should be submitting to, reach out to your contact on the SMaHT DAC Team.
 
 The ``key`` and ``secret`` values are obtained from the `Access Keys` sections of the SMaHT Portal `My Profile` page.
-
-A typical key file might look like the below. If you are not a developer, you will probably
-only have one key rather than several, and almost certainly none of the URLs will be on ``localhost``::
 
 This file should _not_ be readable by others than yourself.
 Set its permissions accordingly by using ``chmod 600``,
 which sets the file to be readable and writable only by yourself,
 and to give no one else (but the system superuser) any permissions at all::
 
-   $ ls -dal ~/.smaht-keys.json
-   -rw-r--r--  1 smahtuser  staff  297 Sep  4 13:14 /Users/smahtuser/.smaht-keys.json
+   $ ls -l ~/.smaht-keys.json
+   -rw-r--r--  1 youruser  staff  137 Jan 31 08:55 /Users/youruser/.smaht-keys.json
 
    $ chmod 600 ~/.smaht-keys.json
 
-   $ ls -dal ~/.smaht-keys.json
-   -rw-------  1 smahtuser  staff  297 Sep  4 13:14 /Users/smahtuser/.smaht-keys.json
+   $ ls -l ~/.smaht-keys.json
+   -rw-------  1 youruser  staff  137 Jan 31 08:55 /Users/youruser/.smaht-keys.json
 
