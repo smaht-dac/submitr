@@ -97,7 +97,7 @@ To be more specific, these sanity checks include the following:
 #. Ensures the basic integrity of the format of the submission file.
 #. Validates the objects defined within the submission file against the corresponding Portal schemas for these objects.
 #. Confirms that any objects referenced within the submission file are resolved; i.e. either already exist within the Portal, or are defined within the submission file itself.
-#. Checks that referenced files (to be subsequently uploaded) actually exist in the file system.
+#. Checks that referenced files (to be subsequently uploaded) actually exist on the file system.
 
 Resuming Uploads
 ================
