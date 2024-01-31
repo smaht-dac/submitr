@@ -69,7 +69,10 @@ To invoke the submission for validation only, without having SMaHT actually inge
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --validate-only
 
-To invoke the submission for with `local` sanity checking, where "local" means before actually submitting to SMaHT, do::
+
+**Sanity Checking**
+
+To invoke the submission for with `local` sanity checking, where "local" means - `before` actually submitting to SMaHT, do::
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --check
 
@@ -77,8 +80,8 @@ And to invoke the submission for with `only` local sanity checking, without actu
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --check-only
 
-These ``--check`` and ``--check-only`` options can be very useful and their use is encouraged,
-ensure that everything is in order before sending the submission off to SMaHT for processing.
+These ``--check`` and ``--check-only`` options can be very useful and their use is encouraged.
+They ensure that everything is in order before sending the submission off to SMaHT for processing.
 In fact this (``--check`` ) is actually the `default` behavior unless your user profile indicates that you are an `admin` user.
 To be more specific, these sanity checks include the following:
 
@@ -90,13 +93,9 @@ To be more specific, these sanity checks include the following:
 Resuming Uploads
 ================
 When using ``submit-metadata-bundle`` you can choose `not` to upload any referenced files when prompted.
-In this can you will probably want to manually upload them subsequently using the ``resume-uploads`` command.
+In this case, you will probably want to manually upload them subsequently using the ``resume-uploads`` command.
 
 You can resume execution with the upload part by doing::
-
-   resume-uploads --env <environment-name> <uuid>
-
-or::
 
    resume-uploads --env <environment-name> <uuid>
 
@@ -104,14 +103,22 @@ where the ``uuid`` argument is the UUID for the submission which should have bee
 
 You can upload individual files referenced in the original submission separately by doing::
 
-   resume-uploads --env <environment-name> <reference-file-uuid-or-accesssion-id> --uuid <item-uuid>
+   resume-uploads --env <environment-name> <referenced-file-uuid-or-accesssion-id> --uuid <item-uuid>
 
-where the ``<reference-file-uuid-or-accesssion-id>`` is the uuid (or the accession based file name) of the 
+where the ``<referenced-file-uuid-or-accesssion-id>`` is the uuid (or the accession ID or accession based file name) of the 
 individual file referenced (`not` the submission or metadata bundle UUID) which you wish to upload;
-this uuid (or accession based file name) is included in the output of ``submit-metadata-bundle``. 
+this uuid (or accession ID or accession based file name) is included in the output of ``submit-metadata-bundle``. 
 
 For both of these commands above, you will be asked to confirm if you would like to continue with the stated action.
 If you would like to skip these prompts so the commands can be run by a
 scheduler or in the background, you can pass the ``--no_query`` or ``-nq`` argument, such as::
 
     submit-metadata-bundle your_metadata_file.xlsx --no_query
+
+Getting Submission Info
+=======================
+To view relevant information about a submission using, do::
+
+   check-submission --env <environment-name> <uuid>
+
+where the ``uuid`` argument is the UUID for the submission which should have been displayed in the output of the ``submit-metadata-bundle`` command.
