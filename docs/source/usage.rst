@@ -14,7 +14,7 @@ For more details on what file formats are accepted and how the information shoul
 see our submission help pages at the
 `SMaHT Portal <https://data.smaht.org/>`_.
 
-But briefly, most commonly, the file format recommended is an Excel spreadsheet file (e.g. ``your_metadata_file.xlsx``),
+Most commonly, the file format recommended is an Excel spreadsheet file (e.g. ``your_metadata_file.xlsx``),
 comprised of one or more sheets. Each sheet name must be the name of a SMaHT Portal entity or `object` defined within the system.
 
 Each sheet must have as its first row, a special `header` row, which enumerates the names of the object properties as the column names;
@@ -47,9 +47,9 @@ For example::
    submit-metadata-bundle your_metadata_file.xlsx --env data
 
 You can omit the ``--env`` option entirely if your ``~/.smaht-keys.json`` file has only one entry.
-This command should do everything, including upload referenced files (it will prompt first for confirmation);
-by default these referenced files should be in the same directory is the main file; or you can
-specify an alternate directory where these reside using the ``--directory`` option.
+
+This command should do everything, including uploading referenced file; it will prompt first for confirmation;
+see the `Uploading Referenced Files` section just below for more on this.
 
 If you belong to
 multiple consortia and/or submission centers, you can also add the ``--consortium <consortium>``
@@ -58,10 +58,9 @@ the command will automatically detect (based on your user profile) and use those
 
 **Uploading Referenced Files**
 
-As mentioned above, after ``submit-metadata-bundle`` processes the main submission file, it will,
-after prompting, upload files referenced within the submission file. These files should reside
-in the same directory as the submission file; or if they do not, then yo must specify the directory
-where these files can be found, like this::
+As mentioned above, after ``submit-metadata-bundle`` processes the main submission file, it will (after prompting) upload files referenced within the submission file. These files should reside
+in the same directory as the submission file.
+Or, if they do not, then yo must specify the directory where these files can be found, like this::
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files>
 
@@ -75,6 +74,10 @@ The above commands will only look for the files to upload only directly within t
 To invoke the submission for validation only, without having SMaHT actually ingest anything into its data store, do::
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --validate-only
+
+To be clear, this `will` submit the file to SMaHT for processing, but no data ingestion will take place, and any problems
+will be reported back to you from the SMaHT server. To sanity check the file you are submitting  `before` actually
+submitting it to SMaHT, you should use the ``--check`` option described now below.
 
 **Sanity Checking**
 
