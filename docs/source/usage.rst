@@ -79,12 +79,17 @@ And to invoke the submission for with `only` local sanity checking, without actu
 
 These ``--check`` and ``--check-only`` options can be very useful and their use is encouraged,
 ensure that everything is in order before sending the submission off to SMaHT for processing.
-This is actually the default behavior unless your user profile indicates that you are an `admin` user.
-To be more specific, these check the following:
+In fact this (``--check`` ) is actually the `default` behavior unless your user profile indicates that you are an `admin` user.
+To be more specific, these sanity checks include the following:
+
+#. Ensures the basic integrity of the format of the submission file.
+#. Validates the objects defined within the submission file against the corresponding Portal schemas for these objects.
+#. Confirms that any objects referenced within the submission file are resolved; i.e. either already exist within the Portal, or are defined within the submission file itself.
+#. Checks that referenced files (to be subsequently uploaded) actually exist in the file system.
 
 Resuming Uploads
 ================
-When using ``submit-metadata-bundle`` you can choose `not` to upload any referenced files.
+When using ``submit-metadata-bundle`` you can choose `not` to upload any referenced files when prompted.
 In this can you will probably want to manually upload them subsequently using the ``resume-uploads`` command.
 
 You can resume execution with the upload part by doing::
@@ -99,14 +104,14 @@ where the ``uuid`` argument is the UUID for the submission which should have bee
 
 You can upload individual files referenced in the original submission separately by doing::
 
-   resume-uploads --env <env> <filename-or-reference-file-uuid> --uuid <item-uuid>
+   resume-uploads --env <environment-name> <reference-file-uuid-or-accesssion-id> --uuid <item-uuid>
 
-where the ``<filename-or-reference-file-uuid>`` is the uuid (or the file name) of the 
-ndividual file referenced (`not` the submission or metadata bundle UUID) which you wish to upload.
+where the ``<reference-file-uuid-or-accesssion-id>`` is the uuid (or the accession based file name) of the 
+individual file referenced (`not` the submission or metadata bundle UUID) which you wish to upload;
+this uuid (or accession based file name) is included in the output of ``submit-metadata-bundle``. 
 
-Normally, for the three commands above, you are asked to verify the files you would like
-to upload. If you would like to skip these prompts so the commands can be run by a
-scheduler or in the background, you can pass the ``--no_query`` or ``-nq`` argument, such
-as::
+For both of these commands above, you will be asked to confirm if you would like to continue with the stated action.
+If you would like to skip these prompts so the commands can be run by a
+scheduler or in the background, you can pass the ``--no_query`` or ``-nq`` argument, such as::
 
     submit-metadata-bundle your_metadata_file.xlsx --no_query
