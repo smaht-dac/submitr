@@ -28,14 +28,6 @@ submitr.submission module
    :undoc-members:
    :show-inheritance:
 
-submitr.utils module
-~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: submitr.utils
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 submitr subpackages
 ~~~~~~~~~~~~~~~~~~~
 

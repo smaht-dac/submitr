@@ -56,19 +56,25 @@ multiple consortia and/or submission centers, you can also add the ``--consortiu
 and ``--submission-center <submission-center>`` options; if you belong to only one of either,
 the command will automatically detect (based on your user profile) and use those.
 
-To specify a different directory for the files, do::
+**Uploading Referenced Files**
 
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory /path/to/folder
+As mentioned above, after ``submit-metadata-bundle`` processes the main submission file, it will,
+after prompting, upload files referenced within the submission file. These files should reside
+in the same directory as the submission file; or if they do not, then yo must specify the directory
+where these files can be found, like this::
 
-The above commands will only look for the files to upload only in the directory specified (and not any sub-directories within).
-To look within subdirectories, do::
+   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files>
 
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory /path/to/folder --subfolders
+The above commands will only look for the files to upload only directly within the specified directory
+(and not any sub-directories therein). To look within subdirectories, do::
+
+   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files> --subdirectories
+
+**Valdation Only**
 
 To invoke the submission for validation only, without having SMaHT actually ingest anything into its data store, do::
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --validate-only
-
 
 **Sanity Checking**
 
