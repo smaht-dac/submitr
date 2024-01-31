@@ -16,9 +16,9 @@
 Overview
 ========
 
-----------------------------------------
+------------------------------------------------
 smaht-submitr: A remote file submitter for SMaHT
-----------------------------------------
+------------------------------------------------
 
 .. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
     :target: https://github.com/smaht-dac/submitr/actions
@@ -68,5 +68,6 @@ and installing the dependencies to run this package.
   self
   installing_prerequisites
   installation
+  credentials
   usage
   submitr
