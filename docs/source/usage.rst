@@ -18,13 +18,17 @@ But briefly, most commonly, the file format recommended is an Excel spreadsheet 
 comprised of one or more sheets. Each sheet name must be the name of a SMaHT Portal entity or `object` defined within the system.
 
 Each sheet must have as its first row, a special `header` row, which enumerates the names of the object properties as the column names;
-each column name must match exactly the name of the property for the kkk
+each column name must match exactly the name of the property for the Portal object.
 Each sheet may contain any number of rows, each representing an instance of the object.
 
 Note that the first row which is entirely empty marks the end of the input, and any subsequenct rows will be entirely ignored.
 
 And similarly, the first column in the header column which is empty marks the end of the header,
 and any subsequent columns will be entirely ignored.
+
+A column value within a (non-header) row may be empty, but this means the value would be ignored
+when creating or updating the associated object. In order to delete a property value a special
+value ``*delete*`` should be used as the the property value.
 
 Submission
 ==========
