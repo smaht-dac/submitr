@@ -530,6 +530,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          patch_only=False,
                          validate_only=False,
                          validate_local=False,
+                         validate_local_no=False,
                          validate_local_only=False,
                          verbose=False,
                          debug=False):
@@ -574,7 +575,7 @@ def submit_any_ingestion(ingestion_filename, *,
         exit(1)
 
     user_record = _get_user_record(portal.server, auth=portal.key_pair)
-    if not _is_admin_user(user_record):
+    if not _is_admin_user(user_record) and not validate_local_no:
         # If user is not an admin then default to local validation first;
         # i.e. act as-if the --validate-local flag was specified.
         validate_local = True

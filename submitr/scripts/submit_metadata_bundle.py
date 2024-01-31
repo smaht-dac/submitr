@@ -56,6 +56,8 @@ def main(simulated_args_for_testing=None):
                         help="Sanity check file locally before submission.", default=False)
     parser.add_argument('--check-only', action="store_true",
                         help="Sanity check file locally ONLY (no submission).", default=False)
+    parser.add_argument('--nocheck', action="store_true",
+                        help="Do not sanity check file locally before submission.", default=False)
     parser.add_argument('--validate-local', action="store_true", help="Synonym for --check.")
     parser.add_argument('--validate-local-only', action="store_true", help="Synonym for --check-only.")
     args = parser.parse_args(args=simulated_args_for_testing)
@@ -88,6 +90,7 @@ def main(simulated_args_for_testing=None):
                              patch_only=args.patch_only,
                              validate_only=args.validate_only,
                              validate_local=args.validate_local,
+                             validate_local_no=args.nocheck,
                              validate_local_only=args.validate_local_only,
                              verbose=args.verbose,
                              debug=args.debug)

@@ -1,8 +1,8 @@
-Implementation of submitr
-=========================
+Implementation of smaht-submitr
+===============================
 
-submitr package
----------------
+smaht-submitr package
+---------------------
 
 submitr.base module
 ~~~~~~~~~~~~~~~~~~~

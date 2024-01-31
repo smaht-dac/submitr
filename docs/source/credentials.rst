@@ -1,6 +1,6 @@
-====================================
-Setting Up Credentials smaht-submitr
-====================================
+=============================
+Credentials for smaht-submitr
+=============================
 
 Credentials can be placed in the file ``~/.smaht-keys.json`` which typically looks something like this::
 
