@@ -1,6 +1,13 @@
 # Required
 version: 2
 
+# Define the build environment (specify the OS)
+build:
+  os: "ubuntu-20.04"
+  tools:
+    python: "3.8"
+
+# Python configuration
 python:
   version: 3.8
   install:
