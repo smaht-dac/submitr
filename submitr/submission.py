@@ -1493,11 +1493,11 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                     print(" (substantive DIFFs below)")
                     for diff_path in object_info.diffs:
                         if (diff := object_info.diffs[diff_path]).creating_value:
-                            print(f"      CREATE {diff_path}: {diff.value}")
+                            print(f"     CREATE {diff_path}: {diff.value}")
                         elif diff.updating_value:
-                            print(f"      UPDATE {diff_path}: {diff.updating_value} -> {diff.value}")
+                            print(f"     UPDATE {diff_path}: {diff.updating_value} -> {diff.value}")
                         elif (diff := object_info.diffs[diff_path]).deleting_value:
-                            print(f"      DELETE {diff_path}: {diff.value}")
+                            print(f"     DELETE {diff_path}: {diff.value}")
 
 
 def _print_json_with_prefix(data, prefix):
