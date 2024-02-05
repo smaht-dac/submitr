@@ -25,21 +25,25 @@ def main(simulated_args_for_testing=None):
                         help="HTTP(S) address of Portal server (e.g. in ~/.smaht-keys.json).")
     parser.add_argument('--env', '-e',
                         help="Portal environment name for server/credentials (e.g. in ~/.smaht-keys.json).")
+    parser.add_argument('--consortium', help="Consoritium to use for submission.")
+    parser.add_argument('--submission-center', help="Submission center to use for submission.")
     parser.add_argument('--post-only', action="store_true",
                         help="Only perform creates (POST) for submitted data.", default=False)
     parser.add_argument('--patch-only', action="store_true",
                         help="Only perform updates (PATCH) for submitted data.", default=False)
     parser.add_argument('--validate-only', '-v', action="store_true",
                         help="Only perform validation of submitted data.", default=False)
-    parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
+    parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
     parser.add_argument('--ingestion_type', '--ingestion-type', '-t',
                         help=f"The ingestion type (default: {DEFAULT_INGESTION_TYPE}).",
                         default=DEFAULT_INGESTION_TYPE)
     parser.add_argument('--no_query', '--no-query', '-nq', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
-    parser.add_argument('--subfolders', '-sf', action="store_true",
+    parser.add_argument('--subdirectories', '-sd', action="store_true",
                         help="Search sub-directories of folder for upload files.", default=False)
+    parser.add_argument('--subfolders', '-sf', action="store_true",
+                        help="Synonym for --subdirectories", default=False)
     parser.add_argument('--app',
                         help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")
@@ -48,12 +52,24 @@ def main(simulated_args_for_testing=None):
                         help=f"the submission protocol (default {DEFAULT_SUBMISSION_PROTOCOL!r})")
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
-    parser.add_argument('--validate-local', action="store_true",
-                        help="Validate file locally before submission.", default=False)
-    parser.add_argument('--validate-local-only', action="store_true",
-                        help="Validate file locally only (no submission).", default=False)
+    parser.add_argument('--check', action="store_true",
+                        help="Sanity check file locally before submission.", default=False)
+    parser.add_argument('--check-only', action="store_true",
+                        help="Sanity check file locally ONLY (no submission).", default=False)
+    parser.add_argument('--nocheck', action="store_true",
+                        help="Do not sanity check file locally before submission.", default=False)
+    parser.add_argument('--validate-local', action="store_true", help="Synonym for --check.")
+    parser.add_argument('--validate-local-only', action="store_true", help="Synonym for --check-only.")
     args = parser.parse_args(args=simulated_args_for_testing)
 
+    if args.directory:
+        args.upload_folder = args.directory
+    if args.subdirectories:
+        args.subfolders = True
+    if args.check:
+        args.validate_local = True
+    if args.check_only:
+        args.validate_local_only = True
     if args.validate_local_only:
         args.validate_local = True
 
@@ -64,6 +80,8 @@ def main(simulated_args_for_testing=None):
 
         submit_any_ingestion(ingestion_filename=args.bundle_filename, ingestion_type=args.ingestion_type,
                              server=args.server, env=args.env,
+                             consortium=args.consortium,
+                             submission_center=args.submission_center,
                              no_query=args.no_query, subfolders=args.subfolders, app=args.app,
                              submission_protocol=args.submission_protocol,
                              upload_folder=args.upload_folder,
@@ -72,6 +90,7 @@ def main(simulated_args_for_testing=None):
                              patch_only=args.patch_only,
                              validate_only=args.validate_only,
                              validate_local=args.validate_local,
+                             validate_local_no=args.nocheck,
                              validate_local_only=args.validate_local_only,
                              verbose=args.verbose,
                              debug=args.debug)

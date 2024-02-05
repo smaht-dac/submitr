@@ -20,8 +20,8 @@ def test_upload_item_data_script(keyfile, mocked_s3_encrypt_key_id):
         output = []
         with argparse_errors_muffled():
             with mock.patch.object(upload_item_data_module,
-                                   "upload_item_data") as mock_upload_item_data:
-                with mock.patch.object(submission_module, "get_health_page") as mock_get_health_page:
+                                   "_upload_item_data") as mock_upload_item_data:
+                with mock.patch.object(submission_module, "_get_health_page") as mock_get_health_page:
                     mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: mocked_s3_encrypt_key_id}
                     with mock.patch.object(submission_module, "print") as mock_print:
                         mock_print.side_effect = lambda *args: output.append(" ".join(args))

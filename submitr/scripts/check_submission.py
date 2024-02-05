@@ -2,7 +2,7 @@ import argparse
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.common import ORCHESTRATED_APPS
 from ..base import DEFAULT_APP
-from ..submission import check_submit_ingestion
+from ..submission import _check_submit_ingestion
 
 
 EPILOG = __doc__
@@ -26,7 +26,7 @@ def main(simulated_args_for_testing=None):
     args = parser.parse_args(args=simulated_args_for_testing)
 
     with script_catch_errors():
-        return check_submit_ingestion(
+        return _check_submit_ingestion(
                 args.submission_uuid,
                 server=args.server,
                 env=args.env,

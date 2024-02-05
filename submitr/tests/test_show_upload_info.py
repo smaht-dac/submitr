@@ -14,7 +14,7 @@ def test_show_upload_info_script(keyfile):
         with argparse_errors_muffled():
             with mock.patch.object(show_upload_info_module, "print") as mock_print:
                 mock_print.side_effect = lambda *args: output.append(" ".join(args))
-                with mock.patch.object(show_upload_info_module, "show_upload_info") as mock_show_upload_info:
+                with mock.patch.object(show_upload_info_module, "_show_upload_info") as mock_show_upload_info:
                     with system_exit_expected(exit_code=expect_exit_code):
                         show_upload_info_main(args_in)
                         raise AssertionError("show_upload_info_main should not exit normally.")  # pragma: no cover

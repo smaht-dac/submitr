@@ -7,6 +7,13 @@ Change Log
 ----------
 
 
+0.5.3
+=====
+
+* Version updates to dcicutils.
+* Changes to itemize SMaHT submission ingestion create/update/diff situation.
+
+
 0.5.2
 =====
 

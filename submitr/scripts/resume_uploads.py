@@ -23,13 +23,20 @@ def main(simulated_args_for_testing=None):
                         help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")
     parser.add_argument('--bundle_filename', '-b', help="location of the original Excel submission file")
-    parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
+    parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
     parser.add_argument('--no_query', '-nq', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
-    parser.add_argument('--subfolders', '-sf', action="store_true",
+    parser.add_argument('--subdirectories', '-sd', action="store_true",
                         help="Search sub-directories of folder for upload files.", default=False)
+    parser.add_argument('--subfolders', '-sf', action="store_true",
+                        help="Synonym for --subdirectories.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
+
+    if args.directory:
+        args.upload_folder = args.directory
+    if args.subdirectories:
+        args.subfolders = True
 
     if args.bundle_filename and not os.path.isdir(os.path.normpath(os.path.dirname(args.bundle_filename))):
         print(f"Specified bundle file not found: {args.bundle_filename}")

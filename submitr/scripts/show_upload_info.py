@@ -2,7 +2,7 @@ import argparse
 
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.common import APP_SMAHT, ORCHESTRATED_APPS
-from ..submission import show_upload_info
+from ..submission import _show_upload_info
 
 
 EPILOG = __doc__
@@ -25,7 +25,7 @@ def main(simulated_args_for_testing=None):
 
     with script_catch_errors():
 
-        show_upload_info(uuid=args.uuid, server=args.server, env=args.env, app=args.app, show_details=args.details)
+        _show_upload_info(uuid=args.uuid, server=args.server, env=args.env, app=args.app, show_details=args.details)
 
 
 if __name__ == '__main__':

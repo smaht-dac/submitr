@@ -1,6 +1,6 @@
-==================
-Installing submitr
-==================
+========================
+Installing smaht-submitr
+========================
 
 
 System Requirements
@@ -85,57 +85,4 @@ If you're an end user,
 once you have created and activated the virtual environment,
 just do::
 
-   pip install submitr
-
-
-Setting Up Credentials
-======================
-
-Credentials can be placed in the file ``~/.smaht-keys.json`` which looks like this::
-
-   {
-       "smaht-staging": {
-           "key": "your-portal-key",
-           "secret": "your-portal-secret",
-           "server": "https://data.smaht.org"
-       },
-       "smaht-data": {
-           "key": "your-portal-key",
-           "secret": "your-portal-secret",
-           "server": "https://data.smaht.org"
-       },
-       "smaht-local": {
-           "key": "your-local-portal-key",
-           "secret": "your-local-portal-secret",
-           "server": "http://localhost:8000"
-       }
-   }
-
-The easiest way to create or modify a file like this is with TextEdit, which you can open from a MacOS Terminal window with:
-
-The environment names there are of your own choosing; this name will be used
-as the ``--env`` argument to the various `submitr` commands, e.g. ``submit-metadata-bundle`` and ``resume-uploads``.
-If you're not sure which server you should be submitting to, reach out to your contact on the SMaHT DAC Team.
-
-The ``key`` and ``secret`` values are obtained from the `Access Keys` sections of the SMaHT Portal `My Profile` page.
-
-A typical key file might look like the below. If you are not a developer, you will probably
-only have one key rather than several, and almost certainly none of the URLs will be on ``localhost``::
-
-.. code-block::
-
-    $ open -a TextEdit ~/.cgap-keys.json
-
-This file should _not_ be readable by others than yourself.
-Set its permissions accordingly by using ``chmod 600``,
-which sets the file to be readable and writable only by yourself,
-and to give no one else (but the system superuser) any permissions at all::
-
-   $ ls -dal ~/.smaht-keys.json
-   -rw-r--r--  1 smahtuser  staff  297 Sep  4 13:14 /Users/smahtuser/.smaht-keys.json
-
-   $ chmod 600 ~/.smaht-keys.json
-
-   $ ls -dal ~/.smaht-keys.json
-   -rw-------  1 smahtuser  staff  297 Sep  4 13:14 /Users/smahtuser/.smaht-keys.json
-
+   pip install smaht-submitr

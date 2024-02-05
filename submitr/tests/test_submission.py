@@ -21,18 +21,19 @@ from .test_upload_item_data import TEST_ENCRYPT_KEY
 from .. import submission as submission_module
 from ..submission import (  # noqa
     SERVER_REGEXP, PROGRESS_CHECK_INTERVAL, ATTEMPTS_BEFORE_TIMEOUT,
-    get_defaulted_institution, get_defaulted_project, do_any_uploads, do_uploads, show_upload_info, show_upload_result,
-    execute_prearranged_upload, get_section, get_user_record, ingestion_submission_item_url,
-    resolve_server, resume_uploads, show_section, submit_any_ingestion,
-    upload_file_to_uuid, upload_item_data,
-    get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page, running_on_windows_native,
-    search_for_file, UploadMessageWrapper, upload_extra_files,
+    _get_defaulted_institution, _get_defaulted_project,
+    do_any_uploads, do_uploads, _show_upload_info, _show_upload_result,
+    execute_prearranged_upload, _get_section, _get_user_record, _ingestion_submission_item_url,
+    _resolve_server, resume_uploads, _show_section, submit_any_ingestion,
+    upload_file_to_uuid, _upload_item_data,
+    get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page, _running_on_windows_native,
+    search_for_file, UploadMessageWrapper, _upload_extra_files,
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
     _post_files_data,  # noQA - again, testing a protected member
     _check_ingestion_progress,  # noQA - again, testing a protected member
-    get_defaulted_lab, get_defaulted_award, SubmissionProtocol, compute_file_post_data,
-    upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE, DEFAULT_APP, summarize_submission,
-    get_defaulted_submission_centers, get_defaulted_consortia, do_app_arg_defaulting, check_submit_ingestion
+    _get_defaulted_lab, _get_defaulted_award, SubmissionProtocol, compute_file_post_data,
+    upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE, DEFAULT_APP, _summarize_submission,
+    _get_defaulted_submission_centers, _get_defaulted_consortia, _do_app_arg_defaulting, _check_submit_ingestion
 )
 from ..utils import FakeResponse
 
@@ -158,7 +159,7 @@ def _independently_confirmed_as_running_on_windows_native():
     #    os.name == 'nt' (as opposed to 'posix')
     #    platform.system() == 'Windows' (as opposed to 'Linux', 'Darwin', or 'CYGWIN_NT-<version>'
     # Since we're wanting to test one of these, we  use the other mechansim to confirm things.
-    standard_result = running_on_windows_native()
+    standard_result = _running_on_windows_native()
     independent_result = platform.system() == 'Windows'
     assert standard_result == independent_result, (
         f"Mechanisms for telling whether we're on Windows disagree:"
@@ -219,6 +220,7 @@ def make_user_record(title=SOME_USER_TITLE,
     user_record = {
         'title': title,
         'contact_email': contact_email,
+        'groups': ['admin']
     }
     user_record.update(kwargs)
 
@@ -237,41 +239,41 @@ def test_get_user_record():
 
     with mock.patch("requests.get", return_value=FakeResponse(401, content='["not dictionary"]')):
         with pytest.raises(Exception):
-            get_user_record(server="http://localhost:12345", auth=None)
+            _get_user_record(server="http://localhost:12345", auth=None)
 
     with mock.patch("requests.get", make_mocked_get(auth_failure_code=401)):
         with pytest.raises(Exception):
-            get_user_record(server="http://localhost:12345", auth=None)
+            _get_user_record(server="http://localhost:12345", auth=None)
 
     with mock.patch("requests.get", make_mocked_get(auth_failure_code=403)):
         with pytest.raises(Exception):
-            get_user_record(server="http://localhost:12345", auth=None)
+            _get_user_record(server="http://localhost:12345", auth=None)
 
     with mock.patch("requests.get", make_mocked_get()):
-        get_user_record(server="http://localhost:12345", auth=SOME_AUTH)
+        _get_user_record(server="http://localhost:12345", auth=SOME_AUTH)
 
     with mock.patch("requests.get", lambda *x, **y: FakeResponse(status_code=400)):
         with pytest.raises(Exception):  # Body is not JSON
-            get_user_record(server="http://localhost:12345", auth=SOME_AUTH)
+            _get_user_record(server="http://localhost:12345", auth=SOME_AUTH)
 
 
 def test_get_defaulted_institution():
 
-    assert get_defaulted_institution(institution=SOME_INSTITUTION, user_record='does-not-matter') == SOME_INSTITUTION
-    assert get_defaulted_institution(institution='anything', user_record='does-not-matter') == 'anything'
+    assert _get_defaulted_institution(institution=SOME_INSTITUTION, user_record='does-not-matter') == SOME_INSTITUTION
+    assert _get_defaulted_institution(institution='anything', user_record='does-not-matter') == 'anything'
 
     try:
-        get_defaulted_institution(institution=None, user_record=make_user_record())
+        _get_defaulted_institution(institution=None, user_record=make_user_record())
     except Exception as e:
         assert str(e).startswith("Your user profile has no institution")
 
-    successful_result = get_defaulted_institution(institution=None,
-                                                  user_record=make_user_record(
-                                                      # this is the old-fashioned place for it - a decoy
-                                                      institution={'@id': SOME_OTHER_INSTITUTION},
-                                                      # this is the right place to find the info
-                                                      user_institution={'@id': SOME_INSTITUTION}
-                                                  ))
+    successful_result = _get_defaulted_institution(institution=None,
+                                                   user_record=make_user_record(
+                                                       # this is the old-fashioned place for it - a decoy
+                                                       institution={'@id': SOME_OTHER_INSTITUTION},
+                                                       # this is the right place to find the info
+                                                       user_institution={'@id': SOME_INSTITUTION}
+                                                   ))
 
     print("successful_result=", successful_result)
 
@@ -280,39 +282,39 @@ def test_get_defaulted_institution():
 
 def test_get_defaulted_project():
 
-    assert get_defaulted_project(project=SOME_PROJECT, user_record='does-not-matter') == SOME_PROJECT
-    assert get_defaulted_project(project='anything', user_record='does-not-matter') == 'anything'
+    assert _get_defaulted_project(project=SOME_PROJECT, user_record='does-not-matter') == SOME_PROJECT
+    assert _get_defaulted_project(project='anything', user_record='does-not-matter') == 'anything'
 
     try:
-        get_defaulted_project(project=None, user_record=make_user_record())
+        _get_defaulted_project(project=None, user_record=make_user_record())
     except Exception as e:
         assert str(e).startswith("Your user profile declares no project")
 
     try:
-        get_defaulted_project(project=None,
-                              user_record=make_user_record(project_roles=[]))
+        _get_defaulted_project(project=None,
+                               user_record=make_user_record(project_roles=[]))
     except Exception as e:
         assert str(e).startswith("Your user profile declares no project")
     else:
         raise AssertionError("Expected error was not raised.")  # pragma: no cover
 
     try:
-        get_defaulted_project(project=None,
-                              user_record=make_user_record(project_roles=[
-                                  {"project": {"@id": "/projects/foo"}, "role": "developer"},
-                                  {"project": {"@id": "/projects/bar"}, "role": "clinician"},
-                                  {"project": {"@id": "/projects/baz"}, "role": "director"},
-                              ]))
+        _get_defaulted_project(project=None,
+                               user_record=make_user_record(project_roles=[
+                                   {"project": {"@id": "/projects/foo"}, "role": "developer"},
+                                   {"project": {"@id": "/projects/bar"}, "role": "clinician"},
+                                   {"project": {"@id": "/projects/baz"}, "role": "director"},
+                               ]))
     except Exception as e:
         assert str(e).startswith("You must use --project to specify which project")
     else:
         raise AssertionError("Expected error was not raised.")  # pragma: no cover - we hope never to see this executed
 
-    successful_result = get_defaulted_project(project=None,
-                                              user_record=make_user_record(project_roles=[
-                                                  {"project": {"@id": "/projects/the_only_project"},
-                                                   "role": "scientist"}
-                                              ]))
+    successful_result = _get_defaulted_project(project=None,
+                                               user_record=make_user_record(project_roles=[
+                                                   {"project": {"@id": "/projects/the_only_project"},
+                                                    "role": "scientist"}
+                                               ]))
 
     print("successful_result=", successful_result)
 
@@ -321,12 +323,12 @@ def test_get_defaulted_project():
 
 def test_get_section():
 
-    assert get_section({}, 'foo') is None
-    assert get_section({'alpha': 3, 'beta': 4}, 'foo') is None
-    assert get_section({'alpha': 3, 'foo': 5, 'beta': 4}, 'foo') == 5
-    assert get_section({'additional_data': {}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'omega') is None
-    assert get_section({'additional_data': {'omega': 24}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'epsilon') is None
-    assert get_section({'additional_data': {'omega': 24}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'omega') == 24
+    assert _get_section({}, 'foo') is None
+    assert _get_section({'alpha': 3, 'beta': 4}, 'foo') is None
+    assert _get_section({'alpha': 3, 'foo': 5, 'beta': 4}, 'foo') == 5
+    assert _get_section({'additional_data': {}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'omega') is None
+    assert _get_section({'additional_data': {'omega': 24}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'epsilon') is None
+    assert _get_section({'additional_data': {'omega': 24}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'omega') == 24
 
 
 def test_progress_check_interval():
@@ -340,7 +342,7 @@ def test_attempts_before_timeout():
 
 def test_ingestion_submission_item_url():
 
-    assert ingestion_submission_item_url(
+    assert _ingestion_submission_item_url(
         server='http://foo.com',
         uuid='123-4567-890'
     ) == 'http://foo.com/ingestion-submissions/123-4567-890?format=json'
@@ -375,13 +377,13 @@ def test_show_upload_info():
                         index = 0
                         json_result = {}
                         with shown_output() as shown:
-                            show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
+                            _show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
                             assert shown.lines == ['Uploads: None']
                         index = 0
                         del URLS[1]
                         json_result = SOME_UPLOAD_INFO_RESULT
                         with shown_output() as shown:
-                            show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
+                            _show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
                             expected_lines = ['\n----- Upload Info -----']
                             assert shown.lines == expected_lines
 
@@ -395,7 +397,7 @@ def test_show_upload_info_with_app():
 
     def mocked_get(url, *, auth, **kwargs):
         ignored(url, auth, kwargs)
-        # This checks that the recursive call in show_upload_info actually happened, binding the selected_app
+        # This checks that the recursive call in _show_upload_info actually happened, binding the selected_app
         # to the given app. Once we've verified that, this test is done.
         raise TestFinished
 
@@ -405,11 +407,11 @@ def test_show_upload_info_with_app():
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
                     with mock.patch("requests.get") as mock_get:
                         mock_get.side_effect = mocked_get
-                        with mock.patch.object(submission_module, "show_upload_result"):
+                        with mock.patch.object(submission_module, "_show_upload_result"):
                             assert mock_get.call_count == 0
                             with pytest.raises(TestFinished):
-                                show_upload_info(SOME_UUID,
-                                                 server=SOME_SERVER, env=None, keydict=SOME_KEYDICT, app=expected_app)
+                                _show_upload_info(SOME_UUID,
+                                                  server=SOME_SERVER, env=None, keydict=SOME_KEYDICT, app=expected_app)
                             assert mock_get.call_count == 1
 
 
@@ -419,21 +421,21 @@ def test_show_upload_result():
     upload_info_items: List
     for upload_info_items in [[], ['alpha', 'bravo']]:
         with shown_output() as shown:
-            show_upload_result({'upload_info': upload_info_items},
-                               show_primary_result=True,
-                               show_validation_output=False,
-                               show_processing_status=False,
-                               show_datafile_url=False)
+            _show_upload_result({'upload_info': upload_info_items},
+                                show_primary_result=True,
+                                show_validation_output=False,
+                                show_processing_status=False,
+                                show_datafile_url=False)
             assert shown.lines == upload_info_items or "Uploads: None"  # special case for no uploads
 
     sample_validation_output = ['yep', 'uh huh', 'wait, what?']
     for show_validation in [False, True]:
         with shown_output() as shown:
-            show_upload_result({'validation_output': sample_validation_output},
-                               show_primary_result=False,
-                               show_validation_output=show_validation,
-                               show_processing_status=False,
-                               show_datafile_url=False)
+            _show_upload_result({'validation_output': sample_validation_output},
+                                show_primary_result=False,
+                                show_validation_output=show_validation,
+                                show_processing_status=False,
+                                show_datafile_url=False)
             # assert shown.lines == (['----- Validation Output -----'] + sample_validation_output
             #                        if show_validation
             #                        else [])
@@ -449,11 +451,11 @@ def test_show_upload_result():
     sample_data_parameters: Dict
     for datafile_should_be_shown, sample_data_parameters in test_cases:
         with shown_output() as shown:
-            show_upload_result({'parameters': dict(sample_non_data_parameters, **sample_data_parameters)},
-                               show_primary_result=False,
-                               show_validation_output=False,
-                               show_processing_status=False,
-                               show_datafile_url=True)
+            _show_upload_result({'parameters': dict(sample_non_data_parameters, **sample_data_parameters)},
+                                show_primary_result=False,
+                                show_validation_output=False,
+                                show_processing_status=False,
+                                show_datafile_url=True)
             if datafile_should_be_shown:
                 assert shown.lines == [
                     "----- DataFile URL -----",
@@ -464,7 +466,7 @@ def test_show_upload_result():
 
     for show_it in [False, True]:
         with shown_output() as shown:
-            show_upload_result({
+            _show_upload_result({
                 'processing_status': {
                     'state': 'some-state',
                     'outcome': 'some-outcome',
@@ -483,7 +485,7 @@ def test_show_upload_result():
             for progress in ['some-progress', None]:
                 n += 1 if progress else 0
                 with shown_output() as shown:
-                    show_upload_result({
+                    _show_upload_result({
                         'processing_status': {
                             'state': state, 'outcome': outcome, 'progress': progress
                         }},
@@ -502,7 +504,7 @@ def test_show_section_without_caveat():
 
     # Lines section available, without caveat.
     with shown_output() as shown:
-        show_section(
+        _show_section(
             res={'foo': ['abc', 'def']},
             section='foo',
             caveat_outcome=None)
@@ -514,7 +516,7 @@ def test_show_section_without_caveat():
 
     # Lines section available, without caveat, but no section entry.
     with shown_output() as shown:
-        show_section(
+        _show_section(
             res={},
             section='foo',
             caveat_outcome=None
@@ -523,7 +525,7 @@ def test_show_section_without_caveat():
 
     # Lines section available, without caveat, but empty.
     with shown_output() as shown:
-        show_section(
+        _show_section(
             res={'foo': []},
             section='foo',
             caveat_outcome=None
@@ -532,7 +534,7 @@ def test_show_section_without_caveat():
 
     # Lines section available, without caveat, but null.
     with shown_output() as shown:
-        show_section(
+        _show_section(
             res={'foo': None},
             section='foo',
             caveat_outcome=None
@@ -541,7 +543,7 @@ def test_show_section_without_caveat():
 
     # Dictionary section available, without caveat, and with a dictionary.
     with shown_output() as shown:
-        show_section(
+        _show_section(
             res={'foo': {'alpha': 'beta', 'gamma': 'delta'}},
             section='foo',
             caveat_outcome=None
@@ -550,7 +552,7 @@ def test_show_section_without_caveat():
 
     # Dictionary section available, without caveat, and with an empty dictionary.
     with shown_output() as shown:
-        show_section(
+        _show_section(
             res={'foo': {}},
             section='foo',
             caveat_outcome=None
@@ -559,7 +561,7 @@ def test_show_section_without_caveat():
 
     # Random unexpected data, with caveat.
     with shown_output() as shown:
-        show_section(
+        _show_section(
             res={'foo': 17},
             section='foo',
             caveat_outcome=None
@@ -579,7 +581,7 @@ def test_show_section_with_caveat():
 
     # Lines section available, with caveat.
     with shown_output() as shown:
-        show_section(
+        _show_section(
             res={'foo': ['abc', 'def']},
             section='foo',
             caveat_outcome=caveat
@@ -592,7 +594,7 @@ def test_show_section_with_caveat():
 
     # Lines section available, with caveat.
     with shown_output() as shown:
-        show_section(
+        _show_section(
             res={},
             section='foo',
             caveat_outcome=caveat
@@ -745,7 +747,7 @@ def test_do_any_uploads():
 def test_resume_uploads():
 
     with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-        with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+        with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
             some_response_json = {'some': 'json', '@type': 'IngestionSubmission'}
             with mock.patch("requests.get", return_value=FakeResponse(200, json=some_response_json)):
                 with mock.patch("dcicutils.portal_utils.Portal.get_metadata", return_value=some_response_json):
@@ -761,7 +763,7 @@ def test_resume_uploads():
                             subfolders=False)
 
     with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-        with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+        with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
             with mock.patch("requests.get", return_value=FakeResponse(401, json=SOME_BAD_RESULT)):
                 with mock.patch("dcicutils.portal_utils.Portal.get_metadata", return_value=SOME_BAD_RESULT):
                     with mock.patch.object(submission_module, "do_any_uploads") as mock_do_any_uploads:
@@ -807,6 +809,7 @@ def os_simulation(*, simulation_mode):
 
 @pytest.mark.parametrize("os_simulation_mode", OS_SIMULATION_MODE_NAMES)
 def test_execute_prearranged_upload(os_simulation_mode: str):
+    Portal.KEYS_FILE_DIRECTORY = "/dummy"
     with os_simulation(simulation_mode=os_simulation_mode):
         with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
             with shown_output() as shown:
@@ -925,7 +928,7 @@ def test_get_s3_encrypt_key_id(debug_protocol):
 
 @pytest.mark.parametrize("mocked_s3_encrypt_key_id", [None, "", TEST_ENCRYPT_KEY])
 def test_get_s3_encrypt_key_id_from_health_page(mocked_s3_encrypt_key_id):
-    with mock.patch.object(submission_module, "get_health_page") as mock_get_health_page:
+    with mock.patch.object(submission_module, "_get_health_page") as mock_get_health_page:
         mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: mocked_s3_encrypt_key_id}
         assert get_s3_encrypt_key_id_from_health_page(auth='not-used-by-mock') == mocked_s3_encrypt_key_id
 
@@ -1171,7 +1174,7 @@ def test_do_uploads2(tmp_path):
         return_value=SOME_FILE_METADATA_WITH_EXTRA_FILE_CREDENTIALS,
     ) as mocked_upload_file_to_uuid:
         with mock.patch.object(
-            submission_module, "upload_extra_files"
+            submission_module, "_upload_extra_files"
         ) as mocked_upload_extra_files:
             with mock.patch.object(
                 submission_module,
@@ -1210,8 +1213,8 @@ def test_upload_item_data():
                 with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
                     with mock.patch("dcicutils.portal_utils.Portal.get_metadata", return_value={"@type": "File"}):
                         with mock.patch("dcicutils.portal_utils.Portal.get_schemas", return_value={}):
-                            upload_item_data(item_filename=some_filename,
-                                             uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
+                            _upload_item_data(item_filename=some_filename,
+                                              uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
                             mock_upload.assert_called_with(filename=some_filename, uuid=SOME_UUID, auth=SOME_KEYDICT)
 
         with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -1222,8 +1225,8 @@ def test_upload_item_data():
                         with mock.patch("dcicutils.portal_utils.Portal.get_schemas", return_value={}):
                             with shown_output() as shown:
                                 try:
-                                    upload_item_data(item_filename=some_filename,
-                                                     uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
+                                    _upload_item_data(item_filename=some_filename,
+                                                      uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
                                 except SystemExit as e:
                                     assert e.code == 1
                                 else:
@@ -1236,8 +1239,8 @@ def test_upload_item_data():
             with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
                 with mock.patch("dcicutils.portal_utils.Portal.get_metadata", return_value={"@type": "File"}):
                     with mock.patch("dcicutils.portal_utils.Portal.get_schemas", return_value={}):
-                        upload_item_data(item_filename=some_filename, uuid=SOME_UUID,
-                                         server=SOME_SERVER, env=SOME_ENV, no_query=True)
+                        _upload_item_data(item_filename=some_filename, uuid=SOME_UUID,
+                                          server=SOME_SERVER, env=SOME_ENV, no_query=True)
                         mock_upload.assert_called_with(filename=some_filename, uuid=SOME_UUID, auth=SOME_KEYDICT)
 
 
@@ -1276,8 +1279,8 @@ class Scenario:
         ]
         if submission_module.DEBUG_PROTOCOL:  # pragma: no cover - useful if it happens to help, but not a big deal
             result.append(f"Created IngestionSubmission object: s3://{self.bundles_bucket}/{SOME_UUID}")
-        result.append(f"{uploaded_time} Bundle uploaded to bucket {self.bundles_bucket},"
-                      f" assigned uuid {SOME_UUID} for tracking. Awaiting processing...")
+        result.append(f"{uploaded_time} Metadata bundle uploaded to bucket ({self.bundles_bucket});"
+                      f" tracking UUID: {SOME_UUID} Awaiting processing...")
         return result
 
     def make_wait_lines(self, wait_attempts, outcome: str = None, start_delta: int = 0):
@@ -1381,7 +1384,7 @@ class Scenario:
         return result
 
 
-@mock.patch.object(submission_module, "get_health_page")
+@mock.patch.object(submission_module, "_get_health_page")
 @mock.patch.object(submission_module, "DEBUG_PROTOCOL", False)
 def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
@@ -1389,7 +1392,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
     with shown_output():  # as shown:
         with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-            with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+            with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                 with mock.patch.object(submission_module, "yes_or_no", return_value=False):
                     with pytest.raises(Exception):
                         submit_any_ingestion(SOME_BUNDLE_FILENAME,
@@ -1492,12 +1495,12 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
     with mock.patch("os.path.exists", mfs.exists):
         with mock.patch("io.open", mfs.open):
             with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                     with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                         with mock.patch.object(Portal, "key",
                                                new_callable=mock.PropertyMock) as mocked_portal_key_property:
                             mocked_portal_key_property.return_value = SOME_KEYDICT
-                            with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                            with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                                 with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                                     with mock.patch("dcicutils.portal_utils.Portal.post", mocked_post):
                                         with mock.patch("dcicutils.portal_utils.Portal.get",
@@ -1528,7 +1531,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(Portal, "key",
                                                    new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -1538,7 +1541,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                     make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module, "_show_section"):
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
@@ -1572,7 +1575,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no",
                                                side_effect=make_mocked_yes_or_no(f"Submit {SOME_BUNDLE_FILENAME}"
                                                                                  f" ({ANOTHER_INGESTION_TYPE})"
@@ -1585,7 +1588,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                     make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module, "_show_section"):
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
@@ -1615,7 +1618,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(Portal, "key",
                                                new_callable=mock.PropertyMock) as mocked_portal_key_property:
                             mocked_portal_key_property.return_value = SOME_KEYDICT
@@ -1624,7 +1627,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                 make_mocked_get(done_after_n_tries=get_request_attempts)):
                                     with mock.patch("datetime.datetime", dt):
                                         with mock.patch("time.sleep", dt.sleep):
-                                            with mock.patch.object(submission_module, "show_section"):
+                                            with mock.patch.object(submission_module, "_show_section"):
                                                 with mock.patch.object(submission_module,
                                                                        "do_any_uploads") as mock_do_any_uploads:
                                                     try:
@@ -1661,7 +1664,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(Portal, "key",
                                                    new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -1672,7 +1675,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                     success=False)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module, "_show_section"):
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
@@ -1713,7 +1716,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(Portal, "key",
                                                    new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -1723,7 +1726,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                     make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module, "_show_section"):
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
@@ -1752,7 +1755,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(Portal, "key",
                                                    new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -1763,7 +1766,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                     success=False)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module, "_show_section"):
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
@@ -1794,7 +1797,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(Portal, "key",
                                                    new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -1804,7 +1807,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                     make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module, "_show_section"):
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
@@ -1834,7 +1837,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(Portal, "key",
                                                    new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -1845,7 +1848,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                         done_after_n_tries=ATTEMPTS_BEFORE_TIMEOUT + 1)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module, "_show_section"):
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
@@ -1868,7 +1871,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 SOME_ORG_ARGS = {'consortium': SOME_CONSORTIUM, 'submission_center': SOME_SUBMISSION_CENTER}
 
 
-@mock.patch.object(submission_module, "get_health_page")
+@mock.patch.object(submission_module, "_get_health_page")
 @mock.patch.object(submission_module, "DEBUG_PROTOCOL", False)
 def test_submit_any_ingestion_new_protocol(mock_get_health_page):
 
@@ -1876,7 +1879,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
 
     with shown_output() as shown:
         with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-            with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+            with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                 with mock.patch.object(submission_module, "yes_or_no", return_value=False):
                     try:
                         submit_any_ingestion(SOME_BUNDLE_FILENAME,
@@ -2021,12 +2024,12 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
     with mock.patch("os.path.exists", mfs.exists):
         with mock.patch("io.open", mfs.open):
             with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                     with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                         with mock.patch.object(Portal, "key",
                                                new_callable=mock.PropertyMock) as mocked_portal_key_property:
                             mocked_portal_key_property.return_value = SOME_KEYDICT
-                            with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                            with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                                 with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                                     with mock.patch("requests.post", mocked_post):
                                         with mock.patch("requests.get",
@@ -2061,7 +2064,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(Portal, "key",
                                                    new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -2071,7 +2074,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                     make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module, "_show_section"):
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
@@ -2103,7 +2106,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(Portal, "key",
                                                    new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -2113,7 +2116,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                     make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module, "_show_section"):
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         with mock.patch.object(submission_module,
@@ -2171,14 +2174,14 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch("requests.post", mocked_post):
                                 with mock.patch("requests.get",
                                                 make_mocked_get(done_after_n_tries=get_request_attempts)):
                                     with mock.patch("datetime.datetime", dt):
                                         with mock.patch("time.sleep", dt.sleep):
-                                            with mock.patch.object(submission_module, "show_section"):
+                                            with mock.patch.object(submission_module, "_show_section"):
                                                 with mock.patch.object(submission_module,
                                                                        "do_any_uploads") as mock_do_any_uploads:
                                                     with mock.patch.object(submission_module,
@@ -2221,7 +2224,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(Portal, "key",
                                                    new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -2232,7 +2235,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                     success=False)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module, "_show_section"):
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
@@ -2272,7 +2275,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(Portal, "key",
                                                    new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -2283,7 +2286,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                     success=False)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module, "_show_section"):
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
@@ -2315,7 +2318,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(Portal, "key",
                                                    new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -2326,7 +2329,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                     success=False)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module, "_show_section"):
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
@@ -2356,7 +2359,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(Portal, "key",
                                                    new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -2366,7 +2369,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                     make_mocked_get(done_after_n_tries=get_request_attempts)):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module, "_show_section"):
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
@@ -2396,7 +2399,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                 with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
                     print("Data would go here.", file=fp)
                 with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "resolve_server", return_value=SOME_SERVER):
+                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
                         with mock.patch.object(submission_module, "yes_or_no", return_value=True):
                             with mock.patch.object(Portal, "key",
                                                    new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -2408,7 +2411,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                     ):
                                         with mock.patch("datetime.datetime", dt):
                                             with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "show_section"):
+                                                with mock.patch.object(submission_module, "_show_section"):
                                                     with mock.patch.object(submission_module,
                                                                            "do_any_uploads") as mock_do_any_uploads:
                                                         try:
@@ -2431,7 +2434,7 @@ def test_running_on_windows_native():
     for pair in [("nt", True), ("posix", False)]:
         os_name, is_windows = pair
         with mock.patch.object(os, "name", os_name):
-            assert running_on_windows_native() is is_windows
+            assert _running_on_windows_native() is is_windows
 
 
 @pytest.mark.parametrize(
@@ -2529,7 +2532,7 @@ def test_upload_extra_files(
             submission_module, "execute_prearranged_upload"
         ) as mocked_execute_upload:
             uploader_wrapper = UploadMessageWrapper(SOME_UUID)
-            upload_extra_files(
+            _upload_extra_files(
                 credentials,
                 uploader_wrapper,
                 folder,
@@ -2684,40 +2687,40 @@ def test_submit_any_ingestion():
 
 def test_get_defaulted_lab():
 
-    assert get_defaulted_lab(lab=SOME_LAB, user_record='does-not-matter') == SOME_LAB
-    assert get_defaulted_lab(lab='anything', user_record='does-not-matter') == 'anything'
+    assert _get_defaulted_lab(lab=SOME_LAB, user_record='does-not-matter') == SOME_LAB
+    assert _get_defaulted_lab(lab='anything', user_record='does-not-matter') == 'anything'
 
     user_record = make_user_record(
         # this is the old-fashioned place for it, but what fourfront uses
         lab={'@id': SOME_LAB},
     )
 
-    successful_result = get_defaulted_lab(lab=None, user_record=user_record)
+    successful_result = _get_defaulted_lab(lab=None, user_record=user_record)
 
     print("successful_result=", successful_result)
 
     assert successful_result == SOME_LAB
 
-    assert get_defaulted_lab(lab=None, user_record=make_user_record()) is None
-    assert get_defaulted_lab(lab=None, user_record=make_user_record(), error_if_none=False) is None
+    assert _get_defaulted_lab(lab=None, user_record=make_user_record()) is None
+    assert _get_defaulted_lab(lab=None, user_record=make_user_record(), error_if_none=False) is None
 
     with pytest.raises(Exception) as exc:
-        get_defaulted_lab(lab=None, user_record=make_user_record(), error_if_none=True)
+        _get_defaulted_lab(lab=None, user_record=make_user_record(), error_if_none=True)
     assert str(exc.value).startswith("Your user profile has no lab")
 
 
 def test_get_defaulted_award():
 
-    assert get_defaulted_award(award=SOME_AWARD, user_record='does-not-matter') == SOME_AWARD
-    assert get_defaulted_award(award='anything', user_record='does-not-matter') == 'anything'
+    assert _get_defaulted_award(award=SOME_AWARD, user_record='does-not-matter') == SOME_AWARD
+    assert _get_defaulted_award(award='anything', user_record='does-not-matter') == 'anything'
 
-    successful_result = get_defaulted_award(award=None,
-                                            user_record=make_user_record(
-                                                lab={
-                                                    '@id': SOME_LAB,
-                                                    'awards': [
-                                                        {"@id": SOME_AWARD},
-                                                    ]}))
+    successful_result = _get_defaulted_award(award=None,
+                                             user_record=make_user_record(
+                                                 lab={
+                                                     '@id': SOME_LAB,
+                                                     'awards': [
+                                                         {"@id": SOME_AWARD},
+                                                     ]}))
 
     print("successful_result=", successful_result)
 
@@ -2728,79 +2731,79 @@ def test_get_defaulted_award():
     # error_if_none=True argument. -kmp 27-Mar-2023
 
     try:
-        get_defaulted_award(award=None,
-                            user_record=make_user_record(award_roles=[]),
-                            error_if_none=True)
+        _get_defaulted_award(award=None,
+                             user_record=make_user_record(award_roles=[]),
+                             error_if_none=True)
     except Exception as e:
         assert str(e).startswith("Your user profile declares no lab with awards.")
     else:
         raise AssertionError("Expected error was not raised.")  # pragma: no cover
 
     with pytest.raises(Exception) as exc:
-        get_defaulted_award(award=None,
-                            user_record=make_user_record(lab={
-                                '@id': SOME_LAB,
-                                'awards': [
-                                    {"@id": "/awards/foo"},
-                                    {"@id": "/awards/bar"},
-                                    {"@id": "/awards/baz"},
-                                ]}),
-                            error_if_none=True)
+        _get_defaulted_award(award=None,
+                             user_record=make_user_record(lab={
+                                 '@id': SOME_LAB,
+                                 'awards': [
+                                     {"@id": "/awards/foo"},
+                                     {"@id": "/awards/bar"},
+                                     {"@id": "/awards/baz"},
+                                 ]}),
+                             error_if_none=True)
     assert str(exc.value) == ("Your lab (/lab/good-lab/) declares multiple awards."
                               " You must explicitly specify one of /awards/foo, /awards/bar"
                               " or /awards/baz with --award.")
 
-    assert get_defaulted_award(award=None, user_record=make_user_record()) is None
-    assert get_defaulted_award(award=None, user_record=make_user_record(), error_if_none=False) is None
+    assert _get_defaulted_award(award=None, user_record=make_user_record()) is None
+    assert _get_defaulted_award(award=None, user_record=make_user_record(), error_if_none=False) is None
 
     with pytest.raises(Exception) as exc:
-        get_defaulted_award(award=None, user_record=make_user_record(), error_if_none=True)
+        _get_defaulted_award(award=None, user_record=make_user_record(), error_if_none=True)
     assert str(exc.value).startswith("Your user profile declares no lab with awards.")
 
 
 def test_get_defaulted_consortia():
 
-    assert get_defaulted_consortia(consortia=SOME_CONSORTIA, user_record='does-not-matter') == SOME_CONSORTIA
-    assert get_defaulted_consortia(consortia=['anything'], user_record='does-not-matter') == ['anything']
+    assert _get_defaulted_consortia(consortia=SOME_CONSORTIA, user_record='does-not-matter') == SOME_CONSORTIA
+    assert _get_defaulted_consortia(consortia=['anything'], user_record='does-not-matter') == ['anything']
 
     user_record = make_user_record(consortia=[{'@id': SOME_CONSORTIUM}])
 
-    successful_result = get_defaulted_consortia(consortia=None, user_record=user_record)
+    successful_result = _get_defaulted_consortia(consortia=None, user_record=user_record)
 
     print("successful_result=", successful_result)
 
     assert successful_result == SOME_CONSORTIA
 
-    assert get_defaulted_consortia(consortia=None, user_record=make_user_record()) == []
-    assert get_defaulted_consortia(consortia=None, user_record=make_user_record(),
-                                   error_if_none=False) == []
+    assert _get_defaulted_consortia(consortia=None, user_record=make_user_record()) == []
+    assert _get_defaulted_consortia(consortia=None, user_record=make_user_record(),
+                                    error_if_none=False) == []
 
     with pytest.raises(Exception) as exc:
-        get_defaulted_consortia(consortia=None, user_record=make_user_record(), error_if_none=True)
+        _get_defaulted_consortia(consortia=None, user_record=make_user_record(), error_if_none=True)
     assert str(exc.value).startswith("Your user profile has no consortium")
 
 
 def test_get_defaulted_submission_centers():
 
-    assert get_defaulted_submission_centers(submission_centers=SOME_SUBMISSION_CENTERS,
-                                            user_record='does-not-matter') == SOME_SUBMISSION_CENTERS
-    assert get_defaulted_submission_centers(submission_centers=['anything'],
-                                            user_record='does-not-matter') == ['anything']
+    assert _get_defaulted_submission_centers(submission_centers=SOME_SUBMISSION_CENTERS,
+                                             user_record='does-not-matter') == SOME_SUBMISSION_CENTERS
+    assert _get_defaulted_submission_centers(submission_centers=['anything'],
+                                             user_record='does-not-matter') == ['anything']
 
     user_record = make_user_record(submission_centers=[{'@id': SOME_SUBMISSION_CENTER}])
 
-    successful_result = get_defaulted_submission_centers(submission_centers=None, user_record=user_record)
+    successful_result = _get_defaulted_submission_centers(submission_centers=None, user_record=user_record)
 
     print("successful_result=", successful_result)
 
     assert successful_result == SOME_SUBMISSION_CENTERS
 
-    assert get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record()) == []
-    assert get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(),
-                                            error_if_none=False) == []
+    assert _get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record()) == []
+    assert _get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(),
+                                             error_if_none=False) == []
 
     with pytest.raises(Exception) as exc:
-        get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(), error_if_none=True)
+        _get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(), error_if_none=True)
     assert str(exc.value).startswith("Your user profile has no submission center")
 
 
@@ -2974,23 +2977,23 @@ def test_do_app_arg_defaulting():
 
         args1 = {'foo': 1, 'bar': 2}
         user1 = {'default-foo': 4}
-        do_app_arg_defaulting(args1, user1)
+        _do_app_arg_defaulting(args1, user1)
         assert args1 == {'foo': 1, 'bar': 2}
 
         args2 = {'foo': None, 'bar': 2}
         user2 = {'default-foo': 4}
-        do_app_arg_defaulting(args2, user2)
+        _do_app_arg_defaulting(args2, user2)
         assert args2 == {'foo': 4, 'bar': 2}
 
         args3 = {'foo': None, 'bar': 2}
         user3 = {}
-        do_app_arg_defaulting(args3, user3)
+        _do_app_arg_defaulting(args3, user3)
         assert args3 == {'foo': 17, 'bar': 2}
 
         # Only the args already expressly present are defaulted
         args4 = {'bar': 2}
         user4 = {}
-        do_app_arg_defaulting(args4, user4)
+        _do_app_arg_defaulting(args4, user4)
         assert args4 == {'bar': 2}
 
         # If the defaulter returns None, the argument is removed rather than be None
@@ -2998,26 +3001,26 @@ def test_do_app_arg_defaulting():
         ignorable(default_default_foo)  # it gets used in the closure, PyCharm should know
         args5 = {'foo': None, 'bar': 2}
         user5 = {}
-        do_app_arg_defaulting(args5, user5)
+        _do_app_arg_defaulting(args5, user5)
         assert args4 == {'bar': 2}
 
 
 def test_summarize_submission():
 
     # env supplied
-    summary = summarize_submission(uuid='some-uuid', env='some-env', app='some-app')
+    summary = _summarize_submission(uuid='some-uuid', env='some-env', app='some-app')
     assert summary == "check-submit --app some-app --env some-env some-uuid"
 
     # server supplied
-    summary = summarize_submission(uuid='some-uuid', server='some-server', app='some-app')
+    summary = _summarize_submission(uuid='some-uuid', server='some-server', app='some-app')
     assert summary == "check-submit --app some-app --server some-server some-uuid"
 
     # If both are supplied, env wins.
-    summary = summarize_submission(uuid='some-uuid', server='some-server', env='some-env', app='some-app')
+    summary = _summarize_submission(uuid='some-uuid', server='some-server', env='some-env', app='some-app')
     assert summary == "check-submit --app some-app --env some-env some-uuid"
 
     # If neither is supplied, well, that shouldn't really happen, but we'll see this:
-    summary = summarize_submission(uuid='some-uuid', server=None, env=None, app='some-app')
+    summary = _summarize_submission(uuid='some-uuid', server=None, env=None, app='some-app')
     assert summary == "check-submit --app some-app some-uuid"
 
 
