@@ -8,7 +8,7 @@
 
 .. warning::
 
-   **THIS IS A PRE-RELEASE VERSION.** TESTING-123
+   **THIS IS A PRE-RELEASE VERSION.**
    Watch for version 1.0.
 
 
