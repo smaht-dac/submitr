@@ -29,4 +29,4 @@ jobs:
       - name: Docs
         env:
           DOCS_TOKEN: ${{ secrets.DOCS_TOKEN }}
-        run: curl -X POST -d "ref=master" -d "token=$DOCS_TOKEN" https://readthedocs.org/api/v2/webhook/submitr/246175/
+        run: curl -X POST -d "ref=master" -d "token=$DOCS_TOKEN" https://readthedocs.org/api/v2/webhook/submitr/261796/
