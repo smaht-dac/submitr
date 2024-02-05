@@ -9,7 +9,7 @@
 .. warning::
 
    **THIS IS A PRE-RELEASE VERSION.**
-   Watch for version 1.0.
+   Version 1.0 is forthcoming circa February 2024.
 
 
 ========
