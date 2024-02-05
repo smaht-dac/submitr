@@ -1,8 +1,8 @@
-Implementation of submitr
-=========================
+Implementation of smaht-submitr
+===============================
 
-submitr package
----------------
+smaht-submitr package
+---------------------
 
 submitr.base module
 ~~~~~~~~~~~~~~~~~~~
@@ -24,14 +24,6 @@ submitr.submission module
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: submitr.submission
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-submitr.utils module
-~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: submitr.utils
    :members:
    :undoc-members:
    :show-inheritance:

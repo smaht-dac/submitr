@@ -7,6 +7,30 @@ Change Log
 ----------
 
 
+0.5.3
+=====
+
+* Version updates to dcicutils.
+* Changes to itemize SMaHT submission ingestion create/update/diff situation.
+
+
+0.5.2
+=====
+
+* Refactored to use dcicutils.portal_utils.Portal.
+* Many minor-ish changes to submit-metadata-bundle, resume-uploads, upload-item-data.
+  E.g. sanity checking file paths and uuids, providing more info/feedback to user,
+  allowing accession ID or accession ID based file name, show file sizes, etc.
+* Subsumed upload-item-data functionality into resume-uploads for convenience.
+* Starting (readthedocs) documentation updates.
+
+
+0.5.1
+=====
+
+* Thug commit to initiate publish.
+
+
 0.5.0
 =====
 

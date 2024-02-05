@@ -10,4 +10,5 @@ TEST_FILE=test_submission_from_doug_20231106.xlsx
 TEST_FILE_DIR=$THIS_DIR/../testdata/demo
 TEST_FILE_PATH=`realpath $TEST_FILE_DIR/$TEST_FILE`
 
-submit-metadata-bundle $TEST_FILE_PATH --env smaht-localhost --verbose $*
+echo submit-metadata-bundle $TEST_FILE_PATH --env smaht-local $*
+submit-metadata-bundle $TEST_FILE_PATH --env smaht-local $*

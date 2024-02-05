@@ -5,10 +5,6 @@ build:
   os: "ubuntu-20.04"
   tools:
     python: "3.8"
-
-# Python configuration
-python:
-  version: "3.8"
   install:
     - method: pip
       path: .
@@ -18,3 +14,4 @@ python:
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
   configuration: docs/source/conf.py
+version: 2

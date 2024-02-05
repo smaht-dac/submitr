@@ -26,8 +26,12 @@ update:  # updates dependencies
 tag-and-push:  # tags the branch and pushes it
 	@scripts/tag-and-push
 
-preview-locally:
+preview-locally: doc-view
+
+doc:
 	sphinx-build -b html docs/source docs/html
+
+doc-view: doc
 	open docs/html/index.html
 
 publish:

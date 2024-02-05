@@ -1,7 +1,6 @@
 import pytest
 from unittest import mock
 from .. import submission as submission_module
-from ..base import DefaultKeyManager
 from ..scripts import submit_ontology as submit_ontology_module
 from ..scripts.submit_ontology import main as submit_ontology_main
 from .testing_helpers import system_exit_expected, argparse_errors_muffled, temporary_json_file
@@ -16,24 +15,19 @@ def test_submit_ontology_script(keyfile):
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
         output = []
         with argparse_errors_muffled():
-            with DefaultKeyManager.default_keys_file_for_testing(keyfile):
-                with mock.patch.object(submit_ontology_module, "submit_any_ingestion") as mock_submit_any_ingestion:
-                    with mock.patch.object(submission_module, "print") as mock_print:
-                        mock_print.side_effect = lambda *args: output.append(" ".join(args))
-                        with mock.patch.object(submission_module, "yes_or_no") as mock_yes_or_no:
-                            mock_yes_or_no.return_value = True
-                            with system_exit_expected(exit_code=expect_exit_code):
-                                key_manager = DefaultKeyManager()
-                                if keyfile:
-                                    assert key_manager.keys_file == keyfile
-                                assert key_manager.keys_file == (keyfile or key_manager.KEYS_FILE)
-                                submit_ontology_main(args_in)
-                                raise AssertionError(  # pragma: no cover
-                                    "submit_ontology_main should not exit normally.")
-                            assert mock_submit_any_ingestion.call_count == (1 if expect_called else 0)
-                            if expect_called:
-                                assert mock_submit_any_ingestion.called_with(**expect_call_args)
-                            assert output == []
+            with mock.patch.object(submit_ontology_module, "submit_any_ingestion") as mock_submit_any_ingestion:
+                with mock.patch.object(submission_module, "print") as mock_print:
+                    mock_print.side_effect = lambda *args: output.append(" ".join(args))
+                    with mock.patch.object(submission_module, "yes_or_no") as mock_yes_or_no:
+                        mock_yes_or_no.return_value = True
+                        with system_exit_expected(exit_code=expect_exit_code):
+                            submit_ontology_main(args_in)
+                            raise AssertionError(  # pragma: no cover
+                                "submit_ontology_main should not exit normally.")
+                        assert mock_submit_any_ingestion.call_count == (1 if expect_called else 0)
+                        if expect_called:
+                            assert mock_submit_any_ingestion.called_with(**expect_call_args)
+                        assert output == []
 
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
 
