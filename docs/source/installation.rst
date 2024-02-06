@@ -6,10 +6,11 @@ Installing smaht-submitr
 System Requirements
 ===================
 
-* Python 3.8, 3.9, 3.10, or 3.11
-* ``pip`` (>=20.0.0)
-* ``virtualenv`` (>=16.0.0)
-* ``poetry`` (>=1.4.0)
+* `Prerequisites </installing_prerequisites>`_
+* ``python`` `3.8, 3.9, 3.10, or 3.11`
+* ``pip`` `>=20.0.0`
+* ``poetry`` `>=1.4.0`
+* ``virtualenv`` `>=16.0.0` (`optional`)
 
 
 Setting Up a Virtual Environment (OPTIONAL)
