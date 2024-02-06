@@ -2,11 +2,15 @@
 Installing smaht-submitr
 ========================
 
+.. toctree::
+  :maxdepth: 1
+
+  installing_prerequisites
+
 
 System Requirements
 ===================
 
-* `Prerequisites </installing_prerequisites>`_
 * ``python`` `3.8, 3.9, 3.10, or 3.11`
 * ``pip`` `>=20.0.0`
 * ``poetry`` `>=1.4.0`
