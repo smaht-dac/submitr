@@ -37,6 +37,9 @@ Notice that the first row comprises the property/column `header`, defining prope
 And also notice the multiple tabs at the bottom for the different sheets within the spreadsheet,
 representing (in this example) data for the objects ``CellCultureSample``, ``Analyte``, and so on.
 
+N.B. Though ``submission_center`` is shown in the above screenshot,
+that particular field is not actually required, as it is automatically added by the ``smaht-submitr`` tool.
+
 **Column Deletions**
 
 A column value within a (non-header) row may be empty, but this only means that the value will be ignored
