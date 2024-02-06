@@ -56,7 +56,6 @@ For this we will use a `dot-notation` whereby dots (``.``) are used to separate 
 For example, an object may define a ``components`` property which itself may contain a ``cell_culture`` property;
 to reference the ``cell_culture`` property then, the spreadsheet column header would need to be ``components.cell_culture``.
 
-
 **Array Type Columns**
 
 Some Portal object properties are defined to be lists (or `arrays`) of values.
@@ -68,6 +67,12 @@ Less common, but still supported, is the ability to set values for individual ar
 This is accomplished by the convention suffixing the property name in the column header with
 a pound sign (``#``) folowing by an integer representing the zero-indexed array element.
 For example to set the first element of the ``molecules`` property (using the example above), use column header value ``molecule#0``.
+
+
+**Boolean Type Columns**
+
+For Portal object properties which are defined as `boolean` values, meaning either `true` or `false`,
+simply use these values, i.e. ``true`` or ``false``.
 
 
 Submission
