@@ -46,7 +46,7 @@ A column value within a (non-header) row may be empty, but this only means that 
 when creating or updating the associated object. In order to actually `delete` a property value from an object,
 a special value - ``*delete*`` - should be used as the the property value.
 
-**Nested Columns**
+**Nested Properties**
 
 Some Portal object properties defined to contain other `nested` objects.
 Since a (Excel spreadsheet) inherently defines a "flat" structure,
@@ -56,7 +56,7 @@ For this we will use a `dot-notation` whereby dots (``.``) are used to separate 
 For example, an object may define a ``components`` property which itself may contain a ``cell_culture`` property;
 to reference the ``cell_culture`` property then, the spreadsheet column header would need to be ``components.cell_culture``.
 
-**Array Type Columns**
+**Array Type Properties**
 
 Some Portal object properties are defined to be lists (or `arrays`) of values.
 Defining the values for such array properties, separate the individual array values by a comma (``,``).
@@ -68,12 +68,21 @@ This is accomplished by the convention suffixing the property name in the column
 a pound sign (``#``) folowing by an integer representing the zero-indexed array element.
 For example to set the first element of the ``molecules`` property (using the example above), use column header value ``molecule#0``.
 
-
-**Boolean Type Columns**
+**Boolean Type Properties**
 
 For Portal object properties which are defined as `boolean` values, meaning either `true` or `false`,
 simply use these values, i.e. ``true`` or ``false``.
 
+**Property References**
+
+Some Portal object properties are defined as being references to other Portal objects (also known as `linkTo` properties).
+The values of these in the spreadsheet should be the unique identifying value for that object.
+It is important to know that the ``smaht-submitr`` tool and SMaHT will ensure that the referenced
+objects actually exist within the SMaHT Portal, `or` are defined within the spreadsheet itself;
+if this is not the case then an error will be the result.
+The identifying value for an object varies depending on the specific object in question,
+though the ``uuid`` is common to all objects; other common identifying properties
+are ``submitted_id`` and ``accession``.
 
 Submission
 ==========
