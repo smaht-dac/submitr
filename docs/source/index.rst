@@ -20,6 +20,10 @@ Overview
 smaht-submitr: A remote file submitter for SMaHT
 ------------------------------------------------
 
+.. image:: _static/images/somescreenshot.png
+    :target: https://github.com/smaht-dac/submitr/actions
+    :alt: Build Status
+
 .. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
     :target: https://github.com/smaht-dac/submitr/actions
     :alt: Build Status

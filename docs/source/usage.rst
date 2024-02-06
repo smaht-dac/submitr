@@ -26,9 +26,39 @@ Note that the first row which is entirely empty marks the end of the input, and 
 And similarly, the first column in the header column which is empty marks the end of the header,
 and any subsequent columns will be entirely ignored.
 
-A column value within a (non-header) row may be empty, but this means the value would be ignored
-when creating or updating the associated object. In order to delete a property value a special
-value ``*delete*`` should be used as the the property value.
+Here is screenshot of a simple example Excel spreadsheet: 
+
+.. image:: _static/images/excel_screenshot.png
+    :target: _static/images/excel_screenshot.png
+    :alt: Excel Spreadsheet Screenshot
+
+Notice the multiple tabs at the bottom for the different sheets within the spreadsheet,
+representing (in this example) ``CellCultureSample``, ``Analyte``, and so on.
+
+**Column Deletions**
+
+A column value within a (non-header) row may be empty, but this only means that the value will be ignored
+when creating or updating the associated object. In order to actually delete a property value from an object,
+a special value - ``*delete*`` - should be used as the the property value.
+
+**Nested Columns**
+
+Some Portal object properties defined to contain other `nested` objects.
+Since a (Excel spreadsheet) inherently defines a "flat" structure,
+rather than the more hierarchical structure supported by Portal objects, in which such nested objects can be defined,
+a special syntactic convention is needed to be able to reference the properties of these nested objects.
+For this we will use a `dot-notation` whereby dots (``.``) are used to separate a parent property from its child property.
+For example, an object may define a ``components`` property which itself may contain a ``cell_culture`` property;
+to reference the ``cell_culture`` property then, the spreadsheet column header would need to be ``components.cell_culture``.
+
+
+**Array Type Columns**
+
+Some Portal object properties are defined to be lists (or `arrays`) of values.
+Defining the values for such array properties, separate the individual array values by a comma (``,``).
+For example if an object defines a ``molecules`` property as an array type, then to set this
+value to an array with the two elements ``DNA`` and ``RNA``, you should use the value ``DNA,RNA`` in the associated spreadsheet cell.
+
 
 Submission
 ==========
