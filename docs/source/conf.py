@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'submitr'
-copyright = '2020-2023 President and Fellows of Harvard College'
+copyright = '2020-2024 President and Fellows of Harvard College'
 author = 'Harvard Medical School / DBMI / SMaHT DAC Team'
 master_doc = 'index'
 

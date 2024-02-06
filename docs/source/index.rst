@@ -1,24 +1,18 @@
 .. raw:: html
 
-   <div style="width: 100%; text-align: center;">
-     <iframe src="_static/logo.html" style="width: 575px; height: 220px; border: none; margin: 0; padding: 0;" />
+   <div style="width: 100%; text-align: left; margin-left:-10px">
+     <iframe src="_static/logo.html" style="width: 555px; height: 155px; border: none; margin: 0; padding: 0;" />
       [SMaHT submitr logo]
      </iframe>
    </div>
 
-.. warning::
-
-   **THIS IS A PRE-RELEASE VERSION.**
-   Version 1.0 is forthcoming circa February 2024.
-
+-----------------------------
 
 ========
 Overview
 ========
 
-------------------------------------------------
-smaht-submitr: A remote file submitter for SMaHT
-------------------------------------------------
+**smaht-submitr**: A remote file submitter for SMaHT
 
 .. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
     :target: https://github.com/smaht-dac/submitr/actions
@@ -36,17 +30,17 @@ smaht-submitr: A remote file submitter for SMaHT
 Description
 ===========
 
-The ``smaht-submitr`` is a command-line tool for uploading files to SMaHT.
+The ``smaht-submitr`` software is a command-line tool for uploading files to SMaHT.
 It is implemented as Python package and distributed on `PyPi <https://pypi.org/>`_ here: `smaht-submitr <https://pypi.org/project/smaht-submitr/>`_
 
 
 System Requirements
 ===================
 
-* ``python`` (>= ``3.8`` and <= ``3.11``) 
-* ``pip`` (>= ``22.0.0``)
-* ``poetry`` (>= ``1.4.0``)
-* ``smaht-portal`` (>= ``1.0.0``)
+* ``python`` `3.8, 3.9, 3.10, or 3.11`
+* ``pip`` `>=20.0.0`
+* ``poetry`` `>=1.4.0`
+* ``smaht-portal`` `>= 1.0.0`
 
 
 What To Do Next
@@ -66,7 +60,6 @@ and installing the dependencies to run this package.
   :maxdepth: 1
 
   self
-  installing_prerequisites
   installation
   credentials
   usage
