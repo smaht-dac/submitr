@@ -32,13 +32,15 @@ Here is screenshot of a simple example Excel spreadsheet:
     :target: _static/images/excel_screenshot.png
     :alt: Excel Spreadsheet Screenshot
 
-Notice the multiple tabs at the bottom for the different sheets within the spreadsheet,
-representing (in this example) ``CellCultureSample``, ``Analyte``, and so on.
+Notice that the first row comprises the property/column `header`, defining properties named ``submitted_id``, ``submission_centers``, and so on.
+
+And also notice the multiple tabs at the bottom for the different sheets within the spreadsheet,
+representing (in this example) data for the objects ``CellCultureSample``, ``Analyte``, and so on.
 
 **Column Deletions**
 
 A column value within a (non-header) row may be empty, but this only means that the value will be ignored
-when creating or updating the associated object. In order to actually delete a property value from an object,
+when creating or updating the associated object. In order to actually `delete` a property value from an object,
 a special value - ``*delete*`` - should be used as the the property value.
 
 **Nested Columns**
@@ -57,7 +59,12 @@ to reference the ``cell_culture`` property then, the spreadsheet column header w
 Some Portal object properties are defined to be lists (or `arrays`) of values.
 Defining the values for such array properties, separate the individual array values by a comma (``,``).
 For example if an object defines a ``molecules`` property as an array type, then to set this
-value to an array with the two elements ``DNA`` and ``RNA``, you should use the value ``DNA,RNA`` in the associated spreadsheet cell.
+value to an array with the two elements ``DNA`` and ``RNA``, use the value ``DNA,RNA`` in the associated spreadsheet cell.
+
+Less common, but still supported, is the ability to set values for individual array elements.
+This is accomplished by the convention suffixing the property name in the column header with
+a pound sign (``#``) folowing by an integer representing the zero-indexed array element.
+For example to set the first element of the ``molecules`` property (using the example above), use column header value ``molecule#0``.
 
 
 Submission
@@ -128,6 +135,20 @@ To be more specific, these sanity checks include the following:
 #. Validates the objects defined within the submission file against the corresponding Portal schemas for these objects.
 #. Confirms that any objects referenced within the submission file can be resolved; i.e. either they already exist within the Portal, or are defined within the submission file itself.
 #. Checks that referenced files (to be subsequently uploaded) actually exist on the file system.
+
+**Example Screenshots**
+
+The output of a successfully completed ``submit-metadata-bundle`` will look something like this:
+
+.. image:: _static/images/submitr_output.png
+    :target: _static/images/submitr_output.png
+    :alt: Excel Spreadsheet Screenshot
+
+When specifying the ``--check`` the additional sanity checking output will look something like this:
+
+.. image:: _static/images/submitr_check.png
+    :target: _static/images/submitr_check.png
+    :alt: Excel Spreadsheet Screenshot
 
 Resuming Uploads
 ================
