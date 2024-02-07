@@ -120,17 +120,6 @@ multiple consortia and/or submission centers, you can also add the ``--consortiu
 and ``--submission-center <submission-center>`` options; if you belong to only one of either,
 the command will automatically detect (based on your user profile) and use those.
 
-Valdation Only
---------------
-
-To invoke the submission for validation only, without having SMaHT actually ingest anything into its data store, do::
-
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --validate-only
-
-To be clear, this `will` submit the file to SMaHT for processing, but no data ingestion will take place, and any problems
-will be reported back to you from the SMaHT server. To sanity check the file you are submitting  `before` actually
-submitting it to SMaHT, you should use the ``--check`` option described now below.
-
 Sanity Checking
 ---------------
 
@@ -152,6 +141,17 @@ To be more specific, these sanity checks include the following:
 #. Validates the objects defined within the submission file against the corresponding Portal schemas for these objects.
 #. Confirms that any objects referenced within the submission file can be resolved; i.e. either they already exist within the Portal, or are defined within the submission file itself.
 #. Checks that referenced files (to be subsequently uploaded) actually exist on the file system.
+
+Valdation Only
+--------------
+
+To invoke the submission for validation only, without having SMaHT actually ingest anything into its data store, do::
+
+   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --validate-only
+
+To be clear, this `will` submit the file to SMaHT for processing, but no data ingestion will take place, and any problems
+will be reported back to you from the SMaHT server. To sanity check the file you are submitting  `before` actually
+submitting it to SMaHT, you should use the ``--check`` option described now below.
 
 Example Screenshots
 -------------------
@@ -203,16 +203,16 @@ You can resume execution with the upload part by doing::
 
    resume-uploads --env <environment-name> <uuid>
 
-where the ``uuid`` argument is the UUID for the submission which should have been displayed in the output of the ``submit-metadata-bundle`` command.
+where the ``uuid`` argument is the UUID for the submission which should have been displayed in the output of the ``submit-metadata-bundle`` command;
+this will upload `all` of the files references for the given submission UUID.
 
-You can upload individual files referenced in the original submission separately by doing::
+Or, you can upload `individual` files referenced in the original submission separately by doing::
 
-   resume-uploads --env <environment-name> <referenced-file-uuid-or-accesssion-id> --uuid <item-uuid>
+   resume-uploads --env <environment-name> <referenced-file-uuid> --uuid <item-uuid>
 
-where the ``<referenced-file-uuid-or-accesssion-id>`` is the uuid (or the accession ID or accession based file name) of the 
-individual file referenced (`not` the submission or metadata bundle UUID) which you wish to upload;
-
-The **uuid** (or accession ID or accession based file name) is included in the output of ``submit-metadata-bundle``;
+where the ``<referenced-file-uuid>`` is the uuid individual file referenced, `or`
+the accession ID or accession ID based file name of the referenced file.
+This **uuid**, or accession ID or accession ID based file name, is included in the output of ``submit-metadata-bundle``;
 specifically in the **Upload Info** section of that output.
 
 For both of these commands above, you will be asked to confirm if you would like to continue with the stated action.
