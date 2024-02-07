@@ -111,19 +111,6 @@ multiple consortia and/or submission centers, you can also add the ``--consortiu
 and ``--submission-center <submission-center>`` options; if you belong to only one of either,
 the command will automatically detect (based on your user profile) and use those.
 
-**Uploading Referenced Files**
-
-As mentioned above, after ``submit-metadata-bundle`` processes the main submission file, it will (after prompting) upload files referenced within the submission file. These files should reside
-in the same directory as the submission file.
-Or, if they do not, then yo must specify the directory where these files can be found, like this::
-
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files>
-
-The above commands will only look for the files to upload only directly within the specified directory
-(and not any sub-directories therein). To look within subdirectories, do::
-
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files> --subdirectories
-
 **Valdation Only**
 
 To invoke the submission for validation only, without having SMaHT actually ingest anything into its data store, do::
@@ -146,7 +133,8 @@ And to invoke the submission for with `only` local sanity checking, without actu
 
 These ``--check`` and ``--check-only`` options can be very useful and their use is encouraged.
 They ensure that everything is in order before sending the submission off to SMaHT for processing.
-In fact this (``--check`` ) is actually the `default` behavior unless your user profile indicates that you are an `admin` user.
+
+In fact, this (``--check`` ) is actually the `default` behavior unless your user profile indicates that you are an `admin` user.
 To be more specific, these sanity checks include the following:
 
 #. Ensures the basic integrity of the format of the submission file.
@@ -168,10 +156,25 @@ When specifying the ``--check`` the additional sanity checking output will look 
     :target: _static/images/submitr_check.png
     :alt: Excel Spreadsheet Screenshot
 
+Uploading Referenced Files
+==========================
+
+As mentioned above, after ``submit-metadata-bundle`` processes the main submission file, it will (after prompting) upload files referenced within the submission file. These files should reside
+in the same directory as the submission file.
+Or, if they do not, then you must specify the directory where these files can be found, like this::
+
+   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files>
+
+The above commands will only look for the files to upload only directly within the specified directory
+(and not any sub-directories therein). To look within subdirectories, do::
+
+   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files> --subdirectories
+
 Resuming Uploads
 ================
 When using ``submit-metadata-bundle`` you can choose `not` to upload any referenced files when prompted.
-In this case, you will probably want to manually upload them subsequently using the ``resume-uploads`` command.
+In this case, you will probably want to manually upload them subsequently;
+you can do this using the ``resume-uploads`` command.
 
 You can resume execution with the upload part by doing::
 
