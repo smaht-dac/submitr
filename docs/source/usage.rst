@@ -90,7 +90,7 @@ Submission
 
 The type of submission supported is called a "metadata bundles", or `accessioning`.
 And the name of the command-line tool to initiate a submission is ``submit-metadata-bundle``.
-A brief tour of this command, its arguments, and function is given below.
+A brief tour of this command, its arguments, and function is described below.
 To get help about the command, do::
 
    submit-metadata-bundle --help
