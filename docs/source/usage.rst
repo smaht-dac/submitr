@@ -33,10 +33,10 @@ Here is screenshot of a simple example Excel spreadsheet:
     :target: _static/images/excel_screenshot.png
     :alt: Excel Spreadsheet Screenshot
 
-Notice that the first row comprises the property/column `header`, defining properties named ``submitted_id``, ``submission_centers``, and so on.
+Notice that the first row comprises the property/column `header`, defining properties named ``submitted_id``, ``submission_centers``, ``filename``, and so on.
 
 And also notice the multiple tabs at the bottom for the different sheets within the spreadsheet,
-representing (in this example) data for the objects ``CellCultureSample``, ``Analyte``, and so on.
+representing (in this example) data for the objects ``CellCultureSample``, ``Analyte``, ``Library``, and so on.
 
 N.B. Though ``submission_center`` is shown in the above screenshot,
 that particular field is not actually required, as it is automatically added by the ``smaht-submitr`` tool.
