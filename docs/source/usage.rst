@@ -134,7 +134,7 @@ And to invoke the submission for with `only` local sanity checking, without actu
 These ``--check`` and ``--check-only`` options can be very useful and their use is encouraged.
 They ensure that everything is in order before sending the submission off to SMaHT for processing.
 
-In fact, this (``--check`` ) is actually the `default` behavior unless your user profile indicates that you are an `admin` user.
+In fact, this (``--check`` option) is actually the `default` behavior unless your user profile indicates that you are an `admin` user.
 To be more specific, these sanity checks include the following:
 
 #. Ensures the basic integrity of the format of the submission file.
