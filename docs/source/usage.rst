@@ -166,6 +166,14 @@ When specifying the ``--check`` the additional sanity checking output will look 
     :target: _static/images/submitr_check.png
     :alt: Excel Spreadsheet Screenshot
 
+Getting Submission Info
+=======================
+To view relevant information about a submission using, do::
+
+   check-submission --env <environment-name> <uuid>
+
+where the ``uuid`` argument is the UUID for the submission which should have been displayed in the output of the ``submit-metadata-bundle`` command.
+
 Uploading Referenced Files
 ==========================
 
@@ -175,8 +183,8 @@ Or, if they do not, then you must specify the directory where these files can be
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files>
 
-The above commands will only look for the files to upload only directly within the specified directory
-(and not any sub-directories therein). To look within subdirectories, do::
+The above commands will only look for the files to upload directly within the specified directory
+(and not any sub-directories therein). To look (recursively) within sub-directories, do::
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files> --subdirectories
 
@@ -205,11 +213,3 @@ If you would like to skip these prompts so the commands can be run by a
 scheduler or in the background, you can pass the ``--no_query`` or ``-nq`` argument, such as::
 
     submit-metadata-bundle your_metadata_file.xlsx --no_query
-
-Getting Submission Info
-=======================
-To view relevant information about a submission using, do::
-
-   check-submission --env <environment-name> <uuid>
-
-where the ``uuid`` argument is the UUID for the submission which should have been displayed in the output of the ``submit-metadata-bundle`` command.
