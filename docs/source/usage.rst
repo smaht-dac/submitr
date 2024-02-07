@@ -65,7 +65,7 @@ value to an array with the two elements ``DNA`` and ``RNA``, use the value ``DNA
 
 Less common, but still supported, is the ability to set values for individual array elements.
 This is accomplished by the convention suffixing the property name in the column header with
-a pound sign (``#``) folowing by an integer representing the zero-indexed array element.
+a pound sign (``#``) followed by an integer representing the zero-indexed array element.
 For example to set the first element of the ``molecules`` property (using the example above), use column header value ``molecule#0``.
 
 **Boolean Type Properties**
