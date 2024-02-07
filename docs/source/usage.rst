@@ -39,13 +39,15 @@ representing (in this example) data for the objects ``CellCultureSample``, ``Ana
 N.B. Though ``submission_center`` is shown in the above screenshot,
 that particular field is not actually required, as it is automatically added by the ``smaht-submitr`` tool.
 
-**Property Deletions**
+Property Deletions
+------------------
 
 A column value within a (non-header) row may be empty, but this only means that the value will be ignored
 when creating or updating the associated object. In order to actually `delete` a property value from an object,
 a special value - ``*delete*`` - should be used as the the property value.
 
-**Nested Properties**
+Nested Properties
+-----------------
 
 Some Portal object properties defined to contain other `nested` objects.
 Since a (Excel spreadsheet) inherently defines a "flat" structure,
@@ -55,7 +57,8 @@ For this we will use a `dot-notation` whereby dots (``.``) are used to separate 
 For example, an object may define a ``components`` property which itself may contain a ``cell_culture`` property;
 to reference the ``cell_culture`` property then, the spreadsheet column header would need to be ``components.cell_culture``.
 
-**Array Type Properties**
+Array Type Properties
+---------------------
 
 Some Portal object properties are defined to be lists (or `arrays`) of values.
 Defining the values for such array properties, separate the individual array values by a comma (``,``).
@@ -67,12 +70,14 @@ This is accomplished by the convention suffixing the property name in the column
 a pound sign (``#``) followed by an integer representing the zero-indexed array element.
 For example to set the first element of the ``molecules`` property (using the example above), use column header value ``molecule#0``.
 
-**Boolean Type Properties**
+Boolean Type Properties
+-----------------------
 
 For Portal object properties which are defined as `boolean` values, meaning either `true` or `false`,
 simply use these values, i.e. ``true`` or ``false``.
 
-**Property References**
+Property References
+-------------------
 
 Some Portal object properties are defined as being references to other Portal objects (also known as `linkTo` properties).
 The values of these in the spreadsheet should be the unique identifying value for that object.
@@ -110,7 +115,8 @@ multiple consortia and/or submission centers, you can also add the ``--consortiu
 and ``--submission-center <submission-center>`` options; if you belong to only one of either,
 the command will automatically detect (based on your user profile) and use those.
 
-**Valdation Only**
+Valdation Only
+--------------
 
 To invoke the submission for validation only, without having SMaHT actually ingest anything into its data store, do::
 
@@ -120,7 +126,8 @@ To be clear, this `will` submit the file to SMaHT for processing, but no data in
 will be reported back to you from the SMaHT server. To sanity check the file you are submitting  `before` actually
 submitting it to SMaHT, you should use the ``--check`` option described now below.
 
-**Sanity Checking**
+Sanity Checking
+---------------
 
 To invoke the submission for with `local` sanity checking, where "local" means - `before` actually submitting to SMaHT, do::
 
@@ -141,7 +148,8 @@ To be more specific, these sanity checks include the following:
 #. Confirms that any objects referenced within the submission file can be resolved; i.e. either they already exist within the Portal, or are defined within the submission file itself.
 #. Checks that referenced files (to be subsequently uploaded) actually exist on the file system.
 
-**Example Screenshots**
+Example Screenshots
+-------------------
 
 The output of a successfully completed ``submit-metadata-bundle`` will look something like this:
 

@@ -9,14 +9,16 @@ you are required to obtain and setup an access and secret key from the SMaHT dat
 These must stored in a specific format and file on your local system.
 Please follow these steps below to get your access keys and configure your local system for ``smath-submitr`` usage.
 
-**Obtaining SMaHT Data Portal Access Keys**
+Obtaining SMaHT Data Portal Access Keys
+---------------------------------------
 
 #. Log in to the SMaHT `website <https://data.smaht.org>`_ with your username (email) and password.
 #. Once logged in, go to your **Profile** page by clicking **Account** on the upper right corner of the page.
 #. On your profile page, click the green **Add Access Key** button, and copy the **Access Key ID** and **Secret Access Key** values from the popup page. Note that *once the pop-up page disappears you will not be able to see the secret access key value*. However if you forget/lose your secret key you can always delete and add new access keys from your profile page at any time.
 #. Store these values the file ``~/.smaht-keys.json`` on your local machine; see the next section for details.
 
-**Storing SMaHT Data Portal Access Keys**
+Storing SMaHT Data Portal Access Keys
+-------------------------------------
 
 Once you've obtained access and secret keys (per the previous) section,
 they should be stored in a file on your local machine called ``~/.smaht-keys.json``.
@@ -51,7 +53,8 @@ Though if you only have one environment defined in this file then this (``-env``
 
 N.B. If you are not sure what ``server`` you should be submitting to, reach out to your contact on the SMaHT DAC Team.
 
-**Securing SMaHT Portal Access Keys**
+Securing SMaHT Portal Access Keys
+---------------------------------
 
 For extra security, this file should **not** be readable by others; only yourself.
 Set its permissions accordingly by using ``chmod 600``,
