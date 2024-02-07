@@ -44,7 +44,7 @@ that particular field is not actually required, as it is automatically added by 
 Property Deletions
 ------------------
 
-A column value within a (non-header) row may be empty, but this only means that the value will be ignored
+A column value within a (non-header) data row may be empty, but this only means that the value will be ignored
 when creating or updating the associated object. In order to actually `delete` a property value from an object,
 a special value - ``*delete*`` - should be used as the the property value.
 
