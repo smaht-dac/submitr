@@ -78,8 +78,8 @@ Boolean Type Properties
 For Portal object properties which are defined as `boolean` values, meaning either `true` or `false`,
 simply use these values, i.e. ``true`` or ``false``.
 
-Property References
--------------------
+Object Reference Properties
+---------------------------
 
 Some Portal object properties are defined as being references to other Portal objects (also known as `linkTo` properties).
 The values of these in the spreadsheet should be the unique identifying value for that object.
