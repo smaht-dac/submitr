@@ -160,6 +160,9 @@ The output of a successfully completed ``submit-metadata-bundle`` will look some
     :target: _static/images/submitr_output.png
     :alt: Excel Spreadsheet Screenshot
 
+Notice the **Submission UUID** value in the **Validation Output** section as well as the **uuid** values in the **Upload Info** section;
+these may be used in a subsequent ``resume-uploads`` invocation.
+
 When specifying the ``--check`` the additional sanity checking output will look something like this:
 
 .. image:: _static/images/submitr_check.png
@@ -206,7 +209,9 @@ You can upload individual files referenced in the original submission separately
 
 where the ``<referenced-file-uuid-or-accesssion-id>`` is the uuid (or the accession ID or accession based file name) of the 
 individual file referenced (`not` the submission or metadata bundle UUID) which you wish to upload;
-this uuid (or accession ID or accession based file name) is included in the output of ``submit-metadata-bundle``. 
+
+The **uuid** (or accession ID or accession based file name) is included in the output of ``submit-metadata-bundle``;
+specifically in the **Upload Info** section of that output.
 
 For both of these commands above, you will be asked to confirm if you would like to continue with the stated action.
 If you would like to skip these prompts so the commands can be run by a
