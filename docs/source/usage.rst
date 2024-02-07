@@ -53,7 +53,9 @@ Nested Properties
 
 Some Portal object properties defined to contain other `nested` objects.
 Since a (Excel spreadsheet) inherently defines a "flat" structure,
-rather than the more hierarchical structure supported by Portal objects, in which such nested objects can be defined,
+rather than the more hierarchical structure supported by
+Portal objects (which are actually `JSON <https://en.wikipedia.org/wiki/JSON>`_ objects),
+in which such nested objects can be defined,
 a special syntactic convention is needed to be able to reference the properties of these nested objects.
 
 For this we will use a `dot-notation` whereby dots (``.``) are used to separate a parent property from its child property.
