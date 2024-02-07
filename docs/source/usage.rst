@@ -40,7 +40,7 @@ representing (in this example) data for the objects ``CellCultureSample``, ``Ana
 N.B. Though ``submission_center`` is shown in the above screenshot,
 that particular field is not actually required, as it is automatically added by the ``smaht-submitr`` tool.
 
-**Column Deletions**
+**Property Deletions**
 
 A column value within a (non-header) row may be empty, but this only means that the value will be ignored
 when creating or updating the associated object. In order to actually `delete` a property value from an object,
