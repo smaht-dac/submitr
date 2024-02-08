@@ -63,4 +63,5 @@ and installing the dependencies to run this package.
   installation
   credentials
   usage
+  uploading_files
   submitr
