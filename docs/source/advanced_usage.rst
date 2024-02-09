@@ -14,7 +14,7 @@ However we also support a couple other formats, as follows.
 
 It is interesting to note that internally, the ``smaht-submitr`` tool translates the given Excel spreadsheet file
 into JSON (JavaScript Object Notation) format, and then submits that to SMaHT for processing; i.e. JSON is really
-the native format for this tool. So naturally, you can use a JSON file directly rather than an Excel file to submit metadata.
+the native format for this tool. So naturally, you can use a (single) JSON file directly rather than an Excel file to submit metadata.
 
 The required JSON is comprised of a single object containing one or more properties, each named for a SMaHT Portal object type,
 and each of those containing an array of one or more object definitions for that type. The objects must of course
@@ -26,7 +26,7 @@ this will output the JSON for the given Excel spreadsheet as translated by ``sma
 
 **CSV Files**
 
-As Excel files are really just fancy CSV (comma-separated-values), it is natural that CSV files be supported as an alternative.
+As Excel files are really just fancy CSV (comma-separated-values), it's natural that CSV files be supported as an alternative.
 The file name for CSV file `must` be suffixed with ``.csv``.
 Nothing much to say here specifically about this file format per se, as it should be self-explanatory to anyone familiar with these file formats,
 be be sure to read the next paragraph.
@@ -38,7 +38,7 @@ object type name (minus the ``.csv`` suffix). This file name can be either the c
 version of the type name, for example, ``CellCulture.csv`` or ``cell_culture.csv``, respectively.
 
 This obviously implies that multiple files are required if multiple types are to be submitted,
-and the natural question is how to submit multiple files in a single submission.
+and the next question is how to submit multiple files in a single submission.
 The answer is that in this case the files need to packaged together into a
 single archive file (optionally compressed - see below) using the standard ``tar`` command-line utility.
 
