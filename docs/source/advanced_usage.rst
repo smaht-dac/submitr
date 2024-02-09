@@ -30,8 +30,8 @@ CSV Files
 
 As Excel files are really just fancy CSV (comma-separated-values), it's natural that CSV files be supported as an alternative.
 The file name for CSV file `must` be suffixed with ``.csv``.
-Nothing much to say here specifically about this file format per se, as it should be self-explanatory to anyone familiar with these file formats,
-be be sure to read the next paragraph.
+Nothing much to say here specifically about this file format per se, as it should be self-explanatory to anyone familiar with these file formats;
+but be sure to read the next paragraph.
 
 Since, unlike Excel files, which support multiple tabs (each representing a different SMaHT Portal object type),
 CSV files cannot represent multiple SMaHT Portal object types, and since we need to somehow specify what object
