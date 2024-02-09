@@ -1,6 +1,6 @@
-===============================
-Advanced Usage of smaht-submitr
-===============================
+==============
+Advanced Usage
+==============
 
 Despite the title, this section describes not so much "advanced" usage, at least in terms in terms of complexity, but merely less common use cases, which some users may find relevant.
 

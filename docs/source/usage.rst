@@ -1,6 +1,6 @@
-======================
-Usage of smaht-submitr
-======================
+=====
+Usage
+=====
 
 Once you have finished installing this library into your virtual environment,
 you should have access to the ``submit-metadata-bundle`` command.

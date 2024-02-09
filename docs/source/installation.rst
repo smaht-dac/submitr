@@ -1,6 +1,6 @@
-========================
-Installing smaht-submitr
-========================
+============
+Installation
+============
 
 .. toctree::
   :maxdepth: 1

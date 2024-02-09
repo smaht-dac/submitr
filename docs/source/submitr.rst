@@ -1,5 +1,5 @@
-Implementation of smaht-submitr
-===============================
+Implementation
+==============
 
 smaht-submitr package
 ---------------------

@@ -1,6 +1,6 @@
-=============================
-Credentials for smaht-submitr
-=============================
+===========
+Credentials
+===========
 
 If you have been designated as a submitter for the project,
 and plan to use spreadsheet-based submission system (``smaht-submitr``)
