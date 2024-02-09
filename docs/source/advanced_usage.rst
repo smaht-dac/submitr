@@ -13,7 +13,7 @@ However we also support a couple other formats, as follows.
 JSON Files
 ----------
 
-It is interesting to note that internally, the ``smaht-submitr`` tool translates the given Excel spreadsheet file
+It is significant to note that internally, the ``smaht-submitr`` tool translates the given Excel spreadsheet file
 into JSON (JavaScript Object Notation) format, and then submits that to SMaHT for processing; i.e. JSON is really
 the native format for this tool. So naturally, you can use a (single) JSON file directly rather than an Excel file to submit metadata.
 
