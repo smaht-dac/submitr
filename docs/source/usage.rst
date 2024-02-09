@@ -42,6 +42,8 @@ representing (in this example) data for the Portal objects ``CellCultureSample``
 N.B. Though ``submission_center`` is shown in the above screenshot,
 that particular field is not actually required, as it is automatically added by the ``smaht-submitr`` tool.
 
+N.B. Other file formats are actually supported; see the `Advanced Usage <advanced_usage.html>`_ section for more information.
+
 Property Deletions
 ------------------
 
