@@ -16,7 +16,7 @@ see our submission help pages at the
 
 Most commonly, the file format recommended is an Excel spreadsheet file (e.g. ``your_metadata_file.xlsx``),
 comprised of one or more sheets.
-Note these important aspects of the acceptable spreadsheet format:
+Note these important aspects of using the Excel spreadsheet format:
 
 #. Each sheet name must be the name of a SMaHT Portal entity or `object` defined within the system.
 #. Each sheet must have as its first row, a special `header` row, which enumerates in each colum, the names of the Portal object properties as the column names; order does `not` matter.
@@ -26,6 +26,7 @@ Note these important aspects of the acceptable spreadsheet format:
 #. The first column in the header column which is empty marks the end of the header, and any subsequent columns will be entirely ignored.
 #. The first row which is entirely empty marks the end of the input, and any subsequenct rows will be entirely ignored;
    this means you can include comments in your spreadsheet in rows after the first blank row indicating the end of data input.
+#. The name of the spreadsheet file must be suffixed with ``.xls`` or ``.xlsx``; there are no other requirements for the name of this file.
 
 Here is screenshot of a simple example Excel spreadsheet: 
 
