@@ -7,6 +7,12 @@ Change Log
 ----------
 
 
+0.5.4
+=====
+
+* Documentation updates.
+
+
 0.5.3
 =====
 
