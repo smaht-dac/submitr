@@ -58,5 +58,5 @@ Compressed Files
 ----------------
 
 Any file that is submitted via ``smaht-submitr``, no matter what its format,
-maybe compress using either of the standard ``gzip`` or ``zip`` command-line utilities.
+may be compress using either of the standard ``gzip`` or ``zip`` command-line utilities.
 Such file names `must` be suffixed with ``.gz`` or ``.zip``, respectively.
