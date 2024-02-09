@@ -64,4 +64,5 @@ and installing the dependencies to run this package.
   credentials
   usage
   uploading_files
+  advanced_usage
   submitr
