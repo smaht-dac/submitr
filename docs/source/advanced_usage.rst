@@ -10,7 +10,8 @@ Other Files Formats
 As desribed in the main usage section, the primary and recommended file format for metadata submission is the Excel spreadsheet.
 However we also support a couple other formats, as follows.
 
-**JSON Files**
+JSON Files
+----------
 
 It is interesting to note that internally, the ``smaht-submitr`` tool translates the given Excel spreadsheet file
 into JSON (JavaScript Object Notation) format, and then submits that to SMaHT for processing; i.e. JSON is really
@@ -24,7 +25,8 @@ To see an example of this JSON, if you have a Excel spreadsheet metadata file, y
 with that file, specifying the ``--check-only`` and ``--verbose`` options;
 this will output the JSON for the given Excel spreadsheet as translated by ``smaht-submitr``.
 
-**CSV Files**
+CSV Files
+---------
 
 As Excel files are really just fancy CSV (comma-separated-values), it's natural that CSV files be supported as an alternative.
 The file name for CSV file `must` be suffixed with ``.csv``.
@@ -42,13 +44,15 @@ and the next question is how to submit multiple files in a single submission.
 The answer is that in this case the files need to packaged together into a
 single archive file (optionally compressed - see below) using the standard ``tar`` command-line utility.
 
-**TSV Files**
+TSV Files
+---------
 
 Exactly the same as CSV files, TSV (tab-separated-values) files are also supported, with the only
 difference being that tabs are used rather than commas as field separators.
 And, the file name for TSV file `must` be suffixed with ``.tsv`` (rather than ``.csv``).
 
-**Compressed Files**
+Compressed Files
+----------------
 
 Any file that is submitted via ``smaht-submitr``, no matter what its format,
 maybe compress using either of the standard ``gzip`` or ``zip`` command-line utilities.
