@@ -42,7 +42,9 @@ version of the type name, for example, ``CellCulture.csv`` or ``cell_culture.csv
 This obviously implies that multiple files are required if multiple types are to be submitted,
 and the next question is how to submit multiple files in a single submission.
 The answer is that in this case the files need to packaged together into a
-single archive file (optionally compressed - see below) using the standard ``tar`` command-line utility.
+single archive file (optionally compressed - see below) using the standard ``tar`` command-line utility;
+the name of this TAR file must be suffixed with ``.tar``, other than that there are
+no requirements for the name of this file.
 
 TSV Files
 ---------
@@ -56,3 +58,4 @@ Compressed Files
 
 Any file that is submitted via ``smaht-submitr``, no matter what its format,
 maybe compress using either of the standard ``gzip`` or ``zip`` command-line utilities.
+Such file names `must` be suffixed with ``.gz`` or ``.zip``, respectively.
