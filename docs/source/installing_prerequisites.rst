@@ -184,7 +184,7 @@ Reporting Issues
 ----------------
 
 If you experience issues, please do not hesitate to report them to
-`cgap-support@hms-dbmi.atlassian.net <mailto:cgap-support@hms-dbmi.atlassian.net>`_. Please include
+`smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_. Please include
 some information to help assist in the debugging process, including:
 
 * Your Mac OS X versions, which you can find by clicking "About this Mac" in the Apple logo dropdown in the

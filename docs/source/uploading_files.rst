@@ -112,4 +112,4 @@ appropriate files to the DAC if found within the buckets::
 
 For further support or questions regarding file
 submission, please contact the SMaHT DAC team at
-`cgap-support@hms-dbmi.atlassian.net <mailto:cgap-support@hms-dbmi.atlassian.net>`_
+`smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_
