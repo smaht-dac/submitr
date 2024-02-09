@@ -47,8 +47,8 @@ single archive file (optionally compressed - see below) using the standard ``tar
 TSV Files
 ---------
 
-Exactly the same as CSV files, TSV (tab-separated-values) files are also supported, with the only
-difference being that tabs are used rather than commas as field separators.
+Exactly analogous to CSV files, TSV (tab-separated-values) files are also supported;
+the only difference being that tabs are used rather than commas as field separators.
 And, the file name for TSV file `must` be suffixed with ``.tsv`` (rather than ``.csv``).
 
 Compressed Files
