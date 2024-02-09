@@ -4,7 +4,7 @@ Using smaht-submitr
 
 Once you have finished installing this library into your virtual environment,
 you should have access to the ``submit-metadata-bundle`` command.
-There are 2 types of submissions: accessioning (new cases) and family history (pedigrees)
+There are two types of submissions: accessioning (new cases) and family history (pedigrees)
 which both use the ``submit-metadata-bundle`` command.
 
 Formatting Files for Submission
@@ -74,6 +74,14 @@ Less common, but still supported, is the ability to set values for individual ar
 This is accomplished by the convention suffixing the property name in the column header with
 a pound sign (``#``) followed by an integer representing the zero-indexed array element.
 For example to set the first element of the ``molecules`` property (using the example above), use column header value ``molecule#0``.
+
+Date/Time Type Properties
+-------------------------
+For Portal object properties which are defined as `date` values,
+the required format is ``YYYY-MM-DD``, for example ``2024-02-09``.
+
+For Portal object properties which are defined as `date-time` values,
+the required format is ``YYYY-MM-DD hh:mm:ss``, for example ``2024-02-09 08:25:10``.
 
 Boolean Type Properties
 -----------------------
@@ -178,45 +186,3 @@ To view relevant information about a submission using, do::
    check-submission --env <environment-name> <uuid>
 
 where the ``uuid`` argument is the UUID for the submission which should have been displayed in the output of the ``submit-metadata-bundle`` command.
-
-Uploading Referenced Files
-==========================
-
-As mentioned above, after ``submit-metadata-bundle`` processes the main submission file, it will (after prompting) upload files referenced within the submission file. These files should reside
-in the same directory as the submission file.
-Or, if they do not, then you must specify the directory where these files can be found, like this::
-
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files>
-
-The above commands will only look for the files to upload directly within the specified directory
-(and not any sub-directories therein). To look (recursively) within sub-directories, do::
-
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files> --subdirectories
-
-Resuming Uploads
-================
-When using ``submit-metadata-bundle`` you can choose `not` to upload any referenced files when prompted.
-In this case, you will probably want to manually upload them subsequently;
-you can do this using the ``resume-uploads`` command.
-
-You can resume execution with the upload part by doing::
-
-   resume-uploads --env <environment-name> <uuid>
-
-where the ``uuid`` argument is the UUID for the submission which should have been displayed in the output of the ``submit-metadata-bundle`` command;
-this will upload `all` of the files references for the given submission UUID.
-
-Or, you can upload `individual` files referenced in the original submission separately by doing::
-
-   resume-uploads --env <environment-name> <referenced-file-uuid> --uuid <item-uuid>
-
-where the ``<referenced-file-uuid>`` is the uuid individual file referenced, `or`
-the accession ID or accession ID based file name of the referenced file.
-This **uuid**, or accession ID or accession ID based file name, is included in the output of ``submit-metadata-bundle``;
-specifically in the **Upload Info** section of that output.
-
-For both of these commands above, you will be asked to confirm if you would like to continue with the stated action.
-If you would like to skip these prompts so the commands can be run by a
-scheduler or in the background, you can pass the ``--no_query`` or ``-nq`` argument, such as::
-
-    submit-metadata-bundle your_metadata_file.xlsx --no_query
