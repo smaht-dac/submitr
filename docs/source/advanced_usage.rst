@@ -7,7 +7,7 @@ Despite the title, this section describes not so much "advanced" usage, at least
 Other Files Formats
 ===================
 
-As desribed in the main usage section, the primary and recommended file format for metadata submission is the Excel spreadsheet.
+As described in the main usage section, the primary and recommended file format for metadata submission is the Excel spreadsheet.
 However we also support a couple other formats, as follows.
 
 JSON Files
