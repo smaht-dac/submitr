@@ -17,8 +17,8 @@ System Requirements
 * ``virtualenv`` `>= 16.0.0` (`optional`)
 
 
-Setting Up a Virtual Environment (`Optional`)
-===================================-=======
+Setting Up a Virtual Environment ( `Optional` )
+===============================================
 
 This action is optional.
 If you do not create a virtual environment, Poetry will make one for you.

@@ -104,7 +104,7 @@ appropriate files to the DAC if found within the buckets::
 
     # Mount buckets on your local /path-to-your-mount-directory directory.
     mkdir /path-to-your-mount-directory
-    s3fs your-s3-bucket-name /path-to-your-mount-directory -o iam_role
+    s3fs your-s3-bucket-name /path-to-your-mount-directory -o passwd_file=~/.passwd-s3fs
 
     # Run smaht-submitr with mounted files (assuming you have python and pip installed).
     pip install smaht-submitr
