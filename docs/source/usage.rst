@@ -25,7 +25,7 @@ Note these important aspects of using the Excel spreadsheet format:
 #. The values in the cells/columns of each data row correspond to the property in same column of the header row. 
 #. The first column in the header row which is empty marks the end of the header, and any subsequent columns will be entirely ignored.
 #. The first row which is entirely empty marks the end of the input, and any subsequenct rows will be entirely ignored;
-   this means you can include comments in your spreadsheet in rows after the first blank row indicating the end of data input.
+   this means you can include comments in your spreadsheet in rows after (below) the first blank row indicating the end of data input.
 #. The name of the spreadsheet file must be suffixed with ``.xls`` or ``.xlsx``; there are no other requirements for the name of this file.
 
 Here is screenshot of a simple example Excel spreadsheet: 
