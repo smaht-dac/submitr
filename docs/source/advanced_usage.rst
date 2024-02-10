@@ -17,6 +17,7 @@ JSON Files
 It is significant to note that internally, the ``smaht-submitr`` tool translates the given Excel spreadsheet file
 into `JSON <https://en.wikipedia.org/wiki/JSON>`_ (JavaScript Object Notation) format, and then submits that to SMaHT for processing; i.e. JSON is really
 the native format for this tool. So naturally, you can use a (single) JSON file directly rather than an Excel file to submit metadata.
+The file name for a JSON file `must` be suffixed with ``.json``.
 
 The required JSON is comprised of a single object containing one or more properties, each named for a SMaHT Portal object type,
 and each of those containing an array of one or more object definitions for that type. The objects must of course
@@ -30,9 +31,9 @@ CSV Files
 ---------
 
 As Excel files are really just fancy `CSV <https://en.wikipedia.org/wiki/Comma-separated_values>`_ (comma-separated-values), it's natural that CSV files be supported as an alternative.
-The file name for CSV file `must` be suffixed with ``.csv``.
 Nothing much to say here specifically about this file format per se, as it should be self-explanatory to anyone familiar with these file formats;
 but be sure to read the next paragraph.
+The file name for a CSV file `must` be suffixed with ``.csv``.
 
 Since, unlike Excel files, which support multiple tabs (each representing a different SMaHT Portal object type),
 CSV files cannot represent multiple SMaHT Portal object types, and since we need to somehow specify what object
@@ -53,7 +54,7 @@ TSV Files
 
 Exactly analogous to CSV files, `TSV <https://en.wikipedia.org/wiki/Tab-separated_values>`_ (tab-separated-values) files are also supported;
 the only difference being that tabs are used rather than commas as field separators.
-And, the file name for TSV file `must` be suffixed with ``.tsv`` (rather than ``.csv``).
+And, the file name for a TSV file `must` be suffixed with ``.tsv`` (rather than ``.csv``).
 
 Compressed Files
 ----------------
