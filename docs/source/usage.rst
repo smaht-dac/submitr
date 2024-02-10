@@ -126,8 +126,9 @@ For example::
 
 You can omit the ``--env`` option entirely if your ``~/.smaht-keys.json`` file has only one entry.
 
-This command should do everything, including uploading referenced file; it will prompt first for confirmation;
-see the `Uploading Referenced Files` section just below for more on this.
+This command should do everything, including uploading any referenced files,
+prompting first for confirmation;
+see the `Uploading Referenced Files <uploading_files.html>`_ section for more on this.
 
 If you belong to
 multiple consortia and/or submission centers, you can also add the ``--consortium <consortium>``
