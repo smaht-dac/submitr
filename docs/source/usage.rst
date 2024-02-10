@@ -2,7 +2,7 @@
 Usage
 =====
 
-Once you have finished installing this library (per the `Installation <installation.html>`_ section),
+Once you have finished installing this ``smaht-submitr`` package (per the `Installation <installation.html>`_ section),
 you should have access to the ``submit-metadata-bundle`` command.
 There are two types of submissions: accessioning (new cases) and family history (pedigrees)
 which both use the ``submit-metadata-bundle`` command.
