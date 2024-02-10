@@ -91,7 +91,7 @@ Boolean Type Properties
 -----------------------
 
 For Portal object properties which are defined as `boolean` values, meaning either `true` or `false`,
-simply use these values, i.e. ``true`` or ``false``.
+simply use these values, i.e. ``true`` or ``false`` (case-insensitive).
 
 Object Reference Properties
 ---------------------------
