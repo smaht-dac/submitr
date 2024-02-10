@@ -118,7 +118,7 @@ To get help about the command, do::
    submit-metadata-bundle --help
 
 For many cases it will suffice simply to specify the metadata bundle file you want to upload,
-and the SMaHT environment name (such as ``data`` or ``staging``) from your ``~/.smaht-keys.json`` keys file (as described in the `Credential <credentials.html>`_ section),
+and the SMaHT environment name (such as ``data`` or ``staging``) from your ``~/.smaht-keys.json`` keys file (as described in the `Credentials <credentials.html>`_ section),
 as an argument to the ``--env`` option.
 For example::
 
