@@ -22,7 +22,7 @@ If you do not yet and would like have
 a virtual Python environment setup,
 proceed with the rest of these instructions;
 otherwise you may want to cut to the chase and
-see the `Actual Installation <installation.html#actual-installation>`_ section below.
+see the `Actual Installation <installation.html#actual-installation>`_ section at the end of this page.
 
 
 System Requirements
