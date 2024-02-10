@@ -111,5 +111,5 @@ appropriate files to the DAC if found within the buckets::
     resume-uploads your-upload-file-uuid --directory /path-to-your-mount-directory --subdirectories -nq 
 
 For further support or questions regarding file
-submission, please contact the SMaHT DAC team at
+submission, please contact the SMaHT DAC Team at
 `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_
