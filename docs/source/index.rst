@@ -12,7 +12,7 @@
 Overview
 ========
 
-**smaht-submitr**: A remote file submitter for SMaHT
+**smaht-submitr**: A metadata and file submission tool for `SMaHT Portal <https://data.smaht.org/>`_.
 
 .. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
     :target: https://github.com/smaht-dac/submitr/actions
