@@ -142,7 +142,7 @@ To invoke the submission with `local` sanity checking, where "local" means - `be
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --check
 
-And to invoke the submission with `only` local sanity checking, without actually submitting to SMaHT at all, do::
+And to invoke the submission with `only` local sanity checking, `without` actually submitting to SMaHT at all, do::
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --check-only
 
