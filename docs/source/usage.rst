@@ -138,7 +138,7 @@ the command will automatically detect (based on your user profile) and use those
 Sanity Checking
 ---------------
 
-To invoke the submission for with `local` sanity checking, where "local" means - `before` actually submitting to SMaHT, do::
+To invoke the submission with `local` sanity checking, where "local" means - `before` actually submitting to SMaHT, do::
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --check
 
