@@ -31,7 +31,7 @@ Description
 ===========
 
 The ``smaht-submitr`` software is a command-line tool for importing and uploading metadata and files into the `SMaHT Portal <https://data.smaht.org/>`_.
-It is implemented as Python package and distributed on `PyPi <https://pypi.org/>`_ here: `smaht-submitr <https://pypi.org/project/smaht-submitr/>`_
+It is implemented as Python package and distributed on `PyPi <https://pypi.org/>`_ here: `smaht-submitr <https://pypi.org/project/smaht-submitr/>`_.
 
 
 System Requirements
@@ -39,8 +39,7 @@ System Requirements
 
 * ``python`` `3.8, 3.9, 3.10, or 3.11`
 * ``pip`` `>= 20.0.0`
-* ``poetry`` `>= 1.4.0`
-* ``smaht-portal`` `>= 1.0.0`
+* ``poetry`` `>= 1.4.0` (`optional`)
 
 
 What To Do Next

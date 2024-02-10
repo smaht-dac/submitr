@@ -1,10 +1,11 @@
-==========================
-Uploading Referenced Files
-==========================
+===============
+Uploading Files
+===============
 
-As mentioned in the previous section,
-after ``submit-metadata-bundle`` processes the main submission file, it will (after prompting) upload files referenced within the submission file. These files should reside
-in the same directory as the submission file.
+As mentioned in the previously (in the `Usage <usage.html>`_ section),
+after ``submit-metadata-bundle`` processes the main submission metadata file,
+it will (after prompting) upload any files referenced within the submission file.
+These files should reside in the same directory as your submission file.
 Or, if they do not, then you must specify the directory where these files can be found, like this::
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files>
