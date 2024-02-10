@@ -34,9 +34,9 @@ Or, you can upload `individual` files referenced in the original submission sepa
 
    resume-uploads --env <environment-name> <referenced-file-uuid> --uuid <item-uuid>
 
-where the ``<referenced-file-uuid>`` is the uuid individual file referenced (e.g. ``b5a7999e-d614-4deb-b98d-b784925ab910``), `or`
+where the ``<referenced-file-uuid>`` is the UUID individual file referenced (e.g. ``b5a7999e-d614-4deb-b98d-b784925ab910``), `or`
 the accession ID (e.g. ``SMAURL8WB1ZS``) or accession ID based file name (e.g. ``SMAURL8WB1ZS.fastq``) of the referenced file.
-This **uuid**, or accession ID or accession ID based file name, is included in the output of ``submit-metadata-bundle``;
+This UUID, or accession ID or accession ID based file name, is included in the output of ``submit-metadata-bundle``;
 specifically in the **Upload Info** section of that output (e.g. see `screenshot <usage.html#example-screenshots>`_).
 
 For both of these commands above, you will be asked to confirm if you would like to continue with the stated action.
