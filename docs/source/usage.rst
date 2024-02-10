@@ -178,7 +178,7 @@ The output of a successfully completed ``submit-metadata-bundle`` will look some
     :alt: Excel Spreadsheet Screenshot
 
 Notice the **Submission UUID** value in the **Validation Output** section as well as the **uuid** values in the **Upload Info** section;
-these may be used in a subsequent ``resume-uploads`` invocation.
+these may be used in a subsequent ``resume-uploads`` invocation; see the `Uploading Files <uploading_files.html>`_ section for more on this.
 
 When specifying the ``--check`` the additional sanity checking output will look something like this:
 
