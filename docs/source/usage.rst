@@ -42,7 +42,9 @@ representing (in this example) data for the Portal objects ``CellCultureSample``
 N.B. Though ``submission_center`` is shown in the above screenshot,
 that particular field is not actually required, as it is automatically added by the ``smaht-submitr`` tool.
 
-N.B. Other file formats are actually supported; see the `Advanced Usage <advanced_usage.html>`_ section for more information.
+.. tip::
+
+    Other file formats besides Excel actually are supported; see the `Advanced Usage <advanced_usage.html>`_ section for more information.
 
 Property Deletions
 ------------------
@@ -62,7 +64,7 @@ in which such nested objects can be defined,
 a special syntactic convention is needed to be able to reference the properties of these nested objects.
 
 For this we will use a `dot-notation` whereby dots (``.``) are used to separate a parent property from its child property.
-For example, an object may define a ``components`` property which itself may contain a ``cell_culture`` property;
+For example, an object may define a ``components`` property which itself refers to an object containing ``cell_culture`` property;
 to reference the ``cell_culture`` property then, the spreadsheet column header would need to be ``components.cell_culture``.
 
 Array Type Properties
