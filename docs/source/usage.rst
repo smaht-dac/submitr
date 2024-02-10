@@ -10,10 +10,6 @@ which both use the ``submit-metadata-bundle`` command.
 Formatting Files for Submission
 ===============================
 
-For more details on what file formats are accepted and how the information should be structured,
-see our submission help pages at the
-`SMaHT Portal <https://data.smaht.org/doc/>`_.
-
 Most commonly, the file format recommended is an Excel spreadsheet file (e.g. ``your_metadata_file.xlsx``),
 comprised of one or more sheets.
 Note these important aspects of using the Excel spreadsheet format:
