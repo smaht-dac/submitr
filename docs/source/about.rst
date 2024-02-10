@@ -3,7 +3,7 @@ About
 =====
 
 This software and `SMaHT Portal <https://data.smaht.org/>`_
-were development by the `Department of Biomedical Informatics <https://dbmi.hms.harvard.edu/>`_ (DBMI)
+were developed by the `Department of Biomedical Informatics <https://dbmi.hms.harvard.edu/>`_ (DBMI)
 at `Harvard Medical School <https://hms.harvard.edu/>`_.
 
 For further support or questions regarding file submission or SMaHT Portal,
