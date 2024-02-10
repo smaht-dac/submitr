@@ -13,7 +13,7 @@ element of the ``smaht-submitr`` installation, which is simply this::
     pip install smaht-submitr
 
 Less experienced users may want to start with instructions
-for `Installion Prerequisites <installing_prerequisites.html>`_,
+for `Installation Prerequisites <installation_prerequisites.html>`_,
 which will introduce some basics for working with Python on the terminal
 command-line, and installing dependencies to run this tool,
 before continuing on with these instructions.
