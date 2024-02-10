@@ -4,6 +4,9 @@ Advanced Usage
 
 Despite the title, this section describes not so much "advanced" usage, at least in terms in terms of complexity, but merely less common use cases, which some users may find relevant.
 
+Though the following `does` assume some basic understanding of JSON, CSV and TSV files,
+and the ``tar``, ``gzip``, ``zip`` command-line utilities.
+
 Other Files Formats
 ===================
 
