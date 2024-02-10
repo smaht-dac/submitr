@@ -53,7 +53,8 @@ for `Installion Prerequisites <installing_prerequisites.html>`_,
 which will introduce some basics for working with the terminal
 and installing the dependencies to run this tool.
 
-
+Table of Contents
+=================
 
 .. toctree::
   :maxdepth: 1
