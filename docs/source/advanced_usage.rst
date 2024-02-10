@@ -82,4 +82,4 @@ Incidentally, for such a ``.tar.gz`` file you both ``tar`` and ``gzip`` it in a 
 
     tar czf your_tar_file.tar.gz cell_culture.csv unaligned_reads.csv
 
-And you can also alternatively use the single suffix ``.tgz`` (rather than ``.tar.gz``) for such compressed TAR file.
+And you can also alternatively use the single suffix ``.tgz`` (rather than ``.tar.gz``) for such compressed TAR files.
