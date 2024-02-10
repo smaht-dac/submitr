@@ -132,7 +132,7 @@ see the `Uploading Referenced Files <uploading_files.html>`_ section for more on
 
 If you belong to
 multiple consortia and/or submission centers, you can also add the ``--consortium <consortium>``
-and ``--submission-center <submission-center>`` options; if you belong to only one of either,
+and ``--submission-center <submission-center>`` options; if you belong to only one,
 the command will automatically detect (based on your user profile) and use those.
 
 Sanity Checking
