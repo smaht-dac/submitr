@@ -65,3 +65,4 @@ and installing the dependencies to run this tool.
   uploading_files
   advanced_usage
   submitr
+  about
