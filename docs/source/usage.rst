@@ -119,7 +119,7 @@ To get help about the command, do::
 
 For many cases it will suffice simply to specify the metadata bundle file you want to upload,
 and the SMaHT environment name (such as ``data`` or ``staging``) from your ``~/.smaht-keys.json`` keys file),
-as an argument to the ``--env`` option..
+as an argument to the ``--env`` option.
 For example::
 
    submit-metadata-bundle your_metadata_file.xlsx --env data
