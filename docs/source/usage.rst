@@ -44,7 +44,7 @@ that particular field is not actually required, as it is automatically added by 
 
 .. tip::
 
-    Other file formats besides Excel actually are supported; see the `Advanced Usage <advanced_usage.html>`_ section for more information.
+    Other file formats besides Excel actually are supported; see the `Advanced Usage <advanced_usage.html#other-files-formats>`_ section for more information.
 
 Property Deletions
 ------------------
