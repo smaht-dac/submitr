@@ -45,7 +45,7 @@ System Requirements
 What To Do Next
 ===============
 
-More advanced users who already have `Python` installed
+More advanced users who already have Python installed
 can proceed to instructions for `Installation <installation.html>`_.
 
 Less experienced users should start with instructions
