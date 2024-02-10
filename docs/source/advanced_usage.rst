@@ -44,6 +44,7 @@ version of the type name, for example, ``CellCulture.csv`` or ``cell_culture.csv
 
 This obviously implies that multiple files are required if multiple types are to be submitted,
 and the next question is how to submit multiple files in a single submission.
+
 The answer is that in this case the files need to packaged together into a
 single archive file (optionally compressed - see below) using the standard ``tar`` command-line utility;
 the name of this TAR file `must` be suffixed with ``.tar``, other than that there are
