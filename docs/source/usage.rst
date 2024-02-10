@@ -19,7 +19,7 @@ Note these important aspects of using the Excel spreadsheet format:
 #. Each sheet must have as its first row, a special `header` row, which enumerates in each column, the names of the Portal object properties as the column names; order does `not` matter.
 #. Each of these columns name must match exactly the name of the property for the Portal object.
 #. Each sheet may contain any number of `data` rows (directly below the header row), each representing an instance of the Portal object.
-#. The values in the cells/columns of each data row correspond to the property named in same column of the header row. 
+#. The values in the cells/columns of each data row correspond each to the property named in same column of the header row. 
 #. The first column in the header row which is empty marks the end of the header, and any subsequent columns will be entirely ignored.
 #. The first row which is entirely empty marks the end of the input, and any subsequenct rows will be entirely ignored;
    this means you can include comments in your spreadsheet in rows after (below) the first blank row indicating the end of data input.
