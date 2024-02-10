@@ -48,7 +48,15 @@ and the next question is how to submit multiple files in a single submission.
 The answer is that in this case the files need to packaged together into a
 single archive file (optionally compressed - see below) using the standard ``tar`` command-line utility.
 The name of this TAR file `must` be suffixed with ``.tar``, other than that there are
-no requirements for the name of this file.
+no requirements for the name of this file. For example::
+
+    tar cf your_tar_file.tar cell_culture.csv unaligned_reads.csv
+
+Or alternatively, rather than ``tar``, the standard ``zip`` command-line utility can also be used.
+The name of this ZIP file `must` be suffixed with ``.zip``, other than that there are
+no requirements for the name of this file. For example::
+
+    zip your_zip_file.zip cell_culture.csv unaligned_reads.csv
 
 TSV Files
 ---------
@@ -61,5 +69,14 @@ Compressed Files
 ----------------
 
 Any file that is submitted via ``smaht-submitr``, no matter what its format,
-may be compressed using either of the standard ``gzip`` or ``zip`` command-line utilities.
-Such file names `must` be suffixed with ``.gz`` or ``.zip``, respectively.
+may be compressed using either of the standard ``gzip`` command-line utility.
+Such file names `must` be suffixed with ``.gz``. For example::
+
+    gzip your_tar_file.tar
+
+This will automatically compress this file into ``your_tar_file.tar.gz``.
+Incidentally, for such a ``.tar.gz`` file you both ``tar`` and ``gzip`` it in a single step like this::
+
+    tar czf your_tar_file.tar.gz cell_culture.csv unaligned_reads.csv
+
+And you can also alternatively use the single suffix ``.tgz`` (rather than ``.tar.gz``) for such compressed TAR file.
