@@ -162,7 +162,7 @@ to install newer Python versions.
     $ pyenv install 3.11.6
 
 This command will install Python version 3.11.6 through `pyenv`. If it is not successful feel free
-to copy the error output and send it to the SMaHT DAC team. Once the installation has completed, we will
+to copy the error output and send it to the SMaHT DAC Team. Once the installation has completed, we will
 create and activate a virtual environment for using ``smaht-submitr``.
 
 .. code-block:: bash
