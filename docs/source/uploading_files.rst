@@ -2,8 +2,8 @@
 Uploading Files
 ===============
 
-As mentioned in the previously (in the `Usage <usage.html>`_ section),
-after ``submit-metadata-bundle`` processes the main submission metadata file,
+As mentioned previously (in the `Usage <usage.html>`_ section),
+after ``submit-metadata-bundle`` processes the main submitted metadata file,
 it will (after prompting) upload any files referenced within the submission file.
 
 These files should reside in the same directory as your submission file.
