@@ -1,5 +1,5 @@
-Implementation
-==============
+Implementationx
+===============
 
 The ``smaht-submitr`` tool is free and open source software.
 It is implemented as Python package and is distributed on `PyPi <https://pypi.org/>`_ here: `smaht-submitr <https://pypi.org/project/smaht-submitr/>`_.
