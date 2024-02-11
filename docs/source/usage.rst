@@ -194,5 +194,5 @@ To view relevant information about a submission, do::
 
    check-submission --env <environment-name> <uuid>
 
-where the ``uuid`` argument is the UUID for the submission which should have been displayed
+where the ``<uuid>`` argument is the UUID for the submission which should have been displayed
 in the output of the ``submit-metadata-bundle`` command (e.g. see `screenshot <usage.html#example-screenshots>`_).
