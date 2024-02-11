@@ -126,7 +126,7 @@ For example::
 
    submit-metadata-bundle your_metadata_file.xlsx --env data
 
-You can omit the ``--env`` option entirely if your ``~/.smaht-keys.json`` file has only one entry.
+You can omit the ``--env`` option entirely if your ``~/.smaht-keys.json`` file has only `one` single entry.
 
 This command should do everything, `including` uploading any referenced files,
 prompting first for confirmation;
