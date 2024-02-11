@@ -42,7 +42,7 @@ Since, unlike Excel files, which support multiple tabs (each representing a diff
 CSV files cannot represent multiple SMaHT Portal object types, and since we need to somehow specify what object
 type the CSV file contains data for, the actual file name of the CSV file is required to be the SMaHT Portal
 object type name (minus the ``.csv`` suffix). This file name can be either the `camel-case <https://en.wikipedia.org/wiki/Camel_case>`_
-or `snake-case <https://en.wikipedia.org/wiki/Snake_case>`_ or the snake-case
+or `snake-case <https://en.wikipedia.org/wiki/Snake_case>`_
 version of the type name, for example, ``CellCulture.csv`` or ``cell_culture.csv``, respectively.
 
 This obviously implies that multiple files are required if multiple types are to be submitted,
