@@ -68,7 +68,8 @@ systems that can be readily accessed by smaht-submitr.
 Similar tools exist for Google Cloud Storage and Azure Storage.
 
 Alternatively, the files can be directly downloaded
-from the remote location, for example using the AWS command-line tool (``awscli``) for files on AWS S3.
+from a remote location, for example from AWS S3,
+using the AWS command-line tool (``awscli``) for files on AWS S3.
 
 However, note that the methods above require enough free disk space
 on your local computer to store the files to upload.
