@@ -19,8 +19,9 @@ The above commands will only look for the files to upload directly within the sp
 Resuming Uploads
 ================
 When using ``submit-metadata-bundle`` you can choose `not` to upload any referenced files when prompted.
-In this case, you will probably want to manually upload them subsequently;
-you can do this using the ``resume-uploads`` command.
+In this case, you will probably want to manually upload them subsequently; or you may want to `update`
+a previously uploaded file.
+You can do this using the ``resume-uploads`` command.
 
 You can resume execution with the upload part by doing::
 
