@@ -54,7 +54,8 @@ if your files are not stored locally and are instead in Cloud storage or a local
 you need to consider other options for uploading such files.
 
 
-**Loading Files Locally**
+Upoading Files Locally
+~~~~~~~~~~~~~~~~~~~~~~
 
 This option works well for uploading a small number
 of files or files of small size. Files can be
@@ -78,7 +79,8 @@ the upload from a Cloud or cluster instance
 for uploading many files or larger files.
 
 
-**Running smaht-submitr Remotely**
+Running Submission Remotely
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 File submission can easily be scripted to accommodate
 running on a remote server. Once an instance has

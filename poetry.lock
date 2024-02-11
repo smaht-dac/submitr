@@ -481,13 +481,13 @@ test-randomorder = ["pytest-randomly"]
 
 [[package]]
 name = "dcicutils"
-version = "8.7.2.1b2"
+version = "8.7.2.1b3"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 optional = false
 python-versions = ">=3.8,<3.12"
 files = [
-    {file = "dcicutils-8.7.2.1b2-py3-none-any.whl", hash = "sha256:e67fb0ea50b8e902c24a2332f30f4a27932d18b2ff9e4cc0b653e24d2f976d3a"},
-    {file = "dcicutils-8.7.2.1b2.tar.gz", hash = "sha256:58b91ff85542ca3dc856105b6266a6acb3e05c84fda4ff6f304eb074616b1ff6"},
+    {file = "dcicutils-8.7.2.1b3-py3-none-any.whl", hash = "sha256:b6d0b56617146c1f31cdc227fb04bc2b8dc133ef5d29a9c9ed7fd4effa569cac"},
+    {file = "dcicutils-8.7.2.1b3.tar.gz", hash = "sha256:113cf1cbba3dc4089def61c05804d7857c8a2b86697b319bd737654774e0d21f"},
 ]
 
 [package.dependencies]
@@ -504,6 +504,7 @@ openpyxl = ">=3.1.2,<4.0.0"
 opensearch-py = ">=2.0.1,<3.0.0"
 PyJWT = ">=2.6.0,<3.0.0"
 pyOpenSSL = ">=23.1.1,<24.0.0"
+pyperclip = ">=1.8.2,<2.0.0"
 pyramid = "1.10.4"
 pytz = ">=2020.4"
 PyYAML = ">=6.0.1,<7.0.0"
@@ -1135,6 +1136,16 @@ cryptography = ">=41.0.5,<42"
 [package.extras]
 docs = ["sphinx (!=5.2.0,!=5.2.0.post0,!=7.2.5)", "sphinx-rtd-theme"]
 test = ["flaky", "pretend", "pytest (>=3.0.1)"]
+
+[[package]]
+name = "pyperclip"
+version = "1.8.2"
+description = "A cross-platform clipboard module for Python. (Only handles plain text for now.)"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pyperclip-1.8.2.tar.gz", hash = "sha256:105254a8b04934f0bc84e9c24eb360a591aaf6535c9def5f29d92af107a9bf57"},
+]
 
 [[package]]
 name = "pyramid"
@@ -2038,4 +2049,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0,<3.12"
-content-hash = "d4b5f003d0e747203c0bd10b8f2edee7336c4fb71fe685fb7defd5b899dae556"
+content-hash = "b31486df35c2c5a192c3e27ea6bd149e24ae2aedfc60e77ba72878f32a323cbc"
