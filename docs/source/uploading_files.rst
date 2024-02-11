@@ -26,7 +26,7 @@ You can resume execution with the upload part by doing::
 
    resume-uploads --env <environment-name> <uuid>
 
-where the ``uuid`` argument is the UUID (e.g. ``0ad28518-2755-40b5-af51-036042dd099d``) for the submission which should
+where the ``<uuid>`` argument is the UUID (e.g. ``0ad28518-2755-40b5-af51-036042dd099d``) for the submission which should
 have been displayed in the output of the ``submit-metadata-bundle`` command (e.g. see `screenshot <usage.html#example-screenshots>`_);
 this will upload `all` of the files references for the given submission UUID.
 
@@ -34,9 +34,9 @@ Or, you can upload `individual` files referenced in the original submission sepa
 
    resume-uploads --env <environment-name> <referenced-file-uuid> --uuid <item-uuid>
 
-where the ``<referenced-file-uuid>`` is the UUID individual file referenced (e.g. ``b5a7999e-d614-4deb-b98d-b784925ab910``), `or`
+where the ``<referenced-file-uuid>`` argument is the UUID for the individual file referenced (e.g. ``b5a7999e-d614-4deb-b98d-b784925ab910``), `or`
 the accession ID (e.g. ``SMAURL8WB1ZS``) or accession ID based file name (e.g. ``SMAURL8WB1ZS.fastq``) of the referenced file.
-This UUID, or accession ID or accession ID based file name, is included in the output of ``submit-metadata-bundle``;
+This UUID, and accession ID and accession ID based file name, is included in the output of ``submit-metadata-bundle``;
 specifically in the **Upload Info** section of that output (e.g. see `screenshot <usage.html#example-screenshots>`_).
 
 For both of these commands above, you will be asked to confirm if you would like to continue with the stated action.
