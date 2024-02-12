@@ -83,3 +83,33 @@ Incidentally, for such a ``.tar.gz`` file you both ``tar`` and ``gzip`` it in a 
     tar czf your_tar_file.tar.gz cell_culture.csv unaligned_reads.csv
 
 And you can also alternatively use the single suffix ``.tgz`` (rather than ``.tar.gz``) for such compressed TAR files.
+
+Viewing Portal Objects
+======================
+
+Also included in the ``smaht-submitr`` package is a command-line utility called ``view-portal-object``,
+which some users might find sometimes find convenient, for troubleshooting or sanity checking purposes.
+Given a UUID or a path to an object within SMaHT Portal, it simply prints to the output the object in JSON format
+for example::
+
+    view-portal-object --env data dca16310-5127-4347-bd58-10f8fb5516b2
+    view-portal-object --env data /SubmissionCenter/smaht_dac
+
+Note there is nothing really that this command does that you cannot by interacting the SMaHT Portal directly 
+via your browser, but some users may find this command-line interface more agreeable under some circumstances.
+
+Viewing Portal Schemas
+----------------------
+
+Using the same ``view-portal-object`` utility described above you can also view SMaHT Portal object schemas,
+by using the ``--schema`` option and passing the name of a SMaHT Portal object type,
+for example::
+
+    view-portal-object CellLine --schema
+
+Or you can output all schema types present within the SMaHT Portal using the special ``schemas`` identifier,
+for example:
+
+    view-portal-object schemas
+
+And if you also pass the ``-verbose`` option to the above, it will also print the `identifying` and `required` properties for each listed schema type name.
