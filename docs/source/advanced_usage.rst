@@ -95,7 +95,7 @@ for example::
     view-portal-object --env data dca16310-5127-4347-bd58-10f8fb5516b2
     view-portal-object --env data /SubmissionCenter/smaht_dac
 
-Note there is nothing really that this command does that you cannot also do by interacting the SMaHT Portal directly 
+Note there is nothing really that this command does that you cannot also do by interacting SMaHT Portal directly 
 via your browser, but some command-line savvy users may find this interface more agreeable under some circumstances.
 
 Viewing Portal Schemas
@@ -107,7 +107,7 @@ for example::
 
     view-portal-object --env data --schema CellLine
 
-Or you can output all schema types present within the SMaHT Portal using the special ``schemas`` identifier,
+Or you can output all schema types present within SMaHT Portal using the special ``schemas`` identifier,
 for example::
 
     view-portal-object --env data schemas
