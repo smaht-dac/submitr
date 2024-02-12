@@ -105,11 +105,11 @@ Using the same ``view-portal-object`` utility described above you can also view 
 by using the ``--schema`` option and passing the name of a SMaHT Portal object type,
 for example::
 
-    view-portal-object CellLine --schema
+    view-portal-object --env data --schema CellLine
 
 Or you can output all schema types present within the SMaHT Portal using the special ``schemas`` identifier,
 for example:
 
-    view-portal-object schemas
+    view-portal-object --env data schemas
 
 And if you also pass the ``-verbose`` option to the above, it will also print the `identifying` and `required` properties for each listed schema type name.
