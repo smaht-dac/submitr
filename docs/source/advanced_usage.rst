@@ -88,7 +88,7 @@ Viewing Portal Objects
 ======================
 
 Also included in the ``smaht-submitr`` package is a command-line utility called ``view-portal-object``,
-which some users might find sometimes find convenient, for troubleshooting or sanity checking purposes.
+which some users might sometimes find convenient, for troubleshooting or sanity checking purposes.
 Given a UUID or a path to an object within SMaHT Portal, it simply prints to the output the object in JSON format
 for example::
 
