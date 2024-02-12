@@ -96,7 +96,7 @@ for example::
     view-portal-object --env data /SubmissionCenter/smaht_dac
 
 Note there is nothing really that this command does that you cannot also do by interacting the SMaHT Portal directly 
-via your browser, but some users may find this command-line interface more agreeable under some circumstances.
+via your browser, but some command-line savvy users may find this interface more agreeable under some circumstances.
 
 Viewing Portal Schemas
 ----------------------
