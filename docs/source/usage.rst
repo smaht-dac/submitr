@@ -130,7 +130,7 @@ You can omit the ``--env`` option entirely if your ``~/.smaht-keys.json`` file h
 
 .. note::
     If you opted to use a file other than ``~/.smaht-keys.json`` to store
-    your credentials, you will need to use the ``--keys`` argument with the path name to your alternate file.
+    your credentials, you will need to use the ``--keys`` options with the path name to your alternate file as an argument.
 
 This command should do everything, `including` uploading any referenced files,
 prompting first for confirmation;
@@ -176,7 +176,7 @@ see the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
     Even in the absence of validation,
     if there are problems with specific objects within your submitted data,
     they will `not` be ingested into SMaHT Portal; i.e. no worries that corrupt data will sneak into the system.
-    However, without the ``--validate`` option it `is` possible that `some` of your objects
+    However, `without` the ``--validate`` option it `is` possible that `some` of your objects
     will be ingested properly, and other, problematic ones, will `not`.
 
 Example Screenshots

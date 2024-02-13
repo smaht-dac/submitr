@@ -32,7 +32,8 @@ they should be stored in a file on your local machine called ``~/.smaht-keys.jso
 
 .. tip::
    You can actually use a different file rather than ``~/.smaht-keys.json`` to store your credentials.
-   If you do, you will need to use the ``--keys`` argument with the ``smaht-submitr`` commands.
+   If you do, you will need to use the ``--keys`` options with the path to your alternate file as an argument,
+   when using the ``smaht-submitr`` commands.
 
 The format of this file should look something like this:
 
