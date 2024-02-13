@@ -31,6 +31,8 @@ def main(simulated_args_for_testing=None):
                         help="Only perform creates (POST) for submitted data.", default=False)
     parser.add_argument('--patch-only', action="store_true",
                         help="Only perform updates (PATCH) for submitted data.", default=False)
+    parser.add_argument('--keys', action="store_true",
+                        help="Path to keys file (rather than default ~/.smaht-keys.json).", default=False)
     parser.add_argument('--validate', '-v', action="store_true",
                         help="Perform both client-side and server-side validation first.", default=False)
     parser.add_argument('--validate-only', action="store_true",
@@ -100,6 +102,7 @@ def main(simulated_args_for_testing=None):
                              validate_first=args.validate_first,
                              validate_local=args.validate_local,
                              validate_local_only=args.validate_local_only,
+                             keys_file=args.keys,
                              verbose=args.verbose,
                              debug=args.debug)
 

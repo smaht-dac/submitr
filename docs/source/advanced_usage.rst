@@ -26,9 +26,10 @@ The required JSON is comprised of a single object containing one or more propert
 and each of those containing an array of one or more object definitions for that type. The objects must of course
 conform to the schema for their corresponding types.
 
-To see an example of this JSON, if you have a Excel spreadsheet metadata file, you can invoke ``submit-metadata-bundle``
-with that file, specifying the ``--validate-local-only`` and ``--verbose`` options together;
-this will output the JSON for the given Excel spreadsheet as translated by ``smaht-submitr``.
+.. tip::
+    To see an example of this JSON, if you have a Excel spreadsheet metadata file, you can invoke ``submit-metadata-bundle``
+    with that file with both the ``--validate-local-only`` and ``--verbose`` options;
+    this will output the JSON for the spreadsheet as translated by ``smaht-submitr``.
 
 CSV Files
 ---------
@@ -52,7 +53,7 @@ Archive Files
 ~~~~~~~~~~~~~
 
 To submit multiple (CSV) files in a single submission, they need to be packaged together into a
-single `archive` file (optionally compressed - see below) using the standard ``tar`` command-line utility.
+single `archive` file (optionally compressed - `see below <advanced_usage.html#compressed-files>`_) using the standard ``tar`` command-line utility.
 The name of this TAR file `must` be suffixed with ``.tar``; other than that there are
 no requirements for the name of this file. For example::
 
@@ -130,13 +131,9 @@ If you want to perform `only` the server-side validation (for whatever reason),
 there is a ``--validate-only`` option which will cause `only` remote server-side validation to be done;
 no local client-side validation will be done in this case.
 
-And in `both` of these cases (``--validate-local-only`` and ``--validate-only``) the actual ingestion process itself
-will `not` proceed; i.e. these only perform (either client-side or server-side) validation and output the results.
-
 .. note::
-    Even in the absence of `any` validation (which is actually not even a readily available option),
-    if there are problems with the submitted data, it will `not` be ingested into SMaHT Portal;
-    i.e. no need to worry that corrupt data might sneak into the system; the system guards against this.
+    In `both` of these cases (``--validate-local-only`` and ``--validate-only``) the actual ingestion process itself
+    will `not` proceed; i.e. these only perform (either client-side or server-side) validation and output the results.
 
 Also of minor note is that if there are server-side validation errors, you will not be able
 to continue with the submission process; i.e. there is no way to get your data ingested into SMaHT Portal,
@@ -144,6 +141,11 @@ unless/until you correct the problems (or unless you use the ``--validate-local`
 But if there are client-side validation errors,
 you `may` (after prompting) continue processing, in spite of there
 being local client-side validation errors (this of course is not recommended).
+
+.. note::
+    Even in the absence of `any` validation (which is actually not even a readily available option),
+    if there are problems with the submitted data, it will `not` be ingested into SMaHT Portal;
+    i.e. no need to worry that corrupt data might sneak into the system; the system guards against this.
 
 Viewing Portal Objects
 ======================

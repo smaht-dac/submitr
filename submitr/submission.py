@@ -99,7 +99,6 @@ def _get_user_record(server, auth):
 
 
 def _is_admin_user(user: dict) -> bool:
-    return False
     return "admin" in user.get("groups", [])
 
 
@@ -533,6 +532,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          validate_first=False,
                          validate_local=False,
                          validate_local_only=False,
+                         keys_file=None,
                          verbose=False,
                          debug=False):
     """
@@ -566,7 +566,7 @@ def submit_any_ingestion(ingestion_filename, *,
         PRINT(f"App name is: {app}")
     """
 
-    portal = _define_portal(env=env, server=server, app=app, report=True)
+    portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file, report=True)
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=portal.app,
                                  consortium=consortium, submission_center=submission_center)
@@ -973,7 +973,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
-                   upload_folder=None, no_query=False, subfolders=False, app=None):
+                   upload_folder=None, no_query=False, subfolders=False, app=None, keys_file=None):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -1561,7 +1561,7 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
 
 
 def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server: Optional[str] = None,
-                   app: Optional[str] = None, report: bool = False) -> Portal:
+                   app: Optional[str] = None, keys_file: Optional[str] = None, report: bool = False) -> Portal:
     if not app:
         app = DEFAULT_APP
         app_default = True
