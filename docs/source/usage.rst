@@ -137,6 +137,11 @@ multiple consortia and/or submission centers, you can also add the ``--consortiu
 and ``--submission-center <submission-center>`` options; if you belong to only one,
 the command will automatically detect (based on your user profile) and use those.
 
+.. tip::
+    You may wonder: Is it okay to submit the same metadata file more that once?
+    The answer is: Yes. And, if you had made any changes to the file, updates
+    will be applied as expected.
+
 Validation
 ----------
 
