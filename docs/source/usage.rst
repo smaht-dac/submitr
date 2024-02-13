@@ -167,8 +167,8 @@ see the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
     Even in the absence of validation,
     if there are problems with specific objects within your submitted data,
     they will `not` be ingested into SMaHT Portal; i.e. no worries that corrupt data will sneak into the system.
-    However, without the ``--validate`` option it `is` possible that some of your objects
-    will be ingested properly, and other, problematic ones, will not.
+    However, without the ``--validate`` option it `is` possible that `some` of your objects
+    will be ingested properly, and other, problematic ones, will `not`.
 
 Example Screenshots
 -------------------
