@@ -10,7 +10,7 @@ and the ``tar``, ``gzip``, and ``zip`` command-line utilities.
 Other Files Formats
 ===================
 
-As described in the main `Usage <usage.html>`_ section,
+As described in the main `Usage <usage.html#formatting-files-for-submission>`_ section,
 the primary and recommended file format for metadata submission is the Excel spreadsheet.
 However we also support a couple other formats, as follows.
 
@@ -87,7 +87,7 @@ And you can also alternatively use the single suffix ``.tgz`` (rather than ``.ta
 More on Validation
 ==================
 
-As mentioned in the `Usage <usage.html#validation>`_ section, validation can be performed on the given metadata file
+As described in the main `Usage <usage.html#validation>`_ section, validation can be performed on the given metadata file
 before it is actually ingestion into SMaHT Portal; this can be done most simply and comprehensively
 by using the ``--validation`` option. And in fact, this is the default behavior if you, as a submitter,
 are `not` an `admin` user.
@@ -107,7 +107,7 @@ and server-side validation is performed `remotely` within the SMaHT server inges
 
 These two modes of validation largely cover the same ground,
 however there are `some` aspects of validation which 
-can `only` be done on the server-side and so this may pick up problems which
+can `only` be done on the server-side and so this may pick up problems (e.g. various specific identifier formats) which
 are not possible to detect on the client-side; and conversely, the client-side validation
 is the only place where issues regarding the presence (or absence) of any referenced
 files (intended for upload) can be detected.
@@ -123,6 +123,11 @@ no remote server-side validation will be done in this case.
 If you want to perform `only` the server-side validation (for whatever reason),
 there is a ``--validate-only`` option which will cause `only` remote server-side validation to be done;
 no local client-side validation will be done in this case.
+
+.. note::
+    Even in the absence of `any` validation (which is actually not even a readily available option),
+    if there are problems with the submitted data, it will `not` be ingested into SMaHT Portal;
+    i.e. no need to worry that corrupt might sneak into the system; that is guarded against by the system.
 
 Also of minor note is that if there are server-side validation errors, you will not be able
 to continue with the submission process; i.e. there is no way to get your data ingested into SMaHT Portal,
