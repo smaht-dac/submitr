@@ -100,14 +100,14 @@ Client-Side vs. Server-Side Validation
 
 Validation is supported both on the `client-side`, meaning `before` the data is submitted to
 SMaHT Portal for ingestion; and on the `server-side`, meaning `after` the data is submitted
-to SMaHT Portal for ingestion, i.e. within the SMaHT server ingestion processs itself.
+to SMaHT Portal for ingestion.
 
-That is, client-side validation is performed `locally` within the ``submit-metadata-bundle`` command itself;
+That is, client-side validation is performed `locally` within the ``submit-metadata-bundle`` command-line process itself;
 and server-side validation is performed `remotely` within the SMaHT server ingestion process itself.
 
 These two modes of validation largely cover the same ground,
 however there are `some` aspects of validation which 
-can `only` be done on the server-side and so this may pick up problems (e.g. various specific identifier formats) which
+can `only` be done on the server-side and so this may pick up problems (e.g. various identifier format checking) which
 are not possible to detect on the client-side; and conversely, the client-side validation
 is the only place where issues regarding the presence (or absence) of any referenced
 files (intended for upload) can be detected.
@@ -127,7 +127,7 @@ If you want to perform `only` the server-side validation (for whatever reason),
 there is a ``--validate-only`` option which will cause `only` remote server-side validation to be done;
 no local client-side validation will be done in this case.
 
-And in `both` of these cases (``--validate-local-only`` and ``--validate-only``) the ingestion process
+And in `both` of these cases (``--validate-local-only`` and ``--validate-only``) the actual ingestion process itself
 will `not` proceed; i.e. this only performs (either client-side or server-side) validation and outputs the results.
 
 .. note::
