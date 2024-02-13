@@ -8,7 +8,7 @@ to view, upload, create, or update data from/to SMaHT Portal,
 you are required to obtain and setup an access and secret key (i.e. `credentials`)
 from SMaHT Portal.
 
-These must stored in a specific format and file on your local system.
+These SMaHT Portal credentials must stored in a specific format in a special file on your local system.
 Please follow these steps below to get your access keys and configure your local system for ``smath-submitr`` usage.
 
 Obtaining SMaHT Portal Access Keys
