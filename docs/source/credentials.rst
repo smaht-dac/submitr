@@ -16,8 +16,12 @@ Obtaining SMaHT Portal Access Keys
 
 #. Log in to `SMaHT Portal <https://data.smaht.org>`_ with your username (email) and password.
 #. Once logged in, go to your **Profile** page by clicking **Account** on the upper right corner of the page.
-#. On your profile page, click the green **Add Access Key** button, and copy the **Access Key ID** and **Secret Access Key** values from the popup page. Note that *once the pop-up page disappears you will not be able to see the secret access key value*. However if you forget/lose your secret key you can always delete and add new access keys from your profile page at any time.
-#. Store these values the file ``~/.smaht-keys.json`` on your local machine; see the next section for details.
+#. On your profile page, click the green **Add Access Key** button, and copy the **Access Key ID** and **Secret Access Key** values from the pop-up page.
+#. Store these values the file ``~/.smaht-keys.json`` on your local machine. See the next section for details of this file and its format.
+
+.. note::
+   Once the pop-up page with your Access Key ID and Secret Access Key disappears, you will `not` be able to retrieve the Secret Access Key value ever again.
+   However, if you forget or lose your Secret Access Key you can delete the key and add a new one from your Profile page at any time.
 
 Storing SMaHT Portal Access Keys
 --------------------------------
