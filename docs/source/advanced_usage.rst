@@ -46,17 +46,20 @@ or `snake-case <https://en.wikipedia.org/wiki/Snake_case>`_
 version of the type name, for example, ``CellCulture.csv`` or ``cell_culture.csv``, respectively.
 
 This obviously implies that multiple files are required if multiple types are to be submitted,
-and the next question is how to submit multiple files in a single submission.
+and the next question is how to submit multiple files in a single submission, which is answered next.
 
-The answer is that in this case the files need to packaged together into a
-single archive file (optionally compressed - see below) using the standard ``tar`` command-line utility.
-The name of this TAR file `must` be suffixed with ``.tar``, other than that there are
+Archive Files
+~~~~~~~~~~~~~
+
+To submit multiple (CSV) files in a single submission, they need to be packaged together into a
+single `archive` file (optionally compressed - see below) using the standard ``tar`` command-line utility.
+The name of this TAR file `must` be suffixed with ``.tar``; other than that there are
 no requirements for the name of this file. For example::
 
     tar cf your_tar_file.tar cell_culture.csv unaligned_reads.csv
 
 Or alternatively, rather than ``tar``, the standard ``zip`` command-line utility can also be used.
-The name of this ZIP file `must` be suffixed with ``.zip``, other than that there are
+The name of this ZIP file `must` be suffixed with ``.zip``; other than that there are
 no requirements for the name of this file. For example::
 
     zip your_zip_file.zip cell_culture.csv unaligned_reads.csv
