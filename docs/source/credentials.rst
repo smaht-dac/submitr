@@ -58,7 +58,10 @@ For example, using ``TextEdit``, from a MacOS Terminal window, like this:
 
 The environment name, e.g. ``data`` in the above example, is of your own choosing; this name will be used
 as the ``--env`` argument to the various `smaht-submitr` commands, e.g. ``submit-metadata-bundle`` and ``resume-uploads``.
-Though if you only have `one` single environment defined in this file then this (``-env`` argument) will not be necessary.
+
+.. tip::
+    If you only have `one` single environment defined in this ``~/.smaht-keys.json`` file
+    then the ``--env`` argument will not be necessary when using ``submit-metatadata-bundle`` and ``resume-uploads``.
 
 N.B. If you are not sure what ``server`` you should be submitting to, reach out to your contact on the SMaHT DAC Team at
 `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
