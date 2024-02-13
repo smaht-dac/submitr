@@ -66,15 +66,18 @@ def main(simulated_args_for_testing=None):
         args.upload_folder = args.directory
     if args.subdirectories:
         args.subfolders = True
-    if not (args.validate_only and args.validate_local):
+    if not (args.validate_only and (args.validate_local or args.validate_local_only)):
         if args.validate_only:
             args.validate_local = False
-        elif args.validate_local:
+        elif args.validate_local or args.validate_local_only:
             args.validate_first = False
             args.validate_only = False
-    if args.validate_local_only:
-        args.validate_local = True
-    if args.validate and not (args.validate_only or args.validate_local_only or args.validate_local_only):
+    if args.validate_only:
+        args.validate_first = False
+    if args.validate and not (args.validate_only or args.validate_local_only or
+                              args.validate_local_only or args.validate_first):
+        # If --validate is specified and no other validate related options are
+        # specified, then default to server-side and client-side validation.
         args.validate_local = True
         args.validate_first = True
 

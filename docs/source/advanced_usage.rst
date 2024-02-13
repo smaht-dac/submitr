@@ -27,7 +27,7 @@ and each of those containing an array of one or more object definitions for that
 conform to the schema for their corresponding types.
 
 To see an example of this JSON, if you have a Excel spreadsheet metadata file, you can invoke ``submit-metadata-bundle``
-with that file, specifying the ``--validate-local-only`` and ``--verbose`` options;
+with that file, specifying the ``--validate-local-only`` and ``--verbose`` options together;
 this will output the JSON for the given Excel spreadsheet as translated by ``smaht-submitr``.
 
 CSV Files
@@ -116,13 +116,19 @@ For this reason, the default ``--validate`` mode of validation is the most compr
 as it performs `both` client-side and server-side validation.
 But alternatively, you can invoke either one of these validations individually and exclusively as follows.
 
+Validation Only
+~~~~~~~~~~~~~~~
+
 If you want to perform `only` the client-side validation (for whatever reason),
-there is a ``--validate-local`` option which will cause `only` local client-side validation to be done;
+there is a ``--validate-local-only`` option which will cause `only` local client-side validation to be done;
 no remote server-side validation will be done in this case.
 
 If you want to perform `only` the server-side validation (for whatever reason),
 there is a ``--validate-only`` option which will cause `only` remote server-side validation to be done;
 no local client-side validation will be done in this case.
+
+And in `both` of these cases (``--validate-local-only`` and ``--validate-only``) the ingestion process
+will `not` proceed; i.e. this only performs (either client-side or server-side) validation and outputs the results.
 
 .. note::
     Even in the absence of `any` validation (which is actually not even a readily available option),

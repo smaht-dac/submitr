@@ -99,6 +99,7 @@ def _get_user_record(server, auth):
 
 
 def _is_admin_user(user: dict) -> bool:
+    return False
     return "admin" in user.get("groups", [])
 
 
@@ -575,17 +576,25 @@ def submit_any_ingestion(ingestion_filename, *,
         exit(1)
 
     user_record = _get_user_record(portal.server, auth=portal.key_pair)
-    if not _is_admin_user(user_record) and not (validate_only or validate_local_only):
-        # If user is not an admin then default to local validation first;
-        # i.e. act as-if the --validate-local flag was specified.
+    if not _is_admin_user(user_record) and not (validate_only or validate_first or
+                                                validate_local or validate_local_only):
+        # If user is not an admin, and no other validate related options are
+        # specified, then default to server-side and client-side validation,
+        # i.e. act as-if the --validate option was specified.
         validate_local = True
         validate_first = True
+
+    if debug:
+        PRINT(f"DEBUG: validate_only = {validate_only}")
+        PRINT(f"DEBUG: validate_first = {validate_first}")
+        PRINT(f"DEBUG: validate_local = {validate_local}")
+        PRINT(f"DEBUG: validate_local_only = {validate_local_only}")
 
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
     _do_app_arg_defaulting(app_args, user_record)
     PRINT(f"Submission file to ingest: {ingestion_filename}")
 
-    if validate_local:
+    if validate_local or validate_local_only:
         _validate_locally(ingestion_filename, portal, validate_local_only,
                           upload_folder=upload_folder, subfolders=subfolders, verbose=verbose)
 
