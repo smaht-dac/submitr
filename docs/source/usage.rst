@@ -137,8 +137,8 @@ multiple consortia and/or submission centers, you can also add the ``--consortiu
 and ``--submission-center <submission-center>`` options; if you belong to only one,
 the command will automatically detect (based on your user profile) and use those.
 
-Metadata Validation
---------------------
+Validation
+----------
 
 To invoke the submission with validation checking, do::
 
