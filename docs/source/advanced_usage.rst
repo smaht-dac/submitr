@@ -131,7 +131,7 @@ there is a ``--validate-only`` option which will cause `only` remote server-side
 no local client-side validation will be done in this case.
 
 And in `both` of these cases (``--validate-local-only`` and ``--validate-only``) the actual ingestion process itself
-will `not` proceed; i.e. this only performs (either client-side or server-side) validation and outputs the results.
+will `not` proceed; i.e. these only perform (either client-side or server-side) validation and output the results.
 
 .. note::
     Even in the absence of `any` validation (which is actually not even a readily available option),
