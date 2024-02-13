@@ -154,8 +154,21 @@ To be more specific, the validation checks include the following:
 #. Confirms that any objects referenced within the submission file can be resolved; i.e. either they already exist within the Portal, or are defined within the metadata submission file itself.
 #. Verifies that referenced files (to be subsequently uploaded) actually exist on the file system.
 
+.. tip::
+    Using this ``--validate`` feature, if any errors are encountered, the actual ingestion of data
+    will `not` commence. (Even if no errors are encountered, you `will` be prompted as to 
+    whether or not you wish to proceed). I.e. this constitutes a sort of "**dry run**" facility.
+
 Not generally necessary to know,
-but for more detailed information on the validation process see the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
+but for more detailed information on the validation process
+see the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
+
+.. note::
+    Even in the absence of validation,
+    if there are problems with specific objects within your submitted data,
+    they will `not` be ingested into SMaHT Portal; i.e. no worries that corrupt data will sneak into the system.
+    However, without the ``--validate`` option it `is` possible that some of your objects
+    will be ingested properly, and other, problematic ones, will not.
 
 Example Screenshots
 -------------------
