@@ -31,8 +31,7 @@ def main(simulated_args_for_testing=None):
                         help="Only perform creates (POST) for submitted data.", default=False)
     parser.add_argument('--patch-only', action="store_true",
                         help="Only perform updates (PATCH) for submitted data.", default=False)
-    parser.add_argument('--keys', action="store_true",
-                        help="Path to keys file (rather than default ~/.smaht-keys.json).", default=False)
+    parser.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=False)
     parser.add_argument('--validate', '-v', action="store_true",
                         help="Perform both client-side and server-side validation first.", default=False)
     parser.add_argument('--validate-only', action="store_true",
@@ -82,6 +81,12 @@ def main(simulated_args_for_testing=None):
         # specified, then default to server-side and client-side validation.
         args.validate_local = True
         args.validate_first = True
+
+    if args.keys:
+        if not args.keys.endswith(".json") or not os.path.exists(args.keys):
+            PRINT("The --keys argument must be the name of an existing .json file.")
+            exit(1)
+
 
     with script_catch_errors():
 
