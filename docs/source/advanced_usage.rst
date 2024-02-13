@@ -87,10 +87,10 @@ And you can also alternatively use the single suffix ``.tgz`` (rather than ``.ta
 More on Validation
 ==================
 
-As mentioned in the `Usage <usage.html>`_ section, validation can be performed on the given metadata file
+As mentioned in the `Usage <usage.html#validation>`_ section, validation can be performed on the given metadata file
 before it is actually ingestion into SMaHT Portal; this can be done most simply and comprehensively
-by using the ``--validation`` option. And in fact this is the default behavior you, as a submitter,
-are not an `admin` user.
+by using the ``--validation`` option. And in fact, this is the default behavior if you, as a submitter,
+are `not` an `admin` user.
 
 But under the hood there are more finer grained modes of validation
 which may be useful for troubleshooting or other peculiar situations, as described next.
