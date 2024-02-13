@@ -128,6 +128,10 @@ For example::
 
 You can omit the ``--env`` option entirely if your ``~/.smaht-keys.json`` file has only `one` single entry.
 
+.. note::
+    If you opted to use a file other than ``~/.smaht-keys.json`` to store
+    your credentials, you will need to use the ``--keys`` argument with the path name to your alternate file.
+
 This command should do everything, `including` uploading any referenced files,
 prompting first for confirmation;
 see the `Uploading Referenced Files <uploading_files.html>`_ section for more on this.

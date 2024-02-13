@@ -29,6 +29,11 @@ Storing SMaHT Portal Access Keys
 Once you've obtained access and secret keys (per the previous) section,
 they should be stored in a file on your local machine called ``~/.smaht-keys.json``.
 (Note that the ``~`` there refers to your local home directory).
+
+.. tip::
+   You can actually use a different file rather than ``~/.smaht-keys.json`` to store your credentials.
+   If you do, you will need to use the ``--keys`` argument with the ``smaht-submitr`` commands.
+
 The format of this file should look something like this:
 
 .. code-block::
