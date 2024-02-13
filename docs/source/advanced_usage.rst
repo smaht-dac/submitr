@@ -27,7 +27,7 @@ and each of those containing an array of one or more object definitions for that
 conform to the schema for their corresponding types.
 
 To see an example of this JSON, if you have a Excel spreadsheet metadata file, you can invoke ``submit-metadata-bundle``
-with that file, specifying the ``--check-only`` and ``--verbose`` options;
+with that file, specifying the ``--validate-local-only`` and ``--verbose`` options;
 this will output the JSON for the given Excel spreadsheet as translated by ``smaht-submitr``.
 
 CSV Files
@@ -84,6 +84,53 @@ Incidentally, for such a ``.tar.gz`` file you both ``tar`` and ``gzip`` it in a 
 
 And you can also alternatively use the single suffix ``.tgz`` (rather than ``.tar.gz``) for such compressed TAR files.
 
+More on Validation
+==================
+
+As mentioned in the `Usage <usage.html>`_ section, validation can be performed on the given metadata file
+before it is actually ingestion into SMaHT Portal; this can be done most simply and comprehensively
+by using the ``--validation`` option. And in fact this is the default behavior you, as a submitter,
+are not an `admin` user.
+
+But under the hood there are more finer grained modes of validation
+which may be useful for troubleshooting or other peculiar situations, as described next.
+
+Client-Side vs. Server-Side Validation
+--------------------------------------
+
+Validation is supported both on the `client-side`, meaning `before` the data is submitted to
+SMaHT Portal for ingestion; and on the `server-side`, meaning `after` the data is submitted
+to SMaHT Portal for ingestion, i.e. within the SMaHT server ingestion processs itself.
+
+That is, client-side validation is performed `locally` within the ``submit-metadata-bundle`` command itself;
+and server-side validation is performed `remotely` within the SMaHT server ingestion process itself.
+
+These two modes of validation largely cover the same ground,
+however there are `some` aspects of validation which 
+can `only` be done on the server-side and so this may pick up problems which
+are not possible to detect on the client-side; and conversely, the client-side validation
+is the only place where issues regarding the presence (or absence) of any referenced
+files (intended for upload) can be detected.
+
+For this reason, the default ``--validate`` mode of validation is the most comprehensive,
+as it performs `both` client-side and server-side validation.
+But alternatively, you can invoke either one of these validations individually and exclusively as follows.
+
+If you want to perform `only` the client-side validation (for whatever reason),
+there is a ``--validate-local`` option which will cause `only` local client-side validation to be done;
+no remote server-side validation will be done in this case.
+
+If you want to perform `only` the server-side validation (for whatever reason),
+there is a ``--validate-only`` option which will cause `only` remote server-side validation to be done;
+no local client-side validation will be done in this case.
+
+Also of minor note is that if there are server-side validation errors, you will not be able
+to continue with the submission process; i.e. there is no way to get your data ingested into SMaHT Portal,
+unless/until you correct the problems (or unless you use the ``--validate-local``).
+But if there are client-side validation errors,
+you `may` (after prompting) continue processing, in spite of there
+being local client-side validation errors (this of course is not recommended).
+
 Viewing Portal Objects
 ======================
 
@@ -94,6 +141,9 @@ for example::
 
     view-portal-object --env data dca16310-5127-4347-bd58-10f8fb5516b2
     view-portal-object --env data /SubmissionCenter/smaht_dac
+
+If you want to display the data in `YAML <https://en.wikipedia.org/wiki/YAML>`_ format rather than JSON
+use the ``--yaml`` option. And if you want to automatically copy the (JSON) data to the clipboard use the ``--copy`` option.
 
 Note there is nothing really that this command does that you cannot also do by interacting SMaHT Portal directly 
 via your browser, but some command-line savvy users may find this interface more agreeable under some circumstances.
@@ -107,7 +157,7 @@ for example::
 
     view-portal-object --env data --schema CellLine
 
-Or you can output all schema types present within SMaHT Portal using the special ``schemas`` identifier,
+Or you can output `all` schema types present within SMaHT Portal using the special ``schemas`` identifier,
 for example::
 
     view-portal-object --env data schemas

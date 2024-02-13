@@ -529,8 +529,8 @@ def submit_any_ingestion(ingestion_filename, *,
                          post_only=False,
                          patch_only=False,
                          validate_only=False,
+                         validate_first=False,
                          validate_local=False,
-                         validate_local_no=False,
                          validate_local_only=False,
                          verbose=False,
                          debug=False):
@@ -575,10 +575,11 @@ def submit_any_ingestion(ingestion_filename, *,
         exit(1)
 
     user_record = _get_user_record(portal.server, auth=portal.key_pair)
-    if not _is_admin_user(user_record) and not validate_local_no:
+    if not _is_admin_user(user_record) and not (validate_only or validate_local_only):
         # If user is not an admin then default to local validation first;
         # i.e. act as-if the --validate-local flag was specified.
         validate_local = True
+        validate_first = True
 
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
     _do_app_arg_defaulting(app_args, user_record)
@@ -637,6 +638,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
         submission_post_data = {
             'validate_only': validate_only,
+            'validate_first': validate_first,
             'post_only': post_only,
             'patch_only': patch_only,
             'sheet_utils': False,

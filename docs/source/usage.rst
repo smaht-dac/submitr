@@ -137,38 +137,24 @@ multiple consortia and/or submission centers, you can also add the ``--consortiu
 and ``--submission-center <submission-center>`` options; if you belong to only one,
 the command will automatically detect (based on your user profile) and use those.
 
-Sanity Checking
----------------
+Metadata Validation
+--------------------
 
-To invoke the submission with `local` sanity checking, where "local" means - `before` actually submitting to SMaHT, do::
+To invoke the submission with validation checking, do::
 
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --check
+   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --validate
 
-And to invoke the submission with `only` local sanity checking, `without` actually submitting to SMaHT at all, do::
+This is the recommended usage, and in fact this (``--validate`` option) is actually the `default`
+behavior unless your user profile indicates that you are an `admin` user.
 
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --check-only
+To be more specific, the validation checks include the following:
 
-These ``--check`` and ``--check-only`` options can be very useful and their use is encouraged.
-They ensure that everything is in order before sending the submission off to SMaHT for processing.
+#. Ensures the basic integrity of the format of the metadata submission file.
+#. Validates that objects defined within the metadata submission file conform to the corresponding Portal schemas for these objects.
+#. Confirms that any objects referenced within the submission file can be resolved; i.e. either they already exist within the Portal, or are defined within the metadata submission file itself.
+#. Verifies that referenced files (to be subsequently uploaded) actually exist on the file system.
 
-In fact, this (``--check`` option) is actually the `default` behavior unless your user profile indicates that you are an `admin` user.
-To be more specific, these sanity checks include the following:
-
-#. Ensures the basic integrity of the format of the submission file.
-#. Validates the objects defined within the submission file against the corresponding Portal schemas for these objects.
-#. Confirms that any objects referenced within the submission file can be resolved; i.e. either they already exist within the Portal, or are defined within the submission file itself.
-#. Checks that referenced files (to be subsequently uploaded) actually exist on the file system.
-
-Valdation Only
---------------
-
-To invoke the submission for validation only, without having SMaHT actually ingest anything into its data store, do::
-
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --validate-only
-
-To be clear, this `will` submit the file to SMaHT for processing, but no data ingestion will take place, and any problems
-will be reported back to you from the SMaHT server. To sanity check the file you are submitting  `before` actually
-submitting it to SMaHT, you should use the ``--check`` option described above.
+Not generally necessary, but for more detailed information the validation process see the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
 
 Example Screenshots
 -------------------
@@ -182,7 +168,7 @@ The output of a successfully completed ``submit-metadata-bundle`` will look some
 Notice the **Submission UUID** value in the **Validation Output** section as well as the **uuid** values in the **Upload Info** section;
 these may be used in a subsequent ``resume-uploads`` invocation; see the `Uploading Files <uploading_files.html>`_ section for more on this.
 
-When specifying the ``--check`` the additional sanity checking output will look something like this:
+When specifying the ``--validate`` option (default for non-admin users) the additional validation checking output will look something like this:
 
 .. image:: _static/images/submitr_check.png
     :target: _static/images/submitr_check.png
