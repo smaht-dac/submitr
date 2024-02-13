@@ -146,6 +146,8 @@ being local client-side validation errors (this of course is not recommended).
     Even in the absence of `any` validation (which is actually not even a readily available option),
     if there are problems with the submitted data, it will `not` be ingested into SMaHT Portal;
     i.e. no need to worry that corrupt data might sneak into the system; the system guards against this.
+    However, without making use of the ``--validate`` options it `is` possible that `some` of your objects
+    will be ingested properly, and other, problematic ones, will `not`.
 
 Viewing Portal Objects
 ======================
