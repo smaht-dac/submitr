@@ -136,7 +136,7 @@ will `not` proceed; i.e. this only performs (either client-side or server-side) 
 .. note::
     Even in the absence of `any` validation (which is actually not even a readily available option),
     if there are problems with the submitted data, it will `not` be ingested into SMaHT Portal;
-    i.e. no need to worry that corrupt might sneak into the system; that is guarded against by the system.
+    i.e. no need to worry that corrupt data might sneak into the system; the system guards against this.
 
 Also of minor note is that if there are server-side validation errors, you will not be able
 to continue with the submission process; i.e. there is no way to get your data ingested into SMaHT Portal,
