@@ -4,16 +4,17 @@ Credentials
 
 If you have been designated as a submitter for the SMaHT project,
 and plan to use spreadsheet-based submission system (i.e. ``smaht-submitr``)
-to view, upload, create, or update data from/to the SMaHT data portal,
+to view, upload, create, or update data from/to SMaHT Portal,
 you are required to obtain and setup an access and secret key (i.e. `credentials`)
-from the SMaHT data portal.
+from SMaHT Portal.
+
 These must stored in a specific format and file on your local system.
 Please follow these steps below to get your access keys and configure your local system for ``smath-submitr`` usage.
 
 Obtaining SMaHT Portal Access Keys
 ----------------------------------
 
-#. Log in to the `SMaHT Portal <https://data.smaht.org>`_ with your username (email) and password.
+#. Log in to `SMaHT Portal <https://data.smaht.org>`_ with your username (email) and password.
 #. Once logged in, go to your **Profile** page by clicking **Account** on the upper right corner of the page.
 #. On your profile page, click the green **Add Access Key** button, and copy the **Access Key ID** and **Secret Access Key** values from the popup page. Note that *once the pop-up page disappears you will not be able to see the secret access key value*. However if you forget/lose your secret key you can always delete and add new access keys from your profile page at any time.
 #. Store these values the file ``~/.smaht-keys.json`` on your local machine; see the next section for details.
@@ -42,7 +43,7 @@ The format of this file should look something like this:
    }
 
 Obviously replacing ``<your-access-key-id>`` and ``<your-secret-access-key>`` with the actual
-values obtained from the SMaHT Portal **Add Access Key** step described above.
+values obtained from SMaHT Portal **Add Access Key** step described above.
 
 To create or modify and edit this file, use a text editor of your choice (``vim`` or ``TextEdit`` or whatever).
 For example, using ``TextEdit``, from a MacOS Terminal window, like this:
