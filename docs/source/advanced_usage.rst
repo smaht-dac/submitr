@@ -156,8 +156,9 @@ for example::
 If you want to display the data in `YAML <https://en.wikipedia.org/wiki/YAML>`_ format rather than JSON
 use the ``--yaml`` option. And if you want to automatically copy the (JSON) data to the clipboard use the ``--copy`` option.
 
-Note there is nothing really that this command does that you cannot also do by interacting SMaHT Portal directly 
-via your browser, but some command-line savvy users may find this interface more agreeable under some circumstances.
+.. tip::
+    There is nothing really that this command does that you cannot also do by interacting SMaHT Portal directly 
+    via your browser, but some command-line savvy users may find this interface more agreeable under some circumstances.
 
 Viewing Portal Schemas
 ----------------------
