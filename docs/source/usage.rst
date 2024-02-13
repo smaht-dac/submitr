@@ -154,7 +154,8 @@ To be more specific, the validation checks include the following:
 #. Confirms that any objects referenced within the submission file can be resolved; i.e. either they already exist within the Portal, or are defined within the metadata submission file itself.
 #. Verifies that referenced files (to be subsequently uploaded) actually exist on the file system.
 
-Not generally necessary, but for more detailed information the validation process see the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
+Not generally necessary to know,
+but for more detailed information on the validation process see the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
 
 Example Screenshots
 -------------------
