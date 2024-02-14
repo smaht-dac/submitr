@@ -8,7 +8,7 @@ Installation
 More experienced users who already have ``python`` (version ``3.8``, ``3.9``, ``3.10``, or ``3.11``) and ``pip`` installed,
 and a (optional) Python virtual environment satisfactorily setup,
 can proceed directly to the essential element of the actual installation
-of the ``smaht-submitr`` installation, which is simply this::
+of the ``smaht-submitr`` installation, which is simply::
 
     pip install smaht-submitr
 
