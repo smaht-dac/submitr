@@ -21,7 +21,7 @@ Obtaining Access Keys
 
 .. note::
    Once the pop-up page with your Access Key ID and Secret Access Key disappears, you will `not` be able to retrieve the Secret Access Key value ever again.
-   However, if you forget or lose your Secret Access Key you can delete the key and add a new one from your Profile page at any time.
+   `However`, if you forget or lose your Secret Access Key you can delete the key and add a new one from your Profile page at any time.
 
 Storing Access Keys
 -------------------
