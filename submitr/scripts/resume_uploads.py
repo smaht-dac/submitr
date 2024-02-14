@@ -26,7 +26,6 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=False)
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
     parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
-    parser.add_argument('--upload-commands', action="store_true", help="Prints the (AWS CLI) upload command(s).")
     parser.add_argument('--no_query', '-nq', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
     parser.add_argument('--subdirectories', '-sd', action="store_true",
