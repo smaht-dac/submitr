@@ -67,7 +67,7 @@ For example, using ``TextEdit``, from a MacOS Terminal window, like this:
 
 As stated above, the environment name, e.g. ``data`` in the above example,
 is of your own choosing; this name should be used as the ``--env`` argument
-to the various `smaht-submitr` commands, e.g. ``submit-metadata-bundle`` and ``resume-uploads``.
+to the various `smaht-submitr` commands.
 
 .. tip::
     If you only have `one` single environment defined in this ``~/.smaht-keys.json`` file
