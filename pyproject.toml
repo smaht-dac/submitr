@@ -82,6 +82,7 @@ pytest-runner = ">=6.0.0"  # "5.3.1"  # >=
 # Docs build dependencies
 sphinx = ">=3.5.4"  # should be 5.1.1?
 sphinx-rtd-theme = ">=1.2.0"
+sphinx-tabs = "^3.4.5"
 
 [tool.poetry.scripts]
 
