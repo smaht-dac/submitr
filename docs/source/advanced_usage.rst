@@ -34,7 +34,8 @@ conform to the schema for their corresponding types.
 CSV Files
 ---------
 
-As Excel files are really just fancy `CSV <https://en.wikipedia.org/wiki/Comma-separated_values>`_ (comma-separated-values), it's natural that CSV files be supported as an alternative.
+As Excel files are really just fancy `CSV <https://en.wikipedia.org/wiki/Comma-separated_values>`_ (comma-separated-values),
+it's natural that CSV files be supported as an alternative.
 Nothing much to say here specifically about this file format per se, as it should be self-explanatory to anyone familiar with these file formats;
 but be sure to read the next paragraph.
 The file name for a CSV file `must` be suffixed with ``.csv``.
