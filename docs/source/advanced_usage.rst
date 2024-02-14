@@ -188,7 +188,7 @@ Installation for Developers
 ===========================
 
 If you are a software developer, and you want to install ``smaht-submitr`` locally
-for development and other purposes,
+for development or other purposes,
 and assuming you have Python and a (optional) Python virtual environment satisfactorily setup,
 you can do so like this::
 
