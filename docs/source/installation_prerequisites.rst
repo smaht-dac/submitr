@@ -156,7 +156,11 @@ for example, to list your virtual environments, do::
     pyenv virtualenvs
 
 You probably won't see anything listed from that as you have not defined any virtual environments yet.
-Now (finally), to install a newer/specific version Python, for example version 3.11.6 (recommended), do::
+
+Using Pyenv
+~~~~~~~~~~~
+Now (finally), to use ``pyenv`` to install a newer/specific version Python,
+for example version 3.11.6 (a recommended version), do::
 
     pyenv install 3.11.6
 
@@ -181,5 +185,5 @@ if you do not, then something may be wrong.
 .. note::
 
    There are of course other features provided by ``pyenv`` (e.g. setting up to use a particular Python version
-   whenever in a particular directory). For more information, this page provides a pretty good tutorial:
+   whenever you're in a particular directory). For more information, this page provides a pretty good tutorial:
    `Managing Multiple Python Versions With Pyenv <https://realpython.com/intro-to-pyenv/>`_.
