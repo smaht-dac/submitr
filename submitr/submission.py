@@ -992,7 +992,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     :param subfolders: bool to search subdirectories within upload_folder for files
     """
 
-    portal = _define_portal(key=keydict, env=env, server=server, app=app, report=True)
+    portal = _define_portal(key=keydict, keys_file=keys_file, env=env, server=server, app=app, report=True)
 
     if not (response := portal.get_metadata(uuid)):
         if accession_id := _extract_accession_id(uuid):

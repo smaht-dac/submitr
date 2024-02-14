@@ -23,6 +23,7 @@ def main(simulated_args_for_testing=None):
                         help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")
     parser.add_argument('--bundle_filename', '-b', help="location of the original Excel submission file")
+    parser.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=False)
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
     parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
     parser.add_argument('--upload-commands', action="store_true", help="Prints the (AWS CLI) upload command(s).")
@@ -39,6 +40,11 @@ def main(simulated_args_for_testing=None):
     if args.subdirectories:
         args.subfolders = True
 
+    if args.keys:
+        if not args.keys.endswith(".json") or not os.path.exists(args.keys):
+            PRINT("The --keys argument must be the name of an existing .json file.")
+            exit(1)
+
     if args.bundle_filename and not os.path.isdir(os.path.normpath(os.path.dirname(args.bundle_filename))):
         print(f"Specified bundle file not found: {args.bundle_filename}")
         exit(1)
@@ -54,7 +60,8 @@ def main(simulated_args_for_testing=None):
 
         resume_uploads(uuid=args.uuid, server=args.server, env=args.env, bundle_filename=args.bundle_filename,
                        upload_folder=args.upload_folder, no_query=args.no_query,
-                       subfolders=args.subfolders, app=args.app, upload_commands=args.upload_commands)
+                       subfolders=args.subfolders, app=args.app, keys_file=args.keys,
+                       upload_commands=args.upload_commands)
 
 
 if __name__ == '__main__':
