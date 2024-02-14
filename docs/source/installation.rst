@@ -6,8 +6,8 @@ Installation
   :maxdepth: 1
 
 More experienced users who already have ``python`` (version ``3.8``, ``3.9``, ``3.10``, or ``3.11``) installed,
-and a (optional) Python virtual environment satisfactorily setup,
-can proceed directly to the essential element of the actual installation
+and a (optional) Python virtual environment setup to their satisfaction,
+may proceed directly to the essential element of the actual installation
 of the ``smaht-submitr`` installation, which is simply::
 
     pip install smaht-submitr
@@ -39,7 +39,6 @@ System Requirements
 .. note::
    The command-line shell for all of these instructions is assumed ``bash`` (i.e. not ``zsh`` or ``csh`` et cetera).
    To invoke the ``bash`` shell from the command-line simply run ``bash``.
-
 
 Virtual Environment Setup
 =========================
@@ -73,4 +72,5 @@ For Developers
 ==============
 
 If you are a software developer, and you wish to install ``smaht-submitr`` locally
-for development or other purposes, please see the `Advanced Usage <advanced_usage.html#installation-for-developers>`_ section.
+for development or other purposes;
+please see also the `Advanced Usage <advanced_usage.html#installation-for-developers>`_ section.

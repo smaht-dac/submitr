@@ -41,6 +41,8 @@ an object containing a ``key``, ``secret``, and ``server`` values, represening y
 Secret Access Key, and the target SMaHT server URL. For example:
 
 .. code-block::
+   :linenos:
+
 
    {
        "data": {
@@ -59,11 +61,9 @@ Obviously you would replace ``<your-access-key-id>`` and ``<your-secret-access-k
 with your actual Access Key ID and Secret Access Key values obtained from SMaHT Portal **Add Access Key** step described above.
 
 To create or modify and edit this file, use a text editor of your choice (``vim`` or ``TextEdit`` or whatever).
-For example, using ``TextEdit``, from a MacOS Terminal window, like this:
+For example, using ``TextEdit``, from a MacOS Terminal window, like this::
 
-.. code-block::
-
-    $ open -a TextEdit ~/.smaht-keys.json
+    open -a TextEdit ~/.smaht-keys.json
 
 As stated above, the environment name, e.g. ``data`` in the above example,
 is of your own choosing; this name should be used as the ``--env`` argument
