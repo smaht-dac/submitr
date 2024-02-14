@@ -49,8 +49,9 @@ specific instructions will be omitted, though much of what is here is applicate 
 UNIX Command Cheatsheet
 -----------------------
 
-Using this repository and interacting with file submissions assumes some knowledge of the UNIX
-file-system and familiarity with ``bash``. What follows is a list of the essential commands you should
+Using ``smaht-submitr`` assumes some knowledge of the UNIX file system and
+familiarity with the UNIX shell (``bash``).
+What follows is a list of the essential commands you should
 know for working with ``smaht-submitr``. For help for a UNIX command, you can always
 enter ``man <command-name>`` in the terminal to pull up documentation on the named command.
 You can also do use your favorite Web search engine to locate the manual pages.
