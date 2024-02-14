@@ -25,7 +25,7 @@ Please include as much relevant information as you can to help us assist in the 
 * The output of ``pyenv versions`` if possible.
 * The output of ``pip freeze`` if possible.
 
-You can capture the output of multiple commands in a single file like this:
+FYI you can capture the output of multiple commands in a single file like this:
 
 .. code-block:: bash
 

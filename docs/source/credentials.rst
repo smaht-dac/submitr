@@ -35,7 +35,7 @@ they should be stored in a file on your local machine called ``~/.smaht-keys.jso
    If you do, you will need to use the ``--keys`` options with the path to your alternate file as an argument,
    when using the ``smaht-submitr`` commands.
 
-The format of this file requires in consist of a single `JSON <https://en.wikipedia.org/wiki/JSON>`_
+The format of this file requires a single `JSON <https://en.wikipedia.org/wiki/JSON>`_
 object, where each property is an `environment` name (of your choosing), and where its value is
 an object containing a ``key``, ``secret``, and ``server`` values, represening your Access Key ID,
 Secret Access Key, and the target SMaHT server URL. For example:
@@ -73,7 +73,8 @@ to the various `smaht-submitr` commands, e.g. ``submit-metadata-bundle`` and ``r
     If you only have `one` single environment defined in this ``~/.smaht-keys.json`` file
     then the ``--env`` argument will not be necessary when using the ``smaht-submit`` commands.
 
-N.B. If you are not sure what ``server`` you should be submitting to, reach out to your contact on the SMaHT DAC Team at
+N.B. If you are not sure what ``server`` you should be submitting to,
+please reach out to your contact on the SMaHT DAC Team at
 `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
 
 Securing SMaHT Portal Access Keys
