@@ -14,7 +14,7 @@ of the ``smaht-submitr`` installation, which is simply::
 
 Less experienced users may want to start with the following,
 which will introduce some basics for installing and working
-with Python (and dependencies) on the terminal command-line:
+with Python (including dependencies) on the terminal command-line:
 
 .. toctree::
   :maxdepth: 1
