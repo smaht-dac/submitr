@@ -34,8 +34,8 @@ The ``smaht-submitr`` software is a command-line tool for importing and uploadin
 It is implemented as Python package and distributed on `PyPi <https://pypi.org/>`_ here: `smaht-submitr <https://pypi.org/project/smaht-submitr/>`_.
 
 .. note::
-    Note that this documentation mostly covers only the mechanics of using ``smaht-submitr``.
-    It does not at this time cover the semantics of the actual content of metadata being submitted.
+    Note that this documentation covers the mechanics of using ``smaht-submitr``.
+    It does not at this time cover the semantics for the actual content of the metadata being submitted.
     For more information on this aspect of submission please see: **TODO**
 
 
