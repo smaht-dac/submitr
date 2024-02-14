@@ -166,7 +166,7 @@ To be more specific, the validation checks include the following:
 .. tip::
     Using this ``--validate`` feature, if any errors are encountered, the actual ingestion of data
     will `not` commence. (Even if no errors are encountered, you `will` be prompted as to 
-    whether or not you wish to proceed). I.e. this constitutes a sort of "**dry run**" facility.
+    whether or not you wish to proceed). In other words, this constitutes a sort of "**dry run**" facility.
 
 Not generally necessary to know,
 but for more detailed information on the validation process

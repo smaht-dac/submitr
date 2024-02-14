@@ -31,11 +31,14 @@ they should be stored in a file on your local machine called ``~/.smaht-keys.jso
 (Note that the ``~`` there refers to your local home directory).
 
 .. tip::
-   You can actually use a different file rather than ``~/.smaht-keys.json`` to store your credentials.
+   You can actually use any file rather than ``~/.smaht-keys.json`` to store your credentials.
    If you do, you will need to use the ``--keys`` options with the path to your alternate file as an argument,
    when using the ``smaht-submitr`` commands.
 
-The format of this file should look something like this:
+The format of this file requires in consist of a single `JSON <https://en.wikipedia.org/wiki/JSON>`_
+object, where each property is an `environment` name (of your choosing), and where its value is
+an object containing a ``key``, ``secret``, and ``server`` values, represening your Access Key ID,
+Secret Access Key, and the target SMaHT server URL. For example:
 
 .. code-block::
 
