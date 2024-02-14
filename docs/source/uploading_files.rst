@@ -101,11 +101,11 @@ appropriate files to the DAC if found within the buckets::
     sudo amazon-linux-extras install epel -y
     sudo yum install s3fs-fuse -y
 
-    # Set up your AWS credentials.
+    # Setup your AWS credentials.
     echo 'your-aws-access-key-id:your-aws-secret-access-key' > ~/.passwd-s3fs
     chmod 600 ~/.passwd-s3fs
 
-    # Set up your SMaHT credentials.
+    # Setup your SMaHT credentials.
     echo '{"data": {"key": "your-smaht-access-key-id", "secret": "your-smaht-secret-key", "server": "https://data.smaht.org"}}' > ~/.smaht-keys.json
     chmod 600 ~/.smaht-keys.json
 
