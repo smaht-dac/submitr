@@ -183,3 +183,18 @@ for example::
     view-portal-object --env data schemas
 
 And if you also pass the ``-verbose`` option to the above, it will also print the `identifying` and `required` properties for each listed schema type name.
+
+Installation for Developers
+===========================
+
+If you are a software developer, and you want to install ``smaht-submitr`` locally
+for development and other purposes,
+and assuming you have Python and a (optional) Python virtual environment satisfactorily setup,
+you can do so like this::
+
+   git clone https://github.com/smaht-dac/submitr.git
+   cd submitr
+   make build
+
+Note that ``poetry`` is the substrate that the build scripts rely on.
+You won't be calling it directly, rather ``make build`` will call it.

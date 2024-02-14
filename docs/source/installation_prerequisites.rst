@@ -2,22 +2,25 @@
 Installation Prerequisites
 ==========================
 
-The SMaHT ingestion submission tool, ``smaht-submitr``, is a Python based command-line tool and requires a Python installation with version >=3.8 and <=3.11.
+The SMaHT ingestion submission tool, ``smaht-submitr``,
+is a Python based command-line tool and requires a ``python`` installation with version `3.8, 3.9, 3.10, or 3.11`.
 This document is intended for users who are not very familiar with the command-line or Python.
 The intent is to provide detailed instructions for setting up your local environment for using ``smaht-submitr``.
-These instructions are intended to work with Mac OS X.
-Linux users are presumed advanced and Windows instructions are not available at this time but will be provided in the future.
 
+.. note::
+    These instructions are targeted specifically for **Mac OS X**.
+    For **Linux**, these instructions should be generally applicable (with some modifications),
+    and such users, who are presumed to be more advanced, should have no great difficulty.
+    For **Windows**, little to no testing has been done; Windows specific instructions may be available in the future.
 
 Navigating this Document
 ------------------------
 
 Each section in this document is meant to sequentially guide you through the initial setup
 process for installing dependencies necessary to run ``smaht-submitr`` while simultaneously
-getting you setup with some best practices for managing the submissions in your local
-system.
+getting you setup with some best practices for managing the submissions in your local system.
 
-One import note of clarification is that when you see code blocks that begin with ``\$``,
+One important note of clarification is that when you see code blocks that begin with ``\$``,
 this means the commands are meant to be run directly in the (command-line) ``Terminal`` application
 (without the ``\$``). Blocks that do not begin with ``\$`` are intended to be dropped
 directly into files.

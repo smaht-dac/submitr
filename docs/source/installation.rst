@@ -6,23 +6,27 @@ Installation
   :maxdepth: 1
 
 More experienced users who already have ``python`` (version ``3.8``, ``3.9``, ``3.10``, or ``3.11``) and ``pip`` installed,
-and a (optional) virtual Python environment satisfactorily setup,
-can proceed directly to the actual essential
-element of the ``smaht-submitr`` installation, which is simply this::
+and a (optional) Python virtual environment satisfactorily setup,
+can proceed directly to the essential element of the actual installation
+of the ``smaht-submitr`` installation, which is simply this::
 
     pip install smaht-submitr
 
-Less experienced users may want to start with instructions
-for `Installation Prerequisites <installation_prerequisites.html>`_,
-which will introduce some basics for working with Python on the terminal
-command-line, and installing dependencies to run this tool,
-before continuing on with these instructions.
+Less experienced users may want to start with the following,
+which will introduce some basics for working with Python on the terminal command-line;
+and for installing dependencies to run this tool:
 
-If you do not yet and would like have
-a virtual Python environment setup,
-proceed with the rest of these instructions;
-otherwise you may want to cut to the chase and
-see the `Actual Installation <installation.html#actual-installation>`_ section at the end of this page.
+.. toctree::
+  :maxdepth: 1
+
+  installation_prerequisites
+
+Then you can proceed with the rest of these instructions.
+to setup a virtual Python environment setup.
+
+.. tip::
+    If you just want to cut to the chase
+    see the `Actual Installation <installation.html#actual-installation>`_ section at the end of this page.
 
 
 System Requirements
@@ -30,14 +34,20 @@ System Requirements
 
 * ``python`` `3.8, 3.9, 3.10, or 3.11`
 * ``pip`` `>= 20.0.0`
-* ``poetry`` `>= 1.4.0` (`optional`)
+* ``bash``
 * ``virtualenv`` `>= 16.0.0` (`optional`)
 
+.. note::
+    These instructions are targeted specifically for **Mac OS X**.
+    For **Linux**, these instructions should be generally applicable (with some modifications),
+    and such users, who are presumed to be more advanced, should have no great difficulty.
+    For **Windows**, little to no testing has been done; Windows specific instructions may be available in the future.
 
-Virtual Environment Setup ( `Optional` )
-----------------------------------------
 
-This action is optional.
+Virtual Environment Setup
+=========================
+
+This action is **optional**.
 If you do not create a virtual environment, Poetry will make one for you.
 But there are still good reasons you might want to make your own, so here
 are three ways to do it:
@@ -82,19 +92,10 @@ However, if you want to deactivate an active environment, just do::
 
 
 Installation for Developers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+===========================
 
-If you are a developer, you'll be installing via ``poetry``.
-Once you have created a virtual environment, or have decided to just let ``poetry`` handle that,
-go ahead with the installation. To do that, make sure your current directory is the source repository and do::
-
-   git clone https://github.com/smaht-dac/submitr.git
-   cd submitr
-   make build
-
-
-Note that ``poetry`` is the substrate that our build scripts rely on.
-You won't be calling it directly, but ``make build`` will call it.
+If you are a software developer, and you wish to install ``smaht-submitr`` locally
+for development and other purposes, please see the `Advanced Usage <advanced_usage.html#installation-for-developers>`_ section.
 
 
 Actual Installation
