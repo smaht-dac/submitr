@@ -136,7 +136,7 @@ Configuring Pyenv
 ~~~~~~~~~~~~~~~~~
 Before using ``pyenv`` you will now need to add some settings to your ``~/.bashrc`` file,
 which is a script that is executed whenever your login (or launch a new terminal).
-You can edit this file (for example) with ``TextEdit`` (or ``vim`` or whatever you are familiar with) from the terminal with::
+You can edit this file (for example) with ``TextEdit`` (or ``vim`` or whatever you're familiar with) from the terminal with::
 
     open -a TextEdit ~/.bashrc
 
@@ -179,7 +179,8 @@ You can list the virtual environment you have created using ``pyenv virtualenvs`
    i.e. using ``pyenv activate smaht-submitr-3.11`` for example.
 
 Assuming the above example, if you now do ``python --version`` you should `definitely` see something like ``Python 3.11.6``;
-if you do not, then something may be wrong.
+if you do not, then something may be wrong (see the `About <about.html#reporting-issues>`_ page to see about
+contacting us for additional help).
 
 .. note::
 
