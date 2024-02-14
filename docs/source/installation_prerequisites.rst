@@ -7,11 +7,11 @@ is a Python based command-line tool and requires a Python installation (version 
 These instructions, intended for users who are not very familiar with the command-line or Python,
 will help you install Python and setup your local environment for using ``smaht-submitr``.
 
-.. note::
+.. warning::
     These instructions are targeted specifically for **Mac OS X** users.
     For **Linux** users, these instructions should be generally applicable (with some modifications),
     and such users, who are presumed to be a bit more advanced, should have no great difficulty.
-    For **Windows**, little to no testing has been done; Windows specific instructions may be available in the future.
+    For **Windows** users, little to no testing has been done; Windows specific instructions may be available in the future.
 
 Navigating this Document
 ========================

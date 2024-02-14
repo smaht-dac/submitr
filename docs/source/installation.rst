@@ -41,7 +41,7 @@ System Requirements
     These instructions are targeted specifically for **Mac OS X** users.
     For **Linux** users, these instructions should be generally applicable (with some modifications),
     and such users, who are presumed to be a bit more advanced, should have no great difficulty.
-    For **Windows**, little to no testing has been done; Windows specific instructions may be available in the future.
+    For **Windows** users, little to no testing has been done; Windows specific instructions may be available in the future.
 
 .. note::
    The command-line shell for all of these instructions is assumed ``bash`` (i.e. not ``zsh`` or ``csh`` et cetera).
