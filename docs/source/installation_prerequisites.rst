@@ -171,7 +171,7 @@ Your can name your virtual environment (i.e. ``smaht-submitr-3.11`` in this exam
 You can list the virtual environment you have created using ``pyenv virtualenvs``.
 (You can deactivate a virtual environment using ``pyenv deactivate``).
 
-.. warning::
+.. caution::
    You will need to explicitly active the desired virtual environment for each new terminal session,
    i.e. using ``pyenv activate smaht-submitr-3.11`` for example.
 
