@@ -4,7 +4,7 @@ Credentials
 
 If you have been designated as a submitter for the SMaHT project,
 and plan to use spreadsheet-based submission system (i.e. ``smaht-submitr``)
-to view, upload, create, or update data from/to SMaHT Portal,
+to view, upload, create, or update data with SMaHT Portal,
 you are required to obtain and setup an access and secret key (i.e. `credentials`)
 from SMaHT Portal.
 
