@@ -130,7 +130,8 @@ You can omit the ``--env`` option entirely if your ``~/.smaht-keys.json`` file h
 
 .. note::
     If you opted to use a file other than ``~/.smaht-keys.json`` to store
-    your credentials, you will need to use the ``--keys`` options with the path name to your alternate file as an argument.
+    your `credentials <credentials.html>`_, you will need to use the ``--keys``
+   options with the path name to your alternate file as an argument.
 
 This command should do everything, `including` uploading any referenced files,
 prompting first for confirmation;
