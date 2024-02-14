@@ -174,7 +174,6 @@ def test_c4_383_regression_action():
             upload_info["filename"] = os.path.join(current_dir, upload_info["filename"])
             open(upload_info["filename"], "w")
         with override_environ(SMAHT_KEYS_FILE=None):
-            return  # xyzzy
             with mock.patch.object(resume_uploads_module, "print") as mock_print:
                 mock_print.side_effect = lambda *args: output.append(" ".join(args))
                 # This is the directory we expect the uploaded file to get merged against.
