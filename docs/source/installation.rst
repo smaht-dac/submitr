@@ -51,7 +51,7 @@ System Requirements
 Virtual Environment Setup
 =========================
 
-This action is **optional**.
+This step is **optional**.
 If you do not create a virtual environment, ``poetry`` will make one for you.
 But there are still good reasons you might want to make your own, so here
 are three ways to do it:
