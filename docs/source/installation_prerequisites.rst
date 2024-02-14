@@ -26,10 +26,10 @@ this means the commands are meant to be run directly in the (command-line) ``Ter
 directly into files.
 
 
-Unix Command Cheatsheet
+UNIX Command Cheatsheet
 -----------------------
 
-Using Unix commands to interact with your system directly requires using the (command-line) ``Terminal`` application.
+Using UNIX commands to interact with your system directly requires using the (command-line) ``Terminal`` application.
 To open the ``Terminal`` application, if not present in your home dock, open ``Finder``, navigate to
 Applications folder and then to the Utilities sub-folder. Inside the Utilities folder near the bottom should
 be the ``Terminal`` application, which you should add to your home dock by clicking and dragging for
@@ -44,14 +44,14 @@ expected `bash` shell
 
     $ chsh -s /bin/bash
 
-Using this repository and interacting with file submissions assumes some knowledge of the Unix
+Using this repository and interacting with file submissions assumes some knowledge of the UNIX
 file-system and familiarity with ``bash``. What follows is a list of the essential commands you should
 know for working with ``smaht-submitr``. Whenever in doubt, you can enter "man <cmd>" into the terminal to
 pull up documentation on the command. You can also do such search into your favorite search engine to
 locate the manual pages. Generally you need to know how to look around the file system and create
 directories and files.
 
-* `pwd` will "print working directory" i.e: the current location in the Unix file system where the terminal is "located".
+* `pwd` will "print working directory" i.e: the current location in the UNIX file system where the terminal is "located".
   Whenever you start a new terminal session, odds are you will be sent to your home directory.
   The `~` character is a global alias for the current active users home directory.
 * `ls` will list all files and directories in the current directory.
