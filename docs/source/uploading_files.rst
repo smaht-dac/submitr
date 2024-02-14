@@ -60,13 +60,7 @@ Upoading Files Locally
 This option works well for uploading a small number
 of files or files of small size. Files can be
 transferred to your local computer from Cloud storage
-or a computing cluster in several ways. For example,
-if your files are stored on AWS S3, tools such as
-`s3fs <https://github.com/s3fs-fuse/s3fs-fuse>`_
-or `goofys <https://github.com/kahing/goofys>`_
-facilitate mounting of S3 buckets as local file
-systems that can be readily accessed by smaht-submitr.
-Similar tools exist for Google Cloud Storage and Azure Storage.
+or a computing cluster in several ways.
 
 Alternatively, the files can be directly downloaded
 from a remote location, for example from AWS S3,
@@ -78,18 +72,28 @@ As such files can be rather large, we recommend performing
 the upload from a Cloud or cluster instance
 for uploading many files or larger files.
 
+Mounting AWS S3 Files 
+~~~~~~~~~~~~~~~~~~~~~
+If your files are stored on AWS S3, tools such as
+`s3fs <https://github.com/s3fs-fuse/s3fs-fuse>`_
+or `goofys <https://github.com/kahing/goofys>`_
+facilitate mounting of S3 buckets as local file
+systems that can be readily accessed by ``smaht-submitr``.
+Similar tools exist for Google Cloud Storage and Azure Storage.
 
 Running Submission Remotely
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-File submission can easily be scripted to accommodate
-running on a remote server. Once an instance has
+File submission can be scripted to accommodate
+running on a another remote server from your own.
+Once an instance has
 been launched with appropriate storage requirements
 for the files to upload, the files can either be
-mounted or downloaded as before, smaht-submitr can be
+mounted or downloaded as before, ``smaht-submitr`` can be
 installed, and the remainder of the upload process
-can continue as on your local computer. Note that
-your smaht-submitr keys (residing in ``~/.smaht-keys.json``)
+can continue as on your local computer.
+
+Note that your ``smaht-submitr`` keys (residing by default in ``~/.smaht-keys.json``)
 will also have to be copied to this server for successful file upload.
 
 For example, if using an AWS EC2 instance running Amazon Linux 2 with
