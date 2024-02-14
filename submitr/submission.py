@@ -1568,7 +1568,6 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         app_default = True
     else:
         app_default = False
-#   if not (portal := Portal(key, env=env, server=server, app=app, raise_exception=False)).key:
     if not (portal := Portal(key or keys_file, env=env, server=server, app=app, raise_exception=False)).key:
         raise Exception(
             f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")

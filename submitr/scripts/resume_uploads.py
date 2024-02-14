@@ -23,7 +23,7 @@ def main(simulated_args_for_testing=None):
                         help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")
     parser.add_argument('--bundle_filename', '-b', help="location of the original Excel submission file")
-    parser.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=False)
+    parser.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=None)
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
     parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
     parser.add_argument('--no_query', '-nq', action="store_true",
