@@ -182,7 +182,7 @@ for example::
 
     view-portal-object --env data schemas
 
-And if you also pass the ``-verbose`` option to the above, it will also print the `identifying` and `required` properties for each listed schema type name.
+And if you also pass the ``--verbose`` option to the above, it will also print the `identifying` and `required` properties for each listed schema type name.
 
 Installation for Developers
 ===========================
