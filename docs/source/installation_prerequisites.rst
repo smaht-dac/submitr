@@ -172,6 +172,7 @@ This creates a virtual Python environment called ``smaht-submitr-3.11`` which us
 and then (the second command there) actives that virtual environment for your current terminal session.
 Your can name your virtual environment (i.e. ``smaht-submitr-3.11`` in this example) whatever of you like.
 You can list the virtual environment you have created using ``pyenv virtualenvs``.
+(And rarely necessary, but you can deactivate a virtual environment using ``pyenv deactivate``).
 
 .. warning::
    You will need to explicitly active the desired virtual environment for each new terminal session,
