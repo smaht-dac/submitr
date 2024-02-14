@@ -24,11 +24,6 @@ with Python (including dependencies) on the terminal command-line:
 You can then proceed with the rest of these instructions
 to setup a virtual Python environment.
 
-.. tip::
-    If you just want to cut to the chase
-    see the `Actual Installation <installation.html#actual-installation>`_ section near the end of this page.
-
-
 System Requirements
 ===================
 
