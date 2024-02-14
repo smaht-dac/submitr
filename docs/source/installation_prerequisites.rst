@@ -18,7 +18,7 @@ Navigating this Document
 
 Each section in this document is meant to sequentially guide you through the initial setup
 process for installing dependencies necessary to run ``smaht-submitr``, while simultaneously
-getting you setup with some best practices for managing the submissions in your local system.
+getting you setup with some best practices for managing the submissions on your local system.
 
 
 The Command-Line
@@ -40,6 +40,10 @@ expected ``bash`` shell
 .. code-block:: bash
 
     $ chsh -s /bin/bash
+
+For Linux, it is inherently a more command-line oriented operating system,
+and as Linux users are typically a bit more advanced than normal,
+specific instructions will be omitted, though much of what is here is applicate to Linux as well.
 
 UNIX Command Cheatsheet
 -----------------------
@@ -80,15 +84,17 @@ directories and files.
 Installing Python and Pyenv
 ---------------------------
 
-Most systems come with versions of Python installed by default, but oftentimes they are not the
-newest versions, and for our software we prefer to be running newer supported versions of Python
-for security reasons. We also recommend using `pyenv` for managing virtual environments. This allows
+Most systems come with a version of Python installed by default, but oftentimes it is an
+older version; and for our software we prefer to be running newer supported versions of Python
+for security and other reasons.
+
+We also recommend using ``pyenv`` for managing virtual environments. This allows
 you to isolate Python package installations from one another, so you do not install another package
 with conflicting dependencies that may causes issues. Doing so ensures that you have an isolated
 installation location that will not interfere with other things you may have installed into your
 system Python.
 
-Begin by installing pyenv using the automatic installer.
+Begin by installing ``pyenv`` using the automatic installer.
 
 .. code-block:: bash
 
