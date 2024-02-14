@@ -181,7 +181,7 @@ for example::
 And if you also pass the ``--verbose`` option to the above, it will also print the `identifying` and `required` properties for each listed schema type name.
 
 .. tip::
-    There is nothing really that the ``view-portal-object`` command does that you cannot also do by interacting SMaHT Portal directly 
+    There is nothing really that the ``view-portal-object`` command does that you cannot also do by interacting with SMaHT Portal directly 
     via your browser, but some command-line savvy users may find this interface more agreeable under some circumstances.
 
 Installation for Developers
