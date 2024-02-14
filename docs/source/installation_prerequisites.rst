@@ -35,11 +35,9 @@ for future convenience you can add it to your home Dock (if not already there) b
 Before continuing, once you've opened the ``Terminal`` ensure in the top it says ``bash`` (and not ``zsh`` or whatever).
 Newer Mac OS X versions package with ``zsh`` by default, but we want to use ``bash``.
 If you see ``zsh``, once in the terminal run the following command,
-close and re-open terminal and you will be using the expected ``bash`` shell.
+close and re-open terminal and you will be using the expected ``bash`` shell::
 
-.. code-block:: bash
-
-    $ chsh -s /bin/bash
+    chsh -s /bin/bash
 
 For Linux, it is inherently a more command-line oriented operating system,
 and as Linux users are typically a bit more advanced than normal,
@@ -81,75 +79,107 @@ directories and files.
 * ``mkdir some_directory_name``: This will create a new directory.
 * ``touch some_file_name``: This will create a new empty file; **be careful** as if ``some_file_name`` already exists it will be truncated.
 
+Installing Homebrew
+-------------------
 
-Installing Python and Pyenv
----------------------------
+For Mac OS X, a very common and convenient tool for the management of (mostly development related)
+software installation is `Homebrew <https://brew.sh/>`_  or ``brew`` (as the command is named).
+We will assume this Homebrew method of installation for the remainder of this document.
+
+To install Homebrew, from the command-line, do::
+
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+Just to make sure it installed properly try the command ``brew --version`` and it should output something like ``Homebrew 4.2.8``. Use ``brew help`` to see all available ``brew`` commands.
+
+.. tip::
+   Another common alternative to using Homebrew on Mac OS X is to use `XCode <https://developer.apple.com/xcode/>`_.
+   If you want to go this route instead please see (for example) `Installing Python on Mac OS X via XCode <https://docs.python-guide.org/starting/install3/osx/>`_ (external link). In brief to get started with this use the command ``xcode-select --install``.
+   Note however that this installs a `lot` of software, and in may be a lengthy process (at least in terms of time).
+
+Installing Python
+-----------------
 
 Most systems come with a version of Python installed by default, but oftentimes it is an
 older version; and for our software we prefer to be running newer supported versions of Python
 for security and other reasons.
 
-We also recommend using ``pyenv`` for managing virtual environments. This allows
-you to isolate Python package installations from one another, so you do not install another package
-with conflicting dependencies that may causes issues. Doing so ensures that you have an isolated
-installation location that will not interfere with other things you may have installed into your
-system Python.
+So, with ``brew`` installed (per the `previous section <installation_prerequisites.html#installing-homebrew>`_) we can now readily install Python like this::
 
-Begin by installing ``pyenv`` using the automatic installer.
+    brew install python
 
-.. code-block:: bash
+Confusingly, this may (or may not) install Python as ``python3`` rather than ``python``.
+If ``python`` does not work (e.g. `command not found`), then ``python3`` should work.
+Hopefully, any confusion will dissipate once we get ``pyenv`` installed,
+which is one goal here, so that we can gain more convenient control of which version of Python is installed/active.
 
-    $ curl -L https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash
+Installing Pyenv
+----------------
 
-You will now need to add some commands to your `~/.bashrc` file, which is a script that is executed
-when your user logs in. You can open this file with TextEdit from the terminal with:
+We highly recommend using ``pyenv`` for managing virtual Python environments.
+This allows you to isolate Python package and library installations from one another,
+so you do not install packages which have conflicting dependencies with another package,
+as this may cause problems.
 
-.. code-block:: bash
+Using ``pyenv`` allows you have any number of (named) isolated installation environments
+that are guaranteed not interfere with one another.
 
-    $ open -a TextEdit ~/.bashrc
+Again, using ``brew``, you can install ``pyenv`` like this::
 
-If you prefer a different text editor, such as VSCode, you can replace `TextEdit` with the name of that
-application, but we recommend `TextEdit` for users who are not familiar with other editors.
+    brew install pyenv pyenv-virtualenv
 
-Once open, add the following to your `~/.bashrc` file. It may have no contents - if it does not exist
-you can copy the below as is and drop it into the file. Doing so ensures that you can use
-your `~/.bashrc` file as a macro for making `pyenv` and associated commands available to you easily.
-When doing this ensure that you copy the block from below as sometimes the quotation marks
-get clobbered into an incorrect form that will throw errors when you run it.
+.. note::
 
-.. code-block:: bash
+    FYI there are (of course - `sigh`) other ways to install ``pyenv``, for example with
+    ``curl -L https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash``
+
+Configuring Pyenv
+~~~~~~~~~~~~~~~~~
+Before using ``pyenv`` you will now need to add some settings to your ``~/.bashrc`` file,
+which is a script that is executed whenever your login (or launch a new terminal).
+You can edit this file (for example) with ``TextEdit`` (or ``vim`` or whatever you are familiar with) from the terminal with::
+
+    open -a TextEdit ~/.bashrc
+
+Add the following (verbatim) to your ``~/.bashrc`` file (at the end of the file is fine)::
 
     export PYENV_ROOT="$HOME/.pyenv"
-    command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+    export PATH="$PYENV_ROOT/bin:$PATH"
     eval "$(pyenv init -)"
     eval "$(pyenv virtualenv-init -)"
 
-Once done you can force the changes to take effect by running `source ~/.bashrc`. Once done you should
-be able to run `pyenv`.
+Once you've saved those changes,
+you can force the changes to take effect immediately (without closing and opening a new terminal)
+by running ``source ~/.bashrc``. Once this is done you should be able to run ``pyenv`` properly;
+for example, to list your virtual environments, do::
 
-.. code-block:: bash
+    pyenv virtualenvs
 
-    $ source ~/.bashrc
-    $ pyenv  # verify installation, should output some help information
+You probably won't see anything listed from that as you have not defined any virtual environments yet.
+Now (finally), to install a newer/specific version Python, for example version 3.11.6 (recommended), do::
 
-To install a newer/specific version Python, do::
+    pyenv install 3.11.6
 
-    $ pyenv install 3.11.6
+You can list the versions of Python which are installed using ``pyenv versions``.
+And now to create a Python virtual environment named (for example) ``smaht-submitr-3.11``, do::
 
-This command will install Python version 3.11.6 through `pyenv`. If it is not successful feel free
-to copy the error output and send it to the SMaHT DAC Team. Once the installation has completed, we will
-create and activate a virtual environment for using ``smaht-submitr``.
+    pyenv virtualenv 3.11.6 smaht-submitr-3.11
+    pyenv activate smaht-submitr-3.11
 
-.. code-block:: bash
+This creates a virtual Python environment called ``smaht-submitr-3.11`` which uses Python version 3.11.6,
+and then (the second command there) actives that virtual environment for your current terminal session.
+Your can name your virtual environment (i.e. ``smaht-submitr-3.11`` in this example) whatever of you like.
+You can list the virtual environment you have created using ``pyenv virtualenvs``.
 
-    $ pyenv virtualenv 3.11.6 smaht-submitr-3.11
-    $ pyenv activate smaht-submitr-3.11
-    $ pyenv local smaht-submitr-3.11
+.. warning::
+   You will need to explicitly active the desired virtual environment for each new terminal session,
+   i.e. using ``pyenv activate smaht-submitr-3.11`` for example.
 
-This creates a virtual environment called ``smaht-submitr-3.11`` using Python version 3.11.6. We add ``-3.11`` at
-the end just to indicate it is a Python 3.11 environment. Feel free to name your virtual environment whatever
-name is most convenient for you. When in doubt you can run ``pyenv versions`` to see a list of
-virtual environments you have created. The ``pyenv local`` command ensures that whenever you ``cd`` into
-your ``smaht-submitr`` directory you automatically enter the associated virtual environment. If successful, at
-this point you can transition to the installation docs section
-Installing smaht-submitr in a Virtual Environment.
+Assuming the above example, if you now do ``python --version`` you should `definitely` see something like ``Python 3.11.6``;
+if you do not, then something may be wrong.
+
+.. note::
+
+   There are of course other features provided by ``pyenv`` (e.g. setting up to use a particular Python version
+   whenever in a particular directory). For more information, this page provides a pretty good tutorial:
+   `Managing Multiple Python Versions With Pyenv <https://realpython.com/intro-to-pyenv/>`_.
