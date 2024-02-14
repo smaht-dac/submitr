@@ -1087,6 +1087,8 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
             options = {"shell": True}
         if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f"DEBUG CLI: {' '.join(command)} | ENV INCLUDES: {conjoined_list(list(extra_env.keys()))}")
+        if debug:
+            PRINT(f"DEBUG: {' '.join(command)} | ENV INCLUDES: {conjoined_list(list(extra_env.keys()))}")
         subprocess.check_call(command, env=env, **options)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("Upload failed with exit code %d" % e.returncode)
@@ -1567,7 +1569,6 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         app_default = True
     else:
         app_default = False
-    import pdb ; pdb.set_trace()
     if not (portal := Portal(key or keys_file, env=env, server=server, app=app, raise_exception=False)).key:
         raise Exception(
             f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")
