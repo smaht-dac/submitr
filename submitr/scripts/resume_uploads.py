@@ -60,8 +60,7 @@ def main(simulated_args_for_testing=None):
 
         resume_uploads(uuid=args.uuid, server=args.server, env=args.env, bundle_filename=args.bundle_filename,
                        upload_folder=args.upload_folder, no_query=args.no_query,
-                       subfolders=args.subfolders, app=args.app, keys_file=args.keys,
-                       upload_commands=args.upload_commands)
+                       subfolders=args.subfolders, app=args.app, keys_file=args.keys)
 
 
 if __name__ == '__main__':

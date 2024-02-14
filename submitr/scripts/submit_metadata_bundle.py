@@ -109,7 +109,6 @@ def main(simulated_args_for_testing=None):
                              validate_local=args.validate_local,
                              validate_local_only=args.validate_local_only,
                              keys_file=args.keys,
-                             upload_commands=args.upload_commands,
                              verbose=args.verbose,
                              debug=args.debug)
 
