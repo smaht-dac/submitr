@@ -42,7 +42,7 @@ def main(simulated_args_for_testing=None):
 
     if args.keys:
         if not args.keys.endswith(".json") or not os.path.exists(args.keys):
-            PRINT("The --keys argument must be the name of an existing .json file.")
+            print("The --keys argument must be the name of an existing .json file.")
             exit(1)
 
     if args.bundle_filename and not os.path.isdir(os.path.normpath(os.path.dirname(args.bundle_filename))):

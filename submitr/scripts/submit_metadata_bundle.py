@@ -88,7 +88,6 @@ def main(simulated_args_for_testing=None):
             PRINT("The --keys argument must be the name of an existing .json file.")
             exit(1)
 
-
     with script_catch_errors():
 
         if not sanity_check_submitted_file(args.bundle_filename):
