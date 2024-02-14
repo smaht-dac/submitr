@@ -1087,8 +1087,6 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
             options = {"shell": True}
         if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f"DEBUG CLI: {' '.join(command)} | ENV INCLUDES: {conjoined_list(list(extra_env.keys()))}")
-        if debug:
-            PRINT(f"DEBUG: {' '.join(command)} | ENV INCLUDES: {conjoined_list(list(extra_env.keys()))}")
         subprocess.check_call(command, env=env, **options)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("Upload failed with exit code %d" % e.returncode)
