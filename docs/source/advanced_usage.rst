@@ -94,7 +94,7 @@ More on Validation
 
 As described in the main `Usage <usage.html#validation>`_ section, validation can be performed on the given metadata file
 before it is actually ingestion into SMaHT Portal. This can be done most simply and comprehensively
-by using the ``--validation`` option. And in fact, this is the default behavior if you, as a submitter,
+by using the ``--validate`` option. And in fact, this is the default behavior if you, as a submitter,
 are `not` an `admin` user.
 
 But under the hood there are more finer grained modes of validation
