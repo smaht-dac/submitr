@@ -31,18 +31,8 @@ def main(simulated_args_for_testing=None):
                         help="Only perform creates (POST) for submitted data.", default=False)
     parser.add_argument('--patch-only', action="store_true",
                         help="Only perform updates (PATCH) for submitted data.", default=False)
-    parser.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=False)
-    parser.add_argument('--upload-commands', action="store_true", help="Prints the (AWS CLI) upload command(s).")
-    parser.add_argument('--validate', '-v', action="store_true",
-                        help="Perform both client-side and server-side validation first.", default=False)
-    parser.add_argument('--validate-only', action="store_true",
-                        help="Only perform validation of submitted data (on server-side).", default=False)
-    parser.add_argument('--validate-first', action="store_true",
-                        help="Perform validation of submitted data before submitting (on server-side).", default=False)
-    parser.add_argument('--validate-local', action="store_true",
-                        help="Validate submitted data locally (on client-side).")
-    parser.add_argument('--validate-local-only', action="store_true",
-                        help="Validate submitted data locally only (on client-side).")
+    parser.add_argument('--validate-only', '-v', action="store_true",
+                        help="Only perform validation of submitted data.", default=False)
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
     parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
     parser.add_argument('--ingestion_type', '--ingestion-type', '-t',
@@ -62,31 +52,26 @@ def main(simulated_args_for_testing=None):
                         help=f"the submission protocol (default {DEFAULT_SUBMISSION_PROTOCOL!r})")
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
+    parser.add_argument('--check', action="store_true",
+                        help="Sanity check file locally before submission.", default=False)
+    parser.add_argument('--check-only', action="store_true",
+                        help="Sanity check file locally ONLY (no submission).", default=False)
+    parser.add_argument('--nocheck', action="store_true",
+                        help="Do not sanity check file locally before submission.", default=False)
+    parser.add_argument('--validate-local', action="store_true", help="Synonym for --check.")
+    parser.add_argument('--validate-local-only', action="store_true", help="Synonym for --check-only.")
     args = parser.parse_args(args=simulated_args_for_testing)
 
     if args.directory:
         args.upload_folder = args.directory
     if args.subdirectories:
         args.subfolders = True
-    if not (args.validate_only and (args.validate_local or args.validate_local_only)):
-        if args.validate_only:
-            args.validate_local = False
-        elif args.validate_local or args.validate_local_only:
-            args.validate_first = False
-            args.validate_only = False
-    if args.validate_only:
-        args.validate_first = False
-    if args.validate and not (args.validate_only or args.validate_local_only or
-                              args.validate_local_only or args.validate_first):
-        # If --validate is specified and no other validate related options are
-        # specified, then default to server-side and client-side validation.
+    if args.check:
         args.validate_local = True
-        args.validate_first = True
-
-    if args.keys:
-        if not args.keys.endswith(".json") or not os.path.exists(args.keys):
-            PRINT("The --keys argument must be the name of an existing .json file.")
-            exit(1)
+    if args.check_only:
+        args.validate_local_only = True
+    if args.validate_local_only:
+        args.validate_local = True
 
     with script_catch_errors():
 
@@ -104,10 +89,9 @@ def main(simulated_args_for_testing=None):
                              post_only=args.post_only,
                              patch_only=args.patch_only,
                              validate_only=args.validate_only,
-                             validate_first=args.validate_first,
                              validate_local=args.validate_local,
+                             validate_local_no=args.nocheck,
                              validate_local_only=args.validate_local_only,
-                             keys_file=args.keys,
                              verbose=args.verbose,
                              debug=args.debug)
 

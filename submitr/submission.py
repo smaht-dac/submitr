@@ -529,10 +529,9 @@ def submit_any_ingestion(ingestion_filename, *,
                          post_only=False,
                          patch_only=False,
                          validate_only=False,
-                         validate_first=False,
                          validate_local=False,
+                         validate_local_no=False,
                          validate_local_only=False,
-                         keys_file=None,
                          verbose=False,
                          debug=False):
     """
@@ -566,7 +565,7 @@ def submit_any_ingestion(ingestion_filename, *,
         PRINT(f"App name is: {app}")
     """
 
-    portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file, report=True)
+    portal = _define_portal(env=env, server=server, app=app, report=True)
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=portal.app,
                                  consortium=consortium, submission_center=submission_center)
@@ -576,25 +575,16 @@ def submit_any_ingestion(ingestion_filename, *,
         exit(1)
 
     user_record = _get_user_record(portal.server, auth=portal.key_pair)
-    if not _is_admin_user(user_record) and not (validate_only or validate_first or
-                                                validate_local or validate_local_only):
-        # If user is not an admin, and no other validate related options are
-        # specified, then default to server-side and client-side validation,
-        # i.e. act as-if the --validate option was specified.
+    if not _is_admin_user(user_record) and not validate_local_no:
+        # If user is not an admin then default to local validation first;
+        # i.e. act as-if the --validate-local flag was specified.
         validate_local = True
-        validate_first = True
-
-    if debug:
-        PRINT(f"DEBUG: validate_only = {validate_only}")
-        PRINT(f"DEBUG: validate_first = {validate_first}")
-        PRINT(f"DEBUG: validate_local = {validate_local}")
-        PRINT(f"DEBUG: validate_local_only = {validate_local_only}")
 
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
     _do_app_arg_defaulting(app_args, user_record)
     PRINT(f"Submission file to ingest: {ingestion_filename}")
 
-    if validate_local or validate_local_only:
+    if validate_local:
         _validate_locally(ingestion_filename, portal, validate_local_only,
                           upload_folder=upload_folder, subfolders=subfolders, verbose=verbose)
 
@@ -647,7 +637,6 @@ def submit_any_ingestion(ingestion_filename, *,
 
         submission_post_data = {
             'validate_only': validate_only,
-            'validate_first': validate_first,
             'post_only': post_only,
             'patch_only': patch_only,
             'sheet_utils': False,
@@ -967,14 +956,13 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
                        else f"Upload these {len(files_to_upload)} files?")
             if yes_or_no(message):
                 do_uploads(files_to_upload, auth=keydict,
-                           no_query=no_query, folder=upload_folder,
-                           subfolders=subfolders)
+                           no_query=no_query, folder=upload_folder, subfolders=subfolders)
             else:
                 show("No uploads attempted.")
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
-                   upload_folder=None, no_query=False, subfolders=False, app=None, keys_file=None):
+                   upload_folder=None, no_query=False, subfolders=False, app=None):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -989,7 +977,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     :param subfolders: bool to search subdirectories within upload_folder for files
     """
 
-    portal = _define_portal(key=keydict, keys_file=keys_file, env=env, server=server, app=app, report=True)
+    portal = _define_portal(key=keydict, env=env, server=server, app=app, report=True)
 
     if not (response := portal.get_metadata(uuid)):
         if accession_id := _extract_accession_id(uuid):
@@ -1219,10 +1207,10 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
         uuid = upload_spec['uuid']
         uploader_wrapper = UploadMessageWrapper(uuid, no_query=no_query)
         wrapped_upload_file_to_uuid = uploader_wrapper.wrap_upload_function(
-            upload_file_to_uuid, file_path
+            upload_file_to_uuid, file_path,
         )
         file_metadata = wrapped_upload_file_to_uuid(
-            filename=file_path, uuid=uuid, auth=auth
+            filename=file_path, uuid=uuid, auth=auth,
         )
         if file_metadata:
             extra_files_credentials = file_metadata.get("extra_files_creds", [])
@@ -1562,13 +1550,13 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
 
 
 def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server: Optional[str] = None,
-                   app: Optional[str] = None, keys_file: Optional[str] = None, report: bool = False) -> Portal:
+                   app: Optional[str] = None, report: bool = False) -> Portal:
     if not app:
         app = DEFAULT_APP
         app_default = True
     else:
         app_default = False
-    if not (portal := Portal(key or keys_file, env=env, server=server, app=app, raise_exception=False)).key:
+    if not (portal := Portal(key, env=env, server=server, app=app, raise_exception=False)).key:
         raise Exception(
             f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")
     if report:
