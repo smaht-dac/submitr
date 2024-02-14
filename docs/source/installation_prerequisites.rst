@@ -20,77 +20,61 @@ Each section in this document is meant to sequentially guide you through the ini
 process for installing dependencies necessary to run ``smaht-submitr``, while simultaneously
 getting you setup with some best practices for managing the submissions in your local system.
 
-One important note of clarification is that when you see code blocks that begin with ``\$``,
-this means the commands are meant to be run directly in the (command-line) ``Terminal`` application
-(without the ``\$``). Blocks that do not begin with ``\$`` are intended to be dropped
-directly into files.
 
+The Command-Line
+----------------
 
-UNIX Command Cheatsheet
------------------------
+The ``smaht-submitr`` package provides a number of `command-line` tools (commands) which must
+be run from the command-line using a system `terminal` application.
 
-Using UNIX commands to interact with your system directly requires using the (command-line) ``Terminal`` application.
-To open the ``Terminal`` application, if not present in your home dock, open ``Finder``, navigate to
-Applications folder and then to the Utilities sub-folder. Inside the Utilities folder near the bottom should
-be the ``Terminal`` application, which you should add to your home dock by clicking and dragging for
-future convenience.
+On Mac OS X, to open the ``Terminal`` application, if not already present in your home Dock, open ``Finder``, navigate to
+the ``Applications`` folder and then to the ``Utilities`` sub-folder. Inside this folder
+should be the ``Terminal`` application, which you can double-click on to bring it up;
+for future convenience you can add it to your home dock by clicking and dragging it to your Dock.
 
-Before continuing, once you've opened the `Terminal` ensure in the top it says `bash` and not
-`zsh`. Newer Mac OS X versions package with `zsh` by default, but we want to use `bash`. If you see `zsh`,
+Before continuing, once you've opened the ``Terminal`` ensure in the top it says ``bash`` and not
+``zsh``. Newer Mac OS X versions package with ``zsh`` by default, but we want to use ``bash``. If you see ``zsh``,
 once in the terminal run the following command, close and re-open terminal and you will be using the
-expected `bash` shell
+expected ``bash`` shell
 
 .. code-block:: bash
 
     $ chsh -s /bin/bash
 
+UNIX Command Cheatsheet
+-----------------------
+
 Using this repository and interacting with file submissions assumes some knowledge of the UNIX
 file-system and familiarity with ``bash``. What follows is a list of the essential commands you should
-know for working with ``smaht-submitr``. Whenever in doubt, you can enter "man <cmd>" into the terminal to
-pull up documentation on the command. You can also do such search into your favorite search engine to
-locate the manual pages. Generally you need to know how to look around the file system and create
+know for working with ``smaht-submitr``. For help for a UNIX command, you can always
+enter ``man <command-name>`` in the terminal to pull up documentation on the named command.
+You can also do use your favorite Web search engine to locate the manual pages.
+Generally speaking, you just need to know how to look around the file system and create
 directories and files.
 
-* `pwd` will "print working directory" i.e: the current location in the UNIX file system where the terminal is "located".
-  Whenever you start a new terminal session, odds are you will be sent to your home directory.
-  The `~` character is a global alias for the current active users home directory.
-* `ls` will list all files and directories in the current directory.
+* ``pwd``: This will print the full path of your current directory; i.e. the current location within the UNIX file system where your terminal is "located". Whenever you start a new terminal session, odds are you will be in your home directory. The ``~`` (tilde) character is a global alias for your home directory.
+* ``ls``: This will list all files and directories in the current directory.
+* ``ls -l``: Same as above but includes more detailed info, including file size (in bytes), for example `1311` for `some_file_name` in the below example.
 
 
 .. code-block:: bash
 
     $ pwd
-    /Users/<your_username>
+    /Users/your_username
     $ ls
-    directory1
-    file1
-    file2
-    $ ls ~  # this is an alias for your home directory, usually /Users/<your_username>
-    directory1
-    file1
-    file2
+    some_file_name
+    another_file_name
+    some_directory_name/
+    $ ls -l
+    -rw-r--r--  1 your_username  your_usergroup    1311 Feb  7 14:04 some_file_name
+    -rw-r--r--  1 your_username  your_usergroup    4038 Feb 14 14:04 another_file_name
+    drw-r--r--  1 your_username  your_usergroup     128 Jan  5 14:04 some_directory_name/
 
 
-* `cd` will change directory. Use `ls` first to see which directories are available, then use `cd` to change back to them. The special identifier `..` indicates the directory above the current one, so use `cd ..` to exit.
-* `cat <filename>` will output the contents of a file to the terminal.
-* `mkdir <directory_name>` will create a new directory.
-* `touch <filename>` will create a new empty file.
-
-
-Installing XCode Developer Tools
---------------------------------
-
-Some new machines come with very few parts of the developer toolchain that may prevent
-you from doing even basic installation of packages. Thankfully, for Mac OS X, packages
-all of the developer tools cleanly into an easily installable package it calls the XCode Developer
-Tools. You can install these with:
-
-.. code-block:: bash
-
-    $ xcode-select --install
-
-This install may take some significant time, but once complete you should have tools
-necessary for installing Python and other related package for use with ``smaht-submitr``.
+* ``cd``: This will change your current directory. The special identifier ``..`` indicates the parent directory (above the current one).
+* ``cat some_file_name``: This will output the contents of a file to the terminal.
+* ``mkdir some_directory_name``: This will create a new directory.
+* ``touch some_file_name``: This will create a new empty file; **be careful** as if ``some_file_name`` already exists it will be truncated.
 
 
 Installing Python and Pyenv
@@ -141,10 +125,7 @@ be able to run `pyenv`.
     $ source ~/.bashrc
     $ pyenv  # verify installation, should output some help information
 
-The previous XCode Developer Tools installation should give you dependencies necessary
-to install newer Python versions.
-
-.. code-block:: bash
+To install a newer/specific version Python, do::
 
     $ pyenv install 3.11.6
 
