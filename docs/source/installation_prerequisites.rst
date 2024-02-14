@@ -21,16 +21,17 @@ process for installing dependencies necessary to run ``smaht-submitr``, while si
 getting you setup with some best practices for managing the submissions on your local system.
 
 
-The Command-Line
-----------------
+The UNIX Command-Line
+---------------------
 
 The ``smaht-submitr`` package provides a number of `command-line` tools (commands) which must
 be run from the command-line using a system `terminal` application.
 
-On Mac OS X, to open the ``Terminal`` application, if not already present in your home Dock, open ``Finder``, navigate to
-the ``Applications`` folder and then to the ``Utilities`` sub-folder. Inside this folder
-should be the ``Terminal`` application, which you can double-click on to bring it up;
-for future convenience you can add it to your home dock by clicking and dragging it to your Dock.
+On Mac OS X (which is built on UNIX),
+to open the ``Terminal`` application (if not already present in your home Dock) open ``Finder``,
+navigate to the ``Applications`` folder and then to the ``Utilities`` sub-folder.
+Inside this folder should be the ``Terminal`` application, which you can double-click on to bring it up;
+for future convenience you can add it to your home Dock by clicking and dragging it to your Dock.
 
 Before continuing, once you've opened the ``Terminal`` ensure in the top it says ``bash`` and not
 ``zsh``. Newer Mac OS X versions package with ``zsh`` by default, but we want to use ``bash``. If you see ``zsh``,
