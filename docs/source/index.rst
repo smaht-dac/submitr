@@ -44,7 +44,6 @@ System Requirements
 
 * ``python`` `3.8, 3.9, 3.10, or 3.11`
 * ``pip`` `>= 20.0.0`
-* ``poetry`` `>= 1.4.0` (`optional`)
 
 
 What To Do Next
