@@ -13,9 +13,6 @@ will help you install Python and setup your local environment for using ``smaht-
     and such users, who are presumed to be a bit more advanced, should have no great difficulty.
     For **Windows** users, little to no testing has been done; Windows specific instructions may be available in the future.
 
-Navigating this Document
-========================
-
 Each section in this document is meant to sequentially guide you through the initial setup
 process for installing the tools necessary to effectively run ``smaht-submitr``.
 
