@@ -17,9 +17,8 @@ Navigating this Document
 ========================
 
 Each section in this document is meant to sequentially guide you through the initial setup
-process for installing dependencies necessary to run ``smaht-submitr``, while simultaneously
-getting you setup with some best practices for managing the submissions on your local system.
-
+process for installing the tools necessary to effectively run ``smaht-submitr``,
+while simultaneously getting you setup with some best practices for managing the submissions on your local system.
 
 The UNIX Command-Line
 ---------------------
