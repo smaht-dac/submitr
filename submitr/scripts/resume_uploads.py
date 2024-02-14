@@ -25,6 +25,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--bundle_filename', '-b', help="location of the original Excel submission file")
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
     parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
+    parser.add_argument('--upload-commands', action="store_true", help="Prints the (AWS CLI) upload command(s).")
     parser.add_argument('--no_query', '-nq', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
     parser.add_argument('--subdirectories', '-sd', action="store_true",
@@ -53,7 +54,7 @@ def main(simulated_args_for_testing=None):
 
         resume_uploads(uuid=args.uuid, server=args.server, env=args.env, bundle_filename=args.bundle_filename,
                        upload_folder=args.upload_folder, no_query=args.no_query,
-                       subfolders=args.subfolders, app=args.app)
+                       subfolders=args.subfolders, app=args.app, upload_commands=args.upload_commands)
 
 
 if __name__ == '__main__':

@@ -32,6 +32,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--patch-only', action="store_true",
                         help="Only perform updates (PATCH) for submitted data.", default=False)
     parser.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=False)
+    parser.add_argument('--upload-commands', action="store_true", help="Prints the (AWS CLI) upload command(s).")
     parser.add_argument('--validate', '-v', action="store_true",
                         help="Perform both client-side and server-side validation first.", default=False)
     parser.add_argument('--validate-only', action="store_true",
@@ -108,6 +109,7 @@ def main(simulated_args_for_testing=None):
                              validate_local=args.validate_local,
                              validate_local_only=args.validate_local_only,
                              keys_file=args.keys,
+                             upload_commands=args.upload_commands,
                              verbose=args.verbose,
                              debug=args.debug)
 

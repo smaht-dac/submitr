@@ -533,6 +533,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          validate_local=False,
                          validate_local_only=False,
                          keys_file=None,
+                         upload_commands=False,
                          verbose=False,
                          debug=False):
     """
@@ -636,7 +637,7 @@ def submit_any_ingestion(ingestion_filename, *,
     if submission_protocol == SubmissionProtocol.S3:
 
         upload_result = upload_file_to_new_uuid(filename=ingestion_filename, schema_name=GENERIC_SCHEMA_TYPE,
-                                                auth=portal.key, **app_args)
+                                                auth=portal.key, upload_commands=upload_commands, **app_args)
 
         submission_post_data = compute_s3_submission_post_data(ingestion_filename=ingestion_filename,
                                                                ingestion_post_result=upload_result,
@@ -720,7 +721,7 @@ def submit_any_ingestion(ingestion_filename, *,
     if check_status == "success":
         do_any_uploads(check_response, keydict=portal.key, ingestion_filename=ingestion_filename,
                        upload_folder=upload_folder, no_query=no_query,
-                       subfolders=subfolders)
+                       subfolders=subfolders, upload_commands=upload_commands)
 
     exit(0)
 
@@ -928,7 +929,8 @@ def _show_upload_result(result,
             show(datafile_url)
 
 
-def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False, subfolders=False):
+def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False,
+                   subfolders=False, upload_commands=False):
 
     def display_file_info(file: str) -> None:
         nonlocal upload_folder, subfolders
@@ -961,19 +963,21 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
             return
         if no_query:
             do_uploads(files_to_upload, auth=keydict, no_query=no_query, folder=upload_folder,
-                       subfolders=subfolders)
+                       subfolders=subfolders, upload_commands=upload_commands)
         else:
             message = ("Upload this file?" if len(files_to_upload) == 1
                        else f"Upload these {len(files_to_upload)} files?")
             if yes_or_no(message):
                 do_uploads(files_to_upload, auth=keydict,
-                           no_query=no_query, folder=upload_folder, subfolders=subfolders)
+                           no_query=no_query, folder=upload_folder,
+                           subfolders=subfolders, upload_commands=upload_commands)
             else:
                 show("No uploads attempted.")
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
-                   upload_folder=None, no_query=False, subfolders=False, app=None, keys_file=None):
+                   upload_folder=None, no_query=False, subfolders=False, app=None, keys_file=None,
+                   upload_commands=False):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -1002,7 +1006,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
         # Subsume function of upload-item-data into resume-uploads for convenience.
         if portal.is_schema_type(response, FILE_TYPE_NAME):
             _upload_item_data(item_filename=uuid, uuid=None, server=portal.server,
-                              env=portal.env, directory=upload_folder, no_query=no_query, app=app, report=False)
+                              env=portal.env, directory=upload_folder, no_query=no_query, app=app,
+                              report=False, upload_commands=upload_commands)
             return
 
         undesired_type = portal.get_schema_type(response)
@@ -1013,7 +1018,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                    ingestion_filename=bundle_filename,
                    upload_folder=upload_folder,
                    no_query=no_query,
-                   subfolders=subfolders)
+                   subfolders=subfolders,
+                   upload_commands=upload_commands)
 
 
 @function_cache(serialize_key=True)
@@ -1051,7 +1057,7 @@ def get_s3_encrypt_key_id(*, upload_credentials, auth):
     return s3_encrypt_key_id
 
 
-def execute_prearranged_upload(path, upload_credentials, auth=None):
+def execute_prearranged_upload(path, upload_credentials, auth=None, upload_commands=False):
     """
     This performs a file upload using special credentials received from ff_utils.patch_metadata.
 
@@ -1087,6 +1093,8 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
             options = {"shell": True}
         if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f"DEBUG CLI: {' '.join(command)} | ENV INCLUDES: {conjoined_list(list(extra_env.keys()))}")
+        if upload_commands:
+            PRINT(f"{' '.join(command)}")
         subprocess.check_call(command, env=env, **options)
     except subprocess.CalledProcessError as e:
         raise RuntimeError("Upload failed with exit code %d" % e.returncode)
@@ -1111,7 +1119,7 @@ def compute_file_post_data(filename, context_attributes):
     }
 
 
-def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
+def upload_file_to_new_uuid(filename, schema_name, auth, upload_commands=False, **context_attributes):
     """
     Upload file to a target environment.
 
@@ -1134,12 +1142,12 @@ def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
                                                                            method='POST', schema_name=schema_name,
                                                                            filename=filename, payload_data=post_item)
 
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
+    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth, upload_commands=upload_commands)
 
     return metadata
 
 
-def upload_file_to_uuid(filename, uuid, auth):
+def upload_file_to_uuid(filename, uuid, auth, upload_commands=False):
     """
     Upload file to a target environment.
 
@@ -1160,7 +1168,7 @@ def upload_file_to_uuid(filename, uuid, auth):
                                                                            method='PATCH', uuid=uuid,
                                                                            filename=filename, payload_data=patch_data)
 
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
+    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth, upload_commands=upload_commands)
 
     return metadata
 
@@ -1187,7 +1195,8 @@ def extract_metadata_and_upload_credentials(response, filename, method, payload_
 SUBMITR_SELECTIVE_UPLOADS = environ_bool("SUBMITR_SELECTIVE_UPLOADS")
 
 
-def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=False):
+def do_uploads(upload_spec_list, auth, folder=None, no_query=False,
+               subfolders=False, upload_commands=False):
     """
     Uploads the files mentioned in the give upload_spec_list.
 
@@ -1218,10 +1227,10 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
         uuid = upload_spec['uuid']
         uploader_wrapper = UploadMessageWrapper(uuid, no_query=no_query)
         wrapped_upload_file_to_uuid = uploader_wrapper.wrap_upload_function(
-            upload_file_to_uuid, file_path,
+            upload_file_to_uuid, file_path
         )
         file_metadata = wrapped_upload_file_to_uuid(
-            filename=file_path, uuid=uuid, auth=auth,
+            filename=file_path, uuid=uuid, auth=auth, upload_commands=upload_commands
         )
         if file_metadata:
             extra_files_credentials = file_metadata.get("extra_files_creds", [])
@@ -1318,7 +1327,8 @@ def _upload_extra_files(
         wrapped_execute_prearranged_upload(extra_file_path, extra_file_credentials, auth=auth)
 
 
-def _upload_item_data(item_filename, uuid, server, env, no_query=False, app=None, report=True, **kwargs):
+def _upload_item_data(item_filename, uuid, server, env, no_query=False, app=None,
+                      report=True, upload_commands=False, **kwargs):
     """
     Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
 
@@ -1367,7 +1377,7 @@ def _upload_item_data(item_filename, uuid, server, env, no_query=False, app=None
             show("Aborting submission.")
             exit(1)
 
-    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=portal.key)
+    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=portal.key, upload_commands=upload_commands)
 
 
 def _show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
