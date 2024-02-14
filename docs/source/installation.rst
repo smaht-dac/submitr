@@ -13,16 +13,16 @@ of the ``smaht-submitr`` installation, which is simply this::
     pip install smaht-submitr
 
 Less experienced users may want to start with the following,
-which will introduce some basics for working with Python on the terminal command-line;
-and for installing dependencies to run this tool:
+which will introduce some basics for installing and working
+with Python (and dependencies) on the terminal command-line:
 
 .. toctree::
   :maxdepth: 1
 
   installation_prerequisites
 
-Then you can proceed with the rest of these instructions.
-to setup a virtual Python environment setup.
+You can then proceed with the rest of these instructions
+to setup a virtual Python environment.
 
 .. tip::
     If you just want to cut to the chase
@@ -95,8 +95,8 @@ However, if you want to deactivate an active environment, just do::
    deactivate
 
 
-Installation for Developers
-===========================
+For Developers
+==============
 
 If you are a software developer, and you wish to install ``smaht-submitr`` locally
 for development and other purposes, please see the `Advanced Usage <advanced_usage.html#installation-for-developers>`_ section.
