@@ -135,7 +135,7 @@ You can omit the ``--env`` option entirely if your ``~/.smaht-keys.json`` file h
 
 This command should do everything, `including` uploading any referenced files,
 prompting first for confirmation;
-see the `Uploading Referenced Files <uploading_files.html>`_ section for more on this.
+see the `Uploading Files <uploading_files.html>`_ section for more on this.
 
 If you belong to
 multiple consortia and/or submission centers, you can also add the ``--consortium <consortium>``
@@ -148,7 +148,7 @@ the command will automatically detect (based on your user profile) and use those
     will be applied as expected.
 
 Validation
-----------
+==========
 
 To invoke the submission with validation checking, do::
 
@@ -181,7 +181,7 @@ see the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
     will be ingested properly, and other, problematic ones, will `not` be ingested at all.
 
 Example Screenshots
--------------------
+===================
 
 The output of a successfully completed ``submit-metadata-bundle`` will look something like this:
 
