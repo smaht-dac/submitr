@@ -99,7 +99,7 @@ For Developers
 ==============
 
 If you are a software developer, and you wish to install ``smaht-submitr`` locally
-for development and other purposes, please see the `Advanced Usage <advanced_usage.html#installation-for-developers>`_ section.
+for development or other purposes, please see the `Advanced Usage <advanced_usage.html#installation-for-developers>`_ section.
 
 
 Actual Installation
