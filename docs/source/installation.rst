@@ -45,8 +45,8 @@ Virtual Environment Setup
 =========================
 
 This step is **optional** though recommended.
-See the `Installation Requirements <installation_prerequisites.html>`_ section for
-installing the ``pyenv`` command required for this.
+See the `Installation Prerequisites <installation_prerequisites.html>`_ section for
+installing the ``pyenv`` command required to do this.
 Assuming you have installed ``pyenv`` (per that section),
 to create a virtual Python environment with version 3.11.6 of Python, do::
 
