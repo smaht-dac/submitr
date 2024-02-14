@@ -200,7 +200,7 @@ Note that ``poetry`` is the substrate that the build scripts rely on.
 You won't be calling it directly, rather ``make build`` will call it.
 
 Internal Documentation
-======================
+----------------------
 
 Internal documentation for ``smaht-submitr`` can be found here:
 
