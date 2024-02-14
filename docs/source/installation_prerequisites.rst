@@ -27,16 +27,15 @@ The UNIX Command-Line
 The ``smaht-submitr`` package provides a number of `command-line` tools (commands) which must
 be run from the command-line using a system `terminal` application.
 
-On Mac OS X (which is built on UNIX),
-to open the ``Terminal`` application (if not already present in your home Dock) open ``Finder``,
+On Mac OS X (which is built on UNIX), to open the ``Terminal`` application, open ``Finder``,
 navigate to the ``Applications`` folder and then to the ``Utilities`` sub-folder.
 Inside this folder should be the ``Terminal`` application, which you can double-click on to bring it up;
-for future convenience you can add it to your home Dock by clicking and dragging it to your Dock.
+for future convenience you can add it to your home Dock (if not already there) by clicking and dragging it to your Dock.
 
-Before continuing, once you've opened the ``Terminal`` ensure in the top it says ``bash`` and not
-``zsh``. Newer Mac OS X versions package with ``zsh`` by default, but we want to use ``bash``. If you see ``zsh``,
-once in the terminal run the following command, close and re-open terminal and you will be using the
-expected ``bash`` shell
+Before continuing, once you've opened the ``Terminal`` ensure in the top it says ``bash`` (and not ``zsh`` or whatever).
+Newer Mac OS X versions package with ``zsh`` by default, but we want to use ``bash``.
+If you see ``zsh``, once in the terminal run the following command,
+close and re-open terminal and you will be using the expected ``bash`` shell.
 
 .. code-block:: bash
 
