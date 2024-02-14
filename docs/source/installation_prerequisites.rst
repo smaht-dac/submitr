@@ -17,8 +17,7 @@ Navigating this Document
 ========================
 
 Each section in this document is meant to sequentially guide you through the initial setup
-process for installing the tools necessary to effectively run ``smaht-submitr``,
-while simultaneously getting you setup with some best practices for managing the submissions on your local system.
+process for installing the tools necessary to effectively run ``smaht-submitr``.
 
 The UNIX Command-Line
 ---------------------
@@ -62,15 +61,15 @@ directories and files.
 .. code-block:: bash
 
     $ pwd
-    /Users/your_username
+      /Users/your_username
     $ ls
-    some_file_name
-    another_file_name
-    some_directory_name/
+      some_file_name
+      another_file_name
+      some_directory_name/
     $ ls -l
-    -rw-r--r--  1 your_username  your_usergroup    1311 Feb  7 14:04 some_file_name
-    -rw-r--r--  1 your_username  your_usergroup    4038 Feb 14 14:04 another_file_name
-    drw-r--r--  1 your_username  your_usergroup     128 Jan  5 14:04 some_directory_name/
+      -rw-r--r--  1 your_username  your_usergroup    1311 Feb  7 14:04 some_file_name
+      -rw-r--r--  1 your_username  your_usergroup    4038 Feb 14 14:04 another_file_name
+      drw-r--r--  1 your_username  your_usergroup     128 Jan  5 14:04 some_directory_name/
 
 
 * ``cd``: This will change your current directory. The special identifier ``..`` indicates the parent directory (above the current one).
@@ -164,7 +163,7 @@ for example version 3.11.6 (a recommended version), do::
     pyenv install 3.11.6
 
 You can list the versions of Python which are installed using ``pyenv versions``.
-And now to create a Python virtual environment named (for example) ``smaht-submitr-3.11``, do::
+And now, to create a Python virtual environment named (for example) ``smaht-submitr-3.11``, do::
 
     pyenv virtualenv 3.11.6 smaht-submitr-3.11
     pyenv activate smaht-submitr-3.11
