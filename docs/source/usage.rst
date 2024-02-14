@@ -15,9 +15,8 @@ is an Excel spreadsheet file (e.g. ``your_metadata_file.xlsx``),
 comprised of one or more sheets.
 Note these important aspects of using the Excel spreadsheet format:
 
-#. Each sheet name must be the name of a SMaHT Portal entity or `object` defined within the system.
-#. Each sheet must have as its first row, a special `header` row, which enumerates in each column, the names of the Portal object `properties` as the column names; order does `not` matter.
-#. Each of these column names must match `exactly` the name of the property for the Portal object.
+#. Each sheet name must be the `exact` name of a SMaHT Portal entity or `object` defined within the system.
+#. Each sheet must have as its first row, a special `header` row, which enumerates in each column, the `exact` names of the Portal object `properties` as the column names; order does `not` matter.
 #. Each sheet may contain any number of `data` rows (`directly` below the header row), each representing an instance of the Portal object.
 #. The values in the cells/columns of each data row correspond each to the property named in same column of the header row. 
 #. The first column in the header row which is empty marks the end of the header, and any subsequent columns will be entirely ignored.
@@ -40,7 +39,7 @@ And also notice the multiple tabs at the bottom for the different sheets within 
 representing (in this example) data for the Portal objects ``CellCultureSample``, ``Analyte``, ``Library``, and so on.
 
 .. tip::
-   As mentioned in the above list (#8 - you may missed it), if you want to include arbitrary comments or auxiliary information
+   As mentioned in the above list (#7 - you may missed it), if you want to include arbitrary comments or auxiliary information
    in your on a separate sheet, without that content intefering with the parsing of the spreadsheet,
    you can do so by making that sheet **hidden**. Such hidden sheets will be complete ignored by ``smaht-submitr``.
    To hide a sheet in Excel right-click on the tab and choose **Hide**. To **unhide** sheets select
