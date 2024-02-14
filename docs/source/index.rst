@@ -70,5 +70,4 @@ Table of Contents
   usage
   uploading_files
   advanced_usage
-  submitr
   about
