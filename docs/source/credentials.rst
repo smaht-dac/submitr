@@ -11,8 +11,8 @@ from SMaHT Portal.
 These SMaHT Portal credentials must stored in a specific format in a special file on your local system.
 Please follow these steps below to get your access keys and configure your local system for ``smath-submitr`` usage.
 
-Obtaining SMaHT Portal Access Keys
-----------------------------------
+Obtaining Access Keys
+---------------------
 
 #. Log in to `SMaHT Portal <https://data.smaht.org>`_ with your username (email) and password.
 #. Once logged in, go to your **Profile** page by clicking **Account** on the upper right corner of the page.
@@ -23,8 +23,8 @@ Obtaining SMaHT Portal Access Keys
    Once the pop-up page with your Access Key ID and Secret Access Key disappears, you will `not` be able to retrieve the Secret Access Key value ever again.
    However, if you forget or lose your Secret Access Key you can delete the key and add a new one from your Profile page at any time.
 
-Storing SMaHT Portal Access Keys
---------------------------------
+Storing Access Keys
+-------------------
 
 Once you've obtained access and secret keys (per the previous) section,
 they should be stored in a file on your local machine called ``~/.smaht-keys.json``.
@@ -77,8 +77,8 @@ N.B. If you are not sure what ``server`` you should be submitting to,
 please reach out to your contact on the SMaHT DAC Team at
 `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
 
-Securing SMaHT Portal Access Keys
----------------------------------
+Securing Access Keys
+--------------------
 
 For extra security, it is wise to make this file unreadable by others than yourself.
 Set its permissions accordingly by using ``chmod 600`` command,
