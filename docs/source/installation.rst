@@ -105,6 +105,7 @@ for development and other purposes, please see the `Advanced Usage <advanced_usa
 Actual Installation
 ===================
 
-To actually install the ``submitr-smaht`` software package::
+Assuming ``python`` and ``pip`` is satisfactorily installed,
+to actually install the ``submitr-smaht`` software package, do::
 
    pip install smaht-submitr
