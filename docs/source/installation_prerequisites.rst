@@ -10,14 +10,14 @@ The intent is to provide detailed instructions for setting up your local environ
 .. note::
     These instructions are targeted specifically for **Mac OS X**.
     For **Linux**, these instructions should be generally applicable (with some modifications),
-    and such users, who are presumed to be more advanced, should have no great difficulty.
+    and such users, who are presumed to be a bit more advanced, should have no great difficulty.
     For **Windows**, little to no testing has been done; Windows specific instructions may be available in the future.
 
 Navigating this Document
-------------------------
+========================
 
 Each section in this document is meant to sequentially guide you through the initial setup
-process for installing dependencies necessary to run ``smaht-submitr`` while simultaneously
+process for installing dependencies necessary to run ``smaht-submitr``, while simultaneously
 getting you setup with some best practices for managing the submissions in your local system.
 
 One important note of clarification is that when you see code blocks that begin with ``\$``,
@@ -75,22 +75,6 @@ directories and files.
 * `cat <filename>` will output the contents of a file to the terminal.
 * `mkdir <directory_name>` will create a new directory.
 * `touch <filename>` will create a new empty file.
-
-
-Creating the Working Directory and Credentials File
----------------------------------------------------
-
-To get started we will create an empty file to hold the submission credentials and a directory
-for storing the submission Excel files and associated raw sequencing files. At this time, the sequencing
-files need to be on your local machine to be submitted to SMaHT. Do this by using the ``touch`` and ``mkdir``
-commands described above. Use the exact command below for creating the credentials file, but you can
-create the directory for the submission files anywhere, just note the location (you can check with `pwd`).
-
-
-.. code-block:: bash
-
-    $ touch ~/.smaht-keys.json
-    $ mkdir ~/Documents/submitr
 
 
 Installing XCode Developer Tools
