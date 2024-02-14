@@ -59,7 +59,7 @@ directories and files.
 
 * ``pwd``: This will print the full path of your current directory; i.e. the current location within the UNIX file system where your terminal is "located". Whenever you start a new terminal session, odds are you will be in your home directory. The ``~`` (tilde) character is a global alias for your home directory.
 * ``ls``: This will list all files and directories in the current directory.
-* ``ls -l``: Same as above but includes more detailed info, including file size (in bytes), for example `1311` for `some_file_name` in the below example.
+* ``ls -l``: Same as above but with more info, including file size (in bytes), for example `1311` for `some_file_name` in the example below.
 
 
 .. code-block:: bash
