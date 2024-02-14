@@ -8,8 +8,8 @@ This document is intended for users who are not very familiar with the command-l
 The intent is to provide detailed instructions for setting up your local environment for using ``smaht-submitr``.
 
 .. note::
-    These instructions are targeted specifically for **Mac OS X**.
-    For **Linux**, these instructions should be generally applicable (with some modifications),
+    These instructions are targeted specifically for **Mac OS X** users.
+    For **Linux** users, these instructions should be generally applicable (with some modifications),
     and such users, who are presumed to be a bit more advanced, should have no great difficulty.
     For **Windows**, little to no testing has been done; Windows specific instructions may be available in the future.
 
@@ -81,8 +81,8 @@ Installing XCode Developer Tools
 --------------------------------
 
 Some new machines come with very few parts of the developer toolchain that may prevent
-you from doing even basic installation of packages. Thankfully, Mac OS X packages all of the
-developer tools cleanly into an easily installable package it calls the XCode Developer
+you from doing even basic installation of packages. Thankfully, for Mac OS X, packages
+all of the developer tools cleanly into an easily installable package it calls the XCode Developer
 Tools. You can install these with:
 
 .. code-block:: bash
