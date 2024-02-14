@@ -165,29 +165,3 @@ virtual environments you have created. The ``pyenv local`` command ensures that 
 your ``smaht-submitr`` directory you automatically enter the associated virtual environment. If successful, at
 this point you can transition to the installation docs section
 Installing smaht-submitr in a Virtual Environment.
-
-
-Reporting Issues
-----------------
-
-If you experience issues, please do not hesitate to report them to
-`smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_. Please include
-some information to help assist in the debugging process, including:
-
-* Your Mac OS X versions, which you can find by clicking "About this Mac" in the Apple logo dropdown in the
-  top left corner.
-* The full error message you are seeing with all associated output.
-* The output of ``uname -a``
-* The output of ``pyenv versions``
-* The output of ``pip freeze``
-
-You can capture the output of the two commands in a single file by running:
-
-.. code-block:: bash
-
-    $ uname -a >> error_info.txt
-    $ pyenv versions >> error_info.txt
-    $ pip freeze >> error_info.txt
-
-You can then attach this file to any correspondence with us and it will likely allow us to resolve
-issues quicker.
