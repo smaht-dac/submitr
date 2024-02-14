@@ -29,7 +29,6 @@ System Requirements
 
 * ``python`` `3.8, 3.9, 3.10, or 3.11`
 * ``bash``
-* ``virtualenv`` `>= 16.0.0` (`optional`)
 
 .. warning::
     These instructions are targeted specifically for **Mac OS X** users.
