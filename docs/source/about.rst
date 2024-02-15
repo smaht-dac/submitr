@@ -7,7 +7,7 @@ were developed by the `Department of Biomedical Informatics <https://dbmi.hms.ha
 at `Harvard Medical School <https://hms.harvard.edu/>`_.
 
 For further support, questions, feature requests, bug reports, or other information
-regarding file submission process or SMaHT Portal,
+regarding the file submission process or SMaHT Portal,
 please contact the SMaHT DAC Team at
 `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
 
