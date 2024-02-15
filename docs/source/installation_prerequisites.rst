@@ -143,7 +143,7 @@ Add the following (verbatim) to your ``~/.bashrc`` file (at the end of the file 
     eval "$(pyenv virtualenv-init -)"
 
 Once you've saved those changes,
-you can force the changes to take effect immediately (without closing and opening a new terminal)
+you can force these changes to take effect immediately (without closing and opening a new terminal)
 by running ``source ~/.bashrc``. Once this is done you should be able to run ``pyenv`` properly;
 for example, to list your virtual environments, do::
 
