@@ -129,7 +129,7 @@ Using ``brew``, you can install ``pyenv`` like this::
 
 Configuring Pyenv
 ~~~~~~~~~~~~~~~~~
-Before using ``pyenv`` you will now need to add some settings to your ``~/.bashrc`` file,
+Before using ``pyenv`` you will first need to add some settings to your ``~/.bashrc`` file,
 which is a script that is executed whenever your login (or launch a new terminal).
 You can edit this file (for example) with ``TextEdit`` (or ``vim`` or whatever you're familiar with) from the terminal with::
 
