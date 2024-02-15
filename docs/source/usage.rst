@@ -39,7 +39,7 @@ And also notice the multiple tabs at the bottom for the different sheets within 
 representing (in this example) data for the Portal objects ``CellCultureSample``, ``Analyte``, ``Library``, and so on.
 
 .. tip::
-   As mentioned in the above list (you may have missed it), if you want to include arbitrary comments or auxiliary information
+   As mentioned in the above list (in case you missed it), if you want to include arbitrary comments or auxiliary information
    in your on a separate sheet, without that content intefering with the parsing of the spreadsheet,
    you can do so by making that sheet **hidden**. Such hidden sheets will be complete ignored by ``smaht-submitr``.
    To hide a sheet in Excel right-click on the tab and choose **Hide**. To **unhide** sheets select
