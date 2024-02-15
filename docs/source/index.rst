@@ -58,7 +58,7 @@ for `Installation Prerequisites <installation_prerequisites.html>`_,
 which will introduce some basics for working with the terminal
 and installing the dependencies for this tool:
 
-* `Installation Prerequisites <installation_prerequisites.html>`_,
+* `Installation Prerequisites <installation_prerequisites.html>`_
 
 Table of Contents
 =================
