@@ -27,7 +27,7 @@ navigate to the ``Applications`` folder and then to the ``Utilities`` sub-folder
 Inside this folder should be the ``Terminal`` application, which you can double-click on to bring it up;
 for future convenience you can add it to your home Dock (if not already there) by clicking and dragging it to your Dock.
 
-Before continuing, once you've opened the ``Terminal`` ensure in the top it says ``bash`` (and not ``zsh`` or whatever).
+Before continuing, once you've opened the ``Terminal`` ensure that in the top title bar it shows ``bash`` (and not ``zsh`` or whatever).
 Newer Mac OS X versions package with ``zsh`` by default, but we want to use ``bash``.
 If you see ``zsh``, once in the terminal run the following command,
 close and re-open terminal and you will be using the expected ``bash`` shell::
