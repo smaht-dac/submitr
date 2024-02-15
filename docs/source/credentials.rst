@@ -38,7 +38,7 @@ they should be stored in a file on your local machine called ``~/.smaht-keys.jso
 
 The format of this file requires a single `JSON <https://en.wikipedia.org/wiki/JSON>`_
 object, where each property is an `environment` name (of your choosing), and where its value is
-an object containing a ``key``, ``secret``, and ``server`` values, represening your Access Key ID,
+an object containing ``key``, ``secret``, and ``server`` values, represening your Access Key ID,
 Secret Access Key, and the target SMaHT server URL. For example:
 
 .. code-block::
