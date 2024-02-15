@@ -65,7 +65,6 @@ Table of Contents
   :maxdepth: 1
 
   self
-  installation_prerequisites
   installation
   credentials
   usage
