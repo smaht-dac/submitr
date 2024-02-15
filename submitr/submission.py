@@ -1481,13 +1481,13 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
 
 
 def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str) -> bool:
-    validation_errors_exist = False
     PRINT(f"\n> Validation results:")
     pre_validation_errors = _pre_validate_data(structured_data, portal)
     if pre_validation_errors:
         for pre_validation_error in pre_validation_errors:
             print(f"  - {pre_validation_error}")
-        return
+        return False
+    validation_errors_exist = False
     structured_data.validate()
     if (validation_errors := structured_data.validation_errors):
         validation_errors_exist = True
