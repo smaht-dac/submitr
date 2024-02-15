@@ -21,7 +21,6 @@ submitr subpackages
    :maxdepth: 4
 
    submitr.scripts
-   submitr.tests
 
 submitr.exceptions module
 ~~~~~~~~~~~~~~~~~~~~~~~~~

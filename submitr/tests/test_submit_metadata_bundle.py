@@ -1,9 +1,13 @@
+import argparse
 import pytest
 import tempfile
 from unittest import mock
 from .. import submission as submission_module
 from ..submission import DEFAULT_INGESTION_TYPE
-from ..scripts.submit_metadata_bundle import main as submit_metadata_bundle_main
+from ..scripts.submit_metadata_bundle import (
+    main as submit_metadata_bundle_main,
+    _setup_validate_related_options
+)
 from ..scripts import submit_metadata_bundle as submit_metadata_bundle_module
 from .testing_helpers import system_exit_expected, argparse_errors_muffled
 
@@ -162,3 +166,39 @@ def _create_some_temporary_file() -> str:
     finally:
         some_file.close()
     return some_file.name
+
+
+def test_validation_options():
+
+    args = argparse.Namespace(validate=False,
+                              validate_only=False,
+                              validate_first=False,
+                              validate_local=False,
+                              validate_local_only=False)
+    _setup_validate_related_options(args)
+    assert (not args.validate_only and
+            not args.validate_first and
+            not args.validate_local and
+            not args.validate_local_only)
+
+    args = argparse.Namespace(validate=True,
+                              validate_only=False,
+                              validate_first=False,
+                              validate_local=False,
+                              validate_local_only=False)
+    _setup_validate_related_options(args)
+    assert (not args.validate_only and
+            args.validate_first and
+            args.validate_local and
+            not args.validate_local_only)
+
+    args = argparse.Namespace(validate=False,
+                              validate_only=True,
+                              validate_first=False,
+                              validate_local=False,
+                              validate_local_only=False)
+    _setup_validate_related_options(args)
+    assert (args.validate_only and
+            not args.validate_first and
+            not args.validate_local and
+            not args.validate_local_only)

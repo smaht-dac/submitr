@@ -67,20 +67,8 @@ def main(simulated_args_for_testing=None):
         args.upload_folder = args.directory
     if args.subdirectories:
         args.subfolders = True
-    if not (args.validate_only and (args.validate_local or args.validate_local_only)):
-        if args.validate_only:
-            args.validate_local = False
-        elif args.validate_local or args.validate_local_only:
-            args.validate_first = False
-            args.validate_only = False
-    if args.validate_only:
-        args.validate_first = False
-    if args.validate and not (args.validate_only or args.validate_local_only or
-                              args.validate_local_only or args.validate_first):
-        # If --validate is specified and no other validate related options are
-        # specified, then default to server-side and client-side validation.
-        args.validate_local = True
-        args.validate_first = True
+
+    _setup_validate_related_options(args)
 
     if args.keys:
         if not args.keys.endswith(".json") or not os.path.exists(args.keys):
@@ -89,7 +77,7 @@ def main(simulated_args_for_testing=None):
 
     with script_catch_errors():
 
-        if not sanity_check_submitted_file(args.bundle_filename):
+        if not _sanity_check_submitted_file(args.bundle_filename):
             exit(1)
 
         submit_any_ingestion(ingestion_filename=args.bundle_filename, ingestion_type=args.ingestion_type,
@@ -111,7 +99,7 @@ def main(simulated_args_for_testing=None):
                              debug=args.debug)
 
 
-def sanity_check_submitted_file(file_name: str) -> bool:
+def _sanity_check_submitted_file(file_name: str) -> bool:
     """
     Performs some basic sanity checking on the specified file.
     If it is a JSON file (i.e. with a .json file extension) make sure it can load.
@@ -165,6 +153,25 @@ def sanity_check_submitted_file(file_name: str) -> bool:
         PRINT(f"  of your file with a -inserts suffix, e.g. ANYNAME-inserts.")
 
     return sanity_check_passed
+
+
+def _setup_validate_related_options(args: argparse.Namespace):
+    if not (args.validate_only and (args.validate_local or args.validate_local_only)):
+        if args.validate_only:
+            args.validate_local = False
+        elif args.validate_local or args.validate_local_only:
+            args.validate_first = False
+            args.validate_only = False
+    if args.validate_only:
+        args.validate_first = False
+    if args.validate and not (args.validate_only or args.validate_local_only or
+                              args.validate_local_only or args.validate_first):
+        # If --validate is specified and no other validate related options are
+        # specified, then default to server-side and client-side validation.
+        args.validate_local = True
+        args.validate_first = True
+    # Only need this --validate option to set other more specific validate related options.
+    delattr(args, "validate")
 
 
 if __name__ == '__main__':

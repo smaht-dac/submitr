@@ -7,7 +7,7 @@ import re
 import subprocess
 import sys
 import time
-from typing import BinaryIO, Dict, Optional, Tuple
+from typing import BinaryIO, Dict, List, Optional, Tuple
 import yaml
 
 # get_env_real_url would rely on env_utils
@@ -22,7 +22,7 @@ from dcicutils.misc_utils import (
     PRINT, url_path_join, ignorable, remove_prefix
 )
 from dcicutils.s3_utils import HealthPageKey
-from dcicutils.schema_utils import Schema
+from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
 from dcicutils.structured_data import Portal, StructuredDataSet
 from typing_extensions import Literal
 from urllib.parse import urlparse
@@ -1431,15 +1431,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
     if verbose:
         PRINT(f"\n> Parsed JSON:")
         _print_json_with_prefix(structured_data.data, "  ")
-    structured_data.validate()
-    PRINT(f"\n> Validation results:")
-    if (validation_errors := structured_data.validation_errors):
-        errors_exist = True
-        PRINT(f"\n> ERROR: Validation violations:")
-        for validation_error in validation_errors:
-            PRINT(f"  - {_format_issue(validation_error, ingestion_filename)}")
-    else:
-        PRINT(f"  - OK")
+    errors_exist = not _validate_data(structured_data, portal, ingestion_filename)
     PRINT(f"\n> Types submitting:")
     for type_name in sorted(structured_data.data):
         PRINT(f"  - {type_name}: {len(structured_data.data[type_name])}"
@@ -1486,6 +1478,54 @@ def _validate_locally(ingestion_filename: str, portal: Portal,
             exit(1)
     if validate_local_only:
         exit(0 if not errors_exist else 1)
+
+
+def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str) -> bool:
+    validation_errors_exist = False
+    PRINT(f"\n> Validation results:")
+    pre_validation_errors = _pre_validate_data(structured_data, portal)
+    if pre_validation_errors:
+        for pre_validation_error in pre_validation_errors:
+            print(f"  - {pre_validation_error}")
+        return
+    structured_data.validate()
+    if (validation_errors := structured_data.validation_errors):
+        validation_errors_exist = True
+        PRINT(f"\n> ERROR: Validation violations:")
+        for validation_error in validation_errors:
+            PRINT(f"  - {_format_issue(validation_error, ingestion_filename)}")
+    else:
+        PRINT(f"  - OK")
+    return not validation_errors_exist
+
+
+def _pre_validate_data(structured_data: StructuredDataSet, portal: Portal) -> List[str]:
+    # TODO: Move this more specific "pre" validation checking to dcicutils.structured_data.
+    # Just for nicer more specific (non-jsonschema) error messages for common problems.
+    pre_validation_errors = []
+    if not (portal and structured_data and structured_data.data):
+        return pre_validation_errors
+    for schema_name in structured_data.data:
+        if schema_data := portal.get_schema(schema_name):
+            if identifying_properties := schema_data.get(EncodedSchemaConstants.IDENTIFYING_PROPERTIES):
+                identifying_properties = set(identifying_properties)
+                if data := structured_data.data[schema_name]:
+                    data_properties = set(data[0].keys())
+                    if not data_properties & identifying_properties:
+                        # No identifying properties for this object.
+                        pre_validation_errors.append(f"ERROR: No identifying properties for type: {schema_name}")
+            if required_properties := schema_data.get(JsonSchemaConstants.REQUIRED):
+                required_properties = set(required_properties)
+                if data := structured_data.data[schema_name]:
+                    data_properties = set(data[0].keys())
+                    if (data_properties & required_properties) != required_properties:
+                        if missing_required_properties := required_properties - data_properties:
+                            # Missing required properties for this object.
+                            for missing_required_property in missing_required_properties:
+                                pre_validation_errors.append(
+                                    f"ERROR: Missing required property ({missing_required_property})"
+                                    f" for type: {schema_name}")
+    return pre_validation_errors
 
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet) -> None:
