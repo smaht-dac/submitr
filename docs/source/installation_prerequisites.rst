@@ -124,7 +124,7 @@ Using ``brew``, you can install ``pyenv`` like this::
 
 .. note::
 
-    FYI there are (of course - `sigh`) other ways to install ``pyenv``, for example with
+    FYI there are (of course) other ways to install ``pyenv``, for example with
     ``curl -L https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash``
 
 Configuring Pyenv
