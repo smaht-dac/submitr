@@ -36,7 +36,7 @@ close and re-open terminal and you will be using the expected ``bash`` shell::
 
 For Linux, it is inherently a more command-line oriented operating system,
 and as Linux users are typically a bit more advanced than normal,
-specific instructions will be omitted, though much of what is here is applicate to Linux as well.
+specific instructions will be omitted, though much of what is here is applicable to Linux as well.
 
 UNIX Command Cheatsheet
 -----------------------
