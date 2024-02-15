@@ -119,7 +119,7 @@ as this may cause problems.
 Using ``pyenv`` allows you have any number of (named) isolated installation environments
 that are guaranteed not interfere with one another.
 
-Again, using ``brew``, you can install ``pyenv`` like this::
+Using ``brew``, you can install ``pyenv`` like this::
 
     brew install pyenv pyenv-virtualenv
 
