@@ -81,6 +81,10 @@ facilitate mounting of S3 buckets as local file
 systems that can be readily accessed by ``smaht-submitr``.
 Similar tools exist for Google Cloud Storage and Azure Storage.
 
+.. caution::
+    If you are working on a Mac M1 system (using ARM-based chip), you may encounter problems
+    using these kinds of mounting tools. More guidance here will (hopefully) be forthcoming.
+
 Running Submission Remotely
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
