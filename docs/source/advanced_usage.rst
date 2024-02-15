@@ -173,7 +173,7 @@ for example::
 
     view-portal-object --env data --schema CellLine
 
-Or you can output `all` schema types present within SMaHT Portal using the special ``schemas`` identifier,
+Or you can output the type names of  `all` schema types present within SMaHT Portal using the special ``schemas`` identifier,
 for example::
 
     view-portal-object --env data schemas
