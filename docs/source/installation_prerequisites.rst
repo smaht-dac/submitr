@@ -90,7 +90,7 @@ Just to make sure it installed properly try the command ``brew --version`` and i
 .. tip::
    Another common alternative to using Homebrew on Mac OS X is to use `XCode <https://developer.apple.com/xcode/>`_.
    If you want to go this route instead please see (for example) `Installing Python on Mac OS X via XCode <https://docs.python-guide.org/starting/install3/osx/>`_ (external link). In brief to get started with this use the command ``xcode-select --install``.
-   Note however that this installs a `lot` of software, and in may be a lengthy process (at least in terms of time).
+   Note however that this installs a `lot` of software, and it may be a lengthy process (at least in terms of time).
 
 Installing Python
 -----------------
