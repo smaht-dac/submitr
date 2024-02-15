@@ -134,7 +134,7 @@ no local client-side validation will be done in this case.
 
 .. note::
     In `both` of these cases (``--validate-local-only`` and ``--validate-only``) the actual ingestion process itself
-    will `not` proceed; i.e. these only perform (either client-side or server-side) validation and output the results.
+    will `not` proceed; i.e. these `only` perform (either client-side or server-side) validation and output the results.
 
 Also of minor note is that if there are server-side validation errors, you will not be able
 to continue with the submission process; i.e. there is no way to get your data ingested into SMaHT Portal,
