@@ -87,9 +87,9 @@ which sets the file to be readable and writable only by you,
 and gives no one else (but the system superuser) any permissions at all::
 
    $ ls -l ~/.smaht-keys.json
-   -rw-r--r--  1 youruser  staff  137 Jan 31 08:55 /Users/youruser/.smaht-keys.json
+     -rw-r--r--  1 youruser  staff  137 Jan 31 08:55 /Users/youruser/.smaht-keys.json
 
    $ chmod 600 ~/.smaht-keys.json
 
    $ ls -l ~/.smaht-keys.json
-   -rw-------  1 youruser  staff  137 Jan 31 08:55 /Users/youruser/.smaht-keys.json
+     -rw-------  1 youruser  staff  137 Jan 31 08:55 /Users/youruser/.smaht-keys.json
