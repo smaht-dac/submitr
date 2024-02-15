@@ -44,7 +44,13 @@ System Requirements
 ===================
 
 * ``python`` `3.8, 3.9, 3.10, or 3.11`
-* ``pip`` `>= 20.0.0`
+* ``bash``
+
+.. warning::
+    These instructions are targeted specifically for **Mac OS X** users.
+    For **Linux** users, these instructions should be generally applicable (with some modifications),
+    and such users, who are presumed to be a bit more advanced, should have no great difficulty.
+    For **Windows** users, little to no testing has been done; Windows specific instructions may be available in the future.
 
 
 What To Do Next
