@@ -50,13 +50,15 @@ System Requirements
 What To Do Next
 ===============
 
-More advanced users who already have Python installed
+More experienced users who already have Python installed
 to their satisfaction can proceed to instructions for `Installation <installation.html>`_.
 
 Less experienced users should start with instructions
 for `Installation Prerequisites <installation_prerequisites.html>`_,
 which will introduce some basics for working with the terminal
-and installing the dependencies for this tool.
+and installing the dependencies for this tool:
+
+* `Installation Prerequisites <installation_prerequisites.html>`_,
 
 Table of Contents
 =================
