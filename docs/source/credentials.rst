@@ -6,10 +6,15 @@ If you have been designated as a submitter for the SMaHT project,
 and plan to use spreadsheet-based submission system (i.e. ``smaht-submitr``)
 to view, upload, create, or update data with SMaHT Portal,
 you are required to obtain and setup an access and secret key (i.e. `credentials`)
-from SMaHT Portal.
+from via your SMaHT Portal account.
 
 These SMaHT Portal credentials must stored in a specific format in a special file on your local system.
 Please follow these steps below to get your access keys and configure your local system for ``smath-submitr`` usage.
+
+
+.. note::
+   To obtain a SMaHT Portal account please see:
+   `SMaHT Portal Account Creation <https://data.smaht.org/docs/user-guide/account-creation>`_
 
 Obtaining Access Keys
 ---------------------
