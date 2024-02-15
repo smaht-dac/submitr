@@ -50,7 +50,7 @@ What To Do Next
 ===============
 
 More advanced users who already have Python installed
-can proceed to instructions for `Installation <installation.html>`_.
+to their satisfaction can proceed to instructions for `Installation <installation.html>`_.
 
 Less experienced users should start with instructions
 for `Installion Prerequisites <installation_prerequisites.html>`_,
