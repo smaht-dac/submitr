@@ -55,7 +55,7 @@ can proceed to instructions for `Installation <installation.html>`_.
 Less experienced users should start with instructions
 for `Installion Prerequisites <installation_prerequisites.html>`_,
 which will introduce some basics for working with the terminal
-and installing the dependencies to run this tool.
+and installing the dependencies for this tool.
 
 Table of Contents
 =================
