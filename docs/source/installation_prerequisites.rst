@@ -11,7 +11,7 @@ will help you install Python and setup your local environment for using ``smaht-
     These instructions are targeted specifically for **Mac OS X** users.
     For **Linux** users, these should be generally applicable (with some modifications);
     presumed to be a bit more advanced, such users should have little difficulty.
-    For **Windows** users, very little testing has been done; not recommended; but more experienced users should may be able to work through it.
+    For **Windows** users, very little testing has been done; not recommended; but more experienced users should be able to work through it.
 
 Each section in this document is meant to sequentially guide you through the initial setup
 process for installing the tools necessary to effectively run ``smaht-submitr``.
