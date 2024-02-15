@@ -41,7 +41,7 @@ but be sure to read the next paragraph.
 The file name for a CSV file `must` be suffixed with ``.csv``.
 
 Since, unlike Excel files, which support multiple tabs (each representing a different SMaHT Portal object type),
-CSV files cannot represent multiple SMaHT Portal object types, and since we need to somehow specify what object
+CSV files cannot represent multiple SMaHT Portal object types, `and` since we need to somehow specify what object
 type the CSV file contains data for, the actual file name of the CSV file is required to be the SMaHT Portal
 object type name (minus the ``.csv`` suffix). This file name can be either the `camel-case <https://en.wikipedia.org/wiki/Camel_case>`_
 or `snake-case <https://en.wikipedia.org/wiki/Snake_case>`_
