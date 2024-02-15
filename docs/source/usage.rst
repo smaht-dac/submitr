@@ -52,12 +52,23 @@ representing (in this example) data for the Portal objects ``CellCultureSample``
 
     Other file formats besides Excel actually `are` supported; see the `Advanced Usage <advanced_usage.html#other-files-formats>`_ section for more information.
 
-Property Deletions
-------------------
+Object Reference Properties
+---------------------------
 
-A column value within a (non-header) data row may be empty, but this only means that the value for the corresponding property will be ignored
-when creating or updating the associated object. In order to actually `delete` a property value from an object,
-a special value - ``*delete*`` - should be used as the the property value.
+Some Portal object properties are defined as being references to other Portal objects (also known as `linkTo` properties).
+The values of these in the spreadsheet should be the unique `identifying value` for that object.
+
+It is important to know that the ``smaht-submitr`` tool and SMaHT will ensure that the referenced
+objects actually exist within the SMaHT Portal, `or` are defined within the spreadsheet itself;
+if this is not the case then an error will result.
+
+.. tip::
+
+    For the database savvy, such references can be thought of as being analogous to `foreign keys`.
+
+The identifying value property for an object varies depending on the specific object in question;
+though the ``uuid`` property is always common to `all` objects; other common identifying properties
+are ``submitted_id`` and ``accession``.
 
 Nested Properties
 -----------------
@@ -102,23 +113,12 @@ Boolean Type Properties
 For Portal object properties which are defined as `boolean` values, meaning either `true` or `false`,
 simply use these values, i.e. ``true`` or ``false`` (case-insensitive).
 
-Object Reference Properties
----------------------------
+Property Deletions
+------------------
 
-Some Portal object properties are defined as being references to other Portal objects (also known as `linkTo` properties).
-The values of these in the spreadsheet should be the unique `identifying value` for that object.
-
-It is important to know that the ``smaht-submitr`` tool and SMaHT will ensure that the referenced
-objects actually exist within the SMaHT Portal, `or` are defined within the spreadsheet itself;
-if this is not the case then an error will result.
-
-.. tip::
-
-    For the database savvy, such references can be thought of as being analogous to `foreign keys`.
-
-The identifying value property for an object varies depending on the specific object in question;
-though the ``uuid`` property is always common to `all` objects; other common identifying properties
-are ``submitted_id`` and ``accession``.
+A column value within a (non-header) data row may be empty, but this only means that the value for the corresponding property will be ignored
+when creating or updating the associated object. In order to actually `delete` a property value from an object,
+a special value - ``*delete*`` - should be used as the the property value.
 
 Submission
 ==========
