@@ -14,17 +14,17 @@ Overview
 
 **smaht-submitr**: A metadata and file submission tool for `SMaHT Portal <https://data.smaht.org/>`_.
 
-.. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
-    :target: https://github.com/smaht-dac/submitr/actions
-    :alt: Build Status
+.. .. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
+..     :target: https://github.com/smaht-dac/submitr/actions
+..     :alt: Build Status
 
-.. image:: https://coveralls.io/repos/github/smaht-dac/submitr/badge.svg
-    :target: https://coveralls.io/github/smaht-dac/submitr
-    :alt: Coverage Percentage
+.. .. image:: https://coveralls.io/repos/github/smaht-dac/submitr/badge.svg
+..     :target: https://coveralls.io/github/smaht-dac/submitr
+..     :alt: Coverage Percentage
 
-.. image:: https://readthedocs.org/projects/submitr/badge/?version=latest
-    :target: https://submitr.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
+.. .. image:: https://readthedocs.org/projects/submitr/badge/?version=latest
+..     :target: https://submitr.readthedocs.io/en/latest/?badge=latest
+..     :alt: Documentation Status
 
 
 Description
