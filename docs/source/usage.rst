@@ -4,8 +4,8 @@ Usage
 
 Once you have finished installing the ``smaht-submitr`` package (per the `Installation <installation.html>`_ section),
 you should have access to the ``submit-metadata-bundle`` command.
-There are two types of submissions: accessioning (new cases) and family history (pedigrees)
-which both use the ``submit-metadata-bundle`` command.
+What follows are detailed instructions for how to format your metatdata submission files,
+and how to actually submit (and validate) them to SMaHT Portal.
 
 Formatting Files for Submission
 ===============================
