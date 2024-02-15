@@ -6,6 +6,10 @@ This software (`smaht-submitr <https://pypi.org/project/smaht-submitr/>`_) and `
 were developed by the `Department of Biomedical Informatics <https://dbmi.hms.harvard.edu/>`_ (DBMI)
 at `Harvard Medical School <https://hms.harvard.edu/>`_.
 
+.. note::
+   For info on obtaining a SMaHT Portal account please see:
+   `SMaHT Portal Account Creation <https://data.smaht.org/docs/user-guide/account-creation>`_
+
 For further support, questions, feature requests, bug reports, or other information
 regarding the file submission process or SMaHT Portal,
 please contact the SMaHT DAC Team at
