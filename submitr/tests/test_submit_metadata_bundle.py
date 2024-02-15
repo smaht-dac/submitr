@@ -202,3 +202,14 @@ def test_validation_options():
             not args.validate_first and
             not args.validate_local and
             not args.validate_local_only)
+
+    args = argparse.Namespace(validate=False,
+                              validate_only=False,
+                              validate_first=False,
+                              validate_local=True,
+                              validate_local_only=False)
+    _setup_validate_related_options(args)
+    assert (not args.validate_only and
+            not args.validate_first and
+            args.validate_local and
+            not args.validate_local_only)

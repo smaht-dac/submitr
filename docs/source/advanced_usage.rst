@@ -122,6 +122,20 @@ For this reason, the default ``--validate`` mode of validation is the most compr
 as it performs `both` client-side and server-side validation.
 But alternatively, you can invoke either one of these validations individually and exclusively as follows.
 
+Also of minor note is that if there are server-side validation errors, you will `not` be able
+to continue with the submission process; i.e. there is no way to get your data into SMaHT Portal,
+unless you correct the problems (or unless you use the ``--validate-local`` which disables server-side validation).
+But if there are client-side validation errors,
+you `may` (after prompting) continue processing, in spite of there
+being local client-side validation errors (not recommended of course).
+
+.. note::
+    Even in the absence of `any` validation (which is actually not even a readily available option),
+    if there are problems with the submitted data, it will `not` be ingested into SMaHT Portal;
+    i.e. no need to worry that corrupt data might sneak into the system; the system guards against this.
+    However, without making use of the ``--validate`` options it `is` possible that `some` of your objects
+    will be ingested properly, and other, problematic ones, will `not` be ingested at all.
+
 Validation Only
 ~~~~~~~~~~~~~~~
 
@@ -136,20 +150,6 @@ no local client-side validation will be done in this case.
 .. note::
     In `both` of these cases (``--validate-local-only`` and ``--validate-only``) the actual ingestion process itself
     will `not` proceed; i.e. these `only` perform (either client-side or server-side) validation and output the results.
-
-Also of minor note is that if there are server-side validation errors, you will not be able
-to continue with the submission process; i.e. there is no way to get your data ingested into SMaHT Portal,
-unless/until you correct the problems (or unless you use the ``--validate-local``).
-But if there are client-side validation errors,
-you `may` (after prompting) continue processing, in spite of there
-being local client-side validation errors (this of course is not recommended).
-
-.. note::
-    Even in the absence of `any` validation (which is actually not even a readily available option),
-    if there are problems with the submitted data, it will `not` be ingested into SMaHT Portal;
-    i.e. no need to worry that corrupt data might sneak into the system; the system guards against this.
-    However, without making use of the ``--validate`` options it `is` possible that `some` of your objects
-    will be ingested properly, and other, problematic ones, will `not` be ingested at all.
 
 Viewing Portal Objects
 ======================
