@@ -107,7 +107,8 @@ The values of these in the spreadsheet should be the unique `identifying value` 
 
 It is important to know that the ``smaht-submitr`` tool and SMaHT will ensure that the referenced
 objects actually exist within the SMaHT Portal, `or` are defined within the spreadsheet itself;
-if this is not the case then an error will result.
+if this is not the case then an error will result. (For the database savvy, such references
+can be thought of as being analogous to `foreign keys`).
 
 The identifying value property for an object varies depending on the specific object in question;
 though the ``uuid`` property is always common to `all` objects; other common identifying properties
