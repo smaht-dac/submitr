@@ -11,6 +11,7 @@ Change Log
 =====
 
 * Documentation updates.
+* Reworked validation options.
 
 
 0.5.3
