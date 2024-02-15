@@ -11,6 +11,11 @@ regarding the file submission process or SMaHT Portal,
 please contact the SMaHT DAC Team at
 `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
 
+Python Package & Source Code
+-----------------------------
+* Python Package: https://pypi.org/project/smaht-submitr
+* Source Code: https://github.com/smaht-dac/submitr
+
 Reporting Issues
 ----------------
 

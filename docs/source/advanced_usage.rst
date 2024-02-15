@@ -203,7 +203,7 @@ You won't be calling it directly, rather ``make build`` will call it.
 Internal Documentation
 ----------------------
 
-Internal documentation for ``smaht-submitr`` can be found here:
+Internal documentation (from the `source code <https://github.com/smaht-dac/submitr>`_) for ``smaht-submitr`` can be found here:
 
 .. toctree::
   :maxdepth: 1
