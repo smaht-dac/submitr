@@ -116,10 +116,8 @@ This allows you to isolate Python package and library installations from one ano
 so you do not install packages which have conflicting dependencies with another package,
 as this may cause problems.
 
-Using ``pyenv`` allows you have any number of (named) isolated installation environments
-that are guaranteed not interfere with one another.
-
-Using ``brew``, you can install ``pyenv`` like this::
+With ``pyenv`` you can create any number of (named) isolated installation environments,
+that are each guaranteed not interfere with one another. Using ``brew``, you can install ``pyenv`` like this::
 
     brew install pyenv pyenv-virtualenv
 
