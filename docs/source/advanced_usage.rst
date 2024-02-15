@@ -111,7 +111,7 @@ to SMaHT Portal for ingestion.
 That is, client-side validation is performed `locally` within the ``submit-metadata-bundle`` command-line process itself;
 and server-side validation is performed `remotely` within the SMaHT server ingestion process itself.
 
-These two modes of validation covers much of the same ground,
+These two modes of validation cover much of the same ground,
 however there are `some` aspects of validation which 
 can `only` be done on the server-side and so this may pick up problems (e.g. various identifier format checking) which
 are not possible to detect on the client-side; and conversely, the client-side validation
