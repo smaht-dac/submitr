@@ -53,7 +53,7 @@ to create a virtual Python environment with version 3.11.6 of Python, do::
     pyenv virtualenv 3.11.6 smaht-submitr-3.11
 
 That name ``smaht-submitr-3.11`` can actually be any name that you choose.
-And then to activate a this virtual environment, do::
+To activate this virtual environment, do::
 
     pyenv activate smaht-submitr-3.11
 
