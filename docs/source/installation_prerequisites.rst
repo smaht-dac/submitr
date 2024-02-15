@@ -160,7 +160,7 @@ for example version 3.11.6 (a recommended version), do::
     pyenv install 3.11.6
 
 You can list the versions of Python which are installed using ``pyenv versions``.
-And now, to create a Python virtual environment named (for example) ``smaht-submitr-3.11``, do::
+And now, to create (and activate) a Python virtual environment named (for example) ``smaht-submitr-3.11``, do::
 
     pyenv virtualenv 3.11.6 smaht-submitr-3.11
     pyenv activate smaht-submitr-3.11
