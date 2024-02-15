@@ -105,7 +105,7 @@ So, with ``brew`` installed (per the `previous section <installation_prerequisit
 
 Confusingly, this may (or may not) install Python as ``python3`` rather than ``python``.
 If ``python`` does not work (e.g. `command not found`), then ``python3`` should work.
-Hopefully, any confusion will dissipate once we get ``pyenv`` installed,
+Hopefully, any confusion will dissipate once we get ``pyenv`` installed (next),
 which is one goal here, so that we can gain more convenient control of which version of Python is installed/active.
 
 Installing Pyenv
