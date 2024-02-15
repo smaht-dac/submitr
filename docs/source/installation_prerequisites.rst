@@ -154,17 +154,17 @@ You probably won't see anything listed from that as you have not defined any vir
 Using Pyenv
 ~~~~~~~~~~~
 Now (finally), to use ``pyenv`` to install a newer/specific version Python,
-for example version 3.11.6 (a recommended version), do::
+for example version 3.11.8 (a recommended version), do::
 
-    pyenv install 3.11.6
+    pyenv install 3.11.8
 
 You can list the versions of Python which are installed using ``pyenv versions``.
 And now, to create (and activate) a Python virtual environment named (for example) ``smaht-submitr-3.11``, do::
 
-    pyenv virtualenv 3.11.6 smaht-submitr-3.11
+    pyenv virtualenv 3.11.8 smaht-submitr-3.11
     pyenv activate smaht-submitr-3.11
 
-This creates a virtual Python environment called ``smaht-submitr-3.11`` which uses Python version 3.11.6,
+This creates a virtual Python environment called ``smaht-submitr-3.11`` which uses Python version 3.11.8,
 and then (the second command there) actives that virtual environment for your current terminal session.
 Your can name your virtual environment (i.e. ``smaht-submitr-3.11`` in this example) whatever of you like.
 You can list the virtual environment you have created using ``pyenv virtualenvs``.
@@ -174,7 +174,7 @@ You can list the virtual environment you have created using ``pyenv virtualenvs`
    You will need to explicitly active the desired virtual environment for each new terminal session,
    i.e. using ``pyenv activate smaht-submitr-3.11`` for example.
 
-Assuming the above example, if you now do ``python --version`` you should `definitely` see something like ``Python 3.11.6``;
+Assuming the above example, if you now do ``python --version`` you should `definitely` see something like ``Python 3.11.8``;
 if you do not, then something may be wrong (see the `About <about.html#reporting-issues>`_ page to see about
 contacting us for additional help).
 
