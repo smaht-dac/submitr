@@ -39,4 +39,4 @@ FYI you can capture the output of multiple commands on the command-line to a sin
     python --version >> your_error_info.txt
     pip freeze >> your_error_info.txt
 
-You can then attach this file to any correspondence with us and it will likely allow us to resolve issues quicker.
+You can then attach this file to any correspondence with us and it will likely allow us to resolve issues more quickly.
