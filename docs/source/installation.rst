@@ -22,7 +22,7 @@ with Python (including dependencies) on the terminal command-line:
   installation_prerequisites
 
 You can then proceed with the rest of these instructions
-to setup a virtual Python environment.
+to setup a virtual Python environment and install ``smaht-submitr``.
 
 System Requirements
 ===================
