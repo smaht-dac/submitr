@@ -30,7 +30,7 @@ System Requirements
 * ``python`` `3.8, 3.9, 3.10, or 3.11`
 * ``bash``
 
-.. warning::
+.. note::
     These instructions are targeted specifically for **Mac OS X** users.
     For **Linux** users, these should be generally applicable (with some modifications);
     presumed to be a bit more advanced, such users should have little difficulty.
