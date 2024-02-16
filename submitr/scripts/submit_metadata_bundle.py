@@ -222,7 +222,7 @@ METADATA-FILE: This is the path to your metatdata file.
 OPTIONS:
 ===
 --env ENVIRONMENT
-  To specify your environment name, from your ~/.smaht-keys.json file.
+  To specify your environment name; from your ~/.smaht-keys.json file.
 --validate
   To validate metadata before submitting.
   This is the DEFAULT behavior for most (non-admin) users.
