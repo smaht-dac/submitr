@@ -7,9 +7,9 @@ Information on obtaining a `SMaHT Portal <https://data.smaht.org/>`_ account.
 * To get setup with a SMaHT Portal account for your role, please email our `data wranglers` at `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
 * Please provide the email address you wih to use for your account, and CC your principle investigator (PI) for validation purposes.
 * This email must be the same as the one registered with the SMaHT OC.
-* This email address may be any one you like (e.g. an institutional one), but it `must` be associated with a Google account.
+* This email address may be any one you like (e.g. an institutional one), but it `must` be associated with a Google account (see below).
 * If you wish to use a **non-Google** (e.g. an institutional) email address, please **see below** for information on linking this email to a Google account.
-* Once your account request is processed, you will then be able to login to SMaHT Portal using the **Sign in with Google** option, using your chosen Google or Google-linked email address, and account password.
+* Once your account request is processed, you will then be able to login to `SMaHT Portal <https://data.smaht.org/>`_ using the **Sign in with Google** option, using your chosen Google or Google-linked email address, and account password.
 
 
 Using an Non-Google Email Address
