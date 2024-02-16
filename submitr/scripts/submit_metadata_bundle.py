@@ -65,9 +65,12 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--version', action="store_true", help="Print version.", default=False)
-    parser.add_argument('--help-advanced', action="store_true", default=False)
-    parser.add_argument('--help-web', action="store_true", default=False)
-    parser.add_argument('--help-raw', action="store_true", default=False)
+    parser.add_argument('--help-advanced', action="store_true",
+                        help="Print more advanced documentation.", default=False)
+    parser.add_argument('--help-web', action="store_true",
+                        help="Opens your browser to Web based documentation.", default=False)
+    parser.add_argument('--help-raw', action="store_true",
+                        help="Prints the raw version of this help message.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     if args.version:
@@ -239,7 +242,7 @@ OPTIONS: Described below ...
   Print this documentation.
 --help-advanced
   Print more advanced documentation.
---help-page
+--help-web
   Opens your browser to Web based documentation.
 ===
 """
@@ -259,6 +262,8 @@ ADVANCED OPTIONS: Described below ...
   TODO
 --validate-only
   TODO
+--help-raw
+  Prints the raw version of this help message.
 ===
 """
 
