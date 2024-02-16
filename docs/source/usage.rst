@@ -84,8 +84,8 @@ For this we will use a `dot-notation` whereby dots (``.``) are used to separate 
 For example, an object may define a ``components`` property which itself refers to an object containing ``cell_culture`` property;
 to reference the ``cell_culture`` property then, the spreadsheet column header would need to be ``components.cell_culture``.
 
-Array Type Properties
----------------------
+Array Properties
+----------------
 
 Some Portal object properties are defined to be lists (or `arrays`) of values.
 To define the values for such array properties, separate the individual array values by a pipe character (``|``).
@@ -97,8 +97,8 @@ This is accomplished by the convention suffixing the property name in the column
 a pound sign (``#``) followed by an integer representing the zero-indexed array element.
 For example to set the first element of the ``molecules`` property (using the example above), use column header value ``molecule#0``.
 
-Date/Time Type Properties
--------------------------
+Date/Time Properties
+--------------------
 For Portal object properties which are defined as `date` values,
 the required format is ``YYYY-MM-DD``, for example ``2024-02-09``.
 
@@ -107,8 +107,8 @@ the required format is ``YYYY-MM-DD hh:mm:ss``, for example ``2024-02-09 08:25:1
 This will default to your local timezone; if you want to specify a timezone
 use a suffix like ``+hh:mm`` where ``hh`` and ``mm`` are the hour and minute offsets (respectively) from GMT.
 
-Boolean Type Properties
------------------------
+Boolean Properties
+------------------
 
 For Portal object properties which are defined as `boolean` values, meaning either `true` or `false`,
 simply use these values, i.e. ``true`` or ``false`` (case-insensitive).
