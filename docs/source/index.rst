@@ -43,7 +43,7 @@ See the `About <about.html>`_ page for more information about this software and 
 .. tip::
     Note that this documentation covers the `mechanics` of using ``smaht-submitr``.
     It does not at this time cover the `semantics` for the actual content of the metadata being submitted.
-    For more information on this aspect of submission please see: **TODO**
+    For more information on this aspect of submission please see: **TDB**
 
 
 System Requirements
