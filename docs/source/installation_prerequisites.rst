@@ -39,7 +39,7 @@ and as Linux users are typically a bit more advanced than normal,
 specific instructions will be omitted, though much of what is here is applicable to Linux as well.
 
 UNIX Command Cheatsheet
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Using ``smaht-submitr`` assumes some knowledge of the UNIX file system and
 familiarity with the UNIX shell (``bash``).
