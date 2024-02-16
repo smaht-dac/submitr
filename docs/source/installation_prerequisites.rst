@@ -3,8 +3,8 @@ Installation Prerequisites
 ==========================
 
 The SMaHT submission tool, ``smaht-submitr``,
-is a Python based command-line tool and requires Python (version `3.8, 3.9, 3.10, or 3.11`).
-These instructions, for users who are `not` very familiar with the command-line or Python,
+is a `Python <https://en.wikipedia.org/wiki/Python_(programming_language)>`_ based command-line tool and requires Python (version `3.8, 3.9, 3.10, or 3.11`).
+These instructions, for users who are `not` very familiar with the `command-line <https://en.wikipedia.org/wiki/Command-line_interface>`_ or Python,
 will help you install Python and setup your local environment for using ``smaht-submitr``.
 More experienced users can go directly to the `Installation <installation.html>`_ section.
 
