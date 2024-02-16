@@ -27,6 +27,9 @@ If you experience issues with this software, please do not hesitate to report th
 `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
 Please include as much relevant information as you can to help us assist in the troubleshooting process, including:
 
+What to Send Us
+~~~~~~~~~~~~~~~
+
 * Your operating system version. For Mac OS X you can get this by clicking **About this Mac** in the Apple logo dropdown in the top left corner of your screen.
 * The full text of any error message you are seeing with all associated output.
 * The output of ``uname -a``
