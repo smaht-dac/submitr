@@ -12,8 +12,8 @@ Information on obtaining a `SMaHT Portal <https://data.smaht.org/>`_ account.
 * Once your account request is processed, you will then be able to login to `SMaHT Portal <https://data.smaht.org/>`_ using the **Sign in with Google** option, using your chosen Google or Google-linked email address, and account password.
 
 
-Using an Non-Google Email Address
-----------------------------------
+Linking a Non-Google Email to Google
+------------------------------------
 
 SMaHT Portal uses the `OAuth <https://en.wikipedia.org/wiki/OAuth>`_ authentication system to support login.
 This requires that you login to SMaHT Portal with a **Google** account.
