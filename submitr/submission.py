@@ -576,12 +576,14 @@ def submit_any_ingestion(ingestion_filename, *,
         show(f"Portal credentials do not seem to work: {portal.keys_file} ({env})")
         exit(1)
 
+    exit_immediately_on_errors = False
     user_record = _get_user_record(portal.server, auth=portal.key_pair)
     if not _is_admin_user(user_record, noadmin=noadmin) and not (validate_only or validate_first or
                                                                  validate_local or validate_local_only):
         # If user is not an admin, and no other validate related options are
         # specified, then default to server-side and client-side validation,
         # i.e. act as-if the --validate option was specified.
+        exit_immediately_on_errors = True
         validate_local = True
         validate_first = True
 
@@ -609,7 +611,8 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if validate_local or validate_local_only:
         _validate_locally(ingestion_filename, portal, validate_local_only=validate_local_only, autoadd=autoadd,
-                          upload_folder=upload_folder, subfolders=subfolders, verbose=verbose)
+                          upload_folder=upload_folder, subfolders=subfolders,
+                          exit_immediately_on_errors=exit_immediately_on_errors, verbose=verbose)
 
     validation_qualifier = " (for validation only)" if validate_only else ""
 
@@ -1423,7 +1426,7 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
 
 def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional[dict] = None,
                       validate_local_only: bool = False, upload_folder: Optional[str] = None,
-                      subfolders: bool = False, verbose: bool = False) -> int:
+                      subfolders: bool = False, exit_immediately_on_errors: bool = False, verbose: bool = False) -> int:
     errors_exist = False
     if validate_local_only:
         PRINT(f"\n> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
@@ -1474,6 +1477,9 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     PRINT(f"  - {file.get('type')}: {file.get('file')} -> Not found!")
     _print_structured_data_status(portal, structured_data)
     PRINT()
+    if exit_immediately_on_errors:
+        PRINT("There are some errors outlined above. Please fix them before trying again. No action taken.")
+        exit(1)
     if errors_exist:
         if not yes_or_no("There are some errors outlined above; do you want to continue?"):
             exit(1)
