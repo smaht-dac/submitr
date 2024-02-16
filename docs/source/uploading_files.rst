@@ -46,8 +46,8 @@ scheduler or in the background, you can pass the ``--no_query`` or ``-nq`` argum
 
     submit-metadata-bundle your_metadata_file.xlsx --no_query
 
-Other File Upload Considerations
-================================
+Other Upload Considerations
+===========================
 
 Since ``smaht-submitr`` will only upload files found on the local computer running the package,
 if your files are not stored locally and are instead in Cloud storage or a local cluster,
