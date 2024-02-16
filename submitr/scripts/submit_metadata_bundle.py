@@ -262,6 +262,9 @@ ADVANCED OPTIONS:
 ===
 --help-raw
   Prints the raw version of this help message.
+--noadmin
+  Act like you are not an admin user even you are.
+  For testing/troubleshooting only.
 --patch-only
   Perform ONLY updates (PATCHes) for submitted data.
 --post-only
