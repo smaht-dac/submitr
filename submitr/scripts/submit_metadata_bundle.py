@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 from typing import Optional
+import pkg_resources
 
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
@@ -20,7 +21,7 @@ def main(simulated_args_for_testing=None):
         epilog=EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument('bundle_filename', help='Local Excel filename that comprises the data bundle.')
+    parser.add_argument('bundle_filename', nargs="?", help='Local Excel filename that comprises the data bundle.')
     parser.add_argument('--server', '-s',
                         help="HTTP(S) address of Portal server (e.g. in ~/.smaht-keys.json).")
     parser.add_argument('--env', '-e',
@@ -63,7 +64,18 @@ def main(simulated_args_for_testing=None):
                         help="For testing only; assume not admin user.", default=False)
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
+    parser.add_argument('--version', action="store_true", help="Print version.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
+
+    if args.version:
+        if version := _get_package_version():
+            print(f"smaht-submitr: {version}")
+        else:
+            print("smaht-submitr: No version available.")
+        exit(0)
+    if not args.bundle_filename:
+        print("Missing submission file name.")
+        exit(2)
 
     if args.directory:
         args.upload_folder = args.directory
@@ -175,6 +187,13 @@ def _setup_validate_related_options(args: argparse.Namespace):
         args.validate_first = True
     # Only need this --validate option to set other more specific validate related options.
     delattr(args, "validate")
+
+
+def _get_package_version(package_name: str = "smaht-submitr") -> Optional[str]:
+    try:
+        return pkg_resources.get_distribution(package_name).version
+    except Exception:
+        return None
 
 
 if __name__ == '__main__':
