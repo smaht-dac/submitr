@@ -26,6 +26,9 @@ Reporting Issues
 If you experience issues with this software, please do not hesitate to report them to
 `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
 
+.. tip::
+   To quickly see what version of ``smaht-submitr`` you have: ``submit-metadata-bundle --version``
+
 What to Send Us
 ~~~~~~~~~~~~~~~
 Please include as much relevant information as you can to help us assist in the troubleshooting process, including:
