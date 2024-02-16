@@ -18,7 +18,7 @@ Using an Non-Google Email Address
 SMaHT Portal uses the `OAuth <https://en.wikipedia.org/wiki/OAuth>`_ authentication system to support login.
 This requires that you login to SMaHT Portal with a **Google** account.
 
-But how do you do this if you prefer to use a non-Google (e.g. institutional) email address?
+But how do you do this if you prefer to use a **non-Google** (e.g. institutional) email address?
 In this case you will need to associate (`link`) your non-Google email address with a Google account.
 To do this go to this page and following the instructions:
 
