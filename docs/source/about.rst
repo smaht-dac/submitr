@@ -30,7 +30,7 @@ What to Send Us
 ~~~~~~~~~~~~~~~
 Please include as much relevant information as you can to help us assist in the troubleshooting process, including:
 
-* Your operating system version. For Mac OS X you can get this by clicking **About this Mac** in the Apple logo dropdown in the top left corner of your screen.
+* Your operating system version. For Mac OS X you can get this by clicking **About this Mac** in the Apple logo dropdown at the top left corner of your screen.
 * The full text of any error message you are seeing with all associated output.
 * The output of ``uname -a``
 * The output of ``python --version``
