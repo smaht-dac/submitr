@@ -1477,7 +1477,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     PRINT(f"  - {file.get('type')}: {file.get('file')} -> Not found!")
     _print_structured_data_status(portal, structured_data)
     PRINT()
-    if exit_immediately_on_errors:
+    if exit_immediately_on_errors and errors_exist:
         PRINT("There are some errors outlined above. Please fix them before trying again. No action taken.")
         exit(1)
     if errors_exist:
