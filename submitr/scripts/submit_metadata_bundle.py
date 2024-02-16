@@ -213,19 +213,12 @@ Tool to submit (and validate) submission metadata and files to SMaHT Portal.
 See: {_HELP_URL}
 ===
 USAGE: submit-metadata-bundle METADATA-FILE OPTIONS
-
+-----
 METADATA-FILE: This is the path to your metatdata file.
 OPTIONS: Described below ...
 ===
---help
-  Print this documentation.
---help-advanced
-  Print more advanced documentation.
---help-page
-  Opens your browser to Web based documentation.
---env environment
-  To specify your environment name,
-  from your ~/.smaht-keys.json file.
+--env ENVIRONMENT
+  To specify your environment name, from your ~/.smaht-keys.json file.
 --validate
   To validate metadata before submitting.
 --consortium CONSORTIUM
@@ -242,6 +235,12 @@ OPTIONS: Described below ...
   To specify an alternate file to ~/.smaht-keys.json.
 --verbose
   For more verbose output.
+--help
+  Print this documentation.
+--help-advanced
+  Print more advanced documentation.
+--help-page
+  Opens your browser to Web based documentation.
 ===
 """
 
@@ -277,11 +276,11 @@ class _SubmitMetadataBundleArgumentParser(argparse.ArgumentParser):
         else:
             help_message = _HELP_MESSAGE
         lines = help_message.split("\n")
-        length = max(len(line) for line in lines)
         if lines[0] == "":
             lines = lines[1:]
         if lines[len(lines) - 1] == "":
             lines = lines[:len(lines) - 1]
+        length = max(len(line) for line in lines)
         for line in lines:
             if line == "===":
                 print(f"+{'-' * (length - len(line) + 5)}+")
