@@ -14,6 +14,10 @@ Overview
 
 **smaht-submitr**: A metadata and file submission tool for `SMaHT Portal <https://data.smaht.org/>`_.
 
+.. note::
+   You need an SMaHT account to use this software. For information an obtaining an account please see:
+   `SMaHT Portal Account Creation <account_creation.html>`_
+
 .. .. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
 ..     :target: https://github.com/smaht-dac/submitr/actions
 ..     :alt: Build Status
