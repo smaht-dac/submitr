@@ -74,12 +74,13 @@ for uploading many files or larger files.
 
 Mounting AWS S3 Files 
 ~~~~~~~~~~~~~~~~~~~~~
-If your files are stored on AWS S3, tools such as
+If your files are stored on `AWS S3 <https://en.wikipedia.org/wiki/Amazon_S3>`_, tools such as
 `s3fs <https://github.com/s3fs-fuse/s3fs-fuse>`_
 or `goofys <https://github.com/kahing/goofys>`_
 facilitate mounting of S3 buckets as local file
 systems that can be readily accessed by ``smaht-submitr``.
-Similar tools exist for Google Cloud Storage and Azure Storage.
+Similar tools exist for `Google Cloud Storage <https://en.wikipedia.org/wiki/Google_Cloud_Storage>`_
+and `Microsoft Azure <https://en.wikipedia.org/wiki/Microsoft_Azure>`_.
 
 .. caution::
     If you are working on a `Mac M1 <https://en.wikipedia.org/wiki/Apple_M1>`_ or `M2 <https://en.wikipedia.org/wiki/Apple_M2>`_ system (i.e. using the `ARM <https://en.wikipedia.org/wiki/ARM_architecture_family>`_-based chip), you may encounter problems
