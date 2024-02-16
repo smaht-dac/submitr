@@ -48,20 +48,20 @@ Virtual Environment Setup
 =========================
 
 This step is **optional** though recommended.
-See the `Installation Prerequisites <installation_prerequisites.html>`_ section for
+See the `Installation Prerequisites <installation_prerequisites.html#installing-pyenv>`_ section for
 installing the ``pyenv`` command required to do this.
+
 Assuming you have ``pyenv`` installed (per that section),
-to create a virtual Python environment with version 3.11.8 of Python, do::
+to install a Python version (3.11.8),
+create a virtual Python environment using this Python version,
+and active this virtual environment, do::
 
     pyenv install 3.11.8
     pyenv virtualenv 3.11.8 smaht-submitr-3.11
-
-That name ``smaht-submitr-3.11`` can actually be any name that you choose.
-To activate this virtual environment, do::
-
     pyenv activate smaht-submitr-3.11
 
-Now you can proceed to actually install ``smaht-submitr``, next.
+That name ``smaht-submitr-3.11`` can be any name that you choose.
+Now you can proceed to the actual installation of ``smaht-submitr``, next.
 
 Actual Installation
 ===================
