@@ -277,7 +277,7 @@ class _SubmitMetadataBundleArgumentParser(argparse.ArgumentParser):
     def print_help(self):
         if "--help-raw" in sys.argv:
             super().print_help()
-            return 
+            return
         if "--help-web" in sys.argv:
             webbrowser.open_new_tab(_HELP_URL)
             return
