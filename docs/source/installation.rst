@@ -12,17 +12,17 @@ of the ``smaht-submitr`` installation, which is simply::
 
     pip install smaht-submitr
 
-Less experienced users may want to start with the following `prerequisites <installation_prerequisites.html>`_,
+Less experienced users may want to start with these `prerequisites <installation_prerequisites.html>`_,
 which will introduce some basics for installing and working
-with Python (including dependencies) on the terminal command-line:
+with Python on the terminal command-line:
 
 .. toctree::
   :maxdepth: 1
 
   installation_prerequisites
 
-You can then proceed with the rest of these instructions
-to setup a virtual Python environment and install ``smaht-submitr``.
+The rest of these instructions will guide you through the setup of a (optional)
+virtual Python environment, and then the actual installation ``smaht-submitr``.
 
 .. tip::
    You need an SMaHT account to use this software. For information an obtaining an account please see:
