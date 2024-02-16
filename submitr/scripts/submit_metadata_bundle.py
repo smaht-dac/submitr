@@ -206,17 +206,17 @@ def _get_package_version(package_name: str = "smaht-submitr") -> Optional[str]:
 
 
 _HELP_MESSAGE = f"""
-***
+===
 submit-metadata-bundle
-***
+===
 Tool to submit (and validate) submission metadata and files to SMaHT Portal.
 See: {_HELP_URL}
-***
+===
 USAGE: submit-metadata-bundle METADATA-FILE OPTIONS
 
 METADATA-FILE: This is the path to your metatdata file.
 OPTIONS: Described below ...
-***
+===
 --help
   Print this documentation.
 --help-advanced
@@ -242,12 +242,12 @@ OPTIONS: Described below ...
   To specify an alternate file to ~/.smaht-keys.json.
 --verbose
   For more verbose output.
-***
+===
 """
 
 _ADVANCED_HELP_MESSAGE = _HELP_MESSAGE.strip() + f"""
 ADVANCED OPTIONS: Described below ...
-***
+===
 --patch-only
   TODO
 --post-only
@@ -260,7 +260,7 @@ ADVANCED OPTIONS: Described below ...
   TODO
 --validate-only
   TODO
-***
+===
 """
 
 
@@ -283,7 +283,7 @@ class _SubmitMetadataBundleArgumentParser(argparse.ArgumentParser):
         if lines[len(lines) - 1] == "":
             lines = lines[:len(lines) - 1]
         for line in lines:
-            if line == "***":
+            if line == "===":
                 print(f"+{'-' * (length - len(line) + 5)}+")
             else:
                 print(f"| {line}{' ' * (length - len(line))} |")
