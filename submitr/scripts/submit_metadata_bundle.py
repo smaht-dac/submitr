@@ -252,17 +252,17 @@ _ADVANCED_HELP_MESSAGE = _HELP_MESSAGE.strip() + f"""
 ADVANCED OPTIONS:
 ===
 --patch-only
-  TODO
+  Perform ONLY updates (PATCHes) for submitted data.
 --post-only
-  TODO
+  Perform ONLY creates (POSTs) for submitted data.
 --validate-local
-  TODO
+  Performs on client-side (local) validation before submitting.
 --validate-local-only
-  TODO
+  Performs ONLY client-side (local) validation WITHOUT submitting.
 --validate-first
-  TODO
+  Performs only server-side (remote) validation before submitting.
 --validate-only
-  TODO
+  Performs ONLY server-side (remote) validation WITHOUT submitting.
 --help-raw
   Prints the raw version of this help message.
 ===
