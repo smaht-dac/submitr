@@ -59,7 +59,8 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--submission_protocol', '--submission-protocol', '-sp',
                         choices=SUBMISSION_PROTOCOLS, default=DEFAULT_SUBMISSION_PROTOCOL,
                         help=f"the submission protocol (default {DEFAULT_SUBMISSION_PROTOCOL!r})")
-    parser.add_argument('--noadmin', action="store_true", help="For testing only; assume not admin user.", default=False)
+    parser.add_argument('--noadmin', action="store_true",
+                        help="For testing only; assume not admin user.", default=False)
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
