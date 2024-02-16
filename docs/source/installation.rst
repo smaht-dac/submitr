@@ -25,7 +25,7 @@ The rest of these instructions will guide you through the setup of a (optional)
 virtual Python environment, and then the actual installation of ``smaht-submitr``.
 
 .. tip::
-   You need an SMaHT account to use this software. For information an obtaining an account please see:
+   You need a SMaHT account to use this software. For information an obtaining an account please see:
    `SMaHT Portal Account Creation <account_creation.html>`_
 
 System Requirements

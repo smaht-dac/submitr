@@ -17,7 +17,7 @@ More experienced users can go directly to the `Installation <installation.html>`
     For **Windows** users, very little testing has been done; not recommended; but more experienced users should be able to work through it.
 
 .. tip::
-   You need an SMaHT account to use this software. For information an obtaining an account please see:
+   You need a SMaHT account to use this software. For information an obtaining an account please see:
    `SMaHT Portal Account Creation <account_creation.html>`_
 
 Each section in this document is meant to sequentially guide you through the initial setup
