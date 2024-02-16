@@ -225,7 +225,7 @@ OPTIONS:
   To specify your environment name, from your ~/.smaht-keys.json file.
 --validate
   To validate metadata before submitting.
-  This is the default behavior for most (non-admin) users.
+  This is the DEFAULT behavior for most (non-admin) users.
 --consortium CONSORTIUM
   To specify your consortium.
   The default is to use the consortium associated with your account.
