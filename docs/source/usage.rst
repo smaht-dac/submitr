@@ -32,7 +32,7 @@ Here is screenshot of a simple example Excel spreadsheet:
     :target: _static/images/excel_screenshot.png
     :alt: Excel Spreadsheet Screenshot
 
-Notice that the first row comprises the property/column `header`, defining properties named ``submitted_id``, ``submission_centers``, ``filename``, and so on. (N.B. Though ``submission_center`` is shown in the above screenshot,
+Notice that the first row comprises the property/column `header`, defining properties named ``submitted_id``, ``submission_centers``, ``filename``, and so on. (N.B. Though ``submission_centers`` is shown in the above screenshot,
 that particular field is not actually required, as it is automatically added by the ``smaht-submitr`` tool).
 
 And also notice the multiple tabs at the bottom for the different sheets within the spreadsheet,
@@ -119,6 +119,13 @@ Property Deletions
 A column value within a (non-header) data row may be empty, but this only means that the value for the corresponding property will be ignored
 when creating or updating the associated object. In order to actually `delete` a property value from an object,
 a special value - ``*delete*`` - should be used as the the property value.
+
+Implicit Properties
+-------------------
+
+Some Portal objects require (or support) the specific ``submission_centers`` property.
+If you do not specify this though, ``smaht-submitr`` will `automatically` supply this particular property;
+it will `implicitly` be set the submission center to which you belong. 
 
 Submission
 ==========
