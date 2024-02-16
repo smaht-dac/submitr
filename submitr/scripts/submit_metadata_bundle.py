@@ -218,7 +218,8 @@ See: {_HELP_URL}
 USAGE: submit-metadata-bundle METADATA-FILE OPTIONS
 -----
 METADATA-FILE: This is the path to your metatdata file.
-OPTIONS: Described below ...
+===
+OPTIONS:
 ===
 --env ENVIRONMENT
   To specify your environment name, from your ~/.smaht-keys.json file.
@@ -248,7 +249,7 @@ OPTIONS: Described below ...
 """
 
 _ADVANCED_HELP_MESSAGE = _HELP_MESSAGE.strip() + f"""
-ADVANCED OPTIONS: Described below ...
+ADVANCED OPTIONS:
 ===
 --patch-only
   TODO
