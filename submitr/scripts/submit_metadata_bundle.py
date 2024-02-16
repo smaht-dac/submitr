@@ -236,8 +236,8 @@ OPTIONS:
   To specify the directory containing files to upload;
   in addition to the directory containing the submitted metadata file.
 --sub-directories
-  To specify that sub-directoreis of the upload file(s)
-  directory should be searched, recursively.
+  To specify that any sub-directories of the upload
+  file(s) directory should be searched, recursively.
 --keys KEYS-FILE
   To specify an alternate credentials/keys file to ~/.smaht-keys.json.
 --verbose
