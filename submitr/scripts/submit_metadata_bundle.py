@@ -48,6 +48,8 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--ingestion_type', '--ingestion-type', '-t',
                         help=f"The ingestion type (default: {DEFAULT_INGESTION_TYPE}).",
                         default=DEFAULT_INGESTION_TYPE)
+    parser.add_argument('--yes', action="store_true",
+                        help="Suppress (yes/no) requests for user input.", default=False)
     parser.add_argument('--no_query', '--no-query', '-nq', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
     parser.add_argument('--sub-directories', '-sd', action="store_true",
@@ -93,6 +95,9 @@ def main(simulated_args_for_testing=None):
         args.upload_folder = args.directory
     if args.sub_directories:
         args.subfolders = True
+
+    if args.yes:
+        args.no_query = True
 
     _setup_validate_related_options(args)
 
@@ -255,6 +260,8 @@ OPTIONS:
 _ADVANCED_HELP_MESSAGE = _HELP_MESSAGE.strip() + f"""
 ADVANCED OPTIONS:
 ===
+--help-raw
+  Prints the raw version of this help message.
 --patch-only
   Perform ONLY updates (PATCHes) for submitted data.
 --post-only
@@ -267,8 +274,8 @@ ADVANCED OPTIONS:
   Performs only server-side (remote) validation before submitting.
 --validate-only
   Performs ONLY server-side (remote) validation WITHOUT submitting.
---help-raw
-  Prints the raw version of this help message.
+--yes
+  Automatically answer 'yes' to any confirmation questions.
 ===
 """
 
