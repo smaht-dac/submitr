@@ -51,7 +51,7 @@ This step is **optional** though recommended.
 See the `Installation Prerequisites <installation_prerequisites.html#installing-pyenv>`_ section for
 installing the ``pyenv`` command required to do this.
 
-Assuming you have ``pyenv`` installed (per that section),
+Assuming you have ``pyenv`` installed (per that `section <installation_prerequisites.html#installing-pyenv>`_),
 to install a Python version (3.11.8),
 create a virtual Python environment using this Python version,
 and active this virtual environment, do::
