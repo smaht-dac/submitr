@@ -79,7 +79,7 @@ directories and files.
 * ``cd``: This will change your current directory. The special identifier ``..`` indicates the parent directory (above the current one).
 * ``cat some_file_name``: This will output the contents of a file to the terminal.
 * ``mkdir some_directory_name``: This will create a new directory.
-* ``touch some_file_name``: This will create a new empty file; **be careful** as if ``some_file_name`` already exists it will be truncated.
+* ``touch some_file_name``: This will create a new empty file; **be careful**, as if ``some_file_name`` already exists it will be truncated.
 
 Installing Homebrew
 -------------------
