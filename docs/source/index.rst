@@ -76,6 +76,7 @@ Table of Contents
 
   self
   installation
+  account_creation
   credentials
   usage
   uploading_files

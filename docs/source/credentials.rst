@@ -13,12 +13,12 @@ Please follow these steps below to get your access keys and configure your local
 
 .. note::
    For info on obtaining a SMaHT Portal account please see:
-   `SMaHT Portal Account Creation <https://data.smaht.org/docs/user-guide/account-creation>`_
+   `SMaHT Portal Account Creation <account_creation.html>`_
 
 Obtaining Access Keys
 ---------------------
 
-#. Log in to `SMaHT Portal <https://data.smaht.org>`_ with your username (email) and password.
+#. Log in to `SMaHT Portal <https://data.smaht.org>`_ with your username (email) and password. (See `Account Creation <account_creation.html>`_ for getting an account).
 #. Once logged in, go to your **Profile** page by clicking **Account** on the upper right corner of the page.
 #. On your profile page, click the green **Add Access Key** button, and copy the **Access Key ID** and **Secret Access Key** values from the pop-up page.
 #. Store these values the file ``~/.smaht-keys.json`` on your local machine. See the next section for details of this file and its format.

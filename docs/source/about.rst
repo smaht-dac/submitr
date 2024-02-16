@@ -8,7 +8,7 @@ at `Harvard Medical School <https://hms.harvard.edu/>`_.
 
 .. note::
    For info on obtaining a SMaHT Portal account please see:
-   `SMaHT Portal Account Creation <https://data.smaht.org/docs/user-guide/account-creation>`_
+   `SMaHT Portal Account Creation <account_creation.html>`_
 
 For further support, questions, feature requests, bug reports, or other information
 regarding the file submission process or SMaHT Portal,
