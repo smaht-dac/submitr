@@ -98,8 +98,8 @@ def _get_user_record(server, auth):
     return user_record
 
 
-def _is_admin_user(user: dict) -> bool:
-    return "admin" in user.get("groups", [])
+def _is_admin_user(user: dict, noadmin: bool = False) -> bool:
+    return False if noadmin else ("admin" in user.get("groups", []))
 
 
 def _get_defaulted_institution(institution, user_record):
@@ -533,6 +533,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          validate_local=False,
                          validate_local_only=False,
                          keys_file=None,
+                         noadmin=False,
                          verbose=False,
                          debug=False):
     """
@@ -576,8 +577,8 @@ def submit_any_ingestion(ingestion_filename, *,
         exit(1)
 
     user_record = _get_user_record(portal.server, auth=portal.key_pair)
-    if not _is_admin_user(user_record) and not (validate_only or validate_first or
-                                                validate_local or validate_local_only):
+    if not _is_admin_user(user_record, noadmin=noadmin) and not (validate_only or validate_first or
+                                                                 validate_local or validate_local_only):
         # If user is not an admin, and no other validate related options are
         # specified, then default to server-side and client-side validation,
         # i.e. act as-if the --validate option was specified.

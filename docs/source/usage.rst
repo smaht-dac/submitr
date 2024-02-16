@@ -118,7 +118,7 @@ Implicit Properties
 
 Some Portal objects require (or support) the specific ``submission_centers`` property.
 If you do not specify this though, ``smaht-submitr`` will `automatically` supply this particular property;
-it will `implicitly` be set the submission center to which you belong. 
+it will `implicitly` be set to the submission center to which you belong. 
 
 Property Deletions
 ------------------
