@@ -113,19 +113,19 @@ Boolean Type Properties
 For Portal object properties which are defined as `boolean` values, meaning either `true` or `false`,
 simply use these values, i.e. ``true`` or ``false`` (case-insensitive).
 
-Property Deletions
-------------------
-
-A column value within a (non-header) data row may be empty, but this only means that the value for the corresponding property will be ignored
-when creating or updating the associated object. In order to actually `delete` a property value from an object,
-a special value - ``*delete*`` - should be used as the the property value.
-
 Implicit Properties
 -------------------
 
 Some Portal objects require (or support) the specific ``submission_centers`` property.
 If you do not specify this though, ``smaht-submitr`` will `automatically` supply this particular property;
 it will `implicitly` be set the submission center to which you belong. 
+
+Property Deletions
+------------------
+
+A column value within a (non-header) data row may be empty, but this only means that the value for the corresponding property will be ignored
+when creating or updating the associated object. In order to actually `delete` a property value from an object,
+a special value - ``*delete*`` - should be used as the the property value.
 
 Submission
 ==========
