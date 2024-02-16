@@ -36,7 +36,7 @@ Please include as much relevant information as you can to help us assist in the 
 * The output of ``python --version``
 * The output of ``pip freeze``
 
-FYI You can capture the output of multiple commands into single file on the command-line to like::
+FYI You can capture the output of multiple commands into single file on the command-line like::
 
     uname -a >> your_error_info.txt
     python --version >> your_error_info.txt
