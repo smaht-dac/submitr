@@ -7,7 +7,7 @@ were developed by the `Department of Biomedical Informatics <https://dbmi.hms.ha
 at `Harvard Medical School <https://hms.harvard.edu/>`_.
 
 .. note::
-   For info on obtaining a SMaHT Portal account please see:
+   You need an SMaHT account to use this software. For information an obtaining an account please see:
    `SMaHT Portal Account Creation <account_creation.html>`_
 
 For further support, questions, feature requests, bug reports, or other information

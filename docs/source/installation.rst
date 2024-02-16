@@ -24,6 +24,10 @@ with Python (including dependencies) on the terminal command-line:
 You can then proceed with the rest of these instructions
 to setup a virtual Python environment and install ``smaht-submitr``.
 
+.. tip::
+   You need an SMaHT account to use this software. For information an obtaining an account please see:
+   `SMaHT Portal Account Creation <account_creation.html>`_
+
 System Requirements
 ===================
 

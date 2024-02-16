@@ -12,7 +12,7 @@ These SMaHT Portal credentials must stored in a specific format in a special fil
 Please follow these steps below to get your access keys and configure your local system for ``smath-submitr`` usage.
 
 .. note::
-   For info on obtaining a SMaHT Portal account please see:
+   You need an SMaHT account to use this software. For information an obtaining an account please see:
    `SMaHT Portal Account Creation <account_creation.html>`_
 
 Obtaining Access Keys

@@ -4,14 +4,19 @@ Installation Prerequisites
 
 The SMaHT submission tool, ``smaht-submitr``,
 is a Python based command-line tool and requires a Python installation (version `3.8, 3.9, 3.10, or 3.11`).
-These instructions, intended for users who are not very familiar with the command-line or Python,
+These instructions, intended for users who are `not` very familiar with the command-line or Python,
 will help you install Python and setup your local environment for using ``smaht-submitr``.
+More experienced users can go directly to the `Installation <installation.html>`_ section.
 
 .. note::
     These instructions are targeted specifically for **Mac OS X** users.
     For **Linux** users, these should be generally applicable (with some modifications);
     presumed to be a bit more advanced, such users should have little difficulty.
     For **Windows** users, very little testing has been done; not recommended; but more experienced users should be able to work through it.
+
+.. tip::
+   You need an SMaHT account to use this software. For information an obtaining an account please see:
+   `SMaHT Portal Account Creation <account_creation.html>`_
 
 Each section in this document is meant to sequentially guide you through the initial setup
 process for installing the tools necessary to effectively run ``smaht-submitr``.
