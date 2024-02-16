@@ -149,7 +149,8 @@ no local client-side validation will be done in this case.
 
 .. note::
     In `both` of these cases (``--validate-local-only`` and ``--validate-only``) the actual ingestion process itself
-    will `not` proceed; i.e. these `only` perform (either client-side or server-side) validation and output the results.
+    will `not` be performed; i.e. these `only` perform (either client-side or server-side) validation and output the results
+    (thus the word ``only`` in thise option names).
 
 Viewing Portal Objects
 ======================
