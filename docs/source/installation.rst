@@ -22,7 +22,7 @@ with Python on the terminal command-line:
   installation_prerequisites
 
 The rest of these instructions will guide you through the setup of a (optional)
-virtual Python environment, and then the actual installation ``smaht-submitr``.
+virtual Python environment, and then the actual installation of ``smaht-submitr``.
 
 .. tip::
    You need an SMaHT account to use this software. For information an obtaining an account please see:
