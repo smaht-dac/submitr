@@ -1,26 +1,26 @@
 import argparse
 import json
 import os
+import sys
+import webbrowser
 from typing import Optional
 import pkg_resources
-
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
 from ..base import DEFAULT_APP
 from ..submission import (
-    submit_any_ingestion, DEFAULT_INGESTION_TYPE, DEFAULT_SUBMISSION_PROTOCOL, SUBMISSION_PROTOCOLS
+    submit_any_ingestion,
+    DEFAULT_INGESTION_TYPE,
+    DEFAULT_SUBMISSION_PROTOCOL,
+    SUBMISSION_PROTOCOLS
 )
 
-
-EPILOG = __doc__
+_HELP_URL_VERSION = "dmichaels-20240205"
+_HELP_URL = f"https://submitr.readthedocs.io/en/{_HELP_URL_VERSION}/usage.html#submission"
 
 
 def main(simulated_args_for_testing=None):
-    parser = argparse.ArgumentParser(  # noqa - PyCharm wrongly thinks the formatter_class is invalid
-        description="Submits a data bundle",
-        epilog=EPILOG,
-        formatter_class=argparse.RawDescriptionHelpFormatter
-    )
+    parser = _SubmitMetadataBundleArgumentParser()
     parser.add_argument('bundle_filename', nargs="?", help='Local Excel filename that comprises the data bundle.')
     parser.add_argument('--server', '-s',
                         help="HTTP(S) address of Portal server (e.g. in ~/.smaht-keys.json).")
@@ -50,10 +50,10 @@ def main(simulated_args_for_testing=None):
                         default=DEFAULT_INGESTION_TYPE)
     parser.add_argument('--no_query', '--no-query', '-nq', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
-    parser.add_argument('--subdirectories', '-sd', action="store_true",
+    parser.add_argument('--sub-directories', '-sd', action="store_true",
                         help="Search sub-directories of folder for upload files.", default=False)
     parser.add_argument('--subfolders', '-sf', action="store_true",
-                        help="Synonym for --subdirectories", default=False)
+                        help="Synonym for --sub-directories", default=False)
     parser.add_argument('--app',
                         help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")
@@ -65,6 +65,9 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--version', action="store_true", help="Print version.", default=False)
+    parser.add_argument('--help-advanced', action="store_true", default=False)
+    parser.add_argument('--help-web', action="store_true", default=False)
+    parser.add_argument('--help-raw', action="store_true", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     if args.version:
@@ -73,13 +76,19 @@ def main(simulated_args_for_testing=None):
         else:
             print("smaht-submitr: No version available.")
         exit(0)
+    elif args.help_advanced or args.help_web or args.help_raw:
+        parser.print_help()
+        exit(0)
     if not args.bundle_filename:
         print("Missing submission file name.")
         exit(2)
+    if args.bundle_filename == "help":
+        webbrowser.open_new_tab(_HELP_URL)
+        exit(0)
 
     if args.directory:
         args.upload_folder = args.directory
-    if args.subdirectories:
+    if args.sub_directories:
         args.subfolders = True
 
     _setup_validate_related_options(args)
@@ -142,7 +151,7 @@ def _sanity_check_submitted_file(file_name: str) -> bool:
         return base_file_name.endswith("-inserts") or base_file_name.endswith("_inserts")
 
     if not os.path.exists(file_name):
-        PRINT(f"File does not exist: {file_name}")
+        PRINT(f"Submission file does not exist: {file_name}")
         return False
 
     if file_name.endswith(".json"):
@@ -194,6 +203,90 @@ def _get_package_version(package_name: str = "smaht-submitr") -> Optional[str]:
         return pkg_resources.get_distribution(package_name).version
     except Exception:
         return None
+
+
+_HELP_MESSAGE = f"""
+***
+submit-metadata-bundle
+***
+Tool to submit (and validate) submission metadata and files to SMaHT Portal.
+See: {_HELP_URL}
+***
+USAGE: submit-metadata-bundle METADATA-FILE OPTIONS
+
+METADATA-FILE: This is the path to your metatdata file.
+OPTIONS: Described below ...
+***
+--help
+  Print this documentation.
+--help-advanced
+  Print more advanced documentation.
+--help-page
+  Opens your browser to Web based documentation.
+--env environment
+  To specify your environment name,
+  from your ~/.smaht-keys.json file.
+--validate
+  To validate metadata before submitting.
+--consortium CONSORTIUM
+  To specify your consortium.
+--submission-center SUBMISSION-CENTER
+  To specify your submission center.
+  This is default behavior for most (non-admin) users.
+--directory DIRECTORY
+  To specify the directory containing files to upload.
+--sub-directories
+  To specify that sub-directoreis of the upload file(s)
+  directory should be searched, recursively.
+--keys KEYS-FILE
+  To specify an alternate file to ~/.smaht-keys.json.
+--verbose
+  For more verbose output.
+***
+"""
+
+_ADVANCED_HELP_MESSAGE = _HELP_MESSAGE.strip() + f"""
+ADVANCED OPTIONS: Described below ...
+***
+--patch-only
+  TODO
+--post-only
+  TODO
+--validate-local
+  TODO
+--validate-local-only
+  TODO
+--validate-first
+  TODO
+--validate-only
+  TODO
+***
+"""
+
+
+class _SubmitMetadataBundleArgumentParser(argparse.ArgumentParser):
+    def print_help(self):
+        if "--help-raw" in sys.argv:
+            super().print_help()
+            return 
+        if "--help-web" in sys.argv:
+            webbrowser.open_new_tab(_HELP_URL)
+            return
+        if "--help-advanced" in sys.argv:
+            help_message = _ADVANCED_HELP_MESSAGE
+        else:
+            help_message = _HELP_MESSAGE
+        lines = help_message.split("\n")
+        length = max(len(line) for line in lines)
+        if lines[0] == "":
+            lines = lines[1:]
+        if lines[len(lines) - 1] == "":
+            lines = lines[:len(lines) - 1]
+        for line in lines:
+            if line == "***":
+                print(f"+{'-' * (length - len(line) + 5)}+")
+            else:
+                print(f"| {line}{' ' * (length - len(line))} |")
 
 
 if __name__ == '__main__':
