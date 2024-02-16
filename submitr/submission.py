@@ -594,8 +594,20 @@ def submit_any_ingestion(ingestion_filename, *,
     _do_app_arg_defaulting(app_args, user_record)
     PRINT(f"Submission file to ingest: {ingestion_filename}")
 
+    autoadd = None
+    if app_args and isinstance(submission_centers := app_args.get("submission_centers"), list):
+        if len(submission_centers) == 1:
+            def extract_identifying_value_from_path(path: str) -> str:
+                if path.endswith("/"):
+                    path = path[:-1]
+                parts = path.split("/")
+                return parts[-1] if parts else ""
+            autoadd = {"submission_centers": [extract_identifying_value_from_path(submission_centers[0])]}
+        elif len(submission_centers) > 1:
+            PRINT(f"Multiple submission centers: {', '.join(submission_centers)}")
+
     if validate_local or validate_local_only:
-        _validate_locally(ingestion_filename, portal, validate_local_only,
+        _validate_locally(ingestion_filename, portal, validate_local_only=validate_local_only, autoadd=autoadd,
                           upload_folder=upload_folder, subfolders=subfolders, verbose=verbose)
 
     validation_qualifier = " (for validation only)" if validate_only else ""
@@ -609,18 +621,6 @@ def submit_any_ingestion(ingestion_filename, *,
                          % (ingestion_filename, maybe_ingestion_type, portal.server, validation_qualifier)):
             show("Aborting submission.")
             exit(1)
-
-    autoadd = None
-    if app_args and isinstance(submission_centers := app_args.get("submission_centers"), list):
-        if len(submission_centers) == 1:
-            def extract_identifying_value_from_path(path: str) -> str:
-                if path.endswith("/"):
-                    path = path[:-1]
-                parts = path.split("/")
-                return parts[-1] if parts else ""
-            autoadd = {"submission_centers": [extract_identifying_value_from_path(submission_centers[0])]}
-        elif len(submission_centers) > 1:
-            PRINT(f"Multiple submission centers: {', '.join(submission_centers)}")
 
     if not os.path.exists(ingestion_filename):
         raise ValueError("The file '%s' does not exist." % ingestion_filename)
@@ -1420,14 +1420,14 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
         return (results_location, None)
 
 
-def _validate_locally(ingestion_filename: str, portal: Portal,
+def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional[dict] = None,
                       validate_local_only: bool = False, upload_folder: Optional[str] = None,
                       subfolders: bool = False, verbose: bool = False) -> int:
     errors_exist = False
     if validate_local_only:
         PRINT(f"\n> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
               f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
-    structured_data = StructuredDataSet.load(ingestion_filename, portal)
+    structured_data = StructuredDataSet.load(ingestion_filename, portal, autoadd=autoadd)
     if verbose:
         PRINT(f"\n> Parsed JSON:")
         _print_json_with_prefix(structured_data.data, "  ")
@@ -1515,7 +1515,7 @@ def _pre_validate_data(structured_data: StructuredDataSet, portal: Portal) -> Li
                         # No identifying properties for this object.
                         pre_validation_errors.append(f"ERROR: No identifying properties for type: {schema_name}")
             if required_properties := schema_data.get(JsonSchemaConstants.REQUIRED):
-                required_properties = set(required_properties)
+                required_properties = set(required_properties) - set("submission_centers")
                 if data := structured_data.data[schema_name]:
                     data_properties = set(data[0].keys())
                     if (data_properties & required_properties) != required_properties:
