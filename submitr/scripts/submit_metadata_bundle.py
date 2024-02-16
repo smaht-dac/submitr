@@ -225,18 +225,21 @@ OPTIONS:
   To specify your environment name, from your ~/.smaht-keys.json file.
 --validate
   To validate metadata before submitting.
+  This is the default behavior for most (non-admin) users.
 --consortium CONSORTIUM
   To specify your consortium.
+  The default is to use the consortium associated with your account.
 --submission-center SUBMISSION-CENTER
   To specify your submission center.
-  This is default behavior for most (non-admin) users.
+  The default is to use the submission center associated with your account.
 --directory DIRECTORY
-  To specify the directory containing files to upload.
+  To specify the directory containing files to upload;
+  in addition to the directory containing the submitted metadata file.
 --sub-directories
   To specify that sub-directoreis of the upload file(s)
   directory should be searched, recursively.
 --keys KEYS-FILE
-  To specify an alternate file to ~/.smaht-keys.json.
+  To specify an alternate credentials/keys file to ~/.smaht-keys.json.
 --verbose
   For more verbose output.
 --help
@@ -244,7 +247,8 @@ OPTIONS:
 --help-advanced
   Print more advanced documentation.
 --help-web
-  Opens your browser to Web based documentation.
+  Opens your browser to the Web based documentation.
+  {_HELP_URL}
 ===
 """
 
