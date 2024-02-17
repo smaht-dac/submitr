@@ -578,15 +578,15 @@ def submit_any_ingestion(ingestion_filename, *,
 
     exit_immediately_on_errors = False
     user_record = _get_user_record(portal.server, auth=portal.key_pair)
-    if not _is_admin_user(user_record, noadmin=noadmin) and not (validate_remote_only or validate_remote or
-                                                                 validate_local or validate_local_only):
+    is_admin_user = _is_admin_user(user_record, noadmin=noadmin)
+    if not is_admin_user and not (validate_remote_only or validate_remote or validate_local or validate_local_only):
         # If user is not an admin, and no other validate related options are
         # specified, then default to server-side and client-side validation,
         # i.e. act as-if the --validate option was specified.
         validate_local = True
         validate_remote = True
         exit_immediately_on_errors = True
-    if validate_local_only or validate_remote_only:
+    if not is_admin_user or validate_local_only or validate_remote_only:
         exit_immediately_on_errors = True
 
     if debug:
@@ -616,16 +616,21 @@ def submit_any_ingestion(ingestion_filename, *,
                           upload_folder=upload_folder, subfolders=subfolders,
                           exit_immediately_on_errors=exit_immediately_on_errors, verbose=verbose)
 
-    validation_qualifier = " (for validation only)" if validate_remote_only else ""
-
     maybe_ingestion_type = ''
     if ingestion_type != DEFAULT_INGESTION_TYPE:
         maybe_ingestion_type = " (%s)" % ingestion_type
 
+    if validate_remote_only:
+        action_message = f"Continue with validation against {portal.server}?"
+    else:
+        action_message = f"Submit {ingestion_filename}{maybe_ingestion_type} to {portal.server}?"
+
     if not no_query:
-        if not yes_or_no("Submit %s%s to %s%s?"
-                         % (ingestion_filename, maybe_ingestion_type, portal.server, validation_qualifier)):
-            show("Aborting submission.")
+        if not yes_or_no(action_message):
+            if validate_remote_only:
+                show("Aborting validation.")
+            else:
+                show("Aborting submission.")
             exit(1)
 
     if not os.path.exists(ingestion_filename):
