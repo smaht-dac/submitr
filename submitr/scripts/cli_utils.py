@@ -50,7 +50,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
         if error:
             exit(2)
         if args.version:
-            if version := self.get_package_version():
+            if version := self.get_version():
                 print(f"{self._package or 'COMMAND'}: {version} | {self.COPYRIGHT}")
             else:
                 print(f"{self._package or 'COMMAND'}: No version available | {self.COPYRIGHT}")
@@ -83,12 +83,12 @@ class CustomArgumentParser(argparse.ArgumentParser):
                 print(f"+{'-' * (length - len(line) + 5)}+")
             elif line.endswith("[VERSION]"):
                 line = line.replace("[VERSION]", len("[VERSION]") * " ")
-                version = self.get_package_version()
+                version = self.get_version()
                 print(f"| {line}{' ' * (length - len(line) - len(version) - 1)} {version} |")
             else:
                 print(f"| {line}{' ' * (length - len(line))} |")
 
-    def get_package_version(self) -> str:
+    def get_version(self) -> str:
         try:
             return pkg_resources.get_distribution(self._package).version
         except Exception:
