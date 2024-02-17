@@ -144,13 +144,19 @@ there is a ``--validate-local-only`` option which will cause `only` local client
 no remote server-side validation will be done in this case.
 
 If you want to perform `only` the server-side validation (for whatever reason),
-there is a ``--validate-only`` option which will cause `only` remote server-side validation to be done;
+there is a ``--validate-remote-only`` option which will cause `only` remote server-side validation to be done;
 no local client-side validation will be done in this case.
 
+If you want to perform `only` the client-side validation **and** the server-side validation,
+there is a ``--validate-only`` option which will cause `only` both local client-side
+and remote server-side validation to be done. (The only real difference between this
+and option the plain ``--validate`` option, is that this option will `not` prompt
+you to continue the metadata ingestion process if there are no errors).
+
 .. note::
-    In `both` of these cases (``--validate-local-only`` and ``--validate-only``) the actual ingestion process itself
-    will `not` be performed; i.e. these `only` perform (either client-side or server-side) validation and output the results
-    (thus the word ``only`` in thise option names).
+    In all of these "**only**" cases,
+    the actual metadata ingestion process itself
+    will **not** be performed; i.e. these `only` perform (either client-side and/or server-side) validation and output the results.
 
 Viewing Portal Objects
 ======================
