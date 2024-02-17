@@ -175,23 +175,27 @@ To invoke the submission with validation checking, do::
 This is the recommended usage, and in fact, this (``--validate`` option) is actually the `default`
 behavior unless your user profile indicates that you are an `admin` user.
 
-To be more specific, the validation checks include the following:
+.. tip::
+    Using this ``--validate`` feature, if any errors are encountered, the actual ingestion of data
+    will `not` commence. (Even if no errors are encountered, you `will` be prompted as to 
+    whether or not you wish to proceed). In other words, this constitutes a sort of "**dry run**" facility.
+
+To be more specific about the the validation checks, they include the following:
 
 #. Ensures the basic integrity of the format of the metadata submission file.
 #. Validates that objects defined within the metadata submission file conform to the corresponding Portal schemas for these objects.
 #. Confirms that any objects referenced within the submission file can be resolved; i.e. either they already exist within the Portal, or are defined within the metadata submission file itself.
 #. Verifies that referenced files (to be subsequently uploaded) actually exist on the file system.
 
-.. tip::
-    Using this ``--validate`` feature, if any errors are encountered, the actual ingestion of data
-    will `not` commence. (Even if no errors are encountered, you `will` be prompted as to 
-    whether or not you wish to proceed). In other words, this constitutes a sort of "**dry run**" facility.
-
-Not generally necessary to know,
-but for more detailed information on the validation process
-see the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
-
 .. note::
+    If you get validation errors, and then you fix them, and then you try again,
+    it is `possible` that you will get new, additional errors. I.e. it is not necessarily
+    the case that `all` validation errors will be comprehensively reported all at once.
+    This is because there are two kinds of validation: local (client-side) and remote (server-side).
+    You can learn more about the details of ths validation process
+    in the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
+
+.. tip::
     Even in the absence of validation,
     if there are problems with specific objects within your submitted data,
     they will `not` be ingested into SMaHT Portal; i.e. no worries that corrupt data will sneak into the system.
