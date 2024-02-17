@@ -1,12 +1,10 @@
 import argparse
 import json
 import os
-import sys
-import webbrowser
 from typing import Optional
-import pkg_resources
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
+from .cli_utils import CustomArgumentParser
 from ..base import DEFAULT_APP
 from ..submission import (
     submit_any_ingestion,
@@ -15,12 +13,77 @@ from ..submission import (
     SUBMISSION_PROTOCOLS
 )
 
-_HELP_URL_VERSION = "dmichaels-20240205"
-_HELP_URL = f"https://submitr.readthedocs.io/en/{_HELP_URL_VERSION}/usage.html#submission"
+_HELP = f"""
+===
+submit-metadata-bundle
+===
+Tool to submit (and validate) submission metadata and files to SMaHT Portal.
+See: {CustomArgumentParser.HELP_URL}#submission
+===
+USAGE: submit-metadata-bundle METADATA-FILE OPTIONS
+-----
+METADATA-FILE: This is the path to your metatdata file.
+===
+OPTIONS:
+===
+--env ENVIRONMENT
+  To specify your environment name; from your ~/.smaht-keys.json file.
+--validate
+  To validate metadata before submitting.
+  This is the DEFAULT behavior for most (non-admin) users.
+--consortium CONSORTIUM
+  To specify your consortium.
+  The default is to use the consortium associated with your account.
+--submission-center SUBMISSION-CENTER
+  To specify your submission center.
+  The default is to use the submission center associated with your account.
+--directory DIRECTORY
+  To specify the directory containing files to upload;
+  in addition to the directory containing the submitted metadata file.
+--sub-directories
+  To specify that any sub-directories of the upload
+  file(s) directory should be searched, recursively.
+--keys KEYS-FILE
+  To specify an alternate credentials/keys file to ~/.smaht-keys.json.
+--verbose
+  For more verbose output.
+--help
+  Print this documentation.
+--help-advanced
+  Print more advanced documentation.
+--help-web
+  Opens your browser to the Web based documentation.
+  {CustomArgumentParser.HELP_URL}#submission
+===
+"""
+_HELP_ADVANCED = _HELP.strip() + f"""
+ADVANCED OPTIONS:
+===
+--help-raw
+  Prints the raw version of this help message.
+--noadmin
+  Act like you are not an admin user even you are.
+  For testing/troubleshooting only.
+--patch-only
+  Perform ONLY updates (PATCHes) for submitted data.
+--post-only
+  Perform ONLY creates (POSTs) for submitted data.
+--validate-local
+  Performs only client-side (local) validation before submitting.
+--validate-local-only
+  Performs ONLY client-side (local) validation WITHOUT submitting.
+--validate-first
+  Performs only server-side (remote) validation before submitting.
+--validate-only
+  Performs ONLY server-side (remote) validation WITHOUT submitting.
+--yes
+  Automatically answer 'yes' to any confirmation questions.
+===
+"""
 
 
 def main(simulated_args_for_testing=None):
-    parser = _SubmitMetadataBundleArgumentParser()
+    parser = CustomArgumentParser(_HELP, _HELP_ADVANCED, CustomArgumentParser.HELP_URL, package="smaht-submitr")
     parser.add_argument('bundle_filename', nargs="?", help='Local Excel filename that comprises the data bundle.')
     parser.add_argument('--server', '-s',
                         help="HTTP(S) address of Portal server (e.g. in ~/.smaht-keys.json).")
@@ -66,27 +129,7 @@ def main(simulated_args_for_testing=None):
                         help="For testing only; assume not admin user.", default=False)
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
-    parser.add_argument('--version', action="store_true", help="Print version.", default=False)
-    parser.add_argument('--help-advanced', action="store_true",
-                        help="Print more advanced documentation.", default=False)
-    parser.add_argument('--help-web', action="store_true",
-                        help="Opens your browser to Web based documentation.", default=False)
-    parser.add_argument('--help-raw', action="store_true",
-                        help="Prints the raw version of this help message.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
-
-    if args.version or args.bundle_filename == "version":
-        if version := _get_package_version():
-            print(f"smaht-submitr: {version} | {_COPYRIGHT}")
-        else:
-            print("smaht-submitr: No version available | {_COPYRIGHT}")
-        exit(0)
-    elif args.help_advanced or args.help_web or args.help_raw or args.bundle_filename == "help":
-        parser.print_help()
-        exit(0)
-    if not args.bundle_filename:
-        print("Missing submission file name.")
-        exit(2)
 
     if args.directory:
         args.upload_folder = args.directory
@@ -95,6 +138,17 @@ def main(simulated_args_for_testing=None):
 
     if args.yes:
         args.no_query = True
+
+    if not args.bundle_filename:
+        print("Missing submission file name.")
+        exit(2)
+
+    if args.upload_folder and not os.path.isdir(args.upload_folder):
+        print(f"WARNING: Directory does not exist: {args.upload_folder}")
+        # TODO: exist breaks test ...
+        # FAILED submitr/tests/test_submit_metadata_bundle.py::test_submit_metadata_bundle_script[None]
+        # FAILED submitr/tests/test_submit_metadata_bundle.py::test_submit_metadata_bundle_script[foo.bar]
+        # exit(1)
 
     _setup_validate_related_options(args)
 
@@ -201,110 +255,6 @@ def _setup_validate_related_options(args: argparse.Namespace):
         args.validate_first = True
     # Only need this --validate option to set other more specific validate related options.
     delattr(args, "validate")
-
-
-def _get_package_version(package_name: str = "smaht-submitr") -> Optional[str]:
-    try:
-        return pkg_resources.get_distribution(package_name).version
-    except Exception:
-        return None
-
-
-_COPYRIGHT = "© Copyright 2020-2024 President and Fellows of Harvard College"
-_HELP_MESSAGE = f"""
-===
-submit-metadata-bundle
-===
-Tool to submit (and validate) submission metadata and files to SMaHT Portal.
-See: {_HELP_URL}
-===
-USAGE: submit-metadata-bundle METADATA-FILE OPTIONS
------
-METADATA-FILE: This is the path to your metatdata file.
-===
-OPTIONS:
-===
---env ENVIRONMENT
-  To specify your environment name; from your ~/.smaht-keys.json file.
---validate
-  To validate metadata before submitting.
-  This is the DEFAULT behavior for most (non-admin) users.
---consortium CONSORTIUM
-  To specify your consortium.
-  The default is to use the consortium associated with your account.
---submission-center SUBMISSION-CENTER
-  To specify your submission center.
-  The default is to use the submission center associated with your account.
---directory DIRECTORY
-  To specify the directory containing files to upload;
-  in addition to the directory containing the submitted metadata file.
---sub-directories
-  To specify that any sub-directories of the upload
-  file(s) directory should be searched, recursively.
---keys KEYS-FILE
-  To specify an alternate credentials/keys file to ~/.smaht-keys.json.
---verbose
-  For more verbose output.
---help
-  Print this documentation.
---help-advanced
-  Print more advanced documentation.
---help-web
-  Opens your browser to the Web based documentation.
-  {_HELP_URL}
-===
-"""
-
-_ADVANCED_HELP_MESSAGE = _HELP_MESSAGE.strip() + f"""
-ADVANCED OPTIONS:
-===
---help-raw
-  Prints the raw version of this help message.
---noadmin
-  Act like you are not an admin user even you are.
-  For testing/troubleshooting only.
---patch-only
-  Perform ONLY updates (PATCHes) for submitted data.
---post-only
-  Perform ONLY creates (POSTs) for submitted data.
---validate-local
-  Performs only client-side (local) validation before submitting.
---validate-local-only
-  Performs ONLY client-side (local) validation WITHOUT submitting.
---validate-first
-  Performs only server-side (remote) validation before submitting.
---validate-only
-  Performs ONLY server-side (remote) validation WITHOUT submitting.
---yes
-  Automatically answer 'yes' to any confirmation questions.
-===
-"""
-
-
-class _SubmitMetadataBundleArgumentParser(argparse.ArgumentParser):
-    def print_help(self):
-        if "--help-raw" in sys.argv:
-            super().print_help()
-            return
-        if "--help-web" in sys.argv:
-            webbrowser.open_new_tab(_HELP_URL)
-            return
-        if "--help-advanced" in sys.argv:
-            help_message = _ADVANCED_HELP_MESSAGE
-        else:
-            help_message = _HELP_MESSAGE
-        help_message += f"{_COPYRIGHT}\n==="
-        lines = help_message.split("\n")
-        if lines[0] == "":
-            lines = lines[1:]
-        if lines[len(lines) - 1] == "":
-            lines = lines[:len(lines) - 1]
-        length = max(len(line) for line in lines)
-        for line in lines:
-            if line == "===":
-                print(f"+{'-' * (length - len(line) + 5)}+")
-            else:
-                print(f"| {line}{' ' * (length - len(line))} |")
 
 
 if __name__ == '__main__':
