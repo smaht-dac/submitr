@@ -250,6 +250,8 @@ def _setup_validate_related_options(args: argparse.Namespace):
     validate_option_count = 0
     if args.validate:
         validate_option_count += 1
+    if args.validate_only:
+        validate_option_count += 1
     if args.validate_local:
         validate_option_count += 1
     if args.validate_local_only:
@@ -258,28 +260,47 @@ def _setup_validate_related_options(args: argparse.Namespace):
         validate_option_count += 1
     if args.validate_remote_only:
         validate_option_count += 1
-    if args.validate_only:
-        validate_option_count += 1
     if validate_option_count > 1:
         print("Only specify ONE of the validate options.")
         exit(1)
 
     """
     if args.validate:
+        # L-LO-R-RO = T-F-T-F
         args.validate_local = True
         args.validate_local_only = False
         args.validate_remote = True
         args.validate_remote_only = False
-    elif args.validate_local:
-        pass  # TODO
-    elif args.validate_local_only:
-        pass  # TODO
     elif args.validate_only:
-        pass  # TODO
+        # L-LO-R-RO = T-F-F-T
+        args.validate_local = True
+        args.validate_local_only = False
+        args.validate_remote = False
+        args.validate_remote_only = True
+    elif args.validate_local:
+        # L-LO-R-RO = T-F-F-F
+        args.validate_local = True
+        args.validate_local_only = False
+        args.validate_remote = False
+        args.validate_remote_only = False
+    elif args.validate_local_only:
+        # L-LO-R-RO = F-T-F-F
+        args.validate_local = False
+        args.validate_local_only = True
+        args.validate_remote = False
+        args.validate_remote_only = False
     elif args.validate_remote:
-        pass  # TODO
+        # L-LO-R-RO = F-F-T-F
+        args.validate_local = False
+        args.validate_local_only = False
+        args.validate_remote = True
+        args.validate_remote_only = False
     elif args.validate_remote_only:
-        pass  # TODO
+        # L-LO-R-RO = F-F-F-T
+        args.validate_local = False
+        args.validate_local_only = False
+        args.validate_remote = False
+        args.validate_remote_only = True
     """
 
     if not (args.validate_remote_only and (args.validate_local or args.validate_local_only)):
