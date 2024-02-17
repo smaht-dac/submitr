@@ -72,9 +72,14 @@ ADVANCED OPTIONS:
   Performs only client-side (local) validation before submitting.
 --validate-local-only
   Performs ONLY client-side (local) validation WITHOUT submitting.
---validate-remote-first
+--validate-remote
   Performs only server-side (remote) validation before submitting.
---validate-only
+--validate-remote-only
+  Performs ONLY server-side (remote) validation WITHOUT submitting.
+--validate-only -> TODO
+  Performs ONLY client-side (local) AND server-side (remote)
+  validation WITHOUT submitting.
+--validate-only -> OBSOLETE (SEE ABOVE - NOT YET IMPLEMENTED)
   Performs ONLY server-side (remote) validation WITHOUT submitting.
 --yes
   Automatically answer 'yes' to any confirmation questions.
@@ -100,8 +105,10 @@ def main(simulated_args_for_testing=None):
                         help="Perform both client-side and server-side validation first.", default=False)
     parser.add_argument('--validate-only', action="store_true",
                         help="Only perform validation of submitted data (on server-side).", default=False)
-    parser.add_argument('--validate-remote-first', action="store_true",
+    parser.add_argument('--validate-remote', action="store_true",
                         help="Perform validation of submitted data before submitting (on server-side).", default=False)
+    parser.add_argument('--validate-remote-only', action="store_true",
+                        help="Only perform validation of submitted data (on server-side).", default=False)
     parser.add_argument('--validate-local', action="store_true",
                         help="Validate submitted data locally (on client-side).")
     parser.add_argument('--validate-local-only', action="store_true",
@@ -172,10 +179,10 @@ def main(simulated_args_for_testing=None):
                              show_details=args.debug,
                              post_only=args.post_only,
                              patch_only=args.patch_only,
-                             validate_only=args.validate_only,
-                             validate_remote_first=args.validate_remote_first,
                              validate_local=args.validate_local,
                              validate_local_only=args.validate_local_only,
+                             validate_only=args.validate_only,
+                             validate_remote=args.validate_remote,
                              keys_file=args.keys,
                              noadmin=args.noadmin,
                              verbose=args.verbose,
@@ -239,20 +246,56 @@ def _sanity_check_submitted_file(file_name: str) -> bool:
 
 
 def _setup_validate_related_options(args: argparse.Namespace):
+
+    validate_option_count = 0
+    if args.validate:
+        validate_option_count += 1
+    if args.validate_local:
+        validate_option_count += 1
+    if args.validate_local_only:
+        validate_option_count += 1
+    if args.validate_remote:
+        validate_option_count += 1
+    if args.validate_remote_only:
+        validate_option_count += 1
+    if args.validate_only:
+        validate_option_count += 1
+    if validate_option_count > 1:
+        print("Only specify ONE of the validate options.")
+        exit(1)
+
+    """
+    if args.validate:
+        args.validate_local = True
+        args.validate_local_only = False
+        args.validate_remote = True
+        args.validate_remote_only = False
+    elif args.validate_local:
+        pass  # TODO
+    elif args.validate_local_only:
+        pass  # TODO
+    elif args.validate_only:
+        pass  # TODO
+    elif args.validate_remote:
+        pass  # TODO
+    elif args.validate_remote_only:
+        pass  # TODO
+    """
+
     if not (args.validate_only and (args.validate_local or args.validate_local_only)):
         if args.validate_only:
             args.validate_local = False
         elif args.validate_local or args.validate_local_only:
-            args.validate_remote_first = False
+            args.validate_remote = False
             args.validate_only = False
     if args.validate_only:
-        args.validate_remote_first = False
+        args.validate_remote = False
     if args.validate and not (args.validate_only or args.validate_local_only or
-                              args.validate_local_only or args.validate_remote_first):
+                              args.validate_local_only or args.validate_remote):
         # If --validate is specified and no other validate related options are
         # specified, then default to server-side and client-side validation.
         args.validate_local = True
-        args.validate_remote_first = True
+        args.validate_remote = True
     # Only need this --validate option to set other more specific validate related options.
     delattr(args, "validate")
 

@@ -529,7 +529,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          post_only=False,
                          patch_only=False,
                          validate_only=False,
-                         validate_remote_first=False,
+                         validate_remote=False,
                          validate_local=False,
                          validate_local_only=False,
                          keys_file=None,
@@ -578,18 +578,18 @@ def submit_any_ingestion(ingestion_filename, *,
 
     exit_immediately_on_errors = False
     user_record = _get_user_record(portal.server, auth=portal.key_pair)
-    if not _is_admin_user(user_record, noadmin=noadmin) and not (validate_only or validate_remote_first or
+    if not _is_admin_user(user_record, noadmin=noadmin) and not (validate_only or validate_remote or
                                                                  validate_local or validate_local_only):
         # If user is not an admin, and no other validate related options are
         # specified, then default to server-side and client-side validation,
         # i.e. act as-if the --validate option was specified.
         exit_immediately_on_errors = True
         validate_local = True
-        validate_remote_first = True
+        validate_remote = True
 
     if debug:
         PRINT(f"DEBUG: validate_only = {validate_only}")
-        PRINT(f"DEBUG: validate_remote_first = {validate_remote_first}")
+        PRINT(f"DEBUG: validate_remote = {validate_remote}")
         PRINT(f"DEBUG: validate_local = {validate_local}")
         PRINT(f"DEBUG: validate_local_only = {validate_local_only}")
 
@@ -651,7 +651,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
         submission_post_data = {
             'validate_only': validate_only,
-            'validate_first': validate_remote_first,
+            'validate_first': validate_remote,
             'post_only': post_only,
             'patch_only': patch_only,
             'sheet_utils': False,
