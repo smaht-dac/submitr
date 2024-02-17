@@ -1403,7 +1403,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                              # institution=SOME_INSTITUTION,
                                              # project=SOME_PROJECT,
                                              env=None,
-                                             validate_only=False,
+                                             validate_remote_only=False,
                                              no_query=False,
                                              subfolders=False,
                                              )
@@ -1511,7 +1511,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                      **SOME_ORG_ARGS,
                                                                      server=SOME_SERVER,
                                                                      env=None,
-                                                                     validate_only=False,
+                                                                     validate_remote_only=False,
                                                                      no_query=False,
                                                                      subfolders=False)
                                             except SystemExit:
@@ -1522,7 +1522,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                             else:  # pragma: no cover
                                                 raise AssertionError("Expected ValueError did not happen.")
 
-    # This tests the normal case with validate_only=False and a successful result.
+    # This tests the normal case with validate_remote_only=False and a successful result.
 
     get_request_attempts = 3
     with shown_output():  # as shown:
@@ -1550,7 +1550,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                                  **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
-                                                                                 validate_only=False,
+                                                                                 validate_remote_only=False,
                                                                                  no_query=False,
                                                                                  subfolders=False)
                                                         except SystemExit as e:  # pragma: no cover
@@ -1561,7 +1561,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
     dt.reset_datetime()
 
-    # This tests the normal case with validate_only=False and a successful result.
+    # This tests the normal case with validate_remote_only=False and a successful result.
 
     def make_mocked_yes_or_no(expected_message):
         def _yes_or_no(prompt):
@@ -1598,7 +1598,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                 **SOME_ORG_ARGS,
                                                                 server=SOME_SERVER,
                                                                 env=None,
-                                                                validate_only=False,
+                                                                validate_remote_only=False,
                                                                 no_query=False,
                                                                 subfolders=False)
                                                         except SystemExit as e:  # pragma: no cover
@@ -1636,7 +1636,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                              **SOME_ORG_ARGS,
                                                                              server=SOME_SERVER,
                                                                              env=None,
-                                                                             validate_only=False,
+                                                                             validate_remote_only=False,
                                                                              no_query=True,
                                                                              subfolders=False)
                                                     except SystemExit as e:  # pragma: no cover
@@ -1647,7 +1647,8 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
     dt.reset_datetime()
 
-    # This tests the normal case with validate_only=False and a post error due to multipart/form-data unsupported,
+    # This tests the normal case with validate_remote_only=False
+    # and a post error due to multipart/form-data unsupported,
     # a symptom of the metadata bundle submission protocol being unsupported.
 
     def unsupported_media_type(*args, **kwargs):
@@ -1684,7 +1685,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                                  **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
-                                                                                 validate_only=False,
+                                                                                 validate_remote_only=False,
                                                                                  no_query=False,
                                                                                  subfolders=False)
                                                         except SystemExit as e:
@@ -1700,7 +1701,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
     dt.reset_datetime()
 
-    # This tests the normal case with validate_only=False and a post error for some unknown reason.
+    # This tests the normal case with validate_remote_only=False and a post error for some unknown reason.
 
     def mysterious_error(*args, **kwargs):
         ignored(args, kwargs)
@@ -1735,7 +1736,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                                  **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
-                                                                                 validate_only=False,
+                                                                                 validate_remote_only=False,
                                                                                  no_query=False,
                                                                                  subfolders=False)
                                                         except Exception as e:
@@ -1747,7 +1748,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
     dt.reset_datetime()
 
-    # This tests the normal case with validate_only=False and an error result.
+    # This tests the normal case with validate_remote_only=False and an error result.
 
     with shown_output():  # as shown:
         with mock.patch("os.path.exists", mfs.exists):
@@ -1775,7 +1776,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                                  **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
-                                                                                 validate_only=False,
+                                                                                 validate_remote_only=False,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
                                                                                  subfolders=False)
@@ -1789,7 +1790,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
 
     dt.reset_datetime()
 
-    # This tests the normal case with validate_only=True
+    # This tests the normal case with validate_remote_only=True
 
     with shown_output():  # as shown:
         with mock.patch("os.path.exists", mfs.exists):
@@ -1816,7 +1817,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                                  **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
-                                                                                 validate_only=True,
+                                                                                 validate_remote_only=True,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
                                                                                  subfolders=False)
@@ -1857,7 +1858,7 @@ def test_submit_any_ingestion_old_protocol(mock_get_health_page):
                                                                                  **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
-                                                                                 validate_only=False,
+                                                                                 validate_remote_only=False,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
                                                                                  subfolders=False)
@@ -1887,7 +1888,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                              **SOME_ORG_ARGS,
                                              server=SOME_SERVER,
                                              env=None,
-                                             validate_only=False,
+                                             validate_remote_only=False,
                                              no_query=False,
                                              subfolders=False)
                     except SystemExit as e:
@@ -2040,7 +2041,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                      **SOME_ORG_ARGS,
                                                                      server=SOME_SERVER,
                                                                      env=None,
-                                                                     validate_only=False,
+                                                                     validate_remote_only=False,
                                                                      no_query=False,
                                                                      subfolders=False)
                                             except SystemExit as e:
@@ -2055,7 +2056,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                             else:  # pragma: no cover
                                                 raise AssertionError("Expected ValueError did not happen.")
 
-    # This tests the normal case with SubmissionProtocol.UPLOAD (the default), and with validate_only=False
+    # This tests the normal case with SubmissionProtocol.UPLOAD (the default), and with validate_remote_only=False
     # and a successful result.
 
     with shown_output() as shown:
@@ -2083,7 +2084,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                                  **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
-                                                                                 validate_only=False,
+                                                                                 validate_remote_only=False,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
                                                                                  subfolders=False)
@@ -2096,7 +2097,8 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
 
     dt.reset_datetime()
 
-    # This tests the normal case with SubmissionProtocol.S3, and with validate_only=False and a successful result.
+    # This tests the normal case with SubmissionProtocol.S3,
+    # and with validate_remote_only=False and a successful result.
 
     expect_datafile_for_mocked_post = False
 
@@ -2147,7 +2149,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                     **SOME_ORG_ARGS,
                                                                     server=SOME_SERVER,
                                                                     env=None,
-                                                                    validate_only=False,
+                                                                    validate_remote_only=False,
                                                                     upload_folder=None,
                                                                     no_query=False,
                                                                     subfolders=False,
@@ -2194,7 +2196,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                 **SOME_ORG_ARGS,
                                                                 server=SOME_SERVER,
                                                                 env=None,
-                                                                validate_only=False,
+                                                                validate_remote_only=False,
                                                                 upload_folder=None,
                                                                 no_query=False,
                                                                 subfolders=False,
@@ -2207,7 +2209,8 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
 
     dt.reset_datetime()
 
-    # This tests the normal case with validate_only=False and a post error due to multipart/form-data unsupported,
+    # This tests the normal case with validate_remote_only=False
+    # and a post error due to multipart/form-data unsupported,
     # a symptom of the metadata bundle submission protocol being unsupported.
 
     def unsupported_media_type(*args, **kwargs):
@@ -2244,7 +2247,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                                  **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
-                                                                                 validate_only=False,
+                                                                                 validate_remote_only=False,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
                                                                                  subfolders=False)
@@ -2259,7 +2262,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
 
     dt.reset_datetime()
 
-    # This tests the normal case with validate_only=False and a post error for some unknown reason.
+    # This tests the normal case with validate_remote_only=False and a post error for some unknown reason.
 
     def mysterious_error(*args, **kwargs):
         ignored(args, kwargs)
@@ -2295,7 +2298,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                                  **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
-                                                                                 validate_only=False,
+                                                                                 validate_remote_only=False,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
                                                                                  subfolders=False)
@@ -2310,7 +2313,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
 
     dt.reset_datetime()
 
-    # This tests the normal case with validate_only=False and an error result.
+    # This tests the normal case with validate_remote_only=False and an error result.
 
     with shown_output() as shown:
         with mock.patch("os.path.exists", mfs.exists):
@@ -2338,7 +2341,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                                  **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
-                                                                                 validate_only=False,
+                                                                                 validate_remote_only=False,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
                                                                                  subfolders=False)
@@ -2351,7 +2354,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
 
     dt.reset_datetime()
 
-    # This tests the normal case with validate_only=True
+    # This tests the normal case with validate_remote_only=True
 
     with shown_output() as shown:
         with mock.patch("os.path.exists", mfs.exists):
@@ -2378,7 +2381,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                                  **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
-                                                                                 validate_only=True,
+                                                                                 validate_remote_only=True,
                                                                                  upload_folder=None,
                                                                                  no_query=False,
                                                                                  subfolders=False)
@@ -2420,7 +2423,7 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
                                                                                  **SOME_ORG_ARGS,
                                                                                  server=SOME_SERVER,
                                                                                  env=None,
-                                                                                 validate_only=False,
+                                                                                 validate_remote_only=False,
                                                                                  upload_folder=None,
                                                                                  no_query=False)
                                                         except SystemExit as e:
@@ -2673,7 +2676,7 @@ def test_submit_any_ingestion():
                         mock_submit_any_ingestion(
                             ingestion_filename=SOME_FILENAME,
                             ingestion_type=SOME_INGESTION_TYPE, server=SOME_SERVER, env=SOME_ENV,
-                            validate_only=True, institution=SOME_INSTITUTION, project=SOME_PROJECT,
+                            validate_remote_only=True, institution=SOME_INSTITUTION, project=SOME_PROJECT,
                             lab=SOME_LAB, award=SOME_AWARD,
                             consortium=SOME_CONSORTIUM, submission_center=SOME_SUBMISSION_CENTER,
                             upload_folder=SOME_FILENAME,

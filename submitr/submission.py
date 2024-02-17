@@ -525,15 +525,15 @@ def submit_any_ingestion(ingestion_filename, *,
                          no_query=False,
                          subfolders=False,
                          submission_protocol=DEFAULT_SUBMISSION_PROTOCOL,
-                         show_details=False,
-                         post_only=False,
-                         patch_only=False,
-                         validate_only=False,
-                         validate_remote=False,
                          validate_local=False,
                          validate_local_only=False,
+                         validate_remote_only=False,
+                         validate_remote=False,
+                         post_only=False,
+                         patch_only=False,
                          keys_file=None,
                          noadmin=False,
+                         show_details=False,
                          verbose=False,
                          debug=False):
     """
@@ -543,7 +543,7 @@ def submit_any_ingestion(ingestion_filename, *,
     :param ingestion_type: the type of ingestion to be performed (an ingestion_type in the IngestionSubmission schema)
     :param server: the server to upload to
     :param env: the portal environment to upload to
-    :param validate_only: whether to do stop after validation instead of proceeding to post metadata
+    :param validate_remote_only: whether to do stop after validation instead of proceeding to post metadata
     :param app: an orchestrated app name
     :param institution: the @id of the institution for which the submission is being done (when app='cgap')
     :param project: the @id of the project for which the submission is being done (when app='cgap')
@@ -578,7 +578,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
     exit_immediately_on_errors = False
     user_record = _get_user_record(portal.server, auth=portal.key_pair)
-    if not _is_admin_user(user_record, noadmin=noadmin) and not (validate_only or validate_remote or
+    if not _is_admin_user(user_record, noadmin=noadmin) and not (validate_remote_only or validate_remote or
                                                                  validate_local or validate_local_only):
         # If user is not an admin, and no other validate related options are
         # specified, then default to server-side and client-side validation,
@@ -588,7 +588,7 @@ def submit_any_ingestion(ingestion_filename, *,
         validate_remote = True
 
     if debug:
-        PRINT(f"DEBUG: validate_only = {validate_only}")
+        PRINT(f"DEBUG: validate_remote_only = {validate_remote_only}")
         PRINT(f"DEBUG: validate_remote = {validate_remote}")
         PRINT(f"DEBUG: validate_local = {validate_local}")
         PRINT(f"DEBUG: validate_local_only = {validate_local_only}")
@@ -614,7 +614,7 @@ def submit_any_ingestion(ingestion_filename, *,
                           upload_folder=upload_folder, subfolders=subfolders,
                           exit_immediately_on_errors=exit_immediately_on_errors, verbose=verbose)
 
-    validation_qualifier = " (for validation only)" if validate_only else ""
+    validation_qualifier = " (for validation only)" if validate_remote_only else ""
 
     maybe_ingestion_type = ''
     if ingestion_type != DEFAULT_INGESTION_TYPE:
@@ -645,12 +645,12 @@ def submit_any_ingestion(ingestion_filename, *,
         submission_post_data = compute_s3_submission_post_data(ingestion_filename=ingestion_filename,
                                                                ingestion_post_result=upload_result,
                                                                # The rest of this is other_args to pass through...
-                                                               validate_only=validate_only, **app_args)
+                                                               validate_remote_only=validate_remote_only, **app_args)
 
     elif submission_protocol == SubmissionProtocol.UPLOAD:
 
         submission_post_data = {
-            'validate_only': validate_only,
+            'validate_only': validate_remote_only,
             'validate_first': validate_remote,
             'post_only': post_only,
             'patch_only': patch_only,
@@ -718,7 +718,7 @@ def submit_any_ingestion(ingestion_filename, *,
     check_done, check_status, check_response = _check_submit_ingestion(
             uuid, portal.server, portal.env, portal.app, show_details, report=False)
 
-    if validate_only:
+    if validate_remote_only:
         exit(0)
 
     if check_status == "success":
@@ -837,7 +837,7 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
         'datafile_bucket': upload_bucket,
         'datafile_key': upload_key,
         'datafile_source_filename': os.path.basename(ingestion_filename),
-        **other_args  # validate_only, and any of institution, project, lab, or award that caller gave us
+        **other_args  # validate_remote_only, and any of institution, project, lab, or award that caller gave us
     }
     return submission_post_data
 

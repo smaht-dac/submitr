@@ -77,8 +77,8 @@ ADVANCED OPTIONS:
 --validate-remote-only
   Performs ONLY server-side (remote) validation WITHOUT submitting.
 --validate-only -> TODO
-  Performs ONLY client-side (local) AND server-side (remote)
-  validation WITHOUT submitting.
+  Performs BOTH client-side (local) and
+  server-side (remote) validation only WITHOUT submitting.
 --validate-only -> OBSOLETE (SEE ABOVE - NOT YET IMPLEMENTED)
   Performs ONLY server-side (remote) validation WITHOUT submitting.
 --yes
@@ -181,7 +181,7 @@ def main(simulated_args_for_testing=None):
                              patch_only=args.patch_only,
                              validate_local=args.validate_local,
                              validate_local_only=args.validate_local_only,
-                             validate_only=args.validate_only,
+                             validate_remote_only=args.validate_remote_only,
                              validate_remote=args.validate_remote,
                              keys_file=args.keys,
                              noadmin=args.noadmin,
@@ -282,15 +282,15 @@ def _setup_validate_related_options(args: argparse.Namespace):
         pass  # TODO
     """
 
-    if not (args.validate_only and (args.validate_local or args.validate_local_only)):
-        if args.validate_only:
+    if not (args.validate_remote_only and (args.validate_local or args.validate_local_only)):
+        if args.validate_remote_only:
             args.validate_local = False
         elif args.validate_local or args.validate_local_only:
             args.validate_remote = False
-            args.validate_only = False
-    if args.validate_only:
+            args.validate_remote_only = False
+    if args.validate_remote_only:
         args.validate_remote = False
-    if args.validate and not (args.validate_only or args.validate_local_only or
+    if args.validate and not (args.validate_remote_only or args.validate_local_only or
                               args.validate_local_only or args.validate_remote):
         # If --validate is specified and no other validate related options are
         # specified, then default to server-side and client-side validation.
