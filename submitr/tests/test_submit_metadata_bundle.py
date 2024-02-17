@@ -172,44 +172,44 @@ def test_validation_options():
 
     args = argparse.Namespace(validate=False,
                               validate_only=False,
-                              validate_first=False,
+                              validate_remote_first=False,
                               validate_local=False,
                               validate_local_only=False)
     _setup_validate_related_options(args)
     assert (not args.validate_only and
-            not args.validate_first and
+            not args.validate_remote_first and
             not args.validate_local and
             not args.validate_local_only)
 
     args = argparse.Namespace(validate=True,
                               validate_only=False,
-                              validate_first=False,
+                              validate_remote_first=False,
                               validate_local=False,
                               validate_local_only=False)
     _setup_validate_related_options(args)
     assert (not args.validate_only and
-            args.validate_first and
+            args.validate_remote_first and
             args.validate_local and
             not args.validate_local_only)
 
     args = argparse.Namespace(validate=False,
                               validate_only=True,
-                              validate_first=False,
+                              validate_remote_first=False,
                               validate_local=False,
                               validate_local_only=False)
     _setup_validate_related_options(args)
     assert (args.validate_only and
-            not args.validate_first and
+            not args.validate_remote_first and
             not args.validate_local and
             not args.validate_local_only)
 
     args = argparse.Namespace(validate=False,
                               validate_only=False,
-                              validate_first=False,
+                              validate_remote_first=False,
                               validate_local=True,
                               validate_local_only=False)
     _setup_validate_related_options(args)
     assert (not args.validate_only and
-            not args.validate_first and
+            not args.validate_remote_first and
             args.validate_local and
             not args.validate_local_only)
