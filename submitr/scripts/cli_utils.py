@@ -81,6 +81,10 @@ class CustomArgumentParser(argparse.ArgumentParser):
         for line in lines:
             if line == "===":
                 print(f"+{'-' * (length - len(line) + 5)}+")
+            elif line.endswith("[VERSION]"):
+                line = line.replace("[VERSION]", len("[VERSION]") * " ")
+                version = self.get_package_version()
+                print(f"| {line}{' ' * (length - len(line) - len(version) - 1)} {version} |")
             else:
                 print(f"| {line}{' ' * (length - len(line))} |")
 

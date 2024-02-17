@@ -15,7 +15,7 @@ from ..submission import (
 
 _HELP = f"""
 ===
-submit-metadata-bundle
+submit-metadata-bundle [VERSION]
 ===
 Tool to submit (and validate) submission metadata and files to SMaHT Portal.
 See: {CustomArgumentParser.HELP_URL}#submission
