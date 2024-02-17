@@ -586,7 +586,7 @@ def submit_any_ingestion(ingestion_filename, *,
         validate_local = True
         validate_remote = True
         exit_immediately_on_errors = True
-    if not is_admin_user or validate_local_only or validate_remote_only:
+    if not is_admin_user or validate_local_only or (validate_remote_only and not is_admin_user):
         exit_immediately_on_errors = True
 
     if debug:
