@@ -270,7 +270,7 @@ ADVANCED OPTIONS:
 --post-only
   Perform ONLY creates (POSTs) for submitted data.
 --validate-local
-  Performs on client-side (local) validation before submitting.
+  Performs only client-side (local) validation before submitting.
 --validate-local-only
   Performs ONLY client-side (local) validation WITHOUT submitting.
 --validate-first
