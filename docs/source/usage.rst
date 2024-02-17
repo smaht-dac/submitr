@@ -172,8 +172,10 @@ To invoke the submission with validation checking, do::
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --validate
 
-This is the recommended usage, and in fact, this (``--validate`` option) is actually the `default`
-behavior unless your user profile indicates that you are an `admin` user.
+This is the recommended usage, and in fact, this (``--validate`` option) is actually
+the **default behavior** unless your user profile indicates that you are an `admin` user.
+(I.e. if you are not an `admin` user you do not actually have to supply this option;
+it will be done for you automatically).
 
 .. tip::
     Using this ``--validate`` feature, if any errors are encountered, the actual ingestion of data
