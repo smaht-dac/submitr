@@ -95,7 +95,7 @@ More on Validation
 
 As described in the main `Usage <usage.html#validation>`_ section, validation can be performed on the given metadata file
 before it is actually ingestion into SMaHT Portal. This can be done most simply and comprehensively
-by using the ``--validate`` option. And in fact, this is the default behavior if you, as a submitter,
+by using the ``--validate`` option. And in fact, this is the **default behavior** if you, as a submitter,
 are `not` an `admin` user.
 
 But under the hood there are more finer grained modes of validation
@@ -133,8 +133,8 @@ But alternatively, you can invoke either one of these validations individually a
 Validation Only
 ~~~~~~~~~~~~~~~
 
-If you want to perform `only` client-side **and** server-side validation,
-there is a ``--validate-only`` option which will cause `only` both local client-side
+If you want to perform `only` client-side `and` server-side validation,
+there is a ``--validate-only`` option, which will cause `only` both local client-side
 and remote server-side validation to be done. But note that if there are (local) client-side
 errors then (remote) server-side validation will `not` actually be done; you must fix those
 errors first to move on to (remote) server-side validation. (The only real difference between this
