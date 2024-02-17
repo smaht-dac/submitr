@@ -123,13 +123,6 @@ For this reason, the default ``--validate`` mode of validation is the most compr
 as it performs `both` client-side and server-side validation.
 But alternatively, you can invoke either one of these validations individually and exclusively as follows.
 
-Also of minor note is that if there are server-side validation errors, you will `not` be able
-to continue with the submission process; i.e. there is no way to get your data into SMaHT Portal,
-unless you correct the problems (or unless you use the ``--validate-local`` which disables server-side validation).
-But if there are client-side validation errors,
-you `may` (after prompting) continue processing, in spite of there
-being local client-side validation errors (not recommended of course).
-
 .. note::
     Even in the absence of `any` validation (which is actually not even a readily available option),
     if there are problems with the submitted data, it will `not` be ingested into SMaHT Portal;
