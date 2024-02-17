@@ -300,23 +300,6 @@ def _setup_validate_related_options(args: argparse.Namespace):
         args.validate_remote = False
         args.validate_remote_only = True
 
-    """
-    if not (args.validate_remote_only and (args.validate_local or args.validate_local_only)):
-        if args.validate_remote_only:
-            args.validate_local = False
-        elif args.validate_local or args.validate_local_only:
-            args.validate_remote = False
-            args.validate_remote_only = False
-    if args.validate_remote_only:
-        args.validate_remote = False
-    if args.validate and not (args.validate_remote_only or args.validate_local_only or
-                              args.validate_local_only or args.validate_remote):
-        # If --validate is specified and no other validate related options are
-        # specified, then default to server-side and client-side validation.
-        args.validate_local = True
-        args.validate_remote = True
-    # Only need this --validate option to set other more specific validate related options.
-    """
     delattr(args, "validate")
     delattr(args, "validate_only")
 
