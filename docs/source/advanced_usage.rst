@@ -139,19 +139,19 @@ being local client-side validation errors (not recommended of course).
 Validation Only
 ~~~~~~~~~~~~~~~
 
-If you want to perform `only` the client-side validation **and** the server-side validation,
+If you want to perform `only` client-side **and** server-side validation,
 there is a ``--validate-only`` option which will cause `only` both local client-side
 and remote server-side validation to be done. But note that if there are (local) client-side
-errors then we will `not` continue on with (remote) server-side validation; you must fix those
-first to move on to (remote) server-side validation. (The only real difference between this
+errors then (remote) server-side validation will `not` actually be done; you must fix those
+errors first to move on to (remote) server-side validation. (The only real difference between this
 and option the plain ``--validate`` option, is that this option will `not` prompt
 you to continue the metadata ingestion process if there are no errors).
 
-If you want to perform `only` the client-side validation (for whatever reason),
+If you want to perform `only` client-side validation (for whatever reason),
 there is a ``--validate-local-only`` option which will cause `only` local client-side validation to be done;
 no remote server-side validation will be done in this case.
 
-If you want to perform `only` the server-side validation (for whatever reason),
+If you want to perform `only` server-side validation (for whatever reason),
 there is a ``--validate-remote-only`` option which will cause `only` remote server-side validation to be done;
 no local client-side validation will be done in this case.
 
