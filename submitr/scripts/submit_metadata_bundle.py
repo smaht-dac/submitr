@@ -75,21 +75,18 @@ def main(simulated_args_for_testing=None):
                         help="Prints the raw version of this help message.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
-    if args.version:
+    if args.version or args.bundle_filename == "version":
         if version := _get_package_version():
             print(f"smaht-submitr: {version} | {_COPYRIGHT}")
         else:
-            print("smaht-submitr: No version available.")
+            print("smaht-submitr: No version available | {_COPYRIGHT}")
         exit(0)
-    elif args.help_advanced or args.help_web or args.help_raw:
+    elif args.help_advanced or args.help_web or args.help_raw or args.bundle_filename == "help":
         parser.print_help()
         exit(0)
     if not args.bundle_filename:
         print("Missing submission file name.")
         exit(2)
-    if args.bundle_filename == "help":
-        webbrowser.open_new_tab(_HELP_URL)
-        exit(0)
 
     if args.directory:
         args.upload_folder = args.directory
