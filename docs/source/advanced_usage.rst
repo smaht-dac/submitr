@@ -141,7 +141,9 @@ Validation Only
 
 If you want to perform `only` the client-side validation **and** the server-side validation,
 there is a ``--validate-only`` option which will cause `only` both local client-side
-and remote server-side validation to be done. (The only real difference between this
+and remote server-side validation to be done. But note that if there are (local) client-side
+errors then we will `not` continue on with (remote) server-side validation; you must fix those
+first to move on to (remote) server-side validation. (The only real difference between this
 and option the plain ``--validate`` option, is that this option will `not` prompt
 you to continue the metadata ingestion process if there are no errors).
 

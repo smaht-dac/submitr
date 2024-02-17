@@ -583,9 +583,11 @@ def submit_any_ingestion(ingestion_filename, *,
         # If user is not an admin, and no other validate related options are
         # specified, then default to server-side and client-side validation,
         # i.e. act as-if the --validate option was specified.
-        exit_immediately_on_errors = True
         validate_local = True
         validate_remote = True
+        exit_immediately_on_errors = True
+    if validate_local_only or validate_remote_only:
+        exit_immediately_on_errors = True
 
     if debug:
         PRINT(f"DEBUG: validate_remote_only = {validate_remote_only}")

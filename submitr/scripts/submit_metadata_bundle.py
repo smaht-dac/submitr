@@ -264,7 +264,6 @@ def _setup_validate_related_options(args: argparse.Namespace):
         print("Only specify ONE of the validate options.")
         exit(1)
 
-    """
     if args.validate:
         # L-LO-R-RO = T-F-T-F
         args.validate_local = True
@@ -301,8 +300,8 @@ def _setup_validate_related_options(args: argparse.Namespace):
         args.validate_local_only = False
         args.validate_remote = False
         args.validate_remote_only = True
-    """
 
+    """
     if not (args.validate_remote_only and (args.validate_local or args.validate_local_only)):
         if args.validate_remote_only:
             args.validate_local = False
@@ -318,7 +317,9 @@ def _setup_validate_related_options(args: argparse.Namespace):
         args.validate_local = True
         args.validate_remote = True
     # Only need this --validate option to set other more specific validate related options.
+    """
     delattr(args, "validate")
+    delattr(args, "validate_only")
 
 
 if __name__ == '__main__':

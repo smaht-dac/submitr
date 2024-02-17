@@ -177,10 +177,15 @@ def test_validation_options():
                               validate_local=False,
                               validate_local_only=False)
     _setup_validate_related_options(args)
-    assert (not args.validate_only and
+    # Note This is for admin users; for non-admin users it would be (TODO):
+    # assert (not args.validate_local and
+    #         not args.validate_local_only and
+    #         not args.validate_remote and
+    #         not args.validate_remote_only)
+    assert (not args.validate_local and
+            not args.validate_local_only and
             not args.validate_remote and
-            not args.validate_local and
-            not args.validate_local_only)
+            not args.validate_remote_only)
 
     args = argparse.Namespace(validate=True,
                               validate_only=False,
@@ -189,10 +194,10 @@ def test_validation_options():
                               validate_local=False,
                               validate_local_only=False)
     _setup_validate_related_options(args)
-    assert (not args.validate_only and
+    assert (args.validate_local and
+            not args.validate_local_only and
             args.validate_remote and
-            args.validate_local and
-            not args.validate_local_only)
+            not args.validate_remote_only)
 
     args = argparse.Namespace(validate=False,
                               validate_only=True,
@@ -201,10 +206,10 @@ def test_validation_options():
                               validate_local=False,
                               validate_local_only=False)
     _setup_validate_related_options(args)
-    assert (args.validate_only and
+    assert (args.validate_local and
+            not args.validate_local_only and
             not args.validate_remote and
-            not args.validate_local and
-            not args.validate_local_only)
+            args.validate_remote_only)
 
     args = argparse.Namespace(validate=False,
                               validate_only=False,
@@ -213,7 +218,7 @@ def test_validation_options():
                               validate_local=True,
                               validate_local_only=False)
     _setup_validate_related_options(args)
-    assert (not args.validate_only and
+    assert (args.validate_local and
+            not args.validate_local_only and
             not args.validate_remote and
-            args.validate_local and
-            not args.validate_local_only)
+            not args.validate_remote_only)
