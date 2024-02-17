@@ -77,7 +77,7 @@ def main(simulated_args_for_testing=None):
 
     if args.version:
         if version := _get_package_version():
-            print(f"smaht-submitr: {version}")
+            print(f"smaht-submitr: {version} | {_COPYRIGHT}")
         else:
             print("smaht-submitr: No version available.")
         exit(0)
@@ -213,6 +213,7 @@ def _get_package_version(package_name: str = "smaht-submitr") -> Optional[str]:
         return None
 
 
+_COPYRIGHT = "© Copyright 2020-2024 President and Fellows of Harvard College"
 _HELP_MESSAGE = f"""
 ===
 submit-metadata-bundle
@@ -295,7 +296,7 @@ class _SubmitMetadataBundleArgumentParser(argparse.ArgumentParser):
             help_message = _ADVANCED_HELP_MESSAGE
         else:
             help_message = _HELP_MESSAGE
-        help_message += "© Copyright 2020-2024 President and Fellows of Harvard College.\n==="
+        help_message += f"{_COPYRIGHT}\n==="
         lines = help_message.split("\n")
         if lines[0] == "":
             lines = lines[1:]
