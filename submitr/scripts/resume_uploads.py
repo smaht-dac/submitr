@@ -7,7 +7,7 @@ from ..submission import resume_uploads
 
 _HELP = f"""
 ===
-submit-metadata-bundle
+resume-uploads
 ===
 Tool to submit (and validate) submission metadata and files to SMaHT Portal.
 See: {CustomArgumentParser.HELP_URL}#resuming-uploads
