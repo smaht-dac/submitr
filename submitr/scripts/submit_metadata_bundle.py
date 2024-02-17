@@ -295,6 +295,7 @@ class _SubmitMetadataBundleArgumentParser(argparse.ArgumentParser):
             help_message = _ADVANCED_HELP_MESSAGE
         else:
             help_message = _HELP_MESSAGE
+        help_message += "© Copyright 2020-2024 President and Fellows of Harvard College.\n==="
         lines = help_message.split("\n")
         if lines[0] == "":
             lines = lines[1:]
