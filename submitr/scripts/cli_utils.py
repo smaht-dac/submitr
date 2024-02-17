@@ -8,7 +8,7 @@ import pkg_resources
 
 class CustomArgumentParser(argparse.ArgumentParser):
 
-    HELP_URL_VERSION = "dmichaels-20240205"
+    HELP_URL_VERSION = "latest"
     HELP_URL = f"https://submitr.readthedocs.io/en/{HELP_URL_VERSION}/usage.html"
     COPYRIGHT = "© Copyright 2020-2024 President and Fellows of Harvard College"
 

@@ -17,7 +17,7 @@ _HELP = f"""
 ===
 submit-metadata-bundle [VERSION]
 ===
-Tool to submit (and validate) submission metadata and files to SMaHT Portal.
+Tool to submit  submission metadata and files to SMaHT Portal.
 See: {CustomArgumentParser.HELP_URL}#submission
 ===
 USAGE: submit-metadata-bundle METADATA-FILE OPTIONS
@@ -33,18 +33,19 @@ OPTIONS:
   This is the DEFAULT behavior for most (non-admin) users.
 --consortium CONSORTIUM
   To specify your consortium.
-  The default is to use the consortium associated with your account.
+  Default is to use the consortium associated with your account.
 --submission-center SUBMISSION-CENTER
   To specify your submission center.
-  The default is to use the submission center associated with your account.
+  Default is to use the submission center associated with your account.
 --directory DIRECTORY
-  To specify the directory containing files to upload;
-  in addition to the directory containing the submitted metadata file.
+  To specify a directory containing the files to upload; in addition
+  to the default of using the directory containing the submitted file.
 --sub-directories
-  To specify that any sub-directories of the upload
-  file(s) directory should be searched, recursively.
+  To specify that any sub-directories, of the directory containing
+  the upload file(s), should be searched, recursively.
 --keys KEYS-FILE
-  To specify an alternate credentials/keys file to ~/.smaht-keys.json.
+  To specify an alternate credentials/keys
+  file to the default ~/.smaht-keys.json file.
 --verbose
   For more verbose output.
 --help
@@ -59,30 +60,28 @@ OPTIONS:
 _HELP_ADVANCED = _HELP.strip() + f"""
 ADVANCED OPTIONS:
 ===
---help-raw
-  Prints the raw version of this help message.
---noadmin
-  Act like you are not an admin user even you are.
-  For testing/troubleshooting only.
+--validate-only
+  Performs ONLY, but BOTH client-side (local) and
+  server-side (remote) validation only WITHOUT submitting.
+--validate-local-only
+  Performs ONLY client-side (local) validation WITHOUT submitting.
+--validate-remote-only
+  Performs ONLY server-side (remote) validation WITHOUT submitting.
+--validate-local
+  Performs only client-side (local) validation before submitting.
+--validate-remote
+  Performs only server-side (remote) validation before submitting.
 --patch-only
   Perform ONLY updates (PATCHes) for submitted data.
 --post-only
   Perform ONLY creates (POSTs) for submitted data.
---validate-local
-  Performs only client-side (local) validation before submitting.
---validate-local-only
-  Performs ONLY client-side (local) validation WITHOUT submitting.
---validate-remote
-  Performs only server-side (remote) validation before submitting.
---validate-remote-only
-  Performs ONLY server-side (remote) validation WITHOUT submitting.
---validate-only -> TODO
-  Performs BOTH client-side (local) and
-  server-side (remote) validation only WITHOUT submitting.
---validate-only -> OBSOLETE (SEE ABOVE - NOT YET IMPLEMENTED)
-  Performs ONLY server-side (remote) validation WITHOUT submitting.
 --yes
   Automatically answer 'yes' to any confirmation questions.
+--noadmin
+  Act like you are not an admin user even you are.
+  For testing/troubleshooting only.
+--help-raw
+  Prints the raw version of this help message.
 ===
 """
 
