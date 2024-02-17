@@ -336,21 +336,26 @@ def _show_section(res, section, caveat_outcome=None, portal=None):
             PRINT(f"Details: {details}")
         for item in section_data:
             if isinstance(section_data[item], list) and section_data[item]:
+                issue_prefix = ""
                 if item == "reader":
                     PRINT(f"Parser Warnings:")
+                    issue_prefix = "WARNING: "
                 elif item == "validation":
                     PRINT(f"Validation Errors:")
+                    issue_prefix = "ERROR: "
                 elif item == "ref":
                     PRINT(f"Reference (linkTo) Errors:")
+                    issue_prefix = "ERROR: "
                 elif item == "errors":
                     PRINT(f"Other Errors:")
+                    issue_prefix = "ERROR: "
                 else:
                     continue
                 for issue in section_data[item]:
                     if isinstance(issue, dict):
-                        PRINT(f"  - {_format_issue(issue, file)}")
+                        PRINT(f"- {issue_prefix}{_format_issue(issue, file)}")
                     elif isinstance(issue, str):
-                        PRINT(f"  - {issue}")
+                        PRINT(f"- {issue_prefix}{issue}")
     elif isinstance(section_data, list):
         if section == "upload_info":
             for info in section_data:
@@ -612,8 +617,10 @@ def submit_any_ingestion(ingestion_filename, *,
             PRINT(f"Multiple submission centers: {', '.join(submission_centers)}")
 
     if validate_local or validate_local_only:
-        _validate_locally(ingestion_filename, portal, validate_local_only=validate_local_only, autoadd=autoadd,
-                          upload_folder=upload_folder, subfolders=subfolders,
+        _validate_locally(ingestion_filename, portal,
+                          validate_local_only=validate_local_only,
+                          validate_remote_only=validate_remote_only,
+                          autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
                           exit_immediately_on_errors=exit_immediately_on_errors, verbose=verbose)
 
     maybe_ingestion_type = ''
@@ -1432,7 +1439,8 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
 
 
 def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional[dict] = None,
-                      validate_local_only: bool = False, upload_folder: Optional[str] = None,
+                      validate_local_only: bool = False, validate_remote_only: bool = False,
+                      upload_folder: Optional[str] = None,
                       subfolders: bool = False, exit_immediately_on_errors: bool = False, verbose: bool = False) -> int:
     errors_exist = False
     if validate_local_only:
@@ -1488,7 +1496,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         PRINT("There are some errors outlined above. Please fix them before trying again. No action taken.")
         exit(1)
     if errors_exist:
-        if not yes_or_no("There are some errors outlined above; do you want to continue?"):
+        question_suffix = " with validation" if validate_local_only or validate_remote_only else ""
+        if not yes_or_no(f"There are some errors outlined above; do you want to continue{question_suffix}?"):
             exit(1)
     if validate_local_only:
         exit(0 if not errors_exist else 1)
@@ -1496,18 +1505,18 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
 
 def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str) -> bool:
     PRINT(f"\n> Validation results:")
+    validation_errors_exist = False
     pre_validation_errors = _pre_validate_data(structured_data, portal)
     if pre_validation_errors:
         for pre_validation_error in pre_validation_errors:
             print(f"  - {pre_validation_error}")
-        return False
-    validation_errors_exist = False
+        pre_validation_errors = True
     structured_data.validate()
     if (validation_errors := structured_data.validation_errors):
         validation_errors_exist = True
-        PRINT(f"\n> ERROR: Validation violations:")
+        # PRINT(f"  - ERROR: Validation violations:")
         for validation_error in validation_errors:
-            PRINT(f"  - {_format_issue(validation_error, ingestion_filename)}")
+            PRINT(f"  - ERROR: {_format_issue(validation_error, ingestion_filename)}")
     else:
         PRINT(f"  - OK")
     return not validation_errors_exist
