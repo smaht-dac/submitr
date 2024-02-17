@@ -88,11 +88,11 @@ class CustomArgumentParser(argparse.ArgumentParser):
             else:
                 print(f"| {line}{' ' * (length - len(line))} |")
 
-    def get_package_version(self) -> Optional[str]:
+    def get_package_version(self) -> str:
         try:
             return pkg_resources.get_distribution(self._package).version
         except Exception:
-            return None
+            return ""
 
     def is_pytest(self):
         return "pytest" in sys.modules
