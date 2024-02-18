@@ -1,8 +1,11 @@
 import boto3
 from botocore.exceptions import NoCredentialsError as BotoNoCredentialsError
+from datetime import datetime
+from functools import lru_cache
 import io
 import json
 import os
+import pytz
 import re
 import subprocess
 import sys
@@ -28,6 +31,7 @@ from typing_extensions import Literal
 from urllib.parse import urlparse
 from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
+from .scripts.cli_utils import print_boxed
 from .utils import show, keyword_as_title, check_repeatedly
 from dcicutils.function_cache_decorator import function_cache
 
@@ -360,18 +364,9 @@ def _show_section(res, section, caveat_outcome=None, portal=None):
         if section == "upload_info":
             for info in section_data:
                 if isinstance(info, dict) and info.get("filename") and (uuid := info.get("uuid")):
-                    if portal and (fileobject := portal.get(f"/{uuid}")) and (fileobject := fileobject.json()):
-                        if (display_title := fileobject.get("display_title")):
-                            info["target"] = display_title
-                        if (data_type := fileobject.get("data_type")):
-                            if isinstance(data_type, list) and len(data_type) > 0:
-                                data_type = data_type[0]
-                            elif isinstance(data_type, str):
-                                data_type = data_type
-                            else:
-                                data_type = None
-                            if data_type:
-                                info["type"] = Schema.type_name(data_type)
+                    upload_file_accession_name, upload_file_type = _get_upload_file_info(portal, uuid)
+                    info["target"] = upload_file_accession_name
+                    info["type"] = upload_file_type
             print(yaml.dump(section_data))
         else:
             [show(line) for line in section_data]
@@ -908,6 +903,23 @@ def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None
         _show_detailed_results(uuid, metadata_bundles_bucket)
 
 
+@lru_cache(maxsize=256)
+def _get_upload_file_info(portal: Portal, uuid: str) -> Tuple[Optional[str], Optional[str]]:
+    try:
+        upload_file_info = portal.get(f"/{uuid}").json()
+        upload_file_accession_based_name = upload_file_info.get("display_title")
+        if upload_file_type := upload_file_info.get("data_type"):
+            if isinstance(upload_file_type, list) and len(upload_file_type) > 0:
+                upload_file_type = upload_file_type[0]
+            elif not isinstance(upload_file_type, str):
+                upload_file_type = None
+            if upload_file_type:
+                upload_file_type = Schema.type_name(upload_file_type)
+        return upload_file_accession_based_name, upload_file_type
+    except Exception:
+        return None
+
+
 def _show_upload_result(result,
                         show_primary_result=True,
                         show_validation_output=True,
@@ -915,6 +927,39 @@ def _show_upload_result(result,
                         show_datafile_url=True,
                         show_details=True,
                         portal=None):
+
+    def print_upload_summary():
+        def format_portal_object_datetime(value: str) -> Optional[str]:  # noqa
+            try:
+                dt = datetime.fromisoformat(value).replace(tzinfo=pytz.utc)
+                tzlocal = datetime.now().astimezone().tzinfo
+                return dt.astimezone(tzlocal).strftime(f"%-I:%M %p %Z | %A, %B %-d, %Y")
+            except Exception:
+                return None
+        print("")
+        lines = ["==="]
+        if submission_uuid := result.get("uuid"):
+            lines.append(f"Submission UUID: {submission_uuid}")
+        if submission_file := result.get("parameters", {}).get("datafile"):
+            lines.append(f"Submission File: {submission_file}")
+        if date_created := format_portal_object_datetime(result.get("date_created")):
+            lines.append(f"Submission Time: {date_created}")
+        if upload_files := result.get("additional_data", {}).get("upload_info"):
+            for upload_file in upload_files:
+                upload_file_uuid = upload_file.get("uuid")
+                upload_file_name = upload_file.get("filename")
+                upload_file_accession_name, upload_file_type = _get_upload_file_info(portal, upload_file_uuid)
+                lines.append("===")
+                lines.append(f"Upload File Name: {upload_file_name}")
+                lines.append(f"Upload File UUID: {upload_file_uuid}")
+                if upload_file_accession_name:
+                    lines.append(f"Upload File Accession Name: {upload_file_accession_name}")
+                if upload_file_type:
+                    lines.append(f"Upload File Type: {upload_file_type}")
+        lines.append("===")
+        print_boxed(lines)
+
+    print_upload_summary()
 
     if show_primary_result:
         if _get_section(result, 'upload_info'):

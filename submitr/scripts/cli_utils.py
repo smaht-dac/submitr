@@ -2,7 +2,7 @@ import argparse
 import io
 import sys
 import webbrowser
-from typing import Optional
+from typing import Callable, List, Optional, Tuple
 import pkg_resources
 
 
@@ -77,6 +77,8 @@ class CustomArgumentParser(argparse.ArgumentParser):
             lines = lines[1:]
         if lines[len(lines) - 1] == "":
             lines = lines[:len(lines) - 1]
+        print_boxed(lines, right_justified_macro=("[VERSION]", self.get_version))
+        """
         length = max(len(line) for line in lines)
         for line in lines:
             if line == "===":
@@ -87,6 +89,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
                 print(f"| {line}{' ' * (length - len(line) - len(version) - 1)} {version} |")
             else:
                 print(f"| {line}{' ' * (length - len(line))} |")
+        """
 
     def get_version(self) -> str:
         try:
@@ -96,3 +99,16 @@ class CustomArgumentParser(argparse.ArgumentParser):
 
     def is_pytest(self):
         return "pytest" in sys.modules
+
+
+def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Callable]] = None) -> None:
+    length = max(len(line) for line in lines)
+    for line in lines:
+        if line == "===":
+            print(f"+{'-' * (length - len(line) + 5)}+")
+        elif right_justified_macro and (len(right_justified_macro) == 2) and line.endswith(right_justified_macro[0]):
+            line = line.replace(right_justified_macro[0], len(right_justified_macro[0]) * " ")
+            version = right_justified_macro[1]()
+            print(f"| {line}{' ' * (length - len(line) - len(version) - 1)} {version} |")
+        else:
+            print(f"| {line}{' ' * (length - len(line))} |")
