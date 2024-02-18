@@ -874,7 +874,6 @@ def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None
     :param show_datafile_url: bool controls whether to show the datafile_url parameter from the parameters.
     :param show_details: bool controls whether to show the details from the results file in S3.
     """
-
     def print_submission_summary(result: dict) -> None:
         def format_portal_object_datetime(value: str) -> Optional[str]:  # noqa
             try:
