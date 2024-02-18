@@ -9,7 +9,8 @@ _HELP = f"""
 ===
 resume-uploads [VERSION]
 ===
-Tool to submit (and validate) submission metadata and files to SMaHT Portal.
+Tool to upload files referenced in a metadata file,
+previously submitted using submit-metadata-bundle, to SMaHT Portal.
 See: {CustomArgumentParser.HELP_URL}#resuming-uploads
 ===
 USAGE: resume-uploads UUID OPTIONS
