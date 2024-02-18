@@ -197,7 +197,7 @@ for each schema with associated details, as described above.
 Finally, passing ``--raw`` to either of these schema related uses will result in the raw JSON for the schema(s) being output.
 
 .. tip::
-    There is nothing really that the ``view-portal-object`` command does that you cannot also do by interacting with SMaHT Portal directly 
+    There is nothing really that the ``view-portal-object`` commands do that you cannot also do by interacting with SMaHT Portal directly 
     via your browser, but some command-line savvy users may find this interface more agreeable under some circumstances.
 
 Installation for Developers
