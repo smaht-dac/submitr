@@ -184,7 +184,7 @@ And specifying  the ``--details`` option, the output will also include a alphabe
 properties, along with their types, and other details like: whether or not the property is required;
 any (regular expression) pattern the associated value must adhere to; and if it is a reference, the type to which it refers;
 
-You can output the type `names` of  `all` schema types present within SMaHT Portal
+You can also output the type `names` of  `all` schema types present within SMaHT Portal
 using the special ``schemas`` name to the above command, for example::
 
     view-portal-object --env data schemas
@@ -192,7 +192,7 @@ using the special ``schemas`` name to the above command, for example::
 If you pass the ``--details`` option to this,
 you'll get the `identifying` and `required` properties for each listed schema type name;
 and then also passing the ``--more-details`` options you'll get `all` of the properties
-for each schema and associated details, as described above.
+for each schema with associated details, as described above.
 
 Finally, passing ``--raw`` to either of these schema related uses will result in the raw JSON for the schema(s) being output.
 

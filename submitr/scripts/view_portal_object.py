@@ -208,8 +208,8 @@ def _print_schema_info(schema: dict, level: int = 0,
         if required_properties := schema.get("required"):
             _print("- required properties:")
             for required_property in sorted(list(set(required_properties))):
-                if property_type := (type_info := schema.get("properties", {}).get(required_property, {})).get("type"):
-                    if property_type == "array" and (array_type := type_info.get("items", {}).get("type")):
+                if property_type := (info := schema.get("properties", {}).get(required_property, {})).get("type"):
+                    if property_type == "array" and (array_type := info.get("items", {}).get("type")):
                         _print(f"  - {required_property}: {property_type} of {array_type}")
                     else:
                         _print(f"  - {required_property}: {property_type}")
@@ -218,8 +218,8 @@ def _print_schema_info(schema: dict, level: int = 0,
         if identifying_properties := schema.get("identifyingProperties"):
             _print("- identifying properties:")
             for identifying_property in sorted(list(set(identifying_properties))):
-                if property_type := (type_info := schema.get("properties", {}).get(identifying_property, {})).get("type"):
-                    if property_type == "array" and (array_type := type_info.get("items", {}).get("type")):
+                if property_type := (info := schema.get("properties", {}).get(identifying_property, {})).get("type"):
+                    if property_type == "array" and (array_type := info.get("items", {}).get("type")):
                         _print(f"  - {identifying_property}: {property_type} of {array_type}")
                     else:
                         _print(f"  - {identifying_property}: {property_type}")
