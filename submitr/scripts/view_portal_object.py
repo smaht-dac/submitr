@@ -89,7 +89,8 @@ def main():
     parser.add_argument("--copy", "-c", action="store_true", required=False, default=False,
                         help="Copy object data to clipboard.")
     parser.add_argument("--details", action="store_true", required=False, default=False, help="Detailed output.")
-    parser.add_argument("--more-details", action="store_true", required=False, default=False, help="More detailed output.")
+    parser.add_argument("--more-details", action="store_true", required=False, default=False,
+                        help="More detailed output.")
     parser.add_argument("--verbose", action="store_true", required=False, default=False, help="Verbose output.")
     parser.add_argument("--debug", action="store_true", required=False, default=False, help="Debugging output.")
     args = parser.parse_args()
