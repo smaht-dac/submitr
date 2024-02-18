@@ -121,7 +121,7 @@ files (intended for upload) can be detected.
 
 For this reason, the default ``--validate`` mode of validation is the most comprehensive,
 as it performs `both` client-side and server-side validation.
-But alternatively, you can invoke either one of these validations individually and exclusively as follows.
+But alternatively, you can invoke either one of these validations individually and `exclusively` as follows.
 
 .. note::
     Even in the absence of `any` validation (which is actually not even a readily available option),
