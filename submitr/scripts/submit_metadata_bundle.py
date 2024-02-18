@@ -17,7 +17,7 @@ _HELP = f"""
 ===
 submit-metadata-bundle [VERSION]
 ===
-Tool to submit  submission metadata and files to SMaHT Portal.
+Tool to submit submission metadata and files to SMaHT Portal.
 See: {CustomArgumentParser.HELP_URL}#submission
 ===
 USAGE: submit-metadata-bundle METADATA-FILE OPTIONS
@@ -26,7 +26,7 @@ METADATA-FILE: This is the path to your metatdata file.
 ===
 OPTIONS:
 ===
---env ENVIRONMENT
+--env ENVIRONMENT-NAME
   To specify your environment name; from your ~/.smaht-keys.json file.
 --validate
   To validate metadata before submitting.
