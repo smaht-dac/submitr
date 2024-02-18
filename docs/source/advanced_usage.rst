@@ -174,18 +174,25 @@ use the ``--yaml`` option. And if you want to automatically copy the (JSON) data
 Viewing Portal Schemas
 ----------------------
 
-Using the same ``view-portal-object`` utility described above you can also view SMaHT Portal object schemas,
-by using the ``--schema`` option and passing the name of a SMaHT Portal object type,
-for example::
+Using the same ``view-portal-object`` utility described above you can also view information about SMaHT Portal `schemas`,
+if the given the argument is the name of a SMaHT Portal object type, for example::
 
-    view-portal-object --env data --schema CellLine
+    view-portal-object --env data CellLine
 
-Or you can output the type names of  `all` schema types present within SMaHT Portal using the special ``schemas`` identifier,
-for example::
+This will output the names of the `identifying` and `required` properties for the named schema.
+And specifying  the ``--details`` option, the output will also include a alphabetical list of `all` of the schema
+properties, along with their types, and other details like whether or not they property is required,
+any (regular expression) pattern the associated value must adhere to.
+
+You can output the type names of  `all` schema types present within SMaHT Portal using the special ``schemas`` name
+to the above command, for example::
 
     view-portal-object --env data schemas
 
-And if you also pass the ``--verbose`` option to the above, it will also print the `identifying` and `required` properties for each listed schema type name.
+And if you pass the ``--details`` option to this,
+you'll get the `identifying` and `required` properties for each listed schema type name;
+and then also passing the ``--more-details`` options you'll get all of the properties for each schema and associated details,
+as described above.
 
 .. tip::
     There is nothing really that the ``view-portal-object`` command does that you cannot also do by interacting with SMaHT Portal directly 
