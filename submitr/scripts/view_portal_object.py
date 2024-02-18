@@ -207,7 +207,7 @@ def _print_schema_info(schema: dict, level: int = 0,
             for identifying_property in sorted(identifying_properties):
                 _print(f"  - {identifying_property}")
         if schema.get("additionalProperties") is True:
-            _print(f"  - additional properties allowed: {additional_properties}")
+            _print(f"  - additional properties are allowed")
             pass
     if not details:
         return
@@ -217,7 +217,7 @@ def _print_schema_info(schema: dict, level: int = 0,
         for property_name in sorted(properties):
             spaces = f"{' ' * (level + 1) * 2}"
             property = properties[property_name]
-            property_required = required and property_name in required 
+            property_required = required and property_name in required
             if property_type := property.get("type"):
                 if property_type == "object":
                     suffix = ""
@@ -227,7 +227,6 @@ def _print_schema_info(schema: dict, level: int = 0,
                         else:
                             suffix += " | undefined"
                     elif property.get("additionalProperties") is True:
-                        #suffix += " | additional properties allowed"
                         property_type = "open ended object"
                     _print(f"{spaces}- {property_name}: {property_type}{suffix}")
                     _print_schema_info(object_properties, level=level + 1,
