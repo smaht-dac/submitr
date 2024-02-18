@@ -49,9 +49,9 @@ OPTIONS:
 --verbose
   For more verbose output.
 --help
-  Print this documentation.
+  Prints this documentation.
 --help-advanced
-  Print more advanced documentation.
+  Prints this plus more advanced documentation.
 --help-web
   Opens your browser to the Web based documentation.
   {CustomArgumentParser.HELP_URL}#submission

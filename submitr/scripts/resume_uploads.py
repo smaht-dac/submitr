@@ -37,9 +37,9 @@ OPTIONS:
   To specify an alternate credentials/keys
   file to the default ~/.smaht-keys.json file.
 --help
-  Print this documentation.
+  Prints this documentation.
 --help-advanced
-  Print more advanced documentation.
+  Prints this plus more advanced documentation.
 --help-web
   Opens your browser to the Web based documentation.
   {CustomArgumentParser.HELP_URL}#resuming-uploads
