@@ -193,7 +193,7 @@ To be more specific about the the validation checks, they include the following:
     If you get validation errors, and then you fix them, and then you try again,
     it is `possible` that you will get new, additional errors. I.e. it is not necessarily
     the case that `all` validation errors will be comprehensively reported all at once.
-    This is because there are two kinds of validation: local `client-side` and remote `server-side`.
+    This is because there are two kinds (or phases) of validation: local `client-side` and remote `server-side`.
     You can learn more about the details of ths validation process
     in the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
 
