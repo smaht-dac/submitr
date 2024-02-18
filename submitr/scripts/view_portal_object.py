@@ -234,6 +234,8 @@ def _print_schema_info(schema: dict, level: int = 0,
         if level == 0:
             _print("- properties:")
         for property_name in sorted(properties):
+            if property_name.startswith("@"):
+                continue
             spaces = f"{' ' * (level + 1) * 2}"
             property = properties[property_name]
             property_required = required and property_name in required
@@ -244,7 +246,7 @@ def _print_schema_info(schema: dict, level: int = 0,
                         if property.get("additionalProperties") is True:
                             property_type = "any object"
                         else:
-                            suffix += " | undefined"
+                            property_type = "undefined object"
                     elif property.get("additionalProperties") is True:
                         property_type = "open ended object"
                     _print(f"{spaces}- {property_name}: {property_type}{suffix}")
