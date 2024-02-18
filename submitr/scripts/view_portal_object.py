@@ -60,7 +60,7 @@ from functools import lru_cache
 import json
 import pyperclip
 import sys
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 import yaml
 from dcicutils.captured_output import captured_output, uncaptured_output
 from dcicutils.misc_utils import get_error_message, is_uuid
@@ -88,6 +88,7 @@ def main():
     parser.add_argument("--yaml", action="store_true", required=False, default=False, help="YAML output.")
     parser.add_argument("--copy", "-c", action="store_true", required=False, default=False,
                         help="Copy object data to clipboard.")
+    parser.add_argument("--details", action="store_true", required=False, default=False, help="Detailed output.")
     parser.add_argument("--verbose", action="store_true", required=False, default=False, help="Verbose output.")
     parser.add_argument("--debug", action="store_true", required=False, default=False, help="Debugging output.")
     args = parser.parse_args()
@@ -96,7 +97,7 @@ def main():
                             app=args.app, verbose=args.verbose, debug=args.debug)
 
     if args.uuid.lower() == "schemas" or args.uuid.lower() == "schema":
-        _print_all_schema_names(portal=portal, verbose=args.verbose, raw=args.raw)
+        _print_all_schema_names(portal=portal, details=args.details, raw=args.raw)
         return
 
     if _is_maybe_schema_name(args.uuid):
@@ -108,7 +109,7 @@ def main():
             if args.copy:
                 pyperclip.copy(json.dumps(schema, indent=4))
             _print(schema_name)
-            _print_schema_info(schema, raw=args.raw)
+            _print_schema(schema, details=args.details, raw=args.raw)
         return
 
     data = _get_portal_object(portal=portal, uuid=args.uuid, raw=args.raw, database=args.database, verbose=args.verbose)
@@ -185,27 +186,32 @@ def _is_maybe_schema_name(value: str) -> bool:
     return False
 
 
-def _print_schema_info(schema: dict, verbose: bool = False, raw: bool = False) -> None:
+def _print_schema(schema: dict, details: bool = False, raw: bool = False) -> None:
     if raw:
         _print(json.dumps(schema, indent=4))
         return
-    _print_schema_detail(schema)
+    _print_schema_info(schema, details=details)
 
-def _print_schema_detail(schema: dict, level: int = 0) -> None:
+
+def _print_schema_info(schema: dict, level: int = 0,
+                       details: bool = False, required: Optional[List[str]] = None) -> None:
     if not schema or not isinstance(schema, dict):
         return
     if level == 0:
-        if identifying_properties := schema.get("identifyingProperties"):
-            _print("- identifying properties:")
-            for identifying_property in sorted(identifying_properties):
-                _print(f"  - {identifying_property}")
         if required_properties := schema.get("required"):
             _print("- required properties:")
             for required_property in sorted(required_properties):
                 _print(f"  - {required_property}")
-        if (additional_properties := schema.get("additionalProperties")) == False:
+        if identifying_properties := schema.get("identifyingProperties"):
+            _print("- identifying properties:")
+            for identifying_property in sorted(identifying_properties):
+                _print(f"  - {identifying_property}")
+        if (additional_properties := schema.get("additionalProperties")) is True:
+            import pdb ; pdb.set_trace()
             # _print(f"  - additional properties allowed: {additional_properties}")
             pass
+    if not details:
+        return
     if properties := (schema.get("properties") if level == 0 else schema):
         if level == 0:
             _print("- properties:")
@@ -216,18 +222,24 @@ def _print_schema_detail(schema: dict, level: int = 0) -> None:
                 if property_type == "object":
                     suffix = ""
                     if not (object_properties := property.get("properties")):
-                        suffix += " | no object defined"
-                    if (additional_properties := property.get("additionalProperties")) == True:
+                        if property.get("additionalProperties") is True:
+                            suffix += " | undefined but additional properties allowed"
+                        else:
+                            suffix += " | undefined"
+                    elif property.get("additionalProperties") is True:
                         suffix += " | additional properties allowed"
                     _print(f"{spaces}- {property_name}: {property_type}{suffix}")
-                    _print_schema_detail(object_properties, level=level + 1)
+                    _print_schema_info(object_properties, level=level + 1,
+                                       details=details, required=property.get("required"))
                 elif property_type == "array":
                     if property_items := property.get("items"):
                         if property_type := property_items.get("type"):
                             if property_type == "object":
+                                suffix = ""
                                 _print(f"{spaces}- {property_name}: array[object]")
-                                _print_schema_detail(property_items.get("properties"), level=level + 1)
+                                _print_schema_info(property_items.get("properties"), details=details, level=level + 1)
                             elif property_type == "array":
+                                # This (array-of-array) never happens to occur at this time (February 2024).
                                 _print(f"{spaces}- {property_name}: array[array]")
                             else:
                                 _print(f"{spaces}- {property_name}: array[{property_type}]")
@@ -236,7 +248,11 @@ def _print_schema_detail(schema: dict, level: int = 0) -> None:
                     else:
                         _print(f"{spaces}- {property_name}: array")
                 else:
+                    if isinstance(property_type, list):
+                        property_type = " | ".join(property_type)
                     suffix = ""
+                    if required and property_name in required:
+                        suffix += f" | required"
                     if pattern := property.get("pattern"):
                         suffix += f" | pattern: {pattern}"
                     if link_to := property.get("linkTo"):
@@ -246,15 +262,15 @@ def _print_schema_detail(schema: dict, level: int = 0) -> None:
                 _print(f"{spaces}- {property_name}")
 
 
-def _print_all_schema_names(portal: Portal, verbose: bool = False, raw: bool = False) -> None:
+def _print_all_schema_names(portal: Portal, details: bool = False, raw: bool = False) -> None:
     if schemas := _get_schemas(portal):
         if raw:
             _print(json.dumps(schemas, indent=4))
             return
         for schema in sorted(schemas.keys()):
             _print(schema)
-            if verbose:
-                _print_schema_info(schemas[schema], verbose=verbose)
+            if details:
+                _print_schema(schemas[schema], details=details)
 
 
 def _print(*args, **kwargs):
