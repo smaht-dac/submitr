@@ -15,7 +15,7 @@ from .testing_helpers import system_exit_expected, argparse_errors_muffled
 @pytest.mark.parametrize("keyfile", [None, "foo.bar"])
 def test_resume_uploads_script(keyfile):
 
-    def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
+    def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None, expect_output=[]):
         output = []
         with argparse_errors_muffled():
             with temporary_directory() as tmpdir:
@@ -33,9 +33,10 @@ def test_resume_uploads_script(keyfile):
                         assert mock_resume_uploads.call_count == (1 if expect_called else 0)
                         if expect_called:
                             assert mock_resume_uploads.called_with(**expect_call_args)
-                        assert output == []
+                        assert output == expect_output
 
-    test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
+    test_it(args_in=[], expect_exit_code=2, expect_called=False,
+            expect_output=["Missing submission UUID or referenced file UUID or accession ID."])  # Missing args
     test_it(args_in=['some-guid'], expect_exit_code=0, expect_called=True, expect_call_args={
         'bundle_filename': None,
         'env': None,
