@@ -198,7 +198,7 @@ Finally, passing ``--raw`` to either of these schema related uses will result in
 
 .. tip::
     There is nothing really that the ``view-portal-object`` commands do that you cannot also do by interacting with SMaHT Portal directly 
-    via your browser, but some command-line savvy users may find this interface more agreeable under some circumstances.
+    via your browser, but more command-line savvy users may find this interface more agreeable under some circumstances.
 
 Installation for Developers
 ===========================
