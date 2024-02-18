@@ -19,7 +19,7 @@ UUID: This is UUID of your submission; or the UUID of an individual file
 ===
 OPTIONS:
 ===
---env ENVIRONMENT
+--env ENVIRONMENT-NAME
   To specify your environment name; from your ~/.smaht-keys.json file.
 --validate
   To validate metadata before submitting.
@@ -33,7 +33,8 @@ OPTIONS:
   To specify that any sub-directories of the directory containing
   the upload file(s) should be searched, recursively.
 --keys KEYS-FILE
-  To specify an alternate credentials/keys file to ~/.smaht-keys.json.
+  To specify an alternate credentials/keys
+  file to the default ~/.smaht-keys.json file.
 --help
   Print this documentation.
 --help-advanced
