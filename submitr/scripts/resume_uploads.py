@@ -48,7 +48,7 @@ OPTIONS:
 
 def main(simulated_args_for_testing=None):
     parser = CustomArgumentParser(_HELP, package="smaht-submitr")
-    parser.add_argument('uuid', help='IngestionSumission UUID (or upload file UUID or accession ID).')
+    parser.add_argument('uuid', nargs="?", help='IngestionSumission UUID (or upload file UUID or accession ID).')
     parser.add_argument('--server', '-s',
                         help="HTTP(S) address of Portal server (e.g. in ~/.smaht-keys.json).")
     parser.add_argument('--env', '-e',
@@ -80,6 +80,10 @@ def main(simulated_args_for_testing=None):
 
     if args.yes:
         args.no_query = True
+
+    if not args.uuid:
+        print("Missing submission UUID or referenced file UUID or accession ID.")
+        exit(2)
 
     if args.keys:
         if not args.keys.endswith(".json") or not os.path.exists(args.keys):
