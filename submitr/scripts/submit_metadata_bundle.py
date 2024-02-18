@@ -1,7 +1,6 @@
 import argparse
 import json
 import os
-from typing import Optional
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
 from .cli_utils import CustomArgumentParser
