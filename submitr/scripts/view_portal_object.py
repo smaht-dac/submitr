@@ -207,7 +207,7 @@ def _print_schema_info(schema: dict, level: int = 0,
             for identifying_property in sorted(identifying_properties):
                 _print(f"  - {identifying_property}")
         if schema.get("additionalProperties") is True:
-            # _print(f"  - additional properties allowed: {additional_properties}")
+            _print(f"  - additional properties allowed: {additional_properties}")
             pass
     if not details:
         return
@@ -217,45 +217,50 @@ def _print_schema_info(schema: dict, level: int = 0,
         for property_name in sorted(properties):
             spaces = f"{' ' * (level + 1) * 2}"
             property = properties[property_name]
+            property_required = required and property_name in required 
             if property_type := property.get("type"):
                 if property_type == "object":
                     suffix = ""
                     if not (object_properties := property.get("properties")):
                         if property.get("additionalProperties") is True:
-                            suffix += " | undefined but additional properties allowed"
+                            property_type = "any object"
                         else:
                             suffix += " | undefined"
                     elif property.get("additionalProperties") is True:
-                        suffix += " | additional properties allowed"
+                        #suffix += " | additional properties allowed"
+                        property_type = "open ended object"
                     _print(f"{spaces}- {property_name}: {property_type}{suffix}")
                     _print_schema_info(object_properties, level=level + 1,
                                        details=details, required=property.get("required"))
                 elif property_type == "array":
+                    suffix = ""
+                    if property_required:
+                        suffix += f" | required"
                     if property_items := property.get("items"):
                         if property_type := property_items.get("type"):
                             if property_type == "object":
                                 suffix = ""
-                                _print(f"{spaces}- {property_name}: array[object]")
+                                _print(f"{spaces}- {property_name}: array of object{suffix}")
                                 _print_schema_info(property_items.get("properties"), details=details, level=level + 1)
                             elif property_type == "array":
                                 # This (array-of-array) never happens to occur at this time (February 2024).
-                                _print(f"{spaces}- {property_name}: array[array]")
+                                _print(f"{spaces}- {property_name}: array of array{suffix}")
                             else:
-                                _print(f"{spaces}- {property_name}: array[{property_type}]")
+                                _print(f"{spaces}- {property_name}: array of {property_type}{suffix}")
                         else:
-                            _print(f"{spaces}- {property_name}: array")
+                            _print(f"{spaces}- {property_name}: array{suffix}")
                     else:
-                        _print(f"{spaces}- {property_name}: array")
+                        _print(f"{spaces}- {property_name}: array{suffix}")
                 else:
                     if isinstance(property_type, list):
                         property_type = " | ".join(property_type)
                     suffix = ""
-                    if required and property_name in required:
+                    if property_required:
                         suffix += f" | required"
                     if pattern := property.get("pattern"):
                         suffix += f" | pattern: {pattern}"
                     if link_to := property.get("linkTo"):
-                        suffix += f" | ref: {link_to}"
+                        suffix += f" | reference: {link_to}"
                     _print(f"{spaces}- {property_name}: {property_type}{suffix}")
             else:
                 _print(f"{spaces}- {property_name}")
