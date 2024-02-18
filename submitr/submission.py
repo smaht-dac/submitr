@@ -883,10 +883,9 @@ def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None
                 return dt.astimezone(tzlocal).strftime(f"%-I:%M %p %Z | %A, %B %-d, %Y")
             except Exception:
                 return None
-        print("")
-        lines = ["==="]
-        lines.append("SMaHT Submission Summary")
-        lines.append("===")
+        if not result:
+            return
+        lines = []
         if submission_uuid := result.get("uuid"):
             lines.append(f"Submission UUID: {submission_uuid}")
         if submission_file := result.get("parameters", {}).get("datafile"):
@@ -934,8 +933,9 @@ def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None
                         lines.append(f"Upload File Accession Name: {upload_file_accession_name}")
                     if upload_file_type:
                         lines.append(f"Upload File Type: {upload_file_type}")
-        lines.append("===")
-        print_boxed(lines)
+        if lines:
+            print("")
+            print_boxed(["===", "SMaHT Submission Summary", "==="] + lines + ["==="])
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
