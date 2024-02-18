@@ -41,8 +41,8 @@ OPTIONS:
   To specify a directory containing the files to upload; in addition
   to the default of using the directory containing the submitted file.
 --sub-directories
-  To specify that any sub-directories, of the directory containing
-  the upload file(s), should be searched, recursively.
+  To specify that any sub-directories of the directory containing
+  the upload file(s) should be searched, recursively.
 --keys KEYS-FILE
   To specify an alternate credentials/keys
   file to the default ~/.smaht-keys.json file.

@@ -28,11 +28,10 @@ OPTIONS:
   To specifiy the path to your metatdata file;
   only the directory of this is used to locate your upload files.
 --directory DIRECTORY
-  To specify the directory containing files to upload;
-  in addition to the directory containing the submitted metadata file.
+  To specify the directory containing files to upload.
 --sub-directories
-  To specify that any sub-directories of the upload
-  file(s) directory should be searched, recursively.
+  To specify that any sub-directories of the directory containing
+  the upload file(s) should be searched, recursively.
 --keys KEYS-FILE
   To specify an alternate credentials/keys file to ~/.smaht-keys.json.
 --help
