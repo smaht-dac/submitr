@@ -206,8 +206,7 @@ def _print_schema_info(schema: dict, level: int = 0,
             _print("- identifying properties:")
             for identifying_property in sorted(identifying_properties):
                 _print(f"  - {identifying_property}")
-        if (additional_properties := schema.get("additionalProperties")) is True:
-            import pdb ; pdb.set_trace()
+        if schema.get("additionalProperties") is True:
             # _print(f"  - additional properties allowed: {additional_properties}")
             pass
     if not details:
