@@ -28,7 +28,7 @@ OPTIONS:
   To specifiy the path to your metatdata file;
   only the directory of this is used to locate your upload files.
 --directory DIRECTORY
-  To specify the directory containing files to upload.
+  To specify the directory containing the files to upload.
 --sub-directories
   To specify that any sub-directories of the directory containing
   the upload file(s) should be searched, recursively.
