@@ -5,7 +5,7 @@ Submitting Metadata
 Once you have finished installing the ``smaht-submitr`` package (per the `Installation <installation.html>`_ section),
 you should have access to the ``submit-metadata-bundle`` command.
 What follows are detailed instructions for how to format your metatdata submission files,
-and how to actually submit (and validate) them to SMaHT Portal.
+and how to actually submit (and validate) them to SMaHT Portal using this command.
 
 Formatting Files for Submission
 ===============================
