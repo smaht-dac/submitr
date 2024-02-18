@@ -196,25 +196,6 @@ def _sanity_check_submitted_file(file_name: str) -> bool:
     that it must contain a single directory whose name is the base name of the file
     with a "-inserts" suffix. Returns True if passed sanity check otherwise False.
     """
-
-    def get_unpackable_file_extension(file_name: str) -> Optional[str]:
-        UNPACKABLE_EXTENSIONS = [".tar.gz", ".tar", ".tgz", ".gz", ".zip"]
-        for extension in UNPACKABLE_EXTENSIONS:
-            if file_name.endswith(extension):
-                return extension
-        return None
-
-    def is_unpackable_file(file_name: str) -> bool:
-        return False
-        return get_unpackable_file_extension(file_name) is not None
-
-    def is_properly_named_unpackable_file(file_name: str) -> bool:
-        unpackable_extension = get_unpackable_file_extension(file_name)
-        if not unpackable_extension:
-            return False
-        base_file_name = file_name[:-len(unpackable_extension)]
-        return base_file_name.endswith("-inserts") or base_file_name.endswith("_inserts")
-
     if not os.path.exists(file_name):
         PRINT(f"Submission file does not exist: {file_name}")
         return False
@@ -227,21 +208,7 @@ def _sanity_check_submitted_file(file_name: str) -> bool:
             PRINT(f"Cannot load JSON from file: {file_name}")
             return False
 
-    sanity_check_passed = True
-    if is_unpackable_file(file_name):
-        extension = get_unpackable_file_extension(file_name)
-        PRINT(f"NOTE: If this archive ({extension[1:]}) file is intended to contain multiple files then: ")
-        PRINT(f"- The archive file must be named like: ANYNAME-inserts{extension}", end="")
-        if not is_properly_named_unpackable_file(file_name):
-            PRINT(f" -> And it is NOT.")
-            sanity_check_passed = False
-        else:
-            PRINT(f" -> And it is.")
-        PRINT(f"- The archive file must contain ONLY a directory with your files directly within it.")
-        PRINT(f"- And that directory name must be named for the base name")
-        PRINT(f"  of your file with a -inserts suffix, e.g. ANYNAME-inserts.")
-
-    return sanity_check_passed
+    return True
 
 
 def _setup_validate_related_options(args: argparse.Namespace):
