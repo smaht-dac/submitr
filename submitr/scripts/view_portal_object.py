@@ -113,7 +113,8 @@ def main():
         if schema:
             if args.copy:
                 pyperclip.copy(json.dumps(schema, indent=4))
-            _print(schema_name)
+            if not args.raw:
+                _print(schema_name)
             _print_schema(schema, details=args.details, more_details=args.details, raw=args.raw)
         return
 
