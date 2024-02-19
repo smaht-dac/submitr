@@ -725,7 +725,7 @@ def submit_any_ingestion(ingestion_filename, *,
     show(f"Awaiting processing ...", with_time=True)
 
     check_done, check_status, check_response = _check_submit_ingestion(
-            uuid, portal.server, portal.env, portal.app, show_details, report=False)
+            uuid, portal.server, portal.env, portal.app, show_details, report=False, messages=True)
 
     if validate_remote_only:
         exit(0)
@@ -764,7 +764,8 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
 
 def _check_submit_ingestion(uuid: str, server: str, env: str,
                             app: Optional[OrchestratedApp] = None,
-                            show_details: bool = False, report: bool = True) -> Tuple[bool, str, dict]:
+                            show_details: bool = False,
+                            report: bool = True, messages: bool = False) -> Tuple[bool, str, dict]:
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
@@ -788,7 +789,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str,
     [check_done, check_status, check_response] = (
         check_repeatedly(check_ingestion_progress,
                          wait_seconds=PROGRESS_CHECK_INTERVAL,
-                         repeat_count=ATTEMPTS_BEFORE_TIMEOUT)
+                         repeat_count=ATTEMPTS_BEFORE_TIMEOUT, messages=messages)
     )
 
     if not check_done:
@@ -796,6 +797,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str,
         show(f"Exiting after check processing timeout using {command_summary!r}.")
         exit(1)
 
+    """
     show("Final status: %s" % check_status.title(), with_time=True)
 
     if check_status == "error" and check_response.get("errors"):
@@ -812,6 +814,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str,
     if show_details:
         metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
         _show_detailed_results(uuid, metadata_bundles_bucket)
+    """
 
     if not _pytesting():
         _print_submission_summary(portal, check_response)
@@ -865,13 +868,13 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
     if not result:
         return
     lines = []
+    validation_info = None
     if submission_file := result.get("parameters", {}).get("datafile"):
         lines.append(f"Submission File: {submission_file}")
     if submission_uuid := result.get("uuid"):
         lines.append(f"Submission UUID: {submission_uuid}")
     if date_created := format_portal_object_datetime(result.get("date_created")):
         lines.append(f"Submission Time: {date_created}")
-    validation_info = None
     if additional_data := result.get("additional_data"):
         if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
             summary_lines = []
