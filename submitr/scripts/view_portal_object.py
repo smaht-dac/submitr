@@ -215,6 +215,7 @@ def _print_schema_info(schema: dict, level: int = 0,
                         _print(f"  - {required_property}: {property_type}")
                 else:
                     _print(f"  - {required_property}")
+            required = required_properties
         if identifying_properties := schema.get("identifyingProperties"):
             _print("- identifying properties:")
             for identifying_property in sorted(list(set(identifying_properties))):
@@ -278,7 +279,7 @@ def _print_schema_info(schema: dict, level: int = 0,
                         property_type = " | ".join(property_type)
                     suffix = ""
                     if (enumeration := property.get("enum")) is not None:
-                        suffix += f" | enum "
+                        suffix += f" | enum"
                     if property_required:
                         suffix += f" | required"
                     if pattern := property.get("pattern"):
@@ -287,6 +288,14 @@ def _print_schema_info(schema: dict, level: int = 0,
                         suffix += f" | reference: {link_to}"
                     if property.get("calculatedProperty"):
                         suffix += f" | calculated"
+                    if default := property.get("default"):
+                        suffix += f" | default:"
+                        if isinstance(default, dict):
+                            suffix += f" object"
+                        elif isinstance(default, list):
+                            suffix += f" array"
+                        else:
+                            suffix += f" {default}"
                     _print(f"{spaces}- {property_name}: {property_type}{suffix}")
                     if enumeration:
                         for enum in enumeration:
