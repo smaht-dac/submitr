@@ -239,4 +239,4 @@ in order of most recent first, do::
    list-submissions --env <environment-name>
 
 Use the ``--verbose`` option to list more information for each of the recent submissions shown.
-You can control the number of results output using the ``--count`` option with an integer count argument.
+You can control the maximum number of results output using the ``--count`` option with an integer count argument.
