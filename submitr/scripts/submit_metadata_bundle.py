@@ -51,9 +51,6 @@ OPTIONS:
   Prints this documentation.
 --help-advanced
   Prints this plus more advanced documentation.
---help-web
-  Opens your browser to the Web based documentation.
-  {CustomArgumentParser.HELP_URL}#submission
 ===
 """
 _HELP_ADVANCED = _HELP.strip() + f"""
@@ -81,6 +78,9 @@ ADVANCED OPTIONS:
   For testing/troubleshooting only.
 --help-raw
   Prints the raw version of this help message.
+--help-web
+  Opens your browser to the Web based documentation.
+  {CustomArgumentParser.HELP_URL}#submission
 ===
 """
 
