@@ -870,17 +870,7 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
         lines.append(f"Submission UUID: {submission_uuid}")
     if date_created := format_portal_object_datetime(result.get("date_created")):
         lines.append(f"Submission Time: {date_created}")
-    if processing_status := result.get("processing_status"):
-        summary_lines = []
-        if status := processing_status.get("state"):
-            summary_lines.append(f"Status: {status.title()}")
-        if outcome := processing_status.get("outcome"):
-            summary_lines.append(f"Outcome: {outcome.title()}")
-        if progress := processing_status.get("progress"):
-            summary_lines.append(f"Progress: {progress.title()}")
-        if summary := " | ".join(summary_lines):
-            lines.append("===")
-            lines.append(summary)
+    validation_info = None
     if additional_data := result.get("additional_data"):
         if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
             summary_lines = []
@@ -899,26 +889,43 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
             if summary := " | ".join(summary_lines):
                 lines.append("===")
                 lines.append(summary)
-            summary_lines = []
-            if s3_data_file := [info for info in validation_info if info.lower().startswith("s3 file: ")]:
-                s3_data_file = s3_data_file[0][9:]
-                if (rindex := s3_data_file.rfind("/")) > 0:
-                    s3_data_bucket = s3_data_file[5:rindex] if s3_data_file.startswith("s3://") else ""
-                    s3_data_file = s3_data_file[rindex + 1:]
-                    if s3_data_bucket:
-                        summary_lines.append(f"S3: {s3_data_bucket}")
-                    summary_lines.append(f"S3 Data: {s3_data_file}")
-            if s3_details_file := [info for info in validation_info if info.lower().startswith("details: ")]:
-                s3_details_file = s3_details_file[0][9:]
-                if (rindex := s3_details_file.rfind("/")) > 0:
-                    s3_details_bucket = s3_details_file[5:rindex] if s3_details_file.startswith("s3://") else ""
-                    s3_details_file = s3_details_file[rindex + 1:]
-                    if s3_details_bucket != s3_data_bucket:
-                        summary_lines.append(f"S3 Bucket: {s3_details_bucket}")
-                    summary_lines.append(f"S3 Details: {s3_details_file}")
-            if summary_lines:
-                lines.append("===")
-                lines += summary_lines
+    if processing_status := result.get("processing_status"):
+        summary_lines = []
+        if state := processing_status.get("state"):
+            summary_lines.append(f"State: {state.title()}")
+        if progress := processing_status.get("progress"):
+            summary_lines.append(f"Progress: {progress.title()}")
+        if outcome := processing_status.get("outcome"):
+            summary_lines.append(f"Outcome: {outcome.title()}")
+        if validation_info:
+            if status := [info for info in validation_info if info.lower().startswith("status")]:
+                summary_lines.append(status[0])
+            pass
+        if summary := " | ".join(summary_lines):
+            lines.append("===")
+            lines.append(summary)
+    if validation_info:
+        summary_lines = []
+        if s3_data_file := [info for info in validation_info if info.lower().startswith("s3 file: ")]:
+            s3_data_file = s3_data_file[0][9:]
+            if (rindex := s3_data_file.rfind("/")) > 0:
+                s3_data_bucket = s3_data_file[5:rindex] if s3_data_file.startswith("s3://") else ""
+                s3_data_file = s3_data_file[rindex + 1:]
+                if s3_data_bucket:
+                    summary_lines.append(f"S3: {s3_data_bucket}")
+                summary_lines.append(f"S3 Data: {s3_data_file}")
+        if s3_details_file := [info for info in validation_info if info.lower().startswith("details: ")]:
+            s3_details_file = s3_details_file[0][9:]
+            if (rindex := s3_details_file.rfind("/")) > 0:
+                s3_details_bucket = s3_details_file[5:rindex] if s3_details_file.startswith("s3://") else ""
+                s3_details_file = s3_details_file[rindex + 1:]
+                if s3_details_bucket != s3_data_bucket:
+                    summary_lines.append(f"S3 Bucket: {s3_details_bucket}")
+                summary_lines.append(f"S3 Details: {s3_details_file}")
+        if summary_lines:
+            lines.append("===")
+            lines += summary_lines
+    if additional_data:
         if upload_files := additional_data.get("upload_info"):
             for upload_file in upload_files:
                 upload_file_uuid = upload_file.get("uuid")
