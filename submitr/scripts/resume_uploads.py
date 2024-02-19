@@ -1,5 +1,6 @@
 import os
 from dcicutils.command_utils import script_catch_errors
+from dcicutils.misc_utils import PRINT
 from .cli_utils import CustomArgumentParser
 from ..base import DEFAULT_APP
 from ..submission import resume_uploads
@@ -83,27 +84,27 @@ def main(simulated_args_for_testing=None):
         args.no_query = True
 
     if not args.uuid:
-        print("Missing submission UUID or referenced file UUID or accession ID.")
+        PRINT("Missing submission UUID or referenced file UUID or accession ID.")
         exit(2)
 
     if args.keys:
         if not args.keys.endswith(".json") or not os.path.exists(args.keys):
-            print("The --keys argument must be the name of an existing .json file.")
+            PRINT("The --keys argument must be the name of an existing .json file.")
             exit(1)
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
-        print(f"WARNING: Directory does not exist: {args.upload_folder}")
+        PRINT(f"WARNING: Directory does not exist: {args.upload_folder}")
         exit(1)
 
     if args.bundle_filename and not os.path.isdir(os.path.normpath(os.path.dirname(args.bundle_filename))):
-        print(f"Specified bundle file not found: {args.bundle_filename}")
+        PRINT(f"Specified bundle file not found: {args.bundle_filename}")
         exit(1)
 
     if not args.upload_folder and args.directory:
         args.upload_folder = args.directory
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
-        print(f"Specified upload directory not found: {args.upload_folder}")
+        PRINT(f"Specified upload directory not found: {args.upload_folder}")
         exit(1)
 
     with script_catch_errors():

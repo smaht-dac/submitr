@@ -367,7 +367,7 @@ def _show_section(res, section, caveat_outcome=None, portal=None):
                     upload_file_accession_name, upload_file_type = _get_upload_file_info(portal, uuid)
                     info["target"] = upload_file_accession_name
                     info["type"] = upload_file_type
-            print(yaml.dump(section_data))
+            PRINT(yaml.dump(section_data))
         else:
             [show(line) for line in section_data]
     else:  # We don't expect this, but such should be shown as-is, mostly to see what it is.
@@ -1029,7 +1029,7 @@ def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None
         _show_detailed_results(uuid, metadata_bundles_bucket)
 
     if not _pytesting():
-        print("")
+        PRINT("")
         _print_submission_summary(portal, res)
 
 
@@ -1533,25 +1533,25 @@ def _upload_item_data(item_filename, uuid, server, env, no_query=False, app=None
 
 def _show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
 
-    print(f"----- Detailed Info -----")
+    PRINT(f"----- Detailed Info -----")
 
     submission_results_location, submission_results = _fetch_submission_results(metadata_bundles_bucket, uuid)
     exception_results_location, exception_results = _fetch_exception_results(metadata_bundles_bucket, uuid)
 
     if not submission_results and not exception_results:
-        print(f"Neither submission nor exception results found!")
-        print(f"-> {submission_results_location}")
-        print(f"-> {exception_results_location}")
+        PRINT(f"Neither submission nor exception results found!")
+        PRINT(f"-> {submission_results_location}")
+        PRINT(f"-> {exception_results_location}")
         return
 
     if submission_results:
-        print(f"From: {submission_results_location}")
-        print(yaml.dump(submission_results))
+        PRINT(f"From: {submission_results_location}")
+        PRINT(yaml.dump(submission_results))
 
     if exception_results:
-        print("Exception during schema ingestion processing:")
-        print(f"From: {exception_results_location}")
-        print(exception_results)
+        PRINT("Exception during schema ingestion processing:")
+        PRINT(f"From: {exception_results_location}")
+        PRINT(exception_results)
 
 
 def _fetch_submission_results(metadata_bundles_bucket: str, uuid: str) -> Optional[Tuple[str, dict]]:
@@ -1651,7 +1651,7 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
     pre_validation_errors = _pre_validate_data(structured_data, portal)
     if pre_validation_errors:
         for pre_validation_error in pre_validation_errors:
-            print(f"  - {pre_validation_error}")
+            PRINT(f"  - {pre_validation_error}")
         pre_validation_errors = True
     structured_data.validate()
     if (validation_errors := structured_data.validation_errors):
@@ -1697,24 +1697,24 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
     PRINT("\n> Object create/update situation:")
     diffs = structured_data.compare()
     for object_type in diffs:
-        print(f"  TYPE: {object_type}")
+        PRINT(f"  TYPE: {object_type}")
         for object_info in diffs[object_type]:
-            print(f"  - OBJECT: {object_info.path}")
+            PRINT(f"  - OBJECT: {object_info.path}")
             if not object_info.uuid:
-                print(f"    Does not exist -> Will be CREATED")
+                PRINT(f"    Does not exist -> Will be CREATED")
             else:
-                print(f"    Already exists -> {object_info.uuid} -> Will be UPDATED", end="")
+                PRINT(f"    Already exists -> {object_info.uuid} -> Will be UPDATED", end="")
                 if not object_info.diffs:
-                    print(" (but NO substantive diffs)")
+                    PRINT(" (but NO substantive diffs)")
                 else:
-                    print(" (substantive DIFFs below)")
+                    PRINT(" (substantive DIFFs below)")
                     for diff_path in object_info.diffs:
                         if (diff := object_info.diffs[diff_path]).creating_value:
-                            print(f"     CREATE {diff_path}: {diff.value}")
+                            PRINT(f"     CREATE {diff_path}: {diff.value}")
                         elif diff.updating_value:
-                            print(f"     UPDATE {diff_path}: {diff.updating_value} -> {diff.value}")
+                            PRINT(f"     UPDATE {diff_path}: {diff.updating_value} -> {diff.value}")
                         elif (diff := object_info.diffs[diff_path]).deleting_value:
-                            print(f"     DELETE {diff_path}: {diff.value}")
+                            PRINT(f"     DELETE {diff_path}: {diff.value}")
 
 
 def _print_json_with_prefix(data, prefix):

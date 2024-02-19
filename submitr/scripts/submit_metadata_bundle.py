@@ -145,11 +145,11 @@ def main(simulated_args_for_testing=None):
         args.no_query = True
 
     if not args.bundle_filename:
-        print("Missing submission file name.")
+        PRINT("Missing submission file name.")
         exit(2)
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
-        print(f"WARNING: Directory does not exist: {args.upload_folder}")
+        PRINT(f"WARNING: Directory does not exist: {args.upload_folder}")
         # TODO: exist breaks test ...
         # FAILED submitr/tests/test_submit_metadata_bundle.py::test_submit_metadata_bundle_script[None]
         # FAILED submitr/tests/test_submit_metadata_bundle.py::test_submit_metadata_bundle_script[foo.bar]
@@ -226,7 +226,7 @@ def _setup_validate_related_options(args: argparse.Namespace):
     if args.validate_remote_only:
         validate_option_count += 1
     if validate_option_count > 1:
-        print("Only specify ONE of the validate options.")
+        PRINT("Only specify ONE of the validate options.")
         exit(1)
 
     if args.validate:

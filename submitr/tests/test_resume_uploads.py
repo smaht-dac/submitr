@@ -24,7 +24,7 @@ def test_resume_uploads_script(keyfile):
                 for i in range(len(args_in)):
                     if "${tmpdir}" in args_in[i]:
                         args_in[i] = args_in[i].replace("${tmpdir}", tmpdir)
-                with mock.patch.object(resume_uploads_module, "print") as mock_print:
+                with mock.patch.object(resume_uploads_module, "PRINT") as mock_print:
                     mock_print.side_effect = lambda *args: output.append(" ".join(args))
                     with mock.patch.object(resume_uploads_module, "resume_uploads") as mock_resume_uploads:
                         with system_exit_expected(exit_code=expect_exit_code):
@@ -175,7 +175,7 @@ def test_c4_383_regression_action():
             upload_info["filename"] = os.path.join(current_dir, upload_info["filename"])
             open(upload_info["filename"], "w")
         with override_environ(SMAHT_KEYS_FILE=None):
-            with mock.patch.object(resume_uploads_module, "print") as mock_print:
+            with mock.patch.object(resume_uploads_module, "PRINT") as mock_print:
                 mock_print.side_effect = lambda *args: output.append(" ".join(args))
                 # This is the directory we expect the uploaded file to get merged against.
                 # We want to really run the code logic to make sure it does this,

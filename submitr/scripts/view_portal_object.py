@@ -63,7 +63,7 @@ import sys
 from typing import List, Optional, Tuple
 import yaml
 from dcicutils.captured_output import captured_output, uncaptured_output
-from dcicutils.misc_utils import get_error_message, is_uuid
+from dcicutils.misc_utils import get_error_message, is_uuid, PRINT
 from dcicutils.portal_utils import Portal
 
 
@@ -303,7 +303,7 @@ def _print_all_schema_names(portal: Portal,
 
 def _print(*args, **kwargs):
     with uncaptured_output():
-        print(*args, **kwargs)
+        PRINT(*args, **kwargs)
     sys.stdout.flush()
 
 

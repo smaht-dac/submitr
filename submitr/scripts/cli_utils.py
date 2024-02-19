@@ -4,6 +4,7 @@ import sys
 import webbrowser
 from typing import Callable, List, Optional, Tuple
 import pkg_resources
+from dcicutils.misc_utils import PRINT
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
@@ -51,9 +52,9 @@ class CustomArgumentParser(argparse.ArgumentParser):
             exit(2)
         if args.version:
             if version := self.get_version():
-                print(f"{self._package or 'COMMAND'}: {version} | {self.COPYRIGHT}")
+                PRINT(f"{self._package or 'COMMAND'}: {version} | {self.COPYRIGHT}")
             else:
-                print(f"{self._package or 'COMMAND'}: No version available | {self.COPYRIGHT}")
+                PRINT(f"{self._package or 'COMMAND'}: No version available | {self.COPYRIGHT}")
             exit(0)
         elif args.help_advanced or args.help_web or args.help_raw:
             self.print_help()
@@ -82,13 +83,13 @@ class CustomArgumentParser(argparse.ArgumentParser):
         length = max(len(line) for line in lines)
         for line in lines:
             if line == "===":
-                print(f"+{'-' * (length - len(line) + 5)}+")
+                PRINT(f"+{'-' * (length - len(line) + 5)}+")
             elif line.endswith("[VERSION]"):
                 line = line.replace("[VERSION]", len("[VERSION]") * " ")
                 version = self.get_version()
-                print(f"| {line}{' ' * (length - len(line) - len(version) - 1)} {version} |")
+                PRINT(f"| {line}{' ' * (length - len(line) - len(version) - 1)} {version} |")
             else:
-                print(f"| {line}{' ' * (length - len(line))} |")
+                PRINT(f"| {line}{' ' * (length - len(line))} |")
         """
 
     def get_version(self) -> str:
@@ -105,10 +106,10 @@ def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Cal
     length = max(len(line) for line in lines)
     for line in lines:
         if line == "===":
-            print(f"+{'-' * (length - len(line) + 5)}+")
+            PRINT(f"+{'-' * (length - len(line) + 5)}+")
         elif right_justified_macro and (len(right_justified_macro) == 2) and line.endswith(right_justified_macro[0]):
             line = line.replace(right_justified_macro[0], len(right_justified_macro[0]) * " ")
             version = right_justified_macro[1]()
-            print(f"| {line}{' ' * (length - len(line) - len(version) - 1)} {version} |")
+            PRINT(f"| {line}{' ' * (length - len(line) - len(version) - 1)} {version} |")
         else:
-            print(f"| {line}{' ' * (length - len(line))} |")
+            PRINT(f"| {line}{' ' * (length - len(line))} |")
