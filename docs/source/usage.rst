@@ -127,10 +127,14 @@ A column value within a (non-header) data row may be empty, but this only means 
 when creating or updating the associated object. In order to actually `delete` a property value from an object,
 a special value - ``*delete*`` - should be used as the the property value.
 
-.. tip::
-   There is a ``view-portal-object`` command, described in the `Advanced Usage <advanced_usage.html#viewing-portal-schemas>`_ section,
-   which might be useful for viewing important aspects of the object schemas supported by SMaHT Portal, as you're building your metadata file;
-   using this you can quickly see the `required`, `identifying`, and `reference` properties for each schema, as well as its type, and more.
+Viewing Schema Info
+-------------------
+Perhaps for the more command-line oriented, as you're building your metadata file,
+you may find the ``view-portal-object`` command useful.
+This is described in the `Advanced Usage <advanced_usage.html#viewing-portal-schemas>`_ section.
+
+Using ``view-portal-object`` you can quickly view important aspects of the object schemas supported by SMaHT Portal;
+you can easily see the `required`, `identifying`, and `reference` properties for each schema, as well as each property `type`, and more.
 
 Submission
 ==========
