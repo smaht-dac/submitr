@@ -966,7 +966,7 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
                 upload_file_name = upload_file.get("filename")
                 upload_file_accession_name, upload_file_type = _get_upload_file_info(portal, upload_file_uuid)
                 lines.append("===")
-                lines.append(f"Upload File Name: {upload_file_name}")
+                lines.append(f"Upload File: {upload_file_name}")
                 lines.append(f"Upload File UUID: {upload_file_uuid}")
                 if upload_file_accession_name:
                     lines.append(f"Upload File Accession Name: {upload_file_accession_name}")
