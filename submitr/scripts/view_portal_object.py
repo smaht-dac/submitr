@@ -226,6 +226,16 @@ def _print_schema_info(schema: dict, level: int = 0,
                         _print(f"  - {identifying_property}: {property_type}")
                 else:
                     _print(f"  - {identifying_property}")
+        if properties := schema.get("properties"):
+            reference_properties = []
+            for property_name in properties:
+                property = properties[property_name]
+                if link_to := property.get("linkTo"):
+                    reference_properties.append({"name": property_name, "ref": link_to})
+            if reference_properties:
+                _print("- reference properties:")
+                for reference_property in sorted(reference_properties, key=lambda key: key["name"]):
+                    _print(f"  - {reference_property['name']}: {reference_property['ref']}")
         if schema.get("additionalProperties") is True:
             _print(f"  - additional properties are allowed")
             pass
@@ -298,7 +308,13 @@ def _print_schema_info(schema: dict, level: int = 0,
                             suffix += f" {default}"
                     _print(f"{spaces}- {property_name}: {property_type}{suffix}")
                     if enumeration:
+                        nenums = 0
+                        maxenums = 15
                         for enum in enumeration:
+                            if (nenums := nenums + 1) >= maxenums:
+                                if (remaining := len(enumeration) - nenums) > 0:
+                                    _print(f"{spaces}  - [{remaining} more ...]")
+                                break
                             _print(f"{spaces}  - {enum}")
             else:
                 _print(f"{spaces}- {property_name}")

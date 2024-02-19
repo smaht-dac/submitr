@@ -179,10 +179,10 @@ if the given the argument is the name of a SMaHT Portal object type, for example
 
     view-portal-object --env data CellLine
 
-This will output the names of the `identifying` and `required` properties for the named schema.
+This will output the names of the `identifying`, `required`, and `reference` properties for the named schema.
 And specifying  the ``--details`` option, the output will also include a alphabetical list of `all` of the schema
-properties, along with their types, and other details like: whether or not the property is required;
-any (regular expression) pattern the associated value must adhere to; and if it is a reference, the type to which it refers;
+properties, along with their types, and other details such as: whether or not the property is required;
+any (regular expression) pattern the associated value must adhere to; and if it is a reference, the type to which it refers.
 
 You can also output the type `names` of  `all` schema types present within SMaHT Portal
 using the special ``schemas`` name to the above command, for example::
@@ -190,7 +190,7 @@ using the special ``schemas`` name to the above command, for example::
     view-portal-object --env data schemas
 
 If you pass the ``--details`` option to this,
-you'll get the `identifying` and `required` properties for each listed schema type name;
+you'll get the `identifying`, `required`, and `reference` properties for each listed schema type name;
 and then also passing the ``--more-details`` options you'll get `all` of the properties
 for each schema with associated details, as described above.
 
