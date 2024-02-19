@@ -73,15 +73,14 @@ run the following (note that the ``pip`` command is automatically installed with
    pip install smaht-submitr
 
 .. note::
-    Once installed, the following command-line commands will be available for use:
+    Once installed, the following command-line commands will be available for use
+    (click on each of these to go to the corresponding documentation section):
 
-        - ``submit-metadata-bundle``
-        - ``resume-uploads``
-        - ``check-submission``
-        - ``list-submissions``
-
-    The usage of each of these is described in the `Submitting Metadata <usage.html>`_ and the
-    `Uploading Files <uploading_files.html>`_ sections. And note that each of these support a ``--help`` option.
+        - `submit-metadata-bundle <usage.html>`_
+        - `resume-uploads <uploading_files.html#resuming-uploads>`_
+        - `check-submission <usage.html#getting-submission-info>`_
+        - `list-submissions <usage.html#listing-recent-submissions>`_
+        - `view-portal-object <advanced_usage.html#viewing-portal-objects>`_
 
 For Developers
 ==============
