@@ -283,6 +283,8 @@ def _print_schema_info(schema: dict, level: int = 0,
                         suffix += f" | pattern: {pattern}"
                     if link_to := property.get("linkTo"):
                         suffix += f" | reference: {link_to}"
+                    if property.get("calculatedProperty"):
+                        suffix += f" | calculated"
                     _print(f"{spaces}- {property_name}: {property_type}{suffix}")
             else:
                 _print(f"{spaces}- {property_name}")

@@ -776,7 +776,7 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
         if message:
             PRINT(message)
         lines.append("===")
-        lines.append("Recent Submissions")
+        lines.append("Recent Submissions [COUNT]")
         lines.append("===")
         for submission in submissions:
             if verbose:
@@ -791,7 +791,7 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
             lines.append(line)
         if not verbose:
             lines.append("===")
-            print_boxed(lines)
+            print_boxed(lines, right_justified_macro=("[COUNT]", lambda: f"Showing: {len(submissions)}"))
         return True
     return False
 

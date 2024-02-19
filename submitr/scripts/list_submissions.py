@@ -6,7 +6,7 @@ from ..submission import _define_portal, _print_recent_submissions
 def main(simulated_args_for_testing=None):
 
     args = argparse.ArgumentParser(
-        description="Check previously submitted submission.",
+        description="List recently submitted submissions.",
     )
     args.add_argument("--env", "-e",
                       help="Portal environment name for server/credentials (e.g. in ~/.smaht-keys.json).")
