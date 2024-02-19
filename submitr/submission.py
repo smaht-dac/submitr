@@ -763,7 +763,7 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
 
 
 def _get_recent_submissions(portal: Portal) -> List[dict]:
-    if submissions := portal.get_metadata("/search/?type=IngestionSubmission&sort=-date_created"):
+    if submissions := portal.get_metadata("/search/?type=IngestionSubmission&sort=-date_created&limit=30"):
         if submissions := submissions.get("@graph"):
             return submissions
     return []
@@ -780,7 +780,10 @@ def _print_recent_submissions(portal: Portal, message: Optional[str] = None) -> 
         for submission in submissions:
             submission_uuid = submission.get("uuid")
             submission_created = submission.get("date_created")
-            lines.append(f"{submission_uuid}: {_format_portal_object_datetime(submission_created)}")
+            line = f"{submission_uuid}: {_format_portal_object_datetime(submission_created)}"
+            if submission_file := submission.get("parameters", {}).get("datafile"):
+                line += f" | {submission_file}"
+            lines.append(line)
         lines.append("===")
         print_boxed(lines)
         return True
