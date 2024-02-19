@@ -7,7 +7,7 @@ Installation
 
 More experienced users who already have ``python`` (version `3.8`, `3.9`, `3.10`, or `3.11`) installed,
 and a (optional) Python virtual environment setup to their satisfaction,
-may proceed directly to the essential element of the actual installation
+may proceed directly to the essential element of the `actual installation <installation.html#id1>`_
 of ``smaht-submitr``, which is simply this::
 
     pip install smaht-submitr
@@ -67,11 +67,21 @@ Actual Installation
 ===================
 
 Assuming ``python`` is satisfactorily installed,
-to install the ``submitr-smaht`` software package, do::
+to install the ``submitr-smaht`` software package,
+run the following (note that the ``pip`` command is automatically installed with ``python``)::
 
    pip install smaht-submitr
 
-(Note that the ``pip`` command is automatically installed with ``python``).
+.. note::
+    Once installed, the following command-line commands will be available for use:
+
+        - ``submit-metadata-bundle``
+        - ``resume-uploads``
+        - ``check-submission``
+        - ``list-submissions``
+
+    The usage of each of these is described in the `Submitting Metadata <usage.html>`_ and the
+    `Uploading Files <uploading_files.html>`_ sections. And note that each of these support a ``--help`` option.
 
 For Developers
 ==============
