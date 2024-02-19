@@ -129,12 +129,13 @@ a special value - ``*delete*`` - should be used as the the property value.
 
 Viewing Schema Info
 -------------------
-Perhaps for the more command-line oriented, as you're building your metadata file,
-you may find the ``view-portal-object`` command useful.
-This is described in the `Advanced Usage <advanced_usage.html#viewing-portal-schemas>`_ section.
+.. tip::
+   As you're building your metadata file,
+   you may find the ``view-portal-object`` command useful.
+   This is described in the `Advanced Usage <advanced_usage.html#viewing-portal-schemas>`_ section.
 
-Using ``view-portal-object`` you can quickly view important aspects of the object schemas supported by SMaHT Portal;
-you can easily see the `required`, `identifying`, and `reference` properties for each schema, as well as each property `type`, and more.
+   Using this command you can quickly view important aspects of the object schemas supported by SMaHT Portal;
+   you can easily see the `required`, `identifying`, and `reference` properties for each schema, as well as each property `type`, and more.
 
 Submission
 ==========
