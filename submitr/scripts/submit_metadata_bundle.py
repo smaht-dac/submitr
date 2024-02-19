@@ -75,7 +75,7 @@ ADVANCED OPTIONS:
   Automatically answer 'yes' to any confirmation questions.
 --noadmin
   Act like you are not an admin user even you are.
-  For testing/troubleshooting only.
+  For testing/troubleshooting purposes only.
 --help-raw
   Prints the raw version of this help message.
 --help-web
