@@ -277,6 +277,8 @@ def _print_schema_info(schema: dict, level: int = 0,
                     if isinstance(property_type, list):
                         property_type = " | ".join(property_type)
                     suffix = ""
+                    if (enumeration := property.get("enum")) is not None:
+                        suffix += f" | enum "
                     if property_required:
                         suffix += f" | required"
                     if pattern := property.get("pattern"):
@@ -286,6 +288,9 @@ def _print_schema_info(schema: dict, level: int = 0,
                     if property.get("calculatedProperty"):
                         suffix += f" | calculated"
                     _print(f"{spaces}- {property_name}: {property_type}{suffix}")
+                    if enumeration:
+                        for enum in enumeration:
+                            _print(f"{spaces}  - {enum}")
             else:
                 _print(f"{spaces}- {property_name}")
 
