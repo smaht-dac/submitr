@@ -813,6 +813,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str,
         metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
         _show_detailed_results(uuid, metadata_bundles_bucket)
 
+    _print_submission_summary(portal, check_response)
+
     return check_done, check_status, check_response
 
 
@@ -851,6 +853,89 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
     return submission_post_data
 
 
+def _print_submission_summary(portal: Portal, result: dict) -> None:
+    def format_portal_object_datetime(value: str) -> Optional[str]:  # noqa
+        try:
+            dt = datetime.fromisoformat(value).replace(tzinfo=pytz.utc)
+            tzlocal = datetime.now().astimezone().tzinfo
+            return dt.astimezone(tzlocal).strftime(f"%-I:%M %p %Z | %A, %B %-d, %Y")
+        except Exception:
+            return None
+    if not result:
+        return
+    lines = []
+    if submission_file := result.get("parameters", {}).get("datafile"):
+        lines.append(f"Submission File: {submission_file}")
+    if submission_uuid := result.get("uuid"):
+        lines.append(f"Submission UUID: {submission_uuid}")
+    if date_created := format_portal_object_datetime(result.get("date_created")):
+        lines.append(f"Submission Time: {date_created}")
+    if processing_status := result.get("processing_status"):
+        summary_lines = []
+        if status := processing_status.get("state"):
+            summary_lines.append(f"Status: {status.title()}")
+        if outcome := processing_status.get("outcome"):
+            summary_lines.append(f"Outcome: {outcome.title()}")
+        if progress := processing_status.get("progress"):
+            summary_lines.append(f"Progress: {progress.title()}")
+        if summary := " | ".join(summary_lines):
+            lines.append("===")
+            lines.append(summary)
+    if additional_data := result.get("additional_data"):
+        if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
+            summary_lines = []
+            if types := [info for info in validation_info if info.lower().startswith("types")]:
+                summary_lines.append(types[0])
+            if created := [info for info in validation_info if info.lower().startswith("created")]:
+                summary_lines.append(created[0])
+            if updated := [info for info in validation_info if info.lower().startswith("updated")]:
+                summary_lines.append(updated[0])
+            if skipped := [info for info in validation_info if info.lower().startswith("skipped")]:
+                summary_lines.append(skipped[0])
+            if checked := [info for info in validation_info if info.lower().startswith("checked")]:
+                summary_lines.append(checked[0])
+            if total := [info for info in validation_info if info.lower().startswith("total")]:
+                summary_lines.append(total[0])
+            if summary := " | ".join(summary_lines):
+                lines.append("===")
+                lines.append(summary)
+            summary_lines = []
+            if s3_data_file := [info for info in validation_info if info.lower().startswith("s3 file: ")]:
+                s3_data_file = s3_data_file[0][9:]
+                if (rindex := s3_data_file.rfind("/")) > 0:
+                    s3_data_bucket = s3_data_file[5:rindex] if s3_data_file.startswith("s3://") else ""
+                    s3_data_file = s3_data_file[rindex + 1:]
+                    if s3_data_bucket:
+                        summary_lines.append(f"S3: {s3_data_bucket}")
+                    summary_lines.append(f"S3 Data: {s3_data_file}")
+            if s3_details_file := [info for info in validation_info if info.lower().startswith("details: ")]:
+                s3_details_file = s3_details_file[0][9:]
+                if (rindex := s3_details_file.rfind("/")) > 0:
+                    s3_details_bucket = s3_details_file[5:rindex] if s3_details_file.startswith("s3://") else ""
+                    s3_details_file = s3_details_file[rindex + 1:]
+                    if s3_details_bucket != s3_data_bucket:
+                        summary_lines.append(f"S3 Bucket: {s3_details_bucket}")
+                    summary_lines.append(f"S3 Details: {s3_details_file}")
+            if summary_lines:
+                lines.append("===")
+                lines += summary_lines
+        if upload_files := additional_data.get("upload_info"):
+            for upload_file in upload_files:
+                upload_file_uuid = upload_file.get("uuid")
+                upload_file_name = upload_file.get("filename")
+                upload_file_accession_name, upload_file_type = _get_upload_file_info(portal, upload_file_uuid)
+                lines.append("===")
+                lines.append(f"Upload File Name: {upload_file_name}")
+                lines.append(f"Upload File UUID: {upload_file_uuid}")
+                if upload_file_accession_name:
+                    lines.append(f"Upload File Accession Name: {upload_file_accession_name}")
+                if upload_file_type:
+                    lines.append(f"Upload File Type: {upload_file_type}")
+    if lines:
+        print_boxed(["===", "SMaHT Submission Summary [UUID]", "==="] + lines + ["==="],
+                    right_justified_macro=("[UUID]", lambda: submission_uuid))
+
+
 def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
                       show_primary_result=True,
                       show_validation_output=True,
@@ -874,67 +959,6 @@ def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None
     :param show_datafile_url: bool controls whether to show the datafile_url parameter from the parameters.
     :param show_details: bool controls whether to show the details from the results file in S3.
     """
-    def print_submission_summary(result: dict) -> None:
-        def format_portal_object_datetime(value: str) -> Optional[str]:  # noqa
-            try:
-                dt = datetime.fromisoformat(value).replace(tzinfo=pytz.utc)
-                tzlocal = datetime.now().astimezone().tzinfo
-                return dt.astimezone(tzlocal).strftime(f"%-I:%M %p %Z | %A, %B %-d, %Y")
-            except Exception:
-                return None
-        if not result:
-            return
-        lines = []
-        if submission_uuid := result.get("uuid"):
-            lines.append(f"Submission UUID: {submission_uuid}")
-        if submission_file := result.get("parameters", {}).get("datafile"):
-            lines.append(f"Submission File: {submission_file}")
-        if date_created := format_portal_object_datetime(result.get("date_created")):
-            lines.append(f"Submission Time: {date_created}")
-        if processing_status := result.get("processing_status"):
-            summary_lines = []
-            if status := processing_status.get("state"):
-                summary_lines.append(f"Status: {status.title()}")
-            if outcome := processing_status.get("outcome"):
-                summary_lines.append(f"Outcome: {outcome.title()}")
-            if progress := processing_status.get("progress"):
-                summary_lines.append(f"Progress: {progress.title()}")
-            if summary := " | ".join(summary_lines):
-                lines.append("===")
-                lines.append(summary)
-        if additional_data := result.get("additional_data"):
-            if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
-                summary_lines = []
-                if types := [info for info in validation_info if info.lower().startswith("types")]:
-                    summary_lines.append(types[0])
-                if created := [info for info in validation_info if info.lower().startswith("created")]:
-                    summary_lines.append(created[0])
-                if updated := [info for info in validation_info if info.lower().startswith("updated")]:
-                    summary_lines.append(updated[0])
-                if skipped := [info for info in validation_info if info.lower().startswith("skipped")]:
-                    summary_lines.append(skipped[0])
-                if checked := [info for info in validation_info if info.lower().startswith("checked")]:
-                    summary_lines.append(checked[0])
-                if total := [info for info in validation_info if info.lower().startswith("total")]:
-                    summary_lines.append(total[0])
-                if summary := " | ".join(summary_lines):
-                    lines.append("===")
-                    lines.append(summary)
-            if upload_files := additional_data.get("upload_info"):
-                for upload_file in upload_files:
-                    upload_file_uuid = upload_file.get("uuid")
-                    upload_file_name = upload_file.get("filename")
-                    upload_file_accession_name, upload_file_type = _get_upload_file_info(portal, upload_file_uuid)
-                    lines.append("===")
-                    lines.append(f"Upload File Name: {upload_file_name}")
-                    lines.append(f"Upload File UUID: {upload_file_uuid}")
-                    if upload_file_accession_name:
-                        lines.append(f"Upload File Accession Name: {upload_file_accession_name}")
-                    if upload_file_type:
-                        lines.append(f"Upload File Type: {upload_file_type}")
-        if lines:
-            print("")
-            print_boxed(["===", "SMaHT Submission Summary", "==="] + lines + ["==="])
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
@@ -963,7 +987,8 @@ def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None
         metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
         _show_detailed_results(uuid, metadata_bundles_bucket)
 
-    print_submission_summary(res)
+    print("")
+    _print_submission_summary(portal, res)
 
 
 @lru_cache(maxsize=256)
