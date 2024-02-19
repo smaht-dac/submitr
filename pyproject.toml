@@ -84,11 +84,13 @@ sphinx-tabs = "^3.4.5"
 [tool.poetry.scripts]
 
 check-submission= "submitr.scripts.check_submission:main"
+list-submissions= "submitr.scripts.list_submissions:main"
 make-sample-fastq-file = "submitr.scripts.make_sample_fastq_file:main"
 publish-to-pypi = "dcicutils.scripts.publish_to_pypi:main"
 resume-uploads = "submitr.scripts.resume_uploads:main"
-show-submission-info = "submitr.scripts.show_upload_info:main"
-show-upload-info = "submitr.scripts.show_upload_info:main"
+# Covered by check-submission
+# show-submission-info = "submitr.scripts.show_upload_info:main"
+# show-upload-info = "submitr.scripts.show_upload_info:main"
 submit-genelist = "submitr.scripts.submit_genelist:main"
 submit-metadata-bundle = "submitr.scripts.submit_metadata_bundle:main"
 submit-ontology = "submitr.scripts.submit_ontology:main"

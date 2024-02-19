@@ -762,30 +762,36 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
         return False, progress, response
 
 
-def _get_recent_submissions(portal: Portal) -> List[dict]:
-    if submissions := portal.get_metadata("/search/?type=IngestionSubmission&sort=-date_created&limit=30"):
+def _get_recent_submissions(portal: Portal, count: int = 30) -> List[dict]:
+    if submissions := portal.get_metadata(f"/search/?type=IngestionSubmission&sort=-date_created&from=0&limit={count}"):
         if submissions := submissions.get("@graph"):
             return submissions
     return []
 
 
-def _print_recent_submissions(portal: Portal, message: Optional[str] = None) -> bool:
+def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional[str] = None,
+                              details: bool = False, verbose: bool = False) -> bool:
     lines = []
-    if submissions := _get_recent_submissions(portal):
+    if submissions := _get_recent_submissions(portal, count):
         if message:
             PRINT(message)
         lines.append("===")
         lines.append("Recent Submissions")
         lines.append("===")
         for submission in submissions:
+            if verbose:
+                PRINT()
+                _print_submission_summary(portal, submission)
+                continue
             submission_uuid = submission.get("uuid")
             submission_created = submission.get("date_created")
             line = f"{submission_uuid}: {_format_portal_object_datetime(submission_created)}"
-            if submission_file := submission.get("parameters", {}).get("datafile"):
+            if details and (submission_file := submission.get("parameters", {}).get("datafile")):
                 line += f" | {submission_file}"
             lines.append(line)
-        lines.append("===")
-        print_boxed(lines)
+        if not verbose:
+            lines.append("===")
+            print_boxed(lines)
         return True
     return False
 

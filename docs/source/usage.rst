@@ -230,3 +230,13 @@ To view relevant information about a submission, do::
 
 where the ``<uuid>`` argument is the UUID for the submission which should have been displayed
 in the output of the ``submit-metadata-bundle`` command (e.g. see `screenshot <usage.html#example-screenshots>`_).
+
+Listing Recent Submissions
+--------------------------
+To view a list of recent submissions (with submission UUID and submission date/time),
+in order of most recent first, do::
+
+   list-submissions --env <environment-name>
+
+Use the ``--verbose`` option to list more information for each of the recent submissions shown.
+You can control the number of results output using the ``--count`` option with an integer count argument.
