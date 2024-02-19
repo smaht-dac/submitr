@@ -813,7 +813,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str,
         metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
         _show_detailed_results(uuid, metadata_bundles_bucket)
 
-    _print_submission_summary(portal, check_response)
+    if not _pytesting():
+        _print_submission_summary(portal, check_response)
 
     return check_done, check_status, check_response
 
@@ -994,8 +995,9 @@ def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None
         metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
         _show_detailed_results(uuid, metadata_bundles_bucket)
 
-    print("")
-    _print_submission_summary(portal, res)
+    if not _pytesting():
+        print("")
+        _print_submission_summary(portal, res)
 
 
 @lru_cache(maxsize=256)
