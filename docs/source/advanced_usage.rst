@@ -172,7 +172,7 @@ If you want to display the data in `YAML <https://en.wikipedia.org/wiki/YAML>`_ 
 use the ``--yaml`` option. And if you want to automatically copy the (JSON) data to the clipboard use the ``--copy`` option.
 
 Viewing Portal Schemas
-----------------------
+======================
 
 Using the same ``view-portal-object`` utility described above you can also view information about SMaHT Portal `schemas`,
 if the given the argument is the name of a SMaHT Portal object type, for example::
