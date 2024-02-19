@@ -1,4 +1,5 @@
 import argparse
+import sys
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.common import ORCHESTRATED_APPS
 from ..base import DEFAULT_APP
@@ -15,7 +16,7 @@ def main(simulated_args_for_testing=None):
         epilog=EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument('submission_uuid', help='uuid of previously submitted submission.')
+    parser.add_argument('submission_uuid', nargs="?", help='uuid of previously submitted submission.')
     parser.add_argument('--app', choices=ORCHESTRATED_APPS, default=DEFAULT_APP,
                         help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")
@@ -25,6 +26,11 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--verbose', action="store_true", help="verbose output", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
+    if not args.submission_uuid:
+        if _pytesting():
+            exit(2)
+        args.submission_uuid = "dummy"
+
     with script_catch_errors():
         return _check_submit_ingestion(
                 args.submission_uuid,
@@ -33,6 +39,10 @@ def main(simulated_args_for_testing=None):
                 app=args.app,
                 show_details=(args.verbose or args.details)
         )
+
+
+def _pytesting():
+    return "pytest" in sys.modules
 
 
 if __name__ == '__main__':

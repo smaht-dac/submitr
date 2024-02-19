@@ -116,7 +116,7 @@ def main():
             if not args.raw:
                 _print(schema_name)
             _print_schema(schema, details=args.details, more_details=args.details, raw=args.raw)
-        return
+            return
 
     data = _get_portal_object(portal=portal, uuid=args.uuid, raw=args.raw, database=args.database, verbose=args.verbose)
     if args.copy:

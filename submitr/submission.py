@@ -762,6 +762,31 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
         return False, progress, response
 
 
+def _get_recent_submissions(portal: Portal) -> List[dict]:
+    if submissions := portal.get_metadata("/search/?type=IngestionSubmission&sort=-date_created"):
+        if submissions := submissions.get("@graph"):
+            return submissions
+    return []
+
+
+def _print_recent_submissions(portal: Portal, message: Optional[str] = None) -> bool:
+    lines = []
+    if submissions := _get_recent_submissions(portal):
+        if message:
+            PRINT(message)
+        lines.append("===")
+        lines.append("Recent Submissions")
+        lines.append("===")
+        for submission in submissions:
+            submission_uuid = submission.get("uuid")
+            submission_created = submission.get("date_created")
+            lines.append(f"{submission_uuid}: {_format_portal_object_datetime(submission_created)}")
+        lines.append("===")
+        print_boxed(lines)
+        return True
+    return False
+
+
 def _check_submit_ingestion(uuid: str, server: str, env: str,
                             app: Optional[OrchestratedApp] = None,
                             show_details: bool = False,
@@ -774,6 +799,9 @@ def _check_submit_ingestion(uuid: str, server: str, env: str,
 
     if not _pytesting():
         if not (uuid_metadata := portal.get_metadata(uuid)):
+            message = f"Submission UUI not found: {uuid}" if uuid != "dummy" else "No submission UUID specified."
+            if _print_recent_submissions(portal, message=message):
+                return
             raise Exception(f"Cannot find object given uuid: {uuid}")
         if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
             undesired_type = portal.get_schema_type(uuid_metadata)
@@ -858,13 +886,6 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
 
 
 def _print_submission_summary(portal: Portal, result: dict) -> None:
-    def format_portal_object_datetime(value: str) -> Optional[str]:  # noqa
-        try:
-            dt = datetime.fromisoformat(value).replace(tzinfo=pytz.utc)
-            tzlocal = datetime.now().astimezone().tzinfo
-            return dt.astimezone(tzlocal).strftime(f"%-I:%M %p %Z | %A, %B %-d, %Y")
-        except Exception:
-            return None
     if not result:
         return
     lines = []
@@ -873,7 +894,7 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
         lines.append(f"Submission File: {submission_file}")
     if submission_uuid := result.get("uuid"):
         lines.append(f"Submission UUID: {submission_uuid}")
-    if date_created := format_portal_object_datetime(result.get("date_created")):
+    if date_created := _format_portal_object_datetime(result.get("date_created"), True):
         lines.append(f"Submission Time: {date_created}")
     if additional_data := result.get("additional_data"):
         if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
@@ -1779,6 +1800,18 @@ def _format_file_size(nbytes: int) -> str:
             return f"{nbytes:3.1f}{unit}"
         nbytes /= 1024.0
     return f"{nbytes:.1f}Yb"
+
+
+def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optional[str]:  # noqa
+    try:
+        dt = datetime.fromisoformat(value).replace(tzinfo=pytz.utc)
+        tzlocal = datetime.now().astimezone().tzinfo
+        if verbose:
+            return dt.astimezone(tzlocal).strftime(f"%-I:%M %p %Z | %A, %B %-d, %Y")
+        else:
+            return dt.astimezone(tzlocal).strftime(f"%Y-%m-%d %H:%M:%S %Z")
+    except Exception:
+        return None
 
 
 def _pytesting():
