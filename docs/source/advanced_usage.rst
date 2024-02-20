@@ -174,27 +174,27 @@ use the ``--yaml`` option. And if you want to automatically copy the (JSON) data
 Viewing Portal Schemas
 ======================
 
-Using the same ``view-portal-object`` utility described above you can also view information about SMaHT Portal `schemas`,
-if the given the argument is the name of a SMaHT Portal object type, for example::
+Using the ``view-portal-object`` utility described above you can also view information about SMaHT Portal `schemas`,
+if the given the argument is the name of a SMaHT Portal object, for example::
 
     view-portal-object --env data CellLine
 
 This will output the names of the `required`, `identifying`, and `reference` properties for the named schema.
-And specifying  the ``--details`` option, the output will also include a alphabetical list of `all` of the schema
+And specifying  the ``--details`` option, the output will also include an alphabetical list of `all` the schema
 properties, along with their types, and other details such as: whether or not the property is required;
 any (regular expression) pattern the associated value must adhere to; and if it is a reference, the type to which it refers.
 
-You can also output the type `names` of  `all` schema types present within SMaHT Portal
+You can also output an alphabetical list of `all` schema names present within SMaHT Portal
 using the special ``schemas`` name to the above command, for example::
 
     view-portal-object --env data schemas
 
 If you pass the ``--details`` option to this,
-you'll get the `required`, `identifying`, and `reference` properties for each listed schema type name;
+you'll get the `required`, `identifying`, and `reference` properties for each listed schema;
 and then also passing the ``--more-details`` options you'll get `all` of the properties
-for each schema with associated details, as described above.
+for each schema with associated details as described above.
 
-Finally, passing ``--raw`` to either of these schema related uses will result in the raw JSON for the schema(s) being output.
+And passing ``--raw`` to either of these will give you the raw JSON for the schema(s).
 
 .. tip::
     There is nothing really that the ``view-portal-object`` commands do that you cannot also do by interacting with SMaHT Portal directly 
