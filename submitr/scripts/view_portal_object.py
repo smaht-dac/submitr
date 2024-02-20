@@ -314,6 +314,8 @@ def _print_schema_info(schema: dict, level: int = 0,
                     if property_items := property.get("items"):
                         if pattern := property_items.get("pattern"):
                             suffix += f" | pattern: {pattern}"
+                        if (format := property_items.get("format")) and (format != "uuid"):
+                            suffix += f" | format: {format}"
                         if max_length := property_items.get("maxLength"):
                             suffix += f" | max items: {max_length}"
                         if property_type := property_items.get("type"):
