@@ -77,10 +77,8 @@ and installing the dependencies for this tool:
 
 * `Installation Prerequisites <installation_prerequisites.html>`_
 
-Table of Contents
-=================
-
 .. toctree::
+  :caption: Documentation 🚀
   :maxdepth: 1
 
   self
@@ -91,4 +89,3 @@ Table of Contents
   uploading_files
   advanced_usage
   about
-
