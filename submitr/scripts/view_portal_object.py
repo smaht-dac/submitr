@@ -321,9 +321,11 @@ def _print_schema_info(schema: dict, level: int = 0,
                         suffix += f" | pattern: {pattern}"
                     if (format := property.get("format")) and (format != "uuid"):
                         suffix += f" | format: {format}"
-                    if property.get("anyOf") == [{"format": "date"}, {"format": "date-time"}]:
-                        # Very special case.
-                        suffix += f" | format: date/date-time"
+                    if isinstance(any_of := property.get("anyOf"), list):
+                        if ((any_of == [{"format": "date"}, {"format": "date-time"}]) or
+                            (any_of == [{"format": "date-time"}, {"format": "date"}])):  # noqa
+                            # Very special case.
+                            suffix += f" | format: date or date-time"
                     if link_to := property.get("linkTo"):
                         suffix += f" | reference: {link_to}"
                     if property.get("calculatedProperty"):
