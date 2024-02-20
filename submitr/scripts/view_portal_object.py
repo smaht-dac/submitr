@@ -111,8 +111,8 @@ def main():
     if args.more_details:
         args.details = True
 
-    portal = _create_portal(ini=args.ini, env=args.env, server=args.server,
-                            app=args.app, verbose=args.verbose, debug=args.debug)
+    portal = _create_portal(ini=args.ini, env=args.env or os.environ.get("SMAHT_ENV"),
+                            server=args.server, app=args.app, verbose=args.verbose, debug=args.debug)
 
     if args.uuid.lower() == "schemas" or args.uuid.lower() == "schema":
         _print_all_schema_names(portal=portal, details=args.details,

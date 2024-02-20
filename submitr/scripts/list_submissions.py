@@ -1,4 +1,5 @@
 import argparse
+import os
 from dcicutils.command_utils import script_catch_errors
 from ..submission import _define_portal, _print_recent_submissions
 
@@ -17,7 +18,8 @@ def main(simulated_args_for_testing=None):
     args = args.parse_args()
 
     with script_catch_errors():
-        portal = _define_portal(env=args.env, keys_file=args.keys)
+        portal = _define_portal(env=args.env or os.environ.get("SMAHT_ENV"),
+                                keys_file=args.keys or os.environ.get("SMAHT_KEYS"))
         _print_recent_submissions(portal, details=args.details, verbose=args.verbose, count=args.count)
 
 

@@ -1,5 +1,6 @@
 import argparse
 import sys
+import os
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.common import ORCHESTRATED_APPS
 from ..base import DEFAULT_APP
@@ -23,6 +24,7 @@ def main(simulated_args_for_testing=None):
     args.add_argument('--server', '-s', help="an http or https address of the server to use", default=None)
     args.add_argument("--env", "-e",
                       help="Portal environment name for server/credentials (e.g. in ~/.smaht-keys.json).")
+    args.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=None)
     args.add_argument('--details', action="store_true", help="More detailed output.", default=False)
     args.add_argument('--verbose', action="store_true", help="More verbose output.", default=False)
     args = args.parse_args(args=simulated_args_for_testing)
@@ -35,7 +37,8 @@ def main(simulated_args_for_testing=None):
     with script_catch_errors():
         return _check_submit_ingestion(
                 args.submission_uuid,
-                env=args.env,
+                env=args.env or os.environ.get("SMAHT_ENV"),
+                keys_file=args.keys or os.environ.get("SMAHT_KEYS"),
                 server=args.server,
                 show_details=(args.verbose or args.details)
         )

@@ -157,9 +157,10 @@ def main(simulated_args_for_testing=None):
 
     _setup_validate_related_options(args)
 
-    if args.keys:
-        if not args.keys.endswith(".json") or not os.path.exists(args.keys):
-            PRINT("The --keys argument must be the name of an existing .json file.")
+    keys_file = args.keys or os.environ.get("SMAHT_KEYS")
+    if keys_file:
+        if not keys_file.endswith(".json") or not os.path.exists(keys_file):
+            PRINT(f"The --keys argument ({keys_file}) must be the name of an existing .json file.")
             exit(1)
 
     with script_catch_errors():
@@ -168,7 +169,9 @@ def main(simulated_args_for_testing=None):
             exit(1)
 
         submit_any_ingestion(ingestion_filename=args.bundle_filename, ingestion_type=args.ingestion_type,
-                             server=args.server, env=args.env,
+                             env=args.env or os.environ.get("SMAHT_ENV"),
+                             keys_file=keys_file,
+                             server=args.server,
                              consortium=args.consortium,
                              submission_center=args.submission_center,
                              no_query=args.no_query, subfolders=args.subfolders, app=args.app,
@@ -181,7 +184,6 @@ def main(simulated_args_for_testing=None):
                              validate_local_only=args.validate_local_only,
                              validate_remote_only=args.validate_remote_only,
                              validate_remote=args.validate_remote,
-                             keys_file=args.keys,
                              noadmin=args.noadmin,
                              verbose=args.verbose,
                              debug=args.debug)

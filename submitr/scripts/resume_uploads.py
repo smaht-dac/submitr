@@ -34,7 +34,7 @@ OPTIONS:
 --sub-directories
   To specify that any sub-directories of the directory containing
   the upload file(s) should be searched, recursively.
---keys KEYS-FILE
+--KEYS-FILE
   To specify an alternate credentials/keys
   file to the default ~/.smaht-keys.json file.
 --help
@@ -87,9 +87,10 @@ def main(simulated_args_for_testing=None):
         PRINT("Missing submission UUID or referenced file UUID or accession ID.")
         exit(2)
 
-    if args.keys:
-        if not args.keys.endswith(".json") or not os.path.exists(args.keys):
-            PRINT("The --keys argument must be the name of an existing .json file.")
+    keys_file = args.keys or os.environ.get("SMAHT_KEYS")
+    if keys_file:
+        if not keys_file.endswith(".json") or not os.path.exists(keys_file):
+            PRINT(f"The --keys argument ({keys_file}) must be the name of an existing .json file.")
             exit(1)
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
@@ -109,9 +110,13 @@ def main(simulated_args_for_testing=None):
 
     with script_catch_errors():
 
-        resume_uploads(uuid=args.uuid, server=args.server, env=args.env, bundle_filename=args.bundle_filename,
+        resume_uploads(uuid=args.uuid,
+                       env=args.env or os.environ.get("SMAHT_ENV"),
+                       keys_file=keys_file,
+                       bundle_filename=args.bundle_filename,
+                       server=args.server, 
                        upload_folder=args.upload_folder, no_query=args.no_query,
-                       subfolders=args.subfolders, app=args.app, keys_file=args.keys)
+                       subfolders=args.subfolders, app=args.app)
 
 
 if __name__ == '__main__':

@@ -80,6 +80,15 @@ to the various ``smaht-submitr`` commands, e.g. ``submit-metadata-bundle`` and `
     If you only have `one` single environment defined in this ``~/.smaht-keys.json`` file
     then the ``--env`` argument will not be necessary when using the ``smaht-submit`` commands.
 
+.. tip::
+    You can set your environment variable ``SMAHT_ENV`` to your environment name
+    to obviate the need to use the ``--env`` option, for example: ``export SMAHT_ENV=data``
+
+    Similarly, if you chose a different keys file than ``~/.smaht-keys``,
+    you can set your environment variable ``SMAHT_KEYS`` to the path to your file,
+    to obviate the need to use the ``--keys`` option,
+    for example: ``export SMAHT_KEYS=/path-to-your-keys-file.json``
+
 N.B. If you are not sure what ``server`` you should be submitting to,
 please reach out to your contact on the SMaHT DAC Team at
 `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
