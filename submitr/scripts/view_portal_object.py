@@ -301,7 +301,7 @@ def _print_schema_info(schema: dict, level: int = 0,
                         _print(f"{spaces}- {property_name}: array{suffix}")
                 else:
                     if isinstance(property_type, list):
-                        property_type = " | ".join(property_type)
+                        property_type = " or ".join(property_type)
                     suffix = ""
                     if (enumeration := property.get("enum")) is not None:
                         suffix += f" | enum"
