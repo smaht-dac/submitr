@@ -61,6 +61,9 @@ Secret Access Key, and the target SMaHT server URL. For example:
 Obviously you would replace ``<your-access-key-id>`` and ``<your-secret-access-key>``
 in the above with your actual **Access Key ID** and **Secret Access Key** values
 obtained from the SMaHT Portal **Add Access Key** step described above.
+If you're unsure what ``server`` you should be submitting to,
+please reach out to your contact on the SMaHT DAC Team at
+`smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
 
 To create or modify and edit this file, use a text editor of your choice (``vim`` or ``TextEdit`` or whatever).
 For example, using ``TextEdit``, from a MacOS Terminal window, like this::
@@ -73,10 +76,6 @@ And it is **important** to note that this name needs to be used as an argument t
 for the various ``smaht-submitr`` commands, for example::
 
     submit-metadata-bundle --env data your_metadata_file.xlsx
-
-N.B. If you are unsure what ``server`` you should be submitting to,
-please reach out to your contact on the SMaHT DAC Team at
-`smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
 
 
 Useful Tips
