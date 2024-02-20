@@ -1,3 +1,9 @@
 body, td {
     font-family: Tahoma;
 }
+
+.boldcode {
+    font-weight: bold;
+    background-color: #f0f0f0; /* Or any styling you prefer for highlighting */
+    /* Add any other styling here to mimic inline code */
+}

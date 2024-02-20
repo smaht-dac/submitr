@@ -56,3 +56,14 @@ html_css_files = ['styles.css']
 
 # https://sphinx-tabs.readthedocs.io/en/latest/
 sphinx_tabs_disable_tab_closing = True
+
+# For bold highlighted text:
+from docutils import nodes
+from sphinx.util.nodes import make_refnode
+
+def setup(app):
+    app.add_role('boldcode', boldcode_role)
+
+def boldcode_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+    node = nodes.literal(rawtext, text, classes=['boldcode'])
+    return [node], []
