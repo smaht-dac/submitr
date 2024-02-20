@@ -46,3 +46,9 @@ FYI you can capture the output of multiple commands into single file on the comm
     pip freeze >> your_error_info.txt
 
 You can then attach this file to any correspondence with us and it will likely allow us to resolve issues more quickly.
+
+.. caution::
+    Please be careful **not** to send us your SMaHT Portal **Secret Access Key**
+    (or any other senstive) value (see `Credentials <credentials.html#securing-access-keys>`_).
+    This is **sensitive** information and, like a password, it should **never** be
+    **shared** with anyone, and particularly through any insecure channels (like email or Slack or whatever).
