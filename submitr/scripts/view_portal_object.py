@@ -269,6 +269,8 @@ def _print_schema_info(schema: dict, level: int = 0,
                             property_type = "undefined object"
                     elif property.get("additionalProperties") is True:
                         property_type = "open ended object"
+                    if property.get("calculatedProperty"):
+                        suffix += f" | calculated"
                     _print(f"{spaces}- {property_name}: {property_type}{suffix}")
                     _print_schema_info(object_properties, level=level + 1,
                                        details=details, more_details=more_details,
@@ -277,6 +279,10 @@ def _print_schema_info(schema: dict, level: int = 0,
                     suffix = ""
                     if property_required:
                         suffix += f" | required"
+                    if property.get("uniqueItems"):
+                        suffix += f" | unique"
+                    if property.get("calculatedProperty"):
+                        suffix += f" | calculated"
                     if property_items := property.get("items"):
                         if property_type := property_items.get("type"):
                             if property_type == "object":
@@ -301,12 +307,14 @@ def _print_schema_info(schema: dict, level: int = 0,
                         suffix += f" | enum"
                     if property_required:
                         suffix += f" | required"
+                    if property.get("uniqueKey"):
+                        suffix += f" | unique"
                     if pattern := property.get("pattern"):
                         suffix += f" | pattern: {pattern}"
                     if (format := property.get("format")) and (format != "uuid"):
                         suffix += f" | format: {format}"
                     if property.get("anyOf") == [{"format": "date"}, {"format": "date-time"}]:
-                        suffix += f" | format: date | date-time"
+                        suffix += f" | format: date/date-time"
                     if link_to := property.get("linkTo"):
                         suffix += f" | reference: {link_to}"
                     if property.get("calculatedProperty"):
