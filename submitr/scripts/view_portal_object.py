@@ -288,8 +288,9 @@ def _print_schema_info(schema: dict, level: int = 0,
                             if property_type == "object":
                                 suffix = ""
                                 _print(f"{spaces}- {property_name}: array of object{suffix}")
-                                _print_schema_info(property_items.get("properties"),
-                                                   details=details, more_details=more_details, level=level + 1)
+                                _print_schema_info(property_items.get("properties"), level=level + 1,
+                                                   details=details, more_details=more_details,
+                                                   required=property_items.get("required"))
                             elif property_type == "array":
                                 # This (array-of-array) never happens to occur at this time (February 2024).
                                 _print(f"{spaces}- {property_name}: array of array{suffix}")
@@ -301,7 +302,7 @@ def _print_schema_info(schema: dict, level: int = 0,
                         _print(f"{spaces}- {property_name}: array{suffix}")
                 else:
                     if isinstance(property_type, list):
-                        property_type = " or ".join(property_type)
+                        property_type = " or ".join(sorted(property_type))
                     suffix = ""
                     if (enumeration := property.get("enum")) is not None:
                         suffix += f" | enum"
