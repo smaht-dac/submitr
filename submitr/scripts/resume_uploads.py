@@ -114,7 +114,7 @@ def main(simulated_args_for_testing=None):
                        env=args.env or os.environ.get("SMAHT_ENV"),
                        keys_file=keys_file,
                        bundle_filename=args.bundle_filename,
-                       server=args.server, 
+                       server=args.server,
                        upload_folder=args.upload_folder, no_query=args.no_query,
                        subfolders=args.subfolders, app=args.app)
 
