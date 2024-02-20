@@ -224,6 +224,13 @@ def _print_schema_info(schema: dict, level: int = 0,
                         _print(f"  - {required_property}: {property_type}")
                 else:
                     _print(f"  - {required_property}")
+            if isinstance(any_of := schema.get("anyOf"), list):
+                if ((any_of == [{"required": ["submission_centers"]}, {"required": ["consortia"]}]) or
+                    (any_of == [{"required": ["consortia"]}, {"required": ["submission_centers"]}])):
+                    # Very very special case.
+                    _print(f"  - at least one of:")
+                    _print(f"    - consortia: array of string | unique")
+                    _print(f"    - submission_centers: array of string | unique")
             required = required_properties
         if identifying_properties := schema.get("identifyingProperties"):
             _print("- identifying properties:")
@@ -315,6 +322,7 @@ def _print_schema_info(schema: dict, level: int = 0,
                     if (format := property.get("format")) and (format != "uuid"):
                         suffix += f" | format: {format}"
                     if property.get("anyOf") == [{"format": "date"}, {"format": "date-time"}]:
+                        # Very special case.
                         suffix += f" | format: date/date-time"
                     if link_to := property.get("linkTo"):
                         suffix += f" | reference: {link_to}"
