@@ -59,6 +59,7 @@ import argparse
 from functools import lru_cache
 import json
 import pyperclip
+import os
 import sys
 from typing import List, Optional, Tuple
 import yaml
@@ -114,7 +115,10 @@ def main():
             if args.copy:
                 pyperclip.copy(json.dumps(schema, indent=4))
             if not args.raw:
-                _print(schema_name)
+                if parent_schema_name := _get_parent_schema_name(schema):
+                    _print(f"{schema_name} | parent: {parent_schema_name}")
+                else:
+                    _print(schema_name)
             _print_schema(schema, details=args.details, more_details=args.details, raw=args.raw)
             return
 
@@ -331,10 +335,19 @@ def _print_all_schema_names(portal: Portal,
         if raw:
             _print(json.dumps(schemas, indent=4))
             return
-        for schema in sorted(schemas.keys()):
-            _print(schema)
+        for schema_name in sorted(schemas.keys()):
+            if parent_schema_name := _get_parent_schema_name(schemas[schema_name]):
+                _print(f"{schema_name} | parent: {parent_schema_name}")
+            else:
+                _print(schema_name)
             if details:
-                _print_schema(schemas[schema], details=details, more_details=more_details)
+                _print_schema(schemas[schema_name], details=details, more_details=more_details)
+
+
+def _get_parent_schema_name(schema: dict) -> Optional[str]:
+    if sub_class_of := schema.get("rdfs:subClassOf"):
+        if (parent_schema_name := os.path.basename(sub_class_of).replace(".json", "")) != "Item":
+            return parent_schema_name
 
 
 def _print(*args, **kwargs):
