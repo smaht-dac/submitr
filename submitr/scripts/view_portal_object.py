@@ -294,7 +294,7 @@ def _print_schema_info(schema: dict, level: int = 0,
                         suffix += f" | required"
                     if pattern := property.get("pattern"):
                         suffix += f" | pattern: {pattern}"
-                    if (format := property.get("format")) and (format != property_name):
+                    if (format := property.get("format")) and (format != "uuid"):
                         suffix += f" | format: {format}"
                     if property.get("anyOf") == [{"format": "date"}, {"format": "date-time"}]:
                         suffix += f" | format: date | date-time"
