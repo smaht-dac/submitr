@@ -17,7 +17,7 @@ Overview
 .. note::
    You need a SMaHT account to use this software. For information on obtaining an account please see the
    `SMaHT Portal Account Creation <account_creation.html>`_ page. See the `About <about.html>`_ page 
-   for more about the SMaHT project more generally 
+   for more about the this tool and the SMaHT project more generally.
 
 .. .. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
 ..     :target: https://github.com/smaht-dac/submitr/actions
