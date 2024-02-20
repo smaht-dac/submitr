@@ -34,15 +34,10 @@ Once you've obtained access and secret keys (per the previous) section,
 they should be stored as :toplink:`JSON <https://en.wikipedia.org/wiki/JSON>`
 in a file on your local machine called ``~/.smaht-keys.json``.
 (Note that the ``~`` there refers to your local home directory).
-
-.. tip::
-   You can actually use `any` file rather than ``~/.smaht-keys.json`` to store your credentials
-   (its name `must` but suffixed with ``.json``).
-   If you do, you will need to use the ``--keys`` options with the path to your alternate file as an argument,
-   when using the ``smaht-submitr`` commands.
+To use a different file see the `Useful Tips <#id1>`_ section below.
 
 The format of this file requires a single JSON object,
-where each property is an `environment` name (of your choosing), and where its value is
+where each property is an **environment name** (of your choosing), and where its value is
 an object containing ``key``, ``secret``, and ``server`` values, represening your Access Key ID,
 Secret Access Key, and the target SMaHT server URL. For example:
 
@@ -73,25 +68,36 @@ For example, using ``TextEdit``, from a MacOS Terminal window, like this::
     open -a TextEdit ~/.smaht-keys.json
 
 As stated above, the environment name, e.g. ``data`` in the above example,
-is of your own choosing; this same name should be used as the ``--env`` argument
-to the various ``smaht-submitr`` commands, e.g. ``submit-metadata-bundle`` and ``resume-uploads``.
+is of your own choosing.
+And it is **important** to note that this name needs to be used as an argument to the  ``--env`` option
+for the various ``smaht-submitr`` commands, for example::
 
-.. tip::
-    If you only have `one` single environment defined in this ``~/.smaht-keys.json`` file
-    then the ``--env`` argument will not be necessary when using the ``smaht-submit`` commands.
+    submit-metadata-bundle --env data your_metadata_file.xlsx
 
-.. tip::
-    You can set your environment variable ``SMAHT_ENV`` to your environment name
-    to obviate the need to use the ``--env`` option, for example: ``export SMAHT_ENV=data``
-
-    Similarly, if you chose a different keys file than ``~/.smaht-keys``,
-    you can set your environment variable ``SMAHT_KEYS`` to the path to your file,
-    to obviate the need to use the ``--keys`` option,
-    for example: ``export SMAHT_KEYS=/path-to-your-keys-file.json``
-
-N.B. If you are not sure what ``server`` you should be submitting to,
+N.B. If you are unsure what ``server`` you should be submitting to,
 please reach out to your contact on the SMaHT DAC Team at
 `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
+
+
+Useful Tips
+~~~~~~~~~~
+You can actually use `any` file rather than ``~/.smaht-keys.json`` to store your credentials;
+its name `must` but suffixed with ``.json``.
+If you do, you'll need to use the ``--keys`` options with the path to your file as an argument,
+when using the ``smaht-submitr`` commands.
+If you want to `avoid` having to specify the ``--keys`` option,
+can use an environment variable to set your file, like this::
+
+    export SMAHT_KEYS=/path-to-your-keys-file.json
+
+If you only have `one` single environment defined in your ``~/.smaht-keys.json`` file
+then the ``--env`` argument will not be necessary when using the ``smaht-submit`` commands.
+
+If you have `more` than one environment defined in your ``~/.smaht-keys.json`` file,
+and you want to avoid having to specify the ``--env`` option for the ``smaht-submitr`` commands, you can
+can use an environment variable to set your preferred environment name, like this::
+
+    export SMAHT_ENV=data
 
 Securing Access Keys
 --------------------
