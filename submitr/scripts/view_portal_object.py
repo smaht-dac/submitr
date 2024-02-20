@@ -226,7 +226,7 @@ def _print_schema_info(schema: dict, level: int = 0,
                     _print(f"  - {required_property}")
             if isinstance(any_of := schema.get("anyOf"), list):
                 if ((any_of == [{"required": ["submission_centers"]}, {"required": ["consortia"]}]) or
-                    (any_of == [{"required": ["consortia"]}, {"required": ["submission_centers"]}])):
+                    (any_of == [{"required": ["consortia"]}, {"required": ["submission_centers"]}])):  # noqa
                     # Very very special case.
                     _print(f"  - at least one of:")
                     _print(f"    - consortia: array of string | unique")
