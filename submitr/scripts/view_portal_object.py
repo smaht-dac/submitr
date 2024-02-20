@@ -316,7 +316,7 @@ def _print_schema_info(schema: dict, level: int = 0,
                             suffix += f" | pattern: {pattern}"
                         if (format := property_items.get("format")) and (format != "uuid"):
                             suffix += f" | format: {format}"
-                        if max_length := property_items.get("maxLength"):
+                        if (max_length := property_items.get("maxLength")) is not None:
                             suffix += f" | max items: {max_length}"
                         if property_type := property_items.get("type"):
                             if property_type == "object":
@@ -365,13 +365,13 @@ def _print_schema_info(schema: dict, level: int = 0,
                             suffix += f" array"
                         else:
                             suffix += f" {default}"
-                    if minimum := property.get("minimum"):
+                    if (minimum := property.get("minimum")) is not None:
                         suffix += f" | min: {minimum}"
-                    if maximum := property.get("maximum"):
+                    if (maximum := property.get("maximum")) is not None:
                         suffix += f" | max: {maximum}"
-                    if max_length := property.get("maxLength"):
+                    if (max_length := property.get("maxLength")) is not None:
                         suffix += f" | max length: {max_length}"
-                    if min_length := property.get("minLength"):
+                    if (min_length := property.get("minLength")) is not None:
                         suffix += f" | min length: {min_length}"
                     _print(f"{spaces}- {property_name}: {property_type}{suffix}")
                     if enumeration:
