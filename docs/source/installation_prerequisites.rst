@@ -26,7 +26,8 @@ process for installing the tools necessary to effectively run ``smaht-submitr``.
 The UNIX Command-Line
 ---------------------
 
-The ``smaht-submitr`` package provides a number of `command-line` tools (commands) which must
+The ``smaht-submitr`` package provides a number of `command-line <https://en.wikipedia.org/wiki/Command-line_interface>`_
+tools (or `commands`) which must
 be run from the command-line using a system `terminal` application.
 
 On Mac OS X (which is built on UNIX), to open the ``Terminal`` application, open ``Finder``,
@@ -34,16 +35,13 @@ navigate to the ``Applications`` folder and then to the ``Utilities`` sub-folder
 Inside this folder should be the ``Terminal`` application, which you can double-click on to bring it up;
 for future convenience you can add it to your home Dock (if not already there) by clicking and dragging it to your Dock.
 
-Before continuing, once you've opened the ``Terminal`` ensure that in the top title bar it shows ``bash`` (and not ``zsh`` or whatever).
+Before continuing, once you've opened the ``Terminal``, ensure that in the top title bar it shows ``bash`` (and `not` ``zsh`` or whatever).
 Newer Mac OS X versions package with ``zsh`` by default, but we want to use ``bash``.
-If you see ``zsh``, once in the terminal run the following command,
-close and re-open terminal and you will be using the expected ``bash`` shell::
+If you see ``zsh``, once in the terminal, run the following command,
+close and re-open terminal, and you will be using the expected ``bash`` shell::
 
     chsh -s /bin/bash
 
-For Linux, it is inherently a more command-line oriented operating system,
-and as Linux users are typically a bit more advanced than normal,
-specific instructions will be omitted, though much of what is here is applicable to Linux as well.
 
 UNIX Command Cheatsheet
 ~~~~~~~~~~~~~~~~~~~~~~~
