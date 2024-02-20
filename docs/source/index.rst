@@ -14,8 +14,6 @@ Overview
 
 **smaht-submitr**: A metadata and file submission tool for :toplink:`SMaHT Portal <https://data.smaht.org/>`.
 
-**[** **SMaHT**: :toplink:`Somatic Mosaicism across Human Tissues Data Portal <https://commonfund.nih.gov/smaht>` **]**
-
 .. note::
    You need a SMaHT account to use this software. For information an obtaining an account please see:
    `SMaHT Portal Account Creation <account_creation.html>`_
@@ -44,7 +42,8 @@ This document explains how to get up and running with the use of this tool.
 
 .. raw:: html
 
-    See the <strong><a href="about.html">About</a></strong> page for more information about this software and SMaHT Portal, including contact information. <br /> <br />
+    For more information about this software and SMaHT Portal see: <strong><a href="about.html">About</a></strong>
+    <br /> <br />
 
 .. tip::
     Note that this documentation covers the `mechanics` of using ``smaht-submitr``.
