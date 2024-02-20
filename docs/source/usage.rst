@@ -3,7 +3,7 @@ Submitting Metadata
 ===================
 
 Once you have finished installing the ``smaht-submitr`` package (per the `Installation <installation.html>`_ section),
-you should have access to the ``submit-metadata-bundle`` command.
+you should have access to the :boldcode:`submit-metadata-bundle` command.
 What follows are detailed instructions for how to format your metatdata submission files,
 and how to actually submit (and validate) them to SMaHT Portal using this command.
 
@@ -141,7 +141,7 @@ Submission
 ==========
 
 The type of submission supported is called a "metadata bundles", or `accessioning`.
-And the name of the command-line tool to initiate a submission is ``submit-metadata-bundle``.
+And the name of the command-line tool to initiate a submission is :boldcode:`submit-metadata-bundle`.
 A brief tour of this command, its arguments, and function is described below.
 To get help about the command, do::
 
@@ -234,7 +234,7 @@ When specifying the ``--validate`` option (default for non-admin users) the addi
 
 Getting Submission Info
 =======================
-To view relevant information about a submission, do::
+To view relevant information about a submission use the :boldcode:`check-submission` command like this::
 
    check-submission --env <environment-name> <uuid>
 
@@ -244,7 +244,7 @@ in the output of the ``submit-metadata-bundle`` command (e.g. see `screenshot <u
 Listing Recent Submissions
 --------------------------
 To view a list of recent submissions (with submission UUID and submission date/time),
-in order of most recent first, do::
+in order of most recent first, use the :boldcode:`list-submissions` command like this::
 
    list-submissions --env <environment-name>
 

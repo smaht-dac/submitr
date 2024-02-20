@@ -160,7 +160,7 @@ no local client-side validation will be done in this case.
 Viewing Portal Objects
 ======================
 
-Also included in the ``smaht-submitr`` package is a command-line utility called ``view-portal-object``,
+Also included in the ``smaht-submitr`` package is a command-line utility called :boldcode:`view-portal-object`,
 which some users might sometimes find convenient, for troubleshooting or sanity checking purposes.
 Given a UUID or a path to an object within SMaHT Portal, it simply prints to the output the object in JSON format
 for example::
