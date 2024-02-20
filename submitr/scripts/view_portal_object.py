@@ -229,8 +229,8 @@ def _print_schema_info(schema: dict, level: int = 0,
                     (any_of == [{"required": ["consortia"]}, {"required": ["submission_centers"]}])):  # noqa
                     # Very very special case.
                     _print(f"  - at least one of:")
-                    _print(f"    - consortia: array of string | unique")
-                    _print(f"    - submission_centers: array of string | unique")
+                    _print(f"    - consortia: array of string")
+                    _print(f"    - submission_centers: array of string")
             required = required_properties
         if identifying_properties := schema.get("identifyingProperties"):
             _print("- identifying properties:")
