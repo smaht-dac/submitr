@@ -182,7 +182,8 @@ if the given the argument is the name of a SMaHT Portal object, for example::
 This will output the names of the `required`, `identifying`, and `reference` properties for the named schema.
 And specifying  the ``--details`` option, the output will also include an alphabetical list of `all` the schema
 properties, along with their types, and other details such as: whether or not the property is required;
-any (regular expression) pattern the associated value must adhere to; and if it is a reference, the type to which it refers.
+any (regular expression) pattern the associated value must adhere to; and if it is a reference, the type to which it refers;
+also included is the `parent` schema name, if any.
 
 You can also output an alphabetical list of `all` schema names present within SMaHT Portal
 using the special ``schemas`` name to the above command, for example::
@@ -194,7 +195,7 @@ you'll get the `required`, `identifying`, and `reference` properties for each li
 and then also passing the ``--more-details`` options you'll get `all` of the properties
 for each schema with associated details as described above.
 
-And passing ``--raw`` to either of these will give you the raw JSON for the schema(s).
+Passing ``--raw`` to either of these will give you the raw JSON for the schema(s).
 
 .. tip::
     There is nothing really that the ``view-portal-object`` commands do that you cannot also do by interacting with SMaHT Portal directly 
