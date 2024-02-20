@@ -1,6 +1,9 @@
 import os
 
 
+os.environ.pop("SMAHT_ENV", None)
+os.environ.pop("SMAHT_KEYS", None)
+
 REPOSITORY_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 if not os.path.basename(REPOSITORY_ROOT_DIR).startswith('submitr'):
