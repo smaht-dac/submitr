@@ -310,7 +310,7 @@ def _print_schema_info(schema: dict, level: int = 0,
                     if enumeration:
                         nenums = 0
                         maxenums = 15
-                        for enum in enumeration:
+                        for enum in sorted(enumeration):
                             if (nenums := nenums + 1) >= maxenums:
                                 if (remaining := len(enumeration) - nenums) > 0:
                                     _print(f"{spaces}  - [{remaining} more ...]")
