@@ -294,6 +294,10 @@ def _print_schema_info(schema: dict, level: int = 0,
                         suffix += f" | required"
                     if pattern := property.get("pattern"):
                         suffix += f" | pattern: {pattern}"
+                    if (format := property.get("format")) and (format != property_name):
+                        suffix += f" | format: {format}"
+                    if property.get("anyOf") == [{"format": "date"}, {"format": "date-time"}]:
+                        suffix += f" | format: date | date-time"
                     if link_to := property.get("linkTo"):
                         suffix += f" | reference: {link_to}"
                     if property.get("calculatedProperty"):
