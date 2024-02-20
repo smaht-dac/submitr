@@ -187,4 +187,4 @@ contacting us for additional help).
 
    There are of course other features provided by ``pyenv`` (e.g. setting up to use a particular Python version
    whenever you're in a particular directory). For more information, this page provides a pretty good tutorial:
-   `Managing Multiple Python Versions With Pyenv <https://realpython.com/intro-to-pyenv/>`_.
+   `Installing Python and Pyenv on MacOS for Beginners <https://londonappdeveloper.com/installing-python-on-macos-using-pyenv/>`_.
