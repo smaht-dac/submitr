@@ -17,9 +17,10 @@ at :toplink:`Harvard Medical School <https://hms.harvard.edu/>`.
    `SMaHT Portal Account Creation <account_creation.html>`_
 
 For further support, questions, feature requests, bug reports, or other information
-regarding the file submission process or SMaHT Portal,
+regarding the file submission process or the SMaHT project,
 please contact the SMaHT DAC Team at
 `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
+See the `Reporting Issues <#id1>`_ section below for more on this.
 
 .. tip::
     **SMaHT** stands for: :toplink:`Somatic Mosaicism across Human Tissues Data Portal <https://commonfund.nih.gov/smaht>`
@@ -35,26 +36,29 @@ Reporting Issues
 If you experience issues with this software, please do not hesitate to report them to
 `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
 
-.. tip::
-   To quickly see what version of ``smaht-submitr`` you have: ``submit-metadata-bundle --version``
-
 What to Send Us
 ~~~~~~~~~~~~~~~
 Please include as much relevant information as you can to help us assist in the troubleshooting process, including:
 
 * Your operating system version. For Mac OS X you can get this by clicking **About this Mac** in the Apple logo dropdown at the top left corner of your screen.
 * The full text of any error message you are seeing with all associated output.
-* The output of ``uname -a``
-* The output of ``python --version``
-* The output of ``pip freeze``
+* If possible, the output of the following commands from your terminal:
+
+.. code-block:: bash
+
+    submit-metadata-bundle --version
+    uname -a
+    python --version
+    pip freeze
 
 FYI you can capture the output of multiple commands into single file on the command-line like::
 
+    submit-metadata-bundle --version >> your_error_info.txt
     uname -a >> your_error_info.txt
     python --version >> your_error_info.txt
     pip freeze >> your_error_info.txt
 
-You can then attach this file to any correspondence with us and it will likely allow us to resolve issues more quickly.
+You can then attach this single file to any correspondence with us and it will likely allow us to resolve issues more quickly.
 
 .. caution::
     Please be careful **not** to send us your SMaHT Portal **Secret Access Key**
