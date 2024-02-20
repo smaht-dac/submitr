@@ -21,6 +21,9 @@ regarding the file submission process or SMaHT Portal,
 please contact the SMaHT DAC Team at
 `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
 
+.. tip::
+    **SMaHT** stands for: :toplink:`Somatic Mosaicism across Human Tissues Data Portal <https://commonfund.nih.gov/smaht>`
+
 Python Package & Source Code
 -----------------------------
 * Python Package: :toplink:`https://pypi.org/project/smaht-submitr <https://pypi.org/project/smaht-submitr>`

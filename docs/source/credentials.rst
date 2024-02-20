@@ -65,7 +65,7 @@ Secret Access Key, and the target SMaHT server URL. For example:
 
 Obviously you would replace ``<your-access-key-id>`` and ``<your-secret-access-key>``
 in the above with your actual **Access Key ID** and **Secret Access Key** values
-obtained from SMaHT Portal **Add Access Key** step described above.
+obtained from the SMaHT Portal **Add Access Key** step described above.
 
 To create or modify and edit this file, use a text editor of your choice (``vim`` or ``TextEdit`` or whatever).
 For example, using ``TextEdit``, from a MacOS Terminal window, like this::

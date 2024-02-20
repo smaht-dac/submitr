@@ -45,6 +45,8 @@ OPTIONS:
 --keys KEYS-FILE
   To specify an alternate credentials/keys
   file to the default ~/.smaht-keys.json file.
+--details
+  For more details in output.
 --verbose
   For more verbose output.
 --help
@@ -132,6 +134,7 @@ def main(simulated_args_for_testing=None):
                         help=f"the submission protocol (default {DEFAULT_SUBMISSION_PROTOCOL!r})")
     parser.add_argument('--noadmin', action="store_true",
                         help="For testing only; assume not admin user.", default=False)
+    parser.add_argument('--details', action="store_true", help="More details in output.", default=False)
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
@@ -177,7 +180,7 @@ def main(simulated_args_for_testing=None):
                              no_query=args.no_query, subfolders=args.subfolders, app=args.app,
                              submission_protocol=args.submission_protocol,
                              upload_folder=args.upload_folder,
-                             show_details=args.debug,
+                             show_details=args.details,
                              post_only=args.post_only,
                              patch_only=args.patch_only,
                              validate_local=args.validate_local,

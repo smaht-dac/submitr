@@ -273,7 +273,6 @@ def _print_schema_info(schema: dict, level: int = 0,
                     _print(f"  - {reference_property['name']}: {reference_property['ref']}")
         if schema.get("additionalProperties") is True:
             _print(f"  - additional properties are allowed")
-            pass
     if not more_details:
         return
     if properties := (schema.get("properties") if level == 0 else schema):
