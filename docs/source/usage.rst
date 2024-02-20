@@ -76,7 +76,7 @@ Nested Properties
 Some Portal object properties defined to contain other `nested` objects.
 Since a (Excel spreadsheet) inherently defines a "flat" structure,
 rather than the more hierarchical structure supported by
-Portal objects (which are actually `JSON <https://en.wikipedia.org/wiki/JSON>`_ objects),
+Portal objects (which are actually :toplink:`JSON <https://en.wikipedia.org/wiki/JSON>` objects),
 in which such nested objects can be defined,
 a special syntactic convention is needed to be able to reference the properties of these nested objects.
 
@@ -105,7 +105,7 @@ the required format is ``YYYY-MM-DD``, for example ``2024-02-09``.
 For Portal object properties which are defined as `date-time` values,
 the required format is ``YYYY-MM-DD hh:mm:ss``, for example ``2024-02-09 08:25:10``.
 This will default to your `local` timezone; if you want to specify a timezone
-use a suffix like ``+hh:mm`` where ``hh`` and ``mm`` are the hour and minute offsets (respectively) from `GMT <https://en.wikipedia.org/wiki/Greenwich_Mean_Time>`_.
+use a suffix like ``+hh:mm`` where ``hh`` and ``mm`` are the hour and minute offsets (respectively) from :toplink:`GMT <https://en.wikipedia.org/wiki/Greenwich_Mean_Time>`.
 
 Boolean Properties
 ------------------

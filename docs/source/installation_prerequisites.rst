@@ -5,8 +5,8 @@ Installation Prerequisites
 The SMaHT submission tool, ``smaht-submitr``,
 is a Python based command-line tool and requires Python (version `3.8, 3.9, 3.10, or 3.11`).
 These instructions, for users who are `not` very familiar with
-the `command-line <https://en.wikipedia.org/wiki/Command-line_interface>`_
-or `Python <https://en.wikipedia.org/wiki/Python_(programming_language)>`_,
+the :toplink:`command-line <https://en.wikipedia.org/wiki/Command-line_interface>`
+or :toplink:`Python <https://en.wikipedia.org/wiki/Python_(programming_language)>`,
 will help you install Python and setup your local environment for using ``smaht-submitr``.
 More experienced users can go directly to the `Installation <installation.html>`_ section.
 
@@ -26,7 +26,7 @@ process for installing the tools necessary to effectively run ``smaht-submitr``.
 The UNIX Command-Line
 ---------------------
 
-The ``smaht-submitr`` package provides a number of `command-line <https://en.wikipedia.org/wiki/Command-line_interface>`_
+The ``smaht-submitr`` package provides a number of :toplink:`command-line <https://en.wikipedia.org/wiki/Command-line_interface>`
 tools (or `commands`) which must
 be run from the command-line using a system `terminal` application.
 
@@ -83,7 +83,7 @@ Installing Homebrew
 -------------------
 
 For Mac OS X, a very common and convenient tool for the management of (mostly development related)
-software installation is `Homebrew <https://brew.sh/>`_  or ``brew`` (as the command is named).
+software installation is :toplink:`Homebrew <https://brew.sh/>`  or ``brew`` (as the command is named).
 We will assume this Homebrew method of installation for the remainder of this document.
 
 To install Homebrew, from the command-line, do::
@@ -93,8 +93,8 @@ To install Homebrew, from the command-line, do::
 Just to make sure it installed properly try the command ``brew --version`` and it should output something like ``Homebrew 4.2.8``. Use ``brew help`` to see all available ``brew`` commands.
 
 .. tip::
-   Another common alternative to using Homebrew on Mac OS X is to use `XCode <https://developer.apple.com/xcode/>`_.
-   If you want to go this route instead please see (for example) `Installing Python on Mac OS X via XCode <https://docs.python-guide.org/starting/install3/osx/>`_ (external link). In brief to get started with this use the command ``xcode-select --install``.
+   Another common alternative to using Homebrew on Mac OS X is to use :toplink:`XCode <https://developer.apple.com/xcode/>`.
+   If you want to go this route instead please see (for example) :toplink:`Installing Python on Mac OS X via XCode <https://docs.python-guide.org/starting/install3/osx/>` (external link). In brief to get started with this use the command ``xcode-select --install``.
    Note however that this installs a `lot` of software, and it may be a lengthy process (at least in terms of time).
 
 Installing Python
@@ -187,4 +187,4 @@ contacting us for additional help).
 
    There are of course other features provided by ``pyenv`` (e.g. setting up to use a particular Python version
    whenever you're in a particular directory). For more information, this page provides a pretty good tutorial:
-   `Installing Python and Pyenv on MacOS for Beginners <https://londonappdeveloper.com/installing-python-on-macos-using-pyenv/>`_.
+   :toplink:`Installing Python and Pyenv on MacOS for Beginners <https://londonappdeveloper.com/installing-python-on-macos-using-pyenv/>`.

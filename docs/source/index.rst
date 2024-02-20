@@ -12,7 +12,7 @@
 Overview
 ========
 
-**smaht-submitr**: A metadata and file submission tool for `SMaHT Portal <https://data.smaht.org/>`_.
+**smaht-submitr**: A metadata and file submission tool for :toplink:`SMaHT Portal <https://data.smaht.org/>`.
 
 .. note::
    You need a SMaHT account to use this software. For information an obtaining an account please see:
@@ -34,8 +34,10 @@ Overview
 Description
 ===========
 
-The :boldcode:`smaht-submitr` software is a command-line tool for importing and uploading metadata and files into the `SMaHT Portal <https://data.smaht.org/>`_.
-It is implemented as Python package and distributed on `PyPi <https://pypi.org/>`_ here: `smaht-submitr <https://pypi.org/project/smaht-submitr/>`_.
+The :boldcode:`smaht-submitr` software is a command-line tool for importing and uploading
+metadata and files into the :toplink:`SMaHT Portal <https://data.smaht.org/>`.
+It is implemented as Python package and distributed on :toplink:`PyPi <https://pypi.org/>`
+here: :toplink:`smaht-submitr <https://pypi.org/project/smaht-submitr/>`.
 This document explains how to get up and running with the use of this tool.
 
 See the `About <about.html>`_ page for more information about this software and SMaHT Portal, including contact information.

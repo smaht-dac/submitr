@@ -57,13 +57,22 @@ html_css_files = ['styles.css']
 # https://sphinx-tabs.readthedocs.io/en/latest/
 sphinx_tabs_disable_tab_closing = True
 
-# For bold highlighted text:
-from docutils import nodes
-from sphinx.util.nodes import make_refnode
+# Special config to:
+# - support bold highlighted text (:boldcode:)
+# - support opening a link an a different/new tab (:toplink:)
+from docutils import nodes, utils
+from sphinx.util.nodes import make_refnode, split_explicit_title
 
 def setup(app):
     app.add_role('boldcode', boldcode_role)
+    app.add_role('toplink', toplink_role)
 
 def boldcode_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
     node = nodes.literal(rawtext, text, classes=['boldcode'])
+    return [node], []
+
+def toplink_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+    has_title, title, target = split_explicit_title(text)
+    node = nodes.reference(rawtext, utils.unescape(title if has_title else target), refuri=target, **options)
+    node['target'] = '_blank'
     return [node], []

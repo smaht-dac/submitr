@@ -18,7 +18,7 @@ Please follow these steps below to get your access keys and configure your local
 Obtaining Access Keys
 ---------------------
 
-#. Log in to `SMaHT Portal <https://data.smaht.org>`_ with your username (email) and password. (See `Account Creation <account_creation.html>`_ for getting an account).
+#. Log in to :toplink:`SMaHT Portal <https://data.smaht.org>` with your username (email) and password. (See `Account Creation <account_creation.html>`_ for getting an account).
 #. Once logged in, go to your **Profile** page by clicking **Account** on the upper right corner of the page.
 #. On your profile page, click the green **Add Access Key** button, and copy the **Access Key ID** and **Secret Access Key** values from the pop-up page.
 #. Store these values the file ``~/.smaht-keys.json`` on your local machine. See the next section for details of this file and its format.
@@ -31,7 +31,7 @@ Storing Access Keys
 -------------------
 
 Once you've obtained access and secret keys (per the previous) section,
-they should be stored (as `JSON <https://en.wikipedia.org/wiki/JSON>`_)
+they should be stored as :toplink:`JSON <https://en.wikipedia.org/wiki/JSON>`
 in a file on your local machine called ``~/.smaht-keys.json``.
 (Note that the ``~`` there refers to your local home directory).
 
@@ -41,8 +41,8 @@ in a file on your local machine called ``~/.smaht-keys.json``.
    If you do, you will need to use the ``--keys`` options with the path to your alternate file as an argument,
    when using the ``smaht-submitr`` commands.
 
-The format of this file requires a single `JSON <https://en.wikipedia.org/wiki/JSON>`_
-object, where each property is an `environment` name (of your choosing), and where its value is
+The format of this file requires a single JSON object,
+where each property is an `environment` name (of your choosing), and where its value is
 an object containing ``key``, ``secret``, and ``server`` values, represening your Access Key ID,
 Secret Access Key, and the target SMaHT server URL. For example:
 

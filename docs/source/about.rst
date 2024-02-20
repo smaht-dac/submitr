@@ -2,9 +2,10 @@
 About
 =====
 
-This software (`smaht-submitr <https://pypi.org/project/smaht-submitr/>`_) and `SMaHT Portal <https://data.smaht.org/>`_
-were developed by the `Department of Biomedical Informatics <https://dbmi.hms.harvard.edu/>`_ (DBMI)
-at `Harvard Medical School <https://hms.harvard.edu/>`_.
+This software (:toplink:`smaht-submitr <https://pypi.org/project/smaht-submitr/>`)
+and :toplink:`SMaHT Portal <https://data.smaht.org/>`
+were developed by the :toplink:`Department of Biomedical Informatics <https://dbmi.hms.harvard.edu/>` (DBMI)
+at :toplink:`Harvard Medical School <https://hms.harvard.edu/>`.
 
 .. note::
    You need a SMaHT account to use this software. For information an obtaining an account please see:
@@ -17,8 +18,8 @@ please contact the SMaHT DAC Team at
 
 Python Package & Source Code
 -----------------------------
-* Python Package: https://pypi.org/project/smaht-submitr
-* Source Code: https://github.com/smaht-dac/submitr
+* Python Package: :toplink:`https://pypi.org/project/smaht-submitr <https://pypi.org/project/smaht-submitr>`
+* Source Code: :toplink:`https://github.com/smaht-dac/submitr <https://github.com/smaht-dac/submitr>`
 
 Reporting Issues
 ----------------

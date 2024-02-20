@@ -18,7 +18,8 @@ JSON Files
 ----------
 
 It is significant to note that internally, the ``smaht-submitr`` tool translates the given Excel spreadsheet file
-into `JSON <https://en.wikipedia.org/wiki/JSON>`_ (JavaScript Object Notation) format, and then submits that to SMaHT for processing; i.e. JSON is really
+into :toplink:`JSON <https://en.wikipedia.org/wiki/JSON>` (JavaScript Object Notation) format,
+and then submits that to SMaHT for processing; i.e. JSON is really
 the native format for this tool. So naturally, you can use a (single) JSON file directly rather than an Excel file to submit metadata.
 The file name for a JSON file `must` be suffixed with ``.json``.
 
@@ -34,7 +35,7 @@ conform to the schema for their corresponding types.
 CSV Files
 ---------
 
-As Excel files are really just fancy `CSV <https://en.wikipedia.org/wiki/Comma-separated_values>`_ (comma-separated-values),
+As Excel files are really just fancy :toplink:`CSV <https://en.wikipedia.org/wiki/Comma-separated_values>` (comma-separated-values),
 it's natural that CSV files be supported as an alternative.
 Nothing much to say here specifically about this file format per se, as it should be self-explanatory to anyone familiar with these file formats;
 but be sure to read the next paragraph.
@@ -43,8 +44,8 @@ The file name for a CSV file `must` be suffixed with ``.csv``.
 Since, unlike Excel files, which support multiple tabs (each representing a different SMaHT Portal object type),
 CSV files cannot represent multiple SMaHT Portal object types, `and` since we need to somehow specify what object
 type the CSV file contains data for, the actual file name of the CSV file is required to be the SMaHT Portal
-object type name (minus the ``.csv`` suffix). This file name can be either the `camel-case <https://en.wikipedia.org/wiki/Camel_case>`_
-or `snake-case <https://en.wikipedia.org/wiki/Snake_case>`_
+object type name (minus the ``.csv`` suffix). This file name can be either the :toplink:`camel-case <https://en.wikipedia.org/wiki/Camel_case>`
+or :toplink:`snake-case <https://en.wikipedia.org/wiki/Snake_case>`
 version of the type name, for example, ``CellCulture.csv`` or ``cell_culture.csv``, respectively.
 
 This obviously implies that multiple files are required if multiple types are to be submitted,
@@ -69,7 +70,8 @@ no requirements for the name of this file. For example::
 TSV Files
 ---------
 
-Exactly analogous to CSV files, `TSV <https://en.wikipedia.org/wiki/Tab-separated_values>`_ (tab-separated-values) files are also supported;
+Exactly analogous to CSV files, :toplink:`TSV <https://en.wikipedia.org/wiki/Tab-separated_values>` (tab-separated-values)
+files are also supported;
 the only difference being that tabs are used rather than commas as field separators.
 And, the file name for a TSV file `must` be suffixed with ``.tsv`` (rather than ``.csv``).
 
@@ -168,7 +170,7 @@ for example::
     view-portal-object --env data dca16310-5127-4347-bd58-10f8fb5516b2
     view-portal-object --env data /SubmissionCenter/smaht_dac
 
-If you want to display the data in `YAML <https://en.wikipedia.org/wiki/YAML>`_ format rather than JSON
+If you want to display the data in :toplink:`YAML <https://en.wikipedia.org/wiki/YAML>` format rather than JSON
 use the ``--yaml`` option. And if you want to automatically copy the (JSON) data to the clipboard use the ``--copy`` option.
 
 Viewing Portal Schemas
@@ -219,7 +221,7 @@ You won't be calling it directly, rather ``make build`` will call it.
 Internal Documentation
 ----------------------
 
-Internal documentation (from the `source code <https://github.com/smaht-dac/submitr>`_) for ``smaht-submitr`` can be found here:
+Internal documentation (from the :toplink:`source code <https://github.com/smaht-dac/submitr>`) for ``smaht-submitr`` can be found here:
 
 .. toctree::
   :maxdepth: 1
