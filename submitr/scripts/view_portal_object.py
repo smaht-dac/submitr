@@ -357,7 +357,7 @@ def _print_schema_info(schema: dict, level: int = 0,
                         suffix += f" | reference: {link_to}"
                     if property.get("calculatedProperty"):
                         suffix += f" | calculated"
-                    if default := property.get("default"):
+                    if (default := property.get("default")) is not None:
                         suffix += f" | default:"
                         if isinstance(default, dict):
                             suffix += f" object"
