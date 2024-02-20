@@ -103,7 +103,8 @@ def main():
                             app=args.app, verbose=args.verbose, debug=args.debug)
 
     if args.uuid.lower() == "schemas" or args.uuid.lower() == "schema":
-        _print_all_schema_names(portal=portal, details=args.details, more_details=args.more_details, raw=args.raw)
+        _print_all_schema_names(portal=portal, details=args.details,
+                                more_details=args.more_details, raw=args.raw, raw_yaml=args.yaml)
         return
 
     if _is_maybe_schema_name(args.uuid):
@@ -119,7 +120,7 @@ def main():
                     _print(f"{schema_name} | parent: {parent_schema_name}")
                 else:
                     _print(schema_name)
-            _print_schema(schema, details=args.details, more_details=args.details, raw=args.raw)
+            _print_schema(schema, details=args.details, more_details=args.details, raw=args.raw, raw_yaml=args.yaml)
             return
 
     data = _get_portal_object(portal=portal, uuid=args.uuid, raw=args.raw, database=args.database, verbose=args.verbose)
@@ -196,9 +197,13 @@ def _is_maybe_schema_name(value: str) -> bool:
     return False
 
 
-def _print_schema(schema: dict, details: bool = False, more_details: bool = False, raw: bool = False) -> None:
+def _print_schema(schema: dict, details: bool = False, more_details: bool = False,
+                  raw: bool = False, raw_yaml: bool = False) -> None:
     if raw:
-        _print(json.dumps(schema, indent=4))
+        if raw_yaml:
+            _print(yaml.dump(schema))
+        else:
+            _print(json.dumps(schema, indent=4))
         return
     _print_schema_info(schema, details=details, more_details=more_details)
 
@@ -330,10 +335,13 @@ def _print_schema_info(schema: dict, level: int = 0,
 
 def _print_all_schema_names(portal: Portal,
                             details: bool = False, more_details: bool = False,
-                            raw: bool = False) -> None:
+                            raw: bool = False, raw_yaml: bool = False) -> None:
     if schemas := _get_schemas(portal):
         if raw:
-            _print(json.dumps(schemas, indent=4))
+            if raw_yaml:
+                _print(yaml.dump(schemas))
+            else:
+                _print(json.dumps(schemas, indent=4))
             return
         for schema_name in sorted(schemas.keys()):
             if parent_schema_name := _get_parent_schema_name(schemas[schema_name]):
