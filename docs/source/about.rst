@@ -23,7 +23,7 @@ please contact the SMaHT DAC Team at
 See the `Reporting Issues <#id1>`_ section below for more on this.
 
 .. tip::
-    **SMaHT** stands for: :toplink:`Somatic Mosaicism across Human Tissues Data Portal <https://commonfund.nih.gov/smaht>`
+    **SMaHT** is an acronym for: :toplink:`Somatic Mosaicism across Human Tissues <https://commonfund.nih.gov/smaht>`
 
 Python Package & Source Code
 -----------------------------
