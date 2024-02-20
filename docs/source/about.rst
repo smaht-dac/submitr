@@ -9,7 +9,7 @@ at :toplink:`Harvard Medical School <https://hms.harvard.edu/>`.
 
 .. image:: https://dbmi.hms.harvard.edu/sites/default/files/hero-images/HMS_DBMI_Logo.svg
     :width: 350px
-    :target: https://dbmi.hms.harvard.edu/sites/default/files/hero-images/HMS_DBMI_Logo.svg
+    :target: https://dbmi.hms.harvard.edu/
     :alt: HMS DBMI
 
 .. note::
