@@ -262,6 +262,8 @@ def _print_schema_info(schema: dict, level: int = 0,
         if properties := schema.get("properties"):
             reference_properties = []
             for property_name in properties:
+                if not all and property_name in _SCHEMAS_IGNORE_PROPERTIES:
+                    continue
                 property = properties[property_name]
                 if link_to := property.get("linkTo"):
                     reference_properties.append({"name": property_name, "ref": link_to})
