@@ -31,11 +31,12 @@ Storing Access Keys
 -------------------
 
 Once you've obtained access and secret keys (per the previous) section,
-they should be stored in a file on your local machine called ``~/.smaht-keys.json``.
+they should be stored (as `JSON <https://en.wikipedia.org/wiki/JSON>`_)
+in a file on your local machine called ``~/.smaht-keys.json``.
 (Note that the ``~`` there refers to your local home directory).
 
 .. tip::
-   You can actually use any file rather than ``~/.smaht-keys.json`` to store your credentials
+   You can actually use `any` file rather than ``~/.smaht-keys.json`` to store your credentials
    (its name `must` but suffixed with ``.json``).
    If you do, you will need to use the ``--keys`` options with the path to your alternate file as an argument,
    when using the ``smaht-submitr`` commands.
@@ -63,7 +64,8 @@ Secret Access Key, and the target SMaHT server URL. For example:
    }
 
 Obviously you would replace ``<your-access-key-id>`` and ``<your-secret-access-key>``
-with your actual Access Key ID and Secret Access Key values obtained from SMaHT Portal **Add Access Key** step described above.
+in the above with your actual **Access Key ID** and **Secret Access Key** values
+obtained from SMaHT Portal **Add Access Key** step described above.
 
 To create or modify and edit this file, use a text editor of your choice (``vim`` or ``TextEdit`` or whatever).
 For example, using ``TextEdit``, from a MacOS Terminal window, like this::
@@ -71,7 +73,7 @@ For example, using ``TextEdit``, from a MacOS Terminal window, like this::
     open -a TextEdit ~/.smaht-keys.json
 
 As stated above, the environment name, e.g. ``data`` in the above example,
-is of your own choosing; this name should be used as the ``--env`` argument
+is of your own choosing; this same name should be used as the ``--env`` argument
 to the various ``smaht-submitr`` commands, e.g. ``submit-metadata-bundle`` and ``resume-uploads``.
 
 .. tip::
@@ -97,3 +99,8 @@ and gives no one else (but the system superuser) any permissions at all::
 
    $ ls -l ~/.smaht-keys.json
      -rw-------  1 youruser  staff  137 Jan 31 08:55 /Users/youruser/.smaht-keys.json
+
+.. tip::
+    Please be careful with your **Secret Access Key** value.
+    This is sensitive information and, like a password, it should **never** be
+    **shared** with anyone, and particularly through any insecure channels (like email or Slack or whatever).
