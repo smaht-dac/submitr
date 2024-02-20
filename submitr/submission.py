@@ -725,7 +725,8 @@ def submit_any_ingestion(ingestion_filename, *,
     show(f"Awaiting processing ...", with_time=True)
 
     check_done, check_status, check_response = _check_submit_ingestion(
-            uuid, portal.server, portal.env, portal.app, show_details, report=False, messages=True)
+            uuid, portal.server, portal.env, portal.app, keys_file=portal.keys_file, 
+            show_details=show_details, report=False, messages=True)
 
     if validate_remote_only:
         exit(0)
@@ -796,7 +797,7 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
     return False
 
 
-def _check_submit_ingestion(uuid: str, server: str, env: str,
+def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optional[str] = None,
                             app: Optional[OrchestratedApp] = None,
                             show_details: bool = False,
                             report: bool = True, messages: bool = False) -> Tuple[bool, str, dict]:
