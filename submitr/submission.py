@@ -725,7 +725,7 @@ def submit_any_ingestion(ingestion_filename, *,
     show(f"Awaiting processing ...", with_time=True)
 
     check_done, check_status, check_response = _check_submit_ingestion(
-            uuid, portal.server, portal.env, portal.app, keys_file=portal.keys_file, 
+            uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
             show_details=show_details, report=False, messages=True)
 
     if validate_remote_only:
