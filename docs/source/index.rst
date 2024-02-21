@@ -78,14 +78,24 @@ and installing the dependencies for this tool:
 * `Installation Prerequisites <installation_prerequisites.html>`_
 
 .. toctree::
-  :caption: Documentation 🚀
   :maxdepth: 1
+  :caption: General  ℹ️
 
   self
+  about
+
+.. toctree::
+  :caption: Setup  ⚙️
+  :maxdepth: 1
+
   installation
   account_creation
   credentials
+
+.. toctree::
+  :caption: Documentation 📄
+  :maxdepth: 1
+
   usage
   uploading_files
   advanced_usage
-  about
