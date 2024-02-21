@@ -103,6 +103,7 @@ def _get_user_record(server, auth):
 
 
 def _is_admin_user(user: dict, noadmin: bool = False) -> bool:
+    # return False  # xyzzy
     return False if noadmin else ("admin" in user.get("groups", []))
 
 
@@ -899,6 +900,7 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
     if not result:
         return
     lines = []
+    errors = []
     validation_info = None
     if submission_file := result.get("parameters", {}).get("datafile"):
         lines.append(f"Submission File: {submission_file}")
@@ -919,6 +921,10 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
                 summary_lines.append(skipped[0])
             if checked := [info for info in validation_info if info.lower().startswith("checked")]:
                 summary_lines.append(checked[0])
+            if errored := [info for info in validation_info if info.lower().startswith("errored")]:
+                summary_lines.append(errored[0].replace("Errored", "Errors"))
+            if errors := [info for info in validation_info if info.lower().startswith("error:")]:
+                pass
             if total := [info for info in validation_info if info.lower().startswith("total")]:
                 summary_lines.append(total[0])
             if summary := " | ".join(summary_lines):
@@ -974,8 +980,13 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
                 if upload_file_type:
                     lines.append(f"Upload File Type: {upload_file_type}")
     if lines:
-        print_boxed(["===", "SMaHT Submission Summary [UUID]", "==="] + lines + ["==="],
-                    right_justified_macro=("[UUID]", lambda: submission_uuid))
+        lines = ["===", "SMaHT Submission Summary [UUID]", "==="] + lines + ["==="]
+        if errors:
+            lines += ["ERRORS FOLLOW BELOW ...", "==="]
+        print_boxed(lines, right_justified_macro=("[UUID]", lambda: submission_uuid))
+        if errors:
+            for error in errors:
+                PRINT(error)
 
 
 def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
