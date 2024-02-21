@@ -34,7 +34,7 @@ Once you've obtained access and secret keys (per the previous) section,
 they should be stored as :toplink:`JSON <https://en.wikipedia.org/wiki/JSON>`
 in a file on your local machine called ``~/.smaht-keys.json``.
 (Note that the ``~`` there refers to your local home directory).
-To use a different file see the `Useful Tips <#id1>`_ section below.
+To use a different file see the `Some Tips <#id1>`_ section below.
 
 The format of this file requires a single JSON object,
 where each property is an **environment name** (of your choosing), and where its value is
@@ -78,11 +78,11 @@ for the various ``smaht-submitr`` commands, for example::
     submit-metadata-bundle --env data your_metadata_file.xlsx
 
 
-Useful Tips
-~~~~~~~~~~
+Some Tips
+~~~~~~~~~
 You can actually use `any` file rather than ``~/.smaht-keys.json`` to store your credentials;
 its name `must` but suffixed with ``.json``.
-If you do, you'll need to use the ``--keys`` options with the path to your file as an argument,
+If you do this, you'll need to use the ``--keys`` option, with the path to your file as an argument,
 when using the ``smaht-submitr`` commands.
 If you want to `avoid` having to specify the ``--keys`` option,
 can use an environment variable to set your file, like this::

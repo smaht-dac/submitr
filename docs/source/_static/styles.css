@@ -7,3 +7,57 @@ body, td {
     background-color: #f0f0f0; /* Or any styling you prefer for highlighting */
     /* Add any other styling here to mimic inline code */
 }
+
+/* Custom CSS to ensure table content wraps */
+// .wy-table-responsive table td, .wy-table-responsive table th {
+//     white-space: normal;
+//     vertical-align: top;
+//     text-align: top;
+//     align: top;
+// }
+
+
+.schema-table table {
+  width: 100%; /* Adjust the width as needed */
+  border-collapse: separate; /* Use 'separate' to enable 'border-spacing' */
+  border-spacing: 8px; /* This adds spacing around each cell */
+  table-layout: fixed; /* This helps with uniform column width */
+}
+//.schema-table table {
+ // background-color: white;
+//}
+.schema-table td, .schema-table th {
+    border: 1px solid #bbbbbb; /* Light grey border */
+    padding: 10px; /* Spacing inside each cell */
+    text-align: left;
+}
+.schema-table th {
+  background-color: #eeeeee;
+}
+.schema-table .nowrap {
+  // white-space: word-break;
+  // white-space: nowrap;
+}
+//.schema-table tbody th {
+  //background-color: #eeeeee;
+//}
+.schema-table tbody tr:nth-child(even) {
+  background-color: #dddddd;
+}
+.schema-table tbody tr:nth-child(odd) {
+  background-color: #cccccc;
+}
+
+
+
+/* Increase the width of the content area for a specific page */
+.wide-tables .wy-nav-content {
+    max-width: 1200px; /* Adjust the width as needed */
+}
+
+/* Ensure tables within that page are fully visible and scrollable if needed */
+.wide-tables .wy-table-responsive table {
+    display: inline-block;
+    width: auto;
+    overflow-x: auto;
+}
