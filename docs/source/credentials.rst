@@ -90,7 +90,7 @@ can use an environment variable to set your file, like this::
     export SMAHT_KEYS=/path-to-your-keys-file.json
 
 If you only have `one` single environment defined in your keys file
-then the ``--env`` argument will not be necessary when using the ``smaht-submit`` commands.
+then the ``--env`` argument will `not` be necessary when using the ``smaht-submit`` commands.
 
 If you have `more` than one environment defined in your keys file,
 and you want to avoid having to specify the ``--env`` option for the ``smaht-submitr`` commands, you can
