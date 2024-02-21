@@ -311,6 +311,8 @@ def _print_schema_info(schema: dict, level: int = 0,
                     if property.get("calculatedProperty"):
                         suffix += f" | calculated"
                     if property_items := property.get("items"):
+                        if (enumeration := property_items.get("enum")) is not None:
+                            suffix = f" | enum" + suffix
                         if pattern := property_items.get("pattern"):
                             suffix += f" | pattern: {pattern}"
                         if (format := property_items.get("format")) and (format != "uuid"):
@@ -333,6 +335,15 @@ def _print_schema_info(schema: dict, level: int = 0,
                             _print(f"{spaces}- {property_name}: array{suffix}")
                     else:
                         _print(f"{spaces}- {property_name}: array{suffix}")
+                    if enumeration:
+                        nenums = 0
+                        maxenums = 15
+                        for enum in sorted(enumeration):
+                            if (nenums := nenums + 1) >= maxenums:
+                                if (remaining := len(enumeration) - nenums) > 0:
+                                    _print(f"{spaces}  - [{remaining} more ...]")
+                                break
+                            _print(f"{spaces}  - {enum}")
                 else:
                     if isinstance(property_type, list):
                         property_type = " or ".join(sorted(property_type))

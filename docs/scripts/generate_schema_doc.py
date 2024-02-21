@@ -189,7 +189,14 @@ def _replace_respecting_leading_spaces(text: str, value: str, replacement: str, 
     """
     Searches for the given value substring in the given text string and, if found,
     replaces it with the given replacement string; but making sure to maintain
-    and spacing regarding where the replacement string is. TODO more description.
+    and spacing regarding where the replacement string is. Meaning that if the
+    value to to be replaced in the text is the first non-space value on a line,
+    i.e. following a newline, the replacement value will be preceded by by that
+    many spaces before doing the replacement, including any of the lines in the
+    replacement string, i.e. each newline in the replacement string will be
+    followed by that many spaces when doing the replacement. If the value to
+    be replaced is not the first non-space value on the line, the the replacement
+    value will be normlized with respect to spaces before doing the replacement
     """
     text = text.expandtabs(tabsize=tabsize)
     if matches := _find_with_leading_characters(text, value, tabsize=tabsize):
