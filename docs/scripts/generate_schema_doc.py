@@ -20,6 +20,8 @@ _IGNORE_PROPERTIES = [
     "schema_version"
 ]
 
+TEMPLATES_DIR = f"{os.path.dirname(__file__)}/../schema_templates"
+
 
 def main():
 
@@ -47,11 +49,13 @@ def main():
         schemas = _get_schemas(portal)
         for schema_name in schemas:
             schema = schemas[schema_name]
-            _generate_doc(schema, all_properties=args.all)
+            schema_doc = _generate_doc(schema, all_properties=args.all)
+            _write_doc(schema_name, schema_doc)
     elif args.schema:
         schema, schema_name = _get_schema(portal, args.schema)
         if schema and schema_name:
-            _generate_doc(schema, all_properties=args.all)
+            schema_doc = _generate_doc(schema, all_properties=args.all)
+            _write_doc(schema_name, schema_doc)
     else:
         _usage()
 
@@ -99,8 +103,7 @@ def _get_parent_schema_name(schema: dict) -> Optional[str]:
 
 def _generate_doc(schema: dict, all_properties: bool = False) -> str:
     content = ""
-    with io.open("../schema_templates/schema.rst", "r") as f:
-        content = f.read()
+    if content := _get_template("schema"):
         if content_required_properties := _generate_doc_required_properties(schema, all_properties):
             content_required_properties = _normalize_spaces(content_required_properties)
             content = content.replace("{required_properties}", content_required_properties)
@@ -128,12 +131,11 @@ def _generate_doc_required_properties(schema: dict, all_properties: bool = False
     if isinstance(any_of := schema.get("anyOf"), list):
         if ((any_of == [{"required": ["submission_centers"]}, {"required": ["consortia"]}]) or
             (any_of == [{"required": ["consortia"]}, {"required": ["submission_centers"]}])):  # noqa
-            with io.open("../schema_templates/oneormore_property.rst", "r") as f:
-                if template_oneormore_property := f.read():
-                    result += _generate_doc_simple_properties([
-                        {"name": "consortia", "type": "array of string"},
-                        {"name": "submission_centers", "type": "array of string"}
-                    ])
+            if template_oneormore_property := _get_template("oneormore_property"):
+                result += _generate_doc_simple_properties([
+                    {"name": "consortia", "type": "array of string"},
+                    {"name": "submission_centers", "type": "array of string"}
+                ])
     return result
 
 
@@ -159,9 +161,8 @@ def _generate_doc_simple_properties(properties: List[str]) -> str:
     result = ""
     if not isinstance(properties, list) or not properties:
         return result
-    with io.open("../schema_templates/simple_property.rst", "r") as f:
-        if not (template_simple_property := f.read()):
-            return result
+    if not (template_simple_property := _get_template("simple_property")):
+        return result
     result = ""
     for property in properties:
         content_simple_property = template_simple_property
@@ -171,6 +172,17 @@ def _generate_doc_simple_properties(properties: List[str]) -> str:
         content_simple_property = content_simple_property.replace("{property_type}", property_type)
         result += content_simple_property
     return result
+
+
+def _write_doc(schema_name: str, schema_content: str) -> None:
+    print(content)
+
+
+@lru_cache(maxsize=32)
+def _get_template(name: str) -> str:
+    template_file = f"{TEMPLATES_DIR}/{name}.rst"
+    with io.open(template_file, "r") as f:
+        return f.read()
 
 
 def _replace_respecting_leading_spaces(text: str, value: str, replacement: str, tabsize: int = 4) -> str:
