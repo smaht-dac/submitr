@@ -48,13 +48,15 @@ OPTIONS:
   To specify an alternate credentials/keys
   file to the default ~/.smaht-keys.json file.
 --details
-  For more details in output.
+  Displays more details in output.
 --verbose
-  For more verbose output.
+  Displays more verbose output.
+--json
+  Displays the submitted metadata as formatted JSON.
 --help
-  Prints this documentation.
+  Displays this documentation.
 --help-advanced
-  Prints this plus more advanced documentation.
+  Displays this plus more advanced documentation.
 ===
 """
 _HELP_ADVANCED = _HELP.strip() + f"""
@@ -63,6 +65,7 @@ ADVANCED OPTIONS:
 --validate-only
   Performs ONLY, but BOTH client-side (local) and
   server-side (remote) validation only WITHOUT submitting.
+  Same as --validate with slightly different command interaction.
 --validate-local-only
   Performs ONLY client-side (local) validation WITHOUT submitting.
 --validate-remote-only
@@ -76,7 +79,8 @@ ADVANCED OPTIONS:
 --post-only
   Perform ONLY creates (POSTs) for submitted data.
 --parsed-json
-  Just prints the submitted metadata as formatted JSON.
+  Display ONLY the submitted metadata as formatted JSON;
+  nothing else is done.
 --yes
   Automatically answer 'yes' to any confirmation questions.
 --noadmin
@@ -257,8 +261,9 @@ def _setup_validate_related_options(args: argparse.Namespace):
             exit(1)
     elif not args.submit:
         if not _pytesting():
-            PRINT(f"You MUST specify either --validate or --submit. Use --help for all options.")
-            exit(1)
+            if not args.parsed_json:
+                PRINT(f"You MUST specify either --validate or --submit. Use --help for all options.")
+                exit(1)
 
     if args.submit:
         args.validate_local = True
