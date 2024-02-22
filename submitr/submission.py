@@ -1643,7 +1643,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}")
                 else:
                     PRINT(f"  - {file.get('type')}: {file.get('file')} -> Not found!")
-    _print_structured_data_status(portal, structured_data)
+    _print_structured_data_status(portal, structured_data, validate_remote_only=validate_remote_only)
     PRINT()
     if exit_immediately_on_errors and errors_exist:
         PRINT("There are some errors outlined above. Please fix them before trying again. No action taken.")
@@ -1704,7 +1704,9 @@ def _pre_validate_data(structured_data: StructuredDataSet, portal: Portal) -> Li
     return pre_validation_errors
 
 
-def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet) -> None:
+def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet,
+                                  validate_remote_only: bool = False) -> None:
+    will_or_would = "Will" if not validate_remote_only else "Would"
     PRINT("\n> Object create/update situation:")
     diffs = structured_data.compare()
     for object_type in diffs:
@@ -1712,9 +1714,9 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
         for object_info in diffs[object_type]:
             PRINT(f"  - OBJECT: {object_info.path}")
             if not object_info.uuid:
-                PRINT(f"    Does not exist -> Will be CREATED")
+                PRINT(f"    Does not exist -> {will_or_would} be CREATED")
             else:
-                PRINT(f"    Already exists -> {object_info.uuid} -> Will be UPDATED", end="")
+                PRINT(f"    Already exists -> {object_info.uuid} -> {will_or_would} be UPDATED", end="")
                 if not object_info.diffs:
                     PRINT(" (but NO substantive diffs)")
                 else:
