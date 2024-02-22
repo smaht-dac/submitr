@@ -170,7 +170,8 @@ def _create_some_temporary_file() -> str:
 
 def test_validation_options():
 
-    args = argparse.Namespace(validate=False,
+    args = argparse.Namespace(submit=False,
+                              validate=False,
                               validate_only=False,
                               validate_remote=False,
                               validate_remote_only=False,
@@ -187,7 +188,8 @@ def test_validation_options():
             not args.validate_remote and
             not args.validate_remote_only)
 
-    args = argparse.Namespace(validate=True,
+    args = argparse.Namespace(submit=False,
+                              validate=True,
                               validate_only=False,
                               validate_remote=False,
                               validate_remote_only=False,
@@ -197,9 +199,10 @@ def test_validation_options():
     assert (args.validate_local and
             not args.validate_local_only and
             args.validate_remote and
-            not args.validate_remote_only)
+            args.validate_remote_only)
 
-    args = argparse.Namespace(validate=False,
+    args = argparse.Namespace(submit=False,
+                              validate=False,
                               validate_only=True,
                               validate_remote=False,
                               validate_remote_only=False,
@@ -211,7 +214,8 @@ def test_validation_options():
             not args.validate_remote and
             args.validate_remote_only)
 
-    args = argparse.Namespace(validate=False,
+    args = argparse.Namespace(submit=False,
+                              validate=False,
                               validate_only=False,
                               validate_remote=False,
                               validate_remote_only=False,

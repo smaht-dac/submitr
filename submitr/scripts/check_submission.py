@@ -1,10 +1,9 @@
 import argparse
-import sys
 import os
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.common import ORCHESTRATED_APPS
 from ..base import DEFAULT_APP
-from ..submission import _check_submit_ingestion
+from ..submission import _check_submit_ingestion, _pytesting
 
 
 EPILOG = __doc__
@@ -42,10 +41,6 @@ def main(simulated_args_for_testing=None):
                 server=args.server,
                 show_details=(args.verbose or args.details)
         )
-
-
-def _pytesting():
-    return "pytest" in sys.modules
 
 
 if __name__ == '__main__':

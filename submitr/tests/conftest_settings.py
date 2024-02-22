@@ -3,6 +3,7 @@ import os
 
 os.environ.pop("SMAHT_ENV", None)
 os.environ.pop("SMAHT_KEYS", None)
+os.environ.pop("SMAHT_NOADMIN", None)
 
 REPOSITORY_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 

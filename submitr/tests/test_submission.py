@@ -6,6 +6,7 @@ import platform
 import pytest
 import re
 
+from . import test_misc
 from dcicutils import command_utils as command_utils_module
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
 from dcicutils.misc_utils import ignored, ignorable, local_attrs, NamedObject

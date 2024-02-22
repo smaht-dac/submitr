@@ -9,7 +9,8 @@ from ..submission import (
     submit_any_ingestion,
     DEFAULT_INGESTION_TYPE,
     DEFAULT_SUBMISSION_PROTOCOL,
-    SUBMISSION_PROTOCOLS
+    SUBMISSION_PROTOCOLS,
+    _pytesting
 )
 
 _HELP = f"""
@@ -29,7 +30,8 @@ OPTIONS:
   To specify your environment name; from your ~/.smaht-keys.json file.
 --validate
   To validate metadata before submitting.
-  This is the DEFAULT behavior for most (non-admin) users.
+--submit
+  To actually submit the metadata for ingestion.
 --consortium CONSORTIUM
   To specify your consortium.
   Default is to use the consortium associated with your account.
@@ -103,12 +105,17 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--patch-only', action="store_true",
                         help="Only perform updates (PATCH) for submitted data.", default=False)
     parser.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=None)
+    parser.add_argument('--submit', action="store_true",
+                        help="Actually submit the metadata for ingestion..", default=False)
     parser.add_argument('--validate', '-v', action="store_true",
                         help="Perform both client-side and server-side validation first.", default=False)
     parser.add_argument('--validate-only', action="store_true",
                         help="Only perform validation of submitted data (on server-side).", default=False)
     parser.add_argument('--validate-remote', action="store_true",
                         help="Perform validation of submitted data before submitting (on server-side).", default=False)
+    parser.add_argument('--validate-remote-silent', action="store_true",
+                        help="Perform validation of submitted data before submitting"
+                             "without prompting to submit to server for validation.", default=False)
     parser.add_argument('--validate-remote-only', action="store_true",
                         help="Only perform validation of submitted data (on server-side).", default=False)
     parser.add_argument('--validate-local', action="store_true",
@@ -150,8 +157,7 @@ def main(simulated_args_for_testing=None):
     if args.sub_directories:
         args.subfolders = True
 
-    if args.yes:
-        args.no_query = True
+    _setup_validate_related_options(args)
 
     if not args.bundle_filename:
         PRINT("Missing submission file name.")
@@ -164,13 +170,17 @@ def main(simulated_args_for_testing=None):
         # FAILED submitr/tests/test_submit_metadata_bundle.py::test_submit_metadata_bundle_script[foo.bar]
         # exit(1)
 
-    _setup_validate_related_options(args)
+    if args.yes:
+        args.no_query = True
 
     keys_file = args.keys or os.environ.get("SMAHT_KEYS")
     if keys_file:
         if not keys_file.endswith(".json") or not os.path.exists(keys_file):
             PRINT(f"The --keys argument ({keys_file}) must be the name of an existing .json file.")
             exit(1)
+
+    if args.noadmin:
+        os.environ["SMAHT_NOADMIN"] = "true"
 
     with script_catch_errors():
 
@@ -191,9 +201,9 @@ def main(simulated_args_for_testing=None):
                              patch_only=args.patch_only,
                              validate_local=args.validate_local,
                              validate_local_only=args.validate_local_only,
-                             validate_remote_only=args.validate_remote_only,
                              validate_remote=args.validate_remote,
-                             noadmin=args.noadmin or os.environ.get("SMAHT_NOADMIN"),
+                             validate_remote_only=args.validate_remote_only,
+                             validate_remote_silent=args.validate_remote_silent,
                              parsed_json=args.parsed_json,
                              verbose_json=args.json,
                              verbose=args.verbose,
@@ -238,46 +248,60 @@ def _setup_validate_related_options(args: argparse.Namespace):
         validate_option_count += 1
     if args.validate_remote_only:
         validate_option_count += 1
-    if validate_option_count > 1:
-        PRINT("Only specify ONE of the validate options.")
-        exit(1)
+    if validate_option_count > 0:
+        if validate_option_count > 1:
+            PRINT("Only specify ONE of the validate options.")
+            exit(1)
+        if args.submit:
+            PRINT(f"May NOT specify BOTH --submit AND --validate.")
+            exit(1)
+    elif not args.submit:
+        if not _pytesting():
+            PRINT(f"You MUST specify either --validate or --submit. Use --help for all options.")
+            exit(1)
 
     if args.validate:
         # L-LO-R-RO = T-F-T-F
         args.validate_local = True
         args.validate_local_only = False
         args.validate_remote = True
-        args.validate_remote_only = False
+        args.validate_remote_only = True
+        args.validate_remote_silent = True
     elif args.validate_only:
         # L-LO-R-RO = T-F-F-T
         args.validate_local = True
         args.validate_local_only = False
         args.validate_remote = False
         args.validate_remote_only = True
+        args.validate_remote_silent = False
     elif args.validate_local:
         # L-LO-R-RO = T-F-F-F
         args.validate_local = True
         args.validate_local_only = False
         args.validate_remote = False
         args.validate_remote_only = False
+        args.validate_remote_silent = False
     elif args.validate_local_only:
         # L-LO-R-RO = F-T-F-F
         args.validate_local = False
         args.validate_local_only = True
         args.validate_remote = False
         args.validate_remote_only = False
+        args.validate_remote_silent = False
     elif args.validate_remote:
         # L-LO-R-RO = F-F-T-F
         args.validate_local = False
         args.validate_local_only = False
         args.validate_remote = True
         args.validate_remote_only = False
+        args.validate_remote_silent = False
     elif args.validate_remote_only:
         # L-LO-R-RO = F-F-F-T
         args.validate_local = False
         args.validate_local_only = False
         args.validate_remote = False
         args.validate_remote_only = True
+        args.validate_remote_silent = False
 
     delattr(args, "validate")
     delattr(args, "validate_only")

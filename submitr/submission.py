@@ -102,8 +102,8 @@ def _get_user_record(server, auth):
     return user_record
 
 
-def _is_admin_user(user: dict, noadmin: bool = False) -> bool:
-    return False if noadmin else ("admin" in user.get("groups", []))
+def _is_admin_user(user: dict) -> bool:
+    return False if os.environ.get("SMAHT_NOADMIN") else ("admin" in user.get("groups", []))
 
 
 def _get_defaulted_institution(institution, user_record):
@@ -527,12 +527,12 @@ def submit_any_ingestion(ingestion_filename, *,
                          submission_protocol=DEFAULT_SUBMISSION_PROTOCOL,
                          validate_local=False,
                          validate_local_only=False,
-                         validate_remote_only=False,
                          validate_remote=False,
+                         validate_remote_only=False,
+                         validate_remote_silent=False,
                          post_only=False,
                          patch_only=False,
                          keys_file=None,
-                         noadmin=False,
                          show_details=False,
                          parsed_json=False,
                          verbose_json=False,
@@ -580,26 +580,29 @@ def submit_any_ingestion(ingestion_filename, *,
 
     exit_immediately_on_errors = False
     user_record = _get_user_record(portal.server, auth=portal.key_pair)
-    is_admin_user = _is_admin_user(user_record, noadmin=noadmin)
+    is_admin_user = _is_admin_user(user_record)
     if not is_admin_user and not (validate_remote_only or validate_remote or validate_local or validate_local_only):
         # If user is not an admin, and no other validate related options are
         # specified, then default to server-side and client-side validation,
         # i.e. act as-if the --validate option was specified.
         validate_local = True
         validate_remote = True
+        validate_remote_silent = True
         exit_immediately_on_errors = True
     if not is_admin_user or validate_local_only or (validate_remote_only and not is_admin_user):
         exit_immediately_on_errors = True
 
     if debug:
-        PRINT(f"DEBUG: validate_remote_only = {validate_remote_only}")
-        PRINT(f"DEBUG: validate_remote = {validate_remote}")
         PRINT(f"DEBUG: validate_local = {validate_local}")
         PRINT(f"DEBUG: validate_local_only = {validate_local_only}")
+        PRINT(f"DEBUG: validate_remote = {validate_remote}")
+        PRINT(f"DEBUG: validate_remote_only = {validate_remote_only}")
+        PRINT(f"DEBUG: validate_remote_silent = {validate_remote_silent}")
 
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
     _do_app_arg_defaulting(app_args, user_record)
-    PRINT(f"Submission file to ingest: {ingestion_filename}")
+    PRINT(f"Submission file to {'validate' if validate_local_only or validate_remote_only else 'ingest'}:"
+          f" {ingestion_filename}")
 
     autoadd = None
     if app_args and isinstance(submission_centers := app_args.get("submission_centers"), list):
@@ -631,12 +634,13 @@ def submit_any_ingestion(ingestion_filename, *,
         action_message = f"Submit {ingestion_filename}{maybe_ingestion_type} to {portal.server}?"
 
     if not no_query:
-        if not yes_or_no(action_message):
-            if validate_remote_only:
-                show("Aborting validation.")
-            else:
-                show("Aborting submission.")
-            exit(1)
+        if not validate_remote_silent:
+            if not yes_or_no(action_message):
+                if validate_remote_only:
+                    show("Aborting validation.")
+                else:
+                    show("Aborting submission.")
+                exit(1)
 
     if not os.path.exists(ingestion_filename):
         raise ValueError("The file '%s' does not exist." % ingestion_filename)
@@ -676,11 +680,14 @@ def submit_any_ingestion(ingestion_filename, *,
         raise InvalidParameterError(parameter='submission_protocol', value=submission_protocol,
                                     options=SUBMISSION_PROTOCOLS)
 
-    response = _post_submission(server=portal.server, keypair=portal.key_pair,
+    def initiate_submission():
+        return _post_submission(server=portal.server, keypair=portal.key_pair,
                                 ingestion_filename=ingestion_filename,
                                 creation_post_data=creation_post_data,
                                 submission_post_data=submission_post_data,
                                 submission_protocol=submission_protocol)
+
+    response = initiate_submission()
 
     try:
         # This can fail if the body doesn't contain JSON
@@ -722,24 +729,58 @@ def submit_any_ingestion(ingestion_filename, *,
 
     uuid = res['submission_id']
 
+    validation = validate_local_only or validate_remote_only or validate_remote_silent
+    if validate_remote_silent:
+        show(f"Continuing with additional (server) validation: {portal.server}")
     if DEBUG_PROTOCOL:  # pragma: no cover
-        show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} object: s3://{metadata_bundles_bucket}/{uuid}", with_time=True)
-    show(f"Metadata bundle uploaded to bucket ({metadata_bundles_bucket}); tracking UUID: {uuid}", with_time=True)
-    show(f"Awaiting processing ...", with_time=True)
+        show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} object: s3://{metadata_bundles_bucket}/{uuid}",
+             with_time=is_admin_user)
+    if not validate_remote_silent or is_admin_user or verbose:
+        show(f"Metadata bundle uploaded to bucket: {metadata_bundles_bucket}", with_time=is_admin_user)
+        show(f"Submission tracking UUID: {uuid}", with_time=is_admin_user)
+        show(f"Awaiting {'validation' if validation else 'processing'} ...", with_time=is_admin_user)
+    else:
+        show(f"Validation tracking UUID: {uuid}", with_time=is_admin_user)
 
     check_done, check_status, check_response = _check_submit_ingestion(
             uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
-            show_details=show_details, report=False, messages=True)
+            show_details=show_details, report=False, messages=True,
+            validation=validation, validate_remote_silent=validate_remote_silent,
+            verbose=is_admin_user or verbose)
 
     if validate_remote_only:
+        if check_status == "success":
+            show("Validation results: OK")
+        """
+        elif validate_remote_silent:
+            show(f"Validation results: ERROR{f'({check_status})' if check_status != 'failure' else ''}")
+            if check_response and (additional_data := check_response.get("additional_data")):
+                if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
+                    if errors := [info for info in validation_info if info.lower().startswith("error:")]:
+                        for error in errors:
+                            PRINT(error.replace("Error", "ERROR:"))
+        """
         exit(0)
 
     if check_status == "success":
+        if validation:
+            import pdb ; pdb.set_trace()
+            response = initiate_submission()
         do_any_uploads(check_response, keydict=portal.key, ingestion_filename=ingestion_filename,
                        upload_folder=upload_folder, no_query=no_query,
                        subfolders=subfolders)
-
     exit(0)
+    """
+    else:
+        if validate_remote_silent:
+            show(f"Validation results: ERROR{f'({check_status})' if check_status != 'failure' else ''}")
+            if check_response and (additional_data := check_response.get("additional_data")):
+                if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
+                    if errors := [info for info in validation_info if info.lower().startswith("error:")]:
+                        for error in errors:
+                            PRINT(error.replace("Error", "ERROR:"))
+        exit(0)
+    """
 
 
 def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict]:
@@ -803,6 +844,8 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
 def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optional[str] = None,
                             app: Optional[OrchestratedApp] = None,
                             show_details: bool = False,
+                            validation: bool = False, validate_remote_silent: bool = False,
+                            verbose: bool = False,
                             report: bool = True, messages: bool = False) -> Tuple[bool, str, dict]:
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
@@ -820,7 +863,11 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
             undesired_type = portal.get_schema_type(uuid_metadata)
             raise Exception(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
 
-    show(f"Checking ingestion process for {INGESTION_SUBMISSION_TYPE_NAME} uuid %s ..." % uuid, with_time=True)
+    action = "validation" if validation else "ingestion"
+    if validation:
+        show(f"Waiting for validation ...")
+    else:
+        show(f"Checking {action} for {INGESTION_SUBMISSION_TYPE_NAME} UUID %s ..." % uuid, with_time=verbose)
 
     def check_ingestion_progress():
         return _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server)
@@ -830,7 +877,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
     [check_done, check_status, check_response] = (
         check_repeatedly(check_ingestion_progress,
                          wait_seconds=PROGRESS_CHECK_INTERVAL,
-                         repeat_count=ATTEMPTS_BEFORE_TIMEOUT, messages=messages)
+                         repeat_count=ATTEMPTS_BEFORE_TIMEOUT,
+                         messages=messages, action=action, verbose=verbose)
     )
 
     if not check_done:
@@ -857,7 +905,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
         _show_detailed_results(uuid, metadata_bundles_bucket)
     """
 
-    if not _pytesting():
+    if not validate_remote_silent and not _pytesting():
         _print_submission_summary(portal, check_response)
 
     return check_done, check_status, check_response
@@ -988,7 +1036,7 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
         print_boxed(lines, right_justified_macro=("[UUID]", lambda: submission_uuid))
         if errors:
             for error in errors:
-                PRINT(error)
+                PRINT(error.replace("Error", "ERROR:"))
 
 
 def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
@@ -1608,7 +1656,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         PRINT(json.dumps(structured_data.data, indent=4))
         exit(1)
     if not (errors_exist := not _validate_data(structured_data, portal, ingestion_filename)):
-        PRINT("Validation results: OK")
+        PRINT("Validation results (preliminary): OK")
     if verbose_json:
         PRINT(f"Parsed JSON:")
         PRINT(json.dumps(structured_data.data, indent=4))
@@ -1653,8 +1701,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     else:
                         PRINT(f"  - {file.get('type')}: {file.get('file')} -> Not found!")
         _print_structured_data_status(portal, structured_data, validate_remote_only=validate_remote_only)
-    PRINT()
     if exit_immediately_on_errors and errors_exist:
+        PRINT()
         PRINT("There are some errors outlined above. Please fix them before trying again. No action taken.")
         exit(1)
     if errors_exist:

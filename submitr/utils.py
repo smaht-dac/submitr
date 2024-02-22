@@ -85,6 +85,7 @@ def check_repeatedly(check_function: Callable,
                      wait_message: str = None,
                      done_message: str = None,
                      stop_message: str = None,
+                     action: str = "processing",
                      response_message: bool = True,
                      messages: bool = True,
                      verbose: bool = True) -> Union[Tuple[bool, str, Any], Any]:
@@ -106,13 +107,13 @@ def check_repeatedly(check_function: Callable,
     def output(message):
         show(message, with_time=verbose, same_line=True)
     if not check_message:
-        check_message = "Checking processing"
+        check_message = f"Checking {action}"
     if not wait_message:
-        wait_message = "Waiting for processing completion"
+        wait_message = f"Waiting for {action} completion"
     if not done_message:
-        done_message = "Processing complete"
+        done_message = f"{action.title()} complete"
     if not stop_message:
-        stop_message = "Giving up waiting for processing completion"
+        stop_message = f"Giving up waiting for {action} completion"
     ntimes = 0
     check_function_returning_tuple = True
     check_status = "Not Done Yet"
