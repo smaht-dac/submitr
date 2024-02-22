@@ -764,7 +764,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if check_status == "success":
         if validation:
-            import pdb ; pdb.set_trace()
+            # import pdb ; pdb.set_trace()
             response = initiate_submission()
         do_any_uploads(check_response, keydict=portal.key, ingestion_filename=ingestion_filename,
                        upload_folder=upload_folder, no_query=no_query,
