@@ -117,10 +117,14 @@ def check_repeatedly(check_function: Callable,
     ntimes = 0
     check_function_returning_tuple = True
     check_status = "Not Done Yet"
+    start_time = time.time()
+    def duration():
+        duration = time.time() - start_time
+        return f"{'%.1f' % duration}s"
     while True:
         if messages:
             output(f"{check_message} {f'| Status: {check_status.title()}' if check_status else ''}"
-                   f" | Checked: {ntimes} time{'s' if ntimes != 1 else ''} ...")
+                   f" | Checked: {ntimes}x | Elapsed: {duration()} ...")
         check_function_response = check_function()
         ntimes += 1
         if isinstance(check_function_response, Tuple) and len(check_function_response) >= 2:
@@ -133,16 +137,16 @@ def check_repeatedly(check_function: Callable,
         if check_done:
             if messages:
                 output(f"{done_message} {f'| Status: {check_status.title()}' if check_status else ''}"
-                       f" | Checked: {ntimes} time{'s' if ntimes != 1 else ''}\n")
+                       f" | Elapsed: {duration()}\n")
             return check_function_response
         if ntimes >= repeat_count > 0:
             if messages:
                 output(f"{stop_message} {f'| Status: {check_status.title()}' if check_status else ''}"
-                       f" | Checked: {ntimes} time{'s' if ntimes != 1 else ''}\n")
+                       f" | Checked: {ntimes}x | Elapsed: {duration()}\n")
             return check_function_response if check_function_returning_tuple else False
         for i in range(wait_seconds):
             time.sleep(1)
             if messages:
                 output(f"{wait_message} {f'| Status: {check_status.title()}' if check_status else ''}"
-                       f" | Checked: {ntimes} time{'s' if ntimes != 1 else ''}"
-                       f" | Next check: {wait_seconds - i} second{'s' if wait_seconds - i != 1 else ''} ...")
+                       f" | Checked: {ntimes}x"
+                       f" | Next check: {wait_seconds - i}s | Elapsed: {duration()} ...")
