@@ -118,7 +118,7 @@ def check_repeatedly(check_function: Callable,
     check_function_returning_tuple = True
     check_status = "Not Done Yet"
     start_time = time.time()
-    def duration():
+    def duration():  # noqa
         duration = time.time() - start_time
         return f"{'%.1f' % duration}s"
     while True:
