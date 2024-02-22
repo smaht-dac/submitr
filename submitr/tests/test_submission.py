@@ -1027,24 +1027,6 @@ def test_do_uploads(tmp_path):
                         '2345': f"{os.path.join(tmpdir, 'bar.fastq.gz')}",
                         '3456': f"{os.path.join(tmpdir, 'baz.fastq.gz')}"
                     }
-                    """
-                    import pdb ; pdb.set_trace()
-                    assert shown.lines == [
-                        f"Uploading {os.path.join(tmpdir, 'foo.fastq.gz')} 1234 ...",
-                        f"Upload of {os.path.join(tmpdir, 'foo.fastq.gz')}: OK -> 1.0 seconds",
-                        f"Uploading {os.path.join(tmpdir, 'bar.fastq.gz')} 2345 ...",
-                        f"Upload of {os.path.join(tmpdir, 'bar.fastq.gz')}: OK -> 1.0 seconds",
-                        f"Uploading {os.path.join(tmpdir, 'baz.fastq.gz')} to 3456 ...",
-                        f"Upload of {os.path.join(tmpdir, 'baz.fastq.gz')}: OK -> 1.0 seconds"
-                        # f"Uploading {os.path.join(tmpdir, 'foo.fastq.gz')} to item 1234 ...",
-                        # f"Upload of {os.path.join(tmpdir, 'foo.fastq.gz')} to item 1234 was successful.",
-                        # f"Uploading {os.path.join(tmpdir, 'bar.fastq.gz')} to item 2345 ...",
-                        # f"Upload of {os.path.join(tmpdir, 'bar.fastq.gz')} to item 2345 was successful.",
-                        # f"Uploading {os.path.join(tmpdir, 'baz.fastq.gz')} to item 3456 ...",
-                        # f"Upload of {os.path.join(tmpdir, 'baz.fastq.gz')} to item 3456 was successful.",
-                    ]
-                    import pdb ; pdb.set_trace()
-                    """
 
             with mock_uploads() as mock_uploaded:
                 with shown_output() as shown:
@@ -1054,25 +1036,6 @@ def test_do_uploads(tmp_path):
                         '2345': f"{os.path.join(tmpdir, 'bar.fastq.gz')}",
                         '3456': f"{os.path.join(tmpdir, 'baz.fastq.gz')}"
                     }
-                    """
-                    import pdb ; pdb.set_trace()
-                    assert shown.lines == [
-                        f"Uploading {os.path.join(tmpdir, 'foo.fastq.gz')} to 1234 ...",
-                        f"Upload of {os.path.join(tmpdir, 'foo.fastq.gz')}: OK -> 1.0 seconds",
-                        f"Uploading {os.path.join(tmpdir, 'bar.fastq.gz')} to 2345 ...",
-                        f"Upload of {os.path.join(tmpdir, 'bar.fastq.gz')}: OK -> 1.0 seconds",
-                        f"Uploading {os.path.join(tmpdir, 'baz.fastq.gz')} to 3456 ...",
-                        f"Upload of {os.path.join(tmpdir, 'baz.fastq.gz')}: OK -> 1.0 seconds"
-
-                        # f"Uploading {os.path.join(tmpdir, 'foo.fastq.gz')} to item 1234 ...",
-                        # f"Upload of {os.path.join(tmpdir, 'foo.fastq.gz')} to item 1234 was successful.",
-                        # f"Uploading {os.path.join(tmpdir, 'bar.fastq.gz')} to item 2345 ...",
-                        # f"Upload of {os.path.join(tmpdir, 'bar.fastq.gz')} to item 2345 was successful.",
-                        # f"Uploading {os.path.join(tmpdir, 'baz.fastq.gz')} to item 3456 ...",
-                        # f"Upload of {os.path.join(tmpdir, 'baz.fastq.gz')} to item 3456 was successful.",
-                    ]
-                    import pdb ; pdb.set_trace()
-                    """
 
             with local_attrs(submission_module, SUBMITR_SELECTIVE_UPLOADS=True):
                 with mock.patch.object(submission_module, "yes_or_no", make_alternator(True, False)):
@@ -2484,7 +2447,7 @@ def test_wrap_upload_function(
     Ensure wrapped function is indeed wrapped and returns expected
     output when called.
     """
-    with shown_output() as shown:
+    with shown_output():
         with mock.patch.object(
             submission_module, "yes_or_no", return_value=yes_or_no_result
         ) as mocked_yes_or_no:
@@ -2503,7 +2466,7 @@ def test_wrap_upload_function(
                 wrapped_function = function_wrapper.wrap_upload_function(
                     simple_function, file_name
                 )
-                result = wrapped_function(input_arg, error_raised=error_raised)
+                _ = wrapped_function(input_arg, error_raised=error_raised)
 
                 expected_lines = []
                 if not no_query and submitr_selective_uploads and not yes_or_no_result:

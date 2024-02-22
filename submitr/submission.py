@@ -106,7 +106,7 @@ def _is_admin_user(user: dict) -> bool:
     return False if os.environ.get("SMAHT_NOADMIN") else ("admin" in user.get("groups", []))
 
 
-def _get_defaulted_institution(institution, user_record):
+def _get_defaulted_institution(institution, user_record, portal=None):
     """
     Returns the given institution or else if none is specified, it tries to infer an institution.
 
@@ -124,7 +124,7 @@ def _get_defaulted_institution(institution, user_record):
     return institution
 
 
-def _get_defaulted_project(project, user_record):
+def _get_defaulted_project(project, user_record, portal=None):
     """
     Returns the given project or else if none is specified, it tries to infer a project.
 
@@ -154,7 +154,7 @@ def _get_defaulted_project(project, user_record):
     return project
 
 
-def _get_defaulted_award(award, user_record, error_if_none=False):
+def _get_defaulted_award(award, user_record, portal=None, error_if_none=False):
     """
     Returns the given award or else if none is specified, it tries to infer an award.
 
@@ -193,7 +193,7 @@ def _get_defaulted_award(award, user_record, error_if_none=False):
     return award
 
 
-def _get_defaulted_lab(lab, user_record, error_if_none=False):
+def _get_defaulted_lab(lab, user_record, portal=None, error_if_none=False):
     """
     Returns the given lab or else if none is specified, it tries to infer a lab.
 
@@ -217,7 +217,7 @@ def _get_defaulted_lab(lab, user_record, error_if_none=False):
     return lab
 
 
-def _get_defaulted_consortia(consortia, user_record, error_if_none=False):
+def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=False):
     """
     Returns the given consortia or else if none is specified, it tries to infer any consortia.
 
@@ -226,23 +226,35 @@ def _get_defaulted_consortia(consortia, user_record, error_if_none=False):
     :param error_if_none: boolean true if failure to infer any consortia should raise an error, and false otherwise.
     :return: the @id of a consortium to use (or a comma-separated list)
     """
-    consortia = consortia
+    suffix = ""
     if not consortia:
-        consortia = [consortium.get('@id', None)
-                     for consortium in user_record.get('consortia', [])]
+        consortia = [consortium.get('@id', None) for consortium in user_record.get('consortia', [])]
         if not consortia:
             if error_if_none:
                 raise SyntaxError("Your user profile has no consortium declared,"
                                   " so you must specify --consortium explicitly.")
             show("No consortium was inferred.")
+            return consortia
         else:
-            show("Consortium is (inferred):", ','.join(consortia))
+            suffix = " (inferred)"
+    annotated_consortia = []
+    if portal and not _pytesting():
+        for consortium in consortia:
+            consortium_path = f"/Consortium/{consortium}" if not consortium.startswith("/") else consortium
+            if not (consortium_object := portal.get_metadata(consortium_path)):
+                show(f"ERROR: Consortium not found: {consortium}")
+                exit(1)
+            elif consortium_name := consortium_object.get("identifier"):
+                consortium_uuid = consortium_object.get("uuid")
+                annotated_consortia.append(f"{consortium_name} ({consortium_uuid})")
+    if annotated_consortia:
+        show(f"Consortium is{suffix}:", ", ".join(annotated_consortia))
     else:
-        show("Consortium is:", ','.join(consortia))
+        show(f"Consortium is{suffix}:", ", ".join(consortia))
     return consortia
 
 
-def _get_defaulted_submission_centers(submission_centers, user_record, error_if_none=False):
+def _get_defaulted_submission_centers(submission_centers, user_record, portal=None, error_if_none=False):
     """
     Returns the given submission center or else if none is specified, it tries to infer a submission center.
 
@@ -252,6 +264,7 @@ def _get_defaulted_submission_centers(submission_centers, user_record, error_if_
         and false otherwise.
     :return: the @id of a submission center to use
     """
+    suffix = ""
     if not submission_centers:
         submission_centers = [submission_center.get('@id', None)
                               for submission_center in user_record.get('submission_centers', {})]
@@ -260,10 +273,25 @@ def _get_defaulted_submission_centers(submission_centers, user_record, error_if_
                 raise SyntaxError("Your user profile has no submission center declared,"
                                   " so you must specify --submission-center explicitly.")
             show("No submission center was inferred.")
+            return submission_centers
         else:
-            show("Submission center is (inferred):", ','.join(submission_centers))
+            suffix = " (inferred)"
+    annotated_submission_centers = []
+    if portal and not _pytesting():
+        for submission_center in submission_centers:
+            submission_center_path = (
+                f"/SubmissionCenter/{submission_center}"
+                if not submission_center.startswith("/") else submission_center)
+            if not (submission_center_object := portal.get_metadata(submission_center_path)):
+                show(f"ERROR: submission_center not found: {submission_center}")
+                exit(1)
+            elif submission_center_name := submission_center_object.get("identifier"):
+                submission_center_uuid = submission_center_object.get("uuid")
+                annotated_submission_centers.append(f"{submission_center_name} ({submission_center_uuid})")
+    if annotated_submission_centers:
+        show(f"Submission center is{suffix}:", ", ".join(annotated_submission_centers))
     else:
-        show("Submission center is:", ','.join(submission_centers))
+        show(f"Submission center is{suffix}:", ", ".join(submission_centers))
     return submission_centers
 
 
@@ -277,12 +305,12 @@ APP_ARG_DEFAULTERS = {
 }
 
 
-def _do_app_arg_defaulting(app_args, user_record):
+def _do_app_arg_defaulting(app_args, user_record, portal=None):
     for arg in list(app_args.keys()):
         val = app_args[arg]
         defaulter = APP_ARG_DEFAULTERS.get(arg)
         if defaulter:
-            val = defaulter(val, user_record)
+            val = defaulter(val, user_record, portal)
             if val:
                 app_args[arg] = val
             elif val is None:
@@ -603,7 +631,8 @@ def submit_any_ingestion(ingestion_filename, *,
     validation = validation_only or validate_remote_silent
 
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
-    _do_app_arg_defaulting(app_args, user_record)
+    if not _do_app_arg_defaulting(app_args, user_record, portal):
+        pass
     PRINT(f"Submission file to {'validate' if validation_only else 'ingest'}: {ingestion_filename}")
 
     autoadd = None
