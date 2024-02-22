@@ -182,8 +182,8 @@ You can list the virtual environment you have created using ``pyenv virtualenvs`
    i.e. via ``pyenv activate smaht-submitr-3.11`` using the above example.
 
 Assuming the above example, if you now do ``python --version`` you should `definitely` see something like ``Python 3.11.8``;
-if you do not, then something **may be wrong** (see the `About <about.html#reporting-issues>`_ page to see about
-contacting us for additional help).
+if you do not, then something **may be wrong**; if you need assitance, see the `Reporting Issues <about.html#id1>`_
+section to see about contacting us for additional help.
 
 .. note::
 

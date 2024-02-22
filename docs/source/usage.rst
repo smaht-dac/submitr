@@ -131,7 +131,7 @@ Viewing Schema Info
 -------------------
 .. tip::
    As you're building your metadata file,
-   you may find the :boldcode:`view-portal-object` command useful.
+   you `may` find the :boldcode:`view-portal-object` command useful.
    This is described in the `Advanced Usage <advanced_usage.html#viewing-portal-schemas>`_ section.
 
    Using this command you can quickly view important aspects of the object schemas supported by SMaHT Portal;
