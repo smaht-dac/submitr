@@ -103,7 +103,6 @@ def _get_user_record(server, auth):
 
 
 def _is_admin_user(user: dict, noadmin: bool = False) -> bool:
-    # return False  # xyzzy
     return False if noadmin else ("admin" in user.get("groups", []))
 
 

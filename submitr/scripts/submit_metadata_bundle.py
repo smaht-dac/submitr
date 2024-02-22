@@ -187,7 +187,7 @@ def main(simulated_args_for_testing=None):
                              validate_local_only=args.validate_local_only,
                              validate_remote_only=args.validate_remote_only,
                              validate_remote=args.validate_remote,
-                             noadmin=args.noadmin,
+                             noadmin=args.noadmin or os.environ.get("SMAHT_NOADMIN"),
                              verbose=args.verbose,
                              debug=args.debug)
 
