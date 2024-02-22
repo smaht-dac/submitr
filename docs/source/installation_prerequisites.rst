@@ -28,12 +28,14 @@ The UNIX Command-Line
 
 The ``smaht-submitr`` package provides a number of :toplink:`command-line <https://en.wikipedia.org/wiki/Command-line_interface>`
 tools (or `commands`) which must
-be run from the command-line using a system `terminal` application.
+be run from the (:toplink:`UNIX <https://en.wikipedia.org/wiki/Unix>`) command-line using a system :toplink:`console <https://en.wikipedia.org/wiki/Console_application>` or `terminal` application.
 
-On Mac OS X (which is built on UNIX), to open the ``Terminal`` application, open ``Finder``,
+On :toplink:`Mac OS X <https://en.wikipedia.org/wiki/MacOS>` (which is built on UNIX),
+to open the :toplink:`Terminal <https://en.wikipedia.org/wiki/Terminal_(macOS)>` application, open ``Finder``,
 navigate to the ``Applications`` folder and then to the ``Utilities`` sub-folder.
 Inside this folder should be the ``Terminal`` application, which you can double-click on to bring it up;
-for future convenience you can add it to your home Dock (if not already there) by clicking and dragging it to your Dock.
+for future convenience you can add it to your home Dock (if not already there)
+by clicking and dragging it to your :toplink:`Dock <https://support.apple.com/guide/mac-help/open-apps-from-the-dock-mh35859/mac>`.
 
 Before continuing, once you've opened the ``Terminal``, ensure that in the top title bar it shows ``bash`` (and `not` ``zsh`` or whatever).
 Newer Mac OS X versions package with ``zsh`` by default, but we want to use ``bash``.
@@ -77,7 +79,7 @@ directories and files.
 * ``cd``: This will change your current directory. The special identifier ``..`` indicates the parent directory (above the current one).
 * ``cat some_file_name``: This will output the contents of a file to the terminal.
 * ``mkdir some_directory_name``: This will create a new directory.
-* ``touch some_file_name``: This will create a new empty file; **be careful**, as if ``some_file_name`` already exists it will be truncated.
+* ``touch some_file_name``: This will create a new empty file; **be careful** with this one, as if ``some_file_name`` already exists it will be `truncated`.
 
 Installing Homebrew
 -------------------
