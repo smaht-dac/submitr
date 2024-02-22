@@ -1781,7 +1781,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             exit(1)
     if validate_local_only:
         exit(0 if not errors_exist else 1)
-    PRINT()
+    if verbose:
+        PRINT()
 
 
 def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str) -> bool:
