@@ -59,7 +59,7 @@ directories and files.
 
 * ``pwd``: This will print the full path of your current directory; i.e. the current location within the UNIX file system where your terminal is "located". Whenever you start a new terminal session, odds are you will be in your home directory. The ``~`` (tilde) character is a global alias for your home directory.
 * ``ls``: This will list all files and directories in the current directory.
-* ``ls -l``: Same as above but with more info, including file size (in bytes), for example `1311` for `some_file_name` in the example below.
+* ``ls -l``: Same as above but with more info, including file size (in bytes), for example ``1311`` bytes for ``some_file_name`` in the example below.
 
 
 .. code-block:: bash
@@ -76,7 +76,7 @@ directories and files.
       drw-r--r--  1 your_username  your_usergroup     128 Jan  5 14:04 some_directory_name/
 
 
-* ``cd``: This will change your current directory. The special identifier ``..`` indicates the parent directory (above the current one).
+* ``cd``: This will change your current directory. The special identifier ``..`` indicates the parent directory (above the current one); and ``.`` indicates the current directory.
 * ``cat some_file_name``: This will output the contents of a file to the terminal.
 * ``mkdir some_directory_name``: This will create a new directory.
 * ``touch some_file_name``: This will create a new empty file; **be careful** with this one, as if ``some_file_name`` already exists it will be `truncated`.
