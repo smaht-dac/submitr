@@ -599,10 +599,12 @@ def submit_any_ingestion(ingestion_filename, *,
         PRINT(f"DEBUG: validate_remote_only = {validate_remote_only}")
         PRINT(f"DEBUG: validate_remote_silent = {validate_remote_silent}")
 
+    validation_only = validate_local_only or validate_remote_only
+    validation = validation_only or validate_remote_silent
+
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
     _do_app_arg_defaulting(app_args, user_record)
-    PRINT(f"Submission file to {'validate' if validate_local_only or validate_remote_only else 'ingest'}:"
-          f" {ingestion_filename}")
+    PRINT(f"Submission file to {'validate' if validation_only else 'ingest'}: {ingestion_filename}")
 
     autoadd = None
     if app_args and isinstance(submission_centers := app_args.get("submission_centers"), list):
@@ -680,15 +682,59 @@ def submit_any_ingestion(ingestion_filename, *,
         raise InvalidParameterError(parameter='submission_protocol', value=submission_protocol,
                                     options=SUBMISSION_PROTOCOLS)
 
-    def initiate_submission():
+    def OLD_initiate_submission():
         return _post_submission(server=portal.server, keypair=portal.key_pair,
                                 ingestion_filename=ingestion_filename,
                                 creation_post_data=creation_post_data,
                                 submission_post_data=submission_post_data,
                                 submission_protocol=submission_protocol)
 
-    response = initiate_submission()
+    def initiate_submission():
+        response = _post_submission(server=portal.server, keypair=portal.key_pair,
+                                    ingestion_filename=ingestion_filename,
+                                    creation_post_data=creation_post_data,
+                                    submission_post_data=submission_post_data,
+                                    submission_protocol=submission_protocol)
+        try:
+            # This can fail if the body doesn't contain JSON
+            res = response.json()
+        except Exception:  # pragma: no cover
+            # This clause is not ordinarily entered. It handles a pathological case that we only hypothesize.
+            # It does not require careful unit test coverage. -kmp 23-Feb-2022
+            res = None
+        try:
+            response.raise_for_status()
+        except Exception:
+            if res is not None:
+                # For example, if you call this on an old version of cgap-portal that does not support this request,
+                # the error will be a 415 error, because the tween code defaultly insists on application/json:
+                # {
+                #     "@type": ["HTTPUnsupportedMediaType", "Error"],
+                #     "status": "error",
+                #     "code": 415,
+                #     "title": "Unsupported Media Type",
+                #     "description": "",
+                #     "detail": "Request content type multipart/form-data is not 'application/json'"
+                # }
+                title = res.get('title')
+                message = title
+                detail = res.get('detail')
+                if detail:
+                    message += ": " + detail
+                show(message)
+                if title == "Unsupported Media Type":
+                    show("NOTE: This error is known to occur if the server"
+                         " does not support metadata bundle submission.")
+            raise
+        if res is None:  # pragma: no cover
+            # This clause is not ordinarily entered. It handles a pathological case that we only hypothesize.
+            # It does not require careful unit test coverage. -kmp 23-Feb-2022
+            raise Exception("Bad JSON body in %s submission result." % response.status_code)
+        return res['submission_id']
 
+    submission_uuid = initiate_submission()
+
+    """
     try:
         # This can fail if the body doesn't contain JSON
         res = response.json()
@@ -728,30 +774,29 @@ def submit_any_ingestion(ingestion_filename, *,
         raise Exception("Bad JSON body in %s submission result." % response.status_code)
 
     uuid = res['submission_id']
+    """
 
-    validation = validate_local_only or validate_remote_only or validate_remote_silent
     if validate_remote_silent:
         show(f"Continuing with additional (server) validation: {portal.server}")
     if DEBUG_PROTOCOL:  # pragma: no cover
-        show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} object: s3://{metadata_bundles_bucket}/{uuid}",
+        show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} object: s3://{metadata_bundles_bucket}/{submission_uuid}",
              with_time=is_admin_user)
     if not validate_remote_silent or is_admin_user or verbose:
-        show(f"Metadata bundle uploaded to bucket: {metadata_bundles_bucket}", with_time=is_admin_user)
-        show(f"Submission tracking UUID: {uuid}", with_time=is_admin_user)
-        show(f"Awaiting {'validation' if validation else 'processing'} ...", with_time=is_admin_user)
+        show(f"Metadata bundle uploaded to bucket: {metadata_bundles_bucket}", with_time=verbose)
+        show(f"Submission tracking ID: {submission_uuid}", with_time=verbose)
+        # show(f"Awaiting {'validation results' if validation else 'processing'} ...", with_time=verbose)
     else:
-        show(f"Validation tracking UUID: {uuid}", with_time=is_admin_user)
+        show(f"Validation tracking ID: {submission_uuid}", with_time=verbose)
 
     check_done, check_status, check_response = _check_submit_ingestion(
-            uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
+            submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
             show_details=show_details, report=False, messages=True,
             validation=validation, validate_remote_silent=validate_remote_silent,
-            verbose=is_admin_user or verbose)
+            verbose=verbose)
 
     if validate_remote_only:
         if check_status == "success":
             show("Validation results: OK")
-        """
         elif validate_remote_silent:
             show(f"Validation results: ERROR{f'({check_status})' if check_status != 'failure' else ''}")
             if check_response and (additional_data := check_response.get("additional_data")):
@@ -759,18 +804,25 @@ def submit_any_ingestion(ingestion_filename, *,
                     if errors := [info for info in validation_info if info.lower().startswith("error:")]:
                         for error in errors:
                             PRINT(error.replace("Error", "ERROR:"))
-        """
         exit(0)
 
     if check_status == "success":
         if validation:
-            # import pdb ; pdb.set_trace()
-            response = initiate_submission()
+            show("Validation results: OK")
+            show(f"Ready to continue with submission to {portal.server}: {ingestion_filename}")
+            if yes_or_no("Continue with submission?"):
+                submission_uuid = initiate_submission()
+                show(f"Submission tracking ID: {submission_uuid}")
+                check_done, check_status, check_response = _check_submit_ingestion(
+                        submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
+                        show_details=show_details, report=False, messages=True,
+                        validation=False, validate_remote_silent=False,
+                        verbose=verbose)
+            else:
+                exit(0)
         do_any_uploads(check_response, keydict=portal.key, ingestion_filename=ingestion_filename,
                        upload_folder=upload_folder, no_query=no_query,
                        subfolders=subfolders)
-    exit(0)
-    """
     else:
         if validate_remote_silent:
             show(f"Validation results: ERROR{f'({check_status})' if check_status != 'failure' else ''}")
@@ -779,8 +831,7 @@ def submit_any_ingestion(ingestion_filename, *,
                     if errors := [info for info in validation_info if info.lower().startswith("error:")]:
                         for error in errors:
                             PRINT(error.replace("Error", "ERROR:"))
-        exit(0)
-    """
+    exit(0)
 
 
 def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict]:
@@ -855,19 +906,21 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
 
     if not _pytesting():
         if not (uuid_metadata := portal.get_metadata(uuid)):
-            message = f"Submission UUI not found: {uuid}" if uuid != "dummy" else "No submission UUID specified."
+            message = f"Submission ID not found: {uuid}" if uuid != "dummy" else "No submission ID specified."
             if _print_recent_submissions(portal, message=message):
                 return
             raise Exception(f"Cannot find object given uuid: {uuid}")
         if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
             undesired_type = portal.get_schema_type(uuid_metadata)
-            raise Exception(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
+            raise Exception(f"Given ID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
 
     action = "validation" if validation else "ingestion"
     if validation:
-        show(f"Waiting for validation ...")
+        show(f"Waiting for validation results ...")
+    elif verbose:
+        show(f"Checking {action} for {INGESTION_SUBMISSION_TYPE_NAME} ID: %s ..." % uuid, with_time=verbose)
     else:
-        show(f"Checking {action} for {INGESTION_SUBMISSION_TYPE_NAME} UUID %s ..." % uuid, with_time=verbose)
+        show(f"Checking {action} for submission ID: %s ..." % uuid, with_time=verbose)
 
     def check_ingestion_progress():
         return _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server)
@@ -955,7 +1008,7 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
     if submission_file := result.get("parameters", {}).get("datafile"):
         lines.append(f"Submission File: {submission_file}")
     if submission_uuid := result.get("uuid"):
-        lines.append(f"Submission UUID: {submission_uuid}")
+        lines.append(f"Submission ID: {submission_uuid}")
     if date_created := _format_portal_object_datetime(result.get("date_created"), True):
         lines.append(f"Submission Time: {date_created}")
     if additional_data := result.get("additional_data"):
@@ -1024,7 +1077,7 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
                 upload_file_accession_name, upload_file_type = _get_upload_file_info(portal, upload_file_uuid)
                 lines.append("===")
                 lines.append(f"Upload File: {upload_file_name}")
-                lines.append(f"Upload File UUID: {upload_file_uuid}")
+                lines.append(f"Upload File ID: {upload_file_uuid}")
                 if upload_file_accession_name:
                     lines.append(f"Upload File Accession Name: {upload_file_accession_name}")
                 if upload_file_type:
@@ -1073,7 +1126,7 @@ def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None
 
     if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
         undesired_type = portal.get_schema_type(uuid_metadata)
-        raise Exception(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
+        raise Exception(f"Given ID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
 
     url = _ingestion_submission_item_url(portal.server, uuid)
     response = portal.get(url)
@@ -1218,7 +1271,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
             if not (response := portal.get_metadata(uuid := accession_id)):
                 raise Exception(f"Given accession ID not found: {uuid}")
         else:
-            raise Exception(f"Given UUID not found: {uuid}")
+            raise Exception(f"Given ID not found: {uuid}")
 
     if not portal.is_schema_type(response, INGESTION_SUBMISSION_TYPE_NAME):
 
@@ -1229,7 +1282,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
             return
 
         undesired_type = portal.get_schema_type(response)
-        raise Exception(f"Given UUID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
+        raise Exception(f"Given ID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
 
     do_any_uploads(response,
                    keydict=portal.key,
@@ -1300,7 +1353,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
     try:
         source = path
         target = upload_credentials['upload_url']
-        show("Uploading local file %s directly (via AWS CLI) to: %s" % (source, target))
+        show("Uploading %s to: %s" % (source, target))
         command = ['aws', 's3', 'cp']
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
@@ -1316,7 +1369,8 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
     else:
         end = time.time()
         duration = end - start
-        show("Upload duration: %.2f seconds" % duration)
+        # show("Upload duration: %.2f seconds" % duration)
+        show(f"Upload of {os.path.basename(source)}: OK -> {'%.1f' % duration} seconds")
 
 
 def _running_on_windows_native():
@@ -1492,12 +1546,7 @@ class UploadMessageWrapper:
                     perform_upload = False
             if perform_upload:
                 try:
-                    show("Uploading %s to item %s ..." % (file_name, self.uuid))
                     result = function(*args, **kwargs)
-                    show(
-                        "Upload of %s to item %s was successful."
-                        % (file_name, self.uuid)
-                    )
                 except Exception as e:
                     show("%s: %s" % (e.__class__.__name__, e))
             return result

@@ -260,43 +260,49 @@ def _setup_validate_related_options(args: argparse.Namespace):
             PRINT(f"You MUST specify either --validate or --submit. Use --help for all options.")
             exit(1)
 
-    if args.validate:
-        # L-LO-R-RO = T-F-T-F
+    if args.submit:
+        args.validate_local = True
+        args.validate_local_only = False
+        args.validate_remote = True
+        args.validate_remote_only = False
+        args.validate_remote_silent = True
+    elif args.validate:
+        # L-LO-R-RO-RS = T-F-T-F-T
         args.validate_local = True
         args.validate_local_only = False
         args.validate_remote = True
         args.validate_remote_only = True
         args.validate_remote_silent = True
     elif args.validate_only:
-        # L-LO-R-RO = T-F-F-T
+        # L-LO-R-RO-RS = T-F-F-T-F
         args.validate_local = True
         args.validate_local_only = False
         args.validate_remote = False
         args.validate_remote_only = True
         args.validate_remote_silent = False
     elif args.validate_local:
-        # L-LO-R-RO = T-F-F-F
+        # L-LO-R-RO-RS = T-F-F-F-F
         args.validate_local = True
         args.validate_local_only = False
         args.validate_remote = False
         args.validate_remote_only = False
         args.validate_remote_silent = False
     elif args.validate_local_only:
-        # L-LO-R-RO = F-T-F-F
+        # L-LO-R-RO-RS = F-T-F-F-F
         args.validate_local = False
         args.validate_local_only = True
         args.validate_remote = False
         args.validate_remote_only = False
         args.validate_remote_silent = False
     elif args.validate_remote:
-        # L-LO-R-RO = F-F-T-F
+        # L-LO-R-RO-RS = F-F-T-F-F
         args.validate_local = False
         args.validate_local_only = False
         args.validate_remote = True
         args.validate_remote_only = False
         args.validate_remote_silent = False
     elif args.validate_remote_only:
-        # L-LO-R-RO = F-F-F-T
+        # L-LO-R-RO-RS = F-F-F-T-F
         args.validate_local = False
         args.validate_local_only = False
         args.validate_remote = False
