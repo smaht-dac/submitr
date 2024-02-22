@@ -981,7 +981,7 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
     if lines:
         lines = ["===", "SMaHT Submission Summary [UUID]", "==="] + lines + ["==="]
         if errors:
-            lines += ["ERRORS FOLLOW BELOW ...", "==="]
+            lines += ["ERRORS ITEMIZED BELOW ...", "==="]
         print_boxed(lines, right_justified_macro=("[UUID]", lambda: submission_uuid))
         if errors:
             for error in errors:
