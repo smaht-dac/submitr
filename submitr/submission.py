@@ -534,6 +534,8 @@ def submit_any_ingestion(ingestion_filename, *,
                          keys_file=None,
                          noadmin=False,
                          show_details=False,
+                         parsed_json=False,
+                         verbose_json=False,
                          verbose=False,
                          debug=False):
     """
@@ -616,7 +618,8 @@ def submit_any_ingestion(ingestion_filename, *,
                           validate_local_only=validate_local_only,
                           validate_remote_only=validate_remote_only,
                           autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
-                          exit_immediately_on_errors=exit_immediately_on_errors, verbose=verbose)
+                          exit_immediately_on_errors=exit_immediately_on_errors,
+                          parsed_json=parsed_json, verbose_json=verbose_json, verbose=verbose)
 
     maybe_ingestion_type = ''
     if ingestion_type != DEFAULT_INGESTION_TYPE:
@@ -1594,56 +1597,62 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
 def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional[dict] = None,
                       validate_local_only: bool = False, validate_remote_only: bool = False,
                       upload_folder: Optional[str] = None,
-                      subfolders: bool = False, exit_immediately_on_errors: bool = False, verbose: bool = False) -> int:
+                      subfolders: bool = False, exit_immediately_on_errors: bool = False,
+                      parsed_json: bool = False, verbose_json: bool = False, verbose: bool = False) -> int:
     errors_exist = False
     if validate_local_only:
         PRINT(f"\n> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
               f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
     structured_data = StructuredDataSet.load(ingestion_filename, portal, autoadd=autoadd)
+    if parsed_json:
+        PRINT(json.dumps(structured_data.data, indent=4))
+        exit(1)
+    if not (errors_exist := not _validate_data(structured_data, portal, ingestion_filename)):
+        PRINT("Validation results: OK")
+    if verbose_json:
+        PRINT(f"Parsed JSON:")
+        PRINT(json.dumps(structured_data.data, indent=4))
     if verbose:
-        PRINT(f"\n> Parsed JSON:")
-        _print_json_with_prefix(structured_data.data, "  ")
-    errors_exist = not _validate_data(structured_data, portal, ingestion_filename)
-    PRINT(f"\n> Types submitting:")
-    for type_name in sorted(structured_data.data):
-        PRINT(f"  - {type_name}: {len(structured_data.data[type_name])}"
-              f" object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
-    if (resolved_refs := structured_data.resolved_refs):
-        PRINT(f"\n> Resolved object (linkTo) references:")
-        for resolved_ref in sorted(resolved_refs):
-            PRINT(f"  - {resolved_ref}")
-    if (ref_errors := structured_data.ref_errors):
-        errors_exist = True
-        PRINT(f"\n> ERROR: Unresolved object (linkTo) references:")
-        for ref_error in ref_errors:
-            PRINT(f"  - {_format_issue(ref_error, ingestion_filename)}")
-    if (reader_warnings := structured_data.reader_warnings):
-        PRINT(f"\n> WARNING: Parser warnings:")
-        for reader_warning in reader_warnings:
-            PRINT(f"  - {_format_issue(reader_warning, ingestion_filename)}")
-    if files := structured_data.upload_files:
-        files = structured_data.upload_files_located(location=[upload_folder,
-                                                               os.path.dirname(ingestion_filename)],
-                                                     recursive=subfolders)
-        files_found = [file for file in files if file.get("path")]
-        files_not_found = [file for file in files if not file.get("path")]
-        if files_found:
-            PRINT(f"\n> Resolved file references:")
-            for file in files_found:
-                if path := file.get("path"):
-                    PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
-                          f" [{_format_file_size(_get_file_size(path))}]")
-                else:
-                    PRINT(f"  - {file.get('type')}: {file.get('file')} -> NOT FOUND!")
-        if files_not_found:
+        PRINT(f"\n> Types submitting:")
+        for type_name in sorted(structured_data.data):
+            PRINT(f"  - {type_name}: {len(structured_data.data[type_name])}"
+                  f" object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
+        if (resolved_refs := structured_data.resolved_refs):
+            PRINT(f"\n> Resolved object (linkTo) references:")
+            for resolved_ref in sorted(resolved_refs):
+                PRINT(f"  - {resolved_ref}")
+        if (ref_errors := structured_data.ref_errors):
             errors_exist = True
-            PRINT(f"\n> ERROR: Unresolved file references:")
-            for file in files_not_found:
-                if path := file.get("path"):
-                    PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}")
-                else:
-                    PRINT(f"  - {file.get('type')}: {file.get('file')} -> Not found!")
-    _print_structured_data_status(portal, structured_data, validate_remote_only=validate_remote_only)
+            PRINT(f"\n> ERROR: Unresolved object (linkTo) references:")
+            for ref_error in ref_errors:
+                PRINT(f"  - {_format_issue(ref_error, ingestion_filename)}")
+        if (reader_warnings := structured_data.reader_warnings):
+            PRINT(f"\n> WARNING: Parser warnings:")
+            for reader_warning in reader_warnings:
+                PRINT(f"  - {_format_issue(reader_warning, ingestion_filename)}")
+        if files := structured_data.upload_files:
+            files = structured_data.upload_files_located(location=[upload_folder,
+                                                                   os.path.dirname(ingestion_filename)],
+                                                         recursive=subfolders)
+            files_found = [file for file in files if file.get("path")]
+            files_not_found = [file for file in files if not file.get("path")]
+            if files_found:
+                PRINT(f"\n> Resolved file references:")
+                for file in files_found:
+                    if path := file.get("path"):
+                        PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
+                              f" [{_format_file_size(_get_file_size(path))}]")
+                    else:
+                        PRINT(f"  - {file.get('type')}: {file.get('file')} -> NOT FOUND!")
+            if files_not_found:
+                errors_exist = True
+                PRINT(f"\n> ERROR: Unresolved file references:")
+                for file in files_not_found:
+                    if path := file.get("path"):
+                        PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}")
+                    else:
+                        PRINT(f"  - {file.get('type')}: {file.get('file')} -> Not found!")
+        _print_structured_data_status(portal, structured_data, validate_remote_only=validate_remote_only)
     PRINT()
     if exit_immediately_on_errors and errors_exist:
         PRINT("There are some errors outlined above. Please fix them before trying again. No action taken.")
@@ -1657,7 +1666,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
 
 
 def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str) -> bool:
-    PRINT(f"\n> Validation results:")
     validation_errors_exist = False
     pre_validation_errors = _pre_validate_data(structured_data, portal)
     if pre_validation_errors:
@@ -1666,12 +1674,11 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
         pre_validation_errors = True
     structured_data.validate()
     if (validation_errors := structured_data.validation_errors):
+        PRINT(f"\n> Validation results:")
         validation_errors_exist = True
         # PRINT(f"  - ERROR: Validation violations:")
         for validation_error in validation_errors:
             PRINT(f"  - ERROR: {_format_issue(validation_error, ingestion_filename)}")
-    else:
-        PRINT(f"  - OK")
     return not validation_errors_exist
 
 

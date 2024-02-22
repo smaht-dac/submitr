@@ -73,6 +73,8 @@ ADVANCED OPTIONS:
   Perform ONLY updates (PATCHes) for submitted data.
 --post-only
   Perform ONLY creates (POSTs) for submitted data.
+--parsed-json
+  Just prints the submitted metadata as formatted JSON.
 --yes
   Automatically answer 'yes' to any confirmation questions.
 --noadmin
@@ -135,6 +137,10 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--noadmin', action="store_true",
                         help="For testing only; assume not admin user.", default=False)
     parser.add_argument('--details', action="store_true", help="More details in output.", default=False)
+    parser.add_argument('--json', action="store_true",
+                        help="Output the parsed JSON of the metadata file.", default=False)
+    parser.add_argument('--parsed-json', action="store_true",
+                        help="Output ONLY the parsed JSON of the metadata file.", default=False)
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
@@ -188,6 +194,8 @@ def main(simulated_args_for_testing=None):
                              validate_remote_only=args.validate_remote_only,
                              validate_remote=args.validate_remote,
                              noadmin=args.noadmin or os.environ.get("SMAHT_NOADMIN"),
+                             parsed_json=args.parsed_json,
+                             verbose_json=args.json,
                              verbose=args.verbose,
                              debug=args.debug)
 
