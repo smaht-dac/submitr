@@ -105,7 +105,7 @@ def check_repeatedly(check_function: Callable,
     ignored(response_message)  # TODO: Why is this not used? -kmp 2-Aug-2023
 
     def output(message):
-        show(message, with_time=verbose, same_line=True)
+        show(message, with_time=False, same_line=True)
     if not check_message:
         check_message = f"Checking {action}"
     if not wait_message:

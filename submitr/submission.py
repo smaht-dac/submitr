@@ -597,7 +597,7 @@ def submit_any_ingestion(ingestion_filename, *,
         PRINT(f"App name is: {app}")
     """
 
-    portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file, report=True)
+    portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file, report=True, verbose=verbose)
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=portal.app,
                                  consortium=consortium, submission_center=submission_center)
@@ -711,13 +711,6 @@ def submit_any_ingestion(ingestion_filename, *,
         raise InvalidParameterError(parameter='submission_protocol', value=submission_protocol,
                                     options=SUBMISSION_PROTOCOLS)
 
-    def OLD_initiate_submission():
-        return _post_submission(server=portal.server, keypair=portal.key_pair,
-                                ingestion_filename=ingestion_filename,
-                                creation_post_data=creation_post_data,
-                                submission_post_data=submission_post_data,
-                                submission_protocol=submission_protocol)
-
     def initiate_submission():
         response = _post_submission(server=portal.server, keypair=portal.key_pair,
                                     ingestion_filename=ingestion_filename,
@@ -809,13 +802,12 @@ def submit_any_ingestion(ingestion_filename, *,
         show(f"Continuing with additional (server) validation: {portal.server}")
     if DEBUG_PROTOCOL:  # pragma: no cover
         show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} object: s3://{metadata_bundles_bucket}/{submission_uuid}",
-             with_time=is_admin_user)
+             with_time=False)
     if not validate_remote_silent or is_admin_user or verbose:
-        show(f"Metadata bundle uploaded to bucket: {metadata_bundles_bucket}", with_time=verbose)
-        show(f"Submission tracking ID: {submission_uuid}", with_time=verbose)
-        # show(f"Awaiting {'validation results' if validation else 'processing'} ...", with_time=verbose)
+        show(f"Metadata bundle uploaded to bucket: {metadata_bundles_bucket}", with_time=False)
+        show(f"Submission tracking ID: {submission_uuid}", with_time=False)
     else:
-        show(f"Validation tracking ID: {submission_uuid}", with_time=verbose)
+        show(f"Validation tracking ID: {submission_uuid}", with_time=False)
 
     check_done, check_status, check_response = _check_submit_ingestion(
             submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
@@ -947,9 +939,9 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
     if validation:
         show(f"Waiting for validation results ...")
     elif verbose:
-        show(f"Checking {action} for {INGESTION_SUBMISSION_TYPE_NAME} ID: %s ..." % uuid, with_time=verbose)
+        show(f"Checking {action} for {INGESTION_SUBMISSION_TYPE_NAME} ID: %s ..." % uuid, with_time=False)
     else:
-        show(f"Checking {action} for submission ID: %s ..." % uuid, with_time=verbose)
+        show(f"Checking {action} for submission ID: %s ..." % uuid, with_time=False)
 
     def check_ingestion_progress():
         return _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server)
@@ -1789,6 +1781,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             exit(1)
     if validate_local_only:
         exit(0 if not errors_exist else 1)
+    PRINT()
 
 
 def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str) -> bool:
@@ -1913,7 +1906,8 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
 
 
 def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server: Optional[str] = None,
-                   app: Optional[str] = None, keys_file: Optional[str] = None, report: bool = False) -> Portal:
+                   app: Optional[str] = None, keys_file: Optional[str] = None,
+                   report: bool = False, verbose: bool = False) -> Portal:
     if not app:
         app = DEFAULT_APP
         app_default = True
@@ -1923,7 +1917,8 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         raise Exception(
             f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")
     if report:
-        PRINT(f"Portal app name is{' (default)' if app_default else ''}: {app}")
+        if verbose:
+            PRINT(f"Portal app name is{' (default)' if app_default else ''}: {app}")
         PRINT(f"Portal environment (in keys file) is: {portal.env}")
         PRINT(f"Portal keys file is: {portal.keys_file}")
         PRINT(f"Portal server is: {portal.server}")
