@@ -173,6 +173,8 @@ for example::
 If you want to display the data in :toplink:`YAML <https://en.wikipedia.org/wiki/YAML>` format rather than JSON
 use the ``--yaml`` option. And if you want to automatically copy the (JSON) data to the clipboard use the ``--copy`` option.
 
+Passing ``--raw`` to will give you the JSON for the "raw" object, without some extraneous data.
+
 Viewing Portal Schemas
 ======================
 
