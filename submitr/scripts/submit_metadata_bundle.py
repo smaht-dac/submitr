@@ -20,7 +20,7 @@ submit-metadata-bundle [VERSION]
 Tool to submit submission metadata and files to SMaHT Portal.
 See: {CustomArgumentParser.HELP_URL}#submission
 ===
-USAGE: submit-metadata-bundle METADATA-FILE OPTIONS
+USAGE: submit-metadata-bundle METADATA-FILE [--validate | --submit] OPTIONS
 -----
 METADATA-FILE: This is the path to your metatdata file.
 ===
@@ -28,10 +28,13 @@ OPTIONS:
 ===
 --env ENVIRONMENT-NAME
   To specify your environment name; from your ~/.smaht-keys.json file.
+  Alternatively, set your SMAHT_ENV environment variable.
 --validate
   To validate metadata before submitting.
+  Either this or --submit is required.
 --submit
   To actually submit the metadata for ingestion.
+  Either this or --validation is required.
 --consortium CONSORTIUM
   To specify your consortium.
   Default is to use the consortium associated with your account.
@@ -47,6 +50,7 @@ OPTIONS:
 --keys KEYS-FILE
   To specify an alternate credentials/keys
   file to the default ~/.smaht-keys.json file.
+  Alternatively, set your SMAHT_KEYS environment variable.
 --details
   Displays more details in output.
 --verbose
@@ -85,6 +89,7 @@ ADVANCED OPTIONS:
   Automatically answer 'yes' to any confirmation questions.
 --noadmin
   Act like you are not an admin user even you are.
+  Alternatively, set your SMAHT_NOADMIN environment variable to true.
   For testing/troubleshooting purposes only.
 --help-raw
   Prints the raw version of this help message.

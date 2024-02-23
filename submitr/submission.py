@@ -1,5 +1,6 @@
 import boto3
 from botocore.exceptions import NoCredentialsError as BotoNoCredentialsError
+import copy
 from datetime import datetime
 from functools import lru_cache
 import io
@@ -21,8 +22,7 @@ from dcicutils.exceptions import InvalidParameterError
 from dcicutils.file_utils import search_for_file
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
-    environ_bool, is_uuid,
-    PRINT, url_path_join, ignorable, remove_prefix
+    environ_bool, is_uuid, PRINT, url_path_join, ignorable, remove_prefix, str_to_bool as asbool
 )
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
@@ -697,7 +697,7 @@ def submit_any_ingestion(ingestion_filename, *,
     elif submission_protocol == SubmissionProtocol.UPLOAD:
 
         submission_post_data = {
-            'validate_only': validate_remote_only,
+            'validate_only': None,  # see initiate_submission below
             'validate_first': validate_remote,
             'post_only': post_only,
             'patch_only': patch_only,
@@ -711,7 +711,14 @@ def submit_any_ingestion(ingestion_filename, *,
         raise InvalidParameterError(parameter='submission_protocol', value=submission_protocol,
                                     options=SUBMISSION_PROTOCOLS)
 
-    def initiate_submission():
+    def initiate_submission(first_time=True):
+        nonlocal submission_post_data, validate_remote, validate_remote_only, validate_remote_silent
+        submission_post_data = copy.deepcopy(submission_post_data)
+        if first_time:
+            submission_post_data["validate_only"] = (
+                validate_remote_only or (validate_remote and validate_remote_silent))
+        else:
+            submission_post_data["validate_only"] = False
         response = _post_submission(server=portal.server, keypair=portal.key_pair,
                                     ingestion_filename=ingestion_filename,
                                     creation_post_data=creation_post_data,
@@ -754,7 +761,7 @@ def submit_any_ingestion(ingestion_filename, *,
             raise Exception("Bad JSON body in %s submission result." % response.status_code)
         return res['submission_id']
 
-    submission_uuid = initiate_submission()
+    submission_uuid = initiate_submission(first_time=True)
 
     """
     try:
@@ -803,8 +810,9 @@ def submit_any_ingestion(ingestion_filename, *,
     if DEBUG_PROTOCOL:  # pragma: no cover
         show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} object: s3://{metadata_bundles_bucket}/{submission_uuid}",
              with_time=False)
-    if not validate_remote_silent or is_admin_user or verbose:
-        show(f"Metadata bundle uploaded to bucket: {metadata_bundles_bucket}", with_time=False)
+    if verbose:
+        show(f"Metadata bundle upload bucket: {metadata_bundles_bucket}", with_time=False)
+    if not validation:
         show(f"Submission tracking ID: {submission_uuid}", with_time=False)
     else:
         show(f"Validation tracking ID: {submission_uuid}", with_time=False)
@@ -832,7 +840,7 @@ def submit_any_ingestion(ingestion_filename, *,
             show("Validation results: OK")
             show(f"Ready to continue with submission to {portal.server}: {ingestion_filename}")
             if yes_or_no("Continue with submission?"):
-                submission_uuid = initiate_submission()
+                submission_uuid = initiate_submission(first_time=False)
                 show(f"Submission tracking ID: {submission_uuid}")
                 check_done, check_status, check_response = _check_submit_ingestion(
                         submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
@@ -902,7 +910,12 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
                 continue
             submission_uuid = submission.get("uuid")
             submission_created = submission.get("date_created")
+            # import pdb ; pdb.set_trace()
             line = f"{submission_uuid}: {_format_portal_object_datetime(submission_created)}"
+            if asbool(submission.get("parameters", {}).get("validate_only")):
+                line += f" | V"
+            else:
+                line += f" | S"
             if details and (submission_file := submission.get("parameters", {}).get("datafile")):
                 line += f" | {submission_file}"
             lines.append(line)
@@ -1026,12 +1039,18 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
     lines = []
     errors = []
     validation_info = None
-    if submission_file := result.get("parameters", {}).get("datafile"):
-        lines.append(f"Submission File: {submission_file}")
+    submission_type = "Submission"
+    if submission_parameters := result.get("parameters", {}):
+        if submission_validation := asbool(submission_parameters.get("validate_only")):
+            submission_type = "Validation"
+        if submission_file := submission_parameters.get("datafile"):
+            lines.append(f"Submission File: {submission_file}")
     if submission_uuid := result.get("uuid"):
-        lines.append(f"Submission ID: {submission_uuid}")
+        lines.append(f"{submission_type} ID: {submission_uuid}")
     if date_created := _format_portal_object_datetime(result.get("date_created"), True):
-        lines.append(f"Submission Time: {date_created}")
+        lines.append(f"{submission_type} Time: {date_created}")
+    if submission_validation:
+        lines.append(f"Validation Only: Yes")
     if additional_data := result.get("additional_data"):
         if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
             summary_lines = []
@@ -1718,9 +1737,9 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       subfolders: bool = False, exit_immediately_on_errors: bool = False,
                       parsed_json: bool = False, verbose_json: bool = False, verbose: bool = False) -> int:
     errors_exist = False
-    if validate_local_only:
-        PRINT(f"\n> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
-              f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
+    # if validate_local_only:
+    #     PRINT(f"\n> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
+    #           f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
     structured_data = StructuredDataSet.load(ingestion_filename, portal, autoadd=autoadd)
     if parsed_json:
         PRINT(json.dumps(structured_data.data, indent=4))
