@@ -86,8 +86,7 @@ ADVANCED OPTIONS:
 --json
   Displays the submitted metadata as formatted JSON.
 --json-only
-  Display ONLY the submitted metadata as formatted JSON;
-  nothing else is done.
+  Displays ONLY the submitted metadata as formatted JSON; nothing else.
 --details
   Displays slightly more detailed output.
 --yes

@@ -605,7 +605,8 @@ def submit_any_ingestion(ingestion_filename, *,
         PRINT(f"App name is: {app}")
     """
 
-    portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file, report=not json_only or verbose, verbose=verbose)
+    portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file,
+                            report=not json_only or verbose, verbose=verbose)
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=portal.app,
                                  consortium=consortium, submission_center=submission_center)
