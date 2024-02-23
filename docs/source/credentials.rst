@@ -118,3 +118,7 @@ and gives no one else (but the system superuser) any permissions at all::
     Please be careful with your **Secret Access Key** value.
     This is **sensitive** information and, like a password, it should **never** be
     **shared** with anyone, and particularly through any insecure channels (like email or Slack or whatever).
+
+.. warning::
+    If you `do` accidentally expose your **Secret Access Key**, we would ask you to please
+    delete it and create a new one.
