@@ -842,7 +842,7 @@ def submit_any_ingestion(ingestion_filename, *,
                 if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
                     if errors := [info for info in validation_info if info.lower().startswith("error:")]:
                         for error in errors:
-                            PRINT(error.replace("Error", "ERROR:"))
+                            PRINT("- " + error.replace("Error", "ERROR:"))
         exit(0)
 
     if check_status == "success":
@@ -869,7 +869,7 @@ def submit_any_ingestion(ingestion_filename, *,
                 if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
                     if errors := [info for info in validation_info if info.lower().startswith("error:")]:
                         for error in errors:
-                            PRINT(error.replace("Error", "ERROR:"))
+                            PRINT("- " + error.replace("Error", "ERROR:"))
     exit(0)
 
 
@@ -920,7 +920,6 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
                 continue
             submission_uuid = submission.get("uuid")
             submission_created = submission.get("date_created")
-            # import pdb ; pdb.set_trace()
             line = f"{submission_uuid}: {_format_portal_object_datetime(submission_created)}"
             if asbool(submission.get("parameters", {}).get("validate_only")):
                 line += f" | V"
@@ -1802,11 +1801,12 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         _print_structured_data_status(portal, structured_data, validate_remote_only=validate_remote_only)
     if exit_immediately_on_errors and errors_exist:
         PRINT()
-        PRINT("There are some errors outlined above. Please fix them before trying again. No action taken.")
+        PRINT("There are some preliminary errors outlined above. Please fix them before trying again. No action taken.")
         exit(1)
     if errors_exist:
         question_suffix = " with validation" if validate_local_only or validate_remote_only else ""
-        if not yes_or_no(f"There are some errors outlined above; do you want to continue{question_suffix}?"):
+        if not yes_or_no(f"There are some preliminary errors outlined above;"
+                         f" do you want to continue{question_suffix}?"):
             exit(1)
     if validate_local_only:
         exit(0 if not errors_exist else 1)
@@ -1815,19 +1815,25 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
 
 
 def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str) -> bool:
+    main_error_message = "Validation results (preliminary): ERROR"
     validation_errors_exist = False
     pre_validation_errors = _pre_validate_data(structured_data, portal)
     if pre_validation_errors:
+        if main_error_message:
+            print(main_error_message)
+            main_error_message = None
         for pre_validation_error in pre_validation_errors:
-            PRINT(f"  - {pre_validation_error}")
+            PRINT(f"- {pre_validation_error}")
         pre_validation_errors = True
     structured_data.validate()
     if (validation_errors := structured_data.validation_errors):
-        PRINT(f"\n> Validation results:")
+        if main_error_message:
+            print(main_error_message)
+            main_error_message = None
         validation_errors_exist = True
         # PRINT(f"  - ERROR: Validation violations:")
         for validation_error in validation_errors:
-            PRINT(f"  - ERROR: {_format_issue(validation_error, ingestion_filename)}")
+            PRINT(f"- ERROR: {_format_issue(validation_error, ingestion_filename)}")
     return not validation_errors_exist
 
 
