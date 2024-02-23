@@ -147,19 +147,28 @@ To get help about the command, do::
 
    submit-metadata-bundle --help
 
-For many cases it will suffice simply to specify the metadata bundle file you want to upload,
-and the SMaHT environment name (such as ``data`` or ``staging``) from your ``~/.smaht-keys.json`` keys file (as described in the `Credentials <credentials.html>`_ section),
-as an argument to the ``--env`` option.
+To submit your metadata run ``submit-metadata-bundle``  with your metadata file,
+and the SMaHT environment name (e.g. ``data``) from your keys file (as described in the `Credentials <credentials.html>`_ section)
+as an argument to the ``--env`` option, and the :boldcode:`--submit` option.
 For example::
 
-   submit-metadata-bundle your_metadata_file.xlsx --env data
+   submit-metadata-bundle your_metadata_file.xlsx --env data --submit
 
-You can omit the ``--env`` option entirely if your ``~/.smaht-keys.json`` file has only `one` single entry.
+This will first validate your metadata, and if no errors were encountered,
+it will do the actual metadata submmision;
+you `will` be prompted for confirmation before the submission is started.
+If errors were encountered, the submission will `not` commence;
+you will `not` be able to submit until you fix the errors.
+
+.. tip::
+    You can omit the ``--env`` option entirely if your keys file has only `one` single entry,
+    or if you have your ``SMAHT_ENV`` environment variable setup (see the `Credentials <credentials.html#storing-access-keys>`_ section).
 
 .. note::
     If you opted to use a file other than ``~/.smaht-keys.json`` to store
-    your `credentials <credentials.html>`_, you will need to use the ``--keys``
-    options with the path name to your alternate file as an argument.
+    your credentials, you will need to use the ``--keys``
+    option with the path name to your alternate file as an argument;
+    or have your ``SMAHT_KEYS`` environment variable setup (see the `Credentials <credentials.html#storing-access-keys>`_ section).
 
 This command should do everything, `including` uploading any referenced files,
 prompting first for confirmation;
@@ -178,19 +187,15 @@ the command will automatically detect (based on your user profile) and use those
 Validation
 ==========
 
-To invoke the submission with validation checking, do::
+As mentioned in the `previous section <usage.html#submission>`_, using the ``--submit`` option `will` perform
+validation of your metadata before submitting it.
+But if you want to `only` run validation `without` submitting the metadata to SMaHT Portal,
+then invoke ``submit-metadata-bundle`` with the :boldcode:`--validate` option like::
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --validate
 
-This is the recommended usage, and in fact, this (``--validate`` option) is actually
-the **default behavior** unless your user profile indicates that you are an `admin` user.
-(I.e. if you are `not` an `admin` user you do not actually have to supply this option;
-it will be done for you automatically).
-
 .. tip::
-    Using this ``--validate`` feature, if any errors are encountered, the actual ingestion of data
-    will `not` commence. (Even if no errors are encountered, you `will` be prompted as to 
-    whether or not you wish to proceed). In other words, this constitutes a sort of "**dry run**" facility.
+    This feature basically constitutes a sort of "**dry run**" facility.
 
 To be more specific about the the validation checks, they include the following:
 
@@ -206,13 +211,6 @@ To be more specific about the the validation checks, they include the following:
     This is because there are two kinds (or phases) of validation: local `client-side` and remote `server-side`.
     You can learn more about the details of ths validation process
     in the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
-
-.. tip::
-    Even in the absence of validation,
-    if there are problems with specific objects within your submitted data,
-    they will `not` be ingested into SMaHT Portal; i.e. no worries that corrupt data will sneak into the system.
-    However, `without` the ``--validate`` option it `is` possible that `some` of your objects
-    will be ingested properly, and other, problematic ones, will `not` be ingested at all.
 
 Example Screenshots
 ===================
