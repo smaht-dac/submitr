@@ -30,10 +30,10 @@ OPTIONS:
   To specify your environment name; from your ~/.smaht-keys.json file.
   Alternatively, set your SMAHT_ENV environment variable.
 --validate
-  To validate metadata before submitting.
+  To ONLY validate metadata WITHOUT submitting.
   Either this or --submit is required.
 --submit
-  To actually submit the metadata for ingestion.
+  To actually submit the metadata for ingestion (validates first).
   Either this or --validation is required.
 --consortium CONSORTIUM
   To specify your consortium.
@@ -51,16 +51,17 @@ OPTIONS:
   To specify an alternate credentials/keys
   file to the default ~/.smaht-keys.json file.
   Alternatively, set your SMAHT_KEYS environment variable.
---details
-  Displays more details in output.
 --verbose
   Displays more verbose output.
---json
-  Displays the submitted metadata as formatted JSON.
 --help
   Displays this documentation.
 --help-advanced
   Displays this plus more advanced documentation.
+--doc
+  Opens your browser to the Web based documentation:
+  {CustomArgumentParser.HELP_URL}#submission
+===
+For any issues please contact SMaHT DAC: smhelp@hms-dbmi.atlassian.net
 ===
 """
 _HELP_ADVANCED = _HELP.strip() + f"""
@@ -82,20 +83,14 @@ ADVANCED OPTIONS:
   Perform ONLY updates (PATCHes) for submitted data.
 --post-only
   Perform ONLY creates (POSTs) for submitted data.
---parsed-json
-  Display ONLY the submitted metadata as formatted JSON;
-  nothing else is done.
+--json
+  Displays the submitted metadata as formatted JSON.
+--json-only
+  Displays ONLY the submitted metadata as formatted JSON; nothing else.
+--details
+  Displays slightly more detailed output.
 --yes
   Automatically answer 'yes' to any confirmation questions.
---noadmin
-  Act like you are not an admin user even you are.
-  Alternatively, set your SMAHT_NOADMIN environment variable to true.
-  For testing/troubleshooting purposes only.
---help-raw
-  Prints the raw version of this help message.
---help-web
-  Opens your browser to the Web based documentation.
-  {CustomArgumentParser.HELP_URL}#submission
 ===
 """
 
@@ -155,7 +150,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--details', action="store_true", help="More details in output.", default=False)
     parser.add_argument('--json', action="store_true",
                         help="Output the parsed JSON of the metadata file.", default=False)
-    parser.add_argument('--parsed-json', action="store_true",
+    parser.add_argument('--json-only', action="store_true",
                         help="Output ONLY the parsed JSON of the metadata file.", default=False)
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
@@ -213,7 +208,7 @@ def main(simulated_args_for_testing=None):
                              validate_remote=args.validate_remote,
                              validate_remote_only=args.validate_remote_only,
                              validate_remote_silent=args.validate_remote_silent,
-                             parsed_json=args.parsed_json,
+                             json_only=args.json_only,
                              verbose_json=args.json,
                              verbose=args.verbose,
                              debug=args.debug)
@@ -266,7 +261,7 @@ def _setup_validate_related_options(args: argparse.Namespace):
             exit(1)
     elif not args.submit:
         if not _pytesting():
-            if not args.parsed_json:
+            if not args.json_only:
                 PRINT(f"You MUST specify either --validate or --submit. Use --help for all options.")
                 exit(1)
 

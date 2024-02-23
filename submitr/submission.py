@@ -71,7 +71,7 @@ def _resolve_server(server, env):
     return  # no longer used - using dcicutils.portal_utils.Portal instead
 
 
-def _get_user_record(server, auth):
+def _get_user_record(server, auth, quiet=False):
     """
     Given a server and some auth info, gets the user record for the authorized user.
 
@@ -90,15 +90,17 @@ def _get_user_record(server, auth):
         user_record = {}
     try:
         if user_record_response.status_code in (401, 403) and user_record.get("Title") == "Not logged in.":
-            show("Server did not recognize you with the given credentials.")
+            if not quiet:
+                show("Server did not recognize you with the given credentials.")
     except Exception:
         pass
     if user_record_response.status_code in (401, 403):
         raise PortalPermissionError(server=server)
     user_record_response.raise_for_status()
     user_record = user_record_response.json()
-    show(f"Portal server recognizes you as{' (admin)' if _is_admin_user(user_record) else ''}:"
-         f" {user_record['title']} ({user_record['contact_email']})")
+    if not quiet:
+        show(f"Portal server recognizes you as{' (admin)' if _is_admin_user(user_record) else ''}:"
+             f" {user_record['title']} ({user_record['contact_email']})")
     return user_record
 
 
@@ -106,7 +108,7 @@ def _is_admin_user(user: dict) -> bool:
     return False if os.environ.get("SMAHT_NOADMIN") else ("admin" in user.get("groups", []))
 
 
-def _get_defaulted_institution(institution, user_record, portal=None):
+def _get_defaulted_institution(institution, user_record, portal=None, quiet=False):
     """
     Returns the given institution or else if none is specified, it tries to infer an institution.
 
@@ -124,7 +126,7 @@ def _get_defaulted_institution(institution, user_record, portal=None):
     return institution
 
 
-def _get_defaulted_project(project, user_record, portal=None):
+def _get_defaulted_project(project, user_record, portal=None, quiet=False):
     """
     Returns the given project or else if none is specified, it tries to infer a project.
 
@@ -154,7 +156,7 @@ def _get_defaulted_project(project, user_record, portal=None):
     return project
 
 
-def _get_defaulted_award(award, user_record, portal=None, error_if_none=False):
+def _get_defaulted_award(award, user_record, portal=None, error_if_none=False, quiet=False):
     """
     Returns the given award or else if none is specified, it tries to infer an award.
 
@@ -193,7 +195,7 @@ def _get_defaulted_award(award, user_record, portal=None, error_if_none=False):
     return award
 
 
-def _get_defaulted_lab(lab, user_record, portal=None, error_if_none=False):
+def _get_defaulted_lab(lab, user_record, portal=None, error_if_none=False, quiet=False):
     """
     Returns the given lab or else if none is specified, it tries to infer a lab.
 
@@ -217,7 +219,7 @@ def _get_defaulted_lab(lab, user_record, portal=None, error_if_none=False):
     return lab
 
 
-def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=False):
+def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=False, quiet=False):
     """
     Returns the given consortia or else if none is specified, it tries to infer any consortia.
 
@@ -233,7 +235,8 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
             if error_if_none:
                 raise SyntaxError("Your user profile has no consortium declared,"
                                   " so you must specify --consortium explicitly.")
-            show("No consortium was inferred.")
+            if not quiet:
+                show("No consortium was inferred.")
             return consortia
         else:
             suffix = " (inferred)"
@@ -248,13 +251,15 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
                 consortium_uuid = consortium_object.get("uuid")
                 annotated_consortia.append(f"{consortium_name} ({consortium_uuid})")
     if annotated_consortia:
-        show(f"Consortium is{suffix}:", ", ".join(annotated_consortia))
+        if not quiet:
+            show(f"Consortium is{suffix}:", ", ".join(annotated_consortia))
     else:
-        show(f"Consortium is{suffix}:", ", ".join(consortia))
+        if not quiet:
+            show(f"Consortium is{suffix}:", ", ".join(consortia))
     return consortia
 
 
-def _get_defaulted_submission_centers(submission_centers, user_record, portal=None, error_if_none=False):
+def _get_defaulted_submission_centers(submission_centers, user_record, portal=None, error_if_none=False, quiet=False):
     """
     Returns the given submission center or else if none is specified, it tries to infer a submission center.
 
@@ -272,7 +277,8 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
             if error_if_none:
                 raise SyntaxError("Your user profile has no submission center declared,"
                                   " so you must specify --submission-center explicitly.")
-            show("No submission center was inferred.")
+            if not quiet:
+                show("No submission center was inferred.")
             return submission_centers
         else:
             suffix = " (inferred)"
@@ -289,9 +295,11 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
                 submission_center_uuid = submission_center_object.get("uuid")
                 annotated_submission_centers.append(f"{submission_center_name} ({submission_center_uuid})")
     if annotated_submission_centers:
-        show(f"Submission center is{suffix}:", ", ".join(annotated_submission_centers))
+        if not quiet:
+            show(f"Submission center is{suffix}:", ", ".join(annotated_submission_centers))
     else:
-        show(f"Submission center is{suffix}:", ", ".join(submission_centers))
+        if not quiet:
+            show(f"Submission center is{suffix}:", ", ".join(submission_centers))
     return submission_centers
 
 
@@ -305,12 +313,12 @@ APP_ARG_DEFAULTERS = {
 }
 
 
-def _do_app_arg_defaulting(app_args, user_record, portal=None):
+def _do_app_arg_defaulting(app_args, user_record, portal=None, quiet=False):
     for arg in list(app_args.keys()):
         val = app_args[arg]
         defaulter = APP_ARG_DEFAULTERS.get(arg)
         if defaulter:
-            val = defaulter(val, user_record, portal)
+            val = defaulter(val, user_record, portal, quiet=quiet)
             if val:
                 app_args[arg] = val
             elif val is None:
@@ -562,7 +570,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          patch_only=False,
                          keys_file=None,
                          show_details=False,
-                         parsed_json=False,
+                         json_only=False,
                          verbose_json=False,
                          verbose=False,
                          debug=False):
@@ -597,7 +605,8 @@ def submit_any_ingestion(ingestion_filename, *,
         PRINT(f"App name is: {app}")
     """
 
-    portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file, report=True, verbose=verbose)
+    portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file,
+                            report=not json_only or verbose, verbose=verbose)
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=portal.app,
                                  consortium=consortium, submission_center=submission_center)
@@ -607,7 +616,7 @@ def submit_any_ingestion(ingestion_filename, *,
         exit(1)
 
     exit_immediately_on_errors = False
-    user_record = _get_user_record(portal.server, auth=portal.key_pair)
+    user_record = _get_user_record(portal.server, auth=portal.key_pair, quiet=json_only and not verbose)
     is_admin_user = _is_admin_user(user_record)
     if not is_admin_user and not (validate_remote_only or validate_remote or validate_local or validate_local_only):
         # If user is not an admin, and no other validate related options are
@@ -631,9 +640,10 @@ def submit_any_ingestion(ingestion_filename, *,
     validation = validation_only or validate_remote_silent
 
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
-    if not _do_app_arg_defaulting(app_args, user_record, portal):
+    if not _do_app_arg_defaulting(app_args, user_record, portal, quiet=json_only and not verbose):
         pass
-    PRINT(f"Submission file to {'validate' if validation_only else 'ingest'}: {ingestion_filename}")
+    if not json_only:
+        PRINT(f"Submission file to {'validate' if validation_only else 'ingest'}: {ingestion_filename}")
 
     autoadd = None
     if app_args and isinstance(submission_centers := app_args.get("submission_centers"), list):
@@ -653,7 +663,7 @@ def submit_any_ingestion(ingestion_filename, *,
                           validate_remote_only=validate_remote_only,
                           autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
                           exit_immediately_on_errors=exit_immediately_on_errors,
-                          parsed_json=parsed_json, verbose_json=verbose_json, verbose=verbose)
+                          json_only=json_only, verbose_json=verbose_json, verbose=verbose)
 
     maybe_ingestion_type = ''
     if ingestion_type != DEFAULT_INGESTION_TYPE:
@@ -832,7 +842,7 @@ def submit_any_ingestion(ingestion_filename, *,
                 if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
                     if errors := [info for info in validation_info if info.lower().startswith("error:")]:
                         for error in errors:
-                            PRINT(error.replace("Error", "ERROR:"))
+                            PRINT("- " + error.replace("Error", "ERROR:"))
         exit(0)
 
     if check_status == "success":
@@ -859,7 +869,7 @@ def submit_any_ingestion(ingestion_filename, *,
                 if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
                     if errors := [info for info in validation_info if info.lower().startswith("error:")]:
                         for error in errors:
-                            PRINT(error.replace("Error", "ERROR:"))
+                            PRINT("- " + error.replace("Error", "ERROR:"))
     exit(0)
 
 
@@ -910,7 +920,6 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
                 continue
             submission_uuid = submission.get("uuid")
             submission_created = submission.get("date_created")
-            # import pdb ; pdb.set_trace()
             line = f"{submission_uuid}: {_format_portal_object_datetime(submission_created)}"
             if asbool(submission.get("parameters", {}).get("validate_only")):
                 line += f" | V"
@@ -1735,13 +1744,13 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       validate_local_only: bool = False, validate_remote_only: bool = False,
                       upload_folder: Optional[str] = None,
                       subfolders: bool = False, exit_immediately_on_errors: bool = False,
-                      parsed_json: bool = False, verbose_json: bool = False, verbose: bool = False) -> int:
+                      json_only: bool = False, verbose_json: bool = False, verbose: bool = False) -> int:
     errors_exist = False
     # if validate_local_only:
     #     PRINT(f"\n> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
     #           f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
     structured_data = StructuredDataSet.load(ingestion_filename, portal, autoadd=autoadd)
-    if parsed_json:
+    if json_only:
         PRINT(json.dumps(structured_data.data, indent=4))
         exit(1)
     if not (errors_exist := not _validate_data(structured_data, portal, ingestion_filename)):
@@ -1792,11 +1801,12 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         _print_structured_data_status(portal, structured_data, validate_remote_only=validate_remote_only)
     if exit_immediately_on_errors and errors_exist:
         PRINT()
-        PRINT("There are some errors outlined above. Please fix them before trying again. No action taken.")
+        PRINT("There are some preliminary errors outlined above. Please fix them before trying again. No action taken.")
         exit(1)
     if errors_exist:
         question_suffix = " with validation" if validate_local_only or validate_remote_only else ""
-        if not yes_or_no(f"There are some errors outlined above; do you want to continue{question_suffix}?"):
+        if not yes_or_no(f"There are some preliminary errors outlined above;"
+                         f" do you want to continue{question_suffix}?"):
             exit(1)
     if validate_local_only:
         exit(0 if not errors_exist else 1)
@@ -1805,19 +1815,25 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
 
 
 def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str) -> bool:
+    main_error_message = "Validation results (preliminary): ERROR"
     validation_errors_exist = False
     pre_validation_errors = _pre_validate_data(structured_data, portal)
     if pre_validation_errors:
+        if main_error_message:
+            print(main_error_message)
+            main_error_message = None
         for pre_validation_error in pre_validation_errors:
-            PRINT(f"  - {pre_validation_error}")
+            PRINT(f"- {pre_validation_error}")
         pre_validation_errors = True
     structured_data.validate()
     if (validation_errors := structured_data.validation_errors):
-        PRINT(f"\n> Validation results:")
+        if main_error_message:
+            print(main_error_message)
+            main_error_message = None
         validation_errors_exist = True
         # PRINT(f"  - ERROR: Validation violations:")
         for validation_error in validation_errors:
-            PRINT(f"  - ERROR: {_format_issue(validation_error, ingestion_filename)}")
+            PRINT(f"- ERROR: {_format_issue(validation_error, ingestion_filename)}")
     return not validation_errors_exist
 
 

@@ -9,7 +9,7 @@ from dcicutils.misc_utils import PRINT
 
 class CustomArgumentParser(argparse.ArgumentParser):
 
-    HELP_URL_VERSION = "latest"
+    HELP_URL_VERSION = "draft"
     HELP_URL = f"https://submitr.readthedocs.io/en/{HELP_URL_VERSION}/usage.html"
     COPYRIGHT = "© Copyright 2020-2024 President and Fellows of Harvard College"
 
@@ -28,6 +28,8 @@ class CustomArgumentParser(argparse.ArgumentParser):
                           help="Prints the raw version of this help message.", default=False)
         self.add_argument("--help-web", action="store_true",
                           help="Opens your browser to Web based documentation.", default=False)
+        self.add_argument("--doc", action="store_true",
+                          help="Synonym for --help-web.", default=False)
         self.add_argument("--version", action="store_true", help="Print version.", default=False)
         if self.is_pytest():
             return super().parse_args(args)
@@ -50,6 +52,8 @@ class CustomArgumentParser(argparse.ArgumentParser):
             sys.stderr = original_stderr
         if error:
             exit(2)
+        if args.doc:
+            args.help_web = True
         if args.version:
             if version := self.get_version():
                 PRINT(f"{self._package or 'COMMAND'}: {version} | {self.COPYRIGHT}")
@@ -65,7 +69,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
         if "--help-raw" in sys.argv:
             super().print_help()
             return
-        if "--help-web" in sys.argv and self._help_url:
+        if ("--help-web" in sys.argv or "--doc" in sys.argv) and self._help_url:
             webbrowser.open_new_tab(self._help_url)
             return
         if "--help-advanced" in sys.argv and self._help_advanced:
