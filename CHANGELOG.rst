@@ -7,11 +7,18 @@ Change Log
 ----------
 
 
-0.5.4
+0.5.5
 =====
 
 * Documentation updates.
 * Lots of reworking of validation options (from discussion with Elizabeth).
+  Require --validate or --submit; do remote/server validation silently; etc.
+
+
+0.5.4
+=====
+
+* Test release from (non-master) branch to change "Author" name/email at pypi.
 
 
 0.5.3
