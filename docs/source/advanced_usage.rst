@@ -132,6 +132,10 @@ But alternatively, you can invoke either one of these validations individually a
     However, without making use of the ``--validate`` options it `is` possible that `some` of your objects
     will be ingested properly, and other, problematic ones, will `not` be ingested at all.
 
+.. caution::
+    There `are` one or two fairly obscure corner cases where validation `will` succeed,
+    but then on submission you `will` get errors; this however is not generally the case.
+
 Validation Only
 ~~~~~~~~~~~~~~~
 
@@ -141,10 +145,10 @@ and remote server-side validation to be done. But note that if there are (local)
 errors, then (remote) server-side validation will `not` actually be done; you must fix those
 errors first to move on to (remote) server-side validation.
 
-.. tip::
-    The only real difference between this ``--validate-only`` option and the plain ``--validate`` option,
-    is that with this option you will `not` be prompted to continue with the metadata ingestion process,
-    even if there are no errors; rather it will simply exit immediately.
+.. .. tip:: TODO: Rework all of this based on latest changes.
+..     The only real difference between this ``--validate-only`` option and the plain ``--validate`` option,
+..     is that with this option you will `not` be prompted to continue with the metadata ingestion process,
+..     even if there are no errors; rather it will simply exit immediately.
 
 If you want to perform `only` client-side validation (for whatever reason),
 there is a ``--validate-local-only`` option which will cause `only` local client-side validation to be done;
