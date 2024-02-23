@@ -118,6 +118,20 @@ def main():
         _print_all_schema_names(portal=portal, details=args.details,
                                 more_details=args.more_details, all=args.all, raw=args.raw, raw_yaml=args.yaml)
         return
+    elif args.uuid.lower() == "info":  # TODO: need word for what consortiums and submission centers are collectively
+        if consortia := portal.get_metadata("/consortia"):
+            _print("Known Consortia:")
+            for consortium in consortia.get("@graph", []):
+                if ((consortium_name := consortium.get("identifier")) and
+                    (consortium_uuid := consortium.get("uuid"))):  # noqa
+                    _print(f"- {consortium_name}: {consortium_uuid}")
+        if submission_centers := portal.get_metadata("/submission-centers"):
+            _print("Known Submission Centers:")
+            for submission_center in submission_centers.get("@graph", []):
+                if ((submission_center_name := submission_center.get("identifier")) and
+                    (submission_center_uuid := submission_center.get("uuid"))):  # noqa
+                    _print(f"- {submission_center_name}: {submission_center_uuid}")
+        return
 
     if _is_maybe_schema_name(args.uuid):
         args.schema = True
