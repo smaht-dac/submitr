@@ -1771,8 +1771,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                           f" [{_format_file_size(_get_file_size(path))}]")
                 else:
                     PRINT(f"  - {file.get('type')}: {file.get('file')} -> NOT FOUND!")
-    if (not files_not_found and
-        not (errors_exist := not _validate_data(structured_data, portal, ingestion_filename))):
+    if (not files_not_found and not (errors_exist := not _validate_data(structured_data,
+                                                                        portal, ingestion_filename))):
         PRINT("Validation results (preliminary): OK")
     if files_not_found:
         if not errors_exist:
