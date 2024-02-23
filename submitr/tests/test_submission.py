@@ -2957,7 +2957,7 @@ def test_do_app_arg_defaulting():
 
     default_default_foo = 17
 
-    def get_defaulted_foo(foo, user_record, error_if_none=False):
+    def get_defaulted_foo(foo, user_record, error_if_none=False, quiet=False):
         ignored(error_if_none)  # not needed for this mock
         return user_record.get('default-foo', default_default_foo) if foo is None else foo
 
