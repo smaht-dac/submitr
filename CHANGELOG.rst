@@ -10,6 +10,8 @@ Change Log
 0.5.5
 =====
 
+* This branch (draft) made from branch dmichaels-20240205 (on 2024-02-23) was
+  made with the sole purpose of having a readthedocs version is the name "draft".
 * Documentation updates.
 * Lots of reworking of validation options (from discussion with Elizabeth).
   Require --validate or --submit; do remote/server validation silently; etc.
