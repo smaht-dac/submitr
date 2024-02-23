@@ -18,7 +18,7 @@ _HELP = f"""
 submit-metadata-bundle [VERSION]
 ===
 Tool to submit submission metadata and files to SMaHT Portal.
-See: {CustomArgumentParser.HELP_URL}#submission
+See: {CustomArgumentParser.HELP_URL}
 ===
 USAGE: submit-metadata-bundle METADATA-FILE [--validate | --submit] OPTIONS
 -----
@@ -59,7 +59,7 @@ OPTIONS:
   Displays this plus more advanced documentation.
 --doc
   Opens your browser to the Web based documentation:
-  {CustomArgumentParser.HELP_URL}#submission
+  {CustomArgumentParser.HELP_URL}
 ===
 For any issues please contact SMaHT DAC: smhelp@hms-dbmi.atlassian.net
 ===

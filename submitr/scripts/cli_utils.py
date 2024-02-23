@@ -10,12 +10,13 @@ from dcicutils.misc_utils import PRINT
 class CustomArgumentParser(argparse.ArgumentParser):
 
     HELP_URL_VERSION = "draft"
-    HELP_URL = f"https://submitr.readthedocs.io/en/{HELP_URL_VERSION}/usage.html"
+    HELP_URL = f"https://submitr.readthedocs.io/en/{HELP_URL_VERSION}"
     COPYRIGHT = "© Copyright 2020-2024 President and Fellows of Harvard College"
 
     def __init__(self, help: str, help_advanced: Optional[str] = None,
                  help_url: Optional[str] = None, package: Optional[str] = None):
         super().__init__()
+        import pdb ; pdb.set_trace()
         self._help = help
         self._help_advanced = help_advanced
         self._help_url = help_url
@@ -70,7 +71,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
             super().print_help()
             return
         if ("--help-web" in sys.argv or "--doc" in sys.argv) and self._help_url:
-            webbrowser.open_new_tab(self._help_url)
+            webbrowser.open_new_tab(self._help_url + "/usage.html")
             return
         if "--help-advanced" in sys.argv and self._help_advanced:
             help_message = self._help_advanced
@@ -83,18 +84,6 @@ class CustomArgumentParser(argparse.ArgumentParser):
         if lines[len(lines) - 1] == "":
             lines = lines[:len(lines) - 1]
         print_boxed(lines, right_justified_macro=("[VERSION]", self.get_version))
-        """
-        length = max(len(line) for line in lines)
-        for line in lines:
-            if line == "===":
-                PRINT(f"+{'-' * (length - len(line) + 5)}+")
-            elif line.endswith("[VERSION]"):
-                line = line.replace("[VERSION]", len("[VERSION]") * " ")
-                version = self.get_version()
-                PRINT(f"| {line}{' ' * (length - len(line) - len(version) - 1)} {version} |")
-            else:
-                PRINT(f"| {line}{' ' * (length - len(line))} |")
-        """
 
     def get_version(self) -> str:
         try:
