@@ -16,7 +16,6 @@ class CustomArgumentParser(argparse.ArgumentParser):
     def __init__(self, help: str, help_advanced: Optional[str] = None,
                  help_url: Optional[str] = None, package: Optional[str] = None):
         super().__init__()
-        import pdb ; pdb.set_trace()
         self._help = help
         self._help_advanced = help_advanced
         self._help_url = help_url
