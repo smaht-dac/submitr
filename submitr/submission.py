@@ -1753,11 +1753,37 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if json_only:
         PRINT(json.dumps(structured_data.data, indent=4))
         exit(1)
-    if not (errors_exist := not _validate_data(structured_data, portal, ingestion_filename)):
-        PRINT("Validation results (preliminary): OK")
     if verbose_json:
         PRINT(f"Parsed JSON:")
         PRINT(json.dumps(structured_data.data, indent=4))
+    files_not_found = []
+    if files := structured_data.upload_files:
+        files = structured_data.upload_files_located(location=[upload_folder,
+                                                               os.path.dirname(ingestion_filename)],
+                                                     recursive=subfolders)
+        files_found = [file for file in files if file.get("path")]
+        files_not_found = [file for file in files if not file.get("path")]
+        if files_found and verbose:
+            PRINT(f"\n> Resolved file references:")
+            for file in files_found:
+                if path := file.get("path"):
+                    PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
+                          f" [{_format_file_size(_get_file_size(path))}]")
+                else:
+                    PRINT(f"  - {file.get('type')}: {file.get('file')} -> NOT FOUND!")
+    if (not files_not_found and not (errors_exist := not _validate_data(structured_data,
+                                                                        portal, ingestion_filename))):
+        PRINT("Validation results (preliminary): OK")
+    if files_not_found:
+        if not errors_exist:
+            PRINT("Validation results (preliminary): ERROR")
+        errors_exist = True
+        PRINT(f"- ERROR: Unresolved file references:")
+        for file in files_not_found:
+            if path := file.get("path"):
+                PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}")
+            else:
+                PRINT(f"  - {file.get('type')}: {file.get('file')} -> Not found!")
     if verbose:
         PRINT(f"\n> Types submitting:")
         for type_name in sorted(structured_data.data):
@@ -1776,28 +1802,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             PRINT(f"\n> WARNING: Parser warnings:")
             for reader_warning in reader_warnings:
                 PRINT(f"  - {_format_issue(reader_warning, ingestion_filename)}")
-        if files := structured_data.upload_files:
-            files = structured_data.upload_files_located(location=[upload_folder,
-                                                                   os.path.dirname(ingestion_filename)],
-                                                         recursive=subfolders)
-            files_found = [file for file in files if file.get("path")]
-            files_not_found = [file for file in files if not file.get("path")]
-            if files_found:
-                PRINT(f"\n> Resolved file references:")
-                for file in files_found:
-                    if path := file.get("path"):
-                        PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
-                              f" [{_format_file_size(_get_file_size(path))}]")
-                    else:
-                        PRINT(f"  - {file.get('type')}: {file.get('file')} -> NOT FOUND!")
-            if files_not_found:
-                errors_exist = True
-                PRINT(f"\n> ERROR: Unresolved file references:")
-                for file in files_not_found:
-                    if path := file.get("path"):
-                        PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}")
-                    else:
-                        PRINT(f"  - {file.get('type')}: {file.get('file')} -> Not found!")
         _print_structured_data_status(portal, structured_data, validate_remote_only=validate_remote_only)
     if exit_immediately_on_errors and errors_exist:
         PRINT()
