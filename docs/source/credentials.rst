@@ -32,7 +32,7 @@ Storing Access Keys
 
 Once you've obtained access and secret keys (per the previous) section,
 they should be stored as :toplink:`JSON <https://en.wikipedia.org/wiki/JSON>`
-in a file on your local machine called ``~/.smaht-keys.json``.
+in a `keys file` on your local machine called ``~/.smaht-keys.json``.
 (Note that the ``~`` there refers to your local home directory).
 To use a different file see the `Some Tips <#id1>`_ section below.
 
