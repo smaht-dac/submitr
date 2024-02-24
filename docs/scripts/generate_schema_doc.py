@@ -20,7 +20,12 @@ _IGNORE_PROPERTIES = [
     "schema_version"
 ]
 
-TEMPLATES_DIR = f"{os.path.dirname(__file__)}/../schema_templates"
+# Relative to the directory containing THIS Python file.
+THIS_DIR = f"{os.path.dirname(__file__)}"
+TEMPLATES_DIR = f"{THIS_DIR}/../schema_templates"
+DOCS_DIR = f"{THIS_DIR}/../source"
+OUTPUT_DIR = f"{DOCS_DIR}/schemas"
+INDEX_DOC_FILE = f"{DOCS_DIR}/schema_types.rst"
 
 
 def main():
@@ -32,32 +37,33 @@ def main():
                         help=f"Name of the application .ini file.")
     parser.add_argument("--env", "-e", type=str, required=False, default=None,
                         help=f"Environment name (key from ~/.smaht-keys.json).")
-    parser.add_argument("--server", "-s", type=str, required=False, default=None,
-                        help=f"Environment server name (server from key in ~/.smaht-keys.json).")
-    parser.add_argument("--app", type=str, required=False, default=None,
-                        help=f"Application name (one of: smaht, cgap, fourfront).")
     parser.add_argument("--all", action="store_true", required=False, default=False,
                         help="Include all properties for schema usage.")
+    parser.add_argument("--update-index", action="store_true", required=False,
+                        default=False, help="Update the index.rst file.")
     parser.add_argument("--verbose", action="store_true", required=False, default=False, help="Verbose output.")
     parser.add_argument("--debug", action="store_true", required=False, default=False, help="Debugging output.")
     args = parser.parse_args()
 
     portal = _create_portal(ini=args.ini, env=args.env or os.environ.get("SMAHT_ENV"),
-                            server=args.server, app=args.app, verbose=args.verbose, debug=args.debug)
+                            verbose=args.verbose, debug=args.debug)
 
     if not args.schema or args.schema.lower() in ["schemas", "schema"]:
         schemas = _get_schemas(portal)
         for schema_name in schemas:
             schema = schemas[schema_name]
-            schema_doc = _generate_doc(schema, all_properties=args.all)
+            schema_doc = _generate_doc(schema_name, schema, all_properties=args.all)
             _write_doc(schema_name, schema_doc)
     elif args.schema:
         schema, schema_name = _get_schema(portal, args.schema)
         if schema and schema_name:
-            schema_doc = _generate_doc(schema, all_properties=args.all)
+            schema_doc = _generate_doc(schema_name, schema, all_properties=args.all)
             _write_doc(schema_name, schema_doc)
     else:
         _usage()
+
+    if args.update_index:
+        _update_index_doc(_get_schemas(portal))
 
 
 def _create_portal(ini: str, env: Optional[str] = None,
@@ -101,9 +107,10 @@ def _get_parent_schema_name(schema: dict) -> Optional[str]:
             return parent_schema_name
 
 
-def _generate_doc(schema: dict, all_properties: bool = False) -> str:
+def _generate_doc(schema_name: str, schema: dict, all_properties: bool = False) -> str:
     content = ""
     if content := _get_template("schema"):
+        content = content.replace("{schema_name}", schema_name)
         if content_required_properties := _generate_doc_required_properties(schema, all_properties):
             content_required_properties = _normalize_spaces(content_required_properties)
             content = content.replace("{required_properties}", content_required_properties)
@@ -174,8 +181,28 @@ def _generate_doc_simple_properties(properties: List[str]) -> str:
     return result
 
 
-def _write_doc(schema_name: str, schema_content: str) -> None:
-    print(content)
+def _write_doc(schema_name: str, schema_doc_content: str) -> None:
+    output_file = f"{os.path.join(OUTPUT_DIR, schema_name)}.rst"
+    with io.open(output_file, "w") as f:
+        f.write(schema_doc_content)
+
+
+def _update_index_doc(schemas: dict) -> None:
+    magic_string = ".. DO NOT TOUCH THIS LINE: USED BY generate_schema_doc SCRIPT!"
+    with io.open(INDEX_DOC_FILE, "r") as f:
+        lines = f.readlines()
+    for index, line in enumerate(lines):
+        if line.strip() == magic_string:
+            lines = lines[:index+1]
+            break
+    with io.open(INDEX_DOC_FILE, "w") as f:
+        f.writelines(lines)
+        f.write(f"\n")
+        f.write(".. toctree::\n")
+        f.write("  :caption: Types  🔍\n")
+        f.write("  :maxdepth: 1\n\n")
+        for schema_name in schemas:
+            f.write(f"  schemas/{schema_name}\n")
 
 
 @lru_cache(maxsize=32)

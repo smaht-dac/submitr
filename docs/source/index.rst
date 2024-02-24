@@ -93,9 +93,15 @@ and installing the dependencies for this tool:
   credentials
 
 .. toctree::
-  :caption: Documentation 📄
+  :caption: Documentation  📄
   :maxdepth: 1
 
   usage
   uploading_files
   advanced_usage
+
+.. toctree::
+  :caption: Object Model  🔍
+  :maxdepth: 1
+
+  schema_types
