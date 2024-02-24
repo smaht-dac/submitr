@@ -2766,9 +2766,10 @@ def test_get_defaulted_consortia():
 
     assert successful_result == SOME_CONSORTIA
 
-    assert _get_defaulted_consortia(consortia=None, user_record=make_user_record()) == []
-    assert _get_defaulted_consortia(consortia=None, user_record=make_user_record(),
-                                    error_if_none=False) == []
+    with pytest.raises(SystemExit) as exc:
+        _get_defaulted_consortia(consortia=None, user_record=make_user_record()) == []
+        _get_defaulted_consortia(consortia=None, user_record=make_user_record(),
+                                 error_if_none=False) == []
 
     with pytest.raises(Exception) as exc:
         _get_defaulted_consortia(consortia=None, user_record=make_user_record(), error_if_none=True)
@@ -2790,9 +2791,10 @@ def test_get_defaulted_submission_centers():
 
     assert successful_result == SOME_SUBMISSION_CENTERS
 
-    assert _get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record()) == []
-    assert _get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(),
-                                             error_if_none=False) == []
+    with pytest.raises(SystemExit) as exc:
+        _get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record()) == []
+        _get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(),
+                                          error_if_none=False) == []
 
     with pytest.raises(Exception) as exc:
         _get_defaulted_submission_centers(submission_centers=None, user_record=make_user_record(), error_if_none=True)

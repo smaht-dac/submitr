@@ -228,6 +228,13 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
     :param error_if_none: boolean true if failure to infer any consortia should raise an error, and false otherwise.
     :return: the @id of a consortium to use (or a comma-separated list)
     """
+    def show_consortia():
+        nonlocal portal
+        if portal:
+            if consortia := _get_consortia(portal):
+                show("CONSORTIA SUPPORTED:")
+                for consortium in consortia:
+                    show(f"- {consortium.get('name')} ({consortium.get('uuid')})")
     suffix = ""
     if not consortia:
         consortia = [consortium.get('@id', None) for consortium in user_record.get('consortia', [])]
@@ -235,9 +242,9 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
             if error_if_none:
                 raise SyntaxError("Your user profile has no consortium declared,"
                                   " so you must specify --consortium explicitly.")
-            if not quiet:
-                show("No consortium was inferred.")
-            return consortia
+            show("ERROR: No consortium was inferred. Use the --consortium option.")
+            show_consortia()
+            exit(1)
         else:
             suffix = " (inferred)"
     annotated_consortia = []
@@ -246,6 +253,7 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
             consortium_path = f"/Consortium/{consortium}" if not consortium.startswith("/") else consortium
             if not (consortium_object := portal.get_metadata(consortium_path)):
                 show(f"ERROR: Consortium not found: {consortium}")
+                show_consortia()
                 exit(1)
             elif consortium_name := consortium_object.get("identifier"):
                 consortium_uuid = consortium_object.get("uuid")
@@ -269,6 +277,14 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
         and false otherwise.
     :return: the @id of a submission center to use
     """
+    # TODO: Need to support submits_for ...
+    def show_submission_centers():
+        nonlocal portal
+        if portal:
+            if submission_centers := _get_submission_centers(portal):
+                show("SUBMISSION CENTERS SUPPORTED:")
+                for submission_center in submission_centers:
+                    show(f"- {submission_center.get('name')} ({submission_center.get('uuid')})")
     suffix = ""
     if not submission_centers:
         submission_centers = [submission_center.get('@id', None)
@@ -277,9 +293,9 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
             if error_if_none:
                 raise SyntaxError("Your user profile has no submission center declared,"
                                   " so you must specify --submission-center explicitly.")
-            if not quiet:
-                show("No submission center was inferred.")
-            return submission_centers
+            show("ERROR: No submission center was inferred. Use the --submission-center option.")
+            show_submission_centers()
+            exit(1)
         else:
             suffix = " (inferred)"
     annotated_submission_centers = []
@@ -289,7 +305,8 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
                 f"/SubmissionCenter/{submission_center}"
                 if not submission_center.startswith("/") else submission_center)
             if not (submission_center_object := portal.get_metadata(submission_center_path)):
-                show(f"ERROR: submission_center not found: {submission_center}")
+                show(f"ERROR: Submission center not found: {submission_center}")
+                show_submission_centers()
                 exit(1)
             elif submission_center_name := submission_center_object.get("identifier"):
                 submission_center_uuid = submission_center_object.get("uuid")
@@ -1981,6 +1998,30 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         if portal.key_id and len(portal.key_id) > 2:
             PRINT(f"Portal key prefix is: {portal.key_id[:2]}******")
     return portal
+
+
+@lru_cache(maxsize=1)
+def _get_consortia(portal: Portal) -> List[str]:
+    results = []
+    if consortia := portal.get_metadata("/consortia"):
+        consortia = sorted(consortia.get("@graph", []), key=lambda key: key.get("identifier"))
+        for consortium in consortia:
+            if ((consortium_name := consortium.get("identifier")) and
+                (consortium_uuid := consortium.get("uuid"))):  # noqa
+                results.append({"name": consortium_name, "uuid": consortium_uuid})
+    return results
+
+
+@lru_cache(maxsize=1)
+def _get_submission_centers(portal: Portal) -> List[str]:
+    results = []
+    if submission_centers := portal.get_metadata("/submission-centers"):
+        submission_centers = sorted(submission_centers.get("@graph", []), key=lambda key: key.get("identifier"))
+        for submission_center in submission_centers:
+            if ((submission_center_name := submission_center.get("identifier")) and
+                (submission_center_uuid := submission_center.get("uuid"))):  # noqa
+                results.append({"name": submission_center_name, "uuid": submission_center_uuid})
+    return results
 
 
 def _is_accession_id(value: str) -> bool:
