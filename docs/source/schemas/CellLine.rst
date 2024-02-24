@@ -9,13 +9,7 @@ Required Properties
 
 .. raw:: html
 
-    <table class="schema-table" width="100%">
-        <tr>
-            <th> Name </td>
-            <th> Type </td>
-        </tr>
-        <tr> <td> FOOsource </td> <td> string </td> </tr> <tr> <td> FOOsubmission_centers </td> <td> array or string </td> </tr> <tr> <td> FOOsubmitted_id </td> <td> string </td> </tr> <tr> <td> FOOtitle </td> <td> string </td> </tr>
-    </table>
+    <table class="schema-table" width="100%"> <tr> <th> Name </td> <th> Type </td> </tr> <tr> <td width="5%"> <b>source</b> </td> <td> string </td> </tr> <tr> <td width="5%"> <b>submission_centers</b> </td> <td> array of string </td> </tr> <tr> <td width="5%"> <b>submitted_id</b> </td> <td> string </td> </tr> <tr> <td width="5%"> <b>title</b> </td> <td> string </td> </tr> </table>
 
 |
 
@@ -24,13 +18,7 @@ Identifying Properties
 
 .. raw:: html
 
-    <table class="schema-table" width="100%">
-        <tr>
-            <th> Name </td>
-            <th> Type </td>
-        </tr>
-        <tr> <td> FOOaccession </td> <td> string </td> </tr> <tr> <td> FOOsubmitted_id </td> <td> string </td> </tr> <tr> <td> FOOuuid </td> <td> string </td> </tr>
-    </table>
+    {identifying_properties_table}
 
 |
 
@@ -39,43 +27,4 @@ Properties
 
 .. raw:: html
 
-    {properties_list}
-    <table class="schema-table" width="100%">
-        <tr>
-            <th> Name </td>
-            <th> Type </td>
-            <th> Attributes </td>
-            <th> Description </td>
-        </tr>
-        {full_property_row}
-        <tr>
-            <td> <b>{property_name}</b> </td>
-            <td> {property_type} </td>
-            <td> {property_attributes} </td>
-            <td> {property_description} </td>
-        </tr>
-        <tr>
-            <td> <b>submission_centers</b> </td>
-            <td> array&nbsp;of&nbsp;string </td>
-            <td> required </td>
-            <td> foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor </td>
-        </tr>
-        <tr>
-            <td> consortia </td>
-            <td> <u>enum</u> <br />abc<br />defghi<br />jk<br />lmnopqrst</td>
-            <td> required </td>
-            <td> foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor </td>
-        </tr>
-        <tr>
-            <td> <b>identifier</b> </td>
-            <td> <u>string</u> </td>
-            <td class="schema-table nowrap">
-                <ul>
-                    <li> unique </li>
-                    <li> required </li>
-                    <li> pattern:<br />^[A-Za-z0-9-_]+^[A-Za-z0-9-_]+$ </li>
-                </ul>
-            </td>
-            <td> pattern </td>
-        </tr>
-    </table>
+    <table class="schema-table" width="100%"> <tr> <th> Name </td> <th> Type </td> <th> Attributes </td> <th> Description </td> </tr> <tr> <td width="5%"> <b>uuid</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>title</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Title for the item </td> </tr> <tr> <td width="5%"> <b>tags</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> Key words that can tag an item - useful for filtering. </td> </tr> <tr> <td width="5%"> <b>submitted_id</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Identifier on submission </td> </tr> <tr> <td width="5%"> <b>status</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>description</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Plain text description of the item </td> </tr> <tr> <td width="5%"> <b>code</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Code used in file naming scheme </td> </tr> <tr> <td width="5%"> <b>submission_centers</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> Submission Centers associated with this item. </td> </tr> <tr> <td width="5%"> <b>consortia</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> Consortia associated with this item. </td> </tr> <tr> <td width="5%"> <b>accession</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> A unique identifier to be used to reference the object. </td> </tr> <tr> <td width="5%"> <b>alternate_accessions</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> Accessions previously assigned to objects that have been merged with this object. </td> </tr> <tr> <td width="5%"> <b>source</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Source of the cells (vendor or institution) </td> </tr> <tr> <td width="5%"> <b>url</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> URL for vendor information on the cell line </td> </tr> <tr> <td width="5%"> <b>donor</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Donor associated with the cell line </td> </tr> <tr> <td width="5%"> <b>@id</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>@type</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>display_title</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> - </td> </tr> </table>

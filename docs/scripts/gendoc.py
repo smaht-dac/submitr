@@ -53,12 +53,12 @@ def main():
         schemas = _get_schemas(portal)
         for schema_name in schemas:
             schema = schemas[schema_name]
-            schema_doc = _generate_doc(schema_name, schema, include_all=args.all)
+            schema_doc = _gendoc(schema_name, schema, include_all=args.all)
             _write_doc(schema_name, schema_doc)
     elif args.schema:
         schema, schema_name = _get_schema(portal, args.schema)
         if schema and schema_name:
-            schema_doc = _generate_doc(schema_name, schema, include_all=args.all)
+            schema_doc = _gendoc(schema_name, schema, include_all=args.all)
             _write_doc(schema_name, schema_doc)
     else:
         _usage()
@@ -108,70 +108,92 @@ def _get_parent_schema_name(schema: dict) -> Optional[str]:
             return parent_schema_name
 
 
-def _generate_doc(schema_name: str, schema: dict, include_all: bool = False) -> str:
+def _gendoc(schema_name: str, schema: dict, include_all: bool = False) -> str:
     content = ""
     if content := _get_template("schema"):
         content = content.replace("{schema_name}", schema_name)
-
-        if content_all_properties := _generate_doc_all_properties(schema, include_all):
-            content_all_properties = _normalize_spaces(content_all_properties)
-            content = content.replace("{all_properties}", content_all_properties)
-
-        if content_required_properties := _generate_doc_required_properties(schema, include_all):
-            content_required_properties = _normalize_spaces(content_required_properties)
-            content = content.replace("{required_properties_list}", content_required_properties)
-        if content_identifying_properties := _generate_doc_identifying_properties(schema, include_all):
-            content_identifying_properties = _normalize_spaces(content_identifying_properties)
-            content = content.replace("{identifying_properties_list}", content_identifying_properties)
+        if content_properties_table := _gendoc_properties_table(schema, include_all):
+            content_properties_table = _normalize_spaces(content_properties_table)
+            content = content.replace("{properties_table}", content_properties_table)
+        if content_required_properties_table := _gendoc_required_properties_table(schema, include_all):
+            content_required_properties_table = _normalize_spaces(content_required_properties_table)
+            content = content.replace("{required_properties_table}", content_required_properties_table)
+        if content_identifying_properties_table := _gendoc_identifying_properties_table(schema, include_all):
+            content_identifying_properties_table = _normalize_spaces(content_identifying_properties_table)
+            content = content.replace("{identifying_properties_list}", content_identifying_properties_table)
     return content
 
 
-def _generate_doc_all_properties(schema: dict, include_all: bool = False) -> str:
-    result = ""
+def _gendoc_properties_table(schema: dict, include_all: bool = False) -> str:
+    content = ""
     if not isinstance(schema, dict) or not schema:
-        return result
-    if not (all_properties := schema.get("properties")):
-        return result
-    properties = []
-    for property_name in all_properties:
+        return content
+    if not (properties := schema.get("properties")):
+        return content
+    if not (template_properties_table := _get_template("properties_table")):
+        return content
+    if not (template_property_row := _get_template("property_row")):
+        return content
+    content_property_rows = ""
+    for property_name in properties:
         if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
             continue
-        if not (property := all_properties[property_name]):
+        if not (property := properties[property_name]):
             continue
-        if not (property_type := all_properties.get("type")):
+        if not (property_type := property.get("type")):
             continue
-        properties.append({"name": property_name, "type": property_type})
-    result = _generate_doc_simple_properties(properties)
-    return result
+        property_attributes = "property-attributes-todo"
+        property_description = property.get("description", "-")
+        content_property_row = template_property_row
+        content_property_row = content_property_row.replace("{property_name}", property_name)
+        content_property_row = content_property_row.replace("{property_type}", property_type)
+        content_property_row = content_property_row.replace("{property_attributes}", property_attributes)
+        content_property_row = content_property_row.replace("{property_description}", property_description)
+        content_property_rows += content_property_row
+    content = template_properties_table
+    content = content.replace("{property_rows}", content_property_rows)
+    return content
 
 
-def _generate_doc_required_properties(schema: dict, include_all: bool = False) -> str:
-    result = ""
+def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -> str:
+    content = ""
     if not isinstance(schema, dict) or not schema:
-        return result
+        return content
+    if not (properties := schema.get("properties")):
+        return content
     if not (required_properties := schema.get("required")):
-        return result
-    properties = []
+        return content
+    if not (template_required_properties_table := _get_template("required_properties_table")):
+        return content
+    simple_properties = []
     for property_name in required_properties:
         if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
             continue
-        if property_type := (info := schema.get("properties", {}).get(property_name, {})).get("type", ""):
-            if property_type == "array" and (array_type := info.get("items", {}).get("type", "")):
-                property_type = f"{property_type} or {array_type}"
-        properties.append({"name": property_name, "type": property_type})
-    result = _generate_doc_simple_properties(properties)
+        if not (property := properties[property_name]):
+            continue
+        if not (property_type := property.get("type")):
+            continue
+        if property_type == "array":
+            if property_items := property.get("items"):
+                if property_array_type := property_items.get("type"):
+                    property_type = f"{property_type} of {property_array_type}"
+        simple_properties.append({"name": property_name, "type": property_type})
+    content_simple_property_rows = _gendoc_simple_properties(simple_properties)
     if isinstance(any_of := schema.get("anyOf"), list):
+        # Very special case.
         if ((any_of == [{"required": ["submission_centers"]}, {"required": ["consortia"]}]) or
             (any_of == [{"required": ["consortia"]}, {"required": ["submission_centers"]}])):  # noqa
             if template_oneormore_property_row := _get_template("oneormore_property_row"):
-                result += _generate_doc_simple_properties([
+                content_simple_property_rows += _gendoc_simple_properties([
                     {"name": "consortia", "type": "array of string"},
                     {"name": "submission_centers", "type": "array of string"}
                 ])
-    return result
+    content = template_required_properties_table
+    content = content.replace("{required_property_rows}", content_simple_property_rows)
+    return content
 
 
-def _generate_doc_identifying_properties(schema: dict, include_all: bool = False) -> str:
+def _gendoc_identifying_properties_table(schema: dict, include_all: bool = False) -> str:
     result = ""
     if not isinstance(schema, dict) or not schema:
         return result
@@ -185,11 +207,11 @@ def _generate_doc_identifying_properties(schema: dict, include_all: bool = False
             if property_type == "array" and (array_type := info.get("items", {}).get("type")):
                 property_type = f"{property_type} or {array_type}"
         properties.append({"name": property_name, "type": property_type})
-    result = _generate_doc_simple_properties(properties)
+    result = _gendoc_simple_properties(properties)
     return result
 
 
-def _generate_doc_simple_properties(properties: List[str]) -> str:
+def _gendoc_simple_properties(properties: List[str]) -> str:
     result = ""
     if not isinstance(properties, list) or not properties:
         return result

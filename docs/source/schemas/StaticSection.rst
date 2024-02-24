@@ -9,13 +9,7 @@ Required Properties
 
 .. raw:: html
 
-    <table class="schema-table" width="100%">
-        <tr>
-            <th> Name </td>
-            <th> Type </td>
-        </tr>
-        <tr> <td> FOOidentifier </td> <td> string </td> </tr> <tr> <td> FOOconsortia </td> <td> array of string </td> </tr> <tr> <td> FOOsubmission_centers </td> <td> array of string </td> </tr>
-    </table>
+    <table class="schema-table" width="100%"> <tr> <th> Name </td> <th> Type </td> </tr> <tr> <td width="5%"> <b>identifier</b> </td> <td> string </td> </tr> <tr> <td width="5%"> <b>consortia</b> </td> <td> array of string </td> </tr> <tr> <td width="5%"> <b>submission_centers</b> </td> <td> array of string </td> </tr> </table>
 
 |
 
@@ -24,13 +18,7 @@ Identifying Properties
 
 .. raw:: html
 
-    <table class="schema-table" width="100%">
-        <tr>
-            <th> Name </td>
-            <th> Type </td>
-        </tr>
-        <tr> <td> FOOaliases </td> <td> array or string </td> </tr> <tr> <td> FOOidentifier </td> <td> string </td> </tr> <tr> <td> FOOuuid </td> <td> string </td> </tr>
-    </table>
+    {identifying_properties_table}
 
 |
 
@@ -39,43 +27,4 @@ Properties
 
 .. raw:: html
 
-    {properties_list}
-    <table class="schema-table" width="100%">
-        <tr>
-            <th> Name </td>
-            <th> Type </td>
-            <th> Attributes </td>
-            <th> Description </td>
-        </tr>
-        {full_property_row}
-        <tr>
-            <td> <b>{property_name}</b> </td>
-            <td> {property_type} </td>
-            <td> {property_attributes} </td>
-            <td> {property_description} </td>
-        </tr>
-        <tr>
-            <td> <b>submission_centers</b> </td>
-            <td> array&nbsp;of&nbsp;string </td>
-            <td> required </td>
-            <td> foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor </td>
-        </tr>
-        <tr>
-            <td> consortia </td>
-            <td> <u>enum</u> <br />abc<br />defghi<br />jk<br />lmnopqrst</td>
-            <td> required </td>
-            <td> foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor </td>
-        </tr>
-        <tr>
-            <td> <b>identifier</b> </td>
-            <td> <u>string</u> </td>
-            <td class="schema-table nowrap">
-                <ul>
-                    <li> unique </li>
-                    <li> required </li>
-                    <li> pattern:<br />^[A-Za-z0-9-_]+^[A-Za-z0-9-_]+$ </li>
-                </ul>
-            </td>
-            <td> pattern </td>
-        </tr>
-    </table>
+    <table class="schema-table" width="100%"> <tr> <th> Name </td> <th> Type </td> <th> Attributes </td> <th> Description </td> </tr> <tr> <td width="5%"> <b>status</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>options</b> </td> <td> object </td> <td> property-attributes-todo </td> <td> Options for section display. </td> </tr> <tr> <td width="5%"> <b>uuid</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>title</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Title for the item </td> </tr> <tr> <td width="5%"> <b>identifier</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Unique, identifying name for the item </td> </tr> <tr> <td width="5%"> <b>description</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Plain text description of the item </td> </tr> <tr> <td width="5%"> <b>submission_centers</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> Submission Centers associated with this item. </td> </tr> <tr> <td width="5%"> <b>consortia</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> Consortia associated with this item. </td> </tr> <tr> <td width="5%"> <b>aliases</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> Institution-specific ID (e.g. bgm:cohort-1234-a). </td> </tr> <tr> <td width="5%"> <b>body</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Plain html or text content of this section. </td> </tr> <tr> <td width="5%"> <b>file</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Source file to use for populating content. Is superceded by contents of 'body', if one present. </td> </tr> <tr> <td width="5%"> <b>section_type</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> What this section is used for. Defaults to 'Page Section'. </td> </tr> <tr> <td width="5%"> <b>@id</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>@type</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>display_title</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>content_as_html</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Convert RST, HTML and MD content into HTML </td> </tr> <tr> <td width="5%"> <b>content</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Content for the page </td> </tr> <tr> <td width="5%"> <b>filetype</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Type of file used for content </td> </tr> </table>

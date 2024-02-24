@@ -9,13 +9,7 @@ Required Properties
 
 .. raw:: html
 
-    <table class="schema-table" width="100%">
-        <tr>
-            <th> Name </td>
-            <th> Type </td>
-        </tr>
-        <tr> <td> FOOdata_category </td> <td> array or string </td> </tr> <tr> <td> FOOdata_type </td> <td> array or string </td> </tr> <tr> <td> FOOfile_format </td> <td> string </td> </tr> <tr> <td> FOOconsortia </td> <td> array of string </td> </tr> <tr> <td> FOOsubmission_centers </td> <td> array of string </td> </tr>
-    </table>
+    <table class="schema-table" width="100%"> <tr> <th> Name </td> <th> Type </td> </tr> <tr> <td width="5%"> <b>data_category</b> </td> <td> array of string </td> </tr> <tr> <td width="5%"> <b>data_type</b> </td> <td> array of string </td> </tr> <tr> <td width="5%"> <b>file_format</b> </td> <td> string </td> </tr> <tr> <td width="5%"> <b>consortia</b> </td> <td> array of string </td> </tr> <tr> <td width="5%"> <b>submission_centers</b> </td> <td> array of string </td> </tr> </table>
 
 |
 
@@ -24,13 +18,7 @@ Identifying Properties
 
 .. raw:: html
 
-    <table class="schema-table" width="100%">
-        <tr>
-            <th> Name </td>
-            <th> Type </td>
-        </tr>
-        <tr> <td> FOOaccession </td> <td> string </td> </tr> <tr> <td> FOOaliases </td> <td> array or string </td> </tr> <tr> <td> FOOuuid </td> <td> string </td> </tr>
-    </table>
+    {identifying_properties_table}
 
 |
 
@@ -39,43 +27,4 @@ Properties
 
 .. raw:: html
 
-    {properties_list}
-    <table class="schema-table" width="100%">
-        <tr>
-            <th> Name </td>
-            <th> Type </td>
-            <th> Attributes </td>
-            <th> Description </td>
-        </tr>
-        {full_property_row}
-        <tr>
-            <td> <b>{property_name}</b> </td>
-            <td> {property_type} </td>
-            <td> {property_attributes} </td>
-            <td> {property_description} </td>
-        </tr>
-        <tr>
-            <td> <b>submission_centers</b> </td>
-            <td> array&nbsp;of&nbsp;string </td>
-            <td> required </td>
-            <td> foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor </td>
-        </tr>
-        <tr>
-            <td> consortia </td>
-            <td> <u>enum</u> <br />abc<br />defghi<br />jk<br />lmnopqrst</td>
-            <td> required </td>
-            <td> foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor </td>
-        </tr>
-        <tr>
-            <td> <b>identifier</b> </td>
-            <td> <u>string</u> </td>
-            <td class="schema-table nowrap">
-                <ul>
-                    <li> unique </li>
-                    <li> required </li>
-                    <li> pattern:<br />^[A-Za-z0-9-_]+^[A-Za-z0-9-_]+$ </li>
-                </ul>
-            </td>
-            <td> pattern </td>
-        </tr>
-    </table>
+    <table class="schema-table" width="100%"> <tr> <th> Name </td> <th> Type </td> <th> Attributes </td> <th> Description </td> </tr> <tr> <td width="5%"> <b>uuid</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>tags</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> Key words that can tag an item - useful for filtering. </td> </tr> <tr> <td width="5%"> <b>description</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Plain text description of the item </td> </tr> <tr> <td width="5%"> <b>submission_centers</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> Submission Centers associated with this item. </td> </tr> <tr> <td width="5%"> <b>consortia</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> Consortia associated with this item. </td> </tr> <tr> <td width="5%"> <b>aliases</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> Institution-specific ID (e.g. bgm:cohort-1234-a). </td> </tr> <tr> <td width="5%"> <b>accession</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> A unique identifier to be used to reference the object. </td> </tr> <tr> <td width="5%"> <b>alternate_accessions</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> Accessions previously assigned to objects that have been merged with this object. </td> </tr> <tr> <td width="5%"> <b>status</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>file_format</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>filename</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> The local file name used at time of submission. Must be alphanumeric, with the exception of the following special characters: '+=,.@-_' </td> </tr> <tr> <td width="5%"> <b>file_size</b> </td> <td> integer </td> <td> property-attributes-todo </td> <td> Size of file on disk </td> </tr> <tr> <td width="5%"> <b>md5sum</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> The MD5 checksum of the file being transferred </td> </tr> <tr> <td width="5%"> <b>content_md5sum</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> The MD5 checksum of the uncompressed file </td> </tr> <tr> <td width="5%"> <b>quality_metrics</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> Associated QC reports </td> </tr> <tr> <td width="5%"> <b>data_category</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> Category for information in the file </td> </tr> <tr> <td width="5%"> <b>data_type</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>o2_path</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Path to file on O2 </td> </tr> <tr> <td width="5%"> <b>sequencing_center</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Sequencing Center </td> </tr> <tr> <td width="5%"> <b>s3_lifecycle_category</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> The lifecycle category determines how long a file remains in a certain storage class. If set to ignore, lifecycle management will have no effect on this file </td> </tr> <tr> <td width="5%"> <b>s3_lifecycle_last_checked</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Date when the lifecycle status of the file was last checked </td> </tr> <tr> <td width="5%"> <b>s3_lifecycle_status</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Current S3 storage class of this object. </td> </tr> <tr> <td width="5%"> <b>@id</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>@type</b> </td> <td> array </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>display_title</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> A calculated title for every object </td> </tr> <tr> <td width="5%"> <b>href</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> Use this link to download this file </td> </tr> <tr> <td width="5%"> <b>upload_credentials</b> </td> <td> object </td> <td> property-attributes-todo </td> <td> - </td> </tr> <tr> <td width="5%"> <b>upload_key</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> File object name in S3 </td> </tr> </table>
