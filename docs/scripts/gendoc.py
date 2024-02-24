@@ -14,6 +14,8 @@ from dcicutils.portal_utils import Portal
 
 # Schema properties to ignore (by default) for the view schema usage.
 _IGNORE_PROPERTIES = [
+    "@id",
+    "@type",
     "date_created",
     "last_modified",
     "principals_allowed",
@@ -120,7 +122,7 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False) -> str:
             content = content.replace("{required_properties_table}", content_required_properties_table)
         if content_identifying_properties_table := _gendoc_identifying_properties_table(schema, include_all):
             content_identifying_properties_table = _normalize_spaces(content_identifying_properties_table)
-            content = content.replace("{identifying_properties_list}", content_identifying_properties_table)
+            content = content.replace("{identifying_properties_table}", content_identifying_properties_table)
     return content
 
 
@@ -143,12 +145,18 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False) -> str:
         if not (property_type := property.get("type")):
             continue
         property_attributes = "property-attributes-todo"
-        property_description = property.get("description", "-")
+        if property_description := property.get("description", "").strip():
+            if not property_description.endswith("."):
+                property_description += "."
+        if property_internal_comment := property.get("internal_comment", "").strip():
+            property_internal_comment = "[" + property_internal_comment + "]"
+            if property_description:
+                property_description += " " + property_internal_comment
         content_property_row = template_property_row
         content_property_row = content_property_row.replace("{property_name}", property_name)
         content_property_row = content_property_row.replace("{property_type}", property_type)
         content_property_row = content_property_row.replace("{property_attributes}", property_attributes)
-        content_property_row = content_property_row.replace("{property_description}", property_description)
+        content_property_row = content_property_row.replace("{property_description}", property_description or "-")
         content_property_rows += content_property_row
     content = template_properties_table
     content = content.replace("{property_rows}", content_property_rows)
@@ -193,7 +201,37 @@ def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -
     return content
 
 
+# IN PROGRESS HERE ...
 def _gendoc_identifying_properties_table(schema: dict, include_all: bool = False) -> str:
+    content = ""
+    if not isinstance(schema, dict) or not schema:
+        return content
+    if not (properties := schema.get("properties")):
+        return content
+    if not (identifying_properties := schema.get("identifyingProperties")):
+        return content
+    if not (template_identifying_properties_table := _get_template("identifying_properties_table")):
+        return content
+    simple_properties = []
+    for property_name in identifying_properties:
+        if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
+            continue
+        if not (property := properties[property_name]):
+            continue
+        if not (property_type := property.get("type")):
+            continue
+        if property_type == "array":
+            if property_items := property.get("items"):
+                if property_array_type := property_items.get("type"):
+                    property_type = f"{property_type} of {property_array_type}"
+        simple_properties.append({"name": property_name, "type": property_type})
+    content_simple_property_rows = _gendoc_simple_properties(simple_properties)
+    content = template_identifying_properties_table
+    content = content.replace("{identifying_property_rows}", content_simple_property_rows)
+    return content
+
+
+def xxx_gendoc_identifying_properties_table(schema: dict, include_all: bool = False) -> str:
     result = ""
     if not isinstance(schema, dict) or not schema:
         return result
