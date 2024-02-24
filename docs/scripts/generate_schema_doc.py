@@ -232,7 +232,7 @@ def _update_index_doc(schemas: dict) -> None:
 
 @lru_cache(maxsize=32)
 def _get_template(name: str) -> str:
-    template_file = f"{TEMPLATES_DIR}/{name}.rst"
+    template_file = f"{TEMPLATES_DIR}/{name}.html"
     with io.open(template_file, "r") as f:
         return f.read()
 

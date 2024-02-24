@@ -9,12 +9,12 @@ Required Properties
 
 .. raw:: html
 
-    <table class="schema-table">
+    <table class="schema-table" width="100%">
         <tr>
             <th> Name </td>
             <th> Type </td>
         </tr>
-        {required_properties}
+        {required_properties_list}
     </table>
 
 |
@@ -24,12 +24,12 @@ Identifying Properties
 
 .. raw:: html
 
-    <table class="schema-table">
+    <table class="schema-table" width="100%">
         <tr>
             <th> Name </td>
             <th> Type </td>
         </tr>
-        {identifying_properties}
+        {identifying_properties_list}
     </table>
 
 |
@@ -39,8 +39,8 @@ Properties
 
 .. raw:: html
 
-    {all_properties}
-    <table class="schema-table">
+    {properties_list}
+    <table class="schema-table" width="100%">
         <tr>
             <th> Name </td>
             <th> Type </td>
@@ -59,14 +59,12 @@ Properties
             <td> array&nbsp;of&nbsp;string </td>
             <td> required </td>
             <td> foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor </td>
-            <td> ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor </td>
         </tr>
         <tr>
             <td> consortia </td>
             <td> <u>enum</u> <br />abc<br />defghi<br />jk<br />lmnopqrst</td>
             <td> required </td>
             <td> foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor foo,Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor </td>
-            <td> ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor </td>
         </tr>
         <tr>
             <td> <b>identifier</b> </td>
@@ -79,6 +77,5 @@ Properties
                 </ul>
             </td>
             <td> pattern </td>
-            <td> ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labor </td>
         </tr>
     </table>
