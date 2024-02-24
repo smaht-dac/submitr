@@ -39,6 +39,7 @@ Properties
 
 .. raw:: html
 
+    {all_properties}
     <table class="schema-table">
         <tr>
             <th> Name </td>
@@ -46,6 +47,7 @@ Properties
             <th> Attributes </td>
             <th> Description </td>
         </tr>
+        {full_property_row}
         <tr>
             <td> <b>{property_name}</b> </td>
             <td> {property_type} </td>

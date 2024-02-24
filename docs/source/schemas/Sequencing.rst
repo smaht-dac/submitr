@@ -14,7 +14,7 @@ Required Properties
             <th> Name </td>
             <th> Type </td>
         </tr>
-        <tr> <td> read_type </td> <td> string </td> </tr> <tr> <td> sequencer </td> <td> string </td> </tr> <tr> <td> submission_centers </td> <td> array or string </td> </tr> <tr> <td> submitted_id </td> <td> string </td> </tr> <tr> <td> target_read_length </td> <td> integer </td> </tr>
+        <tr> <td> FOOread_type </td> <td> string </td> </tr> <tr> <td> FOOsequencer </td> <td> string </td> </tr> <tr> <td> FOOsubmission_centers </td> <td> array or string </td> </tr> <tr> <td> FOOsubmitted_id </td> <td> string </td> </tr> <tr> <td> FOOtarget_read_length </td> <td> integer </td> </tr>
     </table>
 
 |
@@ -29,7 +29,7 @@ Identifying Properties
             <th> Name </td>
             <th> Type </td>
         </tr>
-        <tr> <td> accession </td> <td> string </td> </tr> <tr> <td> submitted_id </td> <td> string </td> </tr> <tr> <td> uuid </td> <td> string </td> </tr>
+        <tr> <td> FOOaccession </td> <td> string </td> </tr> <tr> <td> FOOsubmitted_id </td> <td> string </td> </tr> <tr> <td> FOOuuid </td> <td> string </td> </tr>
     </table>
 
 |
@@ -39,6 +39,7 @@ Properties
 
 .. raw:: html
 
+    {all_properties}
     <table class="schema-table">
         <tr>
             <th> Name </td>
@@ -46,6 +47,7 @@ Properties
             <th> Attributes </td>
             <th> Description </td>
         </tr>
+        {full_property_row}
         <tr>
             <td> <b>{property_name}</b> </td>
             <td> {property_type} </td>

@@ -29,7 +29,7 @@ Identifying Properties
             <th> Name </td>
             <th> Type </td>
         </tr>
-        <tr> <td> access_key_id </td> <td> string </td> </tr> <tr> <td> uuid </td> <td> string </td> </tr>
+        <tr> <td> FOOaccess_key_id </td> <td> string </td> </tr> <tr> <td> FOOuuid </td> <td> string </td> </tr>
     </table>
 
 |
@@ -39,6 +39,7 @@ Properties
 
 .. raw:: html
 
+    {all_properties}
     <table class="schema-table">
         <tr>
             <th> Name </td>
@@ -46,6 +47,7 @@ Properties
             <th> Attributes </td>
             <th> Description </td>
         </tr>
+        {full_property_row}
         <tr>
             <td> <b>{property_name}</b> </td>
             <td> {property_type} </td>

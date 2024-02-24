@@ -14,7 +14,7 @@ Required Properties
             <th> Name </td>
             <th> Type </td>
         </tr>
-        <tr> <td> category </td> <td> array or string </td> </tr> <tr> <td> name </td> <td> string </td> </tr> <tr> <td> title </td> <td> string </td> </tr> <tr> <td> version </td> <td> string </td> </tr> <tr> <td> workflows </td> <td> array or object </td> </tr> <tr> <td> consortia </td> <td> array of string </td> </tr> <tr> <td> submission_centers </td> <td> array of string </td> </tr>
+        <tr> <td> FOOcategory </td> <td> array or string </td> </tr> <tr> <td> FOOname </td> <td> string </td> </tr> <tr> <td> FOOtitle </td> <td> string </td> </tr> <tr> <td> FOOversion </td> <td> string </td> </tr> <tr> <td> FOOworkflows </td> <td> array or object </td> </tr> <tr> <td> FOOconsortia </td> <td> array of string </td> </tr> <tr> <td> FOOsubmission_centers </td> <td> array of string </td> </tr>
     </table>
 
 |
@@ -29,7 +29,7 @@ Identifying Properties
             <th> Name </td>
             <th> Type </td>
         </tr>
-        <tr> <td> accession </td> <td> string </td> </tr> <tr> <td> aliases </td> <td> array or string </td> </tr> <tr> <td> uuid </td> <td> string </td> </tr>
+        <tr> <td> FOOaccession </td> <td> string </td> </tr> <tr> <td> FOOaliases </td> <td> array or string </td> </tr> <tr> <td> FOOuuid </td> <td> string </td> </tr>
     </table>
 
 |
@@ -39,6 +39,7 @@ Properties
 
 .. raw:: html
 
+    {all_properties}
     <table class="schema-table">
         <tr>
             <th> Name </td>
@@ -46,6 +47,7 @@ Properties
             <th> Attributes </td>
             <th> Description </td>
         </tr>
+        {full_property_row}
         <tr>
             <td> <b>{property_name}</b> </td>
             <td> {property_type} </td>
