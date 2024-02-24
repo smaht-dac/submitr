@@ -48,7 +48,7 @@ This document explains how to get up and running with the use of this tool.
 
 .. tip::
     Note that this documentation covers the `mechanics` of using ``smaht-submitr``.
-    It does not at this time cover the `semantics` for the actual content of the metadata being submitted.
+    It does not at this time cover much of the `semantics` for the actual content of the metadata being submitted.
     For more information on this aspect of submission please see: **TBD**
 
 

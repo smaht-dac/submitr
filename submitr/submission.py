@@ -228,6 +228,13 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
     :param error_if_none: boolean true if failure to infer any consortia should raise an error, and false otherwise.
     :return: the @id of a consortium to use (or a comma-separated list)
     """
+    def show_consortia():
+        nonlocal portal
+        if portal:
+            if consortia := _get_consortia(portal):
+                show("CONSORTIA SUPPORTED:")
+                for consortium in consortia:
+                    show(f"- {consortium.get('name')} ({consortium.get('uuid')})")
     suffix = ""
     if not consortia:
         consortia = [consortium.get('@id', None) for consortium in user_record.get('consortia', [])]
@@ -235,9 +242,9 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
             if error_if_none:
                 raise SyntaxError("Your user profile has no consortium declared,"
                                   " so you must specify --consortium explicitly.")
-            if not quiet:
-                show("No consortium was inferred.")
-            return consortia
+            show("ERROR: No consortium was inferred. Use the --consortium option.")
+            show_consortia()
+            exit(1)
         else:
             suffix = " (inferred)"
     annotated_consortia = []
@@ -246,6 +253,7 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
             consortium_path = f"/Consortium/{consortium}" if not consortium.startswith("/") else consortium
             if not (consortium_object := portal.get_metadata(consortium_path)):
                 show(f"ERROR: Consortium not found: {consortium}")
+                show_consortia()
                 exit(1)
             elif consortium_name := consortium_object.get("identifier"):
                 consortium_uuid = consortium_object.get("uuid")
@@ -269,6 +277,14 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
         and false otherwise.
     :return: the @id of a submission center to use
     """
+    # TODO: Need to support submits_for ...
+    def show_submission_centers():
+        nonlocal portal
+        if portal:
+            if submission_centers := _get_submission_centers(portal):
+                show("SUBMISSION CENTERS SUPPORTED:")
+                for submission_center in submission_centers:
+                    show(f"- {submission_center.get('name')} ({submission_center.get('uuid')})")
     suffix = ""
     if not submission_centers:
         submission_centers = [submission_center.get('@id', None)
@@ -277,9 +293,9 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
             if error_if_none:
                 raise SyntaxError("Your user profile has no submission center declared,"
                                   " so you must specify --submission-center explicitly.")
-            if not quiet:
-                show("No submission center was inferred.")
-            return submission_centers
+            show("ERROR: No submission center was inferred. Use the --submission-center option.")
+            show_submission_centers()
+            exit(1)
         else:
             suffix = " (inferred)"
     annotated_submission_centers = []
@@ -289,7 +305,8 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
                 f"/SubmissionCenter/{submission_center}"
                 if not submission_center.startswith("/") else submission_center)
             if not (submission_center_object := portal.get_metadata(submission_center_path)):
-                show(f"ERROR: submission_center not found: {submission_center}")
+                show(f"ERROR: Submission center not found: {submission_center}")
+                show_submission_centers()
                 exit(1)
             elif submission_center_name := submission_center_object.get("identifier"):
                 submission_center_uuid = submission_center_object.get("uuid")
@@ -1745,10 +1762,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       upload_folder: Optional[str] = None,
                       subfolders: bool = False, exit_immediately_on_errors: bool = False,
                       json_only: bool = False, verbose_json: bool = False, verbose: bool = False) -> int:
-    errors_exist = False
-    # if validate_local_only:
-    #     PRINT(f"\n> Validating {'ONLY ' if validate_local_only else ''}file locally because" +
-    #           f" --validate-local{'-only' if validate_local_only else ''} specified: {ingestion_filename}")
     structured_data = StructuredDataSet.load(ingestion_filename, portal, autoadd=autoadd)
     if json_only:
         PRINT(json.dumps(structured_data.data, indent=4))
@@ -1756,97 +1769,92 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if verbose_json:
         PRINT(f"Parsed JSON:")
         PRINT(json.dumps(structured_data.data, indent=4))
-    files_not_found = []
-    if files := structured_data.upload_files:
-        files = structured_data.upload_files_located(location=[upload_folder,
-                                                               os.path.dirname(ingestion_filename)],
-                                                     recursive=subfolders)
-        files_found = [file for file in files if file.get("path")]
-        files_not_found = [file for file in files if not file.get("path")]
-        if files_found and verbose:
-            PRINT(f"\n> Resolved file references:")
-            for file in files_found:
-                if path := file.get("path"):
-                    PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
-                          f" [{_format_file_size(_get_file_size(path))}]")
-                else:
-                    PRINT(f"  - {file.get('type')}: {file.get('file')} -> NOT FOUND!")
-    if (not files_not_found and not (errors_exist := not _validate_data(structured_data,
-                                                                        portal, ingestion_filename))):
+    validation_okay = _validate_data(structured_data, portal, ingestion_filename, upload_folder, recursive=subfolders)
+    if validation_okay:
         PRINT("Validation results (preliminary): OK")
-    if files_not_found:
-        if not errors_exist:
-            PRINT("Validation results (preliminary): ERROR")
-        errors_exist = True
-        PRINT(f"- ERROR: Unresolved file references:")
-        for file in files_not_found:
-            if path := file.get("path"):
-                PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}")
-            else:
-                PRINT(f"  - {file.get('type')}: {file.get('file')} -> Not found!")
     if verbose:
-        PRINT(f"\n> Types submitting:")
-        for type_name in sorted(structured_data.data):
-            PRINT(f"  - {type_name}: {len(structured_data.data[type_name])}"
-                  f" object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
-        if (resolved_refs := structured_data.resolved_refs):
-            PRINT(f"\n> Resolved object (linkTo) references:")
-            for resolved_ref in sorted(resolved_refs):
-                PRINT(f"  - {resolved_ref}")
-        if (ref_errors := structured_data.ref_errors):
-            errors_exist = True
-            PRINT(f"\n> ERROR: Unresolved object (linkTo) references:")
-            for ref_error in ref_errors:
-                PRINT(f"  - {_format_issue(ref_error, ingestion_filename)}")
-        if (reader_warnings := structured_data.reader_warnings):
-            PRINT(f"\n> WARNING: Parser warnings:")
-            for reader_warning in reader_warnings:
-                PRINT(f"  - {_format_issue(reader_warning, ingestion_filename)}")
-        _print_structured_data_status(portal, structured_data, validate_remote_only=validate_remote_only)
-    if exit_immediately_on_errors and errors_exist:
+        _print_structured_data_verbose(portal, structured_data,
+                                       ingestion_filename, upload_folder=upload_folder,
+                                       recursive=subfolders, validate_remote_only=validate_remote_only)
+    if exit_immediately_on_errors and not validation_okay:
         PRINT()
         PRINT("There are some preliminary errors outlined above. Please fix them before trying again. No action taken.")
         exit(1)
-    if errors_exist:
+    if not validation_okay:
         question_suffix = " with validation" if validate_local_only or validate_remote_only else ""
         if not yes_or_no(f"There are some preliminary errors outlined above;"
                          f" do you want to continue{question_suffix}?"):
             exit(1)
     if validate_local_only:
-        exit(0 if not errors_exist else 1)
+        exit(0 if validation_okay else 1)
     if verbose:
         PRINT()
 
 
-def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str) -> bool:
-    main_error_message = "Validation results (preliminary): ERROR"
-    validation_errors_exist = False
-    pre_validation_errors = _pre_validate_data(structured_data, portal)
-    if pre_validation_errors:
-        if main_error_message:
-            print(main_error_message)
-            main_error_message = None
-        for pre_validation_error in pre_validation_errors:
-            PRINT(f"- {pre_validation_error}")
-        pre_validation_errors = True
+def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str,
+                   upload_folder: str, recursive: bool) -> bool:
+    nerrors = 0
+
+    if initial_validation_errors := _validate_initial(structured_data, portal):
+        nerrors += len(initial_validation_errors)
+
+    if ref_validation_errors := _validate_references(structured_data, ingestion_filename):
+        nerrors += len(ref_validation_errors)
+
+    if file_validation_errors := _validate_files(structured_data, ingestion_filename, upload_folder, recursive):
+        nerrors += len(file_validation_errors)
+
     structured_data.validate()
-    if (validation_errors := structured_data.validation_errors):
-        if main_error_message:
-            print(main_error_message)
-            main_error_message = None
-        validation_errors_exist = True
-        # PRINT(f"  - ERROR: Validation violations:")
-        for validation_error in validation_errors:
-            PRINT(f"- ERROR: {_format_issue(validation_error, ingestion_filename)}")
-    return not validation_errors_exist
+    if data_validation_errors := structured_data.validation_errors:
+        nerrors += len(data_validation_errors)
+
+    if nerrors > 0:
+        PRINT("Validation results (preliminary): ERROR")
+
+    if initial_validation_errors:
+        for error in initial_validation_errors:
+            PRINT(f"- ERROR: {error}")
+
+    if ref_validation_errors:
+        for error in ref_validation_errors:
+            PRINT(f"- ERROR: {error}")
+
+    if file_validation_errors:
+        for error in file_validation_errors:
+            PRINT(f"- ERROR: {error}")
+
+    if data_validation_errors:
+        for error in data_validation_errors:
+            PRINT(f"- ERROR: {error}")
+
+    return not (nerrors > 0)
 
 
-def _pre_validate_data(structured_data: StructuredDataSet, portal: Portal) -> List[str]:
+def _validate_references(structured_data: StructuredDataSet, ingestion_filename: str) -> List[str]:
+    ref_validation_errors = []
+    if (ref_errors := structured_data.ref_errors):
+        for ref_error in ref_errors:
+            ref_validation_errors.append(f"{_format_issue(ref_error, ingestion_filename)}")
+    return ref_validation_errors
+
+
+def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
+                    upload_folder: str, recursive: bool) -> List[str]:
+    file_validation_errors = []
+    if files := structured_data.upload_files_located(location=[upload_folder, os.path.dirname(ingestion_filename)],
+                                                     recursive=recursive):
+        if files_not_found := [file for file in files if not file.get("path")]:
+            for file in files_not_found:
+                file_validation_errors.append(f"{file.get('type')}: {file.get('file')} -> Not found")
+    return file_validation_errors
+
+
+def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> List[str]:
     # TODO: Move this more specific "pre" validation checking to dcicutils.structured_data.
     # Just for nicer more specific (non-jsonschema) error messages for common problems.
-    pre_validation_errors = []
+    initial_validation_errors = []
     if not (portal and structured_data and structured_data.data):
-        return pre_validation_errors
+        return initial_validation_errors
     for schema_name in structured_data.data:
         if schema_data := portal.get_schema(schema_name):
             if identifying_properties := schema_data.get(EncodedSchemaConstants.IDENTIFYING_PROPERTIES):
@@ -1855,7 +1863,7 @@ def _pre_validate_data(structured_data: StructuredDataSet, portal: Portal) -> Li
                     data_properties = set(data[0].keys())
                     if not data_properties & identifying_properties:
                         # No identifying properties for this object.
-                        pre_validation_errors.append(f"ERROR: No identifying properties for type: {schema_name}")
+                        initial_validation_errors.append(f"No identifying properties for type: {schema_name}")
             if required_properties := schema_data.get(JsonSchemaConstants.REQUIRED):
                 required_properties = set(required_properties) - set("submission_centers")
                 if data := structured_data.data[schema_name]:
@@ -1864,10 +1872,35 @@ def _pre_validate_data(structured_data: StructuredDataSet, portal: Portal) -> Li
                         if missing_required_properties := required_properties - data_properties:
                             # Missing required properties for this object.
                             for missing_required_property in missing_required_properties:
-                                pre_validation_errors.append(
-                                    f"ERROR: Missing required property ({missing_required_property})"
+                                initial_validation_errors.append(
+                                    f"Missing required property ({missing_required_property})"
                                     f" for type: {schema_name}")
-    return pre_validation_errors
+    return initial_validation_errors
+
+
+def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDataSet, ingestion_filename: str,
+                                   upload_folder: str, recursive: bool, validate_remote_only: bool = False) -> None:
+    if (reader_warnings := structured_data.reader_warnings):
+        PRINT(f"\n> Parser WARNINGS:")
+        for reader_warning in reader_warnings:
+            PRINT(f"  - {_format_issue(reader_warning, ingestion_filename)}")
+    PRINT(f"\n> Types submitting:")
+    for type_name in sorted(structured_data.data):
+        PRINT(f"  - {type_name}: {len(structured_data.data[type_name])}"
+              f" object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
+    if resolved_refs := structured_data.resolved_refs:
+        PRINT(f"\n> Resolved object (linkTo) references:")
+        for resolved_ref in sorted(resolved_refs):
+            PRINT(f"  - {resolved_ref}")
+    if files := structured_data.upload_files_located(location=[upload_folder, os.path.dirname(ingestion_filename)],
+                                                     recursive=recursive):
+        PRINT(f"\n> Resolved file references:")
+        if files_found := [file for file in files if file.get("path")]:
+            for file in files_found:
+                path = file.get("path")
+                PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
+                      f" [{_format_file_size(_get_file_size(path))}]")
+    _print_structured_data_status(portal, structured_data, validate_remote_only=validate_remote_only)
 
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet,
@@ -1965,6 +1998,30 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         if portal.key_id and len(portal.key_id) > 2:
             PRINT(f"Portal key prefix is: {portal.key_id[:2]}******")
     return portal
+
+
+@lru_cache(maxsize=1)
+def _get_consortia(portal: Portal) -> List[str]:
+    results = []
+    if consortia := portal.get_metadata("/consortia"):
+        consortia = sorted(consortia.get("@graph", []), key=lambda key: key.get("identifier"))
+        for consortium in consortia:
+            if ((consortium_name := consortium.get("identifier")) and
+                (consortium_uuid := consortium.get("uuid"))):  # noqa
+                results.append({"name": consortium_name, "uuid": consortium_uuid})
+    return results
+
+
+@lru_cache(maxsize=1)
+def _get_submission_centers(portal: Portal) -> List[str]:
+    results = []
+    if submission_centers := portal.get_metadata("/submission-centers"):
+        submission_centers = sorted(submission_centers.get("@graph", []), key=lambda key: key.get("identifier"))
+        for submission_center in submission_centers:
+            if ((submission_center_name := submission_center.get("identifier")) and
+                (submission_center_uuid := submission_center.get("uuid"))):  # noqa
+                results.append({"name": submission_center_name, "uuid": submission_center_uuid})
+    return results
 
 
 def _is_accession_id(value: str) -> bool:

@@ -215,20 +215,26 @@ To be more specific about the the validation checks, they include the following:
 Example Screenshots
 ===================
 
-The output of a successfully completed ``submit-metadata-bundle`` will look something like this:
+The output of a successful ``submit-metadata-bundle --submit`` will look something like this:
 
-.. image:: _static/images/submitr_output.png
-    :target: _static/images/submitr_output.png
-    :alt: Excel Spreadsheet Screenshot
+.. image:: _static/images/submit_output.png
+    :target: _static/images/submit_output.png
+    :alt: Submission Output Screenshot
 
-Notice the **Submission UUID** value in the **Validation Output** section as well as the **uuid** values in the **Upload Info** section;
+Notice the **Submission tracking ID** value in section as well as **Upload File ID** values;
 these may be used in a subsequent ``resume-uploads`` invocation; see the `Uploading Files <uploading_files.html>`_ section for more on this.
 
-When specifying the ``--validate`` option (default for non-admin users) the additional validation checking output will look something like this:
+When instead specifying the ``--validate`` option the output will look something like this:
 
-.. image:: _static/images/submitr_check.png
-    :target: _static/images/submitr_check.png
-    :alt: Excel Spreadsheet Screenshot
+.. image:: _static/images/validate_output.png
+    :target: _static/images/validate_output.png
+    :alt: Validation Output Screenshot
+
+And if you additionally specify the ``--verbose`` option the output will look something like this:
+
+.. image:: _static/images/validate_verbose_output.png
+    :target: _static/images/validate_verbose_output.png
+    :alt: Validation Verbose Output Screenshot
 
 Getting Submission Info
 =======================
