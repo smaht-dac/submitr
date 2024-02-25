@@ -133,6 +133,8 @@ def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
         schema = schemas[this_schema_name]
         if properties := schema.get("properties"):
             for property_name in properties:
+                if property_name in _IGNORE_PROPERTIES:
+                    continue
                 property = properties[property_name]
                 if property.get("linkTo") == schema_name:
                     result.append(this_schema_name)
@@ -461,8 +463,14 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             for property_attribute in property_attributes:
                 property_type += f"•&nbsp;{property_attribute}<br />"
         if pattern := property.get("pattern"):
+            if save_property_name in required_properties:
+                color = "red"
+            elif save_property_name in identifying_properties:
+                color = "blue"
+            else:
+                color = "inherit"
             property_description += (
-                f"<br /><span style='color:red;'><b>pattern</b>:&nbsp;"
+                f"<br /><span style='color:{color};'><b>pattern</b>:&nbsp;"
                 f"<small style='font-family:monospace;'>{pattern}</small></span>")
         if _parents:
             content_parents = "<span style='font-weight:normal;'>"
