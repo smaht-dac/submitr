@@ -12,7 +12,16 @@ from dcicutils.misc_utils import PRINT
 from dcicutils.portal_utils import Portal
 
 
-# Schema properties to ignore (by default) for the view schema usage.
+# Schema types/properties to ignore (by default) for the view schema usage.
+_IGNORE_TYPES = [
+    "AccessKey",
+    "MetaWorkflow",
+    "MetaWorkflowRun",
+    "Page",
+    "StaticSection",
+    "Workflow",
+    "WorkflowRun",
+]
 _IGNORE_PROPERTIES = [
     "@id",
     "@type",
@@ -54,6 +63,8 @@ def main():
     if not args.schema or args.schema.lower() in ["schemas", "schema"]:
         schemas = _get_schemas(portal)
         for schema_name in schemas:
+            if schema_name in _IGNORE_TYPES:
+                continue
             schema = schemas[schema_name]
             schema_doc = _gendoc(schema_name, schema, include_all=args.all)
             _write_doc(schema_name, schema_doc)
@@ -118,37 +129,52 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False) -> str:
 
     if parent_schema_name := _get_parent_schema_name(schema):
         content = content.replace("{parent_schema_sentence}",
-                                  f"Parent schema is <b><a href={parent_schema_name}.html>{parent_schema_name}</a></b>.")
+                                  f"Parent schema is <b><a href={parent_schema_name}.html>"
+                                  f"{parent_schema_name}</a></b>.")
     else:
         content = content.replace("{parent_schema_sentence}", "")
 
-    if content_required_properties_table := _gendoc_required_properties_table(schema, include_all):
-        content_required_properties_table = _normalize_spaces(content_required_properties_table)
-        content = content.replace("{required_properties_table}", content_required_properties_table)
+    if content_required_properties_section := _gendoc_required_properties_section(schema, include_all):
+        content = content.replace("{required_properties_section}", content_required_properties_section)
     else:
-        content = content.replace("{required_properties_table}", "<i>No required properties.</i>")
+        content = content.replace("{required_properties_section}", "")
 
-    if content_identifying_properties_table := _gendoc_identifying_properties_table(schema, include_all):
-        content_identifying_properties_table = _normalize_spaces(content_identifying_properties_table)
-        content = content.replace("{identifying_properties_table}", content_identifying_properties_table)
+    if content_identifying_properties_section := _gendoc_identifying_properties_section(schema, include_all):
+        content = content.replace("{identifying_properties_section}", content_identifying_properties_section)
     else:
-        content = content.replace("{identifying_properties_table}", "<i>No identifying properties.</i>")
+        content = content.replace("{identifying_properties_section}", "")
 
     if content_reference_properties_section := _gendoc_reference_properties_section(schema, include_all):
         content = content.replace("{reference_properties_section}", content_reference_properties_section)
     else:
         content = content.replace("{reference_properties_section}", "")
-#   if content_reference_properties_table := _gendoc_reference_properties_table(schema, include_all):
-#       content_reference_properties_table = _normalize_spaces(content_reference_properties_table)
-#       content = content.replace("{reference_properties_table}", content_reference_properties_table)
-#   else:
-#       content = content.replace("{reference_properties_table}", "<i>No reference properties.</i>")
 
     if content_properties_table := _gendoc_properties_table(schema, include_all):
         content_properties_table = _normalize_spaces(content_properties_table)
         content = content.replace("{properties_table}", content_properties_table)
 
     return content
+
+
+def _gendoc_required_properties_section(schema: dict, include_all: bool = False) -> str:
+    content = ""
+    if content_required_properties_table := _gendoc_required_properties_table(schema, include_all):
+        if not (content := _get_template("required_properties_section")):
+            return content
+        content_required_properties_table = _normalize_spaces(content_required_properties_table)
+        content = content.replace("{required_properties_table}", content_required_properties_table)
+    return content
+
+
+def _gendoc_identifying_properties_section(schema: dict, include_all: bool = False) -> str:
+    content = ""
+    if content_identifying_properties_table := _gendoc_identifying_properties_table(schema, include_all):
+        if not (content := _get_template("identifying_properties_section")):
+            return content
+        content_identifying_properties_table = _normalize_spaces(content_identifying_properties_table)
+        content = content.replace("{identifying_properties_table}", content_identifying_properties_table)
+    return content
+
 
 def _gendoc_reference_properties_section(schema: dict, include_all: bool = False) -> str:
     content = ""
@@ -158,6 +184,7 @@ def _gendoc_reference_properties_section(schema: dict, include_all: bool = False
         content_reference_properties_table = _normalize_spaces(content_reference_properties_table)
         content = content.replace("{reference_properties_table}", content_reference_properties_table)
     return content
+
 
 def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -> str:
     content = ""
@@ -234,7 +261,8 @@ def _gendoc_reference_properties_table(schema: dict, include_all: bool = False) 
         return content
     if not (properties := schema.get("properties", [])):
         return content
-    if not (reference_properties := [property_name for property_name in properties if properties[property_name].get("linkTo")]):
+    if not (reference_properties := [property_name for property_name in properties
+                                     if properties[property_name].get("linkTo")]):
         return content
     if not (template_reference_properties_table := _get_template("reference_properties_table")):
         return content
@@ -316,11 +344,13 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 if property_array_type := property_items.get("type"):
                     property_type = f"<b>{property_type}</b> of <b>{property_array_type}</b>"
                     if property_array_type == "object":
-                        xyza = _gendoc_properties_table(property_items, include_all=include_all, _level=_level + 1, _parents=_parents + [property_name])
+                        xyza = _gendoc_properties_table(property_items, include_all=include_all,
+                                                        _level=_level + 1, _parents=_parents + [property_name])
             if property.get("uniqueItems"):
                 property_attributes.append("unique")
         elif property_type == "object":
-            xyz = _gendoc_properties_table(property, include_all=include_all, _level=_level + 1, _parents=_parents + [property_name])
+            xyz = _gendoc_properties_table(property, include_all=include_all,
+                                           _level=_level + 1, _parents=_parents + [property_name])
         if property_description := property.get("description", "").strip():
             if not property_description.endswith("."):
                 property_description += "."
@@ -347,9 +377,13 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             for enum_value in enum:
                 if isinstance(enum_value, str) and len(enum_value) > 60:
                     property_name += f"<br />&nbsp;•&nbsp;{enum_value[0:32]}"
-                    property_name += f"<br />&nbsp;&nbsp;&nbsp;{enum_value[32:]}{'&nbsp;←&nbsp;<small><b>default</b></small>' if enum_value == default else ''}"
+                    property_name += (
+                        f"<br />&nbsp;&nbsp;&nbsp;{enum_value[32:]}"
+                        f"{'&nbsp;←&nbsp;<small><b>default</b></small>' if enum_value == default else ''}")
                 else:
-                    property_name += f"<br />&nbsp;•&nbsp;{enum_value}{'&nbsp;←&nbsp;<small><b>default</b></small>' if enum_value == default else ''}"
+                    property_name += (
+                        f"<br />&nbsp;•&nbsp;{enum_value}"
+                        f"{'&nbsp;←&nbsp;<small><b>default</b></small>' if enum_value == default else ''}")
             property_name += f"</span>"
         elif isinstance(property_type, list):  # TODO
             property_type = " or ".join(property_type)
@@ -401,6 +435,7 @@ def _update_index_doc(schemas: dict) -> None:
         if line.strip() == magic_string:
             lines = lines[:index+1]
             break
+    import pdb ; pdb.set_trace()
     with io.open(INDEX_DOC_FILE, "w") as f:
         f.writelines(lines)
         f.write(f"\n")
@@ -408,6 +443,8 @@ def _update_index_doc(schemas: dict) -> None:
         f.write("  :caption: Types  🔍\n")
         f.write("  :maxdepth: 1\n\n")
         for schema_name in schemas:
+            if schema_name in _IGNORE_TYPES:
+                continue
             f.write(f"  schemas/{schema_name}\n")
 
 

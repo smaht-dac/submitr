@@ -18,16 +18,11 @@ Required Properties
     <table class="schema-table" width="100%"> <tr> <th> Property </td> <th> Type </td> <th> Description </td> </tr> <tr> <td width="5%"> <b>required</b> </td> <td> string </td> <td> <i>See below for more details.</i> </td> </tr> </table>
 |
 
-Identifying Properties
-~~~~~~~~~~~~~~~~~~~~~~
 
-.. raw:: html
 
-    <i>No identifying properties.</i>
-|
 
 Reference Properties
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 .. raw:: html
 

@@ -10,13 +10,7 @@ Image
     In the <i>Properties</i> section, properties in <span style='color:red'>red</span> are <i>required</i> properties,
     and those in <span style='color:blue'>blue</span> are <i>identifying</i> properties. <p />
 
-Required Properties
-~~~~~~~~~~~~~~~~~~~
 
-.. raw:: html
-
-    <i>No required properties.</i>
-|
 
 Identifying Properties
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -25,6 +19,7 @@ Identifying Properties
 
     <table class="schema-table" width="100%"> <tr> <th> Property </td> <th> Type </td> <th> Description </td> </tr> <tr> <td width="5%"> <b>aliases</b> </td> <td> array of string </td> <td> <i>See below for more details.</i> </td> </tr> <tr> <td width="5%"> <b>uuid</b> </td> <td> string </td> <td> <i>See below for more details.</i> </td> </tr> </table>
 |
+
 
 
 

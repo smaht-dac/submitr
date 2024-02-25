@@ -18,6 +18,7 @@ Required Properties
     <table class="schema-table" width="100%"> <tr> <th> Property </td> <th> Type </td> <th> Description </td> </tr> <tr> <td width="5%"> <b>identifier</b> </td> <td> string </td> <td> <i>See below for more details.</i> </td> </tr> <tr> <td width="5%"> <b>view_config</b> </td> <td> object </td> <td> <i>See below for more details.</i> </td> </tr> </table>
 |
 
+
 Identifying Properties
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -25,6 +26,7 @@ Identifying Properties
 
     <table class="schema-table" width="100%"> <tr> <th> Property </td> <th> Type </td> <th> Description </td> </tr> <tr> <td width="5%"> <b>aliases</b> </td> <td> array of string </td> <td> <i>See below for more details.</i> </td> </tr> <tr> <td width="5%"> <b>identifier</b> </td> <td> string </td> <td> <i>See below for more details.</i> </td> </tr> <tr> <td width="5%"> <b>uuid</b> </td> <td> string </td> <td> <i>See below for more details.</i> </td> </tr> </table>
 |
+
 
 
 
