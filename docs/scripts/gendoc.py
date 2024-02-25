@@ -348,6 +348,8 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                     if property_array_type == "object":
                         xyza = _gendoc_properties_table(property_items, include_all=include_all,
                                                         _level=_level + 1, _parents=_parents + [property_name])
+                if max_length := property_items.get("maxLength"):
+                    property_attributes.append(f"max items: {max_length}")
             if property.get("uniqueItems"):
                 property_attributes.append("unique")
         elif property_type == "object":
@@ -393,10 +395,14 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             property_type = " or ".join(property_type)
         elif not property_type.startswith("<b>array"):  # TODO
             property_type = f"<b>{property_type}</b>"
+            if default is not None:
+                if isinstance(default, bool):
+                    default = str(default).lower()
+                property_type += f"<span style='font-weight:normal'><br />•&nbsp;default: {default}</span>"
         if property_attributes:
             property_type = f"<u>{property_type}</u><br />"
             for property_attribute in property_attributes:
-                property_type += f"•&nbsp;{property_attribute}"
+                property_type += f"•&nbsp;{property_attribute}<br />"
         if (format := property.get("format")) and (format != save_property_name):
             property_type += f"<br />•&nbsp;format: {format}"
         if pattern := property.get("pattern"):
