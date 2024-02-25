@@ -551,7 +551,7 @@ def _normalize_spaces(value: str) -> str:
 
 def _get_current_datetime_string():
     tzlocal = datetime.now().astimezone().tzinfo
-    return datetime.now().astimezone(tzlocal).strftime(f"%-I:%M %p %Z | %A, %B %-d, %Y")
+    return datetime.now().astimezone(tzlocal).strftime(f"%A, %B %-d, %Y | %-I:%M %p %Z")
 
 
 def _usage(message: Optional[str] = None) -> None:
