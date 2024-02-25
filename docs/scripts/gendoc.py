@@ -213,7 +213,7 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False,
     content = content.replace("{generated_datetime}", _get_current_datetime_string())
     if portal:
         content = content.replace("{generated_server}", portal.server)
-    return content
+    return _cleanup_content(content)
 
 
 def _gendoc_referencing_schemas(schema_name: str, schemas: dict) -> str:
@@ -565,6 +565,10 @@ def _get_template(name: str) -> str:
     template_file = f"{TEMPLATES_DIR}/{name}.html"
     with io.open(template_file, "r") as f:
         return f.read()
+
+
+def _cleanup_content(content: str) -> str:
+    return re.sub(r"\{\w+\}", "", content)
 
 
 def _normalize_spaces(value: str) -> str:

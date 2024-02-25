@@ -6,7 +6,7 @@ LibraryPreparation
 
 .. raw:: html
 
-    Description of properties for the SMaHT Portal 
+    Summary of properties for the SMaHT Portal 
     object type <a target="_blank" href="https://data.smaht.org/profiles/LibraryPreparation.json?format=json" style="color:black"><b>LibraryPreparation</b> 🔗</a>.
     Its <b>parent</b> type is <b><a href=Preparation.html style='color:green'>Preparation</a></b>.
     
@@ -49,4 +49,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 2:55 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:03 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]

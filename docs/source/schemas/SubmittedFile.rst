@@ -6,7 +6,7 @@ SubmittedFile
 
 .. raw:: html
 
-    Description of properties for the SMaHT Portal <u>abstract</u>
+    Summary of properties for the SMaHT Portal <u>abstract</u>
     object type <a target="_blank" href="https://data.smaht.org/profiles/SubmittedFile.json?format=json" style="color:black"><b>SubmittedFile</b> 🔗</a>.
     Its <b>parent</b> type is <b><a href=File.html style='color:green'>File</a></b>.
     Its <b>derived</b> types are: <a href='AlignedReads.html'>AlignedReads</a>, <a href='UnalignedReads.html'>UnalignedReads</a>, <a href='VariantCalls.html'>VariantCalls</a>.
@@ -57,4 +57,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 2:55 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:03 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]

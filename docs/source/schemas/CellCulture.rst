@@ -6,7 +6,7 @@ CellCulture
 
 .. raw:: html
 
-    Description of properties for the SMaHT Portal 
+    Summary of properties for the SMaHT Portal 
     object type <a target="_blank" href="https://data.smaht.org/profiles/CellCulture.json?format=json" style="color:black"><b>CellCulture</b> 🔗</a>.
     Its <b>parent</b> type is <b><a href=SampleSource.html style='color:green'>SampleSource</a></b>.
     Its <b>derived</b> types are: <a href='CellCultureMixture.html'>CellCultureMixture</a>.
@@ -57,4 +57,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 2:55 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:03 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]

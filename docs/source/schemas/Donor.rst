@@ -6,7 +6,7 @@ Donor
 
 .. raw:: html
 
-    Description of properties for the SMaHT Portal 
+    Summary of properties for the SMaHT Portal 
     object type <a target="_blank" href="https://data.smaht.org/profiles/Donor.json?format=json" style="color:black"><b>Donor</b> 🔗</a>.
     
     
@@ -49,4 +49,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 2:55 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:03 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
