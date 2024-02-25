@@ -48,4 +48,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Last generated: 12:54 PM EST | Sunday, February 25, 2024 | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Last generated: Sunday, February 25, 2024 | 12:56 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
