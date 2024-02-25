@@ -133,20 +133,28 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False) -> str:
     return content
 
 
-def _gendoc_properties_table(schema: dict, include_all: bool = False) -> str:
+def _gendoc_properties_table(schema: dict, include_all: bool = False,
+                             _level: int = 0, _parents: List[str] = []) -> str:
     content = ""
     if not isinstance(schema, dict) or not schema:
         return content
     if not (properties := schema.get("properties")):
         return content
-    if not (template_properties_table := _get_template("properties_table")):
-        return content
+    if _level == 0:
+        if not (template_properties_table := _get_template("properties_table")):
+            return content
     if not (template_property_row := _get_template("property_row")):
         return content
+    if _parents:
+        template_property_row = template_property_row.replace("{property_row_indent}", "padding-left:20pt")
+    else:
+        template_property_row = template_property_row.replace("{property_row_indent}", "")
     required_properties = schema.get("required", [])
     identifying_properties = schema.get("identifyingProperties", [])
     content_property_rows = ""
     for property_name in {key: properties[key] for key in sorted(properties)}:
+        xyz = ""
+        xyza = ""
         save_property_name = property_name
         if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
             continue
@@ -160,8 +168,12 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False) -> str:
             if property_items := property.get("items"):
                 if property_array_type := property_items.get("type"):
                     property_type = f"<b>{property_type}</b> of <b>{property_array_type}</b>"
+                    if property_array_type == "object":
+                        xyza = _gendoc_properties_table(property_items, include_all=include_all, _level=_level + 1, _parents=_parents + [property_name])
             if property.get("uniqueItems"):
                 property_attributes.append("unique")
+        elif property_type == "object":
+            xyz = _gendoc_properties_table(property, include_all=include_all, _level=_level + 1, _parents=_parents + [property_name])
         if property_description := property.get("description", "").strip():
             if not property_description.endswith("."):
                 property_description += "."
@@ -184,10 +196,17 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False) -> str:
         elif enum := property.get("enum", []):
             property_type = f"<b>enum</b> of {property_type}"
             property_name = f"<u>{property_name}</u><span style='font-weight:normal;font-family:arial;color:#222222;'>"
+            # application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
             for enum_value in enum:
-                property_name += f"<br />&nbsp;•&nbsp;{enum_value}{'&nbsp;←&nbsp;<small><b>default</b></small>' if enum_value == default else ''}"
+                if isinstance(enum_value, str) and len(enum_value) > 60:
+                    property_name += f"<br />&nbsp;•&nbsp;{enum_value[0:32]}"
+                    property_name += f"<br />&nbsp;&nbsp;&nbsp;{enum_value[32:]}{'&nbsp;←&nbsp;<small><b>default</b></small>' if enum_value == default else ''}"
+                else:
+                    property_name += f"<br />&nbsp;•&nbsp;{enum_value}{'&nbsp;←&nbsp;<small><b>default</b></small>' if enum_value == default else ''}"
             property_name += f"</span>"
-        elif not property_type.startswith("<b>array"):
+        elif isinstance(property_type, list):  # TODO
+            property_type = " or ".join(property_type)
+        elif not property_type.startswith("<b>array"):  # TODO
             property_type = f"<b>{property_type}</b>"
         if property_attributes:
             property_type = f"<u>{property_type}</u><br />"
@@ -197,12 +216,27 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False) -> str:
             property_type += f"<br />•&nbsp;format: {format}"
         if pattern := property.get("pattern"):
             property_description += f"<br /><b>pattern</b>: <small style='font-family:monospace;'>{pattern}</small>"
+        if _parents:
+            content_parents = "<span style='font-weight:normal;'>"
+            for index, parent in enumerate(_parents):
+                if index > 0:
+                    content_parents += f" <b>.</b> "
+                content_parents += f"{parent}"
+            content_parents += "</span>"
+            property_name = f"{content_parents} <b>.</b> {property_name}"
         content_property_row = content_property_row.replace("{property_name}", property_name)
         content_property_row = content_property_row.replace("{property_type}", property_type)
         content_property_row = content_property_row.replace("{property_description}", property_description or "-")
         content_property_rows += content_property_row
-    content = template_properties_table
-    content = content.replace("{property_rows}", content_property_rows)
+        if xyz:
+            content_property_rows += xyz
+        elif xyza:
+            content_property_rows += xyza
+    if _level == 0:
+        content = template_properties_table
+        content = content.replace("{property_rows}", content_property_rows)
+    else:
+        content = content_property_rows
     return content
 
 
