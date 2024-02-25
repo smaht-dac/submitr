@@ -14,7 +14,7 @@ from dcicutils.portal_utils import Portal
 
 
 # Schema types/properties to ignore (by default) for the view schema usage.
-_IGNORE_TYPES = [
+IGNORE_TYPES = [
     "AccessKey",
     "IngestionSubmission",
     "MetaWorkflow",
@@ -27,7 +27,7 @@ _IGNORE_TYPES = [
     "Workflow",
     "WorkflowRun",
 ]
-_IGNORE_PROPERTIES = [
+IGNORE_PROPERTIES = [
     "@id",
     "@type",
     "date_created",
@@ -43,6 +43,7 @@ TEMPLATES_DIR = f"{THIS_DIR}/../schema_templates"
 DOCS_DIR = f"{THIS_DIR}/../source"
 OUTPUT_DIR = f"{DOCS_DIR}/schemas"
 INDEX_DOC_FILE = f"{DOCS_DIR}/schema_types.rst"
+INDEX_DOC_FILE_MAGIC_STRING =  ".. DO NOT TOUCH THIS LINE! USED BY gendoc SCRIPT!"
 
 
 def main():
@@ -68,7 +69,7 @@ def main():
     if not args.schema or args.schema.lower() in ["schemas", "schema"]:
         schemas = _get_schemas(portal)
         for schema_name in schemas:
-            if schema_name in _IGNORE_TYPES:
+            if schema_name in IGNORE_TYPES:
                 continue
             schema = schemas[schema_name]
             schema_doc = _gendoc(schema_name, schema, include_all=args.all, schemas=schemas, portal=portal)
@@ -76,7 +77,7 @@ def main():
     elif args.schema:
         schema, schema_name = _get_schema(portal, args.schema)
         if schema and schema_name:
-            schema_doc = _gendoc(schema_name, schema, include_all=args.all)
+            schema_doc = _gendoc(schema_name, schema, include_all=args.all, portal=portal)
             _write_doc(schema_name, schema_doc)
     else:
         _usage()
@@ -120,7 +121,7 @@ def _get_schema(portal: Portal, name: str) -> Tuple[Optional[dict], Optional[str
     return None, None
 
 
-def _get_parent_schema_name(schema: dict) -> Optional[str]:
+def _get_parent_schema(schema: dict) -> Optional[str]:
     if sub_class_of := schema.get("rdfs:subClassOf"):
         if (parent_schema_name := os.path.basename(sub_class_of).replace(".json", "")) != "Item":
             return parent_schema_name
@@ -129,12 +130,12 @@ def _get_parent_schema_name(schema: dict) -> Optional[str]:
 def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
     result = []
     for this_schema_name in schemas:
-        if this_schema_name == schema_name or this_schema_name in _IGNORE_TYPES:
+        if this_schema_name == schema_name or this_schema_name in IGNORE_TYPES:
             continue
         schema = schemas[this_schema_name]
         if properties := schema.get("properties"):
             for property_name in properties:
-                if property_name in _IGNORE_PROPERTIES:
+                if property_name in IGNORE_PROPERTIES:
                     continue
                 property = properties[property_name]
                 if property.get("linkTo") == schema_name:
@@ -145,21 +146,21 @@ def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
 def _get_derived_schemas(schema_name: str, schemas: dict) -> List[str]:
     result = []
     for this_schema_name in schemas:
-        if this_schema_name == schema_name or this_schema_name in _IGNORE_TYPES:
+        if this_schema_name == schema_name or this_schema_name in IGNORE_TYPES:
             continue
-        if _get_parent_schema_name(schemas[this_schema_name]) == schema_name:
+        if _get_parent_schema(schemas[this_schema_name]) == schema_name:
             result.append(this_schema_name)
     return result
 
 
-def _gendoc(schema_name: str, schema: dict, include_all: bool = False,
-            schemas: Optional[dict] = None, portal: Portal = None) -> str:
+def _gendoc(schema_name: str, schema: dict, include_all: bool, schemas: dict, portal: Portal) -> str:
     content = ""
     if not (content := _get_template("schema")):
         return content
     content_schema_title = f"{'=' * len(schema_name)}\n{schema_name}\n{'=' * len(schema_name)}\n\n"
     content = content.replace("{schema_title}", content_schema_title)
     content = content.replace("{schema_name}", schema_name)
+
     if schema.get("isAbstract") is True:
         content = content.replace("{schema_abstract}", "<u>abstract</u>")
     if schema_description := schema.get("description"):
@@ -167,19 +168,17 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False,
             schema_description += "."
         content = content.replace("{schema_description}", f"<br /><u>Description</u>: {schema_description}")
 
-    if parent_schema_name := _get_parent_schema_name(schema):
+    if parent_schema_name := _get_parent_schema(schema):
         content = content.replace("{parent_schema}",
-                                  f"Its <b>parent</b> type is: "
-                                  f"<a href={parent_schema_name}.html>"
+                                  f"Its <b>parent</b> type is: <a href={parent_schema_name}.html>"
                                   f"<u>{parent_schema_name}</u></a>.")
 
-    if schemas and (content_derived_schemas := _gendoc_derived_schemas(schema_name, schemas)):
-        content_derived_schemas = f"Its <b>derived</b> types are: {content_derived_schemas}."
-        content = content.replace("{derived_schemas}", content_derived_schemas)
+    if content_derived_schemas := _gendoc_derived_schemas(schema_name, schemas):
+        content = content.replace("{derived_schemas}", f"Its <b>derived</b> types are: {content_derived_schemas}.")
 
-    if schemas and (content_referencing_schemas := _gendoc_referencing_schemas(schema_name, schemas)):
-        content_referencing_schemas = f"Types <b>referencing</b> this type are: {content_referencing_schemas}."
-        content = content.replace("{referencing_schemas}", content_referencing_schemas)
+    if content_referencing_schemas := _gendoc_referencing_schemas(schema_name, schemas):
+        content = content.replace("{referencing_schemas}",
+                                  f"Types <b>referencing</b> this type are: {content_referencing_schemas}.")
 
     if content_required_properties_section := _gendoc_required_properties_section(schema, include_all):
         content = content.replace("{required_properties_section}", content_required_properties_section)
@@ -191,12 +190,10 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False,
         content = content.replace("{reference_properties_section}", content_reference_properties_section)
 
     if content_properties_table := _gendoc_properties_table(schema, include_all):
-        content_properties_table = _normalize_spaces(content_properties_table)
         content = content.replace("{properties_table}", content_properties_table)
 
     content = content.replace("{generated_datetime}", _get_current_datetime_string())
-    if portal:
-        content = content.replace("{generated_server}", portal.server)
+    content = content.replace("{generated_server}", portal.server)
     return _cleanup_content(content)
 
 
@@ -242,7 +239,7 @@ def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -
         return content
     simple_properties = []
     for property_name in sorted(list(set(required_properties))):
-        if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
+        if not property_name or not include_all and property_name in IGNORE_PROPERTIES:
             continue
         if not (property := properties[property_name]):
             continue
@@ -292,7 +289,7 @@ def _gendoc_identifying_properties_table(schema: dict, include_all: bool = False
         return content
     simple_properties = []
     for property_name in identifying_properties:
-        if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
+        if not property_name or not include_all and property_name in IGNORE_PROPERTIES:
             continue
         if not (property := properties[property_name]):
             continue
@@ -332,7 +329,7 @@ def _gendoc_reference_properties_table(schema: dict, include_all: bool = False) 
         return content
     simple_properties = []
     for property_name in reference_properties:
-        if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
+        if not property_name or not include_all and property_name in IGNORE_PROPERTIES:
             continue
         if not (property := properties[property_name]):
             continue
@@ -398,7 +395,7 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
     for property_name in {key: properties[key] for key in sorted(properties)}:
         content_nested_object = ""
         content_nested_array = ""
-        if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
+        if not property_name or not include_all and property_name in IGNORE_PROPERTIES:
             continue
         if not (property := properties[property_name]):
             continue
@@ -516,7 +513,7 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         content = content.replace("{property_rows}", content_property_rows)
     else:
         content = content_property_rows
-    return content
+    return _normalize_spaces(content)
 
 
 def _write_doc(schema_name: str, schema_doc_content: str) -> None:
@@ -526,21 +523,17 @@ def _write_doc(schema_name: str, schema_doc_content: str) -> None:
 
 
 def _update_index_doc(schemas: dict) -> None:
-    magic_string = ".. DO NOT TOUCH THIS LINE: USED BY generate_schema_doc SCRIPT!"
     with io.open(INDEX_DOC_FILE, "r") as f:
         lines = f.readlines()
     for index, line in enumerate(lines):
-        if line.strip() == magic_string:
+        if line.strip() == INDEX_DOC_FILE_MAGIC_STRING:
             lines = lines[:index+1]
             break
     with io.open(INDEX_DOC_FILE, "w") as f:
         f.writelines(lines)
         f.write(f"\n")
-        f.write(".. toctree::\n")
-        f.write("  :caption: Types  🔍\n")
-        f.write("  :maxdepth: 1\n\n")
         for schema_name in {key: schemas[key] for key in sorted(schemas)}:
-            if schema_name in _IGNORE_TYPES:
+            if schema_name in IGNORE_TYPES:
                 continue
             f.write(f"  schemas/{schema_name}\n")
 
