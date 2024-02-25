@@ -14,7 +14,7 @@ Document
     Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties.
     
     <p />
-    <br /><u>Description</u>: Data content and metadata, typically for simple files (text, pdf, etc.)
+    <br /><u>Description</u>: Data content and metadata, typically for simple files (text, pdf, etc.).
 
 
 
@@ -40,4 +40,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Last generated: 12:44 PM EST | Sunday, February 25, 2024 | <a target="_blank" href="http://localhost:8000">http://localhost:8000</a></small> ]
+    <br />[ <small>Last generated: 12:46 PM EST | Sunday, February 25, 2024 | <a target="_blank" href="http://localhost:8000">http://localhost:8000</a></small> ]
