@@ -398,13 +398,13 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
     for property_name in {key: properties[key] for key in sorted(properties)}:
         content_nested_object = ""
         content_nested_array = ""
-        save_property_name = property_name
         if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
             continue
         if not (property := properties[property_name]):
             continue
         if not (property_type := property.get("type")):
             continue
+        save_property_name = property_name
         property_attributes = []
         link_to = property.get("linkTo")
         if property_type == "array":
@@ -433,8 +433,6 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         if not property_description and save_property_name == "uuid":
             property_description = "Unique ID by which this object is identified."
         content_property_row = template_property_row
-        if property_name == "identifier":
-            pass
         if property_name in required_properties:
             property_name = f"<span style='color:red'>{property_name}</span>"
         elif property_name in identifying_properties:
