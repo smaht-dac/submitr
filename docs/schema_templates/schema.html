@@ -2,8 +2,13 @@
 {schema_name}
 ====
 
-Description of properties for the SMaHT Portal schema for **{schema_name}**.
-{parent_schema_sentence}
+.. raw:: html
+
+    Description of properties for the SMaHT Portal schema for <b>{schema_name}</b>.
+    {parent_schema_sentence}
+    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties.
+    In the <i>Properties</i> section, properties in <span style='color:red'>red</span> are <i>required</i> properties,
+    and those in <span style='color:blue'>blue</span> are <i>identifying</i> properties. <p />
 
 Required Properties
 ~~~~~~~~~~~~~~~~~~~
@@ -11,7 +16,6 @@ Required Properties
 .. raw:: html
 
     {required_properties_table}
-
 |
 
 Identifying Properties
@@ -20,16 +24,14 @@ Identifying Properties
 .. raw:: html
 
     {identifying_properties_table}
-
 |
+
+{reference_properties_section}
 
 Properties
 ~~~~~~~~~~
 
 .. raw:: html
 
-    Properties in <span style='color:red'>red</span> are <i>required</i> properties.
-    Properties in <span style='color:blue'>blue</span> are <i>identifying</i> properties. <p />
-    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties. <p />
     {properties_table}
     <p />
