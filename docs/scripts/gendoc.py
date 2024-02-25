@@ -338,11 +338,11 @@ def _gendoc_reference_properties_table(schema: dict, include_all: bool = False) 
             continue
         if not (property_type := property.get("type")):
             continue
-        if not (link_to := property.get("linkTo")):
+        if not (property_link_to := property.get("linkTo")):
             continue
         property_type = (
-            f"<a href={link_to}.html style='font-weight:bold;color:green;'>"
-            f"{link_to}</a><br /><span style='color:green;'>{property_type}</span>")
+            f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
+            f"{property_link_to}</a><br /><span style='color:green;'>{property_type}</span>")
         if property_type == "array":
             if property_items := property.get("items"):
                 if property_array_type := property_items.get("type"):
@@ -404,9 +404,10 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             continue
         if not (property_type := property.get("type")):
             continue
-        save_property_name = property_name
+        content_property_row = template_property_row
+        content_property_name = property_name
         property_attributes = []
-        link_to = property.get("linkTo")
+        property_link_to = property.get("linkTo")
         if property_type == "array":
             if property_items := property.get("items"):
                 if property_array_type := property_items.get("type"):
@@ -430,16 +431,14 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             property_internal_comment = "[" + property_internal_comment + "]"
             if property_description:
                 property_description += " " + property_internal_comment
-        if not property_description and save_property_name == "uuid":
+        if not property_description and property_name == "uuid":
             property_description = "Unique ID by which this object is identified."
-        content_property_row = template_property_row
-        content_property_name = property_name
         if property_name in required_properties:
             content_property_name = f"<span style='color:red'>{property_name}</span>"
         elif property_name in identifying_properties:
             content_property_name = f"<span style='color:blue'>{property_name}</span>"
         default = property.get("default")
-        if (format := property.get("format")) and (format != save_property_name):
+        if (format := property.get("format")) and (format != property_name):
             property_attributes.append(f"format: {format}")
         if property.get("calculatedProperty"):
             property_attributes.append(f"calculated")
@@ -448,10 +447,10 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 (any_of == [{"format": "date-time"}, {"format": "date"}])):  # noqa
                 # Very special case.
                 property_attributes.append(f"format: date | date-time")
-        if link_to:
+        if property_link_to:
             property_type = (
-                f"<a href={link_to}.html style='font-weight:bold;color:green;'>"
-                f"{link_to}</a><br /><span style='color:green;'>{property_type}</span>")
+                f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
+                f"{property_link_to}</a><br /><span style='color:green;'>{property_type}</span>")
         elif enum := property.get("enum", []):
             property_type = f"<b>enum</b> of {property_type}"
             content_property_name = (
@@ -486,9 +485,9 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             for property_attribute in property_attributes:
                 property_type += f"•&nbsp;{property_attribute}<br />"
         if pattern := property.get("pattern"):
-            if save_property_name in required_properties:
+            if property_name in required_properties:
                 color = "red"
-            elif save_property_name in identifying_properties:
+            elif property_name in identifying_properties:
                 color = "blue"
             else:
                 color = "inherit"
