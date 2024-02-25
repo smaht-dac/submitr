@@ -4,12 +4,13 @@ TestingLinkedSchemaField
 
 Description of properties for the SMaHT Portal schema for **TestingLinkedSchemaField**.
 
+
 Required Properties
 ~~~~~~~~~~~~~~~~~~~
 
 .. raw:: html
 
-    {required_properties_table}
+    <i>No required properties.</i>
 
 |
 
@@ -27,4 +28,8 @@ Properties
 
 .. raw:: html
 
-    <table class="schema-table" width="100%"> <tr> <th> Name </td> <th> Type </td> <th> Attributes </td> <th> Description </td> </tr> <tr> <td width="5%"> <b>display_title</b> </td> <td> string </td> <td> property-attributes-todo </td> <td> A calculated title for every object. </td> </tr> </table>
+    Properties in <span style='color:red'>red</span> are <i>required</i> properties.
+    Properties in <span style='color:blue'>blue</span> are <i>identifying</i> properties. <p />
+    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties. <p />
+    <table class="schema-table" width="104%"> <tr> <th> Property </td> <th> Type </td> <th> Description </td> </tr> <tr> <td width="5%" style="white-space:nowrap;"> <b>display_title</b> </td> <td width="15%" style="white-space:nowrap;"> <b>string</b> </td> <td width="80%"> A calculated title for every object. </td> </tr> </table>
+    <p />
