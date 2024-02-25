@@ -6,7 +6,7 @@ VariantCalls
 
 .. raw:: html
 
-    Description of properties for the SMaHT Portal object type <b>VariantCalls</b>.
+    Description of properties for the SMaHT Portal  object type <b>VariantCalls</b>.
     Its <b>parent</b> type is <b><a href=SubmittedFile.html style='color:green'>SubmittedFile</a></b>.
     Property names which are <span style='color:red'>red</span> are <i>required</i> properties;
     and those in <span style='color:blue'>blue</span> are <i>identifying</i> properties.

@@ -6,7 +6,7 @@ LibraryPreparation
 
 .. raw:: html
 
-    Description of properties for the SMaHT Portal object type <b>LibraryPreparation</b>.
+    Description of properties for the SMaHT Portal  object type <b>LibraryPreparation</b>.
     Its <b>parent</b> type is <b><a href=Preparation.html style='color:green'>Preparation</a></b>.
     Property names which are <span style='color:red'>red</span> are <i>required</i> properties;
     and those in <span style='color:blue'>blue</span> are <i>identifying</i> properties.
