@@ -7,7 +7,7 @@ MedicalHistory
 .. raw:: html
 
     Summary of properties for the SMaHT Portal 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/MedicalHistory.json?format=json" style="color:black"><b>MedicalHistory</b> 🔗</a>.
+    object type <a target="_blank" href="https://data.smaht.org/profiles/MedicalHistory.json?format=json" style="color:black"><b><u>MedicalHistory</u></b> 🔗</a>.
     
     
     Types <b>referencing</b> this type are: <a href='Diagnosis.html'>Diagnosis</a>, <a href='Exposure.html'>Exposure</a>, <a href='MolecularTest.html'>MolecularTest</a>, <a href='Therapeutic.html'>Therapeutic</a>.
@@ -49,4 +49,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:03 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:09 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]

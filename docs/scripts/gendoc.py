@@ -162,49 +162,33 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False,
     content = content.replace("{schema_name}", schema_name)
     if schema.get("isAbstract") is True:
         content = content.replace("{schema_abstract}", "<u>abstract</u>")
-    else:
-        content = content.replace("{schema_abstract}", "")
     if schema_description := schema.get("description"):
         if not schema_description.endswith("."):
             schema_description += "."
         content = content.replace("{schema_description}", f"<br /><u>Description</u>: {schema_description}")
-    else:
-        content = content.replace("{schema_description}", "")
 
     if parent_schema_name := _get_parent_schema_name(schema):
         content = content.replace("{parent_schema}",
-                                  f"Its <b>parent</b> type is <b>"
-                                  f"<a href={parent_schema_name}.html style='color:green'>"
-                                  f"{parent_schema_name}</a></b>.")
-    else:
-        content = content.replace("{parent_schema}", "")
+                                  f"Its <b>parent</b> type is: "
+                                  f"<a href={parent_schema_name}.html>"
+                                  f"{parent_schema_name}</a>.")
 
     if schemas and (content_derived_schemas := _gendoc_derived_schemas(schema_name, schemas)):
         content_derived_schemas = f"Its <b>derived</b> types are: {content_derived_schemas}."
         content = content.replace("{derived_schemas}", content_derived_schemas)
-    else:
-        content = content.replace("{derived_schemas}", "")
 
     if schemas and (content_referencing_schemas := _gendoc_referencing_schemas(schema_name, schemas)):
         content_referencing_schemas = f"Types <b>referencing</b> this type are: {content_referencing_schemas}."
         content = content.replace("{referencing_schemas}", content_referencing_schemas)
-    else:
-        content = content.replace("{referencing_schemas}", "")
 
     if content_required_properties_section := _gendoc_required_properties_section(schema, include_all):
         content = content.replace("{required_properties_section}", content_required_properties_section)
-    else:
-        content = content.replace("{required_properties_section}", "")
 
     if content_identifying_properties_section := _gendoc_identifying_properties_section(schema, include_all):
         content = content.replace("{identifying_properties_section}", content_identifying_properties_section)
-    else:
-        content = content.replace("{identifying_properties_section}", "")
 
     if content_reference_properties_section := _gendoc_reference_properties_section(schema, include_all):
         content = content.replace("{reference_properties_section}", content_reference_properties_section)
-    else:
-        content = content.replace("{reference_properties_section}", "")
 
     if content_properties_table := _gendoc_properties_table(schema, include_all):
         content_properties_table = _normalize_spaces(content_properties_table)

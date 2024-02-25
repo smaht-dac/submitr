@@ -7,7 +7,7 @@ Software
 .. raw:: html
 
     Summary of properties for the SMaHT Portal 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/Software.json?format=json" style="color:black"><b>Software</b> 🔗</a>.
+    object type <a target="_blank" href="https://data.smaht.org/profiles/Software.json?format=json" style="color:black"><b><u>Software</u></b> 🔗</a>.
     
     
     
@@ -49,4 +49,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:03 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:09 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
