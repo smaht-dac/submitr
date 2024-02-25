@@ -458,7 +458,12 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                         f"{'&nbsp;←&nbsp;<small><b>default</b></small>' if enum_value == default else ''}")
             property_name += f"</span>"
         elif isinstance(property_type, list):  # TODO
-            property_type = " or ".join(property_type)
+            property_types_string = ""
+            for type in property_type:
+                if property_types_string:
+                    property_types_string += " or<br />"
+                property_types_string += f"<b>{type}</b>"
+            property_type = property_types_string
         elif not property_type.startswith("<b>array"):  # TODO
             property_type = f"<b>{property_type}</b>"
             if default is not None:
@@ -477,7 +482,7 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             else:
                 color = "inherit"
             property_description += (
-                f"<br /><span style='color:{color};'><b>pattern</b>:&nbsp;"
+                f"<br />Must adhere to (regex) <span style='color:{color};'><b>pattern</b>:&nbsp;"
                 f"<small style='font-family:monospace;'>{pattern}</small></span>")
         if _parents:
             content_parents = "<span style='font-weight:normal;'>"
