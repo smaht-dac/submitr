@@ -6,7 +6,7 @@ Sample
 
 .. raw:: html
 
-    Summary of properties for the <a target="_blank" href="https://data.smaht.org">SMaHT Portal</a> <u>abstract</u>
+    Summary of properties for the <a target="_blank" href="https://data.smaht.org/search/?type=Sample">SMaHT Portal</a> <u>abstract</u>
     object type <a target="_blank" href="https://data.smaht.org/profiles/Sample.json?format=json" style="color:black"><b><u>Sample</u></b> 🔗</a>.
     
     Its <b>derived</b> types are: <a href='CellCultureSample.html'><u>CellCultureSample</u></a>, <a href='CellSample.html'><u>CellSample</u></a>, <a href='TissueSample.html'><u>TissueSample</u></a>.
@@ -57,4 +57,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 4:03 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 4:08 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
