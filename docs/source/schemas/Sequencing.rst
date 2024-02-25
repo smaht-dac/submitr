@@ -6,8 +6,8 @@ Sequencing
 
 .. raw:: html
 
-    Description of properties for the SMaHT Portal 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/Sequencing.json?format=json" style="color:black"><b>Sequencing</b> 🔗</a>.
+    Summary of properties for the SMaHT Portal 
+    object type <a target="_blank" href="https://data.smaht.org/profiles/Sequencing.json?format=json" style="color:black"><b><u>Sequencing</u></b> 🔗</a>.
     
     
     Types <b>referencing</b> this type are: <a href='FileSet.html'>FileSet</a>.
@@ -57,4 +57,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 2:55 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:09 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]

@@ -6,8 +6,8 @@ FileFormat
 
 .. raw:: html
 
-    Description of properties for the SMaHT Portal 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/FileFormat.json?format=json" style="color:black"><b>FileFormat</b> 🔗</a>.
+    Summary of properties for the SMaHT Portal 
+    object type <a target="_blank" href="https://data.smaht.org/profiles/FileFormat.json?format=json" style="color:black"><b><u>FileFormat</u></b> 🔗</a>.
     
     
     Types <b>referencing</b> this type are: <a href='AlignedReads.html'>AlignedReads</a>, <a href='File.html'>File</a>, <a href='OutputFile.html'>OutputFile</a>, <a href='ReferenceFile.html'>ReferenceFile</a>, <a href='SubmittedFile.html'>SubmittedFile</a>, <a href='UnalignedReads.html'>UnalignedReads</a>, <a href='VariantCalls.html'>VariantCalls</a>.
@@ -49,4 +49,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 2:55 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:09 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]

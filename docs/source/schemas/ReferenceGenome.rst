@@ -6,8 +6,8 @@ ReferenceGenome
 
 .. raw:: html
 
-    Description of properties for the SMaHT Portal 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/ReferenceGenome.json?format=json" style="color:black"><b>ReferenceGenome</b> 🔗</a>.
+    Summary of properties for the SMaHT Portal 
+    object type <a target="_blank" href="https://data.smaht.org/profiles/ReferenceGenome.json?format=json" style="color:black"><b><u>ReferenceGenome</u></b> 🔗</a>.
     
     
     Types <b>referencing</b> this type are: <a href='AlignedReads.html'>AlignedReads</a>, <a href='OutputFile.html'>OutputFile</a>, <a href='VariantCalls.html'>VariantCalls</a>.
@@ -49,4 +49,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 2:55 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:09 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]

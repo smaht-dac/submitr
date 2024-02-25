@@ -6,8 +6,8 @@ Consortium
 
 .. raw:: html
 
-    Description of properties for the SMaHT Portal 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/Consortium.json?format=json" style="color:black"><b>Consortium</b> 🔗</a>.
+    Summary of properties for the SMaHT Portal 
+    object type <a target="_blank" href="https://data.smaht.org/profiles/Consortium.json?format=json" style="color:black"><b><u>Consortium</u></b> 🔗</a>.
     
     
     
@@ -49,4 +49,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 2:55 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:09 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
