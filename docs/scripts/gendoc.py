@@ -135,7 +135,7 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False) -> str:
 
     if parent_schema_name := _get_parent_schema_name(schema):
         content = content.replace("{parent_schema_sentence}",
-                                  f"Its <b>parent</b> schema is <b>"
+                                  f"Its <b>parent</b> type is <b>"
                                   f"<a href={parent_schema_name}.html style='color:green'>"
                                   f"{parent_schema_name}</a></b>.")
     else:
