@@ -26,6 +26,7 @@ Click on the type name for more details.
   schemas/Document
   schemas/Donor
   schemas/Exposure
+  schemas/File
   schemas/FileFormat
   schemas/FileSet
   schemas/FilterSet
@@ -39,16 +40,21 @@ Click on the type name for more details.
   schemas/MolecularTest
   schemas/OntologyTerm
   schemas/OutputFile
+  schemas/Preparation
   schemas/PreparationKit
   schemas/Protocol
   schemas/QualityMetric
   schemas/ReferenceFile
   schemas/ReferenceGenome
+  schemas/Sample
   schemas/SamplePreparation
+  schemas/SampleSource
   schemas/Sequencer
   schemas/Sequencing
   schemas/Software
   schemas/SubmissionCenter
+  schemas/SubmittedFile
+  schemas/SubmittedItem
   schemas/Therapeutic
   schemas/Tissue
   schemas/TissueCollection
@@ -57,13 +63,5 @@ Click on the type name for more details.
   schemas/Treatment
   schemas/UnalignedReads
   schemas/User
-  schemas/VariantCalls
-  schemas/TestingLinkedSchemaField
-  schemas/TestingPostPutPatch
-  schemas/SubmittedItem
-  schemas/File
-  schemas/Preparation
-  schemas/Sample
-  schemas/SampleSource
-  schemas/SubmittedFile
   schemas/UserContent
+  schemas/VariantCalls

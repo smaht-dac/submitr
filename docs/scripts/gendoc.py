@@ -19,6 +19,8 @@ _IGNORE_TYPES = [
     "MetaWorkflowRun",
     "Page",
     "StaticSection",
+    "TestingLinkedSchemaField",
+    "TestingPostPutPatch",
     "Workflow",
     "WorkflowRun",
 ]
@@ -418,7 +420,9 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             for property_attribute in property_attributes:
                 property_type += f"•&nbsp;{property_attribute}<br />"
         if pattern := property.get("pattern"):
-            property_description += f"<br /><b>pattern</b>: <small style='font-family:monospace;'>{pattern}</small>"
+            property_description += (
+                f"<br /><span style='color:red;'><b>pattern</b>:&nbsp;"
+                f"<small style='font-family:monospace;'>{pattern}</small></span>")
         if _parents:
             content_parents = "<span style='font-weight:normal;'>"
             for index, parent in enumerate(_parents):
@@ -463,7 +467,8 @@ def _update_index_doc(schemas: dict) -> None:
         f.write(".. toctree::\n")
         f.write("  :caption: Types  🔍\n")
         f.write("  :maxdepth: 1\n\n")
-        for schema_name in schemas:
+#       for schema_name in schemas:
+        for schema_name in {key: schemas[key] for key in sorted(schemas)}:
             if schema_name in _IGNORE_TYPES:
                 continue
             f.write(f"  schemas/{schema_name}\n")
