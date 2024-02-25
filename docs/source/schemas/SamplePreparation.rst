@@ -12,8 +12,8 @@ SamplePreparation
     
     Types <b>referencing</b> this type are: <a href='CellCultureSample.html'><u>CellCultureSample</u></a>, <a href='CellSample.html'><u>CellSample</u></a>, <a href='Sample.html'><u>Sample</u></a>, <a href='TissueSample.html'><u>TissueSample</u></a>.
     Property names in <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
-    and those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties.
-    Properties whose types are in <span style='color:green'><b>green</b></span> are <i><b>reference</b></i> properties.
+    those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties;
+    and properties whose types are in <span style='color:green'><b>green</b></span> are <i><b>reference</b></i> properties.
     <p />
     
 
@@ -49,4 +49,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 4:08 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 4:11 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
