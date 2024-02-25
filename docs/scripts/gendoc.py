@@ -154,6 +154,14 @@ def _get_derived_schemas(schema_name: str, schemas: dict) -> List[str]:
     return result
 
 
+def _get_schema_version(schema: dict) -> str:
+    if version := schema.get("properties", {}).get("schema_version", {}).get("default", ""):
+        if "." not in version:
+            version = f"{version}.0"
+        version = f"v{version}"
+    return version
+
+
 def _gendoc(schema_name: str, schema: dict, include_all: bool, schemas: dict, portal: Portal) -> str:
     content = ""
     if not (content := _get_template("schema")):
@@ -195,6 +203,7 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool, schemas: dict, po
 
     content = content.replace("{generated_datetime}", _get_current_datetime_string())
     content = content.replace("{generated_server}", portal.server)
+    content = content.replace("{schema_version}", _get_schema_version(schema))
     return _cleanup_content(content)
 
 
