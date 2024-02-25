@@ -14,7 +14,7 @@ from dcicutils.portal_utils import Portal
 
 
 # Schema types/properties to ignore (by default) for the view schema usage.
-_IGNORE_TYPES = [
+IGNORE_TYPES = [
     "AccessKey",
     "IngestionSubmission",
     "MetaWorkflow",
@@ -27,7 +27,7 @@ _IGNORE_TYPES = [
     "Workflow",
     "WorkflowRun",
 ]
-_IGNORE_PROPERTIES = [
+IGNORE_PROPERTIES = [
     "@id",
     "@type",
     "date_created",
@@ -43,7 +43,7 @@ TEMPLATES_DIR = f"{THIS_DIR}/../schema_templates"
 DOCS_DIR = f"{THIS_DIR}/../source"
 OUTPUT_DIR = f"{DOCS_DIR}/schemas"
 INDEX_DOC_FILE = f"{DOCS_DIR}/schema_types.rst"
-INDEX_DOC_FILE_MAGIC_STRING = ".. DO NOT TOUCH THIS LINE: USED BY generate_schema_doc SCRIPT!"
+INDEX_DOC_FILE_MAGIC_STRING =  ".. DO NOT TOUCH THIS LINE! USED BY gendoc SCRIPT!"
 
 
 def main():
@@ -69,7 +69,7 @@ def main():
     if not args.schema or args.schema.lower() in ["schemas", "schema"]:
         schemas = _get_schemas(portal)
         for schema_name in schemas:
-            if schema_name in _IGNORE_TYPES:
+            if schema_name in IGNORE_TYPES:
                 continue
             schema = schemas[schema_name]
             schema_doc = _gendoc(schema_name, schema, include_all=args.all, schemas=schemas, portal=portal)
@@ -130,12 +130,12 @@ def _get_parent_schema(schema: dict) -> Optional[str]:
 def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
     result = []
     for this_schema_name in schemas:
-        if this_schema_name == schema_name or this_schema_name in _IGNORE_TYPES:
+        if this_schema_name == schema_name or this_schema_name in IGNORE_TYPES:
             continue
         schema = schemas[this_schema_name]
         if properties := schema.get("properties"):
             for property_name in properties:
-                if property_name in _IGNORE_PROPERTIES:
+                if property_name in IGNORE_PROPERTIES:
                     continue
                 property = properties[property_name]
                 if property.get("linkTo") == schema_name:
@@ -146,7 +146,7 @@ def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
 def _get_derived_schemas(schema_name: str, schemas: dict) -> List[str]:
     result = []
     for this_schema_name in schemas:
-        if this_schema_name == schema_name or this_schema_name in _IGNORE_TYPES:
+        if this_schema_name == schema_name or this_schema_name in IGNORE_TYPES:
             continue
         if _get_parent_schema(schemas[this_schema_name]) == schema_name:
             result.append(this_schema_name)
@@ -239,7 +239,7 @@ def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -
         return content
     simple_properties = []
     for property_name in sorted(list(set(required_properties))):
-        if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
+        if not property_name or not include_all and property_name in IGNORE_PROPERTIES:
             continue
         if not (property := properties[property_name]):
             continue
@@ -289,7 +289,7 @@ def _gendoc_identifying_properties_table(schema: dict, include_all: bool = False
         return content
     simple_properties = []
     for property_name in identifying_properties:
-        if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
+        if not property_name or not include_all and property_name in IGNORE_PROPERTIES:
             continue
         if not (property := properties[property_name]):
             continue
@@ -329,7 +329,7 @@ def _gendoc_reference_properties_table(schema: dict, include_all: bool = False) 
         return content
     simple_properties = []
     for property_name in reference_properties:
-        if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
+        if not property_name or not include_all and property_name in IGNORE_PROPERTIES:
             continue
         if not (property := properties[property_name]):
             continue
@@ -395,7 +395,7 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
     for property_name in {key: properties[key] for key in sorted(properties)}:
         content_nested_object = ""
         content_nested_array = ""
-        if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
+        if not property_name or not include_all and property_name in IGNORE_PROPERTIES:
             continue
         if not (property := properties[property_name]):
             continue
@@ -532,11 +532,8 @@ def _update_index_doc(schemas: dict) -> None:
     with io.open(INDEX_DOC_FILE, "w") as f:
         f.writelines(lines)
         f.write(f"\n")
-        f.write(".. toctree::\n")
-        f.write("  :caption: Types  🔍\n")
-        f.write("  :maxdepth: 1\n\n")
         for schema_name in {key: schemas[key] for key in sorted(schemas)}:
-            if schema_name in _IGNORE_TYPES:
+            if schema_name in IGNORE_TYPES:
                 continue
             f.write(f"  schemas/{schema_name}\n")
 
