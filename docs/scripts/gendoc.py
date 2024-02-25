@@ -141,6 +141,8 @@ def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
                 property = properties[property_name]
                 if property.get("linkTo") == schema_name:
                     result.append(this_schema_name)
+                elif property_items := property.get("items", {}).get("linkTo") == schema_name:
+                    result.append(this_schema_name)
     return sorted(list(set(result)))
 
 
