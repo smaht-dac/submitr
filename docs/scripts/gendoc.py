@@ -43,7 +43,7 @@ TEMPLATES_DIR = f"{THIS_DIR}/../schema_templates"
 DOCS_DIR = f"{THIS_DIR}/../source"
 OUTPUT_DIR = f"{DOCS_DIR}/schemas"
 INDEX_DOC_FILE = f"{DOCS_DIR}/schema_types.rst"
-INDEX_DOC_FILE_MAGIC_STRING =  ".. DO NOT TOUCH THIS LINE! USED BY gendoc SCRIPT!"
+INDEX_DOC_FILE_MAGIC_STRING = ".. DO NOT TOUCH THIS LINE! USED BY gendoc SCRIPT!"
 
 
 def main():
