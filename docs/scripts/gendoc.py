@@ -155,6 +155,8 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False,
     else:
         content = content.replace("{schema_abstract}", "")
     if schema_description := schema.get("description"):
+        if not schema_description.endswith("."):
+            schema_description += "."
         content = content.replace("{schema_description}", f"<br /><u>Description</u>: {schema_description}")
     else:
         content = content.replace("{schema_description}", "")

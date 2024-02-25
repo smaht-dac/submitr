@@ -14,7 +14,7 @@ FileFormat
     Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties.
     Types referencing this type: <a href='AlignedReads.html'>AlignedReads</a>, <a href='File.html'>File</a>, <a href='OutputFile.html'>OutputFile</a>, <a href='ReferenceFile.html'>ReferenceFile</a>, <a href='SubmittedFile.html'>SubmittedFile</a>, <a href='UnalignedReads.html'>UnalignedReads</a>, <a href='VariantCalls.html'>VariantCalls</a>.
     <p />
-    <br /><u>Description</u>: Data format for a file
+    <br /><u>Description</u>: Data format for a file.
 
 Required Properties
 ~~~~~~~~~~~~~~~~~~~
@@ -48,4 +48,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Last generated: 12:44 PM EST | Sunday, February 25, 2024 | <a target="_blank" href="http://localhost:8000">http://localhost:8000</a></small> ]
+    <br />[ <small>Last generated: 12:46 PM EST | Sunday, February 25, 2024 | <a target="_blank" href="http://localhost:8000">http://localhost:8000</a></small> ]

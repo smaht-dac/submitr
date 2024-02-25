@@ -14,7 +14,7 @@ OutputFile
     Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties.
     
     <p />
-    <br /><u>Description</u>: File produced by bioinformatics pipeline
+    <br /><u>Description</u>: File produced by bioinformatics pipeline.
 
 Required Properties
 ~~~~~~~~~~~~~~~~~~~
@@ -56,4 +56,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Last generated: 12:44 PM EST | Sunday, February 25, 2024 | <a target="_blank" href="http://localhost:8000">http://localhost:8000</a></small> ]
+    <br />[ <small>Last generated: 12:46 PM EST | Sunday, February 25, 2024 | <a target="_blank" href="http://localhost:8000">http://localhost:8000</a></small> ]
