@@ -9,10 +9,11 @@ FileFormat
     Description of properties for the SMaHT Portal 
     object type <a target="_blank" href="https://data.smaht.org/profiles/FileFormat.json?format=json" style="color:black"><b>FileFormat</b> 🔗</a>.
     
-    Property names which are <span style='color:red'>red</span> are <i>required</i> properties;
-    and those in <span style='color:blue'>blue</span> are <i>identifying</i> properties.
-    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties.
-    Types referencing this type: <a href='AlignedReads.html'>AlignedReads</a>, <a href='File.html'>File</a>, <a href='OutputFile.html'>OutputFile</a>, <a href='ReferenceFile.html'>ReferenceFile</a>, <a href='SubmittedFile.html'>SubmittedFile</a>, <a href='UnalignedReads.html'>UnalignedReads</a>, <a href='VariantCalls.html'>VariantCalls</a>.
+    
+    Types <b>referencing</b> this type are: <a href='AlignedReads.html'>AlignedReads</a>, <a href='File.html'>File</a>, <a href='OutputFile.html'>OutputFile</a>, <a href='ReferenceFile.html'>ReferenceFile</a>, <a href='SubmittedFile.html'>SubmittedFile</a>, <a href='UnalignedReads.html'>UnalignedReads</a>, <a href='VariantCalls.html'>VariantCalls</a>.
+    Property names which are <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
+    and those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties.
+    Properties whose types are in <span style='color:green'><b>green</b></span> are <i><b>reference</b></i> properties.
     <p />
     <br /><u>Description</u>: Data format for a file.
 
@@ -48,4 +49,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Last generated: Sunday, February 25, 2024 | 12:56 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 2:55 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
