@@ -1,0 +1,35 @@
+====
+SubmittedItem
+====
+
+Description of properties for the SMaHT Portal schema for **SubmittedItem**.
+
+
+Required Properties
+~~~~~~~~~~~~~~~~~~~
+
+.. raw:: html
+
+    <i>No required properties.</i>
+
+|
+
+Identifying Properties
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. raw:: html
+
+    {identifying_properties_table}
+
+|
+
+Properties
+~~~~~~~~~~
+
+.. raw:: html
+
+    Properties in <span style='color:red'>red</span> are <i>required</i> properties.
+    Properties in <span style='color:blue'>blue</span> are <i>identifying</i> properties. <p />
+    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties. <p />
+    <table class="schema-table" width="104%"> <tr> <th> Property </td> <th> Type </td> <th> Description </td> </tr> <tr> <td width="5%" style="white-space:nowrap;"> <b>display_title</b> </td> <td width="15%" style="white-space:nowrap;"> <b>string</b> </td> <td width="80%"> - </td> </tr> </table>
+    <p />
