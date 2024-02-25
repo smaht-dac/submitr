@@ -10,7 +10,7 @@ Therapeutic
     object type <a target="_blank" href="https://data.smaht.org/profiles/Therapeutic.json?format=json" style="color:black"><b><u>Therapeutic</u></b> 🔗</a>.
     
     
-    
+    Types <b>referencing</b> this type are: <a href='Diagnosis.html'><u>Diagnosis</u></a>.
     Property names in <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
     those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties;
     and properties whose types are in <span style='color:green'><b>green</b></span> are <i><b>reference</b></i> properties.
@@ -57,4 +57,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 6:06 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a> | v1.0</small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 6:13 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a> | v1.0</small> ]

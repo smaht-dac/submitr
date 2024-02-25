@@ -10,7 +10,7 @@ Tissue
     object type <a target="_blank" href="https://data.smaht.org/profiles/Tissue.json?format=json" style="color:black"><b><u>Tissue</u></b> 🔗</a>.
     Its <b>parent</b> type is: <a href=SampleSource.html><u>SampleSource</u></a>.
     
-    Types <b>referencing</b> this type are: <a href='Histology.html'><u>Histology</u></a>.
+    Types <b>referencing</b> this type are: <a href='Histology.html'><u>Histology</u></a>, <a href='TissueSample.html'><u>TissueSample</u></a>.
     Property names in <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
     those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties;
     and properties whose types are in <span style='color:green'><b>green</b></span> are <i><b>reference</b></i> properties.
@@ -57,4 +57,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 6:06 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a> | v1.0</small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 6:13 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a> | v1.0</small> ]
