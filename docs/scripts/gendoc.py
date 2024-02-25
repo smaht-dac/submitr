@@ -43,7 +43,7 @@ TEMPLATES_DIR = f"{THIS_DIR}/../schema_templates"
 DOCS_DIR = f"{THIS_DIR}/../source"
 OUTPUT_DIR = f"{DOCS_DIR}/schemas"
 INDEX_DOC_FILE = f"{DOCS_DIR}/schema_types.rst"
-INDEX_DOC_FILE_MAGIC_STRING =  ".. DO NOT TOUCH THIS LINE! USED BY gendoc SCRIPT!"
+INDEX_DOC_FILE_MAGIC_STRING = ".. DO NOT TOUCH THIS LINE! USED BY gendoc SCRIPT!"
 
 
 def main():
@@ -490,7 +490,7 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             else:
                 color = "inherit"
             property_description += (
-                f"<br />Must adhere to (regex) <span style='color:{color};'><b>pattern</b>:&nbsp;"
+                f"<br />Must adhere to (regex) <span style='color:{color};'><u>pattern</u>:&nbsp;"
                 f"<small style='font-family:monospace;'>{pattern}</small></span>")
         if _parents:
             content_parents = "<span style='font-weight:normal;'>"
