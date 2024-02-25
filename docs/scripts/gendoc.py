@@ -171,7 +171,7 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False,
         content = content.replace("{parent_schema}",
                                   f"Its <b>parent</b> type is: "
                                   f"<a href={parent_schema_name}.html>"
-                                  f"{parent_schema_name}</a>.")
+                                  f"<u>{parent_schema_name}</u></a>.")
 
     if schemas and (content_derived_schemas := _gendoc_derived_schemas(schema_name, schemas)):
         content_derived_schemas = f"Its <b>derived</b> types are: {content_derived_schemas}."
@@ -206,7 +206,7 @@ def _gendoc_referencing_schemas(schema_name: str, schemas: dict) -> str:
         for referencing_schema in referencing_schemas:
             if content:
                 content += ", "
-            content += f"<a href='{referencing_schema}.html'>{referencing_schema}</a>"
+            content += f"<a href='{referencing_schema}.html'><u>{referencing_schema}</u></a>"
     return content
 
 
@@ -216,7 +216,7 @@ def _gendoc_derived_schemas(schema_name: str, schemas: dict) -> str:
         for derived_schema in derived_schemas:
             if content:
                 content += ", "
-            content += f"<a href='{derived_schema}.html'>{derived_schema}</a>"
+            content += f"<a href='{derived_schema}.html'><u>{derived_schema}</u></a>"
     return content
 
 
@@ -338,11 +338,11 @@ def _gendoc_reference_properties_table(schema: dict, include_all: bool = False) 
             continue
         if not (property_type := property.get("type")):
             continue
-        if not (link_to := property.get("linkTo")):
+        if not (property_link_to := property.get("linkTo")):
             continue
         property_type = (
-            f"<a href={link_to}.html style='font-weight:bold;color:green;'>"
-            f"{link_to}</a><br /><span style='color:green;'>{property_type}</span>")
+            f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
+            f"{property_link_to}</a><br /><span style='color:green;'>{property_type}</span>")
         if property_type == "array":
             if property_items := property.get("items"):
                 if property_array_type := property_items.get("type"):
@@ -398,19 +398,21 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
     for property_name in {key: properties[key] for key in sorted(properties)}:
         content_nested_object = ""
         content_nested_array = ""
-        save_property_name = property_name
         if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
             continue
         if not (property := properties[property_name]):
             continue
         if not (property_type := property.get("type")):
             continue
+        content_property_row = template_property_row
+        content_property_name = property_name
+        content_property_type = property_type
         property_attributes = []
-        link_to = property.get("linkTo")
+        property_link_to = property.get("linkTo")
         if property_type == "array":
             if property_items := property.get("items"):
                 if property_array_type := property_items.get("type"):
-                    property_type = f"<b>{property_type}</b> of <b>{property_array_type}</b>"
+                    content_property_type = f"<b>{property_type}</b> of <b>{property_array_type}</b>"
                     if property_array_type == "object":
                         content_nested_array = _gendoc_properties_table(
                             property_items, include_all=include_all,
@@ -430,17 +432,14 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             property_internal_comment = "[" + property_internal_comment + "]"
             if property_description:
                 property_description += " " + property_internal_comment
-        if not property_description and save_property_name == "uuid":
+        if not property_description and property_name == "uuid":
             property_description = "Unique ID by which this object is identified."
-        content_property_row = template_property_row
-        if property_name == "identifier":
-            pass
         if property_name in required_properties:
-            property_name = f"<span style='color:red'>{property_name}</span>"
+            content_property_name = f"<span style='color:red'>{property_name}</span>"
         elif property_name in identifying_properties:
-            property_name = f"<span style='color:blue'>{property_name}</span>"
+            content_property_name = f"<span style='color:blue'>{property_name}</span>"
         default = property.get("default")
-        if (format := property.get("format")) and (format != save_property_name):
+        if (format := property.get("format")) and (format != property_name):
             property_attributes.append(f"format: {format}")
         if property.get("calculatedProperty"):
             property_attributes.append(f"calculated")
@@ -449,45 +448,47 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 (any_of == [{"format": "date-time"}, {"format": "date"}])):  # noqa
                 # Very special case.
                 property_attributes.append(f"format: date | date-time")
-        if link_to:
-            property_type = (
-                f"<a href={link_to}.html style='font-weight:bold;color:green;'>"
-                f"{link_to}</a><br /><span style='color:green;'>{property_type}</span>")
+        if property_link_to:
+            content_property_type = (
+                f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
+                f"{property_link_to}</a><br /><span style='color:green;'>{content_property_type}</span>")
         elif enum := property.get("enum", []):
-            property_type = f"<b>enum</b> of {property_type}"
-            property_name = f"<u>{property_name}</u><span style='font-weight:normal;font-family:arial;color:#222222;'>"
+            content_property_type = f"<b>enum</b> of {content_property_type}"
+            content_property_name = (
+                f"<u>{content_property_name}</u>"
+                f"<span style='font-weight:normal;font-family:arial;color:#222222;'>")
             for enum_value in enum:
                 if isinstance(enum_value, str) and len(enum_value) > 60:
-                    property_name += f"<br />&nbsp;•&nbsp;{enum_value[0:32]}"
-                    property_name += (
+                    content_property_name += f"<br />&nbsp;•&nbsp;{enum_value[0:32]}"
+                    content_property_name += (
                         f"<br />&nbsp;&nbsp;&nbsp;{enum_value[32:]}"
                         f"{'&nbsp;←&nbsp;<small><b>default</b></small>' if enum_value == default else ''}")
                 else:
-                    property_name += (
+                    content_property_name += (
                         f"<br />&nbsp;•&nbsp;{enum_value}"
                         f"{'&nbsp;←&nbsp;<small><b>default</b></small>' if enum_value == default else ''}")
-            property_name += f"</span>"
-        elif isinstance(property_type, list):  # TODO
+            content_property_name += f"</span>"
+        elif isinstance(property_type, list):
             property_types_string = ""
             for type in property_type:
                 if property_types_string:
                     property_types_string += " or<br />"
                 property_types_string += f"<b>{type}</b>"
-            property_type = property_types_string
-        elif not property_type.startswith("<b>array"):  # TODO
-            property_type = f"<b>{property_type}</b>"
+            content_property_type = property_types_string
+        elif not property_type == "array":
+            content_property_type = f"<b>{content_property_type}</b>"
             if default is not None:
                 if isinstance(default, bool):
                     default = str(default).lower()
-                property_type += f"<span style='font-weight:normal'><br />•&nbsp;default: {default}</span>"
+                content_property_type += f"<span style='font-weight:normal'><br />•&nbsp;default: {default}</span>"
         if property_attributes:
-            property_type = f"<u>{property_type}</u><br />"
+            content_property_type = f"<u>{content_property_type}</u><br />"
             for property_attribute in property_attributes:
-                property_type += f"•&nbsp;{property_attribute}<br />"
+                content_property_type += f"•&nbsp;{property_attribute}<br />"
         if pattern := property.get("pattern"):
-            if save_property_name in required_properties:
+            if property_name in required_properties:
                 color = "red"
-            elif save_property_name in identifying_properties:
+            elif property_name in identifying_properties:
                 color = "blue"
             else:
                 color = "inherit"
@@ -501,9 +502,9 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                     content_parents += f" <b>.</b> "
                 content_parents += f"{parent}"
             content_parents += "</span>"
-            property_name = f"{content_parents} <b>.</b> {property_name}"
-        content_property_row = content_property_row.replace("{property_name}", property_name)
-        content_property_row = content_property_row.replace("{property_type}", property_type)
+            content_property_name = f"{content_parents} <b>.</b> {content_property_name}"
+        content_property_row = content_property_row.replace("{property_name}", content_property_name)
+        content_property_row = content_property_row.replace("{property_type}", content_property_type)
         content_property_row = content_property_row.replace("{property_description}", property_description or "-")
         content_property_rows += content_property_row
         if content_nested_object:
