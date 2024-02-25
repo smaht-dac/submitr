@@ -1,10 +1,12 @@
-====
+========================
 TestingLinkedSchemaField
-====
+========================
+
+
 
 .. raw:: html
 
-    Description of properties for the SMaHT Portal schema for <b>TestingLinkedSchemaField</b>.
+    Description of properties for the SMaHT Portal object type <b>TestingLinkedSchemaField</b>.
     
     Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties.
     In the <i>Properties</i> section, properties in <span style='color:red'>red</span> are <i>required</i> properties,

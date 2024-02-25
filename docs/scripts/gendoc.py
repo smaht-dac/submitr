@@ -125,11 +125,13 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False) -> str:
     content = ""
     if not (content := _get_template("schema")):
         return content
+    content_schema_title = f"{'=' * len(schema_name)}\n{schema_name}\n{'=' * len(schema_name)}\n\n"
+    content = content.replace("{schema_title}", content_schema_title)
     content = content.replace("{schema_name}", schema_name)
 
     if parent_schema_name := _get_parent_schema_name(schema):
         content = content.replace("{parent_schema_sentence}",
-                                  f"Parent schema is <b><a href={parent_schema_name}.html>"
+                                  f"Its <b>parent</b> schema is <b><a href={parent_schema_name}.html style='color:green'>"
                                   f"{parent_schema_name}</a></b>.")
     else:
         content = content.replace("{parent_schema_sentence}", "")
@@ -358,6 +360,8 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             property_internal_comment = "[" + property_internal_comment + "]"
             if property_description:
                 property_description += " " + property_internal_comment
+        if not property_description and save_property_name == "uuid":
+            property_description = "Unique ID by which this object is identified."
         content_property_row = template_property_row
         if property_name == "identifier":
             pass

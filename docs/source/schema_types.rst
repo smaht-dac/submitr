@@ -1,6 +1,8 @@
-=====
-Types
-=====
+============
+Object Model
+============
+Below are the object types supported by SMaHT Portal.
+Click on the type name for more details.
 
 .. DO NOT TOUCH THIS LINE: USED BY generate_schema_doc SCRIPT!
 
