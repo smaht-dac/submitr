@@ -9,7 +9,7 @@ Preparation
     Summary of properties for the SMaHT Portal <u>abstract</u>
     object type <a target="_blank" href="https://data.smaht.org/profiles/Preparation.json?format=json" style="color:black"><b><u>Preparation</u></b> 🔗</a>.
     
-    Its <b>derived</b> types are: <a href='AnalytePreparation.html'>AnalytePreparation</a>, <a href='LibraryPreparation.html'>LibraryPreparation</a>, <a href='SamplePreparation.html'>SamplePreparation</a>.
+    Its <b>derived</b> types are: <a href='AnalytePreparation.html'><u>AnalytePreparation</u></a>, <a href='LibraryPreparation.html'><u>LibraryPreparation</u></a>, <a href='SamplePreparation.html'><u>SamplePreparation</u></a>.
     
     Property names which are <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
     and those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties.
@@ -41,4 +41,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:18 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:27 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]

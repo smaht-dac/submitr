@@ -8,7 +8,7 @@ CellCultureSample
 
     Summary of properties for the SMaHT Portal 
     object type <a target="_blank" href="https://data.smaht.org/profiles/CellCultureSample.json?format=json" style="color:black"><b><u>CellCultureSample</u></b> 🔗</a>.
-    Its <b>parent</b> type is: <a href=Sample.html>Sample</a>.
+    Its <b>parent</b> type is: <a href=Sample.html><u>Sample</u></a>.
     
     
     Property names which are <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
@@ -57,4 +57,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:18 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:27 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]

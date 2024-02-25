@@ -9,7 +9,7 @@ File
     Summary of properties for the SMaHT Portal <u>abstract</u>
     object type <a target="_blank" href="https://data.smaht.org/profiles/File.json?format=json" style="color:black"><b><u>File</u></b> 🔗</a>.
     
-    Its <b>derived</b> types are: <a href='OutputFile.html'>OutputFile</a>, <a href='ReferenceFile.html'>ReferenceFile</a>, <a href='SubmittedFile.html'>SubmittedFile</a>.
+    Its <b>derived</b> types are: <a href='OutputFile.html'><u>OutputFile</u></a>, <a href='ReferenceFile.html'><u>ReferenceFile</u></a>, <a href='SubmittedFile.html'><u>SubmittedFile</u></a>.
     
     Property names which are <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
     and those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties.
@@ -57,4 +57,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:18 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:27 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]

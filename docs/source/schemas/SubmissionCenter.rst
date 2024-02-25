@@ -10,7 +10,7 @@ SubmissionCenter
     object type <a target="_blank" href="https://data.smaht.org/profiles/SubmissionCenter.json?format=json" style="color:black"><b><u>SubmissionCenter</u></b> 🔗</a>.
     
     
-    Types <b>referencing</b> this type are: <a href='AlignedReads.html'>AlignedReads</a>, <a href='File.html'>File</a>, <a href='OutputFile.html'>OutputFile</a>, <a href='ReferenceFile.html'>ReferenceFile</a>, <a href='SubmittedFile.html'>SubmittedFile</a>, <a href='UnalignedReads.html'>UnalignedReads</a>, <a href='VariantCalls.html'>VariantCalls</a>.
+    Types <b>referencing</b> this type are: <a href='AlignedReads.html'><u>AlignedReads</u></a>, <a href='File.html'><u>File</u></a>, <a href='OutputFile.html'><u>OutputFile</u></a>, <a href='ReferenceFile.html'><u>ReferenceFile</u></a>, <a href='SubmittedFile.html'><u>SubmittedFile</u></a>, <a href='UnalignedReads.html'><u>UnalignedReads</u></a>, <a href='VariantCalls.html'><u>VariantCalls</u></a>.
     Property names which are <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
     and those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties.
     Properties whose types are in <span style='color:green'><b>green</b></span> are <i><b>reference</b></i> properties.
@@ -57,4 +57,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:18 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:27 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]

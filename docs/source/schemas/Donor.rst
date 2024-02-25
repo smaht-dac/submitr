@@ -10,7 +10,7 @@ Donor
     object type <a target="_blank" href="https://data.smaht.org/profiles/Donor.json?format=json" style="color:black"><b><u>Donor</u></b> 🔗</a>.
     
     
-    Types <b>referencing</b> this type are: <a href='CellLine.html'>CellLine</a>, <a href='DeathCircumstances.html'>DeathCircumstances</a>, <a href='Demographic.html'>Demographic</a>, <a href='Tissue.html'>Tissue</a>, <a href='TissueCollection.html'>TissueCollection</a>.
+    Types <b>referencing</b> this type are: <a href='CellLine.html'><u>CellLine</u></a>, <a href='DeathCircumstances.html'><u>DeathCircumstances</u></a>, <a href='Demographic.html'><u>Demographic</u></a>, <a href='Tissue.html'><u>Tissue</u></a>, <a href='TissueCollection.html'><u>TissueCollection</u></a>.
     Property names which are <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
     and those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties.
     Properties whose types are in <span style='color:green'><b>green</b></span> are <i><b>reference</b></i> properties.
@@ -49,4 +49,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:18 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:27 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
