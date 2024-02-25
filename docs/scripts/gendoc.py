@@ -15,6 +15,7 @@ from dcicutils.portal_utils import Portal
 # Schema types/properties to ignore (by default) for the view schema usage.
 _IGNORE_TYPES = [
     "AccessKey",
+    "IngestionSubmission",
     "MetaWorkflow",
     "MetaWorkflowRun",
     "Page",
@@ -175,26 +176,6 @@ def _gendoc_required_properties_section(schema: dict, include_all: bool = False)
     return content
 
 
-def _gendoc_identifying_properties_section(schema: dict, include_all: bool = False) -> str:
-    content = ""
-    if content_identifying_properties_table := _gendoc_identifying_properties_table(schema, include_all):
-        if not (content := _get_template("identifying_properties_section")):
-            return content
-        content_identifying_properties_table = _normalize_spaces(content_identifying_properties_table)
-        content = content.replace("{identifying_properties_table}", content_identifying_properties_table)
-    return content
-
-
-def _gendoc_reference_properties_section(schema: dict, include_all: bool = False) -> str:
-    content = ""
-    if content_reference_properties_table := _gendoc_reference_properties_table(schema, include_all):
-        if not (content := _get_template("reference_properties_section")):
-            return content
-        content_reference_properties_table = _normalize_spaces(content_reference_properties_table)
-        content = content.replace("{reference_properties_table}", content_reference_properties_table)
-    return content
-
-
 def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -> str:
     content = ""
     if not isinstance(schema, dict) or not schema:
@@ -218,7 +199,7 @@ def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -
                 if property_array_type := property_items.get("type"):
                     property_type = f"{property_type} of {property_array_type}"
         simple_properties.append({"name": property_name, "type": property_type})
-    content_simple_property_rows = _gendoc_simple_properties(simple_properties)
+    content_simple_property_rows = _gendoc_simple_properties(simple_properties, kind="required")
     content = template_required_properties_table
     content = content.replace("{required_property_rows}", content_simple_property_rows)
     content_oneormore_property_row = ""
@@ -232,6 +213,16 @@ def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -
                     content_oneormore_property_row.replace("{oneormore_properties_list}",
                                                            "<b>consortia</b>, <b>submission_centers</b>"))
     content = content.replace("{oneormore_property_row}", content_oneormore_property_row)
+    return content
+
+
+def _gendoc_identifying_properties_section(schema: dict, include_all: bool = False) -> str:
+    content = ""
+    if content_identifying_properties_table := _gendoc_identifying_properties_table(schema, include_all):
+        if not (content := _get_template("identifying_properties_section")):
+            return content
+        content_identifying_properties_table = _normalize_spaces(content_identifying_properties_table)
+        content = content.replace("{identifying_properties_table}", content_identifying_properties_table)
     return content
 
 
@@ -258,9 +249,19 @@ def _gendoc_identifying_properties_table(schema: dict, include_all: bool = False
                 if property_array_type := property_items.get("type"):
                     property_type = f"{property_type} of {property_array_type}"
         simple_properties.append({"name": property_name, "type": property_type})
-    content_simple_property_rows = _gendoc_simple_properties(simple_properties)
+    content_simple_property_rows = _gendoc_simple_properties(simple_properties, kind="identifying")
     content = template_identifying_properties_table
     content = content.replace("{identifying_property_rows}", content_simple_property_rows)
+    return content
+
+
+def _gendoc_reference_properties_section(schema: dict, include_all: bool = False) -> str:
+    content = ""
+    if content_reference_properties_table := _gendoc_reference_properties_table(schema, include_all):
+        if not (content := _get_template("reference_properties_section")):
+            return content
+        content_reference_properties_table = _normalize_spaces(content_reference_properties_table)
+        content = content.replace("{reference_properties_table}", content_reference_properties_table)
     return content
 
 
@@ -300,7 +301,7 @@ def _gendoc_reference_properties_table(schema: dict, include_all: bool = False) 
     return content
 
 
-def _gendoc_simple_properties(properties: List[str]) -> str:
+def _gendoc_simple_properties(properties: List[str], kind: Optional[str] = None) -> str:
     result = ""
     if not isinstance(properties, list) or not properties:
         return result
@@ -310,6 +311,10 @@ def _gendoc_simple_properties(properties: List[str]) -> str:
     for property in properties:
         property_name = property["name"]
         property_type = property["type"]
+        if kind == "required":
+            property_name = f"<span style='color:red'>{property_name}</span>"
+        elif kind == "identifying":
+            property_name = f"<span style='color:blue'>{property_name}</span>"
         content_simple_property = copy.deepcopy(template_simple_property_row)
         content_simple_property = content_simple_property.replace("{property_name}", property_name)
         content_simple_property = content_simple_property.replace("{property_type}", property_type)
@@ -337,8 +342,8 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
     identifying_properties = schema.get("identifyingProperties", [])
     content_property_rows = ""
     for property_name in {key: properties[key] for key in sorted(properties)}:
-        xyz = ""
-        xyza = ""
+        content_nested_object = ""
+        content_nested_array = ""
         save_property_name = property_name
         if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
             continue
@@ -353,15 +358,17 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 if property_array_type := property_items.get("type"):
                     property_type = f"<b>{property_type}</b> of <b>{property_array_type}</b>"
                     if property_array_type == "object":
-                        xyza = _gendoc_properties_table(property_items, include_all=include_all,
-                                                        _level=_level + 1, _parents=_parents + [property_name])
+                        content_nested_array = _gendoc_properties_table(
+                            property_items, include_all=include_all,
+                            _level=_level + 1, _parents=_parents + [property_name])
                 if max_length := property_items.get("maxLength"):
                     property_attributes.append(f"max items: {max_length}")
             if property.get("uniqueItems"):
                 property_attributes.append("unique")
         elif property_type == "object":
-            xyz = _gendoc_properties_table(property, include_all=include_all,
-                                           _level=_level + 1, _parents=_parents + [property_name])
+            content_nested_object = _gendoc_properties_table(
+                property, include_all=include_all,
+                _level=_level + 1, _parents=_parents + [property_name])
         if property_description := property.get("description", "").strip():
             if not property_description.endswith("."):
                 property_description += "."
@@ -395,7 +402,6 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         elif enum := property.get("enum", []):
             property_type = f"<b>enum</b> of {property_type}"
             property_name = f"<u>{property_name}</u><span style='font-weight:normal;font-family:arial;color:#222222;'>"
-            # application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
             for enum_value in enum:
                 if isinstance(enum_value, str) and len(enum_value) > 60:
                     property_name += f"<br />&nbsp;•&nbsp;{enum_value[0:32]}"
@@ -435,10 +441,10 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         content_property_row = content_property_row.replace("{property_type}", property_type)
         content_property_row = content_property_row.replace("{property_description}", property_description or "-")
         content_property_rows += content_property_row
-        if xyz:
-            content_property_rows += xyz
-        elif xyza:
-            content_property_rows += xyza
+        if content_nested_object:
+            content_property_rows += content_nested_object
+        elif content_nested_array:
+            content_property_rows += content_nested_array
     if _level == 0:
         content = template_properties_table
         content = content.replace("{property_rows}", content_property_rows)
