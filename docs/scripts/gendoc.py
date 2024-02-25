@@ -204,7 +204,7 @@ def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -
     if not (template_required_properties_table := _get_template("required_properties_table")):
         return content
     simple_properties = []
-    for property_name in sorted(required_properties):
+    for property_name in sorted(list(set(required_properties))):
         if not property_name or not include_all and property_name in _IGNORE_PROPERTIES:
             continue
         if not (property := properties[property_name]):
@@ -239,7 +239,7 @@ def _gendoc_identifying_properties_table(schema: dict, include_all: bool = False
         return content
     if not (properties := schema.get("properties", [])):
         return content
-    if not (identifying_properties := sorted(schema.get("identifyingProperties", []))):
+    if not (identifying_properties := sorted(list(set(schema.get("identifyingProperties", []))))):
         return content
     if not (template_identifying_properties_table := _get_template("identifying_properties_table")):
         return content
@@ -379,6 +379,8 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         default = property.get("default")
         if (format := property.get("format")) and (format != save_property_name):
             property_attributes.append(f"format: {format}")
+        if property.get("calculatedProperty"):
+            property_attributes.append(f"calculated")
         if isinstance(any_of := property.get("anyOf"), list):
             if ((any_of == [{"format": "date"}, {"format": "date-time"}]) or
                 (any_of == [{"format": "date-time"}, {"format": "date"}])):  # noqa
