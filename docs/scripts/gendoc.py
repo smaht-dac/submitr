@@ -128,10 +128,15 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False) -> str:
     content_schema_title = f"{'=' * len(schema_name)}\n{schema_name}\n{'=' * len(schema_name)}\n\n"
     content = content.replace("{schema_title}", content_schema_title)
     content = content.replace("{schema_name}", schema_name)
+    if schema_description := schema.get("description"):
+        content = content.replace("{schema_description}", f"<br /><u>Description</u>: {schema_description}")
+    else:
+        content = content.replace("{schema_description}", "")
 
     if parent_schema_name := _get_parent_schema_name(schema):
         content = content.replace("{parent_schema_sentence}",
-                                  f"Its <b>parent</b> schema is <b><a href={parent_schema_name}.html style='color:green'>"
+                                  f"Its <b>parent</b> schema is <b>"
+                                  f"<a href={parent_schema_name}.html style='color:green'>"
                                   f"{parent_schema_name}</a></b>.")
     else:
         content = content.replace("{parent_schema_sentence}", "")
@@ -372,6 +377,13 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         elif property_name in identifying_properties:
             property_name = f"<span style='color:blue'>{property_name}</span>"
         default = property.get("default")
+        if (format := property.get("format")) and (format != save_property_name):
+            property_attributes.append(f"format: {format}")
+        if isinstance(any_of := property.get("anyOf"), list):
+            if ((any_of == [{"format": "date"}, {"format": "date-time"}]) or
+                (any_of == [{"format": "date-time"}, {"format": "date"}])):  # noqa
+                # Very special case.
+                property_attributes.append(f"format: date | date-time")
         if link_to:
             property_type = (
                 f"<a href={link_to}.html style='font-weight:bold;color:green;'>"
@@ -403,8 +415,6 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             property_type = f"<u>{property_type}</u><br />"
             for property_attribute in property_attributes:
                 property_type += f"•&nbsp;{property_attribute}<br />"
-        if (format := property.get("format")) and (format != save_property_name):
-            property_type += f"<br />•&nbsp;format: {format}"
         if pattern := property.get("pattern"):
             property_description += f"<br /><b>pattern</b>: <small style='font-family:monospace;'>{pattern}</small>"
         if _parents:
