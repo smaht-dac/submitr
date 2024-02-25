@@ -433,10 +433,11 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         if not property_description and save_property_name == "uuid":
             property_description = "Unique ID by which this object is identified."
         content_property_row = template_property_row
+        content_property_name = property_name
         if property_name in required_properties:
-            property_name = f"<span style='color:red'>{property_name}</span>"
+            content_property_name = f"<span style='color:red'>{property_name}</span>"
         elif property_name in identifying_properties:
-            property_name = f"<span style='color:blue'>{property_name}</span>"
+            content_property_name = f"<span style='color:blue'>{property_name}</span>"
         default = property.get("default")
         if (format := property.get("format")) and (format != save_property_name):
             property_attributes.append(f"format: {format}")
@@ -453,18 +454,20 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 f"{link_to}</a><br /><span style='color:green;'>{property_type}</span>")
         elif enum := property.get("enum", []):
             property_type = f"<b>enum</b> of {property_type}"
-            property_name = f"<u>{property_name}</u><span style='font-weight:normal;font-family:arial;color:#222222;'>"
+            content_property_name = (
+                f"<u>{content_property_name}</u>"
+                f"<span style='font-weight:normal;font-family:arial;color:#222222;'>")
             for enum_value in enum:
                 if isinstance(enum_value, str) and len(enum_value) > 60:
-                    property_name += f"<br />&nbsp;•&nbsp;{enum_value[0:32]}"
-                    property_name += (
+                    content_property_name += f"<br />&nbsp;•&nbsp;{enum_value[0:32]}"
+                    content_property_name += (
                         f"<br />&nbsp;&nbsp;&nbsp;{enum_value[32:]}"
                         f"{'&nbsp;←&nbsp;<small><b>default</b></small>' if enum_value == default else ''}")
                 else:
-                    property_name += (
+                    content_property_name += (
                         f"<br />&nbsp;•&nbsp;{enum_value}"
                         f"{'&nbsp;←&nbsp;<small><b>default</b></small>' if enum_value == default else ''}")
-            property_name += f"</span>"
+            content_property_name += f"</span>"
         elif isinstance(property_type, list):  # TODO
             property_types_string = ""
             for type in property_type:
@@ -499,8 +502,8 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                     content_parents += f" <b>.</b> "
                 content_parents += f"{parent}"
             content_parents += "</span>"
-            property_name = f"{content_parents} <b>.</b> {property_name}"
-        content_property_row = content_property_row.replace("{property_name}", property_name)
+            content_property_name = f"{content_parents} <b>.</b> {content_property_name}"
+        content_property_row = content_property_row.replace("{property_name}", content_property_name)
         content_property_row = content_property_row.replace("{property_type}", property_type)
         content_property_row = content_property_row.replace("{property_description}", property_description or "-")
         content_property_rows += content_property_row
