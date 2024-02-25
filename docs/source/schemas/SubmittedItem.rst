@@ -6,12 +6,12 @@ SubmittedItem
 
 .. raw:: html
 
-    Summary of properties for the SMaHT Portal <u>abstract</u>
+    Summary of properties for the <a target="_blank" href="https://data.smaht.org">SMaHT Portal</a> <u>abstract</u>
     object type <a target="_blank" href="https://data.smaht.org/profiles/SubmittedItem.json?format=json" style="color:black"><b><u>SubmittedItem</u></b> 🔗</a>.
     
     
     
-    Property names which are <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
+    Property names in <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
     and those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties.
     Properties whose types are in <span style='color:green'><b>green</b></span> are <i><b>reference</b></i> properties.
     <p />
@@ -33,4 +33,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:58 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 4:03 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
