@@ -435,7 +435,6 @@ def _update_index_doc(schemas: dict) -> None:
         if line.strip() == magic_string:
             lines = lines[:index+1]
             break
-    import pdb ; pdb.set_trace()
     with io.open(INDEX_DOC_FILE, "w") as f:
         f.writelines(lines)
         f.write(f"\n")
