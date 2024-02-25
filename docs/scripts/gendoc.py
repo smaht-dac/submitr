@@ -121,7 +121,7 @@ def _get_schema(portal: Portal, name: str) -> Tuple[Optional[dict], Optional[str
     return None, None
 
 
-def _get_parent_schema_name(schema: dict) -> Optional[str]:
+def _get_parent_schema(schema: dict) -> Optional[str]:
     if sub_class_of := schema.get("rdfs:subClassOf"):
         if (parent_schema_name := os.path.basename(sub_class_of).replace(".json", "")) != "Item":
             return parent_schema_name
@@ -148,7 +148,7 @@ def _get_derived_schemas(schema_name: str, schemas: dict) -> List[str]:
     for this_schema_name in schemas:
         if this_schema_name == schema_name or this_schema_name in _IGNORE_TYPES:
             continue
-        if _get_parent_schema_name(schemas[this_schema_name]) == schema_name:
+        if _get_parent_schema(schemas[this_schema_name]) == schema_name:
             result.append(this_schema_name)
     return result
 
@@ -160,6 +160,7 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool, schemas: dict, po
     content_schema_title = f"{'=' * len(schema_name)}\n{schema_name}\n{'=' * len(schema_name)}\n\n"
     content = content.replace("{schema_title}", content_schema_title)
     content = content.replace("{schema_name}", schema_name)
+
     if schema.get("isAbstract") is True:
         content = content.replace("{schema_abstract}", "<u>abstract</u>")
     if schema_description := schema.get("description"):
@@ -167,19 +168,17 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool, schemas: dict, po
             schema_description += "."
         content = content.replace("{schema_description}", f"<br /><u>Description</u>: {schema_description}")
 
-    if parent_schema_name := _get_parent_schema_name(schema):
+    if parent_schema_name := _get_parent_schema(schema):
         content = content.replace("{parent_schema}",
-                                  f"Its <b>parent</b> type is: "
-                                  f"<a href={parent_schema_name}.html>"
+                                  f"Its <b>parent</b> type is: <a href={parent_schema_name}.html>"
                                   f"<u>{parent_schema_name}</u></a>.")
 
     if content_derived_schemas := _gendoc_derived_schemas(schema_name, schemas):
-        content_derived_schemas = f"Its <b>derived</b> types are: {content_derived_schemas}."
-        content = content.replace("{derived_schemas}", content_derived_schemas)
+        content = content.replace("{derived_schemas}", f"Its <b>derived</b> types are: {content_derived_schemas}.")
 
     if content_referencing_schemas := _gendoc_referencing_schemas(schema_name, schemas):
-        content_referencing_schemas = f"Types <b>referencing</b> this type are: {content_referencing_schemas}."
-        content = content.replace("{referencing_schemas}", content_referencing_schemas)
+        content = content.replace("{referencing_schemas}",
+                                  f"Types <b>referencing</b> this type are: {content_referencing_schemas}.")
 
     if content_required_properties_section := _gendoc_required_properties_section(schema, include_all):
         content = content.replace("{required_properties_section}", content_required_properties_section)
