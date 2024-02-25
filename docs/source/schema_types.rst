@@ -1,7 +1,7 @@
 ============
 Object Model
 ============
-Below are the object types supported by SMaHT Portal.
+Below are the object types supported by :toplink:`SMaHT Portal <https://data.smaht.org>`.
 Click on the type name for more details.
 
 .. toctree::
