@@ -58,7 +58,6 @@ Click on the type name for more details.
   schemas/Tissue
   schemas/TissueCollection
   schemas/TissueSample
-  schemas/TrackingItem
   schemas/Treatment
   schemas/UnalignedReads
   schemas/User
