@@ -10,7 +10,9 @@ SubmissionCenter
     
     Property names which are <span style='color:red'>red</span> are <i>required</i> properties;
     and those in <span style='color:blue'>blue</span> are <i>identifying</i> properties.
-    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties. <p />
+    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties.
+    Types referencing this type: <a href='AlignedReads.html'>AlignedReads</a>, <a href='File.html'>File</a>, <a href='OutputFile.html'>OutputFile</a>, <a href='ReferenceFile.html'>ReferenceFile</a>, <a href='SubmittedFile.html'>SubmittedFile</a>, <a href='UnalignedReads.html'>UnalignedReads</a>, <a href='VariantCalls.html'>VariantCalls</a>.
+    <p />
     
 
 Required Properties

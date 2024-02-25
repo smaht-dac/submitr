@@ -33,7 +33,6 @@ Click on the type name for more details.
   schemas/HiglassViewConfig
   schemas/Histology
   schemas/Image
-  schemas/IngestionSubmission
   schemas/Library
   schemas/LibraryPreparation
   schemas/MedicalHistory

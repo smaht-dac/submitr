@@ -69,7 +69,7 @@ def main():
             if schema_name in _IGNORE_TYPES:
                 continue
             schema = schemas[schema_name]
-            schema_doc = _gendoc(schema_name, schema, include_all=args.all)
+            schema_doc = _gendoc(schema_name, schema, include_all=args.all, schemas=schemas)
             _write_doc(schema_name, schema_doc)
     elif args.schema:
         schema, schema_name = _get_schema(portal, args.schema)
@@ -124,7 +124,21 @@ def _get_parent_schema_name(schema: dict) -> Optional[str]:
             return parent_schema_name
 
 
-def _gendoc(schema_name: str, schema: dict, include_all: bool = False) -> str:
+def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
+    result = []
+    for this_schema_name in schemas:
+        if this_schema_name == schema_name or this_schema_name in _IGNORE_TYPES:
+            continue
+        schema = schemas[this_schema_name]
+        if properties := schema.get("properties"):
+            for property_name in properties:
+                property = properties[property_name]
+                if property.get("linkTo") == schema_name:
+                    result.append(this_schema_name)
+    return sorted(list(set(result)))
+
+
+def _gendoc(schema_name: str, schema: dict, include_all: bool = False, schemas: Optional[dict] = None) -> str:
     content = ""
     if not (content := _get_template("schema")):
         return content
@@ -143,6 +157,12 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False) -> str:
                                   f"{parent_schema_name}</a></b>.")
     else:
         content = content.replace("{parent_schema_sentence}", "")
+
+    if schemas and (content_referencing_schemas := _gendoc_referencing_schemas(schema_name, schemas)):
+        content_referencing_schemas = f"Types referencing this type: {content_referencing_schemas}."
+        content = content.replace("{referencing_schemas}", content_referencing_schemas)
+    else:
+        content = content.replace("{referencing_schemas}", "")
 
     if content_required_properties_section := _gendoc_required_properties_section(schema, include_all):
         content = content.replace("{required_properties_section}", content_required_properties_section)
@@ -163,6 +183,16 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False) -> str:
         content_properties_table = _normalize_spaces(content_properties_table)
         content = content.replace("{properties_table}", content_properties_table)
 
+    return content
+
+
+def _gendoc_referencing_schemas(schema_name: str, schemas: dict) -> str:
+    content = ""
+    if schemas and (referencing_schemas := _get_referencing_schemas(schema_name, schemas)):
+        for referencing_schema in referencing_schemas:
+            if content:
+                content += ", "
+            content += f"<a href='{referencing_schema}.html'>{referencing_schema}</a>"
     return content
 
 
@@ -473,7 +503,6 @@ def _update_index_doc(schemas: dict) -> None:
         f.write(".. toctree::\n")
         f.write("  :caption: Types  🔍\n")
         f.write("  :maxdepth: 1\n\n")
-#       for schema_name in schemas:
         for schema_name in {key: schemas[key] for key in sorted(schemas)}:
             if schema_name in _IGNORE_TYPES:
                 continue

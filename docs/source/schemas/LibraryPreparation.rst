@@ -10,7 +10,9 @@ LibraryPreparation
     Its <b>parent</b> type is <b><a href=Preparation.html style='color:green'>Preparation</a></b>.
     Property names which are <span style='color:red'>red</span> are <i>required</i> properties;
     and those in <span style='color:blue'>blue</span> are <i>identifying</i> properties.
-    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties. <p />
+    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties.
+    Types referencing this type: <a href='Library.html'>Library</a>.
+    <p />
     
 
 Required Properties

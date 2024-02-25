@@ -10,7 +10,9 @@ SamplePreparation
     Its <b>parent</b> type is <b><a href=Preparation.html style='color:green'>Preparation</a></b>.
     Property names which are <span style='color:red'>red</span> are <i>required</i> properties;
     and those in <span style='color:blue'>blue</span> are <i>identifying</i> properties.
-    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties. <p />
+    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties.
+    Types referencing this type: <a href='CellCultureSample.html'>CellCultureSample</a>, <a href='CellSample.html'>CellSample</a>, <a href='Sample.html'>Sample</a>, <a href='TissueSample.html'>TissueSample</a>.
+    <p />
     
 
 Required Properties

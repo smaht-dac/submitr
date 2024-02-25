@@ -10,7 +10,9 @@ OntologyTerm
     
     Property names which are <span style='color:red'>red</span> are <i>required</i> properties;
     and those in <span style='color:blue'>blue</span> are <i>identifying</i> properties.
-    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties. <p />
+    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties.
+    Types referencing this type: <a href='Diagnosis.html'>Diagnosis</a>, <a href='Exposure.html'>Exposure</a>, <a href='Therapeutic.html'>Therapeutic</a>, <a href='Treatment.html'>Treatment</a>.
+    <p />
     
 
 Required Properties
