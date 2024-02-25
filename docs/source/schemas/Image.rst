@@ -41,4 +41,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 4:25 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> | v1.0 ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 4:27 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a> | v1.0</small> ]
