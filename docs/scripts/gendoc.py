@@ -340,7 +340,7 @@ def _gendoc_reference_properties_table(schema: dict, include_all: bool = False) 
             continue
         property_type = (
             f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
-            f"{property_link_to}</a><br /><span style='color:green;'>{property_type}</span>")
+            f"<u>{property_link_to}</u></a><br /><span style='color:green;'>{property_type}</span>")
         if property_type == "array":
             if property_items := property.get("items"):
                 if property_array_type := property_items.get("type"):
@@ -449,7 +449,7 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         if property_link_to:
             content_property_type = (
                 f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
-                f"{property_link_to}</a><br /><span style='color:green;'>{content_property_type}</span>")
+                f"<u>{property_link_to}</u></a><br /><span style='color:green;'>{content_property_type}</span>")
         elif enum := property.get("enum", []):
             content_property_type = f"<b>enum</b> of {content_property_type}"
             content_property_name = (
