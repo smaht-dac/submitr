@@ -1,8 +1,8 @@
 ============
 Object Model
 ============
-
-Below are all of the types supported by SMaHT Portal.
+Below are the object types supported by SMaHT Portal.
+Click on the type name for more details.
 
 .. DO NOT TOUCH THIS LINE: USED BY generate_schema_doc SCRIPT!
 
@@ -10,7 +10,6 @@ Below are all of the types supported by SMaHT Portal.
   :caption: Types  🔍
   :maxdepth: 1
 
-  schemas/AccessKey
   schemas/AlignedReads
   schemas/Analyte
   schemas/AnalytePreparation
@@ -37,12 +36,9 @@ Below are all of the types supported by SMaHT Portal.
   schemas/Library
   schemas/LibraryPreparation
   schemas/MedicalHistory
-  schemas/MetaWorkflow
-  schemas/MetaWorkflowRun
   schemas/MolecularTest
   schemas/OntologyTerm
   schemas/OutputFile
-  schemas/Page
   schemas/PreparationKit
   schemas/Protocol
   schemas/QualityMetric
@@ -52,7 +48,6 @@ Below are all of the types supported by SMaHT Portal.
   schemas/Sequencer
   schemas/Sequencing
   schemas/Software
-  schemas/StaticSection
   schemas/SubmissionCenter
   schemas/Therapeutic
   schemas/Tissue
@@ -63,8 +58,6 @@ Below are all of the types supported by SMaHT Portal.
   schemas/UnalignedReads
   schemas/User
   schemas/VariantCalls
-  schemas/Workflow
-  schemas/WorkflowRun
   schemas/TestingLinkedSchemaField
   schemas/TestingPostPutPatch
   schemas/SubmittedItem

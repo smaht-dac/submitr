@@ -101,7 +101,7 @@ and installing the dependencies for this tool:
   advanced_usage
 
 .. toctree::
-  :caption: Object Model  🔍
+  :caption: Reference 🔍
   :maxdepth: 1
 
   schema_types
