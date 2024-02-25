@@ -2,6 +2,7 @@
 
 import argparse
 import copy
+from datetime import datetime
 from functools import lru_cache
 import io
 import os
@@ -70,7 +71,7 @@ def main():
             if schema_name in _IGNORE_TYPES:
                 continue
             schema = schemas[schema_name]
-            schema_doc = _gendoc(schema_name, schema, include_all=args.all, schemas=schemas)
+            schema_doc = _gendoc(schema_name, schema, include_all=args.all, schemas=schemas, portal=portal)
             _write_doc(schema_name, schema_doc)
     elif args.schema:
         schema, schema_name = _get_schema(portal, args.schema)
@@ -141,7 +142,8 @@ def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
     return sorted(list(set(result)))
 
 
-def _gendoc(schema_name: str, schema: dict, include_all: bool = False, schemas: Optional[dict] = None) -> str:
+def _gendoc(schema_name: str, schema: dict, include_all: bool = False,
+            schemas: Optional[dict] = None, portal: Portal = None) -> str:
     content = ""
     if not (content := _get_template("schema")):
         return content
@@ -190,6 +192,9 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False, schemas: 
         content_properties_table = _normalize_spaces(content_properties_table)
         content = content.replace("{properties_table}", content_properties_table)
 
+    content = content.replace("{generated_datetime}", _get_current_datetime_string())
+    if portal:
+        content = content.replace("{generated_server}", portal.server)
     return content
 
 
@@ -535,6 +540,11 @@ def _normalize_spaces(value: str) -> str:
     converted to a single space, and left and right trimmed of spaces.
     """
     return re.sub(r"\s+", " ", value).strip()
+
+
+def _get_current_datetime_string():
+    tzlocal = datetime.now().astimezone().tzinfo
+    return datetime.now().astimezone(tzlocal).strftime(f"%-I:%M %p %Z | %A, %B %-d, %Y")
 
 
 def _usage(message: Optional[str] = None) -> None:
