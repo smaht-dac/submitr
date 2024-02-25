@@ -22,6 +22,7 @@ _IGNORE_TYPES = [
     "StaticSection",
     "TestingLinkedSchemaField",
     "TestingPostPutPatch",
+    "TrackingItem",
     "Workflow",
     "WorkflowRun",
 ]
