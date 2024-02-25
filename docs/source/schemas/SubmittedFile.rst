@@ -6,12 +6,12 @@ SubmittedFile
 
 .. raw:: html
 
-    Summary of properties for the SMaHT Portal <u>abstract</u>
+    Summary of properties for the <a target="_blank" href="https://data.smaht.org">SMaHT Portal</a> <u>abstract</u>
     object type <a target="_blank" href="https://data.smaht.org/profiles/SubmittedFile.json?format=json" style="color:black"><b><u>SubmittedFile</u></b> 🔗</a>.
     Its <b>parent</b> type is: <a href=File.html><u>File</u></a>.
     Its <b>derived</b> types are: <a href='AlignedReads.html'><u>AlignedReads</u></a>, <a href='UnalignedReads.html'><u>UnalignedReads</u></a>, <a href='VariantCalls.html'><u>VariantCalls</u></a>.
     
-    Property names which are <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
+    Property names in <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
     and those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties.
     Properties whose types are in <span style='color:green'><b>green</b></span> are <i><b>reference</b></i> properties.
     <p />
@@ -57,4 +57,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 3:58 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 4:03 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
