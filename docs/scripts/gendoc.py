@@ -43,6 +43,7 @@ TEMPLATES_DIR = f"{THIS_DIR}/../schema_templates"
 DOCS_DIR = f"{THIS_DIR}/../source"
 OUTPUT_DIR = f"{DOCS_DIR}/schemas"
 INDEX_DOC_FILE = f"{DOCS_DIR}/schema_types.rst"
+INDEX_DOC_FILE_MAGIC_STRING = ".. DO NOT TOUCH THIS LINE: USED BY generate_schema_doc SCRIPT!"
 
 
 def main():
@@ -76,7 +77,7 @@ def main():
     elif args.schema:
         schema, schema_name = _get_schema(portal, args.schema)
         if schema and schema_name:
-            schema_doc = _gendoc(schema_name, schema, include_all=args.all)
+            schema_doc = _gendoc(schema_name, schema, include_all=args.all, portal=portal)
             _write_doc(schema_name, schema_doc)
     else:
         _usage()
@@ -152,8 +153,7 @@ def _get_derived_schemas(schema_name: str, schemas: dict) -> List[str]:
     return result
 
 
-def _gendoc(schema_name: str, schema: dict, include_all: bool = False,
-            schemas: Optional[dict] = None, portal: Portal = None) -> str:
+def _gendoc(schema_name: str, schema: dict, include_all: bool, schemas: dict, portal: Portal) -> str:
     content = ""
     if not (content := _get_template("schema")):
         return content
@@ -173,11 +173,11 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False,
                                   f"<a href={parent_schema_name}.html>"
                                   f"<u>{parent_schema_name}</u></a>.")
 
-    if schemas and (content_derived_schemas := _gendoc_derived_schemas(schema_name, schemas)):
+    if content_derived_schemas := _gendoc_derived_schemas(schema_name, schemas):
         content_derived_schemas = f"Its <b>derived</b> types are: {content_derived_schemas}."
         content = content.replace("{derived_schemas}", content_derived_schemas)
 
-    if schemas and (content_referencing_schemas := _gendoc_referencing_schemas(schema_name, schemas)):
+    if content_referencing_schemas := _gendoc_referencing_schemas(schema_name, schemas):
         content_referencing_schemas = f"Types <b>referencing</b> this type are: {content_referencing_schemas}."
         content = content.replace("{referencing_schemas}", content_referencing_schemas)
 
@@ -191,12 +191,10 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False,
         content = content.replace("{reference_properties_section}", content_reference_properties_section)
 
     if content_properties_table := _gendoc_properties_table(schema, include_all):
-        content_properties_table = _normalize_spaces(content_properties_table)
         content = content.replace("{properties_table}", content_properties_table)
 
     content = content.replace("{generated_datetime}", _get_current_datetime_string())
-    if portal:
-        content = content.replace("{generated_server}", portal.server)
+    content = content.replace("{generated_server}", portal.server)
     return _cleanup_content(content)
 
 
@@ -516,7 +514,7 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         content = content.replace("{property_rows}", content_property_rows)
     else:
         content = content_property_rows
-    return content
+    return _normalize_spaces(content)
 
 
 def _write_doc(schema_name: str, schema_doc_content: str) -> None:
@@ -526,11 +524,10 @@ def _write_doc(schema_name: str, schema_doc_content: str) -> None:
 
 
 def _update_index_doc(schemas: dict) -> None:
-    magic_string = ".. DO NOT TOUCH THIS LINE: USED BY generate_schema_doc SCRIPT!"
     with io.open(INDEX_DOC_FILE, "r") as f:
         lines = f.readlines()
     for index, line in enumerate(lines):
-        if line.strip() == magic_string:
+        if line.strip() == INDEX_DOC_FILE_MAGIC_STRING:
             lines = lines[:index+1]
             break
     with io.open(INDEX_DOC_FILE, "w") as f:
