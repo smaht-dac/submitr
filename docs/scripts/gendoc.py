@@ -146,6 +146,10 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False, schemas: 
     content_schema_title = f"{'=' * len(schema_name)}\n{schema_name}\n{'=' * len(schema_name)}\n\n"
     content = content.replace("{schema_title}", content_schema_title)
     content = content.replace("{schema_name}", schema_name)
+    if schema.get("isAbstract") is True:
+        content = content.replace("{schema_abstract}", "<u>abstract</u>")
+    else:
+        content = content.replace("{schema_abstract}", "")
     if schema_description := schema.get("description"):
         content = content.replace("{schema_description}", f"<br /><u>Description</u>: {schema_description}")
     else:

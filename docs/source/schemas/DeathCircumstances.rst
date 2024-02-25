@@ -6,7 +6,7 @@ DeathCircumstances
 
 .. raw:: html
 
-    Description of properties for the SMaHT Portal object type <b>DeathCircumstances</b>.
+    Description of properties for the SMaHT Portal  object type <b>DeathCircumstances</b>.
     
     Property names which are <span style='color:red'>red</span> are <i>required</i> properties;
     and those in <span style='color:blue'>blue</span> are <i>identifying</i> properties.

@@ -6,7 +6,7 @@ CellCulture
 
 .. raw:: html
 
-    Description of properties for the SMaHT Portal object type <b>CellCulture</b>.
+    Description of properties for the SMaHT Portal  object type <b>CellCulture</b>.
     Its <b>parent</b> type is <b><a href=SampleSource.html style='color:green'>SampleSource</a></b>.
     Property names which are <span style='color:red'>red</span> are <i>required</i> properties;
     and those in <span style='color:blue'>blue</span> are <i>identifying</i> properties.
