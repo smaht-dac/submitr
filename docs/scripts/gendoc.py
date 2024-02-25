@@ -142,6 +142,16 @@ def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
     return sorted(list(set(result)))
 
 
+def _get_derived_schemas(schema_name: str, schemas: dict) -> List[str]:
+    result = []
+    for this_schema_name in schemas:
+        if this_schema_name == schema_name or this_schema_name in _IGNORE_TYPES:
+            continue
+        if _get_parent_schema_name(schemas[this_schema_name]) == schema_name:
+            result.append(this_schema_name)
+    return result
+
+
 def _gendoc(schema_name: str, schema: dict, include_all: bool = False,
             schemas: Optional[dict] = None, portal: Portal = None) -> str:
     content = ""
@@ -162,15 +172,21 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool = False,
         content = content.replace("{schema_description}", "")
 
     if parent_schema_name := _get_parent_schema_name(schema):
-        content = content.replace("{parent_schema_sentence}",
+        content = content.replace("{parent_schema}",
                                   f"Its <b>parent</b> type is <b>"
                                   f"<a href={parent_schema_name}.html style='color:green'>"
                                   f"{parent_schema_name}</a></b>.")
     else:
-        content = content.replace("{parent_schema_sentence}", "")
+        content = content.replace("{parent_schema}", "")
+
+    if schemas and (content_derived_schemas := _gendoc_derived_schemas(schema_name, schemas)):
+        content_derived_schemas = f"Its <b>derived</b> types are: {content_derived_schemas}."
+        content = content.replace("{derived_schemas}", content_derived_schemas)
+    else:
+        content = content.replace("{derived_schemas}", "")
 
     if schemas and (content_referencing_schemas := _gendoc_referencing_schemas(schema_name, schemas)):
-        content_referencing_schemas = f"Types referencing this type: {content_referencing_schemas}."
+        content_referencing_schemas = f"Types <b>referencing</b> this type are: {content_referencing_schemas}."
         content = content.replace("{referencing_schemas}", content_referencing_schemas)
     else:
         content = content.replace("{referencing_schemas}", "")
@@ -207,6 +223,16 @@ def _gendoc_referencing_schemas(schema_name: str, schemas: dict) -> str:
             if content:
                 content += ", "
             content += f"<a href='{referencing_schema}.html'>{referencing_schema}</a>"
+    return content
+
+
+def _gendoc_derived_schemas(schema_name: str, schemas: dict) -> str:
+    content = ""
+    if schemas and (derived_schemas := _get_derived_schemas(schema_name, schemas)):
+        for derived_schema in derived_schemas:
+            if content:
+                content += ", "
+            content += f"<a href='{derived_schema}.html'>{derived_schema}</a>"
     return content
 
 

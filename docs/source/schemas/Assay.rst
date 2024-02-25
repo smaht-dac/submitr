@@ -9,10 +9,11 @@ Assay
     Description of properties for the SMaHT Portal 
     object type <a target="_blank" href="https://data.smaht.org/profiles/Assay.json?format=json" style="color:black"><b>Assay</b> 🔗</a>.
     
-    Property names which are <span style='color:red'>red</span> are <i>required</i> properties;
-    and those in <span style='color:blue'>blue</span> are <i>identifying</i> properties.
-    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties.
-    Types referencing this type: <a href='FileSet.html'>FileSet</a>.
+    
+    Types <b>referencing</b> this type are: <a href='FileSet.html'>FileSet</a>.
+    Property names which are <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
+    and those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties.
+    Properties whose types are in <span style='color:green'><b>green</b></span> are <i><b>reference</b></i> properties.
     <p />
     
 
@@ -48,4 +49,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Last generated: Sunday, February 25, 2024 | 12:56 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 2:55 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]

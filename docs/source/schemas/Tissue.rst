@@ -9,10 +9,11 @@ Tissue
     Description of properties for the SMaHT Portal 
     object type <a target="_blank" href="https://data.smaht.org/profiles/Tissue.json?format=json" style="color:black"><b>Tissue</b> 🔗</a>.
     Its <b>parent</b> type is <b><a href=SampleSource.html style='color:green'>SampleSource</a></b>.
-    Property names which are <span style='color:red'>red</span> are <i>required</i> properties;
-    and those in <span style='color:blue'>blue</span> are <i>identifying</i> properties.
-    Properties whose types are in <span style='color:green'>green</span> are <i>reference</i> properties.
-    Types referencing this type: <a href='Histology.html'>Histology</a>.
+    
+    Types <b>referencing</b> this type are: <a href='Histology.html'>Histology</a>.
+    Property names which are <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
+    and those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties.
+    Properties whose types are in <span style='color:green'><b>green</b></span> are <i><b>reference</b></i> properties.
     <p />
     
 
@@ -56,4 +57,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Last generated: Sunday, February 25, 2024 | 12:56 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 2:55 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a></small> ]
