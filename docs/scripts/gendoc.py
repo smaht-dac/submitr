@@ -16,6 +16,7 @@ from dcicutils.portal_utils import Portal
 # Schema types/properties to ignore (by default) for the view schema usage.
 IGNORE_TYPES = [
     "AccessKey",
+    "HiglassViewConfig",
     "IngestionSubmission",
     "MetaWorkflow",
     "MetaWorkflowRun",
@@ -466,12 +467,12 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                         f"{'&nbsp;←&nbsp;<small><b>default</b></small>' if enum_value == default else ''}")
             content_property_name += f"</span>"
         elif isinstance(property_type, list):
-            property_types_string = ""
+            content_property_type_array = ""
             for type in property_type:
-                if property_types_string:
-                    property_types_string += " or<br />"
-                property_types_string += f"<b>{type}</b>"
-            content_property_type = property_types_string
+                if content_property_type_array:
+                    content_property_type_array += " or<br />"
+                content_property_type_array += f"<b>{type}</b>"
+            content_property_type = content_property_type_array
         elif not property_type == "array":
             content_property_type = f"<b>{content_property_type}</b>"
             if default is not None:

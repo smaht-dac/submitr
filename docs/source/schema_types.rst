@@ -30,7 +30,6 @@ Click on the type name for more details.
   schemas/FileFormat
   schemas/FileSet
   schemas/FilterSet
-  schemas/HiglassViewConfig
   schemas/Histology
   schemas/Image
   schemas/Library
