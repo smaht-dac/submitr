@@ -32,7 +32,10 @@ body, td {
     text-align: left;
 }
 .schema-table th {
-  background-color: #eeeeee;
+  // background-color: #eeeeee;
+  background-color: #2E86C1;
+  color: white;
+  font-weight: normal;
 }
 .schema-table .nowrap {
   // white-space: word-break;
@@ -42,10 +45,13 @@ body, td {
   //background-color: #eeeeee;
 //}
 .schema-table tbody tr:nth-child(even) {
-  background-color: #dddddd;
+  // background-color: #dddddd;
+  background-color: #EBF5FB;
 }
 .schema-table tbody tr:nth-child(odd) {
-  background-color: #cccccc;
+  // background-color: #cccccc;
+  // background-color: #AED6F1;
+  background-color: #BED6F1;
 }
 
 
