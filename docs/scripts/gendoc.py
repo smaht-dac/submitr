@@ -274,7 +274,8 @@ def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -
                 content_oneormore_property_row = template_oneormore_property_row
                 content_oneormore_property_row = (
                     content_oneormore_property_row.replace("{oneormore_properties_list}",
-                                                           "<b>consortia</b>, <b>submission_centers</b>"))
+                                                           "<b style='color:darkred;'>consortia</b>, "
+                                                           "<b style='color:darkred;'>submission_centers</b>"))
     content = content.replace("{oneormore_property_row}", content_oneormore_property_row)
     return content
 
