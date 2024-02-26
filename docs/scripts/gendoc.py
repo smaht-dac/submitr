@@ -435,27 +435,6 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 else:
                     property_attributes.append(f"array")
         if property_type == "array":
-            # TODO
-            # Not handling array of enum, e.g. from File ...
-            # "data_category": {
-            #     "title": "Data Category",
-            #     "description": "Category for information in the file",
-            #     "type": "array",
-            #     "minItems": 1,
-            #     "uniqueItems": true,
-            #     "items": {
-            #         "type": "string",
-            #         "enum": [
-            #             "Genome Region",
-            #             "Quality Control",
-            #             "Reference Genome",
-            #             "Sequencing Reads",
-            #             "Variant Calls",
-            #             "Germline Variant Calls",
-            #             "Somatic Variant Calls"
-            #         ]
-            #     }
-            # },
             if property_items := property.get("items"):
                 if property_array_enum := property_items.get("enum"):
                     content_property_type = f"<b>{property_type}</b> of <b>enum</b>"
