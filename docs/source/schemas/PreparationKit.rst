@@ -11,9 +11,12 @@ PreparationKit
     
     
     Types <b>referencing</b> this type are: <a href='AnalytePreparation.html'><u>AnalytePreparation</u></a>, <a href='LibraryPreparation.html'><u>LibraryPreparation</u></a>.
-    Property names in <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
-    those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties;
-    and properties whose types are in <span style='color:green'><b>green</b></span> are <i><b>reference</b></i> properties.
+    Property names in <span style='color:red'><b>red</b></span> are
+    <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;
+    those in <span style='color:blue'><b>blue</b></span> are
+    <a href="#identifying-properties" style="color:#222222"><i><b><u>identifying</u></b></i></a> properties;
+    and properties whose types are in <span style='color:green'><b>green</b></span> are
+    <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     <p />
     
 
