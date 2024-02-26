@@ -6,7 +6,7 @@ Preparation
 
 .. raw:: html
 
-    Summary of properties for the <a target="_blank" href="https://data.smaht.org/search/?type=Preparation">SMaHT Portal</a> <u>abstract</u>
+    Summary of <a target="_blank" href="https://data.smaht.org/search/?type=Preparation">SMaHT Portal</a> <u>abstract</u>
     object type <a target="_blank" href="https://data.smaht.org/profiles/Preparation.json?format=json" style="color:black"><b><u>Preparation</u></b> 🔗</a>.
     
     Its <b>derived</b> types are: <a href='AnalytePreparation.html'><u>AnalytePreparation</u></a>, <a href='LibraryPreparation.html'><u>LibraryPreparation</u></a>, <a href='SamplePreparation.html'><u>SamplePreparation</u></a>.
@@ -41,4 +41,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 9:22 PM EST | <a target="_blank" href="https://data.smaht.org">data.smaht.org</a> | v1.0</small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 9:23 PM EST | <a target="_blank" href="https://data.smaht.org">data.smaht.org</a> | v1.0</small> ]
