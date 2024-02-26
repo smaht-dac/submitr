@@ -419,10 +419,11 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         property_link_to_array = False
         if not (property_link_to := property.get("linkTo")):
             if property_link_to := (property_items := property.get("items", {})).get("linkTo"):
-                property_link_to_array = True
                 content_property_type = (
                     f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
                     f"<u>{property_link_to}</u></a>")
+                property_link_to = None
+                property_link_to_array = True
                 if property_type_array := property_items.get("type") if property_items else None:
                     property_attributes.append(f"array of {property_type_array}")
                 else:
@@ -430,7 +431,7 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         if property_type == "array":
             if property_items := property.get("items"):
                 if property_array_type := property_items.get("type"):
-                    if not content_property_type:
+                    if not property_link_to_array:
                         content_property_type = f"<b>{property_type}</b> of <b>{property_array_type}</b>"
                     if property_array_type == "object":
                         content_nested_array = _gendoc_properties_table(
@@ -468,10 +469,9 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 # Very special case.
                 property_attributes.append(f"format: date | date-time")
         if property_link_to:
-            if not property_link_to_array:
-                content_property_type = (
-                    f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
-                    f"<u>{property_link_to}</u></a><br /><span style='color:green;'>{content_property_type}</span>")
+            content_property_type = (
+                f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
+                f"<u>{property_link_to}</u></a><br /><span style='color:green;'>{content_property_type}</span>")
         elif enum := property.get("enum", []):
             content_property_type = f"<b>enum</b> of {content_property_type}"
             content_property_name = (
