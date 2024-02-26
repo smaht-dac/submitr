@@ -204,7 +204,7 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool, schemas: dict, po
         content = content.replace("{properties_table}", content_properties_table)
 
     content = content.replace("{generated_datetime}", _get_current_datetime_string())
-    content = content.replace("{generated_server}", portal.server)
+    content = content.replace("{generated_server}", portal.server.replace('https://', ''))
     content = content.replace("{schema_version}", _get_schema_version(schema))
     return _cleanup_content(content)
 
