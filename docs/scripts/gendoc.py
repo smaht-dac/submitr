@@ -467,6 +467,9 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         elif property_name in identifying_properties:
             content_property_name = f"<span style='color:blue'>{property_name}</span>"
         default = property.get("default")
+        minimum = property.get("minimum")
+        maximum = property.get("maximum")
+        enum = None
         if (format := property.get("format")) and (format != property_name):
             property_attributes.append(f"format: {format}")
         if property.get("calculatedProperty"):
@@ -482,7 +485,7 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 f"<u>{property_link_to}</u></a>")
             property_attributes.append(f"{property_type}")
         elif enum := property.get("enum", []):
-            content_property_type = f"<b>enum</b> of {content_property_type}"
+            content_property_type = f"<b>enum</b> of <b>{content_property_type}</b>"
             content_property_name = (
                 f"<u>{content_property_name}</u>"
                 f"<span style='font-weight:normal;font-family:arial;color:#222222;'>")
@@ -504,12 +507,16 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                     content_property_type_array += " or<br />"
                 content_property_type_array += f"<b>{type}</b>"
             content_property_type = content_property_type_array
-        elif not property_type == "array":
+        if default:
+            if isinstance(default, bool):
+                default = str(default).lower()
+            property_attributes.append(f"default: {default}")
+        if minimum:
+            property_attributes.append(f"minimum: {minimum}")
+        if maximum:
+            property_attributes.append(f"maximum: {maximum}")
+        elif property_type != "array" and not enum:
             content_property_type = f"<b>{content_property_type}</b>"
-            if default is not None:
-                if isinstance(default, bool):
-                    default = str(default).lower()
-                content_property_type += f"<span style='font-weight:normal'><br />•&nbsp;default: {default}</span>"
         if property_attributes:
             content_property_type = f"<u>{content_property_type}</u><br />"
             for property_attribute in property_attributes:
