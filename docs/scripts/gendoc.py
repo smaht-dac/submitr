@@ -466,10 +466,12 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                         content_nested_array = _gendoc_properties_table(
                             property_items, include_all=include_all,
                             _level=_level + 1, _parents=_parents + [property_name])
-                if min_length := property_items.get("minLength"):
-                    property_attributes.append(f"min items: {min_length}")
-                if max_length := property_items.get("maxLength"):
-                    property_attributes.append(f"max items: {max_length}")
+                # TODO
+                # Note handling minLength/maxLength.
+                if min_items := property_items.get("minItems"):
+                    property_attributes.append(f"min items: {min_items}")
+                if max_items := property_items.get("maxItems"):
+                    property_attributes.append(f"max items: {max_items}")
             if property.get("uniqueItems"):
                 property_attributes.append("unique")
         elif property_type == "object":
