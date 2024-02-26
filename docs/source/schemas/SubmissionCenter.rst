@@ -42,7 +42,7 @@ Reference Properties
 
 .. raw:: html
 
-    <table class="schema-table" width="104%"> <tr> <th> Property </td> <th> Type </td> <th> Description </td> </tr> <tr> <td width="5%" style="border-left:1px solid white;border-right:1px solid white;"> <b>static_headers</b> </td> <td style="border-left:1px solid white;border-right:1px solid white;"> <a href=UserContent.html style='font-weight:bold;color:green;'><u>UserContent</u></a><br />array of string </td> <td style="border-left:1px solid white;border-right:1px solid white;"> <i>See below for more details.</i> </td> </tr> <tr> <td width="5%" style="border-left:1px solid white;border-right:1px solid white;"> <b>leader</b> </td> <td style="border-left:1px solid white;border-right:1px solid white;"> <a href=User.html style='font-weight:bold;color:green;'><u>User</u></a><br />string </td> <td style="border-left:1px solid white;border-right:1px solid white;"> <i>See below for more details.</i> </td> </tr> </table>
+    <table class="schema-table" width="104%"> <tr> <th> Property </td> <th> Type </td> <th> Description </td> </tr> <tr> <td width="5%" style="border-left:1px solid white;border-right:1px solid white;"> <b>leader</b> </td> <td style="border-left:1px solid white;border-right:1px solid white;"> <a href=User.html style='font-weight:bold;color:green;'><u>User</u></a><br />string </td> <td style="border-left:1px solid white;border-right:1px solid white;"> <i>See below for more details.</i> </td> </tr> <tr> <td width="5%" style="border-left:1px solid white;border-right:1px solid white;"> <b>static_headers</b> </td> <td style="border-left:1px solid white;border-right:1px solid white;"> <a href=UserContent.html style='font-weight:bold;color:green;'><u>UserContent</u></a><br />array of string </td> <td style="border-left:1px solid white;border-right:1px solid white;"> <i>See below for more details.</i> </td> </tr> </table>
 
 |
 
@@ -57,4 +57,4 @@ Properties
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 10:16 PM EST | <a target="_blank" href="https://data.smaht.org">data.smaht.org</a> | v1.0</small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 10:19 PM EST | <a target="_blank" href="https://data.smaht.org">data.smaht.org</a> | v1.0</small> ]
