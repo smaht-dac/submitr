@@ -471,7 +471,8 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         if property_link_to:
             content_property_type = (
                 f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
-                f"<u>{property_link_to}</u></a><br /><span style='color:green;'>{content_property_type}</span>")
+                f"<u>{property_link_to}</u></a>")
+            property_attributes.append(f"{property_type}")
         elif enum := property.get("enum", []):
             content_property_type = f"<b>enum</b> of {content_property_type}"
             content_property_name = (
