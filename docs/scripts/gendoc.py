@@ -337,6 +337,7 @@ def _gendoc_reference_properties_table(schema: dict, include_all: bool = False) 
         return content
     if not (template_reference_properties_table := _get_template("reference_properties_table")):
         return content
+    required_properties = schema.get("required", [])
     simple_properties = []
     for property_name in properties:
         if not property_name or not include_all and property_name in IGNORE_PROPERTIES:
@@ -355,7 +356,8 @@ def _gendoc_reference_properties_table(schema: dict, include_all: bool = False) 
             if property_items := property.get("items"):
                 if property_array_type := property_items.get("type"):
                     content_property_type = f"{content_property_type} of {property_array_type}"
-        simple_properties.append({"name": property_name, "type": content_property_type})
+        simple_properties.append({"name": property_name, "type": content_property_type,
+                                  "required": property_name in required_properties})
     if not (content_simple_property_rows := _gendoc_simple_properties(simple_properties)):
         return content
     content = template_reference_properties_table
@@ -373,10 +375,10 @@ def _gendoc_simple_properties(properties: List[str], kind: Optional[str] = None)
     for property in sorted(properties, key=lambda item: item.get("name")):
         property_name = property["name"]
         property_type = property["type"]
-        if kind == "required":
-            property_name = f"<span style='color:red'>{property_name}</span>"
-        elif kind == "identifying":
+        if kind == "identifying":
             property_name = f"<span style='color:blue'>{property_name}</span>"
+        elif kind == "required" or property.get("required") is True:
+            property_name = f"<span style='color:red'>{property_name}</span>"
         content_simple_property = copy.deepcopy(template_simple_property_row)
         content_simple_property = content_simple_property.replace("{property_name}", property_name)
         content_simple_property = content_simple_property.replace("{property_type}", property_type)
