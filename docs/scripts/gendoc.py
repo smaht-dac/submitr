@@ -497,14 +497,14 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 content_property_type += f"•&nbsp;{property_attribute}<br />"
         if pattern := property.get("pattern"):
             if property_name in required_properties:
-                color = "red"
+                color = "darkred"
             elif property_name in identifying_properties:
-                color = "blue"
+                color = "darkblue"
             else:
                 color = "inherit"
             property_description += (
                 f"<br />Must adhere to (regex) <span style='color:{color};'><u>pattern</u>:&nbsp;"
-                f"<small style='font-family:monospace;'>{pattern}</small></span>")
+                f"<small style='font-family:monospace;'><b>{pattern}</b></small></span>")
         if _parents:
             content_parents = "<span style='font-weight:normal;'>"
             for index, parent in enumerate(_parents):
