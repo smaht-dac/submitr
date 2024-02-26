@@ -51,7 +51,8 @@ body, td {
 .schema-table tbody tr:nth-child(odd) {
   // background-color: #cccccc;
   // background-color: #AED6F1;
-  background-color: #BED6F1;
+  // background-color: #BED6F1;
+  background-color: #BFDFF6;
 }
 
 
