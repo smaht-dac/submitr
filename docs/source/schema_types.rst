@@ -62,3 +62,8 @@ Click on the type name for more details.
   schemas/User
   schemas/UserContent
   schemas/VariantCalls
+
+
+.. raw:: html
+
+    &nbsp;&nbsp;[ <small>Generated: Monday, February 26, 2024 | 11:07 AM EST | <a target='_blank' href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]<p />
