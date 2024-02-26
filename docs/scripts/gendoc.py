@@ -458,9 +458,11 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 if (max_items := property.get("maxItems")) is not None:
                     property_attributes.append(f"max items: {max_items}")
                 if (min_length := property_items.get("minLength")) is not None:
-                    property_attributes.append(f"min length: {min_length}")
+                    property_attributes.append(
+                        f"min{' string' if property_array_type == 'string' else ''} length: {min_length}")
                 if (max_length := property_items.get("maxLength")) is not None:
-                    property_attributes.append(f"max length: {max_length}")
+                    property_attributes.append(
+                        f"max{' string' if property_array_type == 'string' else ''} length: {max_length}")
             if property.get("uniqueItems"):
                 property_attributes.append("unique")
         elif property_type == "object":
@@ -481,8 +483,6 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         elif property_name in identifying_properties:
             content_property_name = f"<span style='color:blue'>{property_name}</span>"
         default = property.get("default")
-        minimum = property.get("minimum")
-        maximum = property.get("maximum")
         enum = None
         if (format := property.get("format")) and (format != property_name):
             property_attributes.append(f"format: {format}")
@@ -526,10 +526,14 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             if isinstance(default, bool):
                 default = str(default).lower()
             property_attributes.append(f"default: {default}")
-        if minimum is not None:
+        if (minimum := property.get("minimum")) is not None:
             property_attributes.append(f"min value: {minimum}")
-        if maximum is not None:
+        if (maximum := property.get("maximum")) is not None:
             property_attributes.append(f"max value: {maximum}")
+        if (min_length := property.get("minLength")) is not None:
+            property_attributes.append(f"min length: {min_length}")
+        if (max_length := property.get("maxLength")) is not None:
+            property_attributes.append(f"max length: {max_length}")
         elif property_type != "array" and not enum:
             content_property_type = f"<b>{content_property_type}</b>"
         if property_attributes:
