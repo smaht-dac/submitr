@@ -421,14 +421,15 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
         content_property_name = property_name
         content_property_type = property_type
         property_attributes = []
-        property_link_to_array = False
+        property_array_enum = None
+        property_array_link_to = False
         if not (property_link_to := property.get("linkTo")):
             if property_link_to := (property_items := property.get("items", {})).get("linkTo"):
                 content_property_type = (
                     f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
                     f"<u>{property_link_to}</u></a>")
                 property_link_to = None
-                property_link_to_array = True
+                property_array_link_to = True
                 if property_type_array := property_items.get("type") if property_items else None:
                     property_attributes.append(f"array of {property_type_array}")
                 else:
@@ -456,8 +457,10 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             #     }
             # },
             if property_items := property.get("items"):
+                if property_array_enum := property_items.get("enum"):
+                    content_property_type = f"<b>{property_type}</b> of <b>enum</b>"
                 if property_array_type := property_items.get("type"):
-                    if not property_link_to_array:
+                    if not property_array_link_to and not property_array_enum:
                         content_property_type = f"<b>{property_type}</b> of <b>{property_array_type}</b>"
                     if property_array_type == "object":
                         content_nested_array = _gendoc_properties_table(
@@ -502,12 +505,21 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
                 f"<u>{property_link_to}</u></a>")
             property_attributes.append(f"{property_type}")
-        elif enum := property.get("enum", []):
-            content_property_type = f"<b>enum</b> of <b>{content_property_type}</b>"
+#       elif property_array_enum:
+#           if property_name == "data_category":
+#               import pdb ; pdb.set_trace()
+#               pass
+#           content_property_name = f"<u>{content_property_name}</u>"
+#           pass
+        elif (enum := property.get("enum", [])) or property_array_enum:
+#           if property_name == "data_category":
+#               import pdb ; pdb.set_trace()
+            if not property_array_enum:
+                content_property_type = f"<b>enum</b> of <b>{content_property_type}</b>"
             content_property_name = (
                 f"<u>{content_property_name}</u>"
                 f"<span style='font-weight:normal;font-family:arial;color:#222222;'>")
-            for enum_value in enum:
+            for enum_value in sorted(enum if not property_array_enum else property_array_enum):
                 if isinstance(enum_value, str) and len(enum_value) > 60:
                     content_property_name += f"<br />&nbsp;•&nbsp;{enum_value[0:32]}"
                     content_property_name += (
