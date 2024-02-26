@@ -453,13 +453,13 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 # Note that minLength/maxLength (I think) refers to the length of the string;
                 # the minItems/maxItems refers to the length of the array;
                 # it does not appear that minLength/maxLength is every used outside of arrays.
-                if min_items := property.get("minItems") is not None:
+                if (min_items := property.get("minItems")) is not None:
                     property_attributes.append(f"min items: {min_items}")
-                if max_items := property.get("maxItems") is not None:
+                if (max_items := property.get("maxItems")) is not None:
                     property_attributes.append(f"max items: {max_items}")
-                if min_length := property_items.get("minLength") is not None:
+                if (min_length := property_items.get("minLength")) is not None:
                     property_attributes.append(f"min length: {min_length}")
-                if max_length := property_items.get("maxLength") is not None:
+                if (max_length := property_items.get("maxLength")) is not None:
                     property_attributes.append(f"max length: {max_length}")
             if property.get("uniqueItems"):
                 property_attributes.append("unique")
