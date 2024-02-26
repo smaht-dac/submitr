@@ -476,6 +476,11 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             property_internal_comment = "[" + property_internal_comment + "]"
             if property_description:
                 property_description += " " + property_internal_comment
+        # if property_title := property.get("title", "").strip():
+        #     if property_description:
+        #         property_description = f"{property_title}: {property_description}"
+        #     else:
+        #         property_description = property_title
         if not property_description and property_name == "uuid":
             property_description = "Unique ID by which this object is identified."
         if property_name in required_properties:
