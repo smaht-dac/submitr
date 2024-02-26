@@ -335,13 +335,10 @@ def _gendoc_reference_properties_table(schema: dict, include_all: bool = False) 
         return content
     if not (properties := schema.get("properties", [])):
         return content
-    if not (reference_properties := [property_name for property_name in properties
-                                     if properties[property_name].get("linkTo")]):
-        return content
     if not (template_reference_properties_table := _get_template("reference_properties_table")):
         return content
     simple_properties = []
-    for property_name in reference_properties:
+    for property_name in properties:
         if not property_name or not include_all and property_name in IGNORE_PROPERTIES:
             continue
         if not (property := properties[property_name]):
@@ -349,15 +346,16 @@ def _gendoc_reference_properties_table(schema: dict, include_all: bool = False) 
         if not (property_type := property.get("type")):
             continue
         if not (property_link_to := property.get("linkTo")):
-            continue
-        property_type = (
+            if not (property_link_to := property.get("items", {}).get("linkTo")):
+                continue
+        content_property_type = (
             f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
-            f"<u>{property_link_to}</u></a><br /><span style='color:green;'>{property_type}</span>")
+            f"<u>{property_link_to}</u></a><br />{property_type}")
         if property_type == "array":
             if property_items := property.get("items"):
                 if property_array_type := property_items.get("type"):
-                    property_type = f"{property_type} of {property_array_type}"
-        simple_properties.append({"name": property_name, "type": property_type})
+                    content_property_type = f"{content_property_type} of {property_array_type}"
+        simple_properties.append({"name": property_name, "type": content_property_type})
     if not (content_simple_property_rows := _gendoc_simple_properties(simple_properties)):
         return content
     content = template_reference_properties_table
