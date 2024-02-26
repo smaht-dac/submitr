@@ -104,7 +104,7 @@ def _create_portal(ini: str, env: Optional[str] = None,
             if portal.ini_file:
                 PRINT(f"Portal ini file: {portal.ini_file}")
             if portal.server:
-                PRINT(f"Portal server: {portal.server}")
+                PRINT(f"Portal server: {portal.server.replace('https://', '')}")
         return portal
 
 
