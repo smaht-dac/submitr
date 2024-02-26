@@ -34,6 +34,10 @@ doc:
 doc-view: doc
 	open docs/html/index.html
 
+doc-gen docgen gendoc: doc
+	python docs/scripts/gendoc.py --env data
+	make doc
+
 publish:
 	# New Python based publish script in dcicutils (2023-04-25).
 	poetry run publish-to-pypi
