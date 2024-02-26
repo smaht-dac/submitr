@@ -66,4 +66,4 @@ Click on the type name for more details.
 
 .. raw:: html
 
-    &nbsp;&nbsp;[ <small>Generated: Monday, February 26, 2024 | 11:35 AM EST | <a target='_blank' href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]<p />
+    &nbsp;&nbsp;[ <small>Generated: Monday, February 26, 2024 | 11:41 AM EST | <a target='_blank' href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]<p />
