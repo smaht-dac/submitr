@@ -370,7 +370,7 @@ def _gendoc_simple_properties(properties: List[str], kind: Optional[str] = None)
     if not (template_simple_property_row := _get_template("simple_property_row")):
         return result
     result = ""
-    for property in properties:
+    for property in sorted(properties, key=lambda item: item.get("name")):
         property_name = property["name"]
         property_type = property["type"]
         if kind == "required":
