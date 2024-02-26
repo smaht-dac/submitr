@@ -509,9 +509,9 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 default = str(default).lower()
             property_attributes.append(f"default: {default}")
         if minimum:
-            property_attributes.append(f"minimum: {minimum}")
+            property_attributes.append(f"min value: {minimum}")
         if maximum:
-            property_attributes.append(f"maximum: {maximum}")
+            property_attributes.append(f"max value: {maximum}")
         elif property_type != "array" and not enum:
             content_property_type = f"<b>{content_property_type}</b>"
         if property_attributes:
