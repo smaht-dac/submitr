@@ -258,7 +258,9 @@ def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -
             property_link_to = property.get("items", {}).get("linkTo")
         if property_type == "array":
             if property_items := property.get("items"):
-                if property_array_type := property_items.get("type"):
+                if property_array_enum := property_items.get("enum"):
+                    property_type = f"{property_type} of enum"
+                elif property_array_type := property_items.get("type"):
                     property_type = f"{property_type} of {property_array_type}"
         simple_properties.append({"name": property_name, "type": property_type, "link_to": property_link_to})
     content_simple_property_rows = _gendoc_simple_properties(simple_properties, kind="required")
@@ -309,7 +311,9 @@ def _gendoc_identifying_properties_table(schema: dict, include_all: bool = False
             continue
         if property_type == "array":
             if property_items := property.get("items"):
-                if property_array_type := property_items.get("type"):
+                if property_array_enum := property_items.get("enum"):
+                    property_type = f"{property_type} of enum"
+                elif property_array_type := property_items.get("type"):
                     property_type = f"{property_type} of {property_array_type}"
         simple_properties.append({"name": property_name, "type": property_type})
     content_simple_property_rows = _gendoc_simple_properties(simple_properties, kind="identifying")
