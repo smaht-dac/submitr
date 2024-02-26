@@ -453,13 +453,13 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 # Note that minLength/maxLength (I think) refers to the length of the string;
                 # the minItems/maxItems refers to the length of the array;
                 # it does not appear that minLength/maxLength is every used outside of arrays.
-                if min_items := property.get("minItems"):
+                if min_items := property.get("minItems") is not None:
                     property_attributes.append(f"min items: {min_items}")
-                if max_items := property.get("maxItems"):
+                if max_items := property.get("maxItems") is not None:
                     property_attributes.append(f"max items: {max_items}")
-                if min_length := property_items.get("minLength"):
+                if min_length := property_items.get("minLength") is not None:
                     property_attributes.append(f"min length: {min_length}")
-                if max_length := property_items.get("maxLength"):
+                if max_length := property_items.get("maxLength") is not None:
                     property_attributes.append(f"max length: {max_length}")
             if property.get("uniqueItems"):
                 property_attributes.append("unique")
@@ -498,15 +498,7 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
                 f"<u>{property_link_to}</u></a>")
             property_attributes.append(f"{property_type}")
-#       elif property_array_enum:
-#           if property_name == "data_category":
-#               import pdb ; pdb.set_trace()
-#               pass
-#           content_property_name = f"<u>{content_property_name}</u>"
-#           pass
         elif (enum := property.get("enum", [])) or property_array_enum:
-#           if property_name == "data_category":
-#               import pdb ; pdb.set_trace()
             if not property_array_enum:
                 content_property_type = f"<b>enum</b> of <b>{content_property_type}</b>"
             content_property_name = (
@@ -534,9 +526,9 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             if isinstance(default, bool):
                 default = str(default).lower()
             property_attributes.append(f"default: {default}")
-        if minimum:
+        if minimum is not None:
             property_attributes.append(f"min value: {minimum}")
-        if maximum:
+        if maximum is not None:
             property_attributes.append(f"max value: {maximum}")
         elif property_type != "array" and not enum:
             content_property_type = f"<b>{content_property_type}</b>"
