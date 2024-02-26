@@ -27,13 +27,15 @@ body, td {
  // background-color: white;
 //}
 .schema-table td, .schema-table th {
-    border: 1px solid #bbbbbb; /* Light grey border */
+    border: 0; /* Light grey border */
     padding: 7pt; /* Spacing inside each cell */
     text-align: left;
 }
 .schema-table th {
   // background-color: #eeeeee;
   background-color: #2E86C1;
+  border-bottom: 1px solid darkblue;
+  border-top: 1px solid darkblue;
   color: white;
   font-weight: normal;
 }
