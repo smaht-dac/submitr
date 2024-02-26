@@ -11,9 +11,12 @@ SubmittedFile
     Its <b>parent</b> type is: <a href=File.html><u>File</u></a>.
     Its <b>derived</b> types are: <a href='AlignedReads.html'><u>AlignedReads</u></a>, <a href='UnalignedReads.html'><u>UnalignedReads</u></a>, <a href='VariantCalls.html'><u>VariantCalls</u></a>.
     Types <b>referencing</b> this type are: <a href='AlignedReads.html'><u>AlignedReads</u></a>, <a href='OutputFile.html'><u>OutputFile</u></a>, <a href='UnalignedReads.html'><u>UnalignedReads</u></a>, <a href='VariantCalls.html'><u>VariantCalls</u></a>.
-    Property names in <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
-    those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties;
-    and properties whose types are in <span style='color:green'><b>green</b></span> are <i><b>reference</b></i> properties.
+    Property names in <span style='color:red'><b>red</b></span> are
+    <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;
+    those in <span style='color:blue'><b>blue</b></span> are
+    <a href="#identifying-properties" style="color:#222222"><i><b><u>identifying</u></b></i></a> properties;
+    and properties whose types are in <span style='color:green'><b>green</b></span> are
+    <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     <p />
     <br /><u>Description</u>: Generic file submitted by external user.
 

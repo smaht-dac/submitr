@@ -11,9 +11,12 @@ Protocol
     
     
     Types <b>referencing</b> this type are: <a href='Analyte.html'><u>Analyte</u></a>, <a href='CellCulture.html'><u>CellCulture</u></a>, <a href='CellCultureMixture.html'><u>CellCultureMixture</u></a>, <a href='CellCultureSample.html'><u>CellCultureSample</u></a>, <a href='CellSample.html'><u>CellSample</u></a>, <a href='FileSet.html'><u>FileSet</u></a>, <a href='Library.html'><u>Library</u></a>, <a href='Sample.html'><u>Sample</u></a>, <a href='SampleSource.html'><u>SampleSource</u></a>, <a href='Sequencing.html'><u>Sequencing</u></a>, <a href='TissueCollection.html'><u>TissueCollection</u></a>, <a href='TissueSample.html'><u>TissueSample</u></a>.
-    Property names in <span style='color:red'><b>red</b></span> are <i><b>required</b></i> properties;
-    those in <span style='color:blue'><b>blue</b></span> are <i><b>identifying</b></i> properties;
-    and properties whose types are in <span style='color:green'><b>green</b></span> are <i><b>reference</b></i> properties.
+    Property names in <span style='color:red'><b>red</b></span> are
+    <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;
+    those in <span style='color:blue'><b>blue</b></span> are
+    <a href="#identifying-properties" style="color:#222222"><i><b><u>identifying</u></b></i></a> properties;
+    and properties whose types are in <span style='color:green'><b>green</b></span> are
+    <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     <p />
     
 
