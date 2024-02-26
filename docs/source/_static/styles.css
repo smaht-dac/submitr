@@ -28,7 +28,7 @@ body, td {
 //}
 .schema-table td, .schema-table th {
     border: 1px solid #bbbbbb; /* Light grey border */
-    padding: 10px; /* Spacing inside each cell */
+    padding: 7pt; /* Spacing inside each cell */
     text-align: left;
 }
 .schema-table th {

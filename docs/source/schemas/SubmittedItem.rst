@@ -28,9 +28,9 @@ Properties
 
 .. raw:: html
 
-    <table class="schema-table" width="104%"> <tr> <th> Property </td> <th> Type </td> <th> Description </td> </tr> <tr> <td width="5%" style="white-space:nowrap;"> <b>display_title</b> </td> <td width="15%" style="white-space:nowrap;"> <u><b>string</b></u><br />•&nbsp;calculated<br /> </td> <td width="80%"> - </td> </tr> </table>
+    <table class="schema-table" width="104%"> <tr> <th style="border-left:1px solid white;border-right:1px solid white;"> Property </th> <th style="border-left:1px solid white;border-right:1px solid white;"> Type </th> <th style="border-left:1px solid white;border-right:1px solid white;"> Description </th> </tr> <tr> <td width="5%" style="border-left:1px solid white;border-right:1px solid white;white-space:nowrap;"> <b>display_title</b> </td> <td width="15%" style="border-left:1px solid white;border-right:1px solid white;white-space:nowrap;"> <u><b>string</b></u><br />•&nbsp;calculated<br /> </td> <td width="80%" style="border-left:1px solid white;border-right:1px solid white;"> - </td> </tr> </table>
     <p />
 
 .. raw:: html
 
-    <br />[ <small>Generated: Sunday, February 25, 2024 | 6:13 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a> | </small> ]
+    <br />[ <small>Generated: Sunday, February 25, 2024 | 9:10 PM EST | <a target="_blank" href="https://data.smaht.org">https://data.smaht.org</a> | </small> ]
