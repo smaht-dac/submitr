@@ -544,7 +544,7 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
             content_property_type = f"<u>{content_property_type}</u><br />"
             for property_attribute in property_attributes:
                 content_property_type += f"•&nbsp;{property_attribute}<br />"
-        if pattern := property.get("pattern"):
+        if pattern := (property.get("pattern") or property.get("items", {}).get("pattern")):
             if property_name in required_properties:
                 color = "darkred"
             elif property_name in identifying_properties:
