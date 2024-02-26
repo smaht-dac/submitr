@@ -34,7 +34,7 @@ doc:
 doc-view: doc
 	open docs/html/index.html
 
-doc-gen docgen gendoc: doc
+doc-gen docgen gendoc:
 	python docs/scripts/gendoc.py --env data
 	make doc
 

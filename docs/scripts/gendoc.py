@@ -141,7 +141,7 @@ def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
                 property = properties[property_name]
                 if property.get("linkTo") == schema_name:
                     result.append(this_schema_name)
-                elif property_items := property.get("items", {}).get("linkTo") == schema_name:
+                elif property.get("items", {}).get("linkTo") == schema_name:
                     result.append(this_schema_name)
     return sorted(list(set(result)))
 
@@ -257,11 +257,13 @@ def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -
             continue
         if not (property_type := property.get("type")):
             continue
+        if not (property_link_to := property.get("linkTo")):
+            property_link_to = property.get("items", {}).get("linkTo")
         if property_type == "array":
             if property_items := property.get("items"):
                 if property_array_type := property_items.get("type"):
                     property_type = f"{property_type} of {property_array_type}"
-        simple_properties.append({"name": property_name, "type": property_type})
+        simple_properties.append({"name": property_name, "type": property_type, "link_to": property_link_to})
     content_simple_property_rows = _gendoc_simple_properties(simple_properties, kind="required")
     content = template_required_properties_table
     content = content.replace("{required_property_rows}", content_simple_property_rows)
@@ -381,6 +383,10 @@ def _gendoc_simple_properties(properties: List[str], kind: Optional[str] = None)
             property_name = f"<span style='color:red'>{property_name}</span>"
         content_simple_property = copy.deepcopy(template_simple_property_row)
         content_simple_property = content_simple_property.replace("{property_name}", property_name)
+        if property_link_to := property.get("link_to"):
+            property_type = (
+                f"<a href='{property_link_to}.html'><b style='color:green;'>"
+                f"<u>{property_link_to}</u></b></a><br />{property_type}")
         content_simple_property = content_simple_property.replace("{property_type}", property_type)
         result += content_simple_property
     return result
