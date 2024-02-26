@@ -83,8 +83,8 @@ def main():
     else:
         _usage()
 
-    if args.update_index:
-        _update_index_doc(_get_schemas(portal))
+    if True or args.update_index:
+        _update_index_doc(_get_schemas(portal), portal)
 
 
 def _create_portal(ini: str, env: Optional[str] = None,
@@ -203,9 +203,6 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool, schemas: dict, po
     if content_properties_table := _gendoc_properties_table(schema, include_all):
         content = content.replace("{properties_table}", content_properties_table)
 
-    content = content.replace("{generated_datetime}", _get_current_datetime_string())
-    content = content.replace("{generated_server}", portal.server.replace('https://', ''))
-    content = content.replace("{schema_version}", _get_schema_version(schema))
     return _cleanup_content(content)
 
 
@@ -561,7 +558,7 @@ def _write_doc(schema_name: str, schema_doc_content: str) -> None:
         f.write(schema_doc_content)
 
 
-def _update_index_doc(schemas: dict) -> None:
+def _update_index_doc(schemas: dict, portal: Portal) -> None:
     with io.open(INDEX_DOC_FILE, "r") as f:
         lines = f.readlines()
     for index, line in enumerate(lines):
@@ -575,6 +572,9 @@ def _update_index_doc(schemas: dict) -> None:
             if schema_name in IGNORE_TYPES:
                 continue
             f.write(f"  schemas/{schema_name}\n")
+        f.write(f"\n\n.. raw:: html\n\n{' ' * 4}"
+                f"&nbsp;&nbsp;[ <small>Generated: {_get_current_datetime_string()} | <a target='_blank' href='{portal.server}/profiles/?format=json'>"
+                f"{portal.server.replace('https://', '')}</a></small> ]<p />")
 
 
 @lru_cache(maxsize=32)
