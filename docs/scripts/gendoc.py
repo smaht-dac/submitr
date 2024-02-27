@@ -31,7 +31,6 @@ IGNORE_TYPES = [
     "TestingPostPutPatch",
     "TrackingItem",
     "User",
-    "UserContent",
     "Workflow",
     "WorkflowRun",
 ]
