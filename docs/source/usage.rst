@@ -24,6 +24,9 @@ Note these important aspects of using the Excel spreadsheet format:
    this means you can include comments in your spreadsheet in rows after (below) the first blank row indicating the end of data input.
 #. Sheets which are marked as "hidden" will be ignored; this provides a way of including sheets with other auxiliary information
    without its content interfering the submission tool.
+#. Sheets which have a name enclosed in parenthesis, for example ``(My Comments)``, will be completely ignored;
+   this provides a way of including sheets with other auxiliary information
+   without its content interfering the submission tool.
 #. The name of the spreadsheet file must be suffixed with ``.xls`` or ``.xlsx``; there are no other requirements for the name of this file.
 
 Here is screenshot of a simple example Excel spreadsheet: 
@@ -39,14 +42,13 @@ And also notice the multiple tabs at the bottom for the different sheets within 
 representing (in this example) data for the Portal objects ``CellCultureSample``, ``Analyte``, ``Library``, and so on.
 
 .. tip::
-    As mentioned above (in case you missed it), if you want to include arbitrary comments or auxiliary information
-    in your on a separate sheet, without that content intefering with the parsing of the spreadsheet,
-    you can do so by making that sheet **hidden**. Such hidden sheets will be completely ignored by ``smaht-submitr``.
-    To hide a sheet in Excel right-click on the tab and choose **Hide**. To **unhide** sheets select
-    **Format** > **Sheet** > **Unhide...** from the menu-bar.
-
-    Or perhaps more simply, if your sheet name is enclosed in parenthesis, for example like this - ``(My Comments)``,
-    then it will also be completely ignored by ``smaht-submitr``.
+    As mentioned above, if you want to include arbitrary comments or auxiliary information
+    in your spreadsheet, without that content intefering with the parsing of the spreadsheet,
+    you can make an individual sheet **hidden**. Such hidden sheets will be completely ignored.
+    To hide a sheet in Excel right-click on the tab and choose **Hide**. To **unhide** select
+    **Format** > **Sheet** > **Unhide...** from the menu-bar. As also mentioned above,
+    if your sheet name is enclosed in parenthesis, for example ``(My Comments)``, then it will also be completely ignored;
+    again, useful for arbitrary comments, and without having to hide/unhide sheets.
 
 .. tip::
 
@@ -136,6 +138,13 @@ Viewing Schema Info
 
    Using this command you can quickly view important aspects of the object schemas supported by SMaHT Portal;
    you can easily see the `required`, `identifying`, and `reference` properties for each schema, as well as each property `type`, and more.
+
+Metadata
+========
+A thorough discussion of the specific metadata objects suppport by SMaHT Portal  are beyond the scope of this document,
+but there is a reference guide to these metadata objects here:
+
+    * `Metadata Object Model <schema_types.html>`_
 
 Submission
 ==========
