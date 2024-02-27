@@ -680,9 +680,14 @@ def _gendoc_file_formats_table(portal: Portal) -> str:
     for file_format in file_formats:
         if ((file_format_name := file_format.get("identifier")) and
             (file_format_uuid := file_format.get("uuid"))):  # noqa
+            if file_format_description := file_format.get("description", ""):
+                if not file_format_description.endswith("."):
+                    file_format_description += "."
             content_file_formats_row = template_file_formats_row
             content_file_formats_row = content_file_formats_row.replace("{file_format_name}", file_format_name)
             content_file_formats_row = content_file_formats_row.replace("{file_format_uuid}", file_format_uuid)
+            content_file_formats_row = content_file_formats_row.replace("{file_format_description}",
+                                                                        file_format_description or "-")
             content_file_formats_rows += content_file_formats_row
     content = template_file_formats_table.replace("{file_formats_rows}", content_file_formats_rows)
     return _normalize_spaces(content)
@@ -756,4 +761,3 @@ def _exit(message: Optional[str] = None) -> None:
 
 if __name__ == "__main__":
     main()
-
