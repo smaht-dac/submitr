@@ -46,7 +46,7 @@ This document explains how to get up and running with the use of this tool.
     For more information about this software and the SMaHT project see: <strong><a href="about.html">About</a></strong>
     <br /> <br />
 
-.. note::
+.. tip::
     This documentation covers the `mechanics` of using ``smaht-submitr``.
     It does not at this time cover the `semantics` of the metadata;
     though there is an `Object Model <schema_types.html>`_ reference.
