@@ -7,7 +7,7 @@ Consortium
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=Consortium" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/Consortium.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=Consortium" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Consortium.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/Consortium.json?format=json" style="color:black"><b><u>Consortium</u></b> 🔗</a>.
     
     

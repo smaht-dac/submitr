@@ -7,7 +7,7 @@ Sequencer
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=Sequencer" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/Sequencer.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=Sequencer" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Sequencer.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/Sequencer.json?format=json" style="color:black"><b><u>Sequencer</u></b> 🔗</a>.
     
     

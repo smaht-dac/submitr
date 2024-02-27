@@ -7,7 +7,7 @@ Image
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=Image" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/Image.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=Image" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Image.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/Image.json?format=json" style="color:black"><b><u>Image</u></b> 🔗</a>.
     
     

@@ -7,7 +7,7 @@ PreparationKit
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=PreparationKit" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/PreparationKit.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=PreparationKit" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/PreparationKit.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/PreparationKit.json?format=json" style="color:black"><b><u>PreparationKit</u></b> 🔗</a>.
     
     

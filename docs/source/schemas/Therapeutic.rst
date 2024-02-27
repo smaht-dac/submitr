@@ -7,7 +7,7 @@ Therapeutic
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=Therapeutic" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/Therapeutic.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=Therapeutic" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Therapeutic.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/Therapeutic.json?format=json" style="color:black"><b><u>Therapeutic</u></b> 🔗</a>.
     
     

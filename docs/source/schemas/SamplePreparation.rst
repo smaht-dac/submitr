@@ -7,7 +7,7 @@ SamplePreparation
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=SamplePreparation" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/SamplePreparation.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=SamplePreparation" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/SamplePreparation.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/SamplePreparation.json?format=json" style="color:black"><b><u>SamplePreparation</u></b> 🔗</a>.
     Its <b>parent</b> type is: <a href=Preparation.html><u>Preparation</u></a>.
     

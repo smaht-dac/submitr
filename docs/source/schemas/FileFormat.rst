@@ -7,7 +7,7 @@ FileFormat
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/FileFormat.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/FileFormat.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/FileFormat.json?format=json" style="color:black"><b><u>FileFormat</u></b> 🔗</a>.
     
     

@@ -7,7 +7,7 @@ FilterSet
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=FilterSet" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/FilterSet.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=FilterSet" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/FilterSet.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/FilterSet.json?format=json" style="color:black"><b><u>FilterSet</u></b> 🔗</a>.
     
     

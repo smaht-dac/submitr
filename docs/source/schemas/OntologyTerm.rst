@@ -7,7 +7,7 @@ OntologyTerm
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=OntologyTerm" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/OntologyTerm.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=OntologyTerm" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/OntologyTerm.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/OntologyTerm.json?format=json" style="color:black"><b><u>OntologyTerm</u></b> 🔗</a>.
     
     

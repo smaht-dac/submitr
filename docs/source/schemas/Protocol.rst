@@ -7,7 +7,7 @@ Protocol
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=Protocol" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/Protocol.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=Protocol" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Protocol.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/Protocol.json?format=json" style="color:black"><b><u>Protocol</u></b> 🔗</a>.
     
     

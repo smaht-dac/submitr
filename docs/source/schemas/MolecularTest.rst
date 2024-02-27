@@ -7,7 +7,7 @@ MolecularTest
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=MolecularTest" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/MolecularTest.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=MolecularTest" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/MolecularTest.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/MolecularTest.json?format=json" style="color:black"><b><u>MolecularTest</u></b> 🔗</a>.
     
     

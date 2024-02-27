@@ -7,7 +7,7 @@ CellCultureMixture
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=CellCultureMixture" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/CellCultureMixture.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=CellCultureMixture" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/CellCultureMixture.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/CellCultureMixture.json?format=json" style="color:black"><b><u>CellCultureMixture</u></b> 🔗</a>.
     Its <b>parent</b> type is: <a href=CellCulture.html><u>CellCulture</u></a>.
     
