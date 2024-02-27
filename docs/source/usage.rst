@@ -141,7 +141,7 @@ Viewing Schema Info
 
 Metadata
 ========
-A thorough discussion of the specific metadata objects suppport by SMaHT Portal  are beyond the scope of this document,
+A thorough discussion of the specific metadata objects suppported by SMaHT Portal is beyond the scope of this document,
 but there is a reference guide to these metadata objects here:
 
     * `Metadata Object Model <schema_types.html>`_
