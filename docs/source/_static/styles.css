@@ -36,7 +36,7 @@ body, td {
   background-color: #BFDFF6;
 }
 .schema-table tbody tr:nth-last-child(1) {
-  border-bottom: 2px solid darkblue;
+  border-bottom: 1px solid darkblue;
 }
 
 /* Increase the width of the content area for a specific page */
