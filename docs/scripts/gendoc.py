@@ -1,4 +1,7 @@
 # UNDER DEVELOPMENT - EXPERIMENTAL
+# Script to generate readthedocs based documentation for SMaHT Portal schema types
+# relevant for (smaht-submitr) metadata submission; as well as pages for supported
+# consortia, submission-centers, and file-formats.
 
 import argparse
 import copy
