@@ -13,6 +13,8 @@ from dcicutils.misc_utils import PRINT
 from dcicutils.portal_utils import Portal
 
 
+SMAHT_DAC_EMAIL = "smhelp@hms-dbmi.atlassian.net"
+
 # Schema types/properties to ignore (by default) for the view schema usage.
 IGNORE_TYPES = [
     "AccessKey",
@@ -616,6 +618,8 @@ def _gendoc_consortia_table(portal: Portal) -> str:
             content_consortia_row = content_consortia_row.replace("{consortium_uuid}", consortium_uuid)
             content_consortia_row = content_consortia_row.replace("{consortium_description}",
                                                                   consortium_description or "-")
+            content_consortia_row = content_consortia_row.replace("{consortium_url}",
+                                                                  f"{portal.server}/{consortium_uuid}")
             content_consortia_rows += content_consortia_row
     content = template_consortia_table.replace("{consortia_rows}", content_consortia_rows)
     return _normalize_spaces(content)
@@ -641,7 +645,7 @@ def _gendoc_submission_centers_table(portal: Portal) -> str:
         return content
     if not (template_submission_centers_row := _get_template("submission_centers_row")):
         return content
-    if not (submission_centers := portal.get_metadata("/submission-centers")):
+    if not (submission_centers := portal.get_metadata("/submission-centers?limit=1000")):
         return content
     submission_centers = sorted(submission_centers.get("@graph", []), key=lambda key: key.get("identifier"))
     content_submission_centers_rows = ""
@@ -651,6 +655,25 @@ def _gendoc_submission_centers_table(portal: Portal) -> str:
             if submission_center_description := submission_center.get("description", ""):
                 if not submission_center_description.endswith("."):
                     submission_center_description += "."
+            if isinstance(submission_center_leader := submission_center.get("leader", ""), dict):
+                if submission_center_leader_name := submission_center_leader.get("display_title", ""):
+                    if submission_center_leader_url := submission_center_leader.get("@id", ""):
+                        submission_center_leader_url = f"{portal.server}/{submission_center_leader_url}"
+                else:
+                    submission_center_leader = None
+            if submission_center_leader:
+                if submission_center_description:
+                    submission_center_description += "<br />"
+                if submission_center_leader_url:
+                    submission_center_description += (
+                        f"<u>Leader</u>: <a target='_blank' href='{submission_center_leader_url}'"
+                        f" style='color:black;'><b>{submission_center_leader_name}</b></a>")
+                else:
+                    submission_center_description += f"<u>Leader</u>: <b>{submission_center_leader}</b>"
+            elif submission_center_name == "smaht_dac":
+                if submission_center_description:
+                    submission_center_description += "<br />"
+                submission_center_description += f"<u>Contact</u>: <b>{SMAHT_DAC_EMAIL}</b>"
             content_submission_centers_row = template_submission_centers_row
             content_submission_centers_row = (
                 content_submission_centers_row.replace("{submission_center_name}", submission_center_name))
@@ -659,6 +682,9 @@ def _gendoc_submission_centers_table(portal: Portal) -> str:
             content_submission_centers_row = (
                 content_submission_centers_row.replace("{submission_center_description}",
                                                        submission_center_description or "-"))
+            content_submission_centers_row = (
+                content_submission_centers_row.replace("{submission_center_url}",
+                                                       f"{portal.server}/{submission_center_uuid}"))
             content_submission_centers_rows += content_submission_centers_row
     content = template_submission_centers_table.replace("{submission_centers_rows}", content_submission_centers_rows)
     return _normalize_spaces(content)
@@ -684,7 +710,7 @@ def _gendoc_file_formats_table(portal: Portal) -> str:
         return content
     if not (template_file_formats_row := _get_template("file_formats_row")):
         return content
-    if not (file_formats := portal.get_metadata("/file-formats")):
+    if not (file_formats := portal.get_metadata("/file-formats?limit=1000")):
         return content
     file_formats = sorted(file_formats.get("@graph", []), key=lambda key: key.get("identifier"))
     content_file_formats_rows = ""
@@ -694,11 +720,17 @@ def _gendoc_file_formats_table(portal: Portal) -> str:
             if file_format_description := file_format.get("description", ""):
                 if not file_format_description.endswith("."):
                     file_format_description += "."
+            if file_format_file_extension := file_format.get("standard_file_extension"):
+                if file_format_description:
+                    file_format_description += "<br />"
+                    file_format_description += f"<u>File Extension</u>: <b>.{file_format_file_extension}</b>"
             content_file_formats_row = template_file_formats_row
             content_file_formats_row = content_file_formats_row.replace("{file_format_name}", file_format_name)
             content_file_formats_row = content_file_formats_row.replace("{file_format_uuid}", file_format_uuid)
             content_file_formats_row = content_file_formats_row.replace("{file_format_description}",
                                                                         file_format_description or "-")
+            content_file_formats_row = (
+                content_file_formats_row.replace("{file_format_url}", f"{portal.server}/{file_format_uuid}"))
             content_file_formats_rows += content_file_formats_row
     content = template_file_formats_table.replace("{file_formats_rows}", content_file_formats_rows)
     return _normalize_spaces(content)
