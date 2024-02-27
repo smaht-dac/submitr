@@ -30,6 +30,7 @@ IGNORE_TYPES = [
     "TestingLinkedSchemaField",
     "TestingPostPutPatch",
     "TrackingItem",
+    "UserContent",
     "Workflow",
     "WorkflowRun",
 ]
