@@ -108,7 +108,7 @@ def _is_admin_user(user: dict) -> bool:
     return False if os.environ.get("SMAHT_NOADMIN") else ("admin" in user.get("groups", []))
 
 
-def _get_defaulted_institution(institution, user_record, portal=None, quiet=False):
+def _get_defaulted_institution(institution, user_record, portal=None, quiet=False, verbose=False):
     """
     Returns the given institution or else if none is specified, it tries to infer an institution.
 
@@ -126,7 +126,7 @@ def _get_defaulted_institution(institution, user_record, portal=None, quiet=Fals
     return institution
 
 
-def _get_defaulted_project(project, user_record, portal=None, quiet=False):
+def _get_defaulted_project(project, user_record, portal=None, quiet=False, verbose=False):
     """
     Returns the given project or else if none is specified, it tries to infer a project.
 
@@ -156,7 +156,7 @@ def _get_defaulted_project(project, user_record, portal=None, quiet=False):
     return project
 
 
-def _get_defaulted_award(award, user_record, portal=None, error_if_none=False, quiet=False):
+def _get_defaulted_award(award, user_record, portal=None, error_if_none=False, quiet=False, verbose=False):
     """
     Returns the given award or else if none is specified, it tries to infer an award.
 
@@ -195,7 +195,7 @@ def _get_defaulted_award(award, user_record, portal=None, error_if_none=False, q
     return award
 
 
-def _get_defaulted_lab(lab, user_record, portal=None, error_if_none=False, quiet=False):
+def _get_defaulted_lab(lab, user_record, portal=None, error_if_none=False, quiet=False, verbose=False):
     """
     Returns the given lab or else if none is specified, it tries to infer a lab.
 
@@ -219,7 +219,7 @@ def _get_defaulted_lab(lab, user_record, portal=None, error_if_none=False, quiet
     return lab
 
 
-def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=False, quiet=False):
+def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=False, quiet=False, verbose=False):
     """
     Returns the given consortia or else if none is specified, it tries to infer any consortia.
 
@@ -257,7 +257,10 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
                 exit(1)
             elif consortium_name := consortium_object.get("identifier"):
                 consortium_uuid = consortium_object.get("uuid")
-                annotated_consortia.append(f"{consortium_name} ({consortium_uuid})")
+                if verbose:
+                    annotated_consortia.append(f"{consortium_name} ({consortium_uuid})")
+                else:
+                    annotated_consortia.append(f"{consortium_name}")
     if annotated_consortia:
         if not quiet:
             show(f"Consortium is{suffix}:", ", ".join(annotated_consortia))
@@ -267,7 +270,8 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
     return consortia
 
 
-def _get_defaulted_submission_centers(submission_centers, user_record, portal=None, error_if_none=False, quiet=False):
+def _get_defaulted_submission_centers(submission_centers, user_record, portal=None,
+                                      error_if_none=False, quiet=False, verbose=False):
     """
     Returns the given submission center or else if none is specified, it tries to infer a submission center.
 
@@ -310,7 +314,10 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
                 exit(1)
             elif submission_center_name := submission_center_object.get("identifier"):
                 submission_center_uuid = submission_center_object.get("uuid")
-                annotated_submission_centers.append(f"{submission_center_name} ({submission_center_uuid})")
+                if verbose:
+                    annotated_submission_centers.append(f"{submission_center_name} ({submission_center_uuid})")
+                else:
+                    annotated_submission_centers.append(f"{submission_center_name}")
     if annotated_submission_centers:
         if not quiet:
             show(f"Submission center is{suffix}:", ", ".join(annotated_submission_centers))
@@ -330,12 +337,12 @@ APP_ARG_DEFAULTERS = {
 }
 
 
-def _do_app_arg_defaulting(app_args, user_record, portal=None, quiet=False):
+def _do_app_arg_defaulting(app_args, user_record, portal=None, quiet=False, verbose=False):
     for arg in list(app_args.keys()):
         val = app_args[arg]
         defaulter = APP_ARG_DEFAULTERS.get(arg)
         if defaulter:
-            val = defaulter(val, user_record, portal, quiet=quiet)
+            val = defaulter(val, user_record, portal, quiet=quiet, verbose=verbose)
             if val:
                 app_args[arg] = val
             elif val is None:
@@ -657,7 +664,7 @@ def submit_any_ingestion(ingestion_filename, *,
     validation = validation_only or validate_remote_silent
 
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
-    if not _do_app_arg_defaulting(app_args, user_record, portal, quiet=json_only and not verbose):
+    if not _do_app_arg_defaulting(app_args, user_record, portal, quiet=json_only and not verbose, verbose=verbose):
         pass
     if not json_only:
         PRINT(f"Submission file to {'validate' if validation_only else 'ingest'}: {ingestion_filename}")

@@ -139,6 +139,13 @@ Viewing Schema Info
    Using this command you can quickly view important aspects of the object schemas supported by SMaHT Portal;
    you can easily see the `required`, `identifying`, and `reference` properties for each schema, as well as each property `type`, and more.
 
+Metadata
+========
+A thorough discussion of the specific metadata objects suppport by SMaHT Portal  are beyond the scope of this document,
+but there is a reference guide to these metadata objects here:
+
+    * `Metadata Object Model <schema_types.html>`_
+
 Submission
 ==========
 
