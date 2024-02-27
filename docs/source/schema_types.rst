@@ -1,8 +1,9 @@
 ============
 Object Model
 ============
-Below are the object types supported by :toplink:`SMaHT Portal <https://data.smaht.org>`.
+Below are the object types, relevant for metadata submission, supported by :toplink:`SMaHT Portal <https://data.smaht.org>`.
 Click on the type name for more details.
+These and others can also be viewed within SMaHT Portal itself, in a more raw format, :toplink:`here <http://data.smaht.org/profiles/>`.
 
 .. toctree::
   :caption: Types  🔍
@@ -66,4 +67,4 @@ Click on the type name for more details.
 
 .. raw:: html
 
-    &nbsp;&nbsp;[ <small>Generated: Monday, February 26, 2024 | 5:39 PM EST | <a target='_blank' href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]<p />
+    &nbsp;&nbsp;[ <small>Generated: Monday, February 26, 2024 | 10:04 PM EST | <a target='_blank' href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]<p />

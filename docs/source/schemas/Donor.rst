@@ -6,8 +6,9 @@ Donor
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="https://data.smaht.org/search/?type=Donor">SMaHT Portal</a> 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/Donor.json?format=json" style="color:black"><b><u>Donor</u></b> 🔗</a>.
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
+    <a target="_blank" href="https://data.smaht.org/search/?type=Donor" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/Donor.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/Donor.json?format=json" style="color:black"><b><u>Donor</u></b> 🔗</a>.
     
     
     Types <b>referencing</b> this type are: <a href='CellLine.html'><u>CellLine</u></a>, <a href='DeathCircumstances.html'><u>DeathCircumstances</u></a>, <a href='Demographic.html'><u>Demographic</u></a>, <a href='Tissue.html'><u>Tissue</u></a>, <a href='TissueCollection.html'><u>TissueCollection</u></a>.

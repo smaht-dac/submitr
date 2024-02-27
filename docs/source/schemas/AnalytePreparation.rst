@@ -6,8 +6,9 @@ AnalytePreparation
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="https://data.smaht.org/search/?type=AnalytePreparation">SMaHT Portal</a> 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/AnalytePreparation.json?format=json" style="color:black"><b><u>AnalytePreparation</u></b> 🔗</a>.
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
+    <a target="_blank" href="https://data.smaht.org/search/?type=AnalytePreparation" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/AnalytePreparation.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/AnalytePreparation.json?format=json" style="color:black"><b><u>AnalytePreparation</u></b> 🔗</a>.
     Its <b>parent</b> type is: <a href=Preparation.html><u>Preparation</u></a>.
     
     Types <b>referencing</b> this type are: <a href='Analyte.html'><u>Analyte</u></a>.
