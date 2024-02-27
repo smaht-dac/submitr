@@ -40,7 +40,9 @@ IGNORE_PROPERTIES = [
     "last_modified",
     "principals_allowed",
     "submitted_by",
-    "schema_version"
+    "schema_version",
+    "static_content",
+    "static_headers"
 ]
 
 # Relative to the directory containing THIS Python file.
@@ -472,6 +474,8 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
                         f"max{' string' if property_array_type == 'string' else ''} length: {max_length}")
             if property.get("uniqueItems"):
                 property_attributes.append("unique")
+            if property.get("permission") == "restricted_fields":
+                property_attributes.append("restricted")
         elif property_type == "object":
             content_nested_object = _gendoc_properties_table(
                 property,
