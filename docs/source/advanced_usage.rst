@@ -96,8 +96,8 @@ More on Validation
 ==================
 
 As described in the main `Usage <usage.html#validation>`_ section, validation is performed on the given metadata file
-before it is actually ingested into SMaHT Portal. This is be done for both the ``--submit`` and ``--validate`` options
-(the latter being a sort of "dryrun" facility).
+before it is actually ingested into SMaHT Portal. This is done for both the ``--submit`` and ``--validate`` options
+(the latter being a sort of "**dryrun**" facility).
 
 But under the hood there are more finer grained modes of validation
 which may be useful for troubleshooting or other peculiar situations, as described next.

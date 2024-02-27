@@ -195,7 +195,7 @@ Validation
 ==========
 
 As mentioned in the `previous section <usage.html#submission>`_, using the ``--submit`` option `will` perform
-validation of your metadata before submitting it.
+validation of your metadata before submitting it (after prompting you to do so).
 But if you want to `only` run validation `without` submitting the metadata to SMaHT Portal,
 then invoke ``submit-metadata-bundle`` with the :boldcode:`--validate` option like::
 
