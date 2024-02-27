@@ -266,18 +266,25 @@ def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -
     content_simple_property_rows = _gendoc_simple_properties(simple_properties, kind="required")
     content = template_required_properties_table
     content = content.replace("{required_property_rows}", content_simple_property_rows)
-    content_oneormore_property_row = ""
+    content_oneormore_property_rows = ""
     if isinstance(any_of := schema.get("anyOf"), list):
         # Very special case.
         if ((any_of == [{"required": ["submission_centers"]}, {"required": ["consortia"]}]) or
             (any_of == [{"required": ["consortia"]}, {"required": ["submission_centers"]}])):  # noqa
-            if template_oneormore_property_row := _get_template("oneormore_property_row"):
-                content_oneormore_property_row = template_oneormore_property_row
-                content_oneormore_property_row = (
-                    content_oneormore_property_row.replace("{oneormore_properties_list}",
-                                                           "<b style='color:darkred;'>consortia</b>, "
-                                                           "<b style='color:darkred;'>submission_centers</b>"))
-    content = content.replace("{oneormore_property_row}", content_oneormore_property_row)
+            if template_oneormore_property_rows := _get_template("oneormore_property_rows"):
+                content_oneormore_property_rows = template_oneormore_property_rows
+                content_oneormore_property_rows = (
+                    content_oneormore_property_rows.replace("{oneormore_properties_list}",
+                                                            "<b style='color:darkred;'>consortia</b>, "
+                                                            "<b style='color:darkred;'>submission_centers</b>"))
+                content_oneormore_simple_property_rows = _gendoc_simple_properties(
+                    [{"name": "consortia", "type": "array of string", "link_to": "Consortium"},
+                     {"name": "submission_centers", "type": "array of string", "link_to": "SubmissionCenter"}],
+                    kind="oneormore-required")
+                content_oneormore_property_rows = (
+                    content_oneormore_property_rows.replace("{oneormore_property_rows}",
+                                                            content_oneormore_simple_property_rows))
+    content = content.replace("{oneormore_property_rows}", content_oneormore_property_rows)
     return content
 
 
@@ -382,6 +389,8 @@ def _gendoc_simple_properties(properties: List[str], kind: Optional[str] = None)
             property_name = f"<span style='color:blue'>{property_name}</span>"
         elif kind == "required" or property.get("required") is True:
             property_name = f"<span style='color:red'>{property_name}</span>"
+        elif kind == "oneormore-required":
+            property_name = f"<span style='color:darkred'>{property_name}</span>"
         content_simple_property = copy.deepcopy(template_simple_property_row)
         content_simple_property = content_simple_property.replace("{property_name}", property_name)
         if property_link_to := property.get("link_to"):
