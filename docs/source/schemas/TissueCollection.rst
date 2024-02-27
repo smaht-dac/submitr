@@ -7,7 +7,7 @@ TissueCollection
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=TissueCollection" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/TissueCollection.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=TissueCollection" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/TissueCollection.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/TissueCollection.json?format=json" style="color:black"><b><u>TissueCollection</u></b> 🔗</a>.
     
     

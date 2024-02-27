@@ -7,7 +7,7 @@ TissueSample
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=TissueSample" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/TissueSample.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=TissueSample" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/TissueSample.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/TissueSample.json?format=json" style="color:black"><b><u>TissueSample</u></b> 🔗</a>.
     Its <b>parent</b> type is: <a href=Sample.html><u>Sample</u></a>.
     

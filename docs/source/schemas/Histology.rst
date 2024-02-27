@@ -7,7 +7,7 @@ Histology
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=Histology" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/Histology.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=Histology" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Histology.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/Histology.json?format=json" style="color:black"><b><u>Histology</u></b> 🔗</a>.
     
     

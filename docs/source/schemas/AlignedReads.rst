@@ -7,7 +7,7 @@ AlignedReads
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=AlignedReads" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/AlignedReads.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=AlignedReads" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/AlignedReads.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/AlignedReads.json?format=json" style="color:black"><b><u>AlignedReads</u></b> 🔗</a>.
     Its <b>parent</b> type is: <a href=SubmittedFile.html><u>SubmittedFile</u></a>.
     

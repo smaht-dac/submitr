@@ -7,7 +7,7 @@ Exposure
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=Exposure" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/Exposure.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=Exposure" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Exposure.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/Exposure.json?format=json" style="color:black"><b><u>Exposure</u></b> 🔗</a>.
     
     

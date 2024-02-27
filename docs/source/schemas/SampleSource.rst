@@ -7,7 +7,7 @@ SampleSource
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> <u>abstract</u>
-    <a target="_blank" href="https://data.smaht.org/search/?type=SampleSource" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/SampleSource.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/search/?type=SampleSource" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json?format=json" style="color:black"><b><u>SampleSource</u></b> 🔗</a>.
     
     Its <b>derived</b> types are: <a href='CellCulture.html'><u>CellCulture</u></a>, <a href='Tissue.html'><u>Tissue</u></a>.
