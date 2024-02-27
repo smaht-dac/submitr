@@ -608,9 +608,14 @@ def _gendoc_consortia_table(portal: Portal) -> str:
     for consortium in consortia:
         if ((consortium_name := consortium.get("identifier")) and
             (consortium_uuid := consortium.get("uuid"))):  # noqa
+            if consortium_description := consortium.get("title", ""):
+                if not consortium_description.endswith("."):
+                    consortium_description += "."
             content_consortia_row = template_consortia_row
             content_consortia_row = content_consortia_row.replace("{consortium_name}", consortium_name)
             content_consortia_row = content_consortia_row.replace("{consortium_uuid}", consortium_uuid)
+            content_consortia_row = content_consortia_row.replace("{consortium_description}",
+                                                                  consortium_description or "-")
             content_consortia_rows += content_consortia_row
     content = template_consortia_table.replace("{consortia_rows}", content_consortia_rows)
     return _normalize_spaces(content)
@@ -643,11 +648,17 @@ def _gendoc_submission_centers_table(portal: Portal) -> str:
     for submission_center in submission_centers:
         if ((submission_center_name := submission_center.get("identifier")) and
             (submission_center_uuid := submission_center.get("uuid"))):  # noqa
+            if submission_center_description := submission_center.get("description", ""):
+                if not submission_center_description.endswith("."):
+                    submission_center_description += "."
             content_submission_centers_row = template_submission_centers_row
             content_submission_centers_row = (
                 content_submission_centers_row.replace("{submission_center_name}", submission_center_name))
             content_submission_centers_row = (
                 content_submission_centers_row.replace("{submission_center_uuid}", submission_center_uuid))
+            content_submission_centers_row = (
+                content_submission_centers_row.replace("{submission_center_description}",
+                                                       submission_center_description or "-"))
             content_submission_centers_rows += content_submission_centers_row
     content = template_submission_centers_table.replace("{submission_centers_rows}", content_submission_centers_rows)
     return _normalize_spaces(content)
