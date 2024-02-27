@@ -6,8 +6,9 @@ SubmittedFile
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="https://data.smaht.org/search/?type=SubmittedFile">SMaHT Portal</a> <u>abstract</u>
-    object type <a target="_blank" href="https://data.smaht.org/profiles/SubmittedFile.json?format=json" style="color:black"><b><u>SubmittedFile</u></b> 🔗</a>.
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> <u>abstract</u>
+    <a target="_blank" href="https://data.smaht.org/search/?type=SubmittedFile" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/SubmittedFile.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/SubmittedFile.json?format=json" style="color:black"><b><u>SubmittedFile</u></b> 🔗</a>.
     Its <b>parent</b> type is: <a href=File.html><u>File</u></a>.
     Its <b>derived</b> types are: <a href='AlignedReads.html'><u>AlignedReads</u></a>, <a href='UnalignedReads.html'><u>UnalignedReads</u></a>, <a href='VariantCalls.html'><u>VariantCalls</u></a>.
     Types <b>referencing</b> this type are: <a href='AlignedReads.html'><u>AlignedReads</u></a>, <a href='OutputFile.html'><u>OutputFile</u></a>, <a href='UnalignedReads.html'><u>UnalignedReads</u></a>, <a href='VariantCalls.html'><u>VariantCalls</u></a>.

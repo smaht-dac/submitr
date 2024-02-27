@@ -6,8 +6,9 @@ Demographic
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="https://data.smaht.org/search/?type=Demographic">SMaHT Portal</a> 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/Demographic.json?format=json" style="color:black"><b><u>Demographic</u></b> 🔗</a>.
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
+    <a target="_blank" href="https://data.smaht.org/search/?type=Demographic" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/Demographic.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/Demographic.json?format=json" style="color:black"><b><u>Demographic</u></b> 🔗</a>.
     
     
     

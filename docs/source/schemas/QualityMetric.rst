@@ -6,8 +6,9 @@ QualityMetric
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="https://data.smaht.org/search/?type=QualityMetric">SMaHT Portal</a> 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/QualityMetric.json?format=json" style="color:black"><b><u>QualityMetric</u></b> 🔗</a>.
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
+    <a target="_blank" href="https://data.smaht.org/search/?type=QualityMetric" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/QualityMetric.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/QualityMetric.json?format=json" style="color:black"><b><u>QualityMetric</u></b> 🔗</a>.
     
     
     Types <b>referencing</b> this type are: <a href='AlignedReads.html'><u>AlignedReads</u></a>, <a href='File.html'><u>File</u></a>, <a href='OutputFile.html'><u>OutputFile</u></a>, <a href='ReferenceFile.html'><u>ReferenceFile</u></a>, <a href='SubmittedFile.html'><u>SubmittedFile</u></a>, <a href='UnalignedReads.html'><u>UnalignedReads</u></a>, <a href='VariantCalls.html'><u>VariantCalls</u></a>.

@@ -6,8 +6,9 @@ OutputFile
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="https://data.smaht.org/search/?type=OutputFile">SMaHT Portal</a> 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/OutputFile.json?format=json" style="color:black"><b><u>OutputFile</u></b> 🔗</a>.
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
+    <a target="_blank" href="https://data.smaht.org/search/?type=OutputFile" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/OutputFile.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/OutputFile.json?format=json" style="color:black"><b><u>OutputFile</u></b> 🔗</a>.
     Its <b>parent</b> type is: <a href=File.html><u>File</u></a>.
     
     

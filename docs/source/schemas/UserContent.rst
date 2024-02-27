@@ -6,8 +6,9 @@ UserContent
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="https://data.smaht.org/search/?type=UserContent">SMaHT Portal</a> <u>abstract</u>
-    object type <a target="_blank" href="https://data.smaht.org/profiles/UserContent.json?format=json" style="color:black"><b><u>UserContent</u></b> 🔗</a>.
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> <u>abstract</u>
+    <a target="_blank" href="https://data.smaht.org/search/?type=UserContent" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/UserContent.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/UserContent.json?format=json" style="color:black"><b><u>UserContent</u></b> 🔗</a>.
     
     
     Types <b>referencing</b> this type are: <a href='SubmissionCenter.html'><u>SubmissionCenter</u></a>.

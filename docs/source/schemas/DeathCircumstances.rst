@@ -6,8 +6,9 @@ DeathCircumstances
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="https://data.smaht.org/search/?type=DeathCircumstances">SMaHT Portal</a> 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/DeathCircumstances.json?format=json" style="color:black"><b><u>DeathCircumstances</u></b> 🔗</a>.
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
+    <a target="_blank" href="https://data.smaht.org/search/?type=DeathCircumstances" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/DeathCircumstances.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/DeathCircumstances.json?format=json" style="color:black"><b><u>DeathCircumstances</u></b> 🔗</a>.
     
     
     

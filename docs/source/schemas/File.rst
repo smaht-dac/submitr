@@ -6,8 +6,9 @@ File
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="https://data.smaht.org/search/?type=File">SMaHT Portal</a> <u>abstract</u>
-    object type <a target="_blank" href="https://data.smaht.org/profiles/File.json?format=json" style="color:black"><b><u>File</u></b> 🔗</a>.
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> <u>abstract</u>
+    <a target="_blank" href="https://data.smaht.org/search/?type=File" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/File.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/File.json?format=json" style="color:black"><b><u>File</u></b> 🔗</a>.
     
     Its <b>derived</b> types are: <a href='OutputFile.html'><u>OutputFile</u></a>, <a href='ReferenceFile.html'><u>ReferenceFile</u></a>, <a href='SubmittedFile.html'><u>SubmittedFile</u></a>.
     Types <b>referencing</b> this type are: <a href='ReferenceGenome.html'><u>ReferenceGenome</u></a>.

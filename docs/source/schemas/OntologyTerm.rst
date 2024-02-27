@@ -6,8 +6,9 @@ OntologyTerm
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="https://data.smaht.org/search/?type=OntologyTerm">SMaHT Portal</a> 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/OntologyTerm.json?format=json" style="color:black"><b><u>OntologyTerm</u></b> 🔗</a>.
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
+    <a target="_blank" href="https://data.smaht.org/search/?type=OntologyTerm" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/OntologyTerm.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/OntologyTerm.json?format=json" style="color:black"><b><u>OntologyTerm</u></b> 🔗</a>.
     
     
     Types <b>referencing</b> this type are: <a href='Diagnosis.html'><u>Diagnosis</u></a>, <a href='Exposure.html'><u>Exposure</u></a>, <a href='Therapeutic.html'><u>Therapeutic</u></a>, <a href='Treatment.html'><u>Treatment</u></a>.

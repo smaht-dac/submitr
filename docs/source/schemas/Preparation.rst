@@ -6,8 +6,9 @@ Preparation
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="https://data.smaht.org/search/?type=Preparation">SMaHT Portal</a> <u>abstract</u>
-    object type <a target="_blank" href="https://data.smaht.org/profiles/Preparation.json?format=json" style="color:black"><b><u>Preparation</u></b> 🔗</a>.
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> <u>abstract</u>
+    <a target="_blank" href="https://data.smaht.org/search/?type=Preparation" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/Preparation.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/Preparation.json?format=json" style="color:black"><b><u>Preparation</u></b> 🔗</a>.
     
     Its <b>derived</b> types are: <a href='AnalytePreparation.html'><u>AnalytePreparation</u></a>, <a href='LibraryPreparation.html'><u>LibraryPreparation</u></a>, <a href='SamplePreparation.html'><u>SamplePreparation</u></a>.
     

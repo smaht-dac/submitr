@@ -6,8 +6,9 @@ Protocol
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="https://data.smaht.org/search/?type=Protocol">SMaHT Portal</a> 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/Protocol.json?format=json" style="color:black"><b><u>Protocol</u></b> 🔗</a>.
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
+    <a target="_blank" href="https://data.smaht.org/search/?type=Protocol" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/Protocol.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/Protocol.json?format=json" style="color:black"><b><u>Protocol</u></b> 🔗</a>.
     
     
     Types <b>referencing</b> this type are: <a href='Analyte.html'><u>Analyte</u></a>, <a href='CellCulture.html'><u>CellCulture</u></a>, <a href='CellCultureMixture.html'><u>CellCultureMixture</u></a>, <a href='CellCultureSample.html'><u>CellCultureSample</u></a>, <a href='CellSample.html'><u>CellSample</u></a>, <a href='FileSet.html'><u>FileSet</u></a>, <a href='Library.html'><u>Library</u></a>, <a href='Sample.html'><u>Sample</u></a>, <a href='SampleSource.html'><u>SampleSource</u></a>, <a href='Sequencing.html'><u>Sequencing</u></a>, <a href='TissueCollection.html'><u>TissueCollection</u></a>, <a href='TissueSample.html'><u>TissueSample</u></a>.

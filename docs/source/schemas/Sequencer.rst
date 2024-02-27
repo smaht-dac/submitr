@@ -6,8 +6,9 @@ Sequencer
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="https://data.smaht.org/search/?type=Sequencer">SMaHT Portal</a> 
-    object type <a target="_blank" href="https://data.smaht.org/profiles/Sequencer.json?format=json" style="color:black"><b><u>Sequencer</u></b> 🔗</a>.
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
+    <a target="_blank" href="https://data.smaht.org/search/?type=Sequencer" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/Sequencer.json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/Sequencer.json?format=json" style="color:black"><b><u>Sequencer</u></b> 🔗</a>.
     
     
     Types <b>referencing</b> this type are: <a href='Sequencing.html'><u>Sequencing</u></a>.
