@@ -43,14 +43,14 @@ THIS_DIR = f"{os.path.dirname(__file__)}"
 TEMPLATES_DIR = f"{THIS_DIR}/../schema_templates"
 DOCS_DIR = f"{THIS_DIR}/../source"
 OUTPUT_DIR = f"{DOCS_DIR}/schemas"
-INDEX_DOC_FILE = f"{DOCS_DIR}/schema_types.rst"
-INDEX_DOC_FILE_MAGIC_STRING = ".. DO NOT TOUCH THIS LINE! USED BY gendoc SCRIPT!"
+OBJECT_MODEL_DOC_FILE = f"{DOCS_DIR}/object_model.rst"
+OBJECT_MODEL_DOC_FILE_MAGIC_STRING = ".. DO NOT TOUCH THIS LINE! USED BY gendoc SCRIPT!"
 CONSORTIA_DOC_FILE = f"{DOCS_DIR}/consortia.rst"
-CONSORTIA_DOC_FILE_MAGIC_STRING = INDEX_DOC_FILE_MAGIC_STRING
+CONSORTIA_DOC_FILE_MAGIC_STRING = OBJECT_MODEL_DOC_FILE_MAGIC_STRING
 SUBMISSION_CENTERS_DOC_FILE = f"{DOCS_DIR}/submission_centers.rst"
-SUBMISSION_CENTERS_DOC_FILE_MAGIC_STRING = INDEX_DOC_FILE_MAGIC_STRING
+SUBMISSION_CENTERS_DOC_FILE_MAGIC_STRING = OBJECT_MODEL_DOC_FILE_MAGIC_STRING
 FILE_FORMATS_DOC_FILE = f"{DOCS_DIR}/file_formats.rst"
-FILE_FORMATS_DOC_FILE_MAGIC_STRING = INDEX_DOC_FILE_MAGIC_STRING
+FILE_FORMATS_DOC_FILE_MAGIC_STRING = OBJECT_MODEL_DOC_FILE_MAGIC_STRING
 
 
 def main():
@@ -75,7 +75,7 @@ def main():
         schema_doc = _gendoc(schema_name, schema, schemas=schemas, portal=portal)
         _write_doc(schema_name, schema_doc)
 
-    _update_schema_types_file(_get_schemas(portal), portal)
+    _update_object_model_file(_get_schemas(portal), portal)
     _update_consortia_file(portal)
     _update_submission_centers_file(portal)
     _update_file_formats_file(portal)
@@ -694,14 +694,14 @@ def _write_doc(schema_name: str, schema_doc_content: str) -> None:
         f.write(schema_doc_content)
 
 
-def _update_schema_types_file(schemas: dict, portal: Portal) -> None:
-    with io.open(INDEX_DOC_FILE, "r") as f:
+def _update_object_model_file(schemas: dict, portal: Portal) -> None:
+    with io.open(OBJECT_MODEL_DOC_FILE, "r") as f:
         lines = f.readlines()
     for index, line in enumerate(lines):
-        if line.strip() == INDEX_DOC_FILE_MAGIC_STRING:
+        if line.strip() == OBJECT_MODEL_DOC_FILE_MAGIC_STRING:
             lines = lines[:index+1]
             break
-    with io.open(INDEX_DOC_FILE, "w") as f:
+    with io.open(OBJECT_MODEL_DOC_FILE, "w") as f:
         f.writelines(lines)
         f.write(f"\n")
         for schema_name in {key: schemas[key] for key in sorted(schemas)}:
