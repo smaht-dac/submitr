@@ -95,10 +95,9 @@ Incidentally, for such a ``.tar.gz`` file you both ``tar`` and ``gzip`` it in a 
 More on Validation
 ==================
 
-As described in the main `Usage <usage.html#validation>`_ section, validation can be performed on the given metadata file
-before it is actually ingestion into SMaHT Portal. This can be done most simply and comprehensively
-by using the ``--validate`` option. And in fact, this is the **default behavior** if you, as a submitter,
-are `not` an `admin` user.
+As described in the main `Usage <usage.html#validation>`_ section, validation is performed on the given metadata file
+before it is actually ingested into SMaHT Portal. This is be done for both the ``--submit`` and ``--validate`` options
+(the latter being a sort of "dryrun" facility).
 
 But under the hood there are more finer grained modes of validation
 which may be useful for troubleshooting or other peculiar situations, as described next.
@@ -140,15 +139,11 @@ Validation Only
 ~~~~~~~~~~~~~~~
 
 If you want to perform `only` client-side `and` server-side validation,
+and to be prompted `before` the server-side validation,
 there is a ``--validate-only`` option, which will cause `only` both local client-side
 and remote server-side validation to be done. But note that if there are (local) client-side
 errors, then (remote) server-side validation will `not` actually be done; you must fix those
 errors first to move on to (remote) server-side validation.
-
-.. .. tip:: TODO: Rework all of this based on latest changes.
-..     The only real difference between this ``--validate-only`` option and the plain ``--validate`` option,
-..     is that with this option you will `not` be prompted to continue with the metadata ingestion process,
-..     even if there are no errors; rather it will simply exit immediately.
 
 If you want to perform `only` client-side validation (for whatever reason),
 there is a ``--validate-local-only`` option which will cause `only` local client-side validation to be done;
@@ -182,7 +177,7 @@ Passing ``--raw`` to will give you the JSON for the "raw" object, without some e
 Viewing Portal Schemas
 ======================
 
-Using the :boldcode:`view-portal-object` utility described above you can also view information about SMaHT Portal `schemas`,
+Using the :boldcode:`view-portal-object` utility described above you can also view information about SMaHT Portal object types (or `schemas`),
 if the given the argument is the name of a SMaHT Portal object, for example::
 
     view-portal-object --env data CellLine
@@ -207,7 +202,9 @@ Passing ``--raw`` to either of these will give you the raw JSON for the schema(s
 
 .. tip::
     There is nothing really that the ``view-portal-object`` commands do that you cannot also do by interacting with SMaHT Portal directly 
-    via your browser, but more command-line savvy users may find this interface more agreeable under some circumstances.
+    via your browser (e.g. :toplink:`here <https://data.smaht.org/profiles/>`),
+    or by using the `SMaHT Portal Object Model Reference <schema_types.html>`_;
+    but more command-line savvy users may find this interface more agreeable under some circumstances.
 
 Installation for Developers
 ===========================

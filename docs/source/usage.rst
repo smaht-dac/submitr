@@ -54,6 +54,8 @@ representing (in this example) data for the Portal objects ``CellCultureSample``
 
     Other file formats besides Excel actually `are` supported; see the `Advanced Usage <advanced_usage.html#other-files-formats>`_ section for more information.
 
+Below we describe the various object property `types` supported by ``smaht-submitr``.
+
 Object Reference Properties
 ---------------------------
 
@@ -129,22 +131,18 @@ A column value within a (non-header) data row may be empty, but this only means 
 when creating or updating the associated object. In order to actually `delete` a property value from an object,
 a special value - ``*delete*`` - should be used as the the property value.
 
-Viewing Schema Info
--------------------
-.. tip::
-   As you're building your metadata file,
-   you `may` find the :boldcode:`view-portal-object` command useful.
-   This is described in the `Advanced Usage <advanced_usage.html#viewing-portal-schemas>`_ section.
-
-   Using this command you can quickly view important aspects of the object schemas supported by SMaHT Portal;
-   you can easily see the `required`, `identifying`, and `reference` properties for each schema, as well as each property `type`, and more.
-
 Metadata
 ========
 A thorough discussion of the specific metadata objects suppported by SMaHT Portal is beyond the scope of this document,
-but there is a reference guide to these metadata objects here:
+but there is a reference guide to these metadata objects provided at the link below.
+You can quickly view important aspects of each of the object types,
+such as the `required` and `reference` properties for each type, as well as each property `type`, and more.
 
     * `Metadata Object Model <schema_types.html>`_
+
+.. tip::
+   More savvy command-line oriented users `may` find the :boldcode:`view-portal-object` command useful.
+   This is described in the `Advanced Usage <advanced_usage.html#viewing-portal-schemas>`_ section.
 
 Submission
 ==========
