@@ -49,7 +49,7 @@ This document explains how to get up and running with the use of this tool.
 .. tip::
     This documentation covers the `mechanics` of using ``smaht-submitr``.
     It does not at this time cover the `semantics` of the metadata;
-    though there is an `Object Model <schema_types.html>`_ reference.
+    though there is an `Object Model <object_model.html>`_ reference.
     For more information on this aspect of submission please see: **TBD**
 
 
@@ -105,4 +105,7 @@ and installing the dependencies for this tool:
   :caption: Reference 🔍
   :maxdepth: 1
 
-  schema_types
+  consortia
+  submission_centers
+  file_formats
+  object_model

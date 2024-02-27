@@ -138,7 +138,7 @@ but there is a reference guide to these metadata objects provided at the link be
 You can quickly view important aspects of each of the object types,
 such as the `required` and `reference` properties for each type, as well as each property `type`, and more.
 
-    * `Metadata Object Model <schema_types.html>`_
+    * `Metadata Object Model <object_model.html>`_
 
 .. tip::
    More savvy command-line oriented users `may` find the :boldcode:`view-portal-object` command useful.

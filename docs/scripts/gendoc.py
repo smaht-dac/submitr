@@ -43,23 +43,23 @@ THIS_DIR = f"{os.path.dirname(__file__)}"
 TEMPLATES_DIR = f"{THIS_DIR}/../schema_templates"
 DOCS_DIR = f"{THIS_DIR}/../source"
 OUTPUT_DIR = f"{DOCS_DIR}/schemas"
-INDEX_DOC_FILE = f"{DOCS_DIR}/schema_types.rst"
-INDEX_DOC_FILE_MAGIC_STRING = ".. DO NOT TOUCH THIS LINE! USED BY gendoc SCRIPT!"
+OBJECT_MODEL_DOC_FILE = f"{DOCS_DIR}/object_model.rst"
+OBJECT_MODEL_DOC_FILE_MAGIC_STRING = ".. DO NOT TOUCH THIS LINE! USED BY gendoc SCRIPT!"
+CONSORTIA_DOC_FILE = f"{DOCS_DIR}/consortia.rst"
+CONSORTIA_DOC_FILE_MAGIC_STRING = OBJECT_MODEL_DOC_FILE_MAGIC_STRING
+SUBMISSION_CENTERS_DOC_FILE = f"{DOCS_DIR}/submission_centers.rst"
+SUBMISSION_CENTERS_DOC_FILE_MAGIC_STRING = OBJECT_MODEL_DOC_FILE_MAGIC_STRING
+FILE_FORMATS_DOC_FILE = f"{DOCS_DIR}/file_formats.rst"
+FILE_FORMATS_DOC_FILE_MAGIC_STRING = OBJECT_MODEL_DOC_FILE_MAGIC_STRING
 
 
 def main():
 
     parser = argparse.ArgumentParser(description="Generate Portal schema (rst) documentation.")
-    parser.add_argument("schema", type=str, nargs="?",
-                        help=f"A schema name or 'schemas' (or no argument) for all. ")
     parser.add_argument("--ini", type=str, required=False, default=None,
                         help=f"Name of the application .ini file.")
     parser.add_argument("--env", "-e", type=str, required=False, default=None,
                         help=f"Environment name (key from ~/.smaht-keys.json).")
-    parser.add_argument("--all", action="store_true", required=False, default=False,
-                        help="Include all properties for schema usage.")
-    parser.add_argument("--update-index", action="store_true", required=False,
-                        default=False, help="Update the index.rst file.")
     parser.add_argument("--verbose", action="store_true", required=False, default=False, help="Verbose output.")
     parser.add_argument("--debug", action="store_true", required=False, default=False, help="Debugging output.")
     args = parser.parse_args()
@@ -67,24 +67,18 @@ def main():
     portal = _create_portal(ini=args.ini, env=args.env or os.environ.get("SMAHT_ENV"),
                             verbose=args.verbose, debug=args.debug)
 
-    if not args.schema or args.schema.lower() in ["schemas", "schema"]:
-        schemas = _get_schemas(portal)
-        for schema_name in schemas:
-            if schema_name in IGNORE_TYPES:
-                continue
-            schema = schemas[schema_name]
-            schema_doc = _gendoc(schema_name, schema, include_all=args.all, schemas=schemas, portal=portal)
-            _write_doc(schema_name, schema_doc)
-    elif args.schema:
-        schema, schema_name = _get_schema(portal, args.schema)
-        if schema and schema_name:
-            schema_doc = _gendoc(schema_name, schema, include_all=args.all, portal=portal)
-            _write_doc(schema_name, schema_doc)
-    else:
-        _usage()
+    schemas = _get_schemas(portal)
+    for schema_name in schemas:
+        if schema_name in IGNORE_TYPES:
+            continue
+        schema = schemas[schema_name]
+        schema_doc = _gendoc(schema_name, schema, schemas=schemas, portal=portal)
+        _write_doc(schema_name, schema_doc)
 
-    if True or args.update_index:
-        _update_index_doc(_get_schemas(portal), portal)
+    _update_object_model_file(_get_schemas(portal), portal)
+    _update_consortia_file(portal)
+    _update_submission_centers_file(portal)
+    _update_file_formats_file(portal)
 
 
 def _create_portal(ini: str, env: Optional[str] = None,
@@ -164,7 +158,7 @@ def _get_schema_version(schema: dict) -> str:
     return version
 
 
-def _gendoc(schema_name: str, schema: dict, include_all: bool, schemas: dict, portal: Portal) -> str:
+def _gendoc(schema_name: str, schema: dict, schemas: dict, portal: Portal) -> str:
     content = ""
     if not (content := _get_template("schema")):
         return content
@@ -191,16 +185,16 @@ def _gendoc(schema_name: str, schema: dict, include_all: bool, schemas: dict, po
         content = content.replace("{referencing_schemas}",
                                   f"Types <b>referencing</b> this type are: {content_referencing_schemas}.")
 
-    if content_required_properties_section := _gendoc_required_properties_section(schema, include_all):
+    if content_required_properties_section := _gendoc_required_properties_section(schema):
         content = content.replace("{required_properties_section}", content_required_properties_section)
 
-    if content_identifying_properties_section := _gendoc_identifying_properties_section(schema, include_all):
+    if content_identifying_properties_section := _gendoc_identifying_properties_section(schema):
         content = content.replace("{identifying_properties_section}", content_identifying_properties_section)
 
-    if content_reference_properties_section := _gendoc_reference_properties_section(schema, include_all):
+    if content_reference_properties_section := _gendoc_reference_properties_section(schema):
         content = content.replace("{reference_properties_section}", content_reference_properties_section)
 
-    if content_properties_table := _gendoc_properties_table(schema, include_all):
+    if content_properties_table := _gendoc_properties_table(schema):
         content = content.replace("{properties_table}", content_properties_table)
 
     return _cleanup_content(content)
@@ -226,9 +220,9 @@ def _gendoc_derived_schemas(schema_name: str, schemas: dict) -> str:
     return content
 
 
-def _gendoc_required_properties_section(schema: dict, include_all: bool = False) -> str:
+def _gendoc_required_properties_section(schema: dict) -> str:
     content = ""
-    if content_required_properties_table := _gendoc_required_properties_table(schema, include_all):
+    if content_required_properties_table := _gendoc_required_properties_table(schema):
         if not (content := _get_template("required_properties_section")):
             return content
         content_required_properties_table = _normalize_spaces(content_required_properties_table)
@@ -236,7 +230,7 @@ def _gendoc_required_properties_section(schema: dict, include_all: bool = False)
     return content
 
 
-def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -> str:
+def _gendoc_required_properties_table(schema: dict) -> str:
     content = ""
     if not isinstance(schema, dict) or not schema:
         return content
@@ -248,7 +242,7 @@ def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -
         return content
     simple_properties = []
     for property_name in sorted(list(set(required_properties))):
-        if not property_name or not include_all and property_name in IGNORE_PROPERTIES:
+        if (not property_name) or (property_name in IGNORE_PROPERTIES):
             continue
         if not (property := properties[property_name]):
             continue
@@ -258,7 +252,7 @@ def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -
             property_link_to = property.get("items", {}).get("linkTo")
         if property_type == "array":
             if property_items := property.get("items"):
-                if property_array_enum := property_items.get("enum"):
+                if property_items.get("enum"):
                     property_type = f"{property_type} of enum"
                 elif property_array_type := property_items.get("type"):
                     property_type = f"{property_type} of {property_array_type}"
@@ -288,9 +282,9 @@ def _gendoc_required_properties_table(schema: dict, include_all: bool = False) -
     return content
 
 
-def _gendoc_identifying_properties_section(schema: dict, include_all: bool = False) -> str:
+def _gendoc_identifying_properties_section(schema: dict) -> str:
     content = ""
-    if content_identifying_properties_table := _gendoc_identifying_properties_table(schema, include_all):
+    if content_identifying_properties_table := _gendoc_identifying_properties_table(schema):
         if not (content := _get_template("identifying_properties_section")):
             return content
         content_identifying_properties_table = _normalize_spaces(content_identifying_properties_table)
@@ -298,7 +292,7 @@ def _gendoc_identifying_properties_section(schema: dict, include_all: bool = Fal
     return content
 
 
-def _gendoc_identifying_properties_table(schema: dict, include_all: bool = False) -> str:
+def _gendoc_identifying_properties_table(schema: dict) -> str:
     content = ""
     if not isinstance(schema, dict) or not schema:
         return content
@@ -310,7 +304,7 @@ def _gendoc_identifying_properties_table(schema: dict, include_all: bool = False
         return content
     simple_properties = []
     for property_name in identifying_properties:
-        if not property_name or not include_all and property_name in IGNORE_PROPERTIES:
+        if (not property_name) or (property_name in IGNORE_PROPERTIES):
             continue
         if not (property := properties[property_name]):
             continue
@@ -318,7 +312,7 @@ def _gendoc_identifying_properties_table(schema: dict, include_all: bool = False
             continue
         if property_type == "array":
             if property_items := property.get("items"):
-                if property_array_enum := property_items.get("enum"):
+                if property_items.get("enum"):
                     property_type = f"{property_type} of enum"
                 elif property_array_type := property_items.get("type"):
                     property_type = f"{property_type} of {property_array_type}"
@@ -329,9 +323,9 @@ def _gendoc_identifying_properties_table(schema: dict, include_all: bool = False
     return content
 
 
-def _gendoc_reference_properties_section(schema: dict, include_all: bool = False) -> str:
+def _gendoc_reference_properties_section(schema: dict) -> str:
     content = ""
-    if content_reference_properties_table := _gendoc_reference_properties_table(schema, include_all):
+    if content_reference_properties_table := _gendoc_reference_properties_table(schema):
         if not (content := _get_template("reference_properties_section")):
             return content
         content_reference_properties_table = _normalize_spaces(content_reference_properties_table)
@@ -339,7 +333,7 @@ def _gendoc_reference_properties_section(schema: dict, include_all: bool = False
     return content
 
 
-def _gendoc_reference_properties_table(schema: dict, include_all: bool = False) -> str:
+def _gendoc_reference_properties_table(schema: dict) -> str:
     content = ""
     if not isinstance(schema, dict) or not schema:
         return content
@@ -350,7 +344,7 @@ def _gendoc_reference_properties_table(schema: dict, include_all: bool = False) 
     required_properties = schema.get("required", [])
     simple_properties = []
     for property_name in properties:
-        if not property_name or not include_all and property_name in IGNORE_PROPERTIES:
+        if (not property_name) or (property_name in IGNORE_PROPERTIES):
             continue
         if not (property := properties[property_name]):
             continue
@@ -402,8 +396,7 @@ def _gendoc_simple_properties(properties: List[str], kind: Optional[str] = None)
     return result
 
 
-def _gendoc_properties_table(schema: dict, include_all: bool = False,
-                             _level: int = 0, _parents: List[str] = []) -> str:
+def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] = []) -> str:
     content = ""
     if not isinstance(schema, dict) or not schema:
         return content
@@ -424,7 +417,7 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
     for property_name in {key: properties[key] for key in sorted(properties)}:
         content_nested_object = ""
         content_nested_array = ""
-        if not property_name or not include_all and property_name in IGNORE_PROPERTIES:
+        if (not property_name) or (property_name in IGNORE_PROPERTIES):
             continue
         if not (property := properties[property_name]):
             continue
@@ -456,7 +449,7 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                         content_property_type = f"<b>{property_type}</b> of <b>{property_array_type}</b>"
                     if property_array_type == "object":
                         content_nested_array = _gendoc_properties_table(
-                            property_items, include_all=include_all,
+                            property_items,
                             _level=_level + 1, _parents=_parents + [property_name])
                 # TODO
                 # Note that minLength/maxLength (I think) refers to the length of the string;
@@ -476,7 +469,7 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
                 property_attributes.append("unique")
         elif property_type == "object":
             content_nested_object = _gendoc_properties_table(
-                property, include_all=include_all,
+                property,
                 _level=_level + 1, _parents=_parents + [property_name])
         if property_description := property.get("description", "").strip():
             if not property_description.endswith("."):
@@ -588,29 +581,140 @@ def _gendoc_properties_table(schema: dict, include_all: bool = False,
     return _normalize_spaces(content)
 
 
+def _update_consortia_file(portal: Portal) -> None:
+    if not (content_consortia_table := _gendoc_consortia_table(portal)):
+        return
+    with io.open(CONSORTIA_DOC_FILE, "r") as f:
+        lines = f.readlines()
+    for index, line in enumerate(lines):
+        if line.strip() == CONSORTIA_DOC_FILE_MAGIC_STRING:
+            lines = lines[:index+1]
+            break
+    with io.open(CONSORTIA_DOC_FILE, "w") as f:
+        f.writelines(lines)
+        f.write(f"\n\n.. raw:: html\n\n{' ' * 4}{content_consortia_table}<p />")
+
+
+def _gendoc_consortia_table(portal: Portal) -> str:
+    content = ""
+    if not (template_consortia_table := _get_template("consortia_table")):
+        return content
+    if not (template_consortia_row := _get_template("consortia_row")):
+        return content
+    if not (consortia := portal.get_metadata("/consortia")):
+        return content
+    consortia = sorted(consortia.get("@graph", []), key=lambda key: key.get("identifier"))
+    content_consortia_rows = ""
+    for consortium in consortia:
+        if ((consortium_name := consortium.get("identifier")) and
+            (consortium_uuid := consortium.get("uuid"))):  # noqa
+            content_consortia_row = template_consortia_row
+            content_consortia_row = content_consortia_row.replace("{consortium_name}", consortium_name)
+            content_consortia_row = content_consortia_row.replace("{consortium_uuid}", consortium_uuid)
+            content_consortia_rows += content_consortia_row
+    content = template_consortia_table.replace("{consortia_rows}", content_consortia_rows)
+    return _normalize_spaces(content)
+
+
+def _update_submission_centers_file(portal: Portal) -> None:
+    if not (content_submission_centers_table := _gendoc_submission_centers_table(portal)):
+        return
+    with io.open(SUBMISSION_CENTERS_DOC_FILE, "r") as f:
+        lines = f.readlines()
+    for index, line in enumerate(lines):
+        if line.strip() == SUBMISSION_CENTERS_DOC_FILE_MAGIC_STRING:
+            lines = lines[:index+1]
+            break
+    with io.open(SUBMISSION_CENTERS_DOC_FILE, "w") as f:
+        f.writelines(lines)
+        f.write(f"\n\n.. raw:: html\n\n{' ' * 4}{content_submission_centers_table}<p />")
+
+
+def _gendoc_submission_centers_table(portal: Portal) -> str:
+    content = ""
+    if not (template_submission_centers_table := _get_template("submission_centers_table")):
+        return content
+    if not (template_submission_centers_row := _get_template("submission_centers_row")):
+        return content
+    if not (submission_centers := portal.get_metadata("/submission-centers")):
+        return content
+    submission_centers = sorted(submission_centers.get("@graph", []), key=lambda key: key.get("identifier"))
+    content_submission_centers_rows = ""
+    for submission_center in submission_centers:
+        if ((submission_center_name := submission_center.get("identifier")) and
+            (submission_center_uuid := submission_center.get("uuid"))):  # noqa
+            content_submission_centers_row = template_submission_centers_row
+            content_submission_centers_row = (
+                content_submission_centers_row.replace("{submission_center_name}", submission_center_name))
+            content_submission_centers_row = (
+                content_submission_centers_row.replace("{submission_center_uuid}", submission_center_uuid))
+            content_submission_centers_rows += content_submission_centers_row
+    content = template_submission_centers_table.replace("{submission_centers_rows}", content_submission_centers_rows)
+    return _normalize_spaces(content)
+
+
+def _update_file_formats_file(portal: Portal) -> None:
+    if not (content_file_formats_table := _gendoc_file_formats_table(portal)):
+        return
+    with io.open(FILE_FORMATS_DOC_FILE, "r") as f:
+        lines = f.readlines()
+    for index, line in enumerate(lines):
+        if line.strip() == FILE_FORMATS_DOC_FILE_MAGIC_STRING:
+            lines = lines[:index+1]
+            break
+    with io.open(FILE_FORMATS_DOC_FILE, "w") as f:
+        f.writelines(lines)
+        f.write(f"\n\n.. raw:: html\n\n{' ' * 4}{content_file_formats_table}<p />")
+
+
+def _gendoc_file_formats_table(portal: Portal) -> str:
+    content = ""
+    if not (template_file_formats_table := _get_template("file_formats_table")):
+        return content
+    if not (template_file_formats_row := _get_template("file_formats_row")):
+        return content
+    if not (file_formats := portal.get_metadata("/file-formats")):
+        return content
+    file_formats = sorted(file_formats.get("@graph", []), key=lambda key: key.get("identifier"))
+    content_file_formats_rows = ""
+    for file_format in file_formats:
+        if ((file_format_name := file_format.get("identifier")) and
+            (file_format_uuid := file_format.get("uuid"))):  # noqa
+            content_file_formats_row = template_file_formats_row
+            content_file_formats_row = content_file_formats_row.replace("{file_format_name}", file_format_name)
+            content_file_formats_row = content_file_formats_row.replace("{file_format_uuid}", file_format_uuid)
+            content_file_formats_rows += content_file_formats_row
+    content = template_file_formats_table.replace("{file_formats_rows}", content_file_formats_rows)
+    return _normalize_spaces(content)
+
+
 def _write_doc(schema_name: str, schema_doc_content: str) -> None:
     output_file = f"{os.path.join(OUTPUT_DIR, schema_name)}.rst"
     with io.open(output_file, "w") as f:
         f.write(schema_doc_content)
 
 
-def _update_index_doc(schemas: dict, portal: Portal) -> None:
-    with io.open(INDEX_DOC_FILE, "r") as f:
+def _update_object_model_file(schemas: dict, portal: Portal) -> None:
+    with io.open(OBJECT_MODEL_DOC_FILE, "r") as f:
         lines = f.readlines()
     for index, line in enumerate(lines):
-        if line.strip() == INDEX_DOC_FILE_MAGIC_STRING:
+        if line.strip() == OBJECT_MODEL_DOC_FILE_MAGIC_STRING:
             lines = lines[:index+1]
             break
-    with io.open(INDEX_DOC_FILE, "w") as f:
+    with io.open(OBJECT_MODEL_DOC_FILE, "w") as f:
         f.writelines(lines)
         f.write(f"\n")
         for schema_name in {key: schemas[key] for key in sorted(schemas)}:
             if schema_name in IGNORE_TYPES:
                 continue
             f.write(f"  schemas/{schema_name}\n")
-        f.write(f"\n\n.. raw:: html\n\n{' ' * 4}"
-                f"&nbsp;&nbsp;[ <small>Generated: {_get_current_datetime_string()} | <a target='_blank' href='{portal.server}/profiles/?format=json'>"
-                f"{portal.server.replace('https://', '')}</a></small> ]<p />")
+        f.write(f"\n\n.. raw:: html\n\n{' ' * 4}{_gendoc_generated_info(portal)}")
+
+
+def _gendoc_generated_info(portal: Portal):
+    return (f"[ <small>Generated: {_get_current_datetime_string()} | "
+            f"<a target='_blank' href='{portal.server}/profiles/?format=json'>"
+            f"{portal.server.replace('https://', '')}</a></small> ]<p />")
 
 
 @lru_cache(maxsize=32)
