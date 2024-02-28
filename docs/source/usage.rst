@@ -3,9 +3,10 @@ Submitting Metadata
 ===================
 
 Once you have finished installing the ``smaht-submitr`` package (per the `Installation <installation.html>`_ section),
-you should have access to the :boldcode:`submit-metadata-bundle` command.
+and you have setup your access keys (per the `Credentials <credentials.html>`_ section),
+you should be ready to use the :boldcode:`submit-metadata-bundle` command.
 What follows are detailed instructions for how to format your metatdata submission files,
-and how to actually submit (and validate) them to SMaHT Portal using this command.
+and how to actually submit (and validate) these, and upload yours files, to SMaHT Portal using this command.
 
 Formatting Files for Submission
 ===============================
@@ -29,6 +30,7 @@ Note these important aspects of using the Excel spreadsheet format:
    without its content interfering the submission tool.
 #. The name of the spreadsheet file must be suffixed with ``.xls`` or ``.xlsx``; there are no other requirements for the name of this file.
 
+Despite the rather dense chunk of text here, it is actually pretty intiutive, straightforward, and almost self-explanatory.
 Here is screenshot of a simple example Excel spreadsheet: 
 
 .. image:: _static/images/excel_screenshot.png
@@ -36,17 +38,17 @@ Here is screenshot of a simple example Excel spreadsheet:
     :alt: Excel Spreadsheet Screenshot
 
 Notice that the first row comprises the property/column `header`, defining properties named ``submitted_id``, ``submission_centers``, ``filename``, and so on. (N.B. Though ``submission_centers`` is shown in the above screenshot,
-that particular field is not actually required, as it is automatically added by the ``smaht-submitr`` tool).
+that particular field is not actually required to be specified, as it's automatically added by the ``smaht-submitr`` tool if needed).
 
-And also notice the multiple tabs at the bottom for the different sheets within the spreadsheet,
+Also notice the multiple tabs at the bottom for the different sheets within the spreadsheet,
 representing (in this example) data for the Portal objects ``CellCultureSample``, ``Analyte``, ``Library``, and so on.
 
 .. tip::
-    As mentioned above, if you want to include arbitrary comments or auxiliary information
+    As mentioned above (in case you missed it), you can include arbitrary comments or auxiliary information
     in your spreadsheet, without that content intefering with the parsing of the spreadsheet,
-    you can make an individual sheet **hidden**. Such hidden sheets will be completely ignored.
+    by making individual sheets **hidden**. Such hidden sheets will be completely ignored.
     To hide a sheet in Excel right-click on the tab and choose **Hide**. To **unhide** select
-    **Format** > **Sheet** > **Unhide...** from the menu-bar. As also mentioned above,
+    **Format** > **Sheet** > **Unhide...** from the menu-bar. Also mentioned above,
     if your sheet name is enclosed in parenthesis, for example ``(My Comments)``, then it will also be completely ignored;
     again, useful for arbitrary comments, and without having to hide/unhide sheets.
 
