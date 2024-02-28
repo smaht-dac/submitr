@@ -741,8 +741,22 @@ def _gendoc_submission_centers_table(portal: Portal) -> str:
 
 
 def _update_file_formats_file(portal: Portal) -> None:
+    if not (template_file_formats_page := _get_template("file_formats_page")):
+        return
     if not (content_file_formats_table := _gendoc_file_formats_table(portal)):
         return
+    content_file_formats_aligned_reads_table = _gendoc_file_formats_table(portal, "AlignedReads")
+    content_file_formats_unaligned_reads_table = _gendoc_file_formats_table(portal, "UnalignedReads")
+    content_file_formats_page = template_file_formats_page
+    content_file_formats_page = content_file_formats_page.replace("{file_formats_all}",
+                                                                  content_file_formats_table)
+    content_file_formats_page = content_file_formats_page.replace("{file_formats_aligned_reads}",
+                                                                  content_file_formats_aligned_reads_table)
+    content_file_formats_page = content_file_formats_page.replace("{file_formats_unaligned_reads}",
+                                                                  content_file_formats_unaligned_reads_table)
+    with io.open(FILE_FORMATS_DOC_FILE, "w") as f:
+        f.write(content_file_formats_page)
+    """
     with io.open(FILE_FORMATS_DOC_FILE, "r") as f:
         lines = f.readlines()
     for index, line in enumerate(lines):
@@ -752,9 +766,10 @@ def _update_file_formats_file(portal: Portal) -> None:
     with io.open(FILE_FORMATS_DOC_FILE, "w") as f:
         f.writelines(lines)
         f.write(f"\n\n.. raw:: html\n\n{' ' * 4}{content_file_formats_table}<p />")
+    """
 
 
-def _gendoc_file_formats_table(portal: Portal) -> str:
+def _gendoc_file_formats_table(portal: Portal, valid_item_type: Optional[str] = None) -> str:
     content = ""
     if not (template_file_formats_table := _get_template("file_formats_table")):
         return content
@@ -765,6 +780,10 @@ def _gendoc_file_formats_table(portal: Portal) -> str:
     file_formats = sorted(file_formats.get("@graph", []), key=lambda key: key.get("identifier"))
     content_file_formats_rows = ""
     for file_format in file_formats:
+        file_format_valid_item_types = file_format.get("valid_item_types")
+        if valid_item_type and ((not file_format_valid_item_types) or
+                                (valid_item_type not in file_format_valid_item_types)):
+            continue
         if ((file_format_name := file_format.get("identifier")) and
             (file_format_uuid := file_format.get("uuid"))):  # noqa
             if file_format_description := file_format.get("description", ""):
@@ -777,7 +796,7 @@ def _gendoc_file_formats_table(portal: Portal) -> str:
             if file_format_valid_item_types := file_format.get("valid_item_types"):
                 if file_format_description:
                     file_format_description += "<br />"
-                file_format_description += f"<u>Vaild Item Types</u>: "
+                file_format_description += f"<u>Valid Types</u>: "
                 for index, file_format_valid_item_type in enumerate(sorted(file_format_valid_item_types)):
                     if index > 0:
                         file_format_description += ", "
