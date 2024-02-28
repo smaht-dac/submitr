@@ -3,6 +3,9 @@ Consortia
 =========
 Below are the `consortium <schemas/Consortium.html>`_ values currently supported by SMaHT Portal.
 
+.. tip::
+    See also: :toplink:`SMaHT Consortium Members Map <https://data.smaht.org/about/consortium/awardees>`
+
 .. toctree::
   :caption: Consortia
   :maxdepth: 1

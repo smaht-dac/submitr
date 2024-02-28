@@ -18,6 +18,8 @@ MedicalHistory
     <a href="#identifying-properties" style="color:#222222"><i><b><u>identifying</u></b></i></a> properties;
     and properties whose types are in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
+    View <a target="_blank" href="https://data.smaht.org/search/?type=MedicalHistory" style="color:black"><b><i><u>objects</u></i></b></a>
+    of this type <a target="_blank" href="https://data.smaht.org/search/?type=MedicalHistory"><b>here</b></a>. 
     <p />
     
 

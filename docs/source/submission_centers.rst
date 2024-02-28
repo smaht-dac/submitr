@@ -3,6 +3,9 @@ Submission Centers
 ==================
 Below are the `submission center <schemas/SubmissionCenter.html>`_ values currently supported by SMaHT Portal.
 
+.. tip::
+    See also: :toplink:`SMaHT Consortium Members Map <https://data.smaht.org/about/consortium/awardees>`
+
 .. toctree::
   :caption: Submission Centers
   :maxdepth: 1

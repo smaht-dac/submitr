@@ -645,6 +645,7 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
 
 
 def _update_consortia_file(portal: Portal) -> None:
+    # TODO: Redo this more like reference-genomes with template page.
     if not (content_consortia_table := _gendoc_consortia_table(portal)):
         return
     with io.open(CONSORTIA_DOC_FILE, "r") as f:
