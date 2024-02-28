@@ -467,8 +467,11 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
         property_attributes = []
         property_array_enum = None
         property_array_link_to = False
-        if not (property_link_to := property.get("linkTo")):
+        property_link_to = property.get("linkTo")
+        property_link_to_original = property_link_to
+        if not property_link_to:
             if property_link_to := (property_items := property.get("items", {})).get("linkTo"):
+                property_link_to_original = property_link_to
                 content_property_type = (
                     f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
                     f"<u>{property_link_to}</u></a>")
@@ -602,13 +605,13 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
                 content_parents += f"{parent}"
             content_parents += "</span>"
             content_property_name = f"{content_parents} <b>.</b> {content_property_name}"
-        if property_link_to == "Consortium":
+        if property_link_to_original == "Consortium":
             property_description += (
                 "<br /><small><i>Click <a href='../consortia.html'>here</a> to see values.</i></small>")
-        elif property_link_to == "SubmissionCenter":
+        elif property_link_to_original == "SubmissionCenter":
             property_description += (
                 "<br /><small><i>Click <a href='../submission_centers.html'>here</a> to see values.</i></small>")
-        elif property_link_to == "FileFormat":
+        elif property_link_to_original == "FileFormat":
             if property_description:
                 property_description += "<br />"
             property_description += (
