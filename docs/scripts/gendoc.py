@@ -266,6 +266,9 @@ def _gendoc_required_properties_table(schema: dict) -> str:
         if property_name == "submission_centers":
             property_description = (
                 "<br /><small><i>Click <a href='../submission_centers.html'>here</a> to see values.</i></small>")
+        if property_link_to == "FileFormat":
+            property_description = (
+                "<br /><small><i>Click <a href='../file_formats.html'>here</a> to see values.</i></small>")
         if property_type == "array":
             if property_items := property.get("items"):
                 if property_items.get("enum"):
