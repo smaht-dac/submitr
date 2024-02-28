@@ -31,12 +31,14 @@ IGNORE_TYPES = [
     "TestingPostPutPatch",
     "TrackingItem",
     "User",
+    "UserContent",
     "Workflow",
     "WorkflowRun",
 ]
 IGNORE_PROPERTIES = [
     "@id",
     "@type",
+    "content",
     "date_created",
     "last_modified",
     "principals_allowed",
@@ -133,12 +135,12 @@ def _get_parent_schema(schema: dict) -> Optional[str]:
 def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
     result = []
     for this_schema_name in schemas:
-        if this_schema_name == schema_name or this_schema_name in IGNORE_TYPES:
+        if (this_schema_name == schema_name) or (this_schema_name in IGNORE_TYPES):
             continue
         schema = schemas[this_schema_name]
         if properties := schema.get("properties"):
             for property_name in properties:
-                if property_name in IGNORE_PROPERTIES:
+                if (not property_name) or (property_name in IGNORE_PROPERTIES):
                     continue
                 property = properties[property_name]
                 if property.get("linkTo") == schema_name:
