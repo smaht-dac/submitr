@@ -281,8 +281,12 @@ def _gendoc_required_properties_table(schema: dict) -> str:
                                                             "<b style='color:darkred;'>consortia</b>, "
                                                             "<b style='color:darkred;'>submission_centers</b>"))
                 content_oneormore_simple_property_rows = _gendoc_simple_properties(
-                    [{"name": "consortia", "type": "array of string", "link_to": "Consortium"},
-                     {"name": "submission_centers", "type": "array of string", "link_to": "SubmissionCenter"}],
+                    [{"name": "consortia", "type": "array of string", "link_to": "Consortium",
+                      "description": "<br /><small><i>Click <a href='../consortia.html'>here</a>"
+                                     " to see values.</i></small>"},
+                     {"name": "submission_centers", "type": "array of string", "link_to": "SubmissionCenter",
+                      "description": "<br /><small><i>Click <a href='../submission_center.html'>here</a>"
+                                     " to see values.</i></small>"}],
                     kind="oneormore-required")
                 content_oneormore_property_rows = (
                     content_oneormore_property_rows.replace("{oneormore_property_rows}",
@@ -388,6 +392,7 @@ def _gendoc_simple_properties(properties: List[str], kind: Optional[str] = None)
     for property in sorted(properties, key=lambda item: item.get("name")):
         property_name = property["name"]
         property_type = property["type"]
+        property_description = property.get("description")
         if kind == "identifying":
             property_name = f"<span style='color:blue'>{property_name}</span>"
         elif kind == "required" or property.get("required") is True:
@@ -401,6 +406,8 @@ def _gendoc_simple_properties(properties: List[str], kind: Optional[str] = None)
                 f"<a href='{property_link_to}.html'><b style='color:green;'>"
                 f"<u>{property_link_to}</u></b></a><br />{property_type}")
         content_simple_property = content_simple_property.replace("{property_type}", property_type)
+        if property_description:
+            content_simple_property = content_simple_property.replace("{property_description}", property_description)
         result += content_simple_property
     return result
 
@@ -573,6 +580,12 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
                 content_parents += f"{parent}"
             content_parents += "</span>"
             content_property_name = f"{content_parents} <b>.</b> {content_property_name}"
+        if property_name == "consortia":
+            property_description += (
+                "<br /><small><i>Click <a href='../consortia.html'>here</a> to see values.</i></small>")
+        if property_name == "submission_centers":
+            property_description += (
+                "<br /><small><i>Click <a href='../submission_centers.html'>here</a> to see values.</i></small>")
         content_property_row = content_property_row.replace("{property_name}", content_property_name)
         content_property_row = content_property_row.replace("{property_type}", content_property_type)
         content_property_row = content_property_row.replace("{property_description}", property_description or "-")
