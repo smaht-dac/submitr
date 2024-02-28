@@ -59,7 +59,7 @@ CONSORTIA_DOC_FILE_MAGIC_STRING = OBJECT_MODEL_DOC_FILE_MAGIC_STRING
 SUBMISSION_CENTERS_DOC_FILE = f"{DOCS_DIR}/submission_centers.rst"
 SUBMISSION_CENTERS_DOC_FILE_MAGIC_STRING = OBJECT_MODEL_DOC_FILE_MAGIC_STRING
 FILE_FORMATS_DOC_FILE = f"{DOCS_DIR}/file_formats.rst"
-FILE_FORMATS_DOC_FILE_MAGIC_STRING = OBJECT_MODEL_DOC_FILE_MAGIC_STRING
+REFERENCE_GENOMES_DOC_FILE = f"{DOCS_DIR}/reference_genomes.rst"
 
 
 def main():
@@ -88,6 +88,7 @@ def main():
     _update_consortia_file(portal)
     _update_submission_centers_file(portal)
     _update_file_formats_file(portal)
+    _update_reference_genomes_file(portal)
 
 
 def _create_portal(ini: str, env: Optional[str] = None,
@@ -269,6 +270,9 @@ def _gendoc_required_properties_table(schema: dict) -> str:
         elif property_link_to == "FileFormat":
             property_description = (
                 "<br /><small><i>Click <a href='../file_formats.html'>here</a> to see values.</i></small>")
+        elif property_link_to == "ReferenceGenome":
+            property_description = (
+                "<br /><small><i>Click <a href='../reference_genomes.html'>here</a> to see values.</i></small>")
         if property_type == "array":
             if property_items := property.get("items"):
                 if property_items.get("enum"):
@@ -387,6 +391,9 @@ def _gendoc_reference_properties_table(schema: dict) -> str:
         elif property_link_to == "FileFormat":
             property_description = (
                 "<br /><small><i>Click <a href='../file_formats.html'>here</a> to see values.</i></small>")
+        elif property_link_to == "ReferenceGenome":
+            property_description = (
+                "<br /><small><i>Click <a href='../reference_genomes.html'>here</a> to see values.</i></small>")
         content_property_type = (
             f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
             f"<u>{property_link_to}</u></a><br />{property_type}")
@@ -616,6 +623,11 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
                 property_description += "<br />"
             property_description += (
                 "<small><i>Click <a href='../file_formats.html'>here</a> to see values.</i></small>")
+        elif property_link_to_original == "ReferenceGenome":
+            if property_description:
+                property_description += "<br />"
+            property_description += (
+                "<small><i>Click <a href='../reference_genomes.html'>here</a> to see values.</i></small>")
         content_property_row = content_property_row.replace("{property_name}", content_property_name)
         content_property_row = content_property_row.replace("{property_type}", content_property_type)
         content_property_row = content_property_row.replace("{property_description}", property_description or "-")
@@ -756,17 +768,6 @@ def _update_file_formats_file(portal: Portal) -> None:
                                                                   content_file_formats_unaligned_reads_table)
     with io.open(FILE_FORMATS_DOC_FILE, "w") as f:
         f.write(content_file_formats_page)
-    """
-    with io.open(FILE_FORMATS_DOC_FILE, "r") as f:
-        lines = f.readlines()
-    for index, line in enumerate(lines):
-        if line.strip() == FILE_FORMATS_DOC_FILE_MAGIC_STRING:
-            lines = lines[:index+1]
-            break
-    with io.open(FILE_FORMATS_DOC_FILE, "w") as f:
-        f.writelines(lines)
-        f.write(f"\n\n.. raw:: html\n\n{' ' * 4}{content_file_formats_table}<p />")
-    """
 
 
 def _gendoc_file_formats_table(portal: Portal, valid_item_type: Optional[str] = None) -> str:
@@ -811,6 +812,47 @@ def _gendoc_file_formats_table(portal: Portal, valid_item_type: Optional[str] = 
                 content_file_formats_row.replace("{file_format_url}", f"{portal.server}/{file_format_uuid}"))
             content_file_formats_rows += content_file_formats_row
     content = template_file_formats_table.replace("{file_formats_rows}", content_file_formats_rows)
+    return _normalize_spaces(content)
+
+
+def _update_reference_genomes_file(portal: Portal) -> None:
+    if not (template_reference_genomes_page := _get_template("reference_genomes_page")):
+        return
+    if not (content_reference_genomes_table := _gendoc_reference_genomes_table(portal)):
+        return
+    content_reference_genomes_page = template_reference_genomes_page
+    content_reference_genomes_page = content_reference_genomes_page.replace("{reference_genomes}",
+                                                                            content_reference_genomes_table)
+    with io.open(REFERENCE_GENOMES_DOC_FILE, "w") as f:
+        f.write(content_reference_genomes_page)
+
+
+def _gendoc_reference_genomes_table(portal: Portal, valid_item_type: Optional[str] = None) -> str:
+    content = ""
+    if not (template_reference_genomes_table := _get_template("reference_genomes_table")):
+        return content
+    if not (template_reference_genomes_row := _get_template("reference_genomes_row")):
+        return content
+    if not (reference_genomes := portal.get_metadata("/reference-genomes?limit=1000")):
+        return content
+    reference_genomes = sorted(reference_genomes.get("@graph", []), key=lambda key: key.get("identifier"))
+    content_reference_genomes_rows = ""
+    for reference_genome in reference_genomes:
+        if ((reference_genome_name := reference_genome.get("identifier")) and
+            (reference_genome_uuid := reference_genome.get("uuid"))):  # noqa
+            reference_genome_description = reference_genome.get("title")
+            content_reference_genomes_row = template_reference_genomes_row
+            content_reference_genomes_row = content_reference_genomes_row.replace("{reference_genome_name}",
+                                                                                  reference_genome_name)
+            content_reference_genomes_row = content_reference_genomes_row.replace("{reference_genome_uuid}",
+                                                                                  reference_genome_uuid)
+            content_reference_genomes_row = content_reference_genomes_row.replace("{reference_genome_description}",
+                                                                                  reference_genome_description or "-")
+            content_reference_genomes_row = (
+                content_reference_genomes_row.replace("{reference_genome_url}",
+                                                      f"{portal.server}/{reference_genome_uuid}"))
+            content_reference_genomes_rows += content_reference_genomes_row
+    content = template_reference_genomes_table.replace("{reference_genomes_rows}", content_reference_genomes_rows)
     return _normalize_spaces(content)
 
 

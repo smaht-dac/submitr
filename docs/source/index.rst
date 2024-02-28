@@ -110,4 +110,5 @@ Below (and to the left) is the general table of contents for this documentation.
   consortia
   submission_centers
   file_formats
+  reference_genomes
   object_model
