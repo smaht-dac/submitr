@@ -260,13 +260,13 @@ def _gendoc_required_properties_table(schema: dict) -> str:
         if not (property_link_to := property.get("linkTo")):
             property_link_to = property.get("items", {}).get("linkTo")
         property_description = None
-        if property_name == "consortia":
+        if property_link_to == "Consortium":
             property_description = (
                 "<br /><small><i>Click <a href='../consortia.html'>here</a> to see values.</i></small>")
-        if property_name == "submission_centers":
+        elif property_link_to == "SubmissionCenter":
             property_description = (
                 "<br /><small><i>Click <a href='../submission_centers.html'>here</a> to see values.</i></small>")
-        if property_link_to == "FileFormat":
+        elif property_link_to == "FileFormat":
             property_description = (
                 "<br /><small><i>Click <a href='../file_formats.html'>here</a> to see values.</i></small>")
         if property_type == "array":
@@ -296,7 +296,7 @@ def _gendoc_required_properties_table(schema: dict) -> str:
                       "description": "<br /><small><i>Click <a href='../consortia.html'>here</a>"
                                      " to see values.</i></small>"},
                      {"name": "submission_centers", "type": "array of string", "link_to": "SubmissionCenter",
-                      "description": "<br /><small><i>Click <a href='../submission_center.html'>here</a>"
+                      "description": "<br /><small><i>Click <a href='../submission_centers.html'>here</a>"
                                      " to see values.</i></small>"}],
                     kind="oneormore-required")
                 content_oneormore_property_rows = (
@@ -378,13 +378,13 @@ def _gendoc_reference_properties_table(schema: dict) -> str:
             if not (property_link_to := property.get("items", {}).get("linkTo")):
                 continue
         property_description = None
-        if property_name == "consortia":
+        if property_link_to == "Consortium":
             property_description = (
                 "<br /><small><i>Click <a href='../consortia.html'>here</a> to see values.</i></small>")
-        if property_name == "submission_centers":
+        elif property_link_to == "SubmissionCenter":
             property_description = (
                 "<br /><small><i>Click <a href='../submission_centers.html'>here</a> to see values.</i></small>")
-        if property_link_to == "FileFormat":
+        elif property_link_to == "FileFormat":
             property_description = (
                 "<br /><small><i>Click <a href='../file_formats.html'>here</a> to see values.</i></small>")
         content_property_type = (
@@ -602,13 +602,13 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
                 content_parents += f"{parent}"
             content_parents += "</span>"
             content_property_name = f"{content_parents} <b>.</b> {content_property_name}"
-        if property_name == "consortia":
+        if property_link_to == "Consortium":
             property_description += (
                 "<br /><small><i>Click <a href='../consortia.html'>here</a> to see values.</i></small>")
-        if property_name == "submission_centers":
+        elif property_link_to == "SubmissionCenter":
             property_description += (
                 "<br /><small><i>Click <a href='../submission_centers.html'>here</a> to see values.</i></small>")
-        if property_link_to == "FileFormat":
+        elif property_link_to == "FileFormat":
             if property_description:
                 property_description += "<br />"
             property_description += (
