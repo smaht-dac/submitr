@@ -56,7 +56,7 @@ This document explains how to get up and running with the use of this tool.
 System Requirements
 ===================
 
-* ``python`` `3.9, 3.10, or 3.11`
+* ``python`` 3.9, 3.10, or 3.11
 
 .. note::
     These instructions are targeted specifically for **Mac OS X** users.
