@@ -60,9 +60,10 @@ These and others can also be viewed within SMaHT Portal itself, in a more raw fo
   schemas/TissueSample
   schemas/Treatment
   schemas/UnalignedReads
+  schemas/User
   schemas/VariantCalls
 
 
 .. raw:: html
 
-    [ <small>Generated: Tuesday, February 27, 2024 | 7:06 PM EST | <a target='_blank' href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]<p />
+    [ <small>Generated: Tuesday, February 27, 2024 | 7:08 PM EST | <a target='_blank' href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]<p />
