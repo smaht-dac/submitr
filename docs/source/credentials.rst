@@ -119,4 +119,4 @@ and gives no one else (but the system superuser) any permissions at all::
 
 .. note::
     If you `do` accidentally expose your **Secret Access Key**, we would ask you to please
-    delete it and create a new one.
+    delete it and create a new one (and don't forget to update your keys file when you do this).

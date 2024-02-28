@@ -17,10 +17,10 @@ at :toplink:`Harvard Medical School <https://hms.harvard.edu/>`.
    `SMaHT Portal Account Creation <account_creation.html>`_
 
 For further support, questions, feature requests, bug reports, or other information
-regarding the file submission process or the SMaHT project,
+regarding the metadata and file submission process, or the SMaHT project in general,
 please contact the SMaHT DAC Team at
 `smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
-See the `Reporting Issues <#id1>`_ section below for more on this.
+See the `Reporting Issues <#id1>`_ section below for more on getting help from us regarding bugs or other usage problems.
 
 .. tip::
     **SMaHT** is an acronym for: :toplink:`Somatic Mosaicism across Human Tissues <https://commonfund.nih.gov/smaht>`
@@ -33,12 +33,13 @@ Python Package & Source Code
 Reporting Issues
 ----------------
 
-If you experience issues with this software, please do not hesitate to report them to
-`smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_.
+If you're experiencing issues using this software, would like to report bugs, or have suggestions on
+how to improve this process, please do not hesitate to report these to us at:
+`smhelp@hms-dbmi.atlassian.net <mailto:smhelp@hms-dbmi.atlassian.net>`_
 
 What to Send Us
 ~~~~~~~~~~~~~~~
-Please include as much relevant information as you can to help us assist in the troubleshooting process, including:
+If applicable, please include as much relevant information as you can to help us assist you in any troubleshooting process, including:
 
 * Your operating system version. For Mac OS X you can get this by clicking **About this Mac** in the Apple logo dropdown at the top left corner of your screen.
 * The full text of any error message you are seeing with all associated output.
