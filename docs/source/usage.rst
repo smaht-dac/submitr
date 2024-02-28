@@ -221,8 +221,8 @@ To be more specific about the the validation checks, they include the following:
     You can learn more about the details of ths validation process
     in the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
 
-Example Screenshots
-===================
+Screenshots
+===========
 
 The output of a successful ``submit-metadata-bundle --submit`` will look something like this:
 
