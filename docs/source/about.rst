@@ -3,7 +3,7 @@ About
 =====
 
 This :toplink:`smaht-submitr <https://pypi.org/project/smaht-submitr/>` software
-and :toplink:`SMaHT Portal <https://data.smaht.org/>`
+and :toplink:`SMaHT Portal <https://data.smaht.org/about/>`
 were developed by the :toplink:`Department of Biomedical Informatics <https://dbmi.hms.harvard.edu/>` (DBMI)
 at :toplink:`Harvard Medical School <https://hms.harvard.edu/>`.
 
