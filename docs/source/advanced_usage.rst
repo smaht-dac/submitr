@@ -133,7 +133,7 @@ But alternatively, you can invoke either one of these validations individually a
 
 .. caution::
     There `are` one or two fairly obscure corner cases where validation `will` succeed,
-    but then on submission you `will` get errors; this however is not generally the case.
+    but then on submission you `will` get errors; this however is `not` generally the case.
 
 Validation Only
 ~~~~~~~~~~~~~~~
@@ -144,6 +144,8 @@ there is a ``--validate-only`` option, which will cause `only` both local client
 and remote server-side validation to be done. But note that if there are (local) client-side
 errors, then (remote) server-side validation will `not` actually be done; you must fix those
 errors first to move on to (remote) server-side validation.
+This option is not substantively different from ``--validate``; it just has a slightly
+more verbose, interactive interface.
 
 If you want to perform `only` client-side validation (for whatever reason),
 there is a ``--validate-local-only`` option which will cause `only` local client-side validation to be done;
