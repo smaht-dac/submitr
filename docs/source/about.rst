@@ -7,8 +7,8 @@ and :toplink:`SMaHT Portal <https://data.smaht.org/>`
 were developed by the :toplink:`Department of Biomedical Informatics <https://dbmi.hms.harvard.edu/>` (DBMI)
 at :toplink:`Harvard Medical School <https://hms.harvard.edu/>`.
 
-.. image:: https://dbmi.hms.harvard.edu/sites/default/files/hero-images/HMS_DBMI_Logo.svg
-    :width: 350px
+.. image:: https://www.iscb.org/images/stories/ismb2020/bazaar/logo.HarvardMedical-BiomedicalInformatics.png
+    :width: 450px
     :target: https://dbmi.hms.harvard.edu/
     :alt: HMS DBMI
 
