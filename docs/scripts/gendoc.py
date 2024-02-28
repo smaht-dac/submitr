@@ -608,6 +608,11 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
         if property_name == "submission_centers":
             property_description += (
                 "<br /><small><i>Click <a href='../submission_centers.html'>here</a> to see values.</i></small>")
+        if property_link_to == "FileFormat":
+            if property_description:
+                property_description += "<br />"
+            property_description += (
+                "<small><i>Click <a href='../file_formats.html'>here</a> to see values.</i></small>")
         content_property_row = content_property_row.replace("{property_name}", content_property_name)
         content_property_row = content_property_row.replace("{property_type}", content_property_type)
         content_property_row = content_property_row.replace("{property_description}", property_description or "-")
