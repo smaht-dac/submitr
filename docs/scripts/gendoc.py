@@ -704,6 +704,7 @@ def _gendoc_submission_centers_table(portal: Portal) -> str:
             if submission_center_description := submission_center.get("description", ""):
                 if not submission_center_description.endswith("."):
                     submission_center_description += "."
+#           LEADER NAME IS SENSITIVE INFO?
 #           if isinstance(submission_center_leader := submission_center.get("leader", ""), dict):
 #               if submission_center_leader_name := submission_center_leader.get("display_title", ""):
 #                   if submission_center_leader_url := submission_center_leader.get("@id", ""):
