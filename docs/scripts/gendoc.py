@@ -729,7 +729,16 @@ def _gendoc_file_formats_table(portal: Portal) -> str:
             if file_format_file_extension := file_format.get("standard_file_extension"):
                 if file_format_description:
                     file_format_description += "<br />"
-                    file_format_description += f"<u>File Extension</u>: <b>.{file_format_file_extension}</b>"
+                file_format_description += f"<u>File Extension</u>: <b>.{file_format_file_extension}</b>"
+            if file_format_valid_item_types := file_format.get("valid_item_types"):
+                if file_format_description:
+                    file_format_description += "<br />"
+                file_format_description += f"<u>Vaild Item Types</u>: "
+                for index, file_format_valid_item_type in enumerate(sorted(file_format_valid_item_types)):
+                    if index > 0:
+                        file_format_description += ", "
+                    file_format_description += (
+                        f"<a href='schemas/{file_format_valid_item_type}.html'>{file_format_valid_item_type}</b>")
             content_file_formats_row = template_file_formats_row
             content_file_formats_row = content_file_formats_row.replace("{file_format_name}", file_format_name)
             content_file_formats_row = content_file_formats_row.replace("{file_format_uuid}", file_format_uuid)
