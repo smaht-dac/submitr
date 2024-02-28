@@ -31,7 +31,7 @@ virtual Python environment, and then the actual installation of ``smaht-submitr`
 System Requirements
 ===================
 
-* ``python`` 3.9, 3.10, or 3.11`
+* ``python`` 3.9, 3.10, or 3.11
 * ``bash``
 
 .. note::
