@@ -5,7 +5,7 @@ Installation
 .. toctree::
   :maxdepth: 1
 
-More experienced users who already have ``python`` (version `3.9`, `3.10`, or `3.11`) installed,
+More experienced users who already have ``python`` (version 3.9, 3.10, or 3.11) installed,
 and a (optional) Python virtual environment setup to their satisfaction,
 may proceed directly to the essential element of the `actual installation <installation.html#id1>`_
 of ``smaht-submitr``, which is simply this::
