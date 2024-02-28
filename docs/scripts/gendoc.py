@@ -704,21 +704,21 @@ def _gendoc_submission_centers_table(portal: Portal) -> str:
             if submission_center_description := submission_center.get("description", ""):
                 if not submission_center_description.endswith("."):
                     submission_center_description += "."
-            if isinstance(submission_center_leader := submission_center.get("leader", ""), dict):
-                if submission_center_leader_name := submission_center_leader.get("display_title", ""):
-                    if submission_center_leader_url := submission_center_leader.get("@id", ""):
-                        submission_center_leader_url = f"{portal.server}/{submission_center_leader_url}"
-                else:
-                    submission_center_leader = None
-            if submission_center_leader:
-                if submission_center_description:
-                    submission_center_description += "<br />"
-                if submission_center_leader_url:
-                    submission_center_description += (
-                        f"<u>Leader</u>: <a target='_blank' href='{submission_center_leader_url}'"
-                        f" style='color:black;'><b>{submission_center_leader_name}</b></a>")
-                else:
-                    submission_center_description += f"<u>Leader</u>: <b>{submission_center_leader}</b>"
+#           if isinstance(submission_center_leader := submission_center.get("leader", ""), dict):
+#               if submission_center_leader_name := submission_center_leader.get("display_title", ""):
+#                   if submission_center_leader_url := submission_center_leader.get("@id", ""):
+#                       submission_center_leader_url = f"{portal.server}/{submission_center_leader_url}"
+#               else:
+#                   submission_center_leader = None
+#           if submission_center_leader:
+#               if submission_center_description:
+#                   submission_center_description += "<br />"
+#               if submission_center_leader_url:
+#                   submission_center_description += (
+#                       f"<u>Leader</u>: <a target='_blank' href='{submission_center_leader_url}'"
+#                       f" style='color:black;'><b>{submission_center_leader_name}</b></a>")
+#               else:
+#                   submission_center_description += f"<u>Leader</u>: <b>{submission_center_leader}</b>"
             elif submission_center_name == "smaht_dac":
                 if submission_center_description:
                     submission_center_description += "<br />"
