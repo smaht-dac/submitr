@@ -78,7 +78,7 @@ and installing the dependencies for this tool:
 
 * `Installation Prerequisites <installation_prerequisites.html>`_
 
-Below is the general index for this documentation.
+Below (and to the left) is the general table of contents for this documentation.
 
 .. toctree::
   :maxdepth: 1
