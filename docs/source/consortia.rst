@@ -1,7 +1,7 @@
 =========
 Consortia
 =========
-Below are the consortium values currently supported by SMaHT Portal.
+Below are the `consortium <schemas/Consortium.html>`_ values currently supported by SMaHT Portal.
 
 .. toctree::
   :caption: Consortia
@@ -12,4 +12,4 @@ Below are the consortium values currently supported by SMaHT Portal.
 
 .. raw:: html
 
-    <table class="schema-table" width="104%"> <tr> <th style="border-left:1px solid white;border-right:1px solid white;"> Name </th> <th style="border-left:1px solid white;border-right:1px solid white;"> ID </th> <th style="border-left:1px solid white;border-right:1px solid white;"> Description </th> </tr> <tr> <td style="border-left:1px solid white;border-right:1px solid white;"> <b>smaht</b> </td> <td style="border-left:1px solid white;border-right:1px solid white;"> <a target="_blank" href="https://data.smaht.org/358aed10-9b9d-4e26-ab84-4bd162da182b">358aed10-9b9d-4e26-ab84-4bd162da182b</a> </td> <td style="border-left:1px solid white;border-right:1px solid white;"> SMaHT. </td> </tr> </table><p />
+    <table class="schema-table" width="104%"> <tr> <th width="5%"> Name </th> <th width="30%"> ID </th> <th width="65%"> Description </th> </tr> <tr> <td> <b>smaht</b> </td> <td> <a target="_blank" href="https://data.smaht.org/358aed10-9b9d-4e26-ab84-4bd162da182b">358aed10-9b9d-4e26-ab84-4bd162da182b</a> </td> <td> SMaHT. </td> </tr> </table><p />
