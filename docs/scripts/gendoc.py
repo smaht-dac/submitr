@@ -259,13 +259,21 @@ def _gendoc_required_properties_table(schema: dict) -> str:
             continue
         if not (property_link_to := property.get("linkTo")):
             property_link_to = property.get("items", {}).get("linkTo")
+        property_description = None
+        if property_name == "consortia":
+            property_description = (
+                "<br /><small><i>Click <a href='../consortia.html'>here</a> to see values.</i></small>")
+        if property_name == "submission_centers":
+            property_description = (
+                "<br /><small><i>Click <a href='../submission_centers.html'>here</a> to see values.</i></small>")
         if property_type == "array":
             if property_items := property.get("items"):
                 if property_items.get("enum"):
                     property_type = f"{property_type} of enum"
                 elif property_array_type := property_items.get("type"):
                     property_type = f"{property_type} of {property_array_type}"
-        simple_properties.append({"name": property_name, "type": property_type, "link_to": property_link_to})
+        simple_properties.append({"name": property_name, "type": property_type,
+                                  "link_to": property_link_to, "description": property_description})
     content_simple_property_rows = _gendoc_simple_properties(simple_properties, kind="required")
     content = template_required_properties_table
     content = content.replace("{required_property_rows}", content_simple_property_rows)
@@ -366,6 +374,13 @@ def _gendoc_reference_properties_table(schema: dict) -> str:
         if not (property_link_to := property.get("linkTo")):
             if not (property_link_to := property.get("items", {}).get("linkTo")):
                 continue
+        property_description = None
+        if property_name == "consortia":
+            property_description = (
+                "<br /><small><i>Click <a href='../consortia.html'>here</a> to see values.</i></small>")
+        if property_name == "submission_centers":
+            property_description = (
+                "<br /><small><i>Click <a href='../submission_centers.html'>here</a> to see values.</i></small>")
         content_property_type = (
             f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
             f"<u>{property_link_to}</u></a><br />{property_type}")
@@ -374,7 +389,8 @@ def _gendoc_reference_properties_table(schema: dict) -> str:
                 if property_array_type := property_items.get("type"):
                     content_property_type = f"{content_property_type} of {property_array_type}"
         simple_properties.append({"name": property_name, "type": content_property_type,
-                                  "required": property_name in required_properties})
+                                  "required": property_name in required_properties,
+                                  "description": property_description})
     if not (content_simple_property_rows := _gendoc_simple_properties(simple_properties)):
         return content
     content = template_reference_properties_table
