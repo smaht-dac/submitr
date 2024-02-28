@@ -120,3 +120,25 @@ and gives no one else (but the system superuser) any permissions at all::
 .. note::
     If you `do` accidentally expose your **Secret Access Key**, we would ask you to please
     delete it and create a new one (and don't forget to update your keys file when you do this).
+
+Screenshots
+-----------
+Some screenshots illustrating the SMaHT Portal credentials (Access Key ID and Secret Access Key) creation process.
+First, go to your **Profile** and click **Add Access Key** ...
+
+.. image:: _static/images/credentials_access_key_before.png
+    :target: _static/images/credentials_access_key_before.png
+    :alt: Portal Access Key Creation (Before)
+
+After clicking **Add Access Key**, save the **Access Key ID** and **Secret Access Key** to your keys file ...
+
+.. image:: _static/images/credentials_access_key_created.png
+    :target: _static/images/credentials_access_key_created.png
+    :alt: Portal Access Key Creation
+
+After dismissing the above by clicking the **X** you will see your **Access Key ID** (but **not** the **Secret Access Key**).
+Note that you can delete it and create a new one at any time.
+
+.. image:: _static/images/credentials_access_key_after.png
+    :target: _static/images/credentials_access_key_after.png
+    :alt: Portal Access Key Creation (After)
