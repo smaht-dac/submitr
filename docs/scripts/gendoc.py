@@ -381,6 +381,9 @@ def _gendoc_reference_properties_table(schema: dict) -> str:
         if property_name == "submission_centers":
             property_description = (
                 "<br /><small><i>Click <a href='../submission_centers.html'>here</a> to see values.</i></small>")
+        if property_link_to == "FileFormat":
+            property_description = (
+                "<br /><small><i>Click <a href='../file_formats.html'>here</a> to see values.</i></small>")
         content_property_type = (
             f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
             f"<u>{property_link_to}</u></a><br />{property_type}")
