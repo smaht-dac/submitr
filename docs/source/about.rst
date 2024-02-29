@@ -66,3 +66,16 @@ You can then attach this single file to any correspondence with us and it will l
     (see `Credentials <credentials.html#securing-access-keys>`_).
     This is **sensitive** information and, like a password, it should **never** be
     **shared** with anyone, and particularly through any insecure channels (like email).
+
+Links
+-----
+
+.. raw:: html
+
+    <ul>
+        <li><a target="_blank" href="https://data.smaht.org/about">About SMaHT<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
+        <li><a target="_blank" href="https://data.smaht.org/about/consortium/data">SMaHT Data Overview<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
+        <li><a target="_blank" href="https://data.smaht.org/about/consortium/awardees">SMaHT Consortium Members Map<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
+        <li><a target="_blank" href="https://data.smaht.org/about/join/policy">SMaHT Membership Policy<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
+        <li><a target="_blank" href="https://data.smaht.org">SMaHT Portal<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
+    </ul>
