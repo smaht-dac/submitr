@@ -60,6 +60,7 @@ SUBMISSION_CENTERS_DOC_FILE = f"{DOCS_DIR}/submission_centers.rst"
 SUBMISSION_CENTERS_DOC_FILE_MAGIC_STRING = OBJECT_MODEL_DOC_FILE_MAGIC_STRING
 FILE_FORMATS_DOC_FILE = f"{DOCS_DIR}/file_formats.rst"
 REFERENCE_GENOMES_DOC_FILE = f"{DOCS_DIR}/reference_genomes.rst"
+SMAHT_BASE_URL = "https://data.smaht.org"
 
 
 def main():
@@ -175,6 +176,7 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
     content_schema_title = f"{'=' * len(schema_name)}\n{schema_name}\n{'=' * len(schema_name)}\n\n"
     content = content.replace("{schema_title}", content_schema_title)
     content = content.replace("{schema_name}", schema_name)
+    content = content.replace("{smaht_url}", SMAHT_BASE_URL)
 
     if schema.get("isAbstract") is True:
         content = content.replace("{schema_abstract}", "<u>abstract</u>")
@@ -700,7 +702,7 @@ def _gendoc_consortia_table(portal: Portal) -> str:
             content_consortia_row = content_consortia_row.replace("{consortium_url}",
                                                                   f"{portal.server}/{consortium_uuid}")
             content_consortia_rows += content_consortia_row
-    consortia_url = "https://data.smaht.org/search/?type=Consortium"
+    consortia_url = f"{SMAHT_BASE_URL}/search/?type=Consortium"
     content = template_consortia_table
     content = content.replace("{consortia_rows}", content_consortia_rows)
     content = content.replace("{consortia_url}", consortia_url)
@@ -775,7 +777,7 @@ def _gendoc_submission_centers_table(portal: Portal) -> str:
                 content_submission_centers_row.replace("{submission_center_url}",
                                                        f"{portal.server}/{submission_center_uuid}"))
             content_submission_centers_rows += content_submission_centers_row
-    submission_centers_url = "https://data.smaht.org/search/?type=SubmissionCenter"
+    submission_centers_url = f"{SMAHT_BASE_URL}/search/?type=SubmissionCenter"
     content = template_submission_centers_table
     content = content.replace("{submission_centers_rows}", content_submission_centers_rows)
     content = content.replace("{submission_centers_url}", submission_centers_url)
@@ -844,7 +846,7 @@ def _gendoc_file_formats_table(portal: Portal, valid_item_type: Optional[str] = 
             content_file_formats_row = (
                 content_file_formats_row.replace("{file_format_url}", f"{portal.server}/{file_format_uuid}"))
             content_file_formats_rows += content_file_formats_row
-    file_formats_url = "https://data.smaht.org/search/?type=FileFormat"
+    file_formats_url = f"{SMAHT_BASE_URL}/search/?type=FileFormat"
     if valid_item_type:
         file_formats_url += f"&valid_item_types={valid_item_type}"
     content = template_file_formats_table
@@ -890,7 +892,7 @@ def _gendoc_reference_genomes_table(portal: Portal, valid_item_type: Optional[st
                 content_reference_genomes_row.replace("{reference_genome_url}",
                                                       f"{portal.server}/{reference_genome_uuid}"))
             content_reference_genomes_rows += content_reference_genomes_row
-    reference_genomes_url = "https://data.smaht.org/search/?type=ReferenceGenome"
+    reference_genomes_url = f"{SMAHT_BASE_URL}/search/?type=ReferenceGenome"
     content = template_reference_genomes_table
     content = content.replace("{reference_genomes_rows}", content_reference_genomes_rows)
     content = content.replace("{reference_genomes_url}", reference_genomes_url)
