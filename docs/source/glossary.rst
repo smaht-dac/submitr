@@ -40,13 +40,13 @@ Under development ...
         <tr>
             <td style="font-weight:bold;"> TTD </td>
             <td>
-                Data Analysis Center
+                Technology and Tool Development
             </td>
         </tr>
         <tr>
             <td style="font-weight:bold;"> UUID </td>
             <td>
-                Data Analysis Center
+                Universal Unique Identifier
             </td>
         </tr>
     </table>
