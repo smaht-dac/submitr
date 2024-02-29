@@ -8,8 +8,8 @@ you should be ready to use the :boldcode:`submit-metadata-bundle` command.
 What follows are detailed instructions for how to format your metatdata submission files,
 and how to actually submit (and validate) these, and upload yours files, to SMaHT Portal using this command.
 
-Formatting Files for Submission
-===============================
+Formatting Metadata Files
+=========================
 
 Most commonly, the file format recommended for metadata submission to SMaHT Portal,
 is an Excel spreadsheet file (e.g. ``your_metadata_file.xlsx``),
