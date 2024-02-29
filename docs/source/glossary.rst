@@ -1,0 +1,53 @@
+========
+Glossary
+========
+
+Under development ...
+
+.. raw:: html
+
+    <table class="schema-table" width="100%">
+        <tr>
+            <th> Term </td>
+            <th>
+                Definition
+            </th>
+        </tr>
+        <tr>
+            <td style="font-weight:bold;"> DAC </td>
+            <td>
+                Data Analysis Center
+            </td>
+        </tr>
+        <tr>
+            <td style="font-weight:bold;"> GCC </td>
+            <td>
+                Genome Characterization Center
+            </td>
+        </tr>
+        <tr>
+            <td style="font-weight:bold;"> OC </td>
+            <td>
+                Organizational Center
+            </td>
+        </tr>
+        <tr>
+            <td style="font-weight:bold;"> TPC </td>
+            <td>
+                Tissue Procurement Center
+            </td>
+        </tr>
+        <tr>
+            <td style="font-weight:bold;"> TTD </td>
+            <td>
+                Data Analysis Center
+            </td>
+        </tr>
+        <tr>
+            <td style="font-weight:bold;"> UUID </td>
+            <td>
+                Data Analysis Center
+            </td>
+        </tr>
+    </table>
+    <p />

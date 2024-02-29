@@ -112,3 +112,4 @@ Below (and to the left) is the general table of contents for this documentation.
   file_formats
   reference_genomes
   object_model
+  glossary
