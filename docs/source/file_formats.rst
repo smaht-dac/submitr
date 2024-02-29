@@ -22,6 +22,13 @@ For UnalignedReads
   <table class="schema-table" width="104%"> <tr> <th width="5%"> Name </th> <th width="30%"> ID </th> <th width="65%"> Description </th> </tr> <tr> <td> <b>bam</b> </td> <td> <a target="_blank" href="https://data.smaht.org/d13d06cf-218e-4f61-aaf0-91f226248b3c">d13d06cf-218e-4f61-aaf0-91f226248b3c</a> </td> <td> Binary version of a SAM file. Format used to represent aligned sequences.<br /><u>File Extension</u>: <b>.bam</b><br /><u>Valid Types</u>: <a href='schemas/AlignedReads.html'>AlignedReads</b>, <a href='schemas/OutputFile.html'>OutputFile</b>, <a href='schemas/ReferenceFile.html'>ReferenceFile</b>, <a href='schemas/UnalignedReads.html'>UnalignedReads</b> </td> </tr> <tr> <td> <b>fastq_gz</b> </td> <td> <a target="_blank" href="https://data.smaht.org/c13d06cf-218e-4f61-aaf0-91f226248b2c">c13d06cf-218e-4f61-aaf0-91f226248b2c</a> </td> <td> Format used to represent short read sequence data, compressed.<br /><u>File Extension</u>: <b>.fastq.gz</b><br /><u>Valid Types</u>: <a href='schemas/OutputFile.html'>OutputFile</b>, <a href='schemas/ReferenceFile.html'>ReferenceFile</b>, <a href='schemas/UnalignedReads.html'>UnalignedReads</b> </td> </tr> </table><p />
 
 
+For VariantCalls
+-----------------
+.. raw:: html
+
+  <table class="schema-table" width="104%"> <tr> <th width="5%"> Name </th> <th width="30%"> ID </th> <th width="65%"> Description </th> </tr> <tr> <td> <b>vcf</b> </td> <td> <a target="_blank" href="https://data.smaht.org/fcc2647d-301b-4888-8d9d-83ea4270309c">fcc2647d-301b-4888-8d9d-83ea4270309c</a> </td> <td> Format used to represent genomics variants.<br /><u>File Extension</u>: <b>.vcf</b><br /><u>Valid Types</u>: <a href='schemas/OutputFile.html'>OutputFile</b>, <a href='schemas/ReferenceFile.html'>ReferenceFile</b>, <a href='schemas/VariantCalls.html'>VariantCalls</b> </td> </tr> <tr> <td> <b>vcf_gz</b> </td> <td> <a target="_blank" href="https://data.smaht.org/1b8f525f-aecb-4211-9ae5-a2c998b05599">1b8f525f-aecb-4211-9ae5-a2c998b05599</a> </td> <td> Compressed version of a VCF file. Format used to represent genomics variants.<br /><u>File Extension</u>: <b>.vcf.gz</b><br /><u>Valid Types</u>: <a href='schemas/OutputFile.html'>OutputFile</b>, <a href='schemas/ReferenceFile.html'>ReferenceFile</b>, <a href='schemas/VariantCalls.html'>VariantCalls</b> </td> </tr> </table><p />
+
+
 All File Formats
 ----------------
 .. raw:: html

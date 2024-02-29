@@ -760,6 +760,7 @@ def _update_file_formats_file(portal: Portal) -> None:
         return
     content_file_formats_aligned_reads_table = _gendoc_file_formats_table(portal, "AlignedReads")
     content_file_formats_unaligned_reads_table = _gendoc_file_formats_table(portal, "UnalignedReads")
+    content_file_formats_variant_calls_table = _gendoc_file_formats_table(portal, "VariantCalls")
     content_file_formats_page = template_file_formats_page
     content_file_formats_page = content_file_formats_page.replace("{file_formats_all}",
                                                                   content_file_formats_table)
@@ -767,6 +768,8 @@ def _update_file_formats_file(portal: Portal) -> None:
                                                                   content_file_formats_aligned_reads_table)
     content_file_formats_page = content_file_formats_page.replace("{file_formats_unaligned_reads}",
                                                                   content_file_formats_unaligned_reads_table)
+    content_file_formats_page = content_file_formats_page.replace("{file_formats_variant_calls}",
+                                                                  content_file_formats_variant_calls_table)
     with io.open(FILE_FORMATS_DOC_FILE, "w") as f:
         f.write(content_file_formats_page)
 
