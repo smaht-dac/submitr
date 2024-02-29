@@ -23,6 +23,12 @@ FileFormat
     <p />
     <br /><u>Description</u>: Data format for a file.
 
+
+.. tip::
+    See file format values here: `File Formats <../file_formats.html>`_
+
+
+
 Required Properties
 ~~~~~~~~~~~~~~~~~~~
 

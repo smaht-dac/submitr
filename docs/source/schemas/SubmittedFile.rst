@@ -23,6 +23,8 @@ SubmittedFile
     <p />
     <br /><u>Description</u>: Generic file submitted by external user.
 
+
+
 Required Properties
 ~~~~~~~~~~~~~~~~~~~
 

@@ -23,6 +23,8 @@ OutputFile
     <p />
     <br /><u>Description</u>: File produced by bioinformatics pipeline.
 
+
+
 Required Properties
 ~~~~~~~~~~~~~~~~~~~
 
