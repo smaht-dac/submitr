@@ -53,11 +53,10 @@ html_context = {
   "github_user": "", # Optional: Specify GitHub username here
   "github_repo": "", # Optional: Specify repository name here
   "github_version": "", # Optional: Specify branch name here
-  "conf_py_path": "", # Optional: Specify path to conf.py file here
+  "conf_py_path": "" # Optional: Specify path to conf.py file here
 }
 html_theme_options = {
-  "sticky_navigation": False,
-  "color_primary": "blue"
+  "sticky_navigation": False
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
