@@ -1,7 +1,7 @@
 ============
 File Formats
 ============
-Below are the `file formats <schemas/FileFormat.html>`_ currently supported by SMaHT Portal.
+Below are the `FileFormat <schemas/FileFormat.html>`_ values currently supported by SMaHT Portal.
 
 .. toctree::
   :caption: File Formats
