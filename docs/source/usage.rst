@@ -145,7 +145,7 @@ such as the `required` and `reference` properties for each type, as well as each
 
 .. raw:: html
 
-    <ul style="margin-left:18pt;"><li><a target="_blank" href="object_model.html"><b>Metadata Object Model</b></a><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></li></ul>
+    <ul style="margin-left:18pt;"><li><a target="_blank" href="object_model.html"><b>Metadata Object Model</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1.5pt;" /></a></li></ul>
 
 .. tip::
    More savvy command-line oriented users `may` find the :boldcode:`view-portal-object` command useful.
@@ -156,8 +156,8 @@ as well as an **example** spreadsheet:
 
 .. raw:: html
 
-    <div style="padding-left:22pt;">•&nbsp;&nbsp;<a target="_blank" href="https://docs.google.com/spreadsheets/d/1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4/edit#gid=1645623888"><b>Metadata Submission Template</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:2pt;" /></a></div>
-    <div style="padding-left:22pt;" >•&nbsp;&nbsp;<a target="_blank" href="https://docs.google.com/spreadsheets/d/1b5W-8iBEvWfnJQFkcrO9_rG-K7oJEIJlaLr6ZH5qjjA/edit#gid=1589547329"><b>Metadata Submission Example</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:2pt;" /></a></div>
+    <div style="padding-left:22pt;">•&nbsp;&nbsp;<a target="_blank" href="https://docs.google.com/spreadsheets/d/1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4/edit#gid=1645623888"><b>Metadata Submission Template</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1.5pt;" /></a></div>
+    <div style="padding-left:22pt;" >•&nbsp;&nbsp;<a target="_blank" href="https://docs.google.com/spreadsheets/d/1b5W-8iBEvWfnJQFkcrO9_rG-K7oJEIJlaLr6ZH5qjjA/edit#gid=1589547329"><b>Metadata Submission Example</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1.5pt;" /></a></div>
     <p />
 
 Submission
