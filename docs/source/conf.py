@@ -53,7 +53,6 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 html_css_files = ['styles.css']
-html_js_files = ['styles.js']
 
 # https://sphinx-tabs.readthedocs.io/en/latest/
 sphinx_tabs_disable_tab_closing = True

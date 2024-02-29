@@ -8,7 +8,7 @@ Tissue
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
     <a target="_blank" href="https://data.smaht.org/search/?type=Tissue" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Tissue.json" style="color:black">type</a>
-    <a target="_blank" href="https://data.smaht.org/profiles/Tissue.json?format=json" style="color:black"><b><u>Tissue</u></b> 🔗</a>.
+    <a target="_blank" href="https://data.smaht.org/profiles/Tissue.json" style="color:black"><b><u>Tissue</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/Tissue.json?format=json"> 🔗</a>.
     Its <b>parent</b> type is: <a href=SampleSource.html><u>SampleSource</u></a>.
     
     Types <b>referencing</b> this type are: <a href='Histology.html'><u>Histology</u></a>, <a href='TissueSample.html'><u>TissueSample</u></a>.
@@ -16,10 +16,10 @@ Tissue
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;
     those in <span style='color:blue'><b>blue</b></span> are
     <a href="#identifying-properties" style="color:#222222"><i><b><u>identifying</u></b></i></a> properties;
-    and properties whose types are in <span style='color:green'><b>green</b></span> are
+    and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     View <a target="_blank" href="https://data.smaht.org/search/?type=Tissue" style="color:black"><b><i><u>objects</u></i></b></a>
-    of this type <a target="_blank" href="https://data.smaht.org/search/?type=Tissue"><b>here</b></a>. 
+    of this type <a target="_blank" href="https://data.smaht.org/search/?type=Tissue"><b>here</b></a> <a target="_blank" href="https://data.smaht.org/search/?type=Tissue&format=json">🔗</a>.
     <p />
     
 
