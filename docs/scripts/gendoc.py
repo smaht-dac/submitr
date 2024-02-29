@@ -926,10 +926,9 @@ def _update_object_model_file(schemas: dict, portal: Portal) -> None:
     content_schema_types_middle = ""
     content_schema_types_right = ""
     ncolumns = 3
-    nschemas_one_third = nschemas // ncolumns
-    nschemas_one_third_remainder = nschemas % ncolumns
-    nschemas_distribution = [nschemas_one_third + (1 if n < nschemas_one_third_remainder else 0)
-                             for n in range(ncolumns)]
+    nschemas_one_part = nschemas // ncolumns
+    nschemas_one_part_remainder = nschemas % ncolumns
+    nschemas_distribution = [nschemas_one_part + (1 if n < nschemas_one_part_remainder else 0) for n in range(ncolumns)]
     nschemas_left, nschemas_middle, nschemas_right = nschemas_distribution
     for index, schema_name in enumerate(schemas):
         content_schema_types += f"{(' ' * 3) if index > 0 else ''}schemas/{schema_name}\n"
