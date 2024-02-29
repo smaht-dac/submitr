@@ -718,6 +718,7 @@ def _gendoc_submission_centers_table(portal: Portal) -> str:
         if ((submission_center_name := submission_center.get("identifier")) and
             (submission_center_uuid := submission_center.get("uuid"))):  # noqa
             submission_center_code = submission_center.get("code", "")
+            submission_center_title = submission_center.get("title", "")
             if submission_center_description := submission_center.get("description", ""):
                 if not submission_center_description.endswith("."):
                     submission_center_description += "."
@@ -744,6 +745,8 @@ def _gendoc_submission_centers_table(portal: Portal) -> str:
             content_submission_centers_row = template_submission_centers_row
             content_submission_centers_row = (
                 content_submission_centers_row.replace("{submission_center_name}", submission_center_name))
+            content_submission_centers_row = (
+                content_submission_centers_row.replace("{submission_center_title}", submission_center_title))
             content_submission_centers_row = (
                 content_submission_centers_row.replace("{submission_center_uuid}", submission_center_uuid))
             content_submission_centers_row = (
