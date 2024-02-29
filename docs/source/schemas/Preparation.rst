@@ -8,7 +8,7 @@ Preparation
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> <u>abstract</u>
     <a target="_blank" href="https://data.smaht.org/search/?type=Preparation" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Preparation.json" style="color:black">type</a>
-    <a target="_blank" href="https://data.smaht.org/profiles/Preparation.json?format=json" style="color:black"><b><u>Preparation</u></b> 🔗</a>.
+    <a target="_blank" href="https://data.smaht.org/profiles/Preparation.json" style="color:black"><b><u>Preparation</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/Preparation.json?format=json"> 🔗</a>.
     
     Its <b>derived</b> types are: <a href='AnalytePreparation.html'><u>AnalytePreparation</u></a>, <a href='LibraryPreparation.html'><u>LibraryPreparation</u></a>, <a href='SamplePreparation.html'><u>SamplePreparation</u></a>.
     
@@ -16,10 +16,10 @@ Preparation
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;
     those in <span style='color:blue'><b>blue</b></span> are
     <a href="#identifying-properties" style="color:#222222"><i><b><u>identifying</u></b></i></a> properties;
-    and properties whose types are in <span style='color:green'><b>green</b></span> are
+    and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     View <a target="_blank" href="https://data.smaht.org/search/?type=Preparation" style="color:black"><b><i><u>objects</u></i></b></a>
-    of this type <a target="_blank" href="https://data.smaht.org/search/?type=Preparation"><b>here</b></a>. 
+    of this type <a target="_blank" href="https://data.smaht.org/search/?type=Preparation"><b>here</b></a> <a target="_blank" href="https://data.smaht.org/search/?type=Preparation&format=json">🔗</a>.
     <p />
     
 

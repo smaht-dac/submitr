@@ -8,7 +8,7 @@ SubmissionCenter
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
     <a target="_blank" href="https://data.smaht.org/search/?type=SubmissionCenter" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/SubmissionCenter.json" style="color:black">type</a>
-    <a target="_blank" href="https://data.smaht.org/profiles/SubmissionCenter.json?format=json" style="color:black"><b><u>SubmissionCenter</u></b> 🔗</a>.
+    <a target="_blank" href="https://data.smaht.org/profiles/SubmissionCenter.json" style="color:black"><b><u>SubmissionCenter</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/SubmissionCenter.json?format=json"> 🔗</a>.
     
     
     Types <b>referencing</b> this type are: <a href='AlignedReads.html'><u>AlignedReads</u></a>, <a href='Analyte.html'><u>Analyte</u></a>, <a href='AnalytePreparation.html'><u>AnalytePreparation</u></a>, <a href='Assay.html'><u>Assay</u></a>, <a href='CellCulture.html'><u>CellCulture</u></a>, <a href='CellCultureMixture.html'><u>CellCultureMixture</u></a>, <a href='CellCultureSample.html'><u>CellCultureSample</u></a>, <a href='CellLine.html'><u>CellLine</u></a>, <a href='CellSample.html'><u>CellSample</u></a>, <a href='DeathCircumstances.html'><u>DeathCircumstances</u></a>, <a href='Demographic.html'><u>Demographic</u></a>, <a href='Diagnosis.html'><u>Diagnosis</u></a>, <a href='Document.html'><u>Document</u></a>, <a href='Donor.html'><u>Donor</u></a>, <a href='Exposure.html'><u>Exposure</u></a>, <a href='File.html'><u>File</u></a>, <a href='FileFormat.html'><u>FileFormat</u></a>, <a href='FileSet.html'><u>FileSet</u></a>, <a href='FilterSet.html'><u>FilterSet</u></a>, <a href='Histology.html'><u>Histology</u></a>, <a href='Image.html'><u>Image</u></a>, <a href='Library.html'><u>Library</u></a>, <a href='LibraryPreparation.html'><u>LibraryPreparation</u></a>, <a href='MedicalHistory.html'><u>MedicalHistory</u></a>, <a href='MolecularTest.html'><u>MolecularTest</u></a>, <a href='OntologyTerm.html'><u>OntologyTerm</u></a>, <a href='OutputFile.html'><u>OutputFile</u></a>, <a href='Preparation.html'><u>Preparation</u></a>, <a href='PreparationKit.html'><u>PreparationKit</u></a>, <a href='Protocol.html'><u>Protocol</u></a>, <a href='QualityMetric.html'><u>QualityMetric</u></a>, <a href='ReferenceFile.html'><u>ReferenceFile</u></a>, <a href='ReferenceGenome.html'><u>ReferenceGenome</u></a>, <a href='Sample.html'><u>Sample</u></a>, <a href='SamplePreparation.html'><u>SamplePreparation</u></a>, <a href='SampleSource.html'><u>SampleSource</u></a>, <a href='Sequencer.html'><u>Sequencer</u></a>, <a href='Sequencing.html'><u>Sequencing</u></a>, <a href='Software.html'><u>Software</u></a>, <a href='SubmittedFile.html'><u>SubmittedFile</u></a>, <a href='Therapeutic.html'><u>Therapeutic</u></a>, <a href='Tissue.html'><u>Tissue</u></a>, <a href='TissueCollection.html'><u>TissueCollection</u></a>, <a href='TissueSample.html'><u>TissueSample</u></a>, <a href='Treatment.html'><u>Treatment</u></a>, <a href='UnalignedReads.html'><u>UnalignedReads</u></a>, <a href='User.html'><u>User</u></a>, <a href='VariantCalls.html'><u>VariantCalls</u></a>.
@@ -16,10 +16,10 @@ SubmissionCenter
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;
     those in <span style='color:blue'><b>blue</b></span> are
     <a href="#identifying-properties" style="color:#222222"><i><b><u>identifying</u></b></i></a> properties;
-    and properties whose types are in <span style='color:green'><b>green</b></span> are
+    and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     View <a target="_blank" href="https://data.smaht.org/search/?type=SubmissionCenter" style="color:black"><b><i><u>objects</u></i></b></a>
-    of this type <a target="_blank" href="https://data.smaht.org/search/?type=SubmissionCenter"><b>here</b></a>. 
+    of this type <a target="_blank" href="https://data.smaht.org/search/?type=SubmissionCenter"><b>here</b></a> <a target="_blank" href="https://data.smaht.org/search/?type=SubmissionCenter&format=json">🔗</a>.
     <p />
     
 

@@ -8,7 +8,7 @@ SampleSource
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> <u>abstract</u>
     <a target="_blank" href="https://data.smaht.org/search/?type=SampleSource" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json" style="color:black">type</a>
-    <a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json?format=json" style="color:black"><b><u>SampleSource</u></b> 🔗</a>.
+    <a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json" style="color:black"><b><u>SampleSource</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json?format=json"> 🔗</a>.
     
     Its <b>derived</b> types are: <a href='CellCulture.html'><u>CellCulture</u></a>, <a href='Tissue.html'><u>Tissue</u></a>.
     Types <b>referencing</b> this type are: <a href='CellSample.html'><u>CellSample</u></a>, <a href='Sample.html'><u>Sample</u></a>.
@@ -16,10 +16,10 @@ SampleSource
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;
     those in <span style='color:blue'><b>blue</b></span> are
     <a href="#identifying-properties" style="color:#222222"><i><b><u>identifying</u></b></i></a> properties;
-    and properties whose types are in <span style='color:green'><b>green</b></span> are
+    and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     View <a target="_blank" href="https://data.smaht.org/search/?type=SampleSource" style="color:black"><b><i><u>objects</u></i></b></a>
-    of this type <a target="_blank" href="https://data.smaht.org/search/?type=SampleSource"><b>here</b></a>. 
+    of this type <a target="_blank" href="https://data.smaht.org/search/?type=SampleSource"><b>here</b></a> <a target="_blank" href="https://data.smaht.org/search/?type=SampleSource&format=json">🔗</a>.
     <p />
     
 

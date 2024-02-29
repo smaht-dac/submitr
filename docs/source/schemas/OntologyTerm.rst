@@ -8,7 +8,7 @@ OntologyTerm
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
     <a target="_blank" href="https://data.smaht.org/search/?type=OntologyTerm" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/OntologyTerm.json" style="color:black">type</a>
-    <a target="_blank" href="https://data.smaht.org/profiles/OntologyTerm.json?format=json" style="color:black"><b><u>OntologyTerm</u></b> 🔗</a>.
+    <a target="_blank" href="https://data.smaht.org/profiles/OntologyTerm.json" style="color:black"><b><u>OntologyTerm</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/OntologyTerm.json?format=json"> 🔗</a>.
     
     
     Types <b>referencing</b> this type are: <a href='Diagnosis.html'><u>Diagnosis</u></a>, <a href='Exposure.html'><u>Exposure</u></a>, <a href='Therapeutic.html'><u>Therapeutic</u></a>, <a href='Treatment.html'><u>Treatment</u></a>.
@@ -16,10 +16,10 @@ OntologyTerm
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;
     those in <span style='color:blue'><b>blue</b></span> are
     <a href="#identifying-properties" style="color:#222222"><i><b><u>identifying</u></b></i></a> properties;
-    and properties whose types are in <span style='color:green'><b>green</b></span> are
+    and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     View <a target="_blank" href="https://data.smaht.org/search/?type=OntologyTerm" style="color:black"><b><i><u>objects</u></i></b></a>
-    of this type <a target="_blank" href="https://data.smaht.org/search/?type=OntologyTerm"><b>here</b></a>. 
+    of this type <a target="_blank" href="https://data.smaht.org/search/?type=OntologyTerm"><b>here</b></a> <a target="_blank" href="https://data.smaht.org/search/?type=OntologyTerm&format=json">🔗</a>.
     <p />
     
 
