@@ -140,11 +140,19 @@ but there is a reference guide to these metadata objects provided at the link be
 You can quickly view important aspects of each of the object types,
 such as the `required` and `reference` properties for each type, as well as each property `type`, and more.
 
-    * `Metadata Object Model <object_model.html>`_
+.. raw:: html
+
+    <ul style="margin-left:18pt;"><li><a target="_blank" href="object_model.html"><b>Metadata Object Model</b></a><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></li></ul>
 
 .. tip::
    More savvy command-line oriented users `may` find the :boldcode:`view-portal-object` command useful.
    This is described in the `Advanced Usage <advanced_usage.html#viewing-portal-schemas>`_ section.
+
+There is also a metadata submission template which you may find useful, from which to start your spreadsheet:
+
+.. raw:: html
+
+    <ul style="margin-left:18pt;"><li><a target="_blank" href="https://docs.google.com/spreadsheets/d/1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4/edit#gid=1645623888"><b>SMaHT Metadata Submission Template</b></a><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></li></ul>
 
 Submission
 ==========
