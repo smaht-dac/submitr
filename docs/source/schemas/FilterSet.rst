@@ -7,8 +7,8 @@ FilterSet
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=FilterSet" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/FilterSet.json" style="color:black">type</a>
-    <a target="_blank" href="https://data.smaht.org/profiles/FilterSet.json" style="color:black"><b><u>FilterSet</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/FilterSet.json?format=json"> 🔗</a>.
+    <a target="_blank" href="https://data.smaht.org/search/?type=FilterSet&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/FilterSet.json?format=json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/FilterSet.json" style="color:black"><b><u>FilterSet</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/FilterSet.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
     
     
@@ -19,7 +19,7 @@ FilterSet
     and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     View <a target="_blank" href="https://data.smaht.org/search/?type=FilterSet" style="color:black"><b><i><u>objects</u></i></b></a>
-    of this type <a target="_blank" href="https://data.smaht.org/search/?type=FilterSet"><b>here</b></a> <a target="_blank" href="https://data.smaht.org/search/?type=FilterSet&format=json">🔗</a>.
+    of this type <a target="_blank" href="https://data.smaht.org/search/?type=FilterSet"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>
     <p />
     <br /><u>Description</u>: Item for encapsulating multiple queries.
 

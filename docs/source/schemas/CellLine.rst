@@ -7,8 +7,8 @@ CellLine
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=CellLine" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/CellLine.json" style="color:black">type</a>
-    <a target="_blank" href="https://data.smaht.org/profiles/CellLine.json" style="color:black"><b><u>CellLine</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/CellLine.json?format=json"> 🔗</a>.
+    <a target="_blank" href="https://data.smaht.org/search/?type=CellLine&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/CellLine.json?format=json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/CellLine.json" style="color:black"><b><u>CellLine</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/CellLine.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
     
     Types <b>referencing</b> this type are: <a href='CellCulture.html'><u>CellCulture</u></a>.
@@ -19,7 +19,7 @@ CellLine
     and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     View <a target="_blank" href="https://data.smaht.org/search/?type=CellLine" style="color:black"><b><i><u>objects</u></i></b></a>
-    of this type <a target="_blank" href="https://data.smaht.org/search/?type=CellLine"><b>here</b></a> <a target="_blank" href="https://data.smaht.org/search/?type=CellLine&format=json">🔗</a>.
+    of this type <a target="_blank" href="https://data.smaht.org/search/?type=CellLine"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>
     <p />
     
 

@@ -7,8 +7,8 @@ Preparation
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> <u>abstract</u>
-    <a target="_blank" href="https://data.smaht.org/search/?type=Preparation" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Preparation.json" style="color:black">type</a>
-    <a target="_blank" href="https://data.smaht.org/profiles/Preparation.json" style="color:black"><b><u>Preparation</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/Preparation.json?format=json"> 🔗</a>.
+    <a target="_blank" href="https://data.smaht.org/search/?type=Preparation&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Preparation.json?format=json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/Preparation.json" style="color:black"><b><u>Preparation</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/Preparation.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
     Its <b>derived</b> types are: <a href='AnalytePreparation.html'><u>AnalytePreparation</u></a>, <a href='LibraryPreparation.html'><u>LibraryPreparation</u></a>, <a href='SamplePreparation.html'><u>SamplePreparation</u></a>.
     
@@ -19,7 +19,7 @@ Preparation
     and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     View <a target="_blank" href="https://data.smaht.org/search/?type=Preparation" style="color:black"><b><i><u>objects</u></i></b></a>
-    of this type <a target="_blank" href="https://data.smaht.org/search/?type=Preparation"><b>here</b></a> <a target="_blank" href="https://data.smaht.org/search/?type=Preparation&format=json">🔗</a>.
+    of this type <a target="_blank" href="https://data.smaht.org/search/?type=Preparation"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>
     <p />
     
 

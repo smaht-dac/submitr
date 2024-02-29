@@ -7,8 +7,8 @@ SampleSource
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> <u>abstract</u>
-    <a target="_blank" href="https://data.smaht.org/search/?type=SampleSource" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json" style="color:black">type</a>
-    <a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json" style="color:black"><b><u>SampleSource</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json?format=json"> 🔗</a>.
+    <a target="_blank" href="https://data.smaht.org/search/?type=SampleSource&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json?format=json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json" style="color:black"><b><u>SampleSource</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
     Its <b>derived</b> types are: <a href='CellCulture.html'><u>CellCulture</u></a>, <a href='Tissue.html'><u>Tissue</u></a>.
     Types <b>referencing</b> this type are: <a href='CellSample.html'><u>CellSample</u></a>, <a href='Sample.html'><u>Sample</u></a>.
@@ -19,7 +19,7 @@ SampleSource
     and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     View <a target="_blank" href="https://data.smaht.org/search/?type=SampleSource" style="color:black"><b><i><u>objects</u></i></b></a>
-    of this type <a target="_blank" href="https://data.smaht.org/search/?type=SampleSource"><b>here</b></a> <a target="_blank" href="https://data.smaht.org/search/?type=SampleSource&format=json">🔗</a>.
+    of this type <a target="_blank" href="https://data.smaht.org/search/?type=SampleSource"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>
     <p />
     
 

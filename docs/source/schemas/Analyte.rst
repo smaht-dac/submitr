@@ -7,8 +7,8 @@ Analyte
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=Analyte" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Analyte.json" style="color:black">type</a>
-    <a target="_blank" href="https://data.smaht.org/profiles/Analyte.json" style="color:black"><b><u>Analyte</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/Analyte.json?format=json"> 🔗</a>.
+    <a target="_blank" href="https://data.smaht.org/search/?type=Analyte&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Analyte.json?format=json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/Analyte.json" style="color:black"><b><u>Analyte</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/Analyte.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
     
     Types <b>referencing</b> this type are: <a href='Library.html'><u>Library</u></a>.
@@ -19,7 +19,7 @@ Analyte
     and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     View <a target="_blank" href="https://data.smaht.org/search/?type=Analyte" style="color:black"><b><i><u>objects</u></i></b></a>
-    of this type <a target="_blank" href="https://data.smaht.org/search/?type=Analyte"><b>here</b></a> <a target="_blank" href="https://data.smaht.org/search/?type=Analyte&format=json">🔗</a>.
+    of this type <a target="_blank" href="https://data.smaht.org/search/?type=Analyte"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>
     <p />
     
 

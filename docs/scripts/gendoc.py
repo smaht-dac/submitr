@@ -683,7 +683,10 @@ def _gendoc_consortia_table(portal: Portal) -> str:
             content_consortia_row = content_consortia_row.replace("{consortium_url}",
                                                                   f"{portal.server}/{consortium_uuid}")
             content_consortia_rows += content_consortia_row
-    content = template_consortia_table.replace("{consortia_rows}", content_consortia_rows)
+    consortia_url = "https://data.smaht.org/search/?type=Consortium"
+    content = template_consortia_table
+    content = content.replace("{consortia_rows}", content_consortia_rows)
+    content = content.replace("{consortia_url}", consortia_url)
     return _normalize_spaces(content)
 
 
@@ -749,7 +752,10 @@ def _gendoc_submission_centers_table(portal: Portal) -> str:
                 content_submission_centers_row.replace("{submission_center_url}",
                                                        f"{portal.server}/{submission_center_uuid}"))
             content_submission_centers_rows += content_submission_centers_row
-    content = template_submission_centers_table.replace("{submission_centers_rows}", content_submission_centers_rows)
+    submission_centers_url = "https://data.smaht.org/search/?type=SubmissionCenter"
+    content = template_submission_centers_table
+    content = content.replace("{submission_centers_rows}", content_submission_centers_rows)
+    content = content.replace("{submission_centers_url}", submission_centers_url)
     return _normalize_spaces(content)
 
 
@@ -815,7 +821,12 @@ def _gendoc_file_formats_table(portal: Portal, valid_item_type: Optional[str] = 
             content_file_formats_row = (
                 content_file_formats_row.replace("{file_format_url}", f"{portal.server}/{file_format_uuid}"))
             content_file_formats_rows += content_file_formats_row
-    content = template_file_formats_table.replace("{file_formats_rows}", content_file_formats_rows)
+    file_formats_url = "https://data.smaht.org/search/?type=FileFormat"
+    if valid_item_type:
+        file_formats_url += f"&valid_item_types={valid_item_type}"
+    content = template_file_formats_table
+    content = content.replace("{file_formats_url}", file_formats_url)
+    content = content.replace("{file_formats_rows}", content_file_formats_rows)
     return _normalize_spaces(content)
 
 
@@ -856,7 +867,10 @@ def _gendoc_reference_genomes_table(portal: Portal, valid_item_type: Optional[st
                 content_reference_genomes_row.replace("{reference_genome_url}",
                                                       f"{portal.server}/{reference_genome_uuid}"))
             content_reference_genomes_rows += content_reference_genomes_row
-    content = template_reference_genomes_table.replace("{reference_genomes_rows}", content_reference_genomes_rows)
+    reference_genomes_url = "https://data.smaht.org/search/?type=ReferenceGenome"
+    content = template_reference_genomes_table
+    content = content.replace("{reference_genomes_rows}", content_reference_genomes_rows)
+    content = content.replace("{reference_genomes_url}", reference_genomes_url)
     return _normalize_spaces(content)
 
 
