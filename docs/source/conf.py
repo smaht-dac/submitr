@@ -55,6 +55,9 @@ html_context = {
   "github_version": "", # Optional: Specify branch name here
   "conf_py_path": "", # Optional: Specify path to conf.py file here
 }
+html_theme_options = {
+  "sticky_navigation": False,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
