@@ -74,6 +74,7 @@ Links
 
     <ul>
         <li><a target="_blank" href="https://data.smaht.org/about">About SMaHT<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
+        <li><a target="_blank" href="https://docs.google.com/spreadsheets/d/1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4/edit#gid=1645623888">SMaHT Metadata Submission Template <span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
         <li><a target="_blank" href="https://data.smaht.org/about/consortium/data">SMaHT Data Overview<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
         <li><a target="_blank" href="https://data.smaht.org/about/consortium/awardees">SMaHT Consortium Members Map<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
         <li><a target="_blank" href="https://data.smaht.org/about/join/policy">SMaHT Membership Policy<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
