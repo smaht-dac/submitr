@@ -23,6 +23,12 @@ SubmissionCenter
     <p />
     
 
+
+.. tip::
+    See submission center values here: `Submission Centers <../submission_centers.html>`_
+
+
+
 Required Properties
 ~~~~~~~~~~~~~~~~~~~
 

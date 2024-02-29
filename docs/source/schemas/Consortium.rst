@@ -23,6 +23,12 @@ Consortium
     <p />
     
 
+
+.. tip::
+    See consortium values here: `Consortia <../consortia.html>`_
+
+
+
 Required Properties
 ~~~~~~~~~~~~~~~~~~~
 

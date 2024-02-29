@@ -23,6 +23,8 @@ File
     <p />
     <br /><u>Description</u>: Generic file.
 
+
+
 Required Properties
 ~~~~~~~~~~~~~~~~~~~
 

@@ -23,6 +23,8 @@ QualityMetric
     <p />
     <br /><u>Description</u>: Schema for quality control data for a file.
 
+
+
 Required Properties
 ~~~~~~~~~~~~~~~~~~~
 
