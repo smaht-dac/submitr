@@ -57,3 +57,8 @@ body, td {
     width: auto;
     overflow-x: auto;
 }
+
+/* Override inline code background */
+code, .code {
+    background-color: inherit !important; /* Force override */
+}
