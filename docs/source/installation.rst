@@ -36,7 +36,7 @@ System Requirements
 
 .. note::
     These instructions are targeted specifically for **Mac OS X** users.
-    For **Linux** users, these should be generally applicable (with some modifications);
+    For **Linux** users, these should be generally applicable (with slight modifications);
     presumed to be a bit more advanced, such users should have little difficulty.
     For **Windows** users, very little testing has been done; not recommended; but more experienced users should be able to work through it.
 
