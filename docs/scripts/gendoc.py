@@ -78,6 +78,7 @@ def main():
                             verbose=args.verbose, debug=args.debug)
 
     if portal.server:
+        global SMAHT_BASE_URL
         SMAHT_BASE_URL = portal.server
 
     schemas = _get_schemas(portal)
@@ -86,7 +87,7 @@ def main():
             continue
         schema = schemas[schema_name]
         schema_doc = _gendoc_schema(schema_name, schema, schemas=schemas, portal=portal)
-        _write_doc(schema_name, schema_doc)
+        _update_schema_file(schema_name, schema_doc)
 
     _update_object_model_file(_get_schemas(portal), portal)
     _update_consortia_file(portal)
@@ -909,33 +910,45 @@ def _gendoc_reference_genomes_table(portal: Portal, valid_item_type: Optional[st
     return _normalize_spaces(content)
 
 
-def _write_doc(schema_name: str, schema_doc_content: str) -> None:
+def _update_schema_file(schema_name: str, schema_doc_content: str) -> None:
     output_file = f"{os.path.join(OUTPUT_DIR, schema_name)}.rst"
     with io.open(output_file, "w") as f:
         f.write(schema_doc_content)
 
 
 def _update_object_model_file(schemas: dict, portal: Portal) -> None:
-    with io.open(OBJECT_MODEL_DOC_FILE, "r") as f:
-        lines = f.readlines()
-    for index, line in enumerate(lines):
-        if line.strip() == OBJECT_MODEL_DOC_FILE_MAGIC_STRING:
-            lines = lines[:index+1]
-            break
+    if not (template_object_model_page := _get_template("object_model_page")):
+        return
+    schemas = {key: schemas[key] for key in sorted(schemas) if key not in IGNORE_TYPES}
+    nschemas = len(schemas) - 1
+    content_schema_types_left = ""
+    content_schema_types_middle = ""
+    content_schema_types_right = ""
+    ncolumns = 3
+    nschemas_one_third = nschemas // ncolumns
+    nschemas_one_third_remainder = nschemas % ncolumns
+    nschemas_distribution = [nschemas_one_third + (1 if n < nschemas_one_third_remainder else 0)
+                             for n in range(ncolumns)]
+    nschemas_left, nschemas_middle, nschemas_right = nschemas_distribution
+    for index, schema_name in enumerate(schemas):
+        content_schema_types = f"<li><a href='schemas/{schema_name}.html'>{schema_name}</a></li>"
+        if index < nschemas_left:
+            content_schema_types_left += content_schema_types
+        elif index < (nschemas_left + nschemas_right + 1):
+            content_schema_types_middle += content_schema_types
+        else:
+            content_schema_types_right += content_schema_types
+    content_object_model_page = template_object_model_page
+    content_object_model_page = content_object_model_page.replace("{schema_types_left}", content_schema_types_left)
+    content_object_model_page = content_object_model_page.replace("{schema_types_middle}", content_schema_types_middle)
+    content_object_model_page = content_object_model_page.replace("{schema_types_right}", content_schema_types_right)
+    content_object_model_page = content_object_model_page.replace("{smaht_url}", SMAHT_BASE_URL)
+    content_object_model_page = content_object_model_page.replace("{smaht_domain}",
+                                                                  SMAHT_BASE_URL.replace("https://", ""))
+    content_object_model_page = content_object_model_page.replace("{generated_datetime}",
+                                                                  _get_current_datetime_string())
     with io.open(OBJECT_MODEL_DOC_FILE, "w") as f:
-        f.writelines(lines)
-        f.write(f"\n")
-        for schema_name in {key: schemas[key] for key in sorted(schemas)}:
-            if schema_name in IGNORE_TYPES:
-                continue
-            f.write(f"  schemas/{schema_name}\n")
-        f.write(f"\n\n.. raw:: html\n\n{' ' * 4}{_gendoc_generated_info(portal)}")
-
-
-def _gendoc_generated_info(portal: Portal):
-    return (f"[ <small>Generated: {_get_current_datetime_string()} | "
-            f"<a target='_blank' href='{portal.server}/profiles/?format=json'>"
-            f"{portal.server.replace('https://', '')}</a></small> ]<p />")
+        f.write(content_object_model_page)
 
 
 @lru_cache(maxsize=32)
@@ -959,7 +972,7 @@ def _normalize_spaces(value: str) -> str:
 
 def _get_current_datetime_string():
     tzlocal = datetime.now().astimezone().tzinfo
-    return datetime.now().astimezone(tzlocal).strftime(f"%A, %B %-d, %Y | %-I:%M %p %Z")
+    return datetime.now().astimezone(tzlocal).strftime(f" %-I:%M %p %Z %A, %B %-d, %Y")
 
 
 def _usage(message: Optional[str] = None) -> None:
