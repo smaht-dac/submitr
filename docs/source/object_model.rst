@@ -85,6 +85,15 @@ Types
 Data
 ----
 
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+
+   consortia
+   file_formats
+   reference_genomes
+   submission_centers
+
 .. raw:: html
 
     <ul>
@@ -96,4 +105,4 @@ Data
 
 .. raw:: html
 
-    <span style="color:lightgray;">[ <small>Generated:  5:21 PM EST Thursday, February 29, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />
+    <span style="color:lightgray;">[ <small>Generated:  5:24 PM EST Thursday, February 29, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />
