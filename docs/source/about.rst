@@ -67,8 +67,8 @@ You can then attach this single file to any correspondence with us and it will l
     This is **sensitive** information and, like a password, it should **never** be
     **shared** with anyone, and particularly through any insecure channels (like email).
 
-Links
------
+See Also
+--------
 
 .. raw:: html
 
