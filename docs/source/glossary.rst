@@ -34,7 +34,7 @@ Under development ...
         <tr>
             <td style="font-weight:bold;"> SMaHT </td>
             <td>
-                Mosaicism across Human Tissues
+                Somatic Mosaicism across Human Tissues
             </td>
         </tr>
         <tr>
