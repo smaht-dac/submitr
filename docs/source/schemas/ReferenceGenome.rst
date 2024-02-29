@@ -24,6 +24,10 @@ ReferenceGenome
     
 
 
+.. tip::
+    See reference genome values here: `Reference Genomes <../reference_genomes.html>`_
+
+
 
 Required Properties
 ~~~~~~~~~~~~~~~~~~~
