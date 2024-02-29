@@ -47,6 +47,9 @@ body, td {
 .wide-tables .wy-nav-content {
     max-width: 1200px; /* Adjust the width as needed */
 }
+.wy-nav-content {
+    max-width: 610pt;
+}
 
 /* Ensure tables within that page are fully visible and scrollable if needed */
 .wide-tables .wy-table-responsive table {
