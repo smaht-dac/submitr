@@ -7,8 +7,8 @@ SubmittedItem
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> <u>abstract</u>
-    <a target="_blank" href="https://data.smaht.org/search/?type=SubmittedItem" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/SubmittedItem.json" style="color:black">type</a>
-    <a target="_blank" href="https://data.smaht.org/profiles/SubmittedItem.json" style="color:black"><b><u>SubmittedItem</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/SubmittedItem.json?format=json"> 🔗</a>.
+    <a target="_blank" href="https://data.smaht.org/search/?type=SubmittedItem&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/SubmittedItem.json?format=json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/SubmittedItem.json" style="color:black"><b><u>SubmittedItem</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/SubmittedItem.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
     
     
@@ -19,7 +19,7 @@ SubmittedItem
     and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     View <a target="_blank" href="https://data.smaht.org/search/?type=SubmittedItem" style="color:black"><b><i><u>objects</u></i></b></a>
-    of this type <a target="_blank" href="https://data.smaht.org/search/?type=SubmittedItem"><b>here</b></a> <a target="_blank" href="https://data.smaht.org/search/?type=SubmittedItem&format=json">🔗</a>.
+    of this type <a target="_blank" href="https://data.smaht.org/search/?type=SubmittedItem"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>
     <p />
     
 

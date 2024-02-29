@@ -7,8 +7,8 @@ MedicalHistory
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=MedicalHistory" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/MedicalHistory.json" style="color:black">type</a>
-    <a target="_blank" href="https://data.smaht.org/profiles/MedicalHistory.json" style="color:black"><b><u>MedicalHistory</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/MedicalHistory.json?format=json"> 🔗</a>.
+    <a target="_blank" href="https://data.smaht.org/search/?type=MedicalHistory&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/MedicalHistory.json?format=json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/MedicalHistory.json" style="color:black"><b><u>MedicalHistory</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/MedicalHistory.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
     
     Types <b>referencing</b> this type are: <a href='Diagnosis.html'><u>Diagnosis</u></a>, <a href='Exposure.html'><u>Exposure</u></a>, <a href='MolecularTest.html'><u>MolecularTest</u></a>, <a href='Therapeutic.html'><u>Therapeutic</u></a>.
@@ -19,7 +19,7 @@ MedicalHistory
     and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     View <a target="_blank" href="https://data.smaht.org/search/?type=MedicalHistory" style="color:black"><b><i><u>objects</u></i></b></a>
-    of this type <a target="_blank" href="https://data.smaht.org/search/?type=MedicalHistory"><b>here</b></a> <a target="_blank" href="https://data.smaht.org/search/?type=MedicalHistory&format=json">🔗</a>.
+    of this type <a target="_blank" href="https://data.smaht.org/search/?type=MedicalHistory"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>
     <p />
     
 

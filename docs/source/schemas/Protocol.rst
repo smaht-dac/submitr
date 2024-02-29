@@ -7,8 +7,8 @@ Protocol
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="https://data.smaht.org/search/?type=Protocol" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Protocol.json" style="color:black">type</a>
-    <a target="_blank" href="https://data.smaht.org/profiles/Protocol.json" style="color:black"><b><u>Protocol</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/Protocol.json?format=json"> 🔗</a>.
+    <a target="_blank" href="https://data.smaht.org/search/?type=Protocol&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Protocol.json?format=json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/Protocol.json" style="color:black"><b><u>Protocol</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/Protocol.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
     
     Types <b>referencing</b> this type are: <a href='Analyte.html'><u>Analyte</u></a>, <a href='CellCulture.html'><u>CellCulture</u></a>, <a href='CellCultureMixture.html'><u>CellCultureMixture</u></a>, <a href='CellCultureSample.html'><u>CellCultureSample</u></a>, <a href='CellSample.html'><u>CellSample</u></a>, <a href='FileSet.html'><u>FileSet</u></a>, <a href='Library.html'><u>Library</u></a>, <a href='Sample.html'><u>Sample</u></a>, <a href='SampleSource.html'><u>SampleSource</u></a>, <a href='Sequencing.html'><u>Sequencing</u></a>, <a href='TissueCollection.html'><u>TissueCollection</u></a>, <a href='TissueSample.html'><u>TissueSample</u></a>.
@@ -19,7 +19,7 @@ Protocol
     and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     View <a target="_blank" href="https://data.smaht.org/search/?type=Protocol" style="color:black"><b><i><u>objects</u></i></b></a>
-    of this type <a target="_blank" href="https://data.smaht.org/search/?type=Protocol"><b>here</b></a> <a target="_blank" href="https://data.smaht.org/search/?type=Protocol&format=json">🔗</a>.
+    of this type <a target="_blank" href="https://data.smaht.org/search/?type=Protocol"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>
     <p />
     
 
