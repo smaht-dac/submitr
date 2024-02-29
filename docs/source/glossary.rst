@@ -32,6 +32,12 @@ Under development ...
             </td>
         </tr>
         <tr>
+            <td style="font-weight:bold;"> SMaHT </td>
+            <td>
+                Mosaicism across Human Tissues
+            </td>
+        </tr>
+        <tr>
             <td style="font-weight:bold;"> TPC </td>
             <td>
                 Tissue Procurement Center
@@ -47,12 +53,6 @@ Under development ...
             <td style="font-weight:bold;"> UUID </td>
             <td>
                 Universal Unique Identifier
-            </td>
-        </tr>
-        <tr>
-            <td style="font-weight:bold;"> SMaHT </td>
-            <td>
-                Mosaicism across Human Tissues
             </td>
         </tr>
     </table>
