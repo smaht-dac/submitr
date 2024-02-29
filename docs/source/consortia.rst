@@ -6,7 +6,7 @@ Below are the `Consortium <schemas/Consortium.html>`_ values currently supported
 .. tip::
     .. raw:: html
 
-        See also: <a target="_blank" href="https://data.smaht.org/about/consortium/awardees">SMaHT Consortium Members Map<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>
+        See also: <a target="_blank" href="https://data.smaht.org/about/consortium/awardees"><b>SMaHT Consortium Members Map</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>
 
 .. toctree::
   :caption: Consortia

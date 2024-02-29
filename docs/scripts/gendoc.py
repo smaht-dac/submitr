@@ -77,6 +77,9 @@ def main():
     portal = _create_portal(ini=args.ini, env=args.env or os.environ.get("SMAHT_ENV"),
                             verbose=args.verbose, debug=args.debug)
 
+    if portal.server:
+        SMAHT_BASE_URL = portal.server
+
     schemas = _get_schemas(portal)
     for schema_name in schemas:
         if schema_name in IGNORE_TYPES:
@@ -741,22 +744,21 @@ def _gendoc_submission_centers_table(portal: Portal) -> str:
             if submission_center_description := submission_center.get("description", ""):
                 if not submission_center_description.endswith("."):
                     submission_center_description += "."
-#           LEADER NAME IS SENSITIVE INFO?
-#           if isinstance(submission_center_leader := submission_center.get("leader", ""), dict):
-#               if submission_center_leader_name := submission_center_leader.get("display_title", ""):
-#                   if submission_center_leader_url := submission_center_leader.get("@id", ""):
-#                       submission_center_leader_url = f"{portal.server}/{submission_center_leader_url}"
-#               else:
-#                   submission_center_leader = None
-#           if submission_center_leader:
-#               if submission_center_description:
-#                   submission_center_description += "<br />"
-#               if submission_center_leader_url:
-#                   submission_center_description += (
-#                       f"<u>Leader</u>: <a target='_blank' href='{submission_center_leader_url}'"
-#                       f" style='color:black;'><b>{submission_center_leader_name}</b></a>")
-#               else:
-#                   submission_center_description += f"<u>Leader</u>: <b>{submission_center_leader}</b>"
+            if isinstance(submission_center_leader := submission_center.get("leader", ""), dict):
+                if submission_center_leader_name := submission_center_leader.get("display_title", ""):
+                    if submission_center_leader_url := submission_center_leader.get("@id", ""):
+                        submission_center_leader_url = f"{portal.server}/{submission_center_leader_url}"
+                else:
+                    submission_center_leader = None
+            if submission_center_leader:
+                if submission_center_description:
+                    submission_center_description += "<br />"
+                if submission_center_leader_url:
+                    submission_center_description += (
+                        f"<u>Leader</u>: <a target='_blank' href='{submission_center_leader_url}'>"
+                        f"<b>{submission_center_leader_name}</b></a>")
+                else:
+                    submission_center_description += f"<u>Leader</u>: <b>{submission_center_leader}</b>"
             elif submission_center_name == "smaht_dac":
                 if submission_center_description:
                     submission_center_description += "<br />"
@@ -811,7 +813,11 @@ def _gendoc_file_formats_table(portal: Portal, valid_item_type: Optional[str] = 
         return content
     if not (template_file_formats_row := _get_template("file_formats_row")):
         return content
-    if not (file_formats := portal.get_metadata("/file-formats?limit=1000")):
+    file_formats = None
+    try:
+        if not (file_formats := portal.get_metadata("/file-formats?limit=1000")):
+            return content
+    except Exception:
         return content
     file_formats = sorted(file_formats.get("@graph", []), key=lambda key: key.get("identifier"))
     content_file_formats_rows = ""
@@ -873,7 +879,11 @@ def _gendoc_reference_genomes_table(portal: Portal, valid_item_type: Optional[st
         return content
     if not (template_reference_genomes_row := _get_template("reference_genomes_row")):
         return content
-    if not (reference_genomes := portal.get_metadata("/reference-genomes?limit=1000")):
+    reference_genomes = None
+    try:
+        if not (reference_genomes := portal.get_metadata("/reference-genomes?limit=1000")):
+            return content
+    except Exception:
         return content
     reference_genomes = sorted(reference_genomes.get("@graph", []), key=lambda key: key.get("identifier"))
     content_reference_genomes_rows = ""
