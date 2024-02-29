@@ -8,6 +8,63 @@ These and others can also be viewed within SMaHT Portal itself, in a more raw fo
 Types
 -----
 
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+
+   schemas/AlignedReads
+   schemas/Analyte
+   schemas/AnalytePreparation
+   schemas/Assay
+   schemas/CellCulture
+   schemas/CellCultureMixture
+   schemas/CellCultureSample
+   schemas/CellLine
+   schemas/CellSample
+   schemas/Consortium
+   schemas/DeathCircumstances
+   schemas/Demographic
+   schemas/Diagnosis
+   schemas/Document
+   schemas/Donor
+   schemas/Exposure
+   schemas/File
+   schemas/FileFormat
+   schemas/FileSet
+   schemas/FilterSet
+   schemas/Histology
+   schemas/Image
+   schemas/Library
+   schemas/LibraryPreparation
+   schemas/MedicalHistory
+   schemas/MolecularTest
+   schemas/OntologyTerm
+   schemas/OutputFile
+   schemas/Preparation
+   schemas/PreparationKit
+   schemas/Protocol
+   schemas/QualityMetric
+   schemas/ReferenceFile
+   schemas/ReferenceGenome
+   schemas/Sample
+   schemas/SamplePreparation
+   schemas/SampleSource
+   schemas/Sequencer
+   schemas/Sequencing
+   schemas/Software
+   schemas/SubmissionCenter
+   schemas/SubmittedFile
+   schemas/SubmittedItem
+   schemas/Therapeutic
+   schemas/Tissue
+   schemas/TissueCollection
+   schemas/TissueSample
+   schemas/Treatment
+   schemas/UnalignedReads
+   schemas/User
+   schemas/VariantCalls
+
+
 .. raw:: html
 
     <table><tr><td>
@@ -39,4 +96,4 @@ Data
 
 .. raw:: html
 
-    <span style="color:lightgray;">[ <small>Generated:  4:58 PM EST Thursday, February 29, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />
+    <span style="color:lightgray;">[ <small>Generated:  5:21 PM EST Thursday, February 29, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />

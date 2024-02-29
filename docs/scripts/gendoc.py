@@ -921,6 +921,7 @@ def _update_object_model_file(schemas: dict, portal: Portal) -> None:
         return
     schemas = {key: schemas[key] for key in sorted(schemas) if key not in IGNORE_TYPES}
     nschemas = len(schemas) - 1
+    content_schema_types = ""
     content_schema_types_left = ""
     content_schema_types_middle = ""
     content_schema_types_right = ""
@@ -931,14 +932,16 @@ def _update_object_model_file(schemas: dict, portal: Portal) -> None:
                              for n in range(ncolumns)]
     nschemas_left, nschemas_middle, nschemas_right = nschemas_distribution
     for index, schema_name in enumerate(schemas):
-        content_schema_types = f"<li><a href='schemas/{schema_name}.html'>{schema_name}</a></li>"
+        content_schema_types += f"{(' ' * 3) if index > 0 else ''}schemas/{schema_name}\n"
+        content_schema_type = f"<li><a href='schemas/{schema_name}.html'>{schema_name}</a></li>"
         if index < nschemas_left:
-            content_schema_types_left += content_schema_types
+            content_schema_types_left += content_schema_type
         elif index < (nschemas_left + nschemas_right + 1):
-            content_schema_types_middle += content_schema_types
+            content_schema_types_middle += content_schema_type
         else:
-            content_schema_types_right += content_schema_types
+            content_schema_types_right += content_schema_type
     content_object_model_page = template_object_model_page
+    content_object_model_page = content_object_model_page.replace("{schema_types}", content_schema_types)
     content_object_model_page = content_object_model_page.replace("{schema_types_left}", content_schema_types_left)
     content_object_model_page = content_object_model_page.replace("{schema_types_middle}", content_schema_types_middle)
     content_object_model_page = content_object_model_page.replace("{schema_types_right}", content_schema_types_right)
