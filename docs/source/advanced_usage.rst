@@ -205,7 +205,7 @@ Passing ``--raw`` to either of these will give you the raw JSON for the schema(s
 .. tip::
     There is nothing really that the ``view-portal-object`` commands do that you cannot also do by interacting with SMaHT Portal directly 
     via your browser (e.g. :toplink:`here <https://data.smaht.org/profiles/>`),
-    or by using the `SMaHT Portal Object Model Reference <schema_types.html>`_;
+    or by using the `SMaHT Portal Object Model Reference <object_model.html>`_;
     but more command-line savvy users may find this interface more agreeable under some circumstances.
 
 Installation for Developers
