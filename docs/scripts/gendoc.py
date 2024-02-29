@@ -731,7 +731,7 @@ def _gendoc_submission_centers_table(portal: Portal) -> str:
         return content
     if not (submission_centers := portal.get_metadata("/submission-centers?limit=1000")):
         return content
-    submission_centers = sorted(submission_centers.get("@graph", []), key=lambda key: key.get("identifier"))
+    submission_centers = sorted(submission_centers.get("@graph", []), key=lambda key: key.get("title"))
     content_submission_centers_rows = ""
     for submission_center in submission_centers:
         if ((submission_center_name := submission_center.get("identifier")) and
