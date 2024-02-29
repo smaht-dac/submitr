@@ -40,8 +40,11 @@ Here is screenshot of a simple example Excel spreadsheet:
 Notice that the first row comprises the property/column `header`, defining properties named ``submitted_id``, ``submission_centers``, ``filename``, and so on. (N.B. Though ``submission_centers`` is shown in the above screenshot,
 that particular field is not actually required to be specified, as it's automatically added by the ``smaht-submitr`` tool if needed).
 
-Also notice the multiple tabs at the bottom for the different sheets within the spreadsheet,
+Notice the multiple tabs at the bottom for the different sheets within the spreadsheet,
 representing (in this example) data for the Portal objects ``CellCultureSample``, ``Analyte``, ``Library``, and so on.
+
+.. note::
+    For an actual **example**, as well as a **template**, please see the `Metadata <#id1>`_ section below.
 
 .. tip::
     As mentioned above (in case you missed it), you can include arbitrary comments or auxiliary information
@@ -148,11 +151,14 @@ such as the `required` and `reference` properties for each type, as well as each
    More savvy command-line oriented users `may` find the :boldcode:`view-portal-object` command useful.
    This is described in the `Advanced Usage <advanced_usage.html#viewing-portal-schemas>`_ section.
 
-There is also a metadata submission template which you may find useful, from which to start your spreadsheet:
+There is also a metadata submission **template**  which you may find useful, from which to start your spreadsheet,
+as well as an **example** spreadsheet:
 
 .. raw:: html
 
-    <ul style="margin-left:18pt;"><li><a target="_blank" href="https://docs.google.com/spreadsheets/d/1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4/edit#gid=1645623888"><b>SMaHT Metadata Submission Template</b></a><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></li></ul>
+    <div style="padding-left:22pt;">•&nbsp;&nbsp;<a target="_blank" href="https://docs.google.com/spreadsheets/d/1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4/edit#gid=1645623888"><b>SMaHT Metadata Submission Template</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:2pt;" /></a></div>
+    <div style="padding-left:22pt;" >•&nbsp;&nbsp;<a target="_blank" href="https://docs.google.com/spreadsheets/d/1b5W-8iBEvWfnJQFkcrO9_rG-K7oJEIJlaLr6ZH5qjjA/edit#gid=1589547329"><b>SMaHT Metadata Submission Example</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:2pt;" /></a></div>
+    <p />
 
 Submission
 ==========
