@@ -139,8 +139,8 @@ a special value - ``*delete*`` - should be used as the the property value.
 
 Metadata
 ========
-A thorough discussion of the specific metadata objects suppported by SMaHT Portal is beyond the scope of this document,
-but there is a reference guide to these metadata objects provided at the link below.
+A thorough discussion of the metadata semantics is beyond the scope of this document,
+but there is a reference guide to the metadata objects supported by SMaHT Portal, provided at the link below.
 You can quickly view important aspects of each of the object types,
 such as the `required` and `reference` properties for each type, as well as each property `type`, and more.
 
