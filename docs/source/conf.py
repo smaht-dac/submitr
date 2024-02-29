@@ -48,6 +48,14 @@ exclude_patterns = []
 #
 html_theme = 'sphinx_rtd_theme'
 
+html_context = {
+  "display_github": False, # Intends to remove the "Edit on GitHub" link
+  "github_user": "", # Optional: Specify GitHub username here
+  "github_repo": "", # Optional: Specify repository name here
+  "github_version": "", # Optional: Specify branch name here
+  "conf_py_path": "", # Optional: Specify path to conf.py file here
+}
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
