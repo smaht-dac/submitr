@@ -196,11 +196,17 @@ def _gendoc(schema_name: str, schema: dict, schemas: dict, portal: Portal) -> st
                                   f"Types <b>referencing</b> this type are: {content_referencing_schemas}.")
 
     if schema_name == "Consortium":
-        content = content.replace("{tip_section}", "\n.. tip::\n    See consortium values here: `Consortia <../consortia.html>`_\n\n")
+        content = content.replace("{tip_section}",
+                                  "\n.. tip::\n    See consortium values here:"
+                                  " `Consortia <../consortia.html>`_\n\n")
     elif schema_name == "SubmissionCenter":
-        content = content.replace("{tip_section}", "\n.. tip::\n    See submission center values here: `Submission Centers <../submission_centers.html>`_\n\n")
+        content = content.replace("{tip_section}",
+                                  "\n.. tip::\n    See submission center values here:"
+                                  " `Submission Centers <../submission_centers.html>`_\n\n")
     elif schema_name == "FileFormat":
-        content = content.replace("{tip_section}", "\n.. tip::\n    See file format values here: `File Formats <../file_formats.html>`_\n\n")
+        content = content.replace("{tip_section}",
+                                  "\n.. tip::\n    See file format values here:"
+                                  " `File Formats <../file_formats.html>`_\n\n")
 
     if content_required_properties_section := _gendoc_required_properties_section(schema):
         content = content.replace("{required_properties_section}", content_required_properties_section)
