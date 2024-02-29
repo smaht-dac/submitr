@@ -1,7 +1,7 @@
 =================
 Reference Genomes
 =================
-Below are the `reference genomes <schemas/ReferenceGenome.html>`_ currently supported by SMaHT Portal.
+Below are the `ReferenceGenome <schemas/ReferenceGenome.html>`_ values currently supported by SMaHT Portal.
 
 .. toctree::
   :caption: File Formats
