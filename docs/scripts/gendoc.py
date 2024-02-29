@@ -81,7 +81,7 @@ def main():
         if schema_name in IGNORE_TYPES:
             continue
         schema = schemas[schema_name]
-        schema_doc = _gendoc(schema_name, schema, schemas=schemas, portal=portal)
+        schema_doc = _gendoc_schema(schema_name, schema, schemas=schemas, portal=portal)
         _write_doc(schema_name, schema_doc)
 
     _update_object_model_file(_get_schemas(portal), portal)
@@ -168,7 +168,7 @@ def _get_schema_version(schema: dict) -> str:
     return version
 
 
-def _gendoc(schema_name: str, schema: dict, schemas: dict, portal: Portal) -> str:
+def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal) -> str:
     content = ""
     if not (content := _get_template("schema")):
         return content
