@@ -207,6 +207,10 @@ def _gendoc(schema_name: str, schema: dict, schemas: dict, portal: Portal) -> st
         content = content.replace("{tip_section}",
                                   "\n.. tip::\n    See file format values here:"
                                   " `File Formats <../file_formats.html>`_\n\n")
+    elif schema_name == "ReferenceGenome":
+        content = content.replace("{tip_section}",
+                                  "\n.. tip::\n    See reference genome values here:"
+                                  " `Reference Genomes <../reference_genomes.html>`_\n\n")
 
     if content_required_properties_section := _gendoc_required_properties_section(schema):
         content = content.replace("{required_properties_section}", content_required_properties_section)

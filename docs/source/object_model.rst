@@ -66,4 +66,4 @@ These and others can also be viewed within SMaHT Portal itself, in a more raw fo
 
 .. raw:: html
 
-    [ <small>Generated: Thursday, February 29, 2024 | 10:29 AM EST | <a target='_blank' href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]<p />
+    [ <small>Generated: Thursday, February 29, 2024 | 10:35 AM EST | <a target='_blank' href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]<p />
