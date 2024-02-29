@@ -57,6 +57,7 @@ html_context = {
 }
 html_theme_options = {
   "sticky_navigation": False,
+  "color_primary": "blue"
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

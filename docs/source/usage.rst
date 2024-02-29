@@ -52,7 +52,7 @@ representing (in this example) data for the Portal objects ``CellCultureSample``
     by making individual sheets **hidden**. Such hidden sheets will be completely ignored.
     To hide a sheet in Excel right-click on the tab and choose **Hide**. To **unhide** select
     **Format** > **Sheet** > **Unhide...** from the menu-bar. Also mentioned above,
-    if your sheet name is enclosed in parenthesis, for example ``(My Comments)``, then it will also be completely ignored;
+    if your sheet name is enclosed in parenthesis, for example :boldcode:`(My Comments)`, then it will also be completely ignored;
     again, useful for arbitrary comments, and without having to hide/unhide sheets.
 
 .. tip::
