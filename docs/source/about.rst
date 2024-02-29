@@ -74,10 +74,23 @@ See Also
 
     <ul>
         <li><a target="_blank" href="https://data.smaht.org/about">About SMaHT<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
-        <li><a target="_blank" href="https://docs.google.com/spreadsheets/d/1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4/edit#gid=1645623888">SMaHT Metadata Submission Template <span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
-        <li><a target="_blank" href="https://docs.google.com/spreadsheets/d/1b5W-8iBEvWfnJQFkcrO9_rG-K7oJEIJlaLr6ZH5qjjA/edit#gid=1589547329">SMaHT Metadata Submission Example <span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
+        <li><a target="_blank" href="https://www.smaht.org/">SMaHT Network<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
         <li><a target="_blank" href="https://data.smaht.org/about/consortium/data">SMaHT Data Overview<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
         <li><a target="_blank" href="https://data.smaht.org/about/consortium/awardees">SMaHT Consortium Members Map<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
         <li><a target="_blank" href="https://data.smaht.org/about/join/policy">SMaHT Membership Policy<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
         <li><a target="_blank" href="https://data.smaht.org">SMaHT Portal<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
+    </ul>
+
+Technical
+~~~~~~~~~
+
+.. raw:: html
+
+    <ul>
+        <li><a target="_blank" href="https://docs.google.com/spreadsheets/d/1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4/edit#gid=1645623888">SMaHT Metadata Submission Template <span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
+        <li><a target="_blank" href="https://docs.google.com/spreadsheets/d/1b5W-8iBEvWfnJQFkcrO9_rG-K7oJEIJlaLr6ZH5qjjA/edit#gid=1589547329">SMaHT Metadata Submission Example <span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
+        <li><a target="_blank" href="consortia.html">SMaHT Consortia<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
+        <li><a target="_blank" href="submission_centers.html">SMaHT Submission Centers<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
+        <li><a target="_blank" href="file_formats.html">SMaHT File Formats<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
+        <li><a target="_blank" href="reference_genomes.html">SMaHT Reference Genomes<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
     </ul>
