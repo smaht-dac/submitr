@@ -89,8 +89,6 @@ def main():
 
     schemas = _get_schemas(portal)
     for schema_name in schemas:
-        if schema_name in IGNORE_TYPES:
-            continue
         schema = schemas[schema_name]
         schema_doc = _gendoc_schema(schema_name, schema, schemas=schemas, portal=portal)
         _update_schema_file(schema_name, schema_doc)
@@ -125,7 +123,8 @@ def _create_portal(ini: str, env: Optional[str] = None,
 
 @lru_cache(maxsize=1)
 def _get_schemas(portal: Portal) -> Optional[dict]:
-    return portal.get_schemas()
+    schemas = portal.get_schemas()
+    return {schema_name: schemas[schema_name] for schema_name in sorted(schemas) if schema_name not in IGNORE_TYPES}
 
 
 def _get_schema(portal: Portal, name: str) -> Tuple[Optional[dict], Optional[str]]:
@@ -146,7 +145,7 @@ def _get_parent_schema(schema: dict) -> Optional[str]:
 def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
     result = []
     for this_schema_name in schemas:
-        if (this_schema_name == schema_name) or (this_schema_name in IGNORE_TYPES):
+        if this_schema_name == schema_name:
             continue
         schema = schemas[this_schema_name]
         if properties := schema.get("properties"):
@@ -164,7 +163,7 @@ def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
 def _get_derived_schemas(schema_name: str, schemas: dict) -> List[str]:
     result = []
     for this_schema_name in schemas:
-        if this_schema_name == schema_name or this_schema_name in IGNORE_TYPES:
+        if this_schema_name == schema_name:
             continue
         if _get_parent_schema(schemas[this_schema_name]) == schema_name:
             result.append(this_schema_name)
@@ -940,7 +939,6 @@ def _update_schema_file(schema_name: str, schema_doc_content: str) -> None:
 def _update_object_model_file(schemas: dict, portal: Portal) -> None:
     if not (template_object_model_page := _get_template("object_model_page")):
         return
-    schemas = {key: schemas[key] for key in sorted(schemas) if key not in IGNORE_TYPES}
     nschemas = len(schemas) - 1
     content_schema_types = ""
     content_schema_types_left = ""
