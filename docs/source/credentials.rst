@@ -124,13 +124,13 @@ and gives no one else (but the system superuser) any permissions at all::
 Screenshots
 -----------
 Some screenshots illustrating the SMaHT Portal credentials (Access Key ID and Secret Access Key) creation process.
-First, go to your **Profile** and click **Add Access Key** ...
+First, go to your **Profile** and click **Add Access Key**.
 
 .. image:: _static/images/credentials_access_key_before.png
     :target: _static/images/credentials_access_key_before.png
     :alt: Portal Access Key Creation (Before)
 
-After clicking **Add Access Key**, save the **Access Key ID** and **Secret Access Key** to your keys file ...
+After clicking **Add Access Key**, save the **Access Key ID** and **Secret Access Key** to your keys file.
 
 .. image:: _static/images/credentials_access_key_created.png
     :target: _static/images/credentials_access_key_created.png
