@@ -19,7 +19,7 @@ Demographic
     and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     View <a target="_blank" href="https://data.smaht.org/search/?type=Demographic" style="color:black"><b><i><u>objects</u></i></b></a>
-    of this type: <a target="_blank" href="https://data.smaht.org/search/?type=Demographic"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>
+    of this type: <a target="_blank" href="https://data.smaht.org/search/?type=Demographic"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:2pt;" /></a>
     <p />
     
 

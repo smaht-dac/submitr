@@ -75,6 +75,7 @@ See Also
     <ul>
         <li><a target="_blank" href="https://data.smaht.org/about">About SMaHT<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
         <li><a target="_blank" href="https://data.smaht.org">SMaHT Portal<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
+        <li><a target="_blank" href="https://data.smaht.org/docs">SMaHT Portal Documentation<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
         <li><a target="_blank" href="https://www.smaht.org/">SMaHT Network<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
         <li><a target="_blank" href="https://data.smaht.org/about/consortium/data">SMaHT Data Overview<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
         <li><a target="_blank" href="https://data.smaht.org/about/join/policy">SMaHT Membership Policy<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a></li>
