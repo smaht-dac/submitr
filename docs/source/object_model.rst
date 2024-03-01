@@ -108,4 +108,4 @@ Data
 
 .. raw:: html
 
-    <span style="color:lightgray;">[ <small>Generated:  12:27 PM EST Friday, March 1, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />
+    <span style="color:lightgray;">[ <small>Generated:  12:30 PM EST Friday, March 1, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />
