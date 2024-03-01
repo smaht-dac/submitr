@@ -85,6 +85,9 @@ Types
 Data
 ----
 
+.. Preferred to have the data modules in object_model/data but
+.. for some reason if so then then do not appear on the left menu.
+
 .. toctree::
    :hidden:
    :maxdepth: 1
@@ -105,4 +108,4 @@ Data
 
 .. raw:: html
 
-    <span style="color:lightgray;">[ <small>Generated:  9:04 AM EST Friday, March 1, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />
+    <span style="color:lightgray;">[ <small>Generated:  9:20 AM EST Friday, March 1, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />
