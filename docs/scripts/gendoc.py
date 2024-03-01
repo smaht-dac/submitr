@@ -609,6 +609,8 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
                     content_property_type_array += " or<br />"
                 content_property_type_array += f"<b>{type}</b>"
             content_property_type = content_property_type_array
+        elif property_type != "array" and not enum:
+            content_property_type = f"<b>{content_property_type}</b>"
         if default:
             if isinstance(default, bool):
                 default = str(default).lower()
@@ -623,8 +625,6 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
             property_attributes.append(f"max length: {max_length}")
         if property.get("uniqueKey") is True:
             property_attributes.append(f"unique")
-        elif property_type != "array" and not enum:
-            content_property_type = f"<b>{content_property_type}</b>"
         if property_attributes:
             content_property_type = f"<u>{content_property_type}</u><br />"
             for property_attribute in property_attributes:
