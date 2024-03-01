@@ -189,7 +189,8 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
 
     if parent_schema_name := _get_parent_schema(schema):
         content = content.replace("{parent_schema}",
-                                  f"Its <b>parent</b> type is: <a href={camel_case_to_snake_case(parent_schema_name)}.html>"
+                                  f"Its <b>parent</b> type is:"
+                                  f" <a href={camel_case_to_snake_case(parent_schema_name)}.html>"
                                   f"<u>{parent_schema_name}</u></a>.")
 
     if content_derived_schemas := _gendoc_derived_schemas(schema_name, schemas):
@@ -237,7 +238,9 @@ def _gendoc_referencing_schemas(schema_name: str, schemas: dict) -> str:
         for referencing_schema_name in referencing_schemas:
             if content:
                 content += ", "
-            content += f"<a href='{camel_case_to_snake_case(referencing_schema_name)}.html'><u>{referencing_schema_name}</u></a>"
+            content += (
+                f"<a href='{camel_case_to_snake_case(referencing_schema_name)}.html'>"
+                f"<u>{referencing_schema_name}</u></a>")
     return content
 
 
@@ -247,7 +250,8 @@ def _gendoc_derived_schemas(schema_name: str, schemas: dict) -> str:
         for derived_schema_name in derived_schemas:
             if content:
                 content += ", "
-            content += f"<a href='{camel_case_to_snake_case(derived_schema_name)}.html'><u>{derived_schema_name}</u></a>"
+            content += (
+                f"<a href='{camel_case_to_snake_case(derived_schema_name)}.html'><u>{derived_schema_name}</u></a>")
     return content
 
 
@@ -837,7 +841,8 @@ def _gendoc_file_formats_table(portal: Portal, valid_item_type: Optional[str] = 
                     if index > 0:
                         file_format_description += ", "
                     file_format_description += (
-                        f"<a href='object_model/types/{camel_case_to_snake_case(file_format_valid_item_type)}.html'>{file_format_valid_item_type}</b>")
+                        f"<a href='object_model/types/{camel_case_to_snake_case(file_format_valid_item_type)}.html'>"
+                        f"{file_format_valid_item_type}</b>")
             content_file_formats_row = template_file_formats_row
             content_file_formats_row = content_file_formats_row.replace("{file_format_name}", file_format_name)
             content_file_formats_row = content_file_formats_row.replace("{file_format_uuid}", file_format_uuid)
@@ -926,8 +931,10 @@ def _update_object_model_file(schemas: dict, portal: Portal) -> None:
     nschemas_distribution = [nschemas_one_part + (1 if n < nschemas_one_part_remainder else 0) for n in range(ncolumns)]
     nschemas_left, nschemas_middle, nschemas_right = nschemas_distribution
     for index, schema_name in enumerate(schemas):
-        content_schema_types += f"{(' ' * 3) if index > 0 else ''}object_model/types/{camel_case_to_snake_case(schema_name)}\n"
-        content_schema_type = f"<li><a href='object_model/types/{camel_case_to_snake_case(schema_name)}.html'>{schema_name}</a></li>"
+        content_schema_types += (
+            f"{(' ' * 3) if index > 0 else ''}object_model/types/{camel_case_to_snake_case(schema_name)}\n")
+        content_schema_type = (
+            f"<li><a href='object_model/types/{camel_case_to_snake_case(schema_name)}.html'>{schema_name}</a></li>")
         if index < nschemas_left:
             content_schema_types_left += content_schema_type
         elif index < (nschemas_left + nschemas_right + 1):
