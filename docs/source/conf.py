@@ -68,6 +68,9 @@ html_css_files = ['styles.css', "https://cdnjs.cloudflare.com/ajax/libs/font-awe
 # https://sphinx-tabs.readthedocs.io/en/latest/
 sphinx_tabs_disable_tab_closing = True
 
+# today_fmt = '%B %d, %Y'
+today_fmt = '%-I:%M %p %Z %A, %B %-d, %Y'
+
 # Special config to:
 # - support bold highlighted text (:boldcode:)
 # - support opening a link an a different/new tab (:toplink:)
