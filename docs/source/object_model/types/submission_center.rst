@@ -25,7 +25,7 @@ SubmissionCenter
 
 
 .. tip::
-    See submission center values here: `Submission Centers <../../submission_centers.html>`_
+    See submission center values here: `Submission Centers <../data/submission_centers.html>`_
 
 
 

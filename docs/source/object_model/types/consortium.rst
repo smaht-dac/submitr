@@ -25,7 +25,7 @@ Consortium
 
 
 .. tip::
-    See consortium values here: `Consortia <../../consortia.html>`_
+    See consortium values here: `Consortia <../data/consortia.html>`_
 
 
 

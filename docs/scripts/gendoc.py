@@ -53,10 +53,19 @@ TEMPLATES_DIR = f"{THIS_DIR}/../schema_templates"
 DOCS_DIR = f"{THIS_DIR}/../source"
 OUTPUT_DIR = f"{DOCS_DIR}/object_model/types"
 OBJECT_MODEL_DOC_FILE = f"{DOCS_DIR}/object_model.rst"
-CONSORTIA_DOC_FILE = f"{DOCS_DIR}/consortia.rst"
-SUBMISSION_CENTERS_DOC_FILE = f"{DOCS_DIR}/submission_centers.rst"
-FILE_FORMATS_DOC_FILE = f"{DOCS_DIR}/file_formats.rst"
-REFERENCE_GENOMES_DOC_FILE = f"{DOCS_DIR}/reference_genomes.rst"
+CONSORTIA_DOC_FILE = f"{DOCS_DIR}/object_model/data/consortia.rst"
+SUBMISSION_CENTERS_DOC_FILE = f"{DOCS_DIR}/object_model/data/submission_centers.rst"
+FILE_FORMATS_DOC_FILE = f"{DOCS_DIR}/object_model/data/file_formats.rst"
+REFERENCE_GENOMES_DOC_FILE = f"{DOCS_DIR}/object_model/data/reference_genomes.rst"
+# Two copies of the reference data files because so accessible from top level (under REFERENCE)
+# and under object_model/data; just for convenience at the top level; would not need to do this
+# if we did not care about the URL path - would just put it at top level in that case, which is
+# needed otherwise will not appear in left menu, but nice to have the (main) reference file
+# within object_mode/data path.
+CONSORTIA_TOP_DOC_FILE = f"{DOCS_DIR}/consortia.rst"
+SUBMISSION_CENTERS_TOP_DOC_FILE = f"{DOCS_DIR}/submission_centers.rst"
+FILE_FORMATS_TOP_DOC_FILE = f"{DOCS_DIR}/file_formats.rst"
+REFERENCE_GENOMES_TOP_DOC_FILE = f"{DOCS_DIR}/reference_genomes.rst"
 SMAHT_BASE_URL = "https://data.smaht.org"
 
 
@@ -203,19 +212,19 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
     if schema_name == "Consortium":
         content = content.replace("{tip_section}",
                                   "\n.. tip::\n    See consortium values here:"
-                                  " `Consortia <../../consortia.html>`_\n\n")
+                                  " `Consortia <../data/consortia.html>`_\n\n")
     elif schema_name == "SubmissionCenter":
         content = content.replace("{tip_section}",
                                   "\n.. tip::\n    See submission center values here:"
-                                  " `Submission Centers <../../submission_centers.html>`_\n\n")
+                                  " `Submission Centers <../data/submission_centers.html>`_\n\n")
     elif schema_name == "FileFormat":
         content = content.replace("{tip_section}",
                                   "\n.. tip::\n    See file format values here:"
-                                  " `File Formats <../../file_formats.html>`_\n\n")
+                                  " `File Formats <../data/file_formats.html>`_\n\n")
     elif schema_name == "ReferenceGenome":
         content = content.replace("{tip_section}",
                                   "\n.. tip::\n    See reference genome values here:"
-                                  " `Reference Genomes <../../reference_genomes.html>`_\n\n")
+                                  " `Reference Genomes <../data/reference_genomes.html>`_\n\n")
 
     if content_required_properties_section := _gendoc_required_properties_section(schema):
         content = content.replace("{required_properties_section}", content_required_properties_section)
@@ -288,16 +297,16 @@ def _gendoc_required_properties_table(schema: dict) -> str:
         property_description = None
         if property_link_to == "Consortium":
             property_description = (
-                "<br /><small><i>Click <a href='../../consortia.html'>here</a> to see values.</i></small>")
+                "<br /><small><i>Click <a href='../data/consortia.html'>here</a> to see values.</i></small>")
         elif property_link_to == "SubmissionCenter":
             property_description = (
-                "<br /><small><i>Click <a href='../../submission_centers.html'>here</a> to see values.</i></small>")
+                "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a> to see values.</i></small>")
         elif property_link_to == "FileFormat":
             property_description = (
-                "<br /><small><i>Click <a href='../../file_formats.html'>here</a> to see values.</i></small>")
+                "<br /><small><i>Click <a href='../data/file_formats.html'>here</a> to see values.</i></small>")
         elif property_link_to == "ReferenceGenome":
             property_description = (
-                "<br /><small><i>Click <a href='../../reference_genomes.html'>here</a> to see values.</i></small>")
+                "<br /><small><i>Click <a href='../data/reference_genomes.html'>here</a> to see values.</i></small>")
         if property_type == "array":
             if property_items := property.get("items"):
                 if property_items.get("enum"):
@@ -322,10 +331,10 @@ def _gendoc_required_properties_table(schema: dict) -> str:
                                                             "<b style='color:darkred;'>submission_centers</b>"))
                 content_oneormore_simple_property_rows = _gendoc_simple_properties(
                     [{"name": "consortia", "type": "array of string", "link_to": "Consortium",
-                      "description": "<br /><small><i>Click <a href='../../consortia.html'>here</a>"
+                      "description": "<br /><small><i>Click <a href='../data/consortia.html'>here</a>"
                                      " to see values.</i></small>"},
                      {"name": "submission_centers", "type": "array of string", "link_to": "SubmissionCenter",
-                      "description": "<br /><small><i>Click <a href='../../submission_centers.html'>here</a>"
+                      "description": "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a>"
                                      " to see values.</i></small>"}],
                     kind="oneormore-required")
                 content_oneormore_property_rows = (
@@ -409,16 +418,16 @@ def _gendoc_reference_properties_table(schema: dict) -> str:
         property_description = None
         if property_link_to == "Consortium":
             property_description = (
-                "<br /><small><i>Click <a href='../../consortia.html'>here</a> to see values.</i></small>")
+                "<br /><small><i>Click <a href='../data/consortia.html'>here</a> to see values.</i></small>")
         elif property_link_to == "SubmissionCenter":
             property_description = (
-                "<br /><small><i>Click <a href='../../submission_centers.html'>here</a> to see values.</i></small>")
+                "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a> to see values.</i></small>")
         elif property_link_to == "FileFormat":
             property_description = (
-                "<br /><small><i>Click <a href='../../file_formats.html'>here</a> to see values.</i></small>")
+                "<br /><small><i>Click <a href='../data/file_formats.html'>here</a> to see values.</i></small>")
         elif property_link_to == "ReferenceGenome":
             property_description = (
-                "<br /><small><i>Click <a href='../../reference_genomes.html'>here</a> to see values.</i></small>")
+                "<br /><small><i>Click <a href='../data/reference_genomes.html'>here</a> to see values.</i></small>")
         content_property_type = (
             f"<a href={camel_case_to_snake_case(property_link_to)}.html style='font-weight:bold;color:green;'>"
             f"<u>{property_link_to}</u></a><br />{property_type}")
@@ -639,20 +648,20 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
             content_property_name = f"{content_parents} <b>.</b> {content_property_name}"
         if property_link_to_original == "Consortium":
             property_description += (
-                "<br /><small><i>Click <a href='../../consortia.html'>here</a> to see values.</i></small>")
+                "<br /><small><i>Click <a href='../data/consortia.html'>here</a> to see values.</i></small>")
         elif property_link_to_original == "SubmissionCenter":
             property_description += (
-                "<br /><small><i>Click <a href='../../submission_centers.html'>here</a> to see values.</i></small>")
+                "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a> to see values.</i></small>")
         elif property_link_to_original == "FileFormat":
             if property_description:
                 property_description += "<br />"
             property_description += (
-                "<small><i>Click <a href='../../file_formats.html'>here</a> to see values.</i></small>")
+                "<small><i>Click <a href='../data/file_formats.html'>here</a> to see values.</i></small>")
         elif property_link_to_original == "ReferenceGenome":
             if property_description:
                 property_description += "<br />"
             property_description += (
-                "<small><i>Click <a href='../../reference_genomes.html'>here</a> to see values.</i></small>")
+                "<small><i>Click <a href='../data/reference_genomes.html'>here</a> to see values.</i></small>")
         content_property_row = content_property_row.replace("{property_name}", content_property_name)
         content_property_row = content_property_row.replace("{property_type}", content_property_type)
         content_property_row = content_property_row.replace("{property_description}", property_description or "-")
@@ -677,6 +686,8 @@ def _update_consortia_file(portal: Portal) -> None:
     content_consortia_page = template_consortia_page
     content_consortia_page = content_consortia_page.replace("{consortia_table}", content_consortia_table)
     with io.open(CONSORTIA_DOC_FILE, "w") as f:
+        f.writelines(content_consortia_page)
+    with io.open(CONSORTIA_TOP_DOC_FILE, "w") as f:
         f.writelines(content_consortia_page)
 
 
@@ -721,6 +732,8 @@ def _update_submission_centers_file(portal: Portal) -> None:
         content_submission_centers_page.replace("{submission_centers_table}",
                                                 content_submission_centers_table))
     with io.open(SUBMISSION_CENTERS_DOC_FILE, "w") as f:
+        f.writelines(content_submission_centers_page)
+    with io.open(SUBMISSION_CENTERS_TOP_DOC_FILE, "w") as f:
         f.writelines(content_submission_centers_page)
 
 
@@ -803,6 +816,8 @@ def _update_file_formats_file(portal: Portal) -> None:
                                                                   content_file_formats_variant_calls_table)
     with io.open(FILE_FORMATS_DOC_FILE, "w") as f:
         f.write(content_file_formats_page)
+    with io.open(FILE_FORMATS_TOP_DOC_FILE, "w") as f:
+        f.write(content_file_formats_page)
 
 
 def _gendoc_file_formats_table(portal: Portal, valid_item_type: Optional[str] = None) -> str:
@@ -869,6 +884,8 @@ def _update_reference_genomes_file(portal: Portal) -> None:
     content_reference_genomes_page = content_reference_genomes_page.replace("{reference_genomes}",
                                                                             content_reference_genomes_table)
     with io.open(REFERENCE_GENOMES_DOC_FILE, "w") as f:
+        f.write(content_reference_genomes_page)
+    with io.open(REFERENCE_GENOMES_TOP_DOC_FILE, "w") as f:
         f.write(content_reference_genomes_page)
 
 
