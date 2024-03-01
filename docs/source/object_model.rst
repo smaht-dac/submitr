@@ -115,8 +115,9 @@ See Also
     <ul>
         <li> <a target="_blank" href="https://data.smaht.org/docs/additional-resources/sample-file-nomenclature">File and Sample Nomenclature<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
         <li> <a target="_blank" href="https://data.smaht.org/docs/user-guide/referencing-data">Referencing Existing Data<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+        <li> <a target="_blank" href="https://data.smaht.org/data/benchmarking">Benchmarking Data<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
     </ul>
 
 .. raw:: html
 
-    <span style="color:lightgray;">[ <small>Generated:  1:16 PM EST Friday, March 1, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />
+    <span style="color:lightgray;">[ <small>Generated:  1:22 PM EST Friday, March 1, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />
