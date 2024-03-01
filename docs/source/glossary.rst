@@ -38,6 +38,12 @@ Under development ...
             </td>
         </tr>
         <tr>
+            <td style="font-weight:bold;"> PacBio </td>
+            <td>
+                Pacific Biosciences of California
+            </td>
+        </tr>
+        <tr>
             <td style="font-weight:bold;"> SMaHT </td>
             <td>
                 Somatic Mosaicism across Human Tissues
