@@ -621,6 +621,8 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
             property_attributes.append(f"min length: {min_length}")
         if (max_length := property.get("maxLength")) is not None:
             property_attributes.append(f"max length: {max_length}")
+        if property.get("uniqueKey") is True:
+            property_attributes.append(f"unique")
         elif property_type != "array" and not enum:
             content_property_type = f"<b>{content_property_type}</b>"
         if property_attributes:
