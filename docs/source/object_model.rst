@@ -1,9 +1,12 @@
 ============
 Object Model
 ============
-Below are the object types (and data), relevant for metadata submission, supported by :toplink:`SMaHT Portal <https://data.smaht.org>`.
-Click on the name for more details.
-These and others can also be viewed within SMaHT Portal itself, in a more raw format, :toplink:`here <https://data.smaht.org/profiles/>`.
+
+.. raw:: html
+
+    Below are the object types (and data), relevant for metadata submission, supported by SMaHT Portal.
+    Click on the name for more details.
+    These and others can also be viewed within SMaHT Portal itself, in a somewhat more rudimentary format, <a target="_blank" href="https://data.smaht.org/profiles/">here<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>.<p />
 
 Types
 -----
@@ -105,4 +108,4 @@ Data
 
 .. raw:: html
 
-    <span style="color:lightgray;">[ <small>Generated:  11:33 AM EST Friday, March 1, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />
+    <span style="color:lightgray;">[ <small>Generated:  11:52 AM EST Friday, March 1, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />
