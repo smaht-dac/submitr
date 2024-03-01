@@ -1,7 +1,7 @@
 ==================
 Submission Centers
 ==================
-Below are the `SubmissionCenter <../types/submission_center.html>`_ values currently supported by SMaHT Portal.
+Below are the `SubmissionCenter <object_model/types/submission_center.html>`_ values currently supported by SMaHT Portal.
 
 .. tip::
     .. raw:: html
