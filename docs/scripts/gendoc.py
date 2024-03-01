@@ -60,8 +60,8 @@ REFERENCE_GENOMES_DOC_FILE = f"{DOCS_DIR}/object_model/data/reference_genomes.rs
 # Two copies of the reference data files because so accessible from top level (under REFERENCE)
 # and under object_model/data; just for convenience at the top level; would not need to do this
 # if we did not care about the URL path - would just put it at top level in that case, which is
-# needed otherwise will not appear in left menu, but nice to have the (main) reference file
-# within object_mode/data path.
+# needed otherwise will not appear in left menu, but nice to have the (main/default) reference
+# file within object_model/data URL path.
 CONSORTIA_TOP_DOC_FILE = f"{DOCS_DIR}/consortia.rst"
 SUBMISSION_CENTERS_TOP_DOC_FILE = f"{DOCS_DIR}/submission_centers.rst"
 FILE_FORMATS_TOP_DOC_FILE = f"{DOCS_DIR}/file_formats.rst"
