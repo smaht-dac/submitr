@@ -53,11 +53,8 @@ TEMPLATES_DIR = f"{THIS_DIR}/../schema_templates"
 DOCS_DIR = f"{THIS_DIR}/../source"
 OUTPUT_DIR = f"{DOCS_DIR}/schemas"
 OBJECT_MODEL_DOC_FILE = f"{DOCS_DIR}/object_model.rst"
-OBJECT_MODEL_DOC_FILE_MAGIC_STRING = ".. DO NOT TOUCH THIS LINE! USED BY gendoc SCRIPT!"
 CONSORTIA_DOC_FILE = f"{DOCS_DIR}/consortia.rst"
-CONSORTIA_DOC_FILE_MAGIC_STRING = OBJECT_MODEL_DOC_FILE_MAGIC_STRING
 SUBMISSION_CENTERS_DOC_FILE = f"{DOCS_DIR}/submission_centers.rst"
-SUBMISSION_CENTERS_DOC_FILE_MAGIC_STRING = OBJECT_MODEL_DOC_FILE_MAGIC_STRING
 FILE_FORMATS_DOC_FILE = f"{DOCS_DIR}/file_formats.rst"
 REFERENCE_GENOMES_DOC_FILE = f"{DOCS_DIR}/reference_genomes.rst"
 SMAHT_BASE_URL = "https://data.smaht.org"
@@ -668,18 +665,14 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
 
 
 def _update_consortia_file(portal: Portal) -> None:
-    # TODO: Redo this more like reference-genomes with template page.
+    if not (template_consortia_page := _get_template("consortia_page")):
+        return
     if not (content_consortia_table := _gendoc_consortia_table(portal)):
         return
-    with io.open(CONSORTIA_DOC_FILE, "r") as f:
-        lines = f.readlines()
-    for index, line in enumerate(lines):
-        if line.strip() == CONSORTIA_DOC_FILE_MAGIC_STRING:
-            lines = lines[:index+1]
-            break
+    content_consortia_page = template_consortia_page
+    content_consortia_page = content_consortia_page.replace("{consortia_table}", content_consortia_table)
     with io.open(CONSORTIA_DOC_FILE, "w") as f:
-        f.writelines(lines)
-        f.write(f"\n\n.. raw:: html\n\n{' ' * 4}{content_consortia_table}<p />")
+        f.writelines(content_consortia_page)
 
 
 def _gendoc_consortia_table(portal: Portal) -> str:
@@ -714,17 +707,16 @@ def _gendoc_consortia_table(portal: Portal) -> str:
 
 
 def _update_submission_centers_file(portal: Portal) -> None:
+    if not (template_submission_centers_page := _get_template("submission_centers_page")):
+        return
     if not (content_submission_centers_table := _gendoc_submission_centers_table(portal)):
         return
-    with io.open(SUBMISSION_CENTERS_DOC_FILE, "r") as f:
-        lines = f.readlines()
-    for index, line in enumerate(lines):
-        if line.strip() == SUBMISSION_CENTERS_DOC_FILE_MAGIC_STRING:
-            lines = lines[:index+1]
-            break
+    content_submission_centers_page = template_submission_centers_page
+    content_submission_centers_page = (
+        content_submission_centers_page.replace("{submission_centers_table}",
+                                                content_submission_centers_table))
     with io.open(SUBMISSION_CENTERS_DOC_FILE, "w") as f:
-        f.writelines(lines)
-        f.write(f"\n\n.. raw:: html\n\n{' ' * 4}{content_submission_centers_table}<p />")
+        f.writelines(content_submission_centers_page)
 
 
 def _gendoc_submission_centers_table(portal: Portal) -> str:
