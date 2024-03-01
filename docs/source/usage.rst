@@ -90,7 +90,7 @@ in which such nested objects can be defined,
 a special syntactic convention is needed to be able to reference the properties of these nested objects.
 
 For this we will use a `dot-notation` whereby dots (``.``) are used to separate a parent property from its child property.
-For example, if an object (e.g. `ReferenceFile <schemas/ReferenceFile.html>`_) defines an ``extra_files`` property which itself
+For example, if an object (e.g. `ReferenceFile <object_model/types/reference_file.html>`_) defines an ``extra_files`` property which itself
 refers to an object containing a ``file_format`` property,
 then to reference that nested ``file_format`` property, the spreadsheet column header would need to be ``extra_files.file_format``.
 

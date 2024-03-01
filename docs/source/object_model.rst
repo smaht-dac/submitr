@@ -12,78 +12,81 @@ Types
    :hidden:
    :maxdepth: 1
 
-   schemas/AlignedReads
-   schemas/Analyte
-   schemas/AnalytePreparation
-   schemas/Assay
-   schemas/CellCulture
-   schemas/CellCultureMixture
-   schemas/CellCultureSample
-   schemas/CellLine
-   schemas/CellSample
-   schemas/Consortium
-   schemas/DeathCircumstances
-   schemas/Demographic
-   schemas/Diagnosis
-   schemas/Document
-   schemas/Donor
-   schemas/Exposure
-   schemas/File
-   schemas/FileFormat
-   schemas/FileSet
-   schemas/FilterSet
-   schemas/Histology
-   schemas/Image
-   schemas/Library
-   schemas/LibraryPreparation
-   schemas/MedicalHistory
-   schemas/MolecularTest
-   schemas/OntologyTerm
-   schemas/OutputFile
-   schemas/Preparation
-   schemas/PreparationKit
-   schemas/Protocol
-   schemas/QualityMetric
-   schemas/ReferenceFile
-   schemas/ReferenceGenome
-   schemas/Sample
-   schemas/SamplePreparation
-   schemas/SampleSource
-   schemas/Sequencer
-   schemas/Sequencing
-   schemas/Software
-   schemas/SubmissionCenter
-   schemas/SubmittedFile
-   schemas/SubmittedItem
-   schemas/Therapeutic
-   schemas/Tissue
-   schemas/TissueCollection
-   schemas/TissueSample
-   schemas/Treatment
-   schemas/UnalignedReads
-   schemas/User
-   schemas/VariantCalls
+   object_model/types/aligned_reads
+   object_model/types/analyte
+   object_model/types/analyte_preparation
+   object_model/types/assay
+   object_model/types/cell_culture
+   object_model/types/cell_culture_mixture
+   object_model/types/cell_culture_sample
+   object_model/types/cell_line
+   object_model/types/cell_sample
+   object_model/types/consortium
+   object_model/types/death_circumstances
+   object_model/types/demographic
+   object_model/types/diagnosis
+   object_model/types/document
+   object_model/types/donor
+   object_model/types/exposure
+   object_model/types/file
+   object_model/types/file_format
+   object_model/types/file_set
+   object_model/types/filter_set
+   object_model/types/histology
+   object_model/types/image
+   object_model/types/library
+   object_model/types/library_preparation
+   object_model/types/medical_history
+   object_model/types/molecular_test
+   object_model/types/ontology_term
+   object_model/types/output_file
+   object_model/types/preparation
+   object_model/types/preparation_kit
+   object_model/types/protocol
+   object_model/types/quality_metric
+   object_model/types/reference_file
+   object_model/types/reference_genome
+   object_model/types/sample
+   object_model/types/sample_preparation
+   object_model/types/sample_source
+   object_model/types/sequencer
+   object_model/types/sequencing
+   object_model/types/software
+   object_model/types/submission_center
+   object_model/types/submitted_file
+   object_model/types/submitted_item
+   object_model/types/therapeutic
+   object_model/types/tissue
+   object_model/types/tissue_collection
+   object_model/types/tissue_sample
+   object_model/types/treatment
+   object_model/types/unaligned_reads
+   object_model/types/user
+   object_model/types/variant_calls
 
 
 .. raw:: html
 
     <table><tr><td>
     <ul>
-        <li><a href='schemas/AlignedReads.html'>AlignedReads</a></li><li><a href='schemas/Analyte.html'>Analyte</a></li><li><a href='schemas/AnalytePreparation.html'>AnalytePreparation</a></li><li><a href='schemas/Assay.html'>Assay</a></li><li><a href='schemas/CellCulture.html'>CellCulture</a></li><li><a href='schemas/CellCultureMixture.html'>CellCultureMixture</a></li><li><a href='schemas/CellCultureSample.html'>CellCultureSample</a></li><li><a href='schemas/CellLine.html'>CellLine</a></li><li><a href='schemas/CellSample.html'>CellSample</a></li><li><a href='schemas/Consortium.html'>Consortium</a></li><li><a href='schemas/DeathCircumstances.html'>DeathCircumstances</a></li><li><a href='schemas/Demographic.html'>Demographic</a></li><li><a href='schemas/Diagnosis.html'>Diagnosis</a></li><li><a href='schemas/Document.html'>Document</a></li><li><a href='schemas/Donor.html'>Donor</a></li><li><a href='schemas/Exposure.html'>Exposure</a></li><li><a href='schemas/File.html'>File</a></li>
+        <li><a href='object_model/types/aligned_reads.html'>AlignedReads</a></li><li><a href='object_model/types/analyte.html'>Analyte</a></li><li><a href='object_model/types/analyte_preparation.html'>AnalytePreparation</a></li><li><a href='object_model/types/assay.html'>Assay</a></li><li><a href='object_model/types/cell_culture.html'>CellCulture</a></li><li><a href='object_model/types/cell_culture_mixture.html'>CellCultureMixture</a></li><li><a href='object_model/types/cell_culture_sample.html'>CellCultureSample</a></li><li><a href='object_model/types/cell_line.html'>CellLine</a></li><li><a href='object_model/types/cell_sample.html'>CellSample</a></li><li><a href='object_model/types/consortium.html'>Consortium</a></li><li><a href='object_model/types/death_circumstances.html'>DeathCircumstances</a></li><li><a href='object_model/types/demographic.html'>Demographic</a></li><li><a href='object_model/types/diagnosis.html'>Diagnosis</a></li><li><a href='object_model/types/document.html'>Document</a></li><li><a href='object_model/types/donor.html'>Donor</a></li><li><a href='object_model/types/exposure.html'>Exposure</a></li><li><a href='object_model/types/file.html'>File</a></li>
     </ul>
     </td><td style="padding-left:20pt;">
     <ul>
-        <li><a href='schemas/FileFormat.html'>FileFormat</a></li><li><a href='schemas/FileSet.html'>FileSet</a></li><li><a href='schemas/FilterSet.html'>FilterSet</a></li><li><a href='schemas/Histology.html'>Histology</a></li><li><a href='schemas/Image.html'>Image</a></li><li><a href='schemas/Library.html'>Library</a></li><li><a href='schemas/LibraryPreparation.html'>LibraryPreparation</a></li><li><a href='schemas/MedicalHistory.html'>MedicalHistory</a></li><li><a href='schemas/MolecularTest.html'>MolecularTest</a></li><li><a href='schemas/OntologyTerm.html'>OntologyTerm</a></li><li><a href='schemas/OutputFile.html'>OutputFile</a></li><li><a href='schemas/Preparation.html'>Preparation</a></li><li><a href='schemas/PreparationKit.html'>PreparationKit</a></li><li><a href='schemas/Protocol.html'>Protocol</a></li><li><a href='schemas/QualityMetric.html'>QualityMetric</a></li><li><a href='schemas/ReferenceFile.html'>ReferenceFile</a></li><li><a href='schemas/ReferenceGenome.html'>ReferenceGenome</a></li>
+        <li><a href='object_model/types/file_format.html'>FileFormat</a></li><li><a href='object_model/types/file_set.html'>FileSet</a></li><li><a href='object_model/types/filter_set.html'>FilterSet</a></li><li><a href='object_model/types/histology.html'>Histology</a></li><li><a href='object_model/types/image.html'>Image</a></li><li><a href='object_model/types/library.html'>Library</a></li><li><a href='object_model/types/library_preparation.html'>LibraryPreparation</a></li><li><a href='object_model/types/medical_history.html'>MedicalHistory</a></li><li><a href='object_model/types/molecular_test.html'>MolecularTest</a></li><li><a href='object_model/types/ontology_term.html'>OntologyTerm</a></li><li><a href='object_model/types/output_file.html'>OutputFile</a></li><li><a href='object_model/types/preparation.html'>Preparation</a></li><li><a href='object_model/types/preparation_kit.html'>PreparationKit</a></li><li><a href='object_model/types/protocol.html'>Protocol</a></li><li><a href='object_model/types/quality_metric.html'>QualityMetric</a></li><li><a href='object_model/types/reference_file.html'>ReferenceFile</a></li><li><a href='object_model/types/reference_genome.html'>ReferenceGenome</a></li>
     </ul>
     </td><td style="padding-left:24pt;">
     <ul>
-        <li><a href='schemas/Sample.html'>Sample</a></li><li><a href='schemas/SamplePreparation.html'>SamplePreparation</a></li><li><a href='schemas/SampleSource.html'>SampleSource</a></li><li><a href='schemas/Sequencer.html'>Sequencer</a></li><li><a href='schemas/Sequencing.html'>Sequencing</a></li><li><a href='schemas/Software.html'>Software</a></li><li><a href='schemas/SubmissionCenter.html'>SubmissionCenter</a></li><li><a href='schemas/SubmittedFile.html'>SubmittedFile</a></li><li><a href='schemas/SubmittedItem.html'>SubmittedItem</a></li><li><a href='schemas/Therapeutic.html'>Therapeutic</a></li><li><a href='schemas/Tissue.html'>Tissue</a></li><li><a href='schemas/TissueCollection.html'>TissueCollection</a></li><li><a href='schemas/TissueSample.html'>TissueSample</a></li><li><a href='schemas/Treatment.html'>Treatment</a></li><li><a href='schemas/UnalignedReads.html'>UnalignedReads</a></li><li><a href='schemas/User.html'>User</a></li><li><a href='schemas/VariantCalls.html'>VariantCalls</a></li>
+        <li><a href='object_model/types/sample.html'>Sample</a></li><li><a href='object_model/types/sample_preparation.html'>SamplePreparation</a></li><li><a href='object_model/types/sample_source.html'>SampleSource</a></li><li><a href='object_model/types/sequencer.html'>Sequencer</a></li><li><a href='object_model/types/sequencing.html'>Sequencing</a></li><li><a href='object_model/types/software.html'>Software</a></li><li><a href='object_model/types/submission_center.html'>SubmissionCenter</a></li><li><a href='object_model/types/submitted_file.html'>SubmittedFile</a></li><li><a href='object_model/types/submitted_item.html'>SubmittedItem</a></li><li><a href='object_model/types/therapeutic.html'>Therapeutic</a></li><li><a href='object_model/types/tissue.html'>Tissue</a></li><li><a href='object_model/types/tissue_collection.html'>TissueCollection</a></li><li><a href='object_model/types/tissue_sample.html'>TissueSample</a></li><li><a href='object_model/types/treatment.html'>Treatment</a></li><li><a href='object_model/types/unaligned_reads.html'>UnalignedReads</a></li><li><a href='object_model/types/user.html'>User</a></li><li><a href='object_model/types/variant_calls.html'>VariantCalls</a></li>
     </ul>
     </td></tr></table>
 
 
 Data
 ----
+
+.. Preferred to have the data modules in object_model/data but
+.. for some reason if so then then do not appear on the left menu.
 
 .. toctree::
    :hidden:
@@ -105,4 +108,4 @@ Data
 
 .. raw:: html
 
-    <span style="color:lightgray;">[ <small>Generated:  10:57 PM EST Thursday, February 29, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />
+    <span style="color:lightgray;">[ <small>Generated:  9:32 AM EST Friday, March 1, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />
