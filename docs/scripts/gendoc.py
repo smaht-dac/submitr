@@ -687,7 +687,7 @@ def _update_consortia_file(portal: Portal) -> None:
     with io.open(CONSORTIA_DOC_FILE, "w") as f:
         f.writelines(content_consortia_page)
     with io.open(CONSORTIA_TOP_DOC_FILE, "w") as f:
-        content_consortia_page = content_consortia_page.replace("<../types/", "<object_model/types/")
+        content_consortia_page = content_consortia_page.replace("../types/", "object_model/types/")
         f.writelines(content_consortia_page)
 
 
@@ -734,7 +734,7 @@ def _update_submission_centers_file(portal: Portal) -> None:
     with io.open(SUBMISSION_CENTERS_DOC_FILE, "w") as f:
         f.writelines(content_submission_centers_page)
     with io.open(SUBMISSION_CENTERS_TOP_DOC_FILE, "w") as f:
-        content_submission_centers_page = content_submission_centers_page.replace("<../types/", "<object_model/types/")
+        content_submission_centers_page = content_submission_centers_page.replace("../types/", "object_model/types/")
         f.writelines(content_submission_centers_page)
 
 
@@ -818,7 +818,7 @@ def _update_file_formats_file(portal: Portal) -> None:
     with io.open(FILE_FORMATS_DOC_FILE, "w") as f:
         f.write(content_file_formats_page)
     with io.open(FILE_FORMATS_TOP_DOC_FILE, "w") as f:
-        content_file_formats_page = content_file_formats_page.replace("<../types/", "<object_model/types/")
+        content_file_formats_page = content_file_formats_page.replace("../types/", "object_model/types/")
         f.write(content_file_formats_page)
 
 
@@ -858,7 +858,7 @@ def _gendoc_file_formats_table(portal: Portal, valid_item_type: Optional[str] = 
                     if index > 0:
                         file_format_description += ", "
                     file_format_description += (
-                        f"<a href='object_model/types/{camel_case_to_snake_case(file_format_valid_item_type)}.html'>"
+                        f"<a href='../types/{camel_case_to_snake_case(file_format_valid_item_type)}.html'>"
                         f"{file_format_valid_item_type}</b>")
             content_file_formats_row = template_file_formats_row
             content_file_formats_row = content_file_formats_row.replace("{file_format_name}", file_format_name)
@@ -888,7 +888,7 @@ def _update_reference_genomes_file(portal: Portal) -> None:
     with io.open(REFERENCE_GENOMES_DOC_FILE, "w") as f:
         f.write(content_reference_genomes_page)
     with io.open(REFERENCE_GENOMES_TOP_DOC_FILE, "w") as f:
-        content_reference_genomes_page = content_reference_genomes_page.replace("<../types/", "<object_model/types/")
+        content_reference_genomes_page = content_reference_genomes_page.replace("../types/", "object_model/types/")
         f.write(content_reference_genomes_page)
 
 
