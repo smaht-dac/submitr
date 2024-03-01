@@ -12,72 +12,72 @@ Types
    :hidden:
    :maxdepth: 1
 
-   schemas/AlignedReads
-   schemas/Analyte
-   schemas/AnalytePreparation
-   schemas/Assay
-   schemas/CellCulture
-   schemas/CellCultureMixture
-   schemas/CellCultureSample
-   schemas/CellLine
-   schemas/CellSample
-   schemas/Consortium
-   schemas/DeathCircumstances
-   schemas/Demographic
-   schemas/Diagnosis
-   schemas/Document
-   schemas/Donor
-   schemas/Exposure
-   schemas/File
-   schemas/FileFormat
-   schemas/FileSet
-   schemas/FilterSet
-   schemas/Histology
-   schemas/Image
-   schemas/Library
-   schemas/LibraryPreparation
-   schemas/MedicalHistory
-   schemas/MolecularTest
-   schemas/OntologyTerm
-   schemas/OutputFile
-   schemas/Preparation
-   schemas/PreparationKit
-   schemas/Protocol
-   schemas/QualityMetric
-   schemas/ReferenceFile
-   schemas/ReferenceGenome
-   schemas/Sample
-   schemas/SamplePreparation
-   schemas/SampleSource
-   schemas/Sequencer
-   schemas/Sequencing
-   schemas/Software
-   schemas/SubmissionCenter
-   schemas/SubmittedFile
-   schemas/SubmittedItem
-   schemas/Therapeutic
-   schemas/Tissue
-   schemas/TissueCollection
-   schemas/TissueSample
-   schemas/Treatment
-   schemas/UnalignedReads
-   schemas/User
-   schemas/VariantCalls
+   types/aligned_reads
+   types/analyte
+   types/analyte_preparation
+   types/assay
+   types/cell_culture
+   types/cell_culture_mixture
+   types/cell_culture_sample
+   types/cell_line
+   types/cell_sample
+   types/consortium
+   types/death_circumstances
+   types/demographic
+   types/diagnosis
+   types/document
+   types/donor
+   types/exposure
+   types/file
+   types/file_format
+   types/file_set
+   types/filter_set
+   types/histology
+   types/image
+   types/library
+   types/library_preparation
+   types/medical_history
+   types/molecular_test
+   types/ontology_term
+   types/output_file
+   types/preparation
+   types/preparation_kit
+   types/protocol
+   types/quality_metric
+   types/reference_file
+   types/reference_genome
+   types/sample
+   types/sample_preparation
+   types/sample_source
+   types/sequencer
+   types/sequencing
+   types/software
+   types/submission_center
+   types/submitted_file
+   types/submitted_item
+   types/therapeutic
+   types/tissue
+   types/tissue_collection
+   types/tissue_sample
+   types/treatment
+   types/unaligned_reads
+   types/user
+   types/variant_calls
 
 
 .. raw:: html
 
     <table><tr><td>
     <ul>
-        <li><a href='schemas/AlignedReads.html'>AlignedReads</a></li><li><a href='schemas/Analyte.html'>Analyte</a></li><li><a href='schemas/AnalytePreparation.html'>AnalytePreparation</a></li><li><a href='schemas/Assay.html'>Assay</a></li><li><a href='schemas/CellCulture.html'>CellCulture</a></li><li><a href='schemas/CellCultureMixture.html'>CellCultureMixture</a></li><li><a href='schemas/CellCultureSample.html'>CellCultureSample</a></li><li><a href='schemas/CellLine.html'>CellLine</a></li><li><a href='schemas/CellSample.html'>CellSample</a></li><li><a href='schemas/Consortium.html'>Consortium</a></li><li><a href='schemas/DeathCircumstances.html'>DeathCircumstances</a></li><li><a href='schemas/Demographic.html'>Demographic</a></li><li><a href='schemas/Diagnosis.html'>Diagnosis</a></li><li><a href='schemas/Document.html'>Document</a></li><li><a href='schemas/Donor.html'>Donor</a></li><li><a href='schemas/Exposure.html'>Exposure</a></li><li><a href='schemas/File.html'>File</a></li>
+        <li><a href='types/aligned_reads.html'>AlignedReads</a></li><li><a href='types/analyte.html'>Analyte</a></li><li><a href='types/analyte_preparation.html'>AnalytePreparation</a></li><li><a href='types/assay.html'>Assay</a></li><li><a href='types/cell_culture.html'>CellCulture</a></li><li><a href='types/cell_culture_mixture.html'>CellCultureMixture</a></li><li><a href='types/cell_culture_sample.html'>CellCultureSample</a></li><li><a href='types/cell_line.html'>CellLine</a></li><li><a href='types/cell_sample.html'>CellSample</a></li><li><a href='types/consortium.html'>Consortium</a></li><li><a href='types/death_circumstances.html'>DeathCircumstances</a></li><li><a href='types/demographic.html'>Demographic</a></li><li><a href='types/diagnosis.html'>Diagnosis</a></li><li><a href='types/document.html'>Document</a></li><li><a href='types/donor.html'>Donor</a></li><li><a href='types/exposure.html'>Exposure</a></li><li><a href='types/file.html'>File</a></li>
     </ul>
     </td><td style="padding-left:20pt;">
     <ul>
-        <li><a href='schemas/FileFormat.html'>FileFormat</a></li><li><a href='schemas/FileSet.html'>FileSet</a></li><li><a href='schemas/FilterSet.html'>FilterSet</a></li><li><a href='schemas/Histology.html'>Histology</a></li><li><a href='schemas/Image.html'>Image</a></li><li><a href='schemas/Library.html'>Library</a></li><li><a href='schemas/LibraryPreparation.html'>LibraryPreparation</a></li><li><a href='schemas/MedicalHistory.html'>MedicalHistory</a></li><li><a href='schemas/MolecularTest.html'>MolecularTest</a></li><li><a href='schemas/OntologyTerm.html'>OntologyTerm</a></li><li><a href='schemas/OutputFile.html'>OutputFile</a></li><li><a href='schemas/Preparation.html'>Preparation</a></li><li><a href='schemas/PreparationKit.html'>PreparationKit</a></li><li><a href='schemas/Protocol.html'>Protocol</a></li><li><a href='schemas/QualityMetric.html'>QualityMetric</a></li><li><a href='schemas/ReferenceFile.html'>ReferenceFile</a></li><li><a href='schemas/ReferenceGenome.html'>ReferenceGenome</a></li>
+        <li><a href='types/file_format.html'>FileFormat</a></li><li><a href='types/file_set.html'>FileSet</a></li><li><a href='types/filter_set.html'>FilterSet</a></li><li><a href='types/histology.html'>Histology</a></li><li><a href='types/image.html'>Image</a></li><li><a href='types/library.html'>Library</a></li><li><a href='types/library_preparation.html'>LibraryPreparation</a></li><li><a href='types/medical_history.html'>MedicalHistory</a></li><li><a href='types/molecular_test.html'>MolecularTest</a></li><li><a href='types/ontology_term.html'>OntologyTerm</a></li><li><a href='types/output_file.html'>OutputFile</a></li><li><a href='types/preparation.html'>Preparation</a></li><li><a href='types/preparation_kit.html'>PreparationKit</a></li><li><a href='types/protocol.html'>Protocol</a></li><li><a href='types/quality_metric.html'>QualityMetric</a></li><li><a href='types/reference_file.html'>ReferenceFile</a></li><li><a href='types/reference_genome.html'>ReferenceGenome</a></li>
     </ul>
     </td><td style="padding-left:24pt;">
     <ul>
-        <li><a href='schemas/Sample.html'>Sample</a></li><li><a href='schemas/SamplePreparation.html'>SamplePreparation</a></li><li><a href='schemas/SampleSource.html'>SampleSource</a></li><li><a href='schemas/Sequencer.html'>Sequencer</a></li><li><a href='schemas/Sequencing.html'>Sequencing</a></li><li><a href='schemas/Software.html'>Software</a></li><li><a href='schemas/SubmissionCenter.html'>SubmissionCenter</a></li><li><a href='schemas/SubmittedFile.html'>SubmittedFile</a></li><li><a href='schemas/SubmittedItem.html'>SubmittedItem</a></li><li><a href='schemas/Therapeutic.html'>Therapeutic</a></li><li><a href='schemas/Tissue.html'>Tissue</a></li><li><a href='schemas/TissueCollection.html'>TissueCollection</a></li><li><a href='schemas/TissueSample.html'>TissueSample</a></li><li><a href='schemas/Treatment.html'>Treatment</a></li><li><a href='schemas/UnalignedReads.html'>UnalignedReads</a></li><li><a href='schemas/User.html'>User</a></li><li><a href='schemas/VariantCalls.html'>VariantCalls</a></li>
+        <li><a href='types/sample.html'>Sample</a></li><li><a href='types/sample_preparation.html'>SamplePreparation</a></li><li><a href='types/sample_source.html'>SampleSource</a></li><li><a href='types/sequencer.html'>Sequencer</a></li><li><a href='types/sequencing.html'>Sequencing</a></li><li><a href='types/software.html'>Software</a></li><li><a href='types/submission_center.html'>SubmissionCenter</a></li><li><a href='types/submitted_file.html'>SubmittedFile</a></li><li><a href='types/submitted_item.html'>SubmittedItem</a></li><li><a href='types/therapeutic.html'>Therapeutic</a></li><li><a href='types/tissue.html'>Tissue</a></li><li><a href='types/tissue_collection.html'>TissueCollection</a></li><li><a href='types/tissue_sample.html'>TissueSample</a></li><li><a href='types/treatment.html'>Treatment</a></li><li><a href='types/unaligned_reads.html'>UnalignedReads</a></li><li><a href='types/user.html'>User</a></li><li><a href='types/variant_calls.html'>VariantCalls</a></li>
     </ul>
     </td></tr></table>
 
@@ -105,4 +105,4 @@ Data
 
 .. raw:: html
 
-    <span style="color:lightgray;">[ <small>Generated:  11:03 PM EST Thursday, February 29, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />
+    <span style="color:lightgray;">[ <small>Generated:  8:23 AM EST Friday, March 1, 2024 | <a target='_blank' style="color:lightgray" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a></small> ]</span><p />

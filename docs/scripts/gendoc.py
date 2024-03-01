@@ -12,7 +12,7 @@ import os
 import re
 from typing import List, Optional, Tuple
 from dcicutils.captured_output import captured_output
-from dcicutils.misc_utils import PRINT
+from dcicutils.misc_utils import camel_case_to_snake_case, PRINT
 from dcicutils.portal_utils import Portal
 
 
@@ -51,7 +51,7 @@ IGNORE_PROPERTIES = [
 THIS_DIR = f"{os.path.dirname(__file__)}"
 TEMPLATES_DIR = f"{THIS_DIR}/../schema_templates"
 DOCS_DIR = f"{THIS_DIR}/../source"
-OUTPUT_DIR = f"{DOCS_DIR}/schemas"
+OUTPUT_DIR = f"{DOCS_DIR}/types"
 OBJECT_MODEL_DOC_FILE = f"{DOCS_DIR}/object_model.rst"
 CONSORTIA_DOC_FILE = f"{DOCS_DIR}/consortia.rst"
 SUBMISSION_CENTERS_DOC_FILE = f"{DOCS_DIR}/submission_centers.rst"
@@ -177,6 +177,7 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
     content_schema_title = f"{'=' * len(schema_name)}\n{schema_name}\n{'=' * len(schema_name)}\n\n"
     content = content.replace("{schema_title}", content_schema_title)
     content = content.replace("{schema_name}", schema_name)
+    content = content.replace("{schema_name_camel}", camel_case_to_snake_case(schema_name))
     content = content.replace("{smaht_url}", SMAHT_BASE_URL)
 
     if schema.get("isAbstract") is True:
@@ -188,7 +189,7 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
 
     if parent_schema_name := _get_parent_schema(schema):
         content = content.replace("{parent_schema}",
-                                  f"Its <b>parent</b> type is: <a href={parent_schema_name}.html>"
+                                  f"Its <b>parent</b> type is: <a href={camel_case_to_snake_case(parent_schema_name)}.html>"
                                   f"<u>{parent_schema_name}</u></a>.")
 
     if content_derived_schemas := _gendoc_derived_schemas(schema_name, schemas):
@@ -233,20 +234,20 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
 def _gendoc_referencing_schemas(schema_name: str, schemas: dict) -> str:
     content = ""
     if schemas and (referencing_schemas := _get_referencing_schemas(schema_name, schemas)):
-        for referencing_schema in referencing_schemas:
+        for referencing_schema_name in referencing_schemas:
             if content:
                 content += ", "
-            content += f"<a href='{referencing_schema}.html'><u>{referencing_schema}</u></a>"
+            content += f"<a href='{camel_case_to_snake_case(referencing_schema_name)}.html'><u>{referencing_schema_name}</u></a>"
     return content
 
 
 def _gendoc_derived_schemas(schema_name: str, schemas: dict) -> str:
     content = ""
     if schemas and (derived_schemas := _get_derived_schemas(schema_name, schemas)):
-        for derived_schema in derived_schemas:
+        for derived_schema_name in derived_schemas:
             if content:
                 content += ", "
-            content += f"<a href='{derived_schema}.html'><u>{derived_schema}</u></a>"
+            content += f"<a href='{camel_case_to_snake_case(derived_schema_name)}.html'><u>{derived_schema_name}</u></a>"
     return content
 
 
@@ -415,7 +416,7 @@ def _gendoc_reference_properties_table(schema: dict) -> str:
             property_description = (
                 "<br /><small><i>Click <a href='../reference_genomes.html'>here</a> to see values.</i></small>")
         content_property_type = (
-            f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
+            f"<a href={camel_case_to_snake_case(property_link_to)}.html style='font-weight:bold;color:green;'>"
             f"<u>{property_link_to}</u></a><br />{property_type}")
         if property_type == "array":
             if property_items := property.get("items"):
@@ -452,7 +453,7 @@ def _gendoc_simple_properties(properties: List[str], kind: Optional[str] = None)
         content_simple_property = content_simple_property.replace("{property_name}", property_name)
         if property_link_to := property.get("link_to"):
             property_type = (
-                f"<a href='{property_link_to}.html'><b style='color:green;'>"
+                f"<a href='{camel_case_to_snake_case(property_link_to)}.html'><b style='color:green;'>"
                 f"<u>{property_link_to}</u></b></a><br />{property_type}")
         content_simple_property = content_simple_property.replace("{property_type}", property_type)
         if property_description:
@@ -500,7 +501,7 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
             if property_link_to := (property_items := property.get("items", {})).get("linkTo"):
                 property_link_to_original = property_link_to
                 content_property_type = (
-                    f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
+                    f"<a href={camel_case_to_snake_case(property_link_to)}.html style='font-weight:bold;color:green;'>"
                     f"<u>{property_link_to}</u></a>")
                 property_link_to = None
                 property_array_link_to = True
@@ -569,7 +570,7 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
                 property_attributes.append(f"format: date | date-time")
         if property_link_to:
             content_property_type = (
-                f"<a href={property_link_to}.html style='font-weight:bold;color:green;'>"
+                f"<a href={camel_case_to_snake_case(property_link_to)}.html style='font-weight:bold;color:green;'>"
                 f"<u>{property_link_to}</u></a>")
             property_attributes.append(f"{property_type}")
         elif (enum := property.get("enum", [])) or property_array_enum:
@@ -836,7 +837,7 @@ def _gendoc_file_formats_table(portal: Portal, valid_item_type: Optional[str] = 
                     if index > 0:
                         file_format_description += ", "
                     file_format_description += (
-                        f"<a href='schemas/{file_format_valid_item_type}.html'>{file_format_valid_item_type}</b>")
+                        f"<a href='types/{file_format_valid_item_type}.html'>{file_format_valid_item_type}</b>")
             content_file_formats_row = template_file_formats_row
             content_file_formats_row = content_file_formats_row.replace("{file_format_name}", file_format_name)
             content_file_formats_row = content_file_formats_row.replace("{file_format_uuid}", file_format_uuid)
@@ -903,7 +904,9 @@ def _gendoc_reference_genomes_table(portal: Portal, valid_item_type: Optional[st
 
 
 def _update_schema_file(schema_name: str, schema_doc_content: str) -> None:
-    output_file = f"{os.path.join(OUTPUT_DIR, schema_name)}.rst"
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+    output_file = f"{os.path.join(OUTPUT_DIR, camel_case_to_snake_case(schema_name))}.rst"
     with io.open(output_file, "w") as f:
         f.write(schema_doc_content)
 
@@ -923,8 +926,8 @@ def _update_object_model_file(schemas: dict, portal: Portal) -> None:
     nschemas_distribution = [nschemas_one_part + (1 if n < nschemas_one_part_remainder else 0) for n in range(ncolumns)]
     nschemas_left, nschemas_middle, nschemas_right = nschemas_distribution
     for index, schema_name in enumerate(schemas):
-        content_schema_types += f"{(' ' * 3) if index > 0 else ''}schemas/{schema_name}\n"
-        content_schema_type = f"<li><a href='schemas/{schema_name}.html'>{schema_name}</a></li>"
+        content_schema_types += f"{(' ' * 3) if index > 0 else ''}types/{camel_case_to_snake_case(schema_name)}\n"
+        content_schema_type = f"<li><a href='types/{camel_case_to_snake_case(schema_name)}.html'>{schema_name}</a></li>"
         if index < nschemas_left:
             content_schema_types_left += content_schema_type
         elif index < (nschemas_left + nschemas_right + 1):
