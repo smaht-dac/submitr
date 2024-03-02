@@ -6,7 +6,7 @@ Under development ...
 
 .. raw:: html
 
-    <table class="schema-table" width="100%">
+    <table class="schema-table-green" width="100%">
         <tr>
             <th> Term </td>
             <th>
