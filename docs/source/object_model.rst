@@ -120,5 +120,5 @@ See Also
 
 .. raw:: html
 
-    <span style="color:#aaaaaa;">[ <small>Generated: Friday, March 1, 2024 | 7:08 PM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.23.0</small> ]</span><p />
+    <span style="color:#aaaaaa;">[ <small>Generated: Saturday, March 2, 2024 | 5:32 AM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.23.0</small> ]</span><p />
     <p />

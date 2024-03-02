@@ -49,7 +49,7 @@ IGNORE_PROPERTIES = [
 
 # Relative to the directory containing THIS Python file.
 THIS_DIR = f"{os.path.dirname(__file__)}"
-TEMPLATES_DIR = f"{THIS_DIR}/../schema_templates"
+TEMPLATES_DIR = f"{THIS_DIR}/../gendoc_templates"
 DOCS_DIR = f"{THIS_DIR}/../source"
 OUTPUT_DIR = f"{DOCS_DIR}/object_model/types"
 OBJECT_MODEL_DOC_FILE = f"{DOCS_DIR}/object_model.rst"
@@ -180,7 +180,7 @@ def _get_schema_version(schema: dict) -> str:
 
 def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal) -> str:
     content = ""
-    if not (content := _get_template("schema")):
+    if not (content := _get_template("object_model_type")):
         return content
     content_schema_title = f"{'=' * len(schema_name)}\n{schema_name}\n{'=' * len(schema_name)}\n\n"
     content = content.replace("{schema_title}", content_schema_title)
