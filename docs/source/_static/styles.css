@@ -16,7 +16,6 @@ body, td {
 //     align: top;
 // }
 
-
 .schema-table td, .schema-table th {
   padding: 7pt;
   border: 0;
@@ -41,6 +40,32 @@ body, td {
 }
 .schema-table tbody tr:nth-last-child(1) {
   border-bottom: 1px solid darkblue;
+}
+
+.schema-table-green td, .schema-table-green th {
+  padding: 5pt;
+  border: 0;
+  border-left: 1px solid white;
+  border-right:1px solid white;
+  text-align: left;
+}
+.schema-table-green th {
+  background-color: #2EC186;
+  border-top: 1px solid black;
+  border-bottom: 1px solid darkgreen;
+  border-left: 1px solid white;
+  border-right:1px solid white;
+  color: white;
+  font-weight: normal;
+}
+.schema-table-green tbody tr:nth-child(even) {
+  background-color: #EBFBF5;
+}
+.schema-table-green tbody tr:nth-child(odd) {
+  background-color: #BFF6DF;
+}
+.schema-table-green tbody tr:nth-last-child(1) {
+  border-bottom: 1px solid darkgreen;
 }
 
 /* Increase the width of the content area for a specific page */
