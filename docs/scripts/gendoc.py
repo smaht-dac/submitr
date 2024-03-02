@@ -972,6 +972,11 @@ def _update_object_model_file(schemas: dict, portal: Portal) -> None:
                                                                   SMAHT_BASE_URL.replace("https://", ""))
     content_object_model_page = content_object_model_page.replace("{generated_datetime}",
                                                                   _get_current_datetime_string())
+    try:
+        content_object_model_page = content_object_model_page.replace("{smaht_portal_version}",
+                                                                      portal.get_health().json().get("project_version"))
+    except Exception:
+        pass
     with io.open(OBJECT_MODEL_DOC_FILE, "w") as f:
         f.write(content_object_model_page)
 
@@ -997,7 +1002,7 @@ def _normalize_spaces(value: str) -> str:
 
 def _get_current_datetime_string():
     tzlocal = datetime.now().astimezone().tzinfo
-    return datetime.now().astimezone(tzlocal).strftime(f" %-I:%M %p %Z %A, %B %-d, %Y")
+    return datetime.now().astimezone(tzlocal).strftime(f"%A, %B %-d, %Y | %-I:%M %p %Z")
 
 
 def _usage(message: Optional[str] = None) -> None:
