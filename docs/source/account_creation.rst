@@ -33,8 +33,8 @@ To do this go to this page and following the instructions:
    For more on this please see:
    :toplink:`SMaHT Portal Account Creation <https://data.smaht.org/docs/user-guide/account-creation>`
 
-SMaHT Portal Credentials
-------------------------
-Once you have a SMaHT Portal account, you will want to obtain SMaHT Portal credentials
-in order to use this ``smaht-submitr`` software.
-Please see the `Credentials <credentials.html>`_ section for instructions on this.
+Obtaining Credentials
+----------------------
+Once you have a SMaHT Portal account, you will want to obtain credentials in order to use ``smaht-submitr``.
+This is required to allow this software to communicate directly with SMaHT Portal.
+Please see the next `Credentials <credentials.html>`_ section for instructions on this.
