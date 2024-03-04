@@ -4,6 +4,8 @@ Consortium
 
 
 
+..    View <a target="_blank" href="https://data.smaht.org/search/?type=Consortium" style="color:black"><b><i><u>objects</u></i></b></a>
+
 .. raw:: html
 
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
@@ -18,7 +20,6 @@ Consortium
     <a href="#identifying-properties" style="color:#222222"><i><b><u>identifying</u></b></i></a> properties;
     and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
-    View <a target="_blank" href="https://data.smaht.org/search/?type=Consortium" style="color:black"><b><i><u>objects</u></i></b></a>
     of this type: <a target="_blank" href="https://data.smaht.org/search/?type=Consortium"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:2pt;" /></a>
     <p />
     

@@ -229,7 +229,7 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
                                       "\n.. tip::\n    See reference genome values here:"
                                       " `Reference Genomes <../data/reference_genomes.html>`_\n\n")
     else:
-        if schema_name in ["Consortium", "SubmissionCenter", "FileFormat", "ReferenceGenome"]:
+        if True or schema_name in ["Consortium", "SubmissionCenter", "FileFormat", "ReferenceGenome"]:
             content = content.replace(
                 "{tip_section}",
                 f"\n.. tip::\n\n  .. raw::  html\n\n    <i>See {schema_name} values "
