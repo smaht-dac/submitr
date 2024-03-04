@@ -9,7 +9,7 @@ Object Model
 
     Below are the object types, relevant for metadata submission,
     supported by SMaHT Portal;
-    types marked with <small><b>(A)</b></small> indicate an <i>abstract</i> type wihch cannot be created directly.
+    types marked with <small><b>(A)</b></small> indicate <i>abstract</i> types wihch cannot be created directly.
     Click on the name for more details.
     These and others can also be viewed within SMaHT Portal itself, in a somewhat more rudimentary format, <a target="_blank" href="https://data.smaht.org/profiles/">here<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>.
 
@@ -128,5 +128,5 @@ See Also
 
 .. raw:: html
 
-    <span style="color:#aaaaaa;">[ <small>Generated: Monday, March 4, 2024 | 10:50 AM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
+    <span style="color:#aaaaaa;">[ <small>Generated: Monday, March 4, 2024 | 10:52 AM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
     <p />
