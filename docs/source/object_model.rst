@@ -120,6 +120,9 @@ Data
     <ul>
         <li> <a target="_blank" href="https://data.smaht.org/search/?type=Consortium">Consortia<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
         <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat">File Formats<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+        <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat&valid_item_types=AlignedReads">File Formats <small>(Aligned Reads)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a></li>
+        <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat&valid_item_types=UnalignedReads">File Formats <small>(Unaligned Reads)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a></li>
+        <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat&valid_item_types=VariantCalls">File Formats <small>(Variant Calls)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a></li>
         <li> <a target="_blank" href="https://data.smaht.org/search/?type=ReferenceGenome">Reference Genomes<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
         <li> <a target="_blank" href="https://data.smaht.org/search/?type=SubmissionCenter">Submission Centers<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
     </ul>
@@ -138,5 +141,5 @@ See Also
 
 .. raw:: html
 
-    <span style="color:#aaaaaa;">[ <small>Generated: Monday, March 4, 2024 | 11:47 AM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
+    <span style="color:#aaaaaa;">[ <small>Generated: Monday, March 4, 2024 | 11:55 AM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
     <p />

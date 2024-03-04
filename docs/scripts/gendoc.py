@@ -234,7 +234,7 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
                 "{tip_section}",
                 f"\n.. tip::\n\n  .. raw::  html\n\n    <i>See {schema_name} values "
                 f"<a target='_blank' href='https://data.smaht.org/search/?type={schema_name}'><b>here"
-                f"<span class='fa fa-external-link' style='left:4pt;position:relative;top:1pt;' /></b></a></i>\n")
+                f"<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>\n")
 
     if content_required_properties_section := _gendoc_required_properties_section(schema):
         content = content.replace("{required_properties_section}", content_required_properties_section)
@@ -323,7 +323,7 @@ def _gendoc_required_properties_table(schema: dict) -> str:
                 property_description = (
                     f"<br /><i>See values "
                     f"<a target='_blank' href='https://data.smaht.org/search/?type={property_link_to}'>"
-                    f"<b>here</b><span class='fa fa-external-link' style='left:4pt;position:relative;top:1pt;' />"
+                    f"<b>here</b><span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' />"
                     f"</a></i>")
         if property_type == "array":
             if property_items := property.get("items"):
@@ -362,13 +362,13 @@ def _gendoc_required_properties_table(schema: dict) -> str:
                           "description":
                           f"<br /><i>See values "
                           f"<a target='_blank' href='https://data.smaht.org/search/?type=Consortium'>"
-                          f"<b>here</b><span class='fa fa-external-link' style='left:4pt;position:relative;top:1pt;' />"
+                          f"<b>here</b><span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' />"
                           f"</a></i>"},
                          {"name": "submission_centers", "type": "array of string", "link_to": "SubmissionCenter",
                           "description":
                           f"<br /><i>See values "
                           f"<a target='_blank' href='https://data.smaht.org/search/?type=SubmissionCenter'>"
-                          f"<b>here</b><span class='fa fa-external-link' style='left:4pt;position:relative;top:1pt;' />"
+                          f"<b>here</b><span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' />"
                           f"</a></i>"}],
                         kind="oneormore-required")
 
@@ -469,7 +469,7 @@ def _gendoc_reference_properties_table(schema: dict) -> str:
                 property_description = (
                     f"<br /><i>See values "
                     f"<a target='_blank' href='https://data.smaht.org/search/?type={property_link_to}'>"
-                    f"<b>here</b><span class='fa fa-external-link' style='left:4pt;position:relative;top:1pt;' />"
+                    f"<b>here</b><span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' />"
                     f"</a></i>")
         content_property_type = (
             f"<a href={camel_case_to_snake_case(property_link_to)}.html style='font-weight:bold;color:green;'>"
@@ -715,7 +715,7 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
                 property_description += (
                     f"<i>See values "
                     f"<a target='_blank' href='https://data.smaht.org/search/?type={property_link_to_original}'>"
-                    f"<b>here</b><span class='fa fa-external-link' style='left:4pt;position:relative;top:1pt;' />"
+                    f"<b>here</b><span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' />"
                     f"</a></i>")
         content_property_row = content_property_row.replace("{property_name}", content_property_name)
         content_property_row = content_property_row.replace("{property_type}", content_property_type)
