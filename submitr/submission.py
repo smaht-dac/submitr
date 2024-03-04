@@ -861,12 +861,15 @@ def submit_any_ingestion(ingestion_filename, *,
         if check_status == "success":
             show("Validation results: OK")
         elif validate_remote_silent:
-            show(f"Validation results: ERROR{f'({check_status})' if check_status != 'failure' else ''}")
+            show(f"Validation results: ERROR{f'({check_status})' if check_status not in ['failure', 'error'] else ''}")
             if check_response and (additional_data := check_response.get("additional_data")):
                 if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
                     if errors := [info for info in validation_info if info.lower().startswith("error:")]:
                         for error in errors:
                             PRINT("- " + error.replace("Error", "ERROR:"))
+            if check_response and isinstance(other_errors := check_response.get("errors"), list):
+                for error in other_errors:
+                    PRINT("- " + error)
         exit(0)
 
     if check_status == "success":
