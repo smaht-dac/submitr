@@ -25,6 +25,12 @@ Preparation
     
 
 
+.. tip::
+
+  .. raw::  html
+
+    <i>See actual Preparation data <a target='_blank' href='https://data.smaht.org/search/?type=Preparation'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
+
 
 
 

@@ -229,12 +229,11 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
                                       "\n.. tip::\n    See reference genome values here:"
                                       " `Reference Genomes <../data/reference_genomes.html>`_\n\n")
     else:
-        if not (schema.get("isAbstract") is True):
-            content = content.replace(
-                "{tip_section}",
-                f"\n.. tip::\n\n  .. raw::  html\n\n    <i>See actual {schema_name} data "
-                f"<a target='_blank' href='{SMAHT_BASE_URL}/search/?type={schema_name}'><b>here"
-                f"<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>\n")
+        content = content.replace(
+            "{tip_section}",
+            f"\n.. tip::\n\n  .. raw::  html\n\n    <i>See actual {schema_name} data "
+            f"<a target='_blank' href='{SMAHT_BASE_URL}/search/?type={schema_name}'><b>here"
+            f"<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>\n")
 
     if content_required_properties_section := _gendoc_required_properties_section(schema):
         content = content.replace("{required_properties_section}", content_required_properties_section)
