@@ -85,26 +85,27 @@ Types
     </td></tr></table>
 
 
-Data
-----
+.. Commented out (2023-03-04): Decided do not really need this as this is live on portal.
+.. Data
+.. ----
 
-.. toctree::
-   :hidden:
-   :maxdepth: 1
+.. .. toctree::
+..    :hidden:
+..    :maxdepth: 1
 
-   object_model/data/consortia
-   object_model/data/file_formats
-   object_model/data/reference_genomes
-   object_model/data/submission_centers
+..    object_model/data/consortia
+..    object_model/data/file_formats
+..    object_model/data/reference_genomes
+..    object_model/data/submission_centers
 
-.. raw:: html
-
-    <ul>
-        <li> <a href="object_model/data/consortia.html">Consortia</a> </li>
-        <li> <a href="object_model/data/file_formats.html">File Formats</a> </li>
-        <li> <a href="object_model/data/reference_genomes.html">Reference Genomes</a> </li>
-        <li> <a href="object_model/data/submission_centers.html">Submission Centers</a> </li>
-    </ul>
+.. .. raw:: html
+.. 
+..     <ul>
+..         <li> <a href="object_model/data/consortia.html">Consortia</a> </li>
+..         <li> <a href="object_model/data/file_formats.html">File Formats</a> </li>
+..         <li> <a href="object_model/data/reference_genomes.html">Reference Genomes</a> </li>
+..         <li> <a href="object_model/data/submission_centers.html">Submission Centers</a> </li>
+..     </ul>
 
 
 See Also
@@ -120,5 +121,5 @@ See Also
 
 .. raw:: html
 
-    <span style="color:#aaaaaa;">[ <small>Generated: Saturday, March 2, 2024 | 8:42 AM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.23.0</small> ]</span><p />
+    <span style="color:#aaaaaa;">[ <small>Generated: Monday, March 4, 2024 | 10:32 AM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
     <p />

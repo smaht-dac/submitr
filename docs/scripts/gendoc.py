@@ -15,6 +15,7 @@ from dcicutils.captured_output import captured_output
 from dcicutils.misc_utils import camel_case_to_snake_case, PRINT
 from dcicutils.portal_utils import Portal
 
+NODATA = True
 
 SMAHT_DAC_EMAIL = "smhelp@hms-dbmi.atlassian.net"
 
@@ -94,10 +95,11 @@ def main():
         _update_schema_file(schema_name, schema_doc)
 
     _update_object_model_file(_get_schemas(portal), portal)
-    _update_consortia_file(portal)
-    _update_submission_centers_file(portal)
-    _update_file_formats_file(portal)
-    _update_reference_genomes_file(portal)
+    if not NODATA:
+        _update_consortia_file(portal)
+        _update_submission_centers_file(portal)
+        _update_file_formats_file(portal)
+        _update_reference_genomes_file(portal)
 
 
 def _create_portal(ini: str, env: Optional[str] = None,
@@ -208,22 +210,23 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
         content = content.replace("{referencing_schemas}",
                                   f"Types <b>referencing</b> this type are: {content_referencing_schemas}.")
 
-    if schema_name == "Consortium":
-        content = content.replace("{tip_section}",
-                                  "\n.. tip::\n    See consortium values here:"
-                                  " `Consortia <../data/consortia.html>`_\n\n")
-    elif schema_name == "SubmissionCenter":
-        content = content.replace("{tip_section}",
-                                  "\n.. tip::\n    See submission center values here:"
-                                  " `Submission Centers <../data/submission_centers.html>`_\n\n")
-    elif schema_name == "FileFormat":
-        content = content.replace("{tip_section}",
-                                  "\n.. tip::\n    See file format values here:"
-                                  " `File Formats <../data/file_formats.html>`_\n\n")
-    elif schema_name == "ReferenceGenome":
-        content = content.replace("{tip_section}",
-                                  "\n.. tip::\n    See reference genome values here:"
-                                  " `Reference Genomes <../data/reference_genomes.html>`_\n\n")
+    if not NODATA:
+        if schema_name == "Consortium":
+            content = content.replace("{tip_section}",
+                                      "\n.. tip::\n    See consortium values here:"
+                                      " `Consortia <../data/consortia.html>`_\n\n")
+        elif schema_name == "SubmissionCenter":
+            content = content.replace("{tip_section}",
+                                      "\n.. tip::\n    See submission center values here:"
+                                      " `Submission Centers <../data/submission_centers.html>`_\n\n")
+        elif schema_name == "FileFormat":
+            content = content.replace("{tip_section}",
+                                      "\n.. tip::\n    See file format values here:"
+                                      " `File Formats <../data/file_formats.html>`_\n\n")
+        elif schema_name == "ReferenceGenome":
+            content = content.replace("{tip_section}",
+                                      "\n.. tip::\n    See reference genome values here:"
+                                      " `Reference Genomes <../data/reference_genomes.html>`_\n\n")
 
     if content_required_properties_section := _gendoc_required_properties_section(schema):
         content = content.replace("{required_properties_section}", content_required_properties_section)
@@ -294,18 +297,19 @@ def _gendoc_required_properties_table(schema: dict) -> str:
         if not (property_link_to := property.get("linkTo")):
             property_link_to = property.get("items", {}).get("linkTo")
         property_description = None
-        if property_link_to == "Consortium":
-            property_description = (
-                "<br /><small><i>Click <a href='../data/consortia.html'>here</a> to see values.</i></small>")
-        elif property_link_to == "SubmissionCenter":
-            property_description = (
-                "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a> to see values.</i></small>")
-        elif property_link_to == "FileFormat":
-            property_description = (
-                "<br /><small><i>Click <a href='../data/file_formats.html'>here</a> to see values.</i></small>")
-        elif property_link_to == "ReferenceGenome":
-            property_description = (
-                "<br /><small><i>Click <a href='../data/reference_genomes.html'>here</a> to see values.</i></small>")
+        if not NODATA:
+            if property_link_to == "Consortium":
+                property_description = (
+                    "<br /><small><i>Click <a href='../data/consortia.html'>here</a> to see values.</i></small>")
+            elif property_link_to == "SubmissionCenter":
+                property_description = (
+                    "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a> to see values.</i></small>")
+            elif property_link_to == "FileFormat":
+                property_description = (
+                    "<br /><small><i>Click <a href='../data/file_formats.html'>here</a> to see values.</i></small>")
+            elif property_link_to == "ReferenceGenome":
+                property_description = (
+                    "<br /><small><i>Click <a href='../data/reference_genomes.html'>here</a> to see values.</i></small>")
         if property_type == "array":
             if property_items := property.get("items"):
                 if property_items.get("enum"):
@@ -328,14 +332,20 @@ def _gendoc_required_properties_table(schema: dict) -> str:
                     content_oneormore_property_rows.replace("{oneormore_properties_list}",
                                                             "<b style='color:darkred;'>consortia</b>, "
                                                             "<b style='color:darkred;'>submission_centers</b>"))
-                content_oneormore_simple_property_rows = _gendoc_simple_properties(
-                    [{"name": "consortia", "type": "array of string", "link_to": "Consortium",
-                      "description": "<br /><small><i>Click <a href='../data/consortia.html'>here</a>"
-                                     " to see values.</i></small>"},
-                     {"name": "submission_centers", "type": "array of string", "link_to": "SubmissionCenter",
-                      "description": "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a>"
-                                     " to see values.</i></small>"}],
-                    kind="oneormore-required")
+                if not NODATA:
+                    content_oneormore_simple_property_rows = _gendoc_simple_properties(
+                        [{"name": "consortia", "type": "array of string", "link_to": "Consortium",
+                          "description": "<br /><small><i>Click <a href='../data/consortia.html'>here</a>"
+                                         " to see values.</i></small>"},
+                         {"name": "submission_centers", "type": "array of string", "link_to": "SubmissionCenter",
+                          "description": "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a>"
+                                         " to see values.</i></small>"}],
+                        kind="oneormore-required")
+                else:
+                    content_oneormore_simple_property_rows = _gendoc_simple_properties(
+                        [{"name": "consortia", "type": "array of string", "link_to": "Consortium"},
+                         {"name": "submission_centers", "type": "array of string", "link_to": "SubmissionCenter"}],
+                        kind="oneormore-required")
                 content_oneormore_property_rows = (
                     content_oneormore_property_rows.replace("{oneormore_property_rows}",
                                                             content_oneormore_simple_property_rows))
@@ -415,18 +425,19 @@ def _gendoc_reference_properties_table(schema: dict) -> str:
             if not (property_link_to := property.get("items", {}).get("linkTo")):
                 continue
         property_description = None
-        if property_link_to == "Consortium":
-            property_description = (
-                "<br /><small><i>Click <a href='../data/consortia.html'>here</a> to see values.</i></small>")
-        elif property_link_to == "SubmissionCenter":
-            property_description = (
-                "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a> to see values.</i></small>")
-        elif property_link_to == "FileFormat":
-            property_description = (
+        if not NODATA:
+            if property_link_to == "Consortium":
+                property_description = (
+                    "<br /><small><i>Click <a href='../data/consortia.html'>here</a> to see values.</i></small>")
+            elif property_link_to == "SubmissionCenter":
+                property_description = (
+                    "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a> to see values.</i></small>")
+            elif property_link_to == "FileFormat":
+                property_description = (
                 "<br /><small><i>Click <a href='../data/file_formats.html'>here</a> to see values.</i></small>")
-        elif property_link_to == "ReferenceGenome":
-            property_description = (
-                "<br /><small><i>Click <a href='../data/reference_genomes.html'>here</a> to see values.</i></small>")
+            elif property_link_to == "ReferenceGenome":
+                property_description = (
+                     "<br /><small><i>Click <a href='../data/reference_genomes.html'>here</a> to see values.</i></small>")
         content_property_type = (
             f"<a href={camel_case_to_snake_case(property_link_to)}.html style='font-weight:bold;color:green;'>"
             f"<u>{property_link_to}</u></a><br />{property_type}")
@@ -647,22 +658,23 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
                 content_parents += f"{parent}"
             content_parents += "</span>"
             content_property_name = f"{content_parents} <b>.</b> {content_property_name}"
-        if property_link_to_original == "Consortium":
-            property_description += (
-                "<br /><small><i>Click <a href='../data/consortia.html'>here</a> to see values.</i></small>")
-        elif property_link_to_original == "SubmissionCenter":
-            property_description += (
-                "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a> to see values.</i></small>")
-        elif property_link_to_original == "FileFormat":
-            if property_description:
-                property_description += "<br />"
-            property_description += (
-                "<small><i>Click <a href='../data/file_formats.html'>here</a> to see values.</i></small>")
-        elif property_link_to_original == "ReferenceGenome":
-            if property_description:
-                property_description += "<br />"
-            property_description += (
-                "<small><i>Click <a href='../data/reference_genomes.html'>here</a> to see values.</i></small>")
+        if not NODATA:
+            if property_link_to_original == "Consortium":
+                property_description += (
+                    "<br /><small><i>Click <a href='../data/consortia.html'>here</a> to see values.</i></small>")
+            elif property_link_to_original == "SubmissionCenter":
+                property_description += (
+                    "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a> to see values.</i></small>")
+            elif property_link_to_original == "FileFormat":
+                if property_description:
+                    property_description += "<br />"
+                property_description += (
+                    "<small><i>Click <a href='../data/file_formats.html'>here</a> to see values.</i></small>")
+            elif property_link_to_original == "ReferenceGenome":
+                if property_description:
+                    property_description += "<br />"
+                property_description += (
+                    "<small><i>Click <a href='../data/reference_genomes.html'>here</a> to see values.</i></small>")
         content_property_row = content_property_row.replace("{property_name}", content_property_name)
         content_property_row = content_property_row.replace("{property_type}", content_property_type)
         content_property_row = content_property_row.replace("{property_description}", property_description or "-")
