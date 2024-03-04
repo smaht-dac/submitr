@@ -64,7 +64,6 @@ Types
    object_model/types/software
    object_model/types/submission_center
    object_model/types/submitted_file
-   object_model/types/submitted_item
    object_model/types/therapeutic
    object_model/types/tissue
    object_model/types/tissue_collection
@@ -87,7 +86,7 @@ Types
     </ul>
     </td><td style="padding-left:24pt;">
     <ul>
-        <li><a href='object_model/types/sample.html'>Sample</a> <small>(A)</small></li><li><a href='object_model/types/sample_preparation.html'>SamplePreparation</a></li><li><a href='object_model/types/sample_source.html'>SampleSource</a> <small>(A)</small></li><li><a href='object_model/types/sequencer.html'>Sequencer</a></li><li><a href='object_model/types/sequencing.html'>Sequencing</a></li><li><a href='object_model/types/software.html'>Software</a></li><li><a href='object_model/types/submission_center.html'>SubmissionCenter</a></li><li><a href='object_model/types/submitted_file.html'>SubmittedFile</a> <small>(A)</small></li><li><a href='object_model/types/submitted_item.html'>SubmittedItem</a> <small>(A)</small></li><li><a href='object_model/types/therapeutic.html'>Therapeutic</a></li><li><a href='object_model/types/tissue.html'>Tissue</a></li><li><a href='object_model/types/tissue_collection.html'>TissueCollection</a></li><li><a href='object_model/types/tissue_sample.html'>TissueSample</a></li><li><a href='object_model/types/treatment.html'>Treatment</a></li><li><a href='object_model/types/unaligned_reads.html'>UnalignedReads</a></li><li><a href='object_model/types/user.html'>User</a></li><li><a href='object_model/types/variant_calls.html'>VariantCalls</a></li>
+        <li><a href='object_model/types/sample.html'>Sample</a> <small>(A)</small></li><li><a href='object_model/types/sample_preparation.html'>SamplePreparation</a></li><li><a href='object_model/types/sample_source.html'>SampleSource</a> <small>(A)</small></li><li><a href='object_model/types/sequencer.html'>Sequencer</a></li><li><a href='object_model/types/sequencing.html'>Sequencing</a></li><li><a href='object_model/types/software.html'>Software</a></li><li><a href='object_model/types/submission_center.html'>SubmissionCenter</a></li><li><a href='object_model/types/submitted_file.html'>SubmittedFile</a> <small>(A)</small></li><li><a href='object_model/types/therapeutic.html'>Therapeutic</a></li><li><a href='object_model/types/tissue.html'>Tissue</a></li><li><a href='object_model/types/tissue_collection.html'>TissueCollection</a></li><li><a href='object_model/types/tissue_sample.html'>TissueSample</a></li><li><a href='object_model/types/treatment.html'>Treatment</a></li><li><a href='object_model/types/unaligned_reads.html'>UnalignedReads</a></li><li><a href='object_model/types/user.html'>User</a></li><li><a href='object_model/types/variant_calls.html'>VariantCalls</a></li>
     </ul>
     </td></tr></table>
 
@@ -128,5 +127,5 @@ See Also
 
 .. raw:: html
 
-    <span style="color:#aaaaaa;">[ <small>Generated: Monday, March 4, 2024 | 10:52 AM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
+    <span style="color:#aaaaaa;">[ <small>Generated: Monday, March 4, 2024 | 10:57 AM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
     <p />

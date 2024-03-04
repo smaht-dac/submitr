@@ -28,6 +28,7 @@ IGNORE_TYPES = [
     "MetaWorkflowRun",
     "Page",
     "StaticSection",
+    "SubmittedItem",
     "TestingLinkedSchemaField",
     "TestingPostPutPatch",
     "TrackingItem",
@@ -191,7 +192,7 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
     content = content.replace("{smaht_url}", SMAHT_BASE_URL)
 
     if schema.get("isAbstract") is True:
-        content = content.replace("{schema_abstract}", "<u>abstract</u>")
+        content = content.replace("{schema_abstract}", "<u><b style='color:darkorange;'>abstract</b></u> (cannot be created directly)")
     if schema_description := schema.get("description"):
         if not schema_description.endswith("."):
             schema_description += "."

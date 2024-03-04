@@ -6,7 +6,7 @@ SubmittedItem
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> <u>abstract</u>
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> <u><b style='color:darkorange;'>abstract</b></u> (cannot be created directly)
     <a target="_blank" href="https://data.smaht.org/search/?type=SubmittedItem&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/SubmittedItem.json?format=json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/SubmittedItem.json" style="color:black"><b><u>SubmittedItem</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/SubmittedItem.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
