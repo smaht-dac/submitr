@@ -29,7 +29,7 @@ Tissue
 
   .. raw::  html
 
-    <i>See Tissue values <a target='_blank' href='https://data.smaht.org/search/?type=Tissue'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
+    <i>See actual Tissue data <a target='_blank' href='https://data.smaht.org/search/?type=Tissue'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
 
 
 Required Properties

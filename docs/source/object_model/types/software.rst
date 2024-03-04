@@ -29,7 +29,7 @@ Software
 
   .. raw::  html
 
-    <i>See Software values <a target='_blank' href='https://data.smaht.org/search/?type=Software'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
+    <i>See actual Software data <a target='_blank' href='https://data.smaht.org/search/?type=Software'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
 
 
 Required Properties

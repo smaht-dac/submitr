@@ -29,7 +29,7 @@ AlignedReads
 
   .. raw::  html
 
-    <i>See AlignedReads values <a target='_blank' href='https://data.smaht.org/search/?type=AlignedReads'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
+    <i>See actual AlignedReads data <a target='_blank' href='https://data.smaht.org/search/?type=AlignedReads'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
 
 
 Required Properties

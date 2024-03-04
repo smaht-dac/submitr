@@ -29,7 +29,7 @@ FileSet
 
   .. raw::  html
 
-    <i>See FileSet values <a target='_blank' href='https://data.smaht.org/search/?type=FileSet'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
+    <i>See actual FileSet data <a target='_blank' href='https://data.smaht.org/search/?type=FileSet'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
 
 
 Required Properties

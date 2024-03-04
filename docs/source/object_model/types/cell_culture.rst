@@ -29,7 +29,7 @@ CellCulture
 
   .. raw::  html
 
-    <i>See CellCulture values <a target='_blank' href='https://data.smaht.org/search/?type=CellCulture'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
+    <i>See actual CellCulture data <a target='_blank' href='https://data.smaht.org/search/?type=CellCulture'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
 
 
 Required Properties

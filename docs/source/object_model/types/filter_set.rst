@@ -29,7 +29,7 @@ FilterSet
 
   .. raw::  html
 
-    <i>See FilterSet values <a target='_blank' href='https://data.smaht.org/search/?type=FilterSet'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
+    <i>See actual FilterSet data <a target='_blank' href='https://data.smaht.org/search/?type=FilterSet'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
 
 
 Required Properties

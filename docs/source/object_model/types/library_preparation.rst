@@ -29,7 +29,7 @@ LibraryPreparation
 
   .. raw::  html
 
-    <i>See LibraryPreparation values <a target='_blank' href='https://data.smaht.org/search/?type=LibraryPreparation'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
+    <i>See actual LibraryPreparation data <a target='_blank' href='https://data.smaht.org/search/?type=LibraryPreparation'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
 
 
 Required Properties

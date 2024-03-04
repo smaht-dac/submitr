@@ -25,12 +25,6 @@ SubmittedFile
     <br /><u>Description</u>: Generic file submitted by external user.
 
 
-.. tip::
-
-  .. raw::  html
-
-    <i>See SubmittedFile values <a target='_blank' href='https://data.smaht.org/search/?type=SubmittedFile'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
-
 
 Required Properties
 ~~~~~~~~~~~~~~~~~~~

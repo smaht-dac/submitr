@@ -29,7 +29,7 @@ QualityMetric
 
   .. raw::  html
 
-    <i>See QualityMetric values <a target='_blank' href='https://data.smaht.org/search/?type=QualityMetric'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
+    <i>See actual QualityMetric data <a target='_blank' href='https://data.smaht.org/search/?type=QualityMetric'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
 
 
 Required Properties

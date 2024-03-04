@@ -229,11 +229,11 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
                                       "\n.. tip::\n    See reference genome values here:"
                                       " `Reference Genomes <../data/reference_genomes.html>`_\n\n")
     else:
-        if True or schema_name in ["Consortium", "SubmissionCenter", "FileFormat", "ReferenceGenome"]:
+        if not (schema.get("isAbstract") is True):
             content = content.replace(
                 "{tip_section}",
-                f"\n.. tip::\n\n  .. raw::  html\n\n    <i>See {schema_name} values "
-                f"<a target='_blank' href='https://data.smaht.org/search/?type={schema_name}'><b>here"
+                f"\n.. tip::\n\n  .. raw::  html\n\n    <i>See actual {schema_name} data "
+                f"<a target='_blank' href='{SMAHT_BASE_URL}/search/?type={schema_name}'><b>here"
                 f"<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>\n")
 
     if content_required_properties_section := _gendoc_required_properties_section(schema):
@@ -322,7 +322,7 @@ def _gendoc_required_properties_table(schema: dict) -> str:
             if property_link_to in ["Consortium", "SubmissionCenter", "FileFormat", "ReferenceGenome"]:
                 property_description = (
                     f"<br /><i>See values "
-                    f"<a target='_blank' href='https://data.smaht.org/search/?type={property_link_to}'>"
+                    f"<a target='_blank' href='{SMAHT_BASE_URL}/search/?type={property_link_to}'>"
                     f"<b>here</b><span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' />"
                     f"</a></i>")
         if property_type == "array":
@@ -361,13 +361,13 @@ def _gendoc_required_properties_table(schema: dict) -> str:
                         [{"name": "consortia", "type": "array of string", "link_to": "Consortium",
                           "description":
                           f"<br /><i>See values "
-                          f"<a target='_blank' href='https://data.smaht.org/search/?type=Consortium'>"
+                          f"<a target='_blank' href='{SMAHT_BASE_URL}/search/?type=Consortium'>"
                           f"<b>here</b><span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' />"
                           f"</a></i>"},
                          {"name": "submission_centers", "type": "array of string", "link_to": "SubmissionCenter",
                           "description":
                           f"<br /><i>See values "
-                          f"<a target='_blank' href='https://data.smaht.org/search/?type=SubmissionCenter'>"
+                          f"<a target='_blank' href='{SMAHT_BASE_URL}/search/?type=SubmissionCenter'>"
                           f"<b>here</b><span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' />"
                           f"</a></i>"}],
                         kind="oneormore-required")
@@ -468,7 +468,7 @@ def _gendoc_reference_properties_table(schema: dict) -> str:
             if property_link_to in ["Consortium", "SubmissionCenter", "FileFormat", "ReferenceGenome"]:
                 property_description = (
                     f"<br /><i>See values "
-                    f"<a target='_blank' href='https://data.smaht.org/search/?type={property_link_to}'>"
+                    f"<a target='_blank' href='{SMAHT_BASE_URL}/search/?type={property_link_to}'>"
                     f"<b>here</b><span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' />"
                     f"</a></i>")
         content_property_type = (
@@ -714,7 +714,7 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
                     property_description += "<br />"
                 property_description += (
                     f"<i>See values "
-                    f"<a target='_blank' href='https://data.smaht.org/search/?type={property_link_to_original}'>"
+                    f"<a target='_blank' href='{SMAHT_BASE_URL}/search/?type={property_link_to_original}'>"
                     f"<b>here</b><span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' />"
                     f"</a></i>")
         content_property_row = content_property_row.replace("{property_name}", content_property_name)

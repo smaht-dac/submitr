@@ -29,7 +29,7 @@ CellSample
 
   .. raw::  html
 
-    <i>See CellSample values <a target='_blank' href='https://data.smaht.org/search/?type=CellSample'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
+    <i>See actual CellSample data <a target='_blank' href='https://data.smaht.org/search/?type=CellSample'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
 
 
 Required Properties

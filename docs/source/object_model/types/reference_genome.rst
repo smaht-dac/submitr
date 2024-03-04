@@ -29,7 +29,7 @@ ReferenceGenome
 
   .. raw::  html
 
-    <i>See ReferenceGenome values <a target='_blank' href='https://data.smaht.org/search/?type=ReferenceGenome'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
+    <i>See actual ReferenceGenome data <a target='_blank' href='https://data.smaht.org/search/?type=ReferenceGenome'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
 
 
 Required Properties

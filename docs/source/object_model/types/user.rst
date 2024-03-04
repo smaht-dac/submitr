@@ -29,7 +29,7 @@ User
 
   .. raw::  html
 
-    <i>See User values <a target='_blank' href='https://data.smaht.org/search/?type=User'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
+    <i>See actual User data <a target='_blank' href='https://data.smaht.org/search/?type=User'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
 
 
 Required Properties

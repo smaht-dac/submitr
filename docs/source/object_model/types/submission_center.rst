@@ -29,7 +29,7 @@ SubmissionCenter
 
   .. raw::  html
 
-    <i>See SubmissionCenter values <a target='_blank' href='https://data.smaht.org/search/?type=SubmissionCenter'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
+    <i>See actual SubmissionCenter data <a target='_blank' href='https://data.smaht.org/search/?type=SubmissionCenter'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
 
 
 Required Properties
