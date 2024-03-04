@@ -24,6 +24,12 @@ Consortium
     
 
 
+.. tip::
+
+  .. raw::  html
+
+    <i>See Consortium values <a target='_blank' href='https://data.smaht.org/search/?type=Consortium'><b>here<span class='fa fa-external-link' style='left:4pt;position:relative;top:1pt;' /></b></a></i>
+
 
 Required Properties
 ~~~~~~~~~~~~~~~~~~~

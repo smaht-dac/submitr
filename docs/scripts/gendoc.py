@@ -228,6 +228,13 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
             content = content.replace("{tip_section}",
                                       "\n.. tip::\n    See reference genome values here:"
                                       " `Reference Genomes <../data/reference_genomes.html>`_\n\n")
+    else:
+        if schema_name in ["Consortium", "SubmissionCenter", "FileFormat", "ReferenceGenome"]:
+            content = content.replace(
+                "{tip_section}",
+                f"\n.. tip::\n\n  .. raw::  html\n\n    <i>See {schema_name} values "
+                f"<a target='_blank' href='https://data.smaht.org/search/?type={schema_name}'><b>here"
+                f"<span class='fa fa-external-link' style='left:4pt;position:relative;top:1pt;' /></b></a></i>\n")
 
     if content_required_properties_section := _gendoc_required_properties_section(schema):
         content = content.replace("{required_properties_section}", content_required_properties_section)
@@ -311,6 +318,13 @@ def _gendoc_required_properties_table(schema: dict) -> str:
             elif property_link_to == "ReferenceGenome":
                 property_description = (
                     "<br /><small><i>Click <a href='../data/reference_genomes.html'>here</a> to see values.</i></small>")
+        else:
+            if property_link_to in ["Consortium", "SubmissionCenter", "FileFormat", "ReferenceGenome"]:
+                property_description = (
+                    f"<br /><i>See values "
+                    f"<a target='_blank' href='https://data.smaht.org/search/?type={property_link_to}'>"
+                    f"<b>here</b><span class='fa fa-external-link' style='left:4pt;position:relative;top:1pt;' />"
+                    f"</a></i>")
         if property_type == "array":
             if property_items := property.get("items"):
                 if property_items.get("enum"):
@@ -344,9 +358,20 @@ def _gendoc_required_properties_table(schema: dict) -> str:
                         kind="oneormore-required")
                 else:
                     content_oneormore_simple_property_rows = _gendoc_simple_properties(
-                        [{"name": "consortia", "type": "array of string", "link_to": "Consortium"},
-                         {"name": "submission_centers", "type": "array of string", "link_to": "SubmissionCenter"}],
+                        [{"name": "consortia", "type": "array of string", "link_to": "Consortium",
+                          "description":
+                          f"<br /><i>See values "
+                          f"<a target='_blank' href='https://data.smaht.org/search/?type=Consortium'>"
+                          f"<b>here</b><span class='fa fa-external-link' style='left:4pt;position:relative;top:1pt;' />"
+                          f"</a></i>"},
+                         {"name": "submission_centers", "type": "array of string", "link_to": "SubmissionCenter",
+                          "description":
+                          f"<br /><i>See values "
+                          f"<a target='_blank' href='https://data.smaht.org/search/?type=SubmissionCenter'>"
+                          f"<b>here</b><span class='fa fa-external-link' style='left:4pt;position:relative;top:1pt;' />"
+                          f"</a></i>"}],
                         kind="oneormore-required")
+
                 content_oneormore_property_rows = (
                     content_oneormore_property_rows.replace("{oneormore_property_rows}",
                                                             content_oneormore_simple_property_rows))
@@ -435,10 +460,17 @@ def _gendoc_reference_properties_table(schema: dict) -> str:
                     "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a> to see values.</i></small>")
             elif property_link_to == "FileFormat":
                 property_description = (
-                "<br /><small><i>Click <a href='../data/file_formats.html'>here</a> to see values.</i></small>")
+                    "<br /><small><i>Click <a href='../data/file_formats.html'>here</a> to see values.</i></small>")
             elif property_link_to == "ReferenceGenome":
                 property_description = (
                      "<br /><small><i>Click <a href='../data/reference_genomes.html'>here</a> to see values.</i></small>")
+        else:
+            if property_link_to in ["Consortium", "SubmissionCenter", "FileFormat", "ReferenceGenome"]:
+                property_description = (
+                    f"<br /><i>See values "
+                    f"<a target='_blank' href='https://data.smaht.org/search/?type={property_link_to}'>"
+                    f"<b>here</b><span class='fa fa-external-link' style='left:4pt;position:relative;top:1pt;' />"
+                    f"</a></i>")
         content_property_type = (
             f"<a href={camel_case_to_snake_case(property_link_to)}.html style='font-weight:bold;color:green;'>"
             f"<u>{property_link_to}</u></a><br />{property_type}")
@@ -676,6 +708,15 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
                     property_description += "<br />"
                 property_description += (
                     "<small><i>Click <a href='../data/reference_genomes.html'>here</a> to see values.</i></small>")
+        else:
+            if property_link_to_original in ["Consortium", "SubmissionCenter", "FileFormat", "ReferenceGenome"]:
+                if property_description:
+                    property_description += "<br />"
+                property_description += (
+                    f"<i>See values "
+                    f"<a target='_blank' href='https://data.smaht.org/search/?type={property_link_to_original}'>"
+                    f"<b>here</b><span class='fa fa-external-link' style='left:4pt;position:relative;top:1pt;' />"
+                    f"</a></i>")
         content_property_row = content_property_row.replace("{property_name}", content_property_name)
         content_property_row = content_property_row.replace("{property_type}", content_property_type)
         content_property_row = content_property_row.replace("{property_description}", property_description or "-")
