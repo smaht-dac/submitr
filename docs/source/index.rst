@@ -103,7 +103,7 @@ Below (and to the left) is the general table of contents for this documentation.
   uploading_files
   advanced_usage
 
-.. Remove this from below 2023-03-04
+..  Commented out (2023-03-04) from below toctree: Decided do not really need this as this is live on portal.
 ..  consortia
 ..  submission_centers
 ..  file_formats

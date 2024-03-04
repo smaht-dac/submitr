@@ -964,10 +964,12 @@ def _update_object_model_file(schemas: dict, portal: Portal) -> None:
     nschemas_distribution = [nschemas_one_part + (1 if n < nschemas_one_part_remainder else 0) for n in range(ncolumns)]
     nschemas_left, nschemas_middle, nschemas_right = nschemas_distribution
     for index, schema_name in enumerate(schemas):
+        schema = schemas[schema_name]
+        is_schema_abstract = schema.get("isAbstract") is True
         content_schema_types += (
             f"{(' ' * 3) if index > 0 else ''}object_model/types/{camel_case_to_snake_case(schema_name)}\n")
         content_schema_type = (
-            f"<li><a href='object_model/types/{camel_case_to_snake_case(schema_name)}.html'>{schema_name}</a></li>")
+                f"<li><a href='object_model/types/{camel_case_to_snake_case(schema_name)}.html'>{schema_name}</a>{' <small>(A)</small>' if is_schema_abstract else ''}</li>")
         if index < nschemas_left:
             content_schema_types_left += content_schema_type
         elif index < (nschemas_left + nschemas_right + 1):
