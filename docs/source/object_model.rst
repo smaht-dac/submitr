@@ -112,6 +112,18 @@ Types
 ..         <li> <a href="object_model/data/submission_centers.html">Submission Centers</a> </li>
 ..     </ul>
 
+Data
+----
+
+.. raw:: html
+
+    <ul>
+        <li> <a target="_blank" href="https://data.smaht.org/search/?type=Consortium">Consortia<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+        <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat">File Formats<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+        <li> <a target="_blank" href="https://data.smaht.org/search/?type=ReferenceGenome">Reference Genomes<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+        <li> <a target="_blank" href="https://data.smaht.org/search/?type=SubmissionCenter">Submission Centers<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+    </ul>
+
 
 See Also
 --------
@@ -126,5 +138,5 @@ See Also
 
 .. raw:: html
 
-    <span style="color:#aaaaaa;">[ <small>Generated: Monday, March 4, 2024 | 11:01 AM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
+    <span style="color:#aaaaaa;">[ <small>Generated: Monday, March 4, 2024 | 11:08 AM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
     <p />
