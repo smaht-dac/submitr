@@ -89,7 +89,7 @@ See Also
 .. raw:: html
 
     <ul>
-        <li> <a target="_blank" href="object_model/type_hierarchy.html">Type Hierarchy<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+        <li> <a href="object_model/type_hierarchy.html">Type Hierarchy</a> </li>
         <li> <a target="_blank" href="https://data.smaht.org/docs/additional-resources/sample-file-nomenclature">File and Sample Nomenclature<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
         <li> <a target="_blank" href="https://data.smaht.org/docs/user-guide/referencing-data">Referencing Existing Data<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
         <li> <a target="_blank" href="https://data.smaht.org/data/benchmarking">Benchmarking Data<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
@@ -97,5 +97,12 @@ See Also
 
 .. raw:: html
 
-    <span style="color:#aaaaaa;">[ <small>Generated: Tuesday, March 5, 2024 | 12:00 PM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
+    <span style="color:#aaaaaa;">[ <small>Generated: Tuesday, March 5, 2024 | 12:16 PM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
     <p />
+
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+
+   object_model/type_hierarchy
