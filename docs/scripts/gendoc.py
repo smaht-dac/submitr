@@ -10,7 +10,7 @@ from functools import lru_cache
 import io
 import os
 import re
-from typing import List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 from dcicutils.captured_output import captured_output
 from dcicutils.misc_utils import camel_case_to_snake_case, PRINT
 from dcicutils.portal_utils import Portal
@@ -68,6 +68,7 @@ CONSORTIA_TOP_DOC_FILE = f"{DOCS_DIR}/consortia.rst"
 SUBMISSION_CENTERS_TOP_DOC_FILE = f"{DOCS_DIR}/submission_centers.rst"
 FILE_FORMATS_TOP_DOC_FILE = f"{DOCS_DIR}/file_formats.rst"
 REFERENCE_GENOMES_TOP_DOC_FILE = f"{DOCS_DIR}/reference_genomes.rst"
+TYPE_HIERARCHY_DOC_FILE = f"{DOCS_DIR}/object_model/type_hierarchy.rst"
 SMAHT_BASE_URL = "https://data.smaht.org"
 
 
@@ -95,90 +96,14 @@ def main():
         schema_doc = _gendoc_schema(schema_name, schema, schemas=schemas, portal=portal)
         _update_schema_file(schema_name, schema_doc)
 
-    _update_object_model_file(_get_schemas(portal), portal)
+    _update_object_model_file(schemas, portal)
+    _update_type_hierarchy_file(schemas, portal)
+
     if not NODATA:
         _update_consortia_file(portal)
         _update_submission_centers_file(portal)
         _update_file_formats_file(portal)
         _update_reference_genomes_file(portal)
-
-
-def _create_portal(ini: str, env: Optional[str] = None,
-                   server: Optional[str] = None, app: Optional[str] = None,
-                   verbose: bool = False, debug: bool = False) -> Portal:
-    portal = None
-    with captured_output(not debug):
-        portal = Portal(env, server=server, app=app) if env or app else Portal(ini)
-    if portal:
-        if verbose:
-            if portal.env:
-                PRINT(f"Portal environment: {portal.env}")
-            if portal.keys_file:
-                PRINT(f"Portal keys file: {portal.keys_file}")
-            if portal.key_id:
-                PRINT(f"Portal key prefix: {portal.key_id[0:2]}******")
-            if portal.ini_file:
-                PRINT(f"Portal ini file: {portal.ini_file}")
-            if portal.server:
-                PRINT(f"Portal server: {portal.server}")
-        return portal
-
-
-@lru_cache(maxsize=1)
-def _get_schemas(portal: Portal) -> Optional[dict]:
-    schemas = portal.get_schemas()
-    return {schema_name: schemas[schema_name] for schema_name in sorted(schemas) if schema_name not in IGNORE_TYPES}
-
-
-def _get_schema(portal: Portal, name: str) -> Tuple[Optional[dict], Optional[str]]:
-    if portal and name and (name := name.replace("_", "").replace("-", "").strip().lower()):
-        if schemas := _get_schemas(portal):
-            for schema_name in schemas:
-                if schema_name.replace("_", "").replace("-", "").strip().lower() == name:
-                    return schemas[schema_name], schema_name
-    return None, None
-
-
-def _get_parent_schema(schema: dict) -> Optional[str]:
-    if sub_class_of := schema.get("rdfs:subClassOf"):
-        if (parent_schema_name := os.path.basename(sub_class_of).replace(".json", "")) != "Item":
-            return parent_schema_name
-
-
-def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
-    result = []
-    for this_schema_name in schemas:
-        if this_schema_name == schema_name:
-            continue
-        schema = schemas[this_schema_name]
-        if properties := schema.get("properties"):
-            for property_name in properties:
-                if (not property_name) or (property_name in IGNORE_PROPERTIES):
-                    continue
-                property = properties[property_name]
-                if property.get("linkTo") == schema_name:
-                    result.append(this_schema_name)
-                elif property.get("items", {}).get("linkTo") == schema_name:
-                    result.append(this_schema_name)
-    return sorted(list(set(result)))
-
-
-def _get_derived_schemas(schema_name: str, schemas: dict) -> List[str]:
-    result = []
-    for this_schema_name in schemas:
-        if this_schema_name == schema_name:
-            continue
-        if _get_parent_schema(schemas[this_schema_name]) == schema_name:
-            result.append(this_schema_name)
-    return result
-
-
-def _get_schema_version(schema: dict) -> str:
-    if version := schema.get("properties", {}).get("schema_version", {}).get("default", ""):
-        if "." not in version:
-            version = f"{version}.0"
-        version = f"v{version}"
-    return version
 
 
 def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal) -> str:
@@ -192,13 +117,14 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
     content = content.replace("{smaht_url}", SMAHT_BASE_URL)
 
     if schema.get("isAbstract") is True:
-        content = content.replace("{schema_abstract}", "<u><b style='color:darkorange;'>abstract</b></u> (cannot be created directly)")
+        content = content.replace("{schema_abstract}",
+                                  "<u><b style='color:darkorange;'>abstract</b></u> (cannot be created directly)")
     if schema_description := schema.get("description"):
         if not schema_description.endswith("."):
             schema_description += "."
         content = content.replace("{schema_description}", f"<br /><u>Description</u>: {schema_description}")
 
-    if parent_schema_name := _get_parent_schema(schema):
+    if parent_schema_name := _get_parent_schema_name(schema):
         content = content.replace("{parent_schema}",
                                   f"Its <b>parent</b> type is:"
                                   f" <a href={camel_case_to_snake_case(parent_schema_name)}.html>"
@@ -310,13 +236,15 @@ def _gendoc_required_properties_table(schema: dict) -> str:
                     "<br /><small><i>Click <a href='../data/consortia.html'>here</a> to see values.</i></small>")
             elif property_link_to == "SubmissionCenter":
                 property_description = (
-                    "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a> to see values.</i></small>")
+                    "<br /><small><i>Click <a href='../data/submission_centers.html'>"
+                    "here</a> to see values.</i></small>")
             elif property_link_to == "FileFormat":
                 property_description = (
                     "<br /><small><i>Click <a href='../data/file_formats.html'>here</a> to see values.</i></small>")
             elif property_link_to == "ReferenceGenome":
                 property_description = (
-                    "<br /><small><i>Click <a href='../data/reference_genomes.html'>here</a> to see values.</i></small>")
+                    "<br /><small><i>Click <a href='../data/reference_genomes.html'>"
+                    "here</a> to see values.</i></small>")
         else:
             if property_link_to in ["Consortium", "SubmissionCenter", "FileFormat", "ReferenceGenome"]:
                 property_description = (
@@ -456,13 +384,15 @@ def _gendoc_reference_properties_table(schema: dict) -> str:
                     "<br /><small><i>Click <a href='../data/consortia.html'>here</a> to see values.</i></small>")
             elif property_link_to == "SubmissionCenter":
                 property_description = (
-                    "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a> to see values.</i></small>")
+                    "<br /><small><i>Click <a href='../data/submission_centers.html'>"
+                    "here</a> to see values.</i></small>")
             elif property_link_to == "FileFormat":
                 property_description = (
                     "<br /><small><i>Click <a href='../data/file_formats.html'>here</a> to see values.</i></small>")
             elif property_link_to == "ReferenceGenome":
                 property_description = (
-                     "<br /><small><i>Click <a href='../data/reference_genomes.html'>here</a> to see values.</i></small>")
+                     "<br /><small><i>Click <a href='../data/reference_genomes.html'>"
+                     "here</a> to see values.</i></small>")
         else:
             if property_link_to in ["Consortium", "SubmissionCenter", "FileFormat", "ReferenceGenome"]:
                 property_description = (
@@ -696,7 +626,8 @@ def _gendoc_properties_table(schema: dict, _level: int = 0, _parents: List[str] 
                     "<br /><small><i>Click <a href='../data/consortia.html'>here</a> to see values.</i></small>")
             elif property_link_to_original == "SubmissionCenter":
                 property_description += (
-                    "<br /><small><i>Click <a href='../data/submission_centers.html'>here</a> to see values.</i></small>")
+                    "<br /><small><i>Click <a href='../data/submission_centers.html'>"
+                    "here</a> to see values.</i></small>")
             elif property_link_to_original == "FileFormat":
                 if property_description:
                     property_description += "<br />"
@@ -1010,7 +941,8 @@ def _update_object_model_file(schemas: dict, portal: Portal) -> None:
         content_schema_types += (
             f"{(' ' * 3) if index > 0 else ''}object_model/types/{camel_case_to_snake_case(schema_name)}\n")
         content_schema_type = (
-                f"<li><a href='object_model/types/{camel_case_to_snake_case(schema_name)}.html'>{schema_name}</a>{' <small>(A)</small>' if is_schema_abstract else ''}</li>")
+                f"<li><a href='object_model/types/{camel_case_to_snake_case(schema_name)}.html'>"
+                f"{schema_name}</a>{' <small><b>(A)</b></small>' if is_schema_abstract else ''}</li>")
         if index < nschemas_left:
             content_schema_types_left += content_schema_type
         elif index < (nschemas_left + nschemas_right + 1):
@@ -1034,6 +966,165 @@ def _update_object_model_file(schemas: dict, portal: Portal) -> None:
         pass
     with io.open(OBJECT_MODEL_DOC_FILE, "w") as f:
         f.write(content_object_model_page)
+
+
+def _update_type_hierarchy_file(schemas: dict, portal: Portal) -> None:
+    if not (template_type_hierarchy_page := _get_template("type_hierarchy_page")):
+        return
+    if not (type_hierarchy := _gendoc_schemas_tree(schemas)):
+        return
+    content_type_hierarchy_page = template_type_hierarchy_page
+    content_type_hierarchy_page = content_type_hierarchy_page.replace("{type_hierarchy}", type_hierarchy)
+    with io.open(TYPE_HIERARCHY_DOC_FILE, "w") as f:
+        f.write(content_type_hierarchy_page)
+
+
+def _create_portal(ini: str, env: Optional[str] = None,
+                   server: Optional[str] = None, app: Optional[str] = None,
+                   verbose: bool = False, debug: bool = False) -> Portal:
+    portal = None
+    with captured_output(not debug):
+        portal = Portal(env, server=server, app=app) if env or app else Portal(ini)
+    if portal:
+        if verbose:
+            if portal.env:
+                PRINT(f"Portal environment: {portal.env}")
+            if portal.keys_file:
+                PRINT(f"Portal keys file: {portal.keys_file}")
+            if portal.key_id:
+                PRINT(f"Portal key prefix: {portal.key_id[0:2]}******")
+            if portal.ini_file:
+                PRINT(f"Portal ini file: {portal.ini_file}")
+            if portal.server:
+                PRINT(f"Portal server: {portal.server}")
+        return portal
+
+
+@lru_cache(maxsize=1)
+def _get_schemas(portal: Portal) -> Optional[dict]:
+    schemas = portal.get_schemas()
+    return {schema_name: schemas[schema_name] for schema_name in sorted(schemas) if schema_name not in IGNORE_TYPES}
+
+
+def _get_schema(portal: Portal, name: str) -> Tuple[Optional[dict], Optional[str]]:
+    if portal and name and (name := name.replace("_", "").replace("-", "").strip().lower()):
+        if schemas := _get_schemas(portal):
+            for schema_name in schemas:
+                if schema_name.replace("_", "").replace("-", "").strip().lower() == name:
+                    return schemas[schema_name], schema_name
+    return None, None
+
+
+def _get_parent_schema_name(schema: dict) -> Optional[str]:
+    if (isinstance(schema, dict) and
+        (parent_schema_name := schema.get("rdfs:subClassOf")) and
+        (parent_schema_name := parent_schema_name.replace("/profiles/", "").replace(".json", "")) and
+        (parent_schema_name != "Item")):  # noqa
+        return parent_schema_name
+    return None
+
+
+def _get_referencing_schemas(schema_name: str, schemas: dict) -> List[str]:
+    result = []
+    for this_schema_name in schemas:
+        if this_schema_name == schema_name:
+            continue
+        schema = schemas[this_schema_name]
+        if properties := schema.get("properties"):
+            for property_name in properties:
+                if (not property_name) or (property_name in IGNORE_PROPERTIES):
+                    continue
+                property = properties[property_name]
+                if property.get("linkTo") == schema_name:
+                    result.append(this_schema_name)
+                elif property.get("items", {}).get("linkTo") == schema_name:
+                    result.append(this_schema_name)
+    return sorted(list(set(result)))
+
+
+def _get_derived_schemas(schema_name: str, schemas: dict) -> List[str]:
+    result = []
+    for this_schema_name in schemas:
+        if this_schema_name == schema_name:
+            continue
+        if _get_parent_schema_name(schemas[this_schema_name]) == schema_name:
+            result.append(this_schema_name)
+    return result
+
+
+def _get_schema_version(schema: dict) -> str:
+    if version := schema.get("properties", {}).get("schema_version", {}).get("default", ""):
+        if "." not in version:
+            version = f"{version}.0"
+        version = f"v{version}"
+    return version
+
+
+def _gendoc_schemas_tree(schemas: dict) -> str:
+    root_name = "Types"
+    def children_of(name: str):  # noqa
+        nonlocal schemas
+        children = []
+        if not (name is None or isinstance(name, str)):
+            return children
+        if name == root_name:
+            name = None
+        for schema_name in (schemas if isinstance(schemas, dict) else {}):
+            if _get_parent_schema_name(schemas[schema_name]) == name:
+                children.append(schema_name)
+        return sorted(children)
+    def name_of(name: str) -> None:  # noqa
+        nonlocal root_name, schemas
+        abstract = (schemas[name].get("isAbstract") is True) if schemas.get(name) else False
+        return (f"<a href='types/{camel_case_to_snake_case(name)}.html'>{name}</a>"
+                f"{' <small><b>(A)</b></small>' if abstract else ''}"
+                if name != root_name else f"<a href='../object_model.html#types'><b>{name}</b></a>")
+    content = ""
+    def collect_content(value: str) -> None:  # noqa
+        nonlocal content
+        content += f"{' ' * 8}{value}\n"
+    _print_tree(root_name=root_name, children_of=children_of, name_of=name_of, print=collect_content)
+    return content
+
+
+def _print_tree(root_name: Optional[str],
+                children_of: Callable,
+                has_children: Optional[Callable] = None,
+                name_of: Optional[Callable] = None,
+                print: Callable = print) -> None:
+    """
+    Recursively prints as a tree structure the given root name and any of its
+    children (again, recursively) as specified by the given children_of callable;
+    the has_children may be specified, for efficiency, though if not specified
+    it will use the children_of function to determine this; the name_of callable
+    may be specified to modify the name before printing;
+
+    :param directory: Directory name whose tree structure to print.
+    """
+    first = "└─ "
+    space = "    "
+    branch = "│   "
+    tee = "├── "
+    last = "└── "
+
+    if not callable(children_of):
+        return
+    if not callable(has_children):
+        has_children = lambda name: children_of(name) is not None  # noqa
+
+    # This function adapted from stackoverflow.
+    # Ref: https://stackoverflow.com/questions/9727673/list-directory-tree-structure-in-python
+    def tree_generator(name: str, prefix: str = ""):
+        contents = children_of(name)
+        pointers = [tee] * (len(contents) - 1) + [last]
+        for pointer, path in zip(pointers, contents):
+            yield prefix + pointer + (name_of(path) if callable(name_of) else path)
+            if has_children(path):
+                extension = branch if pointer == tee else space
+                yield from tree_generator(path, prefix=prefix+extension)
+    print(first + ((name_of(root_name) if callable(name_of) else root_name) or "root"))
+    for line in tree_generator(root_name, prefix="   "):
+        print(line)
 
 
 @lru_cache(maxsize=32)
