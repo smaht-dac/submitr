@@ -9,7 +9,7 @@ Object Model
 
     Below are the object <a target="_blank" href="https://data.smaht.org/profiles/" style="color:black">types</a>
     (and data) supported by SMaHT Portal which may be relevant for metadata submission;
-    types marked with <b>(A)</b> indicate <i>abstract</i> types wihch cannot be created directly.
+    types marked with <b>(A)</b> indicate <i>abstract</i> types which may not be directly created.
     Click on the name for more details.
     These can also be viewed within SMaHT Portal itself in a somewhat more rudimentary form <a target="_blank" href="https://data.smaht.org/submission-schemas/"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:2pt;" /></a>
 
@@ -97,5 +97,5 @@ See Also
 
 .. raw:: html
 
-    <span style="color:#aaaaaa;">[ <small>Generated: Tuesday, March 5, 2024 | 11:57 AM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
+    <span style="color:#aaaaaa;">[ <small>Generated: Tuesday, March 5, 2024 | 12:00 PM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
     <p />
