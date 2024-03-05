@@ -17,6 +17,7 @@ Change Log
   Require --validate or --submit; do remote/server validation silently; etc.
 * Changed "Author" name/email in PyPi to SMaHT DAC / smhelp@hms-dbmi.atlassian.net;
   controlled by pyproject.toml.
+* Changes to view-portal-object script (need to update this in dcicutils).
 
 
 0.5.4
