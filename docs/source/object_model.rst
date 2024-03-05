@@ -22,6 +22,58 @@ Types
    :hidden:
    :maxdepth: 1
 
+   object_model/types/aligned_reads
+   object_model/types/analyte
+   object_model/types/analyte_preparation
+   object_model/types/assay
+   object_model/types/cell_culture
+   object_model/types/cell_culture_mixture
+   object_model/types/cell_culture_sample
+   object_model/types/cell_line
+   object_model/types/cell_sample
+   object_model/types/consortium
+   object_model/types/death_circumstances
+   object_model/types/demographic
+   object_model/types/diagnosis
+   object_model/types/document
+   object_model/types/donor
+   object_model/types/exposure
+   object_model/types/file
+   object_model/types/file_format
+   object_model/types/file_set
+   object_model/types/filter_set
+   object_model/types/histology
+   object_model/types/image
+   object_model/types/library
+   object_model/types/library_preparation
+   object_model/types/medical_history
+   object_model/types/molecular_test
+   object_model/types/ontology_term
+   object_model/types/output_file
+   object_model/types/preparation
+   object_model/types/preparation_kit
+   object_model/types/protocol
+   object_model/types/quality_metric
+   object_model/types/reference_file
+   object_model/types/reference_genome
+   object_model/types/sample
+   object_model/types/sample_preparation
+   object_model/types/sample_source
+   object_model/types/sequencer
+   object_model/types/sequencing
+   object_model/types/software
+   object_model/types/submission_center
+   object_model/types/submitted_file
+   object_model/types/therapeutic
+   object_model/types/tissue
+   object_model/types/tissue_collection
+   object_model/types/tissue_sample
+   object_model/types/treatment
+   object_model/types/unaligned_reads
+   object_model/types/user
+   object_model/types/variant_calls
+
+
 .. raw:: html
 
     <table><tr><td>
@@ -97,7 +149,7 @@ See Also
 
 .. raw:: html
 
-    <span style="color:#aaaaaa;">[ <small>Generated: Tuesday, March 5, 2024 | 12:16 PM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
+    <span style="color:#aaaaaa;">[ <small>Generated: Tuesday, March 5, 2024 | 2:50 PM EST | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> | 0.29.0</small> ]</span><p />
     <p />
 
 
