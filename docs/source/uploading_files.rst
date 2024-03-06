@@ -14,7 +14,7 @@ Or, if they do not, then you must specify the directory where these files can be
 The above commands will only look for the files to upload directly within the specified directory
 (and not any sub-directories therein). To look (recursively) within sub-directories, do::
 
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files> --subdirectories
+   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files> --sub-directories
 
 Resuming Uploads
 ================
@@ -43,9 +43,10 @@ specifically in the **Upload Info** section of that output (e.g. see `screenshot
 
 For both of these commands above, you will be asked to confirm if you would like to continue with the stated action.
 If you would like to skip these prompts so the commands can be run by a
-scheduler or in the background, you can pass the ``--no_query`` or ``-nq`` argument, such as::
+scheduler or in the background, you can pass the ``--no_query`` or ``-nq`` argument)
 
-    submit-metadata-bundle your_metadata_file.xlsx --no_query
+As with the ``submit-metadata-bundle`` use the ``--directory`` argument to explicitly specify
+in what directory the upload files should be looked for. (And ``--sub-directories`` if you want that directory searched recursively).
 
 Other Upload Considerations
 ===========================
@@ -125,7 +126,7 @@ appropriate files to the DAC if found within the buckets::
 
     # Run smaht-submitr with mounted files (assuming you have python and pip installed).
     pip install smaht-submitr
-    resume-uploads your-upload-file-uuid --directory /path-to-your-mount-directory --subdirectories -nq 
+    resume-uploads your-upload-file-uuid --directory /path-to-your-mount-directory --sub-directories -nq 
 
 For further support or questions regarding file
 submission, please contact the SMaHT DAC Team at

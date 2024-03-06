@@ -1775,7 +1775,15 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       upload_folder: Optional[str] = None,
                       subfolders: bool = False, exit_immediately_on_errors: bool = False,
                       json_only: bool = False, verbose_json: bool = False, verbose: bool = False) -> int:
-    structured_data = StructuredDataSet.load(ingestion_filename, portal, autoadd=autoadd)
+
+    def ref_lookup_strategy(type_name: str, value: str) -> int:
+        if _is_accession_id(value):
+            return StructuredDataSet.REF_LOOKUP_DEFAULT | StructuredDataSet.REF_LOOKUP_ROOT_FIRST
+        else:
+            return StructuredDataSet.REF_LOOKUP_DEFAULT
+
+    structured_data = StructuredDataSet.load(ingestion_filename, portal,
+                                             autoadd=autoadd, ref_lookup_strategy=ref_lookup_strategy)
     if json_only:
         PRINT(json.dumps(structured_data.data, indent=4))
         exit(1)
@@ -1913,6 +1921,8 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
                 path = file.get("path")
                 PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
                       f" [{_format_file_size(_get_file_size(path))}]")
+    PRINT(f"\n> Reference lookup count: {structured_data.ref_lookup_count}")
+    PRINT(f"> Reference cache hit count: {structured_data.ref_cache_hit_count}")
     _print_structured_data_status(portal, structured_data, validate_remote_only=validate_remote_only)
 
 
