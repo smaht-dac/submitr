@@ -12,8 +12,8 @@ CellCulture
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
     <a target="_blank" href="https://data.smaht.org/search/?type=CellCulture&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/CellCulture.json?format=json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/CellCulture.json" style="color:black"><b><u>CellCulture</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/CellCulture.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
-    Its <b>parent</b> type is: <a href=sample_source.html><u>SampleSource</u></a>.
-    Its <b>derived</b> types are: <a href='cell_culture_mixture.html'><u>CellCultureMixture</u></a>.
+    Its <b><a href='../type_hierarchy.html' style='color:black;'>parent</a></b> type is: <a href=sample_source.html><u>SampleSource</u></a>.
+    Its <b><a href='../type_hierarchy.html' style='color:black;'>derived</a></b> types are: <a href='cell_culture_mixture.html'><u>CellCultureMixture</u></a>.
     Types <b>referencing</b> this type are: <a href='cell_culture_sample.html'><u>CellCultureSample</u></a>.
     Property names in <span style='color:red'><b>red</b></span> are
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;

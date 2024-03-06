@@ -12,7 +12,7 @@ TissueSample
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
     <a target="_blank" href="https://data.smaht.org/search/?type=TissueSample&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/TissueSample.json?format=json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/TissueSample.json" style="color:black"><b><u>TissueSample</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/TissueSample.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
-    Its <b>parent</b> type is: <a href=sample.html><u>Sample</u></a>.
+    Its <b><a href='../type_hierarchy.html' style='color:black;'>parent</a></b> type is: <a href=sample.html><u>Sample</u></a>.
     
     
     Property names in <span style='color:red'><b>red</b></span> are

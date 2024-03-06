@@ -12,7 +12,7 @@ LibraryPreparation
     Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
     <a target="_blank" href="https://data.smaht.org/search/?type=LibraryPreparation&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/LibraryPreparation.json?format=json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/LibraryPreparation.json" style="color:black"><b><u>LibraryPreparation</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/LibraryPreparation.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
-    Its <b>parent</b> type is: <a href=preparation.html><u>Preparation</u></a>.
+    Its <b><a href='../type_hierarchy.html' style='color:black;'>parent</a></b> type is: <a href=preparation.html><u>Preparation</u></a>.
     
     Types <b>referencing</b> this type are: <a href='library.html'><u>Library</u></a>.
     Property names in <span style='color:red'><b>red</b></span> are

@@ -13,7 +13,7 @@ File
     <a target="_blank" href="https://data.smaht.org/search/?type=File&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/File.json?format=json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/File.json" style="color:black"><b><u>File</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/File.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
-    Its <b>derived</b> types are: <a href='output_file.html'><u>OutputFile</u></a>, <a href='reference_file.html'><u>ReferenceFile</u></a>, <a href='submitted_file.html'><u>SubmittedFile</u></a>.
+    Its <b><a href='../type_hierarchy.html' style='color:black;'>derived</a></b> types are: <a href='output_file.html'><u>OutputFile</u></a>, <a href='reference_file.html'><u>ReferenceFile</u></a>, <a href='submitted_file.html'><u>SubmittedFile</u></a>.
     Types <b>referencing</b> this type are: <a href='file_set.html'><u>FileSet</u></a>, <a href='reference_genome.html'><u>ReferenceGenome</u></a>.
     Property names in <span style='color:red'><b>red</b></span> are
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;

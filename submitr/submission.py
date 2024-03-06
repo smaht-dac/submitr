@@ -730,6 +730,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
     elif submission_protocol == SubmissionProtocol.UPLOAD:
 
+        # import pdb ; pdb.set_trace()
         submission_post_data = {
             'validate_only': None,  # see initiate_submission below
             'validate_first': validate_remote,
@@ -749,9 +750,11 @@ def submit_any_ingestion(ingestion_filename, *,
         nonlocal submission_post_data, validate_remote, validate_remote_only, validate_remote_silent
         submission_post_data = copy.deepcopy(submission_post_data)
         if first_time:
+            # import pdb ; pdb.set_trace()
             submission_post_data["validate_only"] = (
                 validate_remote_only or (validate_remote and validate_remote_silent))
         else:
+            # import pdb ; pdb.set_trace()
             submission_post_data["validate_only"] = False
         response = _post_submission(server=portal.server, keypair=portal.key_pair,
                                     ingestion_filename=ingestion_filename,
@@ -2035,7 +2038,9 @@ def _get_submission_centers(portal: Portal) -> List[str]:
 
 
 def _is_accession_id(value: str) -> bool:
-    return isinstance(value, str) and re.match(r"^[A-Z0-9]{12}$", value) is not None
+    # See smaht-portal/.../schema_formats.py
+    return isinstance(value, str) and re.match(r"^SMA[1-9A-Z]{9}$", value) is not None
+    # return isinstance(value, str) and re.match(r"^[A-Z0-9]{12}$", value) is not None
 
 
 def _extract_accession_id(value: str) -> Optional[str]:

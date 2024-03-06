@@ -13,7 +13,7 @@ SampleSource
     <a target="_blank" href="https://data.smaht.org/search/?type=SampleSource&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json?format=json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json" style="color:black"><b><u>SampleSource</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
-    Its <b>derived</b> types are: <a href='cell_culture.html'><u>CellCulture</u></a>, <a href='tissue.html'><u>Tissue</u></a>.
+    Its <b><a href='../type_hierarchy.html' style='color:black;'>derived</a></b> types are: <a href='cell_culture.html'><u>CellCulture</u></a>, <a href='tissue.html'><u>Tissue</u></a>.
     Types <b>referencing</b> this type are: <a href='cell_sample.html'><u>CellSample</u></a>, <a href='sample.html'><u>Sample</u></a>.
     Property names in <span style='color:red'><b>red</b></span> are
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;

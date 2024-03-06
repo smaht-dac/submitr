@@ -266,13 +266,14 @@ def _setup_validate_related_options(args: argparse.Namespace):
                 exit(1)
 
     if args.submit:
+        # L-LO-R-RO-RS = T-F-T-F-T
         args.validate_local = True
         args.validate_local_only = False
         args.validate_remote = True
         args.validate_remote_only = False
         args.validate_remote_silent = True
     elif args.validate:
-        # L-LO-R-RO-RS = T-F-T-F-T
+        # L-LO-R-RO-RS = T-F-T-T-T
         args.validate_local = True
         args.validate_local_only = False
         args.validate_remote = True

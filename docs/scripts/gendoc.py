@@ -126,12 +126,12 @@ def _gendoc_schema(schema_name: str, schema: dict, schemas: dict, portal: Portal
 
     if parent_schema_name := _get_parent_schema_name(schema):
         content = content.replace("{parent_schema}",
-                                  f"Its <b>parent</b> type is:"
+                                  f"Its <b><a href='../type_hierarchy.html' style='color:black;'>parent</a></b> type is:"
                                   f" <a href={camel_case_to_snake_case(parent_schema_name)}.html>"
                                   f"<u>{parent_schema_name}</u></a>.")
 
     if content_derived_schemas := _gendoc_derived_schemas(schema_name, schemas):
-        content = content.replace("{derived_schemas}", f"Its <b>derived</b> types are: {content_derived_schemas}.")
+        content = content.replace("{derived_schemas}", f"Its <b><a href='../type_hierarchy.html' style='color:black;'>derived</a></b> types are: {content_derived_schemas}.")
 
     if content_referencing_schemas := _gendoc_referencing_schemas(schema_name, schemas):
         content = content.replace("{referencing_schemas}",

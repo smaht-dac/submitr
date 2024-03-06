@@ -157,7 +157,10 @@ def main():
                 pyperclip.copy(json.dumps(schema, indent=4))
             if not args.raw:
                 if parent_schema_name := _get_parent_schema_name(schema):
-                    _print(f"{schema_name} | parent: {parent_schema_name}")
+                    if schema.get("isAbstract") is True:
+                        _print(f"{schema_name} | parent: {parent_schema_name} | abstract")
+                    else:
+                        _print(f"{schema_name} | parent: {parent_schema_name}")
                 else:
                     _print(schema_name)
             _print_schema(schema, details=args.details, more_details=args.details,
@@ -444,9 +447,15 @@ def _print_all_schema_names(portal: Portal,
 
     for schema_name in sorted(schemas.keys()):
         if parent_schema_name := _get_parent_schema_name(schemas[schema_name]):
-            _print(f"{schema_name} | parent: {parent_schema_name}")
+            if schemas[schema_name].get("isAbstract") is True:
+                _print(f"{schema_name} | parent: {parent_schema_name} | abstract")
+            else:
+                _print(f"{schema_name} | parent: {parent_schema_name}")
         else:
-            _print(schema_name)
+            if schemas[schema_name].get("isAbstract") is True:
+                _print(f"{schema_name} | abstract")
+            else:
+                _print(schema_name)
         if details:
             _print_schema(schemas[schema_name], details=details, more_details=more_details, all=all)
 
@@ -461,7 +470,7 @@ def _get_parent_schema_name(schema: dict) -> Optional[str]:
 
 
 def _print_schemas_tree(schemas: dict) -> None:
-    def children_of(name: str):
+    def children_of(name: str) -> List[str]:
         nonlocal schemas
         children = []
         if not (name is None or isinstance(name, str)):
@@ -472,7 +481,14 @@ def _print_schemas_tree(schemas: dict) -> None:
             if _get_parent_schema_name(schemas[schema_name]) == name:
                 children.append(schema_name)
         return sorted(children)
-    _print_tree(root_name="Schemas", children_of=children_of)
+    def name_of(name: str) -> str:  # noqa
+        nonlocal schemas
+        if not (name is None or isinstance(name, str)):
+            return name
+        if (schema := schemas.get(name)) and schema.get("isAbstract") is True:
+            return f"{name} (abstact)"
+        return name
+    _print_tree(root_name="Schemas", children_of=children_of, name_of=name_of)
 
 
 def _print_tree(root_name: Optional[str],
