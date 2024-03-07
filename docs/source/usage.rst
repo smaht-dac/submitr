@@ -30,7 +30,7 @@ Note these important aspects of using the Excel spreadsheet format:
    without its content interfering the submission tool.
 #. The name of the spreadsheet file must be suffixed with ``.xls`` or ``.xlsx``; there are no other requirements for the name of this file.
 
-Despite the rather dense chunk of text here, it is actually pretty intiutive, straightforward, and almost self-explanatory.
+Despite the rather dense chunk of text here, it is actually pretty intuitive, straightforward, and almost self-explanatory.
 Here is screenshot of a simple example Excel spreadsheet: 
 
 .. image:: _static/images/excel_screenshot.png

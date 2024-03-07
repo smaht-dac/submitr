@@ -595,6 +595,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          keys_file=None,
                          show_details=False,
                          json_only=False,
+                         ref_nocache=False,
                          verbose_json=False,
                          verbose=False,
                          debug=False):
@@ -687,6 +688,7 @@ def submit_any_ingestion(ingestion_filename, *,
                           validate_remote_only=validate_remote_only,
                           autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
                           exit_immediately_on_errors=exit_immediately_on_errors,
+                          ref_nocache=ref_nocache,
                           json_only=json_only, verbose_json=verbose_json, verbose=verbose)
 
     maybe_ingestion_type = ''
@@ -1774,6 +1776,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       validate_local_only: bool = False, validate_remote_only: bool = False,
                       upload_folder: Optional[str] = None,
                       subfolders: bool = False, exit_immediately_on_errors: bool = False,
+                      ref_nocache: bool = False,
                       json_only: bool = False, verbose_json: bool = False, verbose: bool = False) -> int:
 
     def ref_lookup_strategy(type_name: str, value: str) -> int:
@@ -1782,8 +1785,17 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         else:
             return StructuredDataSet.REF_LOOKUP_DEFAULT
 
-    structured_data = StructuredDataSet.load(ingestion_filename, portal,
-                                             autoadd=autoadd, ref_lookup_strategy=ref_lookup_strategy)
+    start = time.time()
+    structured_data = StructuredDataSet.load(ingestion_filename, portal, autoadd=autoadd,
+                                             ref_lookup_strategy=ref_lookup_strategy, ref_lookup_nocache=ref_nocache)
+    if verbose:
+        duration = time.time()- start
+        show(f"Preliminary validation complete (results below): {'%.1f' % duration} seconds")
+        show(f"Reference lookup count: {structured_data.ref_lookup_count}")
+        show(f"Reference lookup found count: {structured_data.ref_lookup_found_count}")
+        show(f"Reference lookup not found count: {structured_data.ref_lookup_notfound_count}")
+        show(f"Reference lookup error count: {structured_data.ref_lookup_error_count}")
+        show(f"Reference cache hit count: {structured_data.ref_cache_hit_count}")
     if json_only:
         PRINT(json.dumps(structured_data.data, indent=4))
         exit(1)
@@ -1921,8 +1933,6 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
                 path = file.get("path")
                 PRINT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
                       f" [{_format_file_size(_get_file_size(path))}]")
-    PRINT(f"\n> Reference lookup count: {structured_data.ref_lookup_count}")
-    PRINT(f"> Reference cache hit count: {structured_data.ref_cache_hit_count}")
     _print_structured_data_status(portal, structured_data, validate_remote_only=validate_remote_only)
 
 

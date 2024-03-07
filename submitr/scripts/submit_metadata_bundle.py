@@ -139,6 +139,8 @@ def main(simulated_args_for_testing=None):
                         help="Search sub-directories of folder for upload files.", default=False)
     parser.add_argument('--subfolders', '-sf', action="store_true",
                         help="Synonym for --sub-directories", default=False)
+    parser.add_argument('--ref-nocache', action="store_true",
+                        help="Do not cache reference (linkTo) lookups.", default=False)
     parser.add_argument('--app',
                         help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")
@@ -209,6 +211,7 @@ def main(simulated_args_for_testing=None):
                              validate_remote_only=args.validate_remote_only,
                              validate_remote_silent=args.validate_remote_silent,
                              json_only=args.json_only,
+                             ref_nocache=args.ref_nocache,
                              verbose_json=args.json,
                              verbose=args.verbose,
                              debug=args.debug)
