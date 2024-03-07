@@ -735,7 +735,6 @@ def submit_any_ingestion(ingestion_filename, *,
 
     elif submission_protocol == SubmissionProtocol.UPLOAD:
 
-        # import pdb ; pdb.set_trace()
         submission_post_data = {
             'validate_only': None,  # see initiate_submission below
             'validate_first': validate_remote,
@@ -760,7 +759,6 @@ def submit_any_ingestion(ingestion_filename, *,
         else:
             submission_post_data["validate_only"] = False
             submission_post_data["validate_first"] = False
-        import pdb ; pdb.set_trace()
         response = _post_submission(server=portal.server, keypair=portal.key_pair,
                                     ingestion_filename=ingestion_filename,
                                     creation_post_data=creation_post_data,
