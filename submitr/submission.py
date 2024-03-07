@@ -755,12 +755,12 @@ def submit_any_ingestion(ingestion_filename, *,
         nonlocal submission_post_data, validate_remote, validate_remote_only, validate_remote_silent
         submission_post_data = copy.deepcopy(submission_post_data)
         if first_time:
-            # import pdb ; pdb.set_trace()
             submission_post_data["validate_only"] = (
                 validate_remote_only or (validate_remote and validate_remote_silent))
         else:
-            # import pdb ; pdb.set_trace()
             submission_post_data["validate_only"] = False
+            submission_post_data["validate_first"] = False
+        import pdb ; pdb.set_trace()
         response = _post_submission(server=portal.server, keypair=portal.key_pair,
                                     ingestion_filename=ingestion_filename,
                                     creation_post_data=creation_post_data,
