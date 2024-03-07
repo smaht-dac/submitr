@@ -740,7 +740,7 @@ def submit_any_ingestion(ingestion_filename, *,
             'validate_first': validate_remote,
             'post_only': post_only,
             'patch_only': patch_only,
-            'sheet_utils': False,
+            'ref_nocache': ref_nocache,
             'autoadd': json.dumps(autoadd),
             'ingestion_directory': os.path.dirname(ingestion_filename)
         }
@@ -1797,6 +1797,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         show(f"Reference exists internal count: {structured_data.ref_exists_internal_count}")
         show(f"Reference lookup cache hit count: {structured_data.ref_lookup_cache_hit_count}")
         show(f"Reference lookup cache miss count: {structured_data.ref_lookup_cache_miss_count}")
+        show(f"Reference lookup count: {structured_data.ref_lookup_count}")
         show(f"Reference lookup found count: {structured_data.ref_lookup_found_count}")
         show(f"Reference lookup not found count: {structured_data.ref_lookup_notfound_count}")
         show(f"Reference lookup error count: {structured_data.ref_lookup_error_count}")
@@ -1853,16 +1854,19 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
             PRINT(f"- ERROR: {error}")
 
     if ref_validation_errors:
+        PRINT("- Reference errors:")
         for error in ref_validation_errors:
-            PRINT(f"- ERROR: {error}")
+            PRINT(f"  - ERROR: {error}")
 
     if file_validation_errors:
+        PRINT("- File reference errors:")
         for error in file_validation_errors:
-            PRINT(f"- ERROR: {error}")
+            PRINT(f"  - ERROR: {error}")
 
     if data_validation_errors:
+        PRINT("- Data errors:")
         for error in data_validation_errors:
-            PRINT(f"- ERROR: {error}")
+            PRINT(f"  - ERROR: {error}")
 
     return not (nerrors > 0)
 
