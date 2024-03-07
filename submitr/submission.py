@@ -291,8 +291,9 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
                     show(f"- {submission_center.get('name')} ({submission_center.get('uuid')})")
     suffix = ""
     if not submission_centers:
-        submission_centers = [submission_center.get('@id', None)
-                              for submission_center in user_record.get('submission_centers', {})]
+        submits_for = [sc.get('@id', None) for sc in user_record.get('submits_for', [])]
+        submission_centers = [sc.get('@id', None) for sc in user_record.get('submission_centers', [])]
+        submission_centers = list(set(submits_for + submission_centers))
         if not submission_centers:
             if error_if_none:
                 raise SyntaxError("Your user profile has no submission center declared,"
@@ -681,6 +682,8 @@ def submit_any_ingestion(ingestion_filename, *,
             autoadd = {"submission_centers": [extract_identifying_value_from_path(submission_centers[0])]}
         elif len(submission_centers) > 1:
             PRINT(f"Multiple submission centers: {', '.join(submission_centers)}")
+            PRINT(f"You must specify onely one submission center using the --submission-center option.")
+            exit(1)
 
     if validate_local or validate_local_only:
         _validate_locally(ingestion_filename, portal,
@@ -1789,7 +1792,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     structured_data = StructuredDataSet.load(ingestion_filename, portal, autoadd=autoadd,
                                              ref_lookup_strategy=ref_lookup_strategy, ref_lookup_nocache=ref_nocache)
     if verbose:
-        duration = time.time()- start
+        duration = time.time() - start
         show(f"Preliminary validation complete (results below): {'%.1f' % duration} seconds")
         show(f"Reference lookup count: {structured_data.ref_lookup_count}")
         show(f"Reference lookup found count: {structured_data.ref_lookup_found_count}")

@@ -18,6 +18,7 @@ Change Log
 * Changed "Author" name/email in PyPi to SMaHT DAC / smhelp@hms-dbmi.atlassian.net;
   controlled by pyproject.toml.
 * Changes to view-portal-object script (need to update this in dcicutils).
+* Support for submits_for to get submission center.
 
 
 0.5.4
