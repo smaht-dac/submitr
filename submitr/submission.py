@@ -1792,11 +1792,14 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if verbose:
         duration = time.time() - start
         show(f"Preliminary validation complete (results below): {'%.1f' % duration} seconds")
-        show(f"Reference lookup count: {structured_data.ref_lookup_count}")
+        show(f"Reference exists cache hit count: {structured_data.ref_exists_cache_hit_count}")
+        show(f"Reference exists cache miss count: {structured_data.ref_exists_cache_miss_count}")
+        show(f"Reference exists internal count: {structured_data.ref_exists_internal_count}")
+        show(f"Reference lookup cache hit count: {structured_data.ref_lookup_cache_hit_count}")
+        show(f"Reference lookup cache miss count: {structured_data.ref_lookup_cache_miss_count}")
         show(f"Reference lookup found count: {structured_data.ref_lookup_found_count}")
         show(f"Reference lookup not found count: {structured_data.ref_lookup_notfound_count}")
         show(f"Reference lookup error count: {structured_data.ref_lookup_error_count}")
-        show(f"Reference cache hit count: {structured_data.ref_cache_hit_count}")
     if json_only:
         PRINT(json.dumps(structured_data.data, indent=4))
         exit(1)
