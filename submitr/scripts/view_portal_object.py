@@ -99,7 +99,8 @@ def main():
     parser.add_argument("--tree", action="store_true", required=False, default=False, help="Tree output for schemas.")
     parser.add_argument("--database", action="store_true", required=False, default=False,
                         help="Read from database output.")
-    parser.add_argument("--bool", action="store_true", required=False, default=False, help="Only return whether found or not.")
+    parser.add_argument("--bool", action="store_true", required=False,
+                        default=False, help="Only return whether found or not.")
     parser.add_argument("--yaml", action="store_true", required=False, default=False, help="YAML output.")
     parser.add_argument("--copy", "-c", action="store_true", required=False, default=False,
                         help="Copy object data to clipboard.")
