@@ -993,8 +993,6 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
     action = "validation" if validation else "ingestion"
     if validation:
         show(f"Waiting for validation results ...")
-    elif verbose:
-        show(f"Checking {action} for {INGESTION_SUBMISSION_TYPE_NAME} ID: %s ..." % uuid, with_time=False)
     else:
         show(f"Checking {action} for submission ID: %s ..." % uuid, with_time=False)
 
