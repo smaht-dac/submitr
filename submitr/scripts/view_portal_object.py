@@ -99,6 +99,7 @@ def main():
     parser.add_argument("--tree", action="store_true", required=False, default=False, help="Tree output for schemas.")
     parser.add_argument("--database", action="store_true", required=False, default=False,
                         help="Read from database output.")
+    parser.add_argument("--bool", action="store_true", required=False, default=False, help="Only return whether found or not.")
     parser.add_argument("--yaml", action="store_true", required=False, default=False, help="YAML output.")
     parser.add_argument("--copy", "-c", action="store_true", required=False, default=False,
                         help="Copy object data to clipboard.")
@@ -167,7 +168,15 @@ def main():
                           all=args.all, raw=args.raw, raw_yaml=args.yaml)
             return
 
-    data = _get_portal_object(portal=portal, uuid=args.uuid, raw=args.raw, database=args.database, verbose=args.verbose)
+    data = _get_portal_object(portal=portal, uuid=args.uuid, raw=args.raw,
+                              database=args.database, check=args.bool, verbose=args.verbose)
+    if args.bool:
+        if data:
+            _print(f"{args.uuid}: found")
+            exit(0)
+        else:
+            _print(f"{args.uuid}: not found")
+            exit(1)
     if args.copy:
         pyperclip.copy(json.dumps(data, indent=4))
     if args.yaml:
@@ -198,7 +207,8 @@ def _create_portal(ini: str, env: Optional[str] = None,
 
 
 def _get_portal_object(portal: Portal, uuid: str,
-                       raw: bool = False, database: bool = False, verbose: bool = False) -> dict:
+                       raw: bool = False, database: bool = False,
+                       check: bool = False, verbose: bool = False) -> dict:
     response = None
     try:
         if not uuid.startswith("/"):
@@ -212,6 +222,8 @@ def _get_portal_object(portal: Portal, uuid: str,
             _exit()
         _exit(f"Exception getting Portal object from {portal.server}: {uuid}\n{get_error_message(e)}")
     if not response:
+        if check:
+            return None
         _exit(f"Null response getting Portal object from {portal.server}: {uuid}")
     if response.status_code not in [200, 307]:
         # TODO: Understand why the /me endpoint returns HTTP status code 307, which is only why we mention it above.
