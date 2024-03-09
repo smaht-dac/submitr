@@ -1778,11 +1778,31 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       ref_nocache: bool = False,
                       json_only: bool = False, verbose_json: bool = False, verbose: bool = False) -> int:
 
-    def ref_lookup_strategy(type_name: str, value: str) -> int:
-        if _is_accession_id(value):
-            return StructuredDataSet.REF_LOOKUP_DEFAULT | StructuredDataSet.REF_LOOKUP_ROOT_FIRST
-        else:
-            return StructuredDataSet.REF_LOOKUP_DEFAULT
+    def ref_lookup_strategy(type_name: str, schema: dict, value: str) -> (int, Optional[str]):
+        #
+        # Note this situation WRT object lookups ...
+        #
+        # /{submitted_id}                # NOT FOUND
+        # /UnalignedReads/{submitted_id} # OK
+        # /SubmittedFile/{submitted_id}  # OK
+        # /File/{submitted_id}           # NOT FOUND
+        #
+        # /{accession}                   # OK
+        # /UnalignedReads/{accession}    # NOT FOUND
+        # /SubmittedFile/{accession}     # NOT FOUND
+        # /File/{accession}              # OK
+        #
+        not_an_identifying_property = "filename"
+        if schema_properties := schema.get("properties"):
+            if schema_properties.get("accession") and _is_accession_id(value):
+                # Case: lookup by accession (only by root).
+                return StructuredDataSet.REF_LOOKUP_ROOT, not_an_identifying_property
+            elif schema_property_info_submitted_id := schema_properties.get("submitted_id"):
+                if schema_property_pattern_submitted_id := schema_property_info_submitted_id.get("pattern"):
+                    if re.match(schema_property_pattern_submitted_id, value):
+                        # Case: lookup by submitted_id (only by specified type).
+                        return StructuredDataSet.REF_LOOKUP_SPECIFIED_TYPE, not_an_identifying_property
+        return StructuredDataSet.REF_LOOKUP_DEFAULT, not_an_identifying_property
 
     start = time.time()
     structured_data = StructuredDataSet.load(ingestion_filename, portal, autoadd=autoadd,
@@ -1799,6 +1819,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         show(f"Reference lookup found count: {structured_data.ref_lookup_found_count}")
         show(f"Reference lookup not found count: {structured_data.ref_lookup_notfound_count}")
         show(f"Reference lookup error count: {structured_data.ref_lookup_error_count}")
+        show(f"Reference incorrect identifying property count:"
+             f" {structured_data.ref_incorrect_identifying_property_count}")
     if json_only:
         PRINT(json.dumps(structured_data.data, indent=4))
         exit(1)
