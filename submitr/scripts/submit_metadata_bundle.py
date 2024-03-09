@@ -156,6 +156,7 @@ def main(simulated_args_for_testing=None):
                         help="Output ONLY the parsed JSON of the metadata file.", default=False)
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
+    parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     if args.directory:
@@ -214,7 +215,8 @@ def main(simulated_args_for_testing=None):
                              ref_nocache=args.ref_nocache,
                              verbose_json=args.json,
                              verbose=args.verbose,
-                             debug=args.debug)
+                             debug=args.debug,
+                             debug_sleep=args.debug_sleep)
 
 
 def _sanity_check_submitted_file(file_name: str) -> bool:
