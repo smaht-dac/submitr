@@ -270,6 +270,7 @@ def _print_schema_info(schema: dict, level: int = 0,
                        required: Optional[List[str]] = None) -> None:
     if not schema or not isinstance(schema, dict):
         return
+    identifying_properties = schema.get("identifyingProperties")
     if level == 0:
         if required_properties := schema.get("required"):
             _print("- required properties:")
@@ -396,6 +397,8 @@ def _print_schema_info(schema: dict, level: int = 0,
                         suffix += f" | enum"
                     if property_required:
                         suffix += f" | required"
+                    if property_name in (identifying_properties or []):
+                        suffix += f" | identifying"
                     if property.get("uniqueKey"):
                         suffix += f" | unique"
                     if pattern := property.get("pattern"):
