@@ -219,7 +219,7 @@ def main(simulated_args_for_testing=None):
                              verbose_json=args.json,
                              verbose=args.verbose,
                              noprogress=args.noprogress,
-                             output=args.output,
+                             output_file=args.output,
                              debug=args.debug,
                              debug_sleep=args.debug_sleep)
 
