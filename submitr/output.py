@@ -7,6 +7,9 @@ from dcicutils.command_utils import yes_or_no
 from dcicutils.misc_utils import PRINT as __PRINT
 from .utils import show as __show
 
+# TODO: Cleanup this arbitrary differentiation between
+# print and show; but need to fix tests when this happens.
+
 
 def _print(*args, **kwargs):
     __PRINT(*args, **kwargs)
