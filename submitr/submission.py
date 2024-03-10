@@ -8,6 +8,7 @@ import json
 import os
 import pytz
 import re
+import signal
 import subprocess
 import sys
 import time
@@ -1809,15 +1810,72 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         return StructuredDataSet.REF_LOOKUP_DEFAULT, not_an_identifying_property
 
     start = time.time()
-    structured_data = StructuredDataSet.load(ingestion_filename, portal, autoadd=autoadd,
-                                             ref_lookup_strategy=ref_lookup_strategy, ref_lookup_nocache=ref_nocache,
-                                             debug_sleep=debug_sleep)
+
+    if True:
+
+        def handle_control_c(signum, frame):
+            print('INTERRUPT')
+            if not yes_or_no("CTRL-C: You have interrupted this process. Do you want to continue?"):
+                exit(1)
+            print('CONTINUE')
+
+        total_rows = 0
+        processed_rows = 0
+        def progress(nrows: int,
+                     nrefs_resolved: Optional[int] = None,
+                     nrefs_unresolved: Optional[int] = None,
+                     nlookups: Optional[int] = None) -> None:
+            nonlocal total_rows, processed_rows
+            ERASE_LINE = "\033[K"
+            if nrows > 0:
+                total_rows += nrows
+            elif nrows < 0:
+                processed_rows += -nrows
+            message = (
+                f"Rows: {total_rows} | "
+                f"Processed: {processed_rows} | "
+                f"Remaining: {total_rows - processed_rows}")
+            message += f" | Complete: {(float(processed_rows) / float(max(total_rows, 1)) * 100):.1f}%"
+            if nrefs_resolved is not None:
+                message += f" ‖ Refs: {nrefs_resolved}"
+                if nrefs_unresolved is not None:
+                    message += f" | Not Found: {nrefs_unresolved}"
+            if nlookups is not None:
+                message += f" | Lookups: {nlookups}"
+            print(f"{ERASE_LINE}{message}\r", end="")
+
+        signal.signal(signal.SIGINT, handle_control_c)
+
+        if verbose:
+            print("Starting preliminary validation.")
+
+        structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
+                                            ref_lookup_strategy=ref_lookup_strategy,
+                                            ref_lookup_nocache=ref_nocache,
+                                            progress=progress if verbose else None,
+                                            debug_sleep=debug_sleep)
+        structured_data._load_file(ingestion_filename)
+        if verbose:
+            print()
+        import pdb ; pdb.set_trace()
+
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    else:
+        structured_data = StructuredDataSet.load(ingestion_filename, portal, autoadd=autoadd,
+                                                 ref_lookup_strategy=ref_lookup_strategy,
+                                                 ref_lookup_nocache=ref_nocache,
+                                                 debug_sleep=debug_sleep)
     if verbose:
         duration = time.time() - start
         show(f"Preliminary validation complete (results below): {'%.1f' % duration} seconds")
+        show(f"Reference total count: {structured_data.ref_total_count}")
+        show(f"Reference total found count: {structured_data.ref_total_found_count}")
+        show(f"Reference total not found count: {structured_data.ref_total_notfound_count}")
         show(f"Reference exists cache hit count: {structured_data.ref_exists_cache_hit_count}")
         show(f"Reference exists cache miss count: {structured_data.ref_exists_cache_miss_count}")
         show(f"Reference exists internal count: {structured_data.ref_exists_internal_count}")
+        show(f"Reference exists external count: {structured_data.ref_exists_external_count}")
         show(f"Reference lookup cache hit count: {structured_data.ref_lookup_cache_hit_count}")
         show(f"Reference lookup cache miss count: {structured_data.ref_lookup_cache_miss_count}")
         show(f"Reference lookup count: {structured_data.ref_lookup_count}")
@@ -1826,6 +1884,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         show(f"Reference lookup error count: {structured_data.ref_lookup_error_count}")
         show(f"Reference incorrect identifying property count:"
              f" {structured_data.ref_incorrect_identifying_property_count}")
+    import pdb ; pdb.set_trace()
     if json_only:
         PRINT(json.dumps(structured_data.data, indent=4))
         exit(1)
