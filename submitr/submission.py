@@ -1824,7 +1824,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         def progress(nrows: int,
                      nrefs_resolved: Optional[int] = None,
                      nrefs_unresolved: Optional[int] = None,
-                     nlookups: Optional[int] = None) -> None:
+                     nlookups: Optional[int] = None,
+                     ncachehits: Optional[int] = None) -> None:
             nonlocal total_rows, processed_rows
             ERASE_LINE = "\033[K"
             if nrows > 0:
@@ -1835,13 +1836,16 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 f"Rows: {total_rows} | "
                 f"Processed: {processed_rows} | "
                 f"Remaining: {total_rows - processed_rows}")
-            message += f" | Complete: {(float(processed_rows) / float(max(total_rows, 1)) * 100):.1f}%"
             if nrefs_resolved is not None:
                 message += f" ‖ Refs: {nrefs_resolved}"
                 if nrefs_unresolved is not None:
-                    message += f" | Not Found: {nrefs_unresolved}"
+                    message += f" | Missing: {nrefs_unresolved}"
             if nlookups is not None:
                 message += f" | Lookups: {nlookups}"
+            if ncachehits is not None and ncachehits > 0:
+                message += f" | Cache Hits: {ncachehits}"
+            message += f" ‖ {'%.1f' % (time.time() - start)}s"
+            message += f" | {(float(processed_rows) / float(max(total_rows, 1)) * 100):.1f}%"
             print(f"{ERASE_LINE}{message}\r", end="")
 
         signal.signal(signal.SIGINT, handle_control_c)
@@ -1857,7 +1861,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         structured_data._load_file(ingestion_filename)
         if verbose:
             print()
-        import pdb ; pdb.set_trace()
 
         signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -1884,7 +1887,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         show(f"Reference lookup error count: {structured_data.ref_lookup_error_count}")
         show(f"Reference incorrect identifying property count:"
              f" {structured_data.ref_incorrect_identifying_property_count}")
-    import pdb ; pdb.set_trace()
     if json_only:
         PRINT(json.dumps(structured_data.data, indent=4))
         exit(1)
