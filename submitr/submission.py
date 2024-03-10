@@ -37,31 +37,30 @@ from .utils import show as __show, keyword_as_title, check_repeatedly
 from dcicutils.function_cache_decorator import function_cache
 
 
-# TODO: Clean up this show/print stuff (lots of test to change when this is done).
-# We do this show/print variable assignment here so we can easily output to file too.
-__print = print
+# TODO: Clean up this show/PRINT stuff (lots of test to change when this is done).
+# We do this show/PRINT variable assignment here so we can easily output to file too.
 def _show(*args, **kwargs):  # noqa
     __show(*args, **kwargs)
 def _print(*args, **kwargs):  # noqa
     __PRINT(*args, **kwargs)
 show = _show  # noqa
-print = _print
 PRINT = _print
 print_stdout = _print
 print_output = _print
 
+
 def setup_for_output_file_option(output_file: str) -> None:
-    global show, print, PRINT, print_stdout, print_output
+    global show, PRINT, print_stdout, print_output
     if os.path.exists(output_file):
-        print(f"Output file already exists: {output_file}")
+        PRINT(f"Output file already exists: {output_file}")
         if not yes_or_no("Overwrite this file?"):
             exit(1)
         with io.open(output_file, "w"):
             pass
-    print(f"Logging to output file: {output_file}")
+    PRINT(f"Logging to output file: {output_file}")
     def append_to_output_file(*args):  # noqa
         string = io.StringIO()
-        __print(*args, file=string)
+        __PRINT(*args, file=string)
         with io.open(output_file, "a") as f:
             f.write(string.getvalue())
     def show_and_output_to_file(*args, **kwargs):  # noqa
@@ -71,11 +70,10 @@ def setup_for_output_file_option(output_file: str) -> None:
         append_to_output_file(*args)
         _print(*args, **kwargs)
     def print_to_stdout_only(*args, **kwargs):  # noqa
-        __print(*args, **kwargs)
+        __PRINT(*args, **kwargs)
     def print_to_output_file_only(*args):  # noqa
         append_to_output_file(*args)
     show = show_and_output_to_file
-    print = print_and_output_to_file
     PRINT = print_and_output_to_file
     print_stdout = print_to_stdout_only
     print_output = print_to_output_file_only
@@ -920,9 +918,9 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if validate_remote_only:
         if check_status == "success":
-            print("Validation results: OK")
+            PRINT("Validation results: OK")
         elif validate_remote_silent:
-            print(f"Validation results: ERROR"
+            PRINT(f"Validation results: ERROR"
                   f"{f' ({check_status})' if check_status not in ['failure', 'error'] else ''}")
             if check_response and (additional_data := check_response.get("additional_data")):
                 if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
@@ -953,7 +951,7 @@ def submit_any_ingestion(ingestion_filename, *,
                        subfolders=subfolders)
     else:
         if validate_remote_silent:
-            print(f"Validation results: ERROR"
+            PRINT(f"Validation results: ERROR"
                   f"{f' ({check_status})' if check_status not in ['failure', 'error'] else ''}")
             if check_response and (additional_data := check_response.get("additional_data")):
                 if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
@@ -1456,7 +1454,7 @@ def get_s3_encrypt_key_id(*, upload_credentials, auth):
     if 's3_encrypt_key_id' in upload_credentials:
         s3_encrypt_key_id = upload_credentials.get('s3_encrypt_key_id')
         if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f"Extracted s3_encrypt_key_id from upload_credentials: {s3_encrypt_key_id}")
+            __PRINT(f"Extracted s3_encrypt_key_id from upload_credentials: {s3_encrypt_key_id}")
     else:
         if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f"No s3_encrypt_key_id entry found in upload_credentials.")
@@ -1869,10 +1867,10 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if True:
 
         def handle_control_c(signum, frame):
-            print('INTERRUPT')
+            PRINT('INTERRUPT')
             if not yes_or_no("CTRL-C: You have interrupted this process. Do you want to continue?"):
                 exit(1)
-            print('CONTINUE')
+            PRINT('CONTINUE')
 
         total_rows = 0
         processed_rows = 0
@@ -1912,7 +1910,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         signal.signal(signal.SIGINT, handle_control_c)
 
         if verbose:
-            print("Starting preliminary validation.")
+            PRINT("Starting preliminary validation.")
 
         structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                             ref_lookup_strategy=ref_lookup_strategy,
@@ -1921,7 +1919,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                             debug_sleep=debug_sleep)
         structured_data._load_file(ingestion_filename)
         if not noprogress:
-            print(last_progress_message)
+            PRINT(last_progress_message)
 
         signal.signal(signal.SIGINT, signal.SIG_DFL)
 
