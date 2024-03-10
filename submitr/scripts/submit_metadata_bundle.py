@@ -89,6 +89,11 @@ ADVANCED OPTIONS:
   Displays ONLY the submitted metadata as formatted JSON; nothing else.
 --details
   Displays slightly more detailed output.
+--output OUTPUT-FILE
+  Sends any output to specified file;
+  and refrains from printing lengthy content to stdout.
+--noprogress
+  Do not print progress output.
 --yes
   Automatically answer 'yes' to any confirmation questions.
 ===
