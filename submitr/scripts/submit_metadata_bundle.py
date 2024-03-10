@@ -51,6 +51,9 @@ OPTIONS:
   To specify an alternate credentials/keys
   file to the default ~/.smaht-keys.json file.
   Alternatively, set your SMAHT_KEYS environment variable.
+--output OUTPUT-FILE
+  Writes any logging output to the specified file;
+  and refrains from printing lengthy content to stdout.
 --verbose
   Displays more verbose output.
 --help
@@ -89,9 +92,6 @@ ADVANCED OPTIONS:
   Displays ONLY the submitted metadata as formatted JSON; nothing else.
 --details
   Displays slightly more detailed output.
---output OUTPUT-FILE
-  Sends any output to specified file;
-  and refrains from printing lengthy content to stdout.
 --noprogress
   Do not print progress output.
 --yes
