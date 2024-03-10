@@ -45,12 +45,12 @@ def _print(*args, **kwargs):  # noqa
     __PRINT(*args, **kwargs)
 SHOW = _show  # noqa
 PRINT = _print
-print_stdout = _print
-print_output = _print
+PRINT_STDOUT = _print
+PRINT_OUTPUT = _print
 
 
 def setup_for_output_file_option(output_file: str) -> None:
-    global SHOW, PRINT, print_stdout, print_output
+    global SHOW, PRINT, PRINT_STDOUT, PRINT_OUTPUT
     if os.path.exists(output_file):
         PRINT(f"Output file already exists: {output_file}")
         if not yes_or_no("Overwrite this file?"):
@@ -75,8 +75,8 @@ def setup_for_output_file_option(output_file: str) -> None:
         append_to_output_file(*args)
     SHOW = show_and_output_to_file
     PRINT = print_and_output_to_file
-    print_stdout = print_to_stdout_only
-    print_output = print_to_output_file_only
+    PRINT_STDOUT = print_to_stdout_only
+    PRINT_OUTPUT = print_to_output_file_only
     append_to_output_file(f"TIME: {_current_datetime_formatted()}")
     append_to_output_file(f"COMMAND: {' '.join(sys.argv)}")
 
@@ -926,10 +926,10 @@ def submit_any_ingestion(ingestion_filename, *,
                 if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
                     if errors := [info for info in validation_info if info.lower().startswith("error:")]:
                         for error in errors:
-                            print_output("- " + error.replace("Error", "ERROR:"))
+                            PRINT_OUTPUT("- " + error.replace("Error", "ERROR:"))
             if check_response and isinstance(other_errors := check_response.get("errors"), list):
                 for error in other_errors:
-                    print_output("- " + error)
+                    PRINT_OUTPUT("- " + error)
         exit(0)
 
     if check_status == "success":
@@ -957,10 +957,10 @@ def submit_any_ingestion(ingestion_filename, *,
                 if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
                     if errors := [info for info in validation_info if info.lower().startswith("error:")]:
                         for error in errors:
-                            print_output("- " + error.replace("Error", "ERROR:"))
+                            PRINT_OUTPUT("- " + error.replace("Error", "ERROR:"))
             if check_response and isinstance(other_errors := check_response.get("errors"), list):
                 for error in other_errors:
-                    print_output("- " + error)
+                    PRINT_OUTPUT("- " + error)
     exit(0)
 
 
@@ -1905,7 +1905,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             message += f" ‖ {'%.1f' % (time.time() - start)}s"
             message += f" | {(float(processed_rows) / float(max(total_rows, 1)) * 100):.1f}%"
             last_progress_message = f"{message}"
-            print_stdout(f"{ERASE_LINE}{last_progress_message}\r", end="")
+            PRINT_STDOUT(f"{ERASE_LINE}{last_progress_message}\r", end="")
 
         signal.signal(signal.SIGINT, handle_control_c)
 
@@ -1930,28 +1930,28 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                                  debug_sleep=debug_sleep)
     if verbose:
         duration = time.time() - start
-        print_output(f"Preliminary validation complete (results below): {'%.1f' % duration} seconds")
-        print_output(f"Reference total count: {structured_data.ref_total_count}")
-        print_output(f"Reference total found count: {structured_data.ref_total_found_count}")
-        print_output(f"Reference total not found count: {structured_data.ref_total_notfound_count}")
-        print_output(f"Reference exists cache hit count: {structured_data.ref_exists_cache_hit_count}")
-        print_output(f"Reference exists cache miss count: {structured_data.ref_exists_cache_miss_count}")
-        print_output(f"Reference exists internal count: {structured_data.ref_exists_internal_count}")
-        print_output(f"Reference exists external count: {structured_data.ref_exists_external_count}")
-        print_output(f"Reference lookup cache hit count: {structured_data.ref_lookup_cache_hit_count}")
-        print_output(f"Reference lookup cache miss count: {structured_data.ref_lookup_cache_miss_count}")
-        print_output(f"Reference lookup count: {structured_data.ref_lookup_count}")
-        print_output(f"Reference lookup found count: {structured_data.ref_lookup_found_count}")
-        print_output(f"Reference lookup not found count: {structured_data.ref_lookup_notfound_count}")
-        print_output(f"Reference lookup error count: {structured_data.ref_lookup_error_count}")
-        print_output(f"Reference incorrect identifying property count:"
+        PRINT_OUTPUT(f"Preliminary validation complete (results below): {'%.1f' % duration} seconds")
+        PRINT_OUTPUT(f"Reference total count: {structured_data.ref_total_count}")
+        PRINT_OUTPUT(f"Reference total found count: {structured_data.ref_total_found_count}")
+        PRINT_OUTPUT(f"Reference total not found count: {structured_data.ref_total_notfound_count}")
+        PRINT_OUTPUT(f"Reference exists cache hit count: {structured_data.ref_exists_cache_hit_count}")
+        PRINT_OUTPUT(f"Reference exists cache miss count: {structured_data.ref_exists_cache_miss_count}")
+        PRINT_OUTPUT(f"Reference exists internal count: {structured_data.ref_exists_internal_count}")
+        PRINT_OUTPUT(f"Reference exists external count: {structured_data.ref_exists_external_count}")
+        PRINT_OUTPUT(f"Reference lookup cache hit count: {structured_data.ref_lookup_cache_hit_count}")
+        PRINT_OUTPUT(f"Reference lookup cache miss count: {structured_data.ref_lookup_cache_miss_count}")
+        PRINT_OUTPUT(f"Reference lookup count: {structured_data.ref_lookup_count}")
+        PRINT_OUTPUT(f"Reference lookup found count: {structured_data.ref_lookup_found_count}")
+        PRINT_OUTPUT(f"Reference lookup not found count: {structured_data.ref_lookup_notfound_count}")
+        PRINT_OUTPUT(f"Reference lookup error count: {structured_data.ref_lookup_error_count}")
+        PRINT_OUTPUT(f"Reference incorrect identifying property count:"
                      f" {structured_data.ref_incorrect_identifying_property_count}")
     if json_only:
-        print_output(json.dumps(structured_data.data, indent=4))
+        PRINT_OUTPUT(json.dumps(structured_data.data, indent=4))
         exit(1)
     if verbose_json:
-        print_output(f"Parsed JSON:")
-        print_output(json.dumps(structured_data.data, indent=4))
+        PRINT_OUTPUT(f"Parsed JSON:")
+        PRINT_OUTPUT(json.dumps(structured_data.data, indent=4))
     validation_okay = _validate_data(structured_data, portal, ingestion_filename, upload_folder, recursive=subfolders)
     if validation_okay:
         PRINT("Validation results (preliminary): OK")
@@ -1992,26 +1992,26 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
         nerrors += len(data_validation_errors)
 
     if nerrors > 0:
-        print_output("Validation results (preliminary): ERROR")
+        PRINT_OUTPUT("Validation results (preliminary): ERROR")
 
     if initial_validation_errors:
         for error in initial_validation_errors:
-            print_output(f"- ERROR: {error}")
+            PRINT_OUTPUT(f"- ERROR: {error}")
 
     if ref_validation_errors:
-        print_output("- Reference errors:")
+        PRINT_OUTPUT("- Reference errors:")
         for error in ref_validation_errors:
-            print_output(f"  - ERROR: {error}")
+            PRINT_OUTPUT(f"  - ERROR: {error}")
 
     if file_validation_errors:
-        print_output("- File reference errors:")
+        PRINT_OUTPUT("- File reference errors:")
         for error in file_validation_errors:
-            print_output(f"  - ERROR: {error}")
+            PRINT_OUTPUT(f"  - ERROR: {error}")
 
     if data_validation_errors:
-        print_output("- Data errors:")
+        PRINT_OUTPUT("- Data errors:")
         for error in data_validation_errors:
-            print_output(f"  - ERROR: {error}")
+            PRINT_OUTPUT(f"  - ERROR: {error}")
 
     return not (nerrors > 0)
 
@@ -2067,24 +2067,24 @@ def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> Lis
 def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDataSet, ingestion_filename: str,
                                    upload_folder: str, recursive: bool, validate_remote_only: bool = False) -> None:
     if (reader_warnings := structured_data.reader_warnings):
-        print_output(f"\n> Parser WARNINGS:")
+        PRINT_OUTPUT(f"\n> Parser WARNINGS:")
         for reader_warning in reader_warnings:
-            print_output(f"  - {_format_issue(reader_warning, ingestion_filename)}")
-    print_output(f"\n> Types submitting:")
+            PRINT_OUTPUT(f"  - {_format_issue(reader_warning, ingestion_filename)}")
+    PRINT_OUTPUT(f"\n> Types submitting:")
     for type_name in sorted(structured_data.data):
-        print_output(f"  - {type_name}: {len(structured_data.data[type_name])}"
+        PRINT_OUTPUT(f"  - {type_name}: {len(structured_data.data[type_name])}"
                      f" object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
     if resolved_refs := structured_data.resolved_refs:
-        print_output(f"\n> Resolved object (linkTo) references:")
+        PRINT_OUTPUT(f"\n> Resolved object (linkTo) references:")
         for resolved_ref in sorted(resolved_refs):
-            print_output(f"  - {resolved_ref}")
+            PRINT_OUTPUT(f"  - {resolved_ref}")
     if files := structured_data.upload_files_located(location=[upload_folder, os.path.dirname(ingestion_filename)],
                                                      recursive=recursive):
-        print_output(f"\n> Resolved file references:")
+        PRINT_OUTPUT(f"\n> Resolved file references:")
         if files_found := [file for file in files if file.get("path")]:
             for file in files_found:
                 path = file.get("path")
-                print_output(f"  - {file.get('type')}: {file.get('file')} -> {path}"
+                PRINT_OUTPUT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
                              f" [{_format_file_size(_get_file_size(path))}]")
     _print_structured_data_status(portal, structured_data, validate_remote_only=validate_remote_only)
 
@@ -2092,34 +2092,34 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet,
                                   validate_remote_only: bool = False) -> None:
     will_or_would = "Will" if not validate_remote_only else "Would"
-    print_output("\n> Object create/update situation:")
+    PRINT_OUTPUT("\n> Object create/update situation:")
     diffs = structured_data.compare()
     for object_type in diffs:
-        print_output(f"  TYPE: {object_type}")
+        PRINT_OUTPUT(f"  TYPE: {object_type}")
         for object_info in diffs[object_type]:
-            print_output(f"  - OBJECT: {object_info.path}")
+            PRINT_OUTPUT(f"  - OBJECT: {object_info.path}")
             if not object_info.uuid:
-                print_output(f"    Does not exist -> {will_or_would} be CREATED")
+                PRINT_OUTPUT(f"    Does not exist -> {will_or_would} be CREATED")
             else:
-                print_output(f"    Already exists -> {object_info.uuid} -> {will_or_would} be UPDATED", end="")
+                PRINT_OUTPUT(f"    Already exists -> {object_info.uuid} -> {will_or_would} be UPDATED", end="")
                 if not object_info.diffs:
-                    print_output(" (but NO substantive diffs)")
+                    PRINT_OUTPUT(" (but NO substantive diffs)")
                 else:
-                    print_output(" (substantive DIFFs below)")
+                    PRINT_OUTPUT(" (substantive DIFFs below)")
                     for diff_path in object_info.diffs:
                         if (diff := object_info.diffs[diff_path]).creating_value:
-                            print_output(f"     CREATE {diff_path}: {diff.value}")
+                            PRINT_OUTPUT(f"     CREATE {diff_path}: {diff.value}")
                         elif diff.updating_value:
-                            print_output(f"     UPDATE {diff_path}: {diff.updating_value} -> {diff.value}")
+                            PRINT_OUTPUT(f"     UPDATE {diff_path}: {diff.updating_value} -> {diff.value}")
                         elif (diff := object_info.diffs[diff_path]).deleting_value:
-                            print_output(f"     DELETE {diff_path}: {diff.value}")
+                            PRINT_OUTPUT(f"     DELETE {diff_path}: {diff.value}")
 
 
 def _print_json_with_prefix(data, prefix):
     json_string = json.dumps(data, indent=4)
     json_string = f"\n{prefix}".join(json_string.split("\n"))
-    print_output(prefix, end="")
-    print_output(json_string)
+    PRINT_OUTPUT(prefix, end="")
+    PRINT_OUTPUT(json_string)
 
 
 def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
