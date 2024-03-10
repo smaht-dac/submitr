@@ -37,20 +37,20 @@ from .utils import show as __show, keyword_as_title, check_repeatedly
 from dcicutils.function_cache_decorator import function_cache
 
 
-# TODO: Clean up this show/PRINT stuff (lots of test to change when this is done).
-# We do this show/PRINT variable assignment here so we can easily output to file too.
+# TODO: Clean up this SHOW/PRINT stuff (lots of test to change when this is done).
+# We do this SHOW/PRINT variable assignment here so we can easily output to file too.
 def _show(*args, **kwargs):  # noqa
     __show(*args, **kwargs)
 def _print(*args, **kwargs):  # noqa
     __PRINT(*args, **kwargs)
-show = _show  # noqa
+SHOW = _show  # noqa
 PRINT = _print
 print_stdout = _print
 print_output = _print
 
 
 def setup_for_output_file_option(output_file: str) -> None:
-    global show, PRINT, print_stdout, print_output
+    global SHOW, PRINT, print_stdout, print_output
     if os.path.exists(output_file):
         PRINT(f"Output file already exists: {output_file}")
         if not yes_or_no("Overwrite this file?"):
@@ -73,7 +73,7 @@ def setup_for_output_file_option(output_file: str) -> None:
         __PRINT(*args, **kwargs)
     def print_to_output_file_only(*args):  # noqa
         append_to_output_file(*args)
-    show = show_and_output_to_file
+    SHOW = show_and_output_to_file
     PRINT = print_and_output_to_file
     print_stdout = print_to_stdout_only
     print_output = print_to_output_file_only
@@ -136,7 +136,7 @@ def _get_user_record(server, auth, quiet=False):
     try:
         if user_record_response.status_code in (401, 403) and user_record.get("Title") == "Not logged in.":
             if not quiet:
-                show("Server did not recognize you with the given credentials.")
+                SHOW("Server did not recognize you with the given credentials.")
     except Exception:
         pass
     if user_record_response.status_code in (401, 403):
@@ -144,7 +144,7 @@ def _get_user_record(server, auth, quiet=False):
     user_record_response.raise_for_status()
     user_record = user_record_response.json()
     if not quiet:
-        show(f"Portal server recognizes you as{' (admin)' if _is_admin_user(user_record) else ''}:"
+        SHOW(f"Portal server recognizes you as{' (admin)' if _is_admin_user(user_record) else ''}:"
              f" {user_record['title']} ({user_record['contact_email']})")
     return user_record
 
@@ -167,7 +167,7 @@ def _get_defaulted_institution(institution, user_record, portal=None, quiet=Fals
         if not institution:
             raise SyntaxError("Your user profile has no institution declared,"
                               " so you must specify --institution explicitly.")
-        show("Using institution:", institution)
+        SHOW("Using institution:", institution)
     return institution
 
 
@@ -197,7 +197,7 @@ def _get_defaulted_project(project, user_record, portal=None, quiet=False, verbo
         else:
             [project_role] = project_roles
             project = project_role['project']['@id']
-            show("Project is: ", project)
+            SHOW("Project is: ", project)
     return project
 
 
@@ -232,11 +232,11 @@ def _get_defaulted_award(award, user_record, portal=None, error_if_none=False, q
             [lab_award] = lab_awards
             award = lab_award['@id']
         if not award:
-            show("No award was inferred.")
+            SHOW("No award was inferred.")
         else:
-            show("Award is (inferred):", award)
+            SHOW("Award is (inferred):", award)
     else:
-        show("Award is:", award)
+        SHOW("Award is:", award)
     return award
 
 
@@ -256,11 +256,11 @@ def _get_defaulted_lab(lab, user_record, portal=None, error_if_none=False, quiet
             if error_if_none:
                 raise SyntaxError("Your user profile has no lab declared,"
                                   " so you must specify --lab explicitly.")
-            show("No lab was inferred.")
+            SHOW("No lab was inferred.")
         else:
-            show("Lab is (inferred):", lab)
+            SHOW("Lab is (inferred):", lab)
     else:
-        show("Lab is:", lab)
+        SHOW("Lab is:", lab)
     return lab
 
 
@@ -277,9 +277,9 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
         nonlocal portal
         if portal:
             if consortia := _get_consortia(portal):
-                show("CONSORTIA SUPPORTED:")
+                SHOW("CONSORTIA SUPPORTED:")
                 for consortium in consortia:
-                    show(f"- {consortium.get('name')} ({consortium.get('uuid')})")
+                    SHOW(f"- {consortium.get('name')} ({consortium.get('uuid')})")
     suffix = ""
     if not consortia:
         consortia = [consortium.get('@id', None) for consortium in user_record.get('consortia', [])]
@@ -287,7 +287,7 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
             if error_if_none:
                 raise SyntaxError("Your user profile has no consortium declared,"
                                   " so you must specify --consortium explicitly.")
-            show("ERROR: No consortium was inferred. Use the --consortium option.")
+            SHOW("ERROR: No consortium was inferred. Use the --consortium option.")
             show_consortia()
             exit(1)
         else:
@@ -297,7 +297,7 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
         for consortium in consortia:
             consortium_path = f"/Consortium/{consortium}" if not consortium.startswith("/") else consortium
             if not (consortium_object := portal.get_metadata(consortium_path)):
-                show(f"ERROR: Consortium not found: {consortium}")
+                SHOW(f"ERROR: Consortium not found: {consortium}")
                 show_consortia()
                 exit(1)
             elif consortium_name := consortium_object.get("identifier"):
@@ -308,10 +308,10 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
                     annotated_consortia.append(f"{consortium_name}")
     if annotated_consortia:
         if not quiet:
-            show(f"Consortium is{suffix}:", ", ".join(annotated_consortia))
+            SHOW(f"Consortium is{suffix}:", ", ".join(annotated_consortia))
     else:
         if not quiet:
-            show(f"Consortium is{suffix}:", ", ".join(consortia))
+            SHOW(f"Consortium is{suffix}:", ", ".join(consortia))
     return consortia
 
 
@@ -331,9 +331,9 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
         nonlocal portal
         if portal:
             if submission_centers := _get_submission_centers(portal):
-                show("SUBMISSION CENTERS SUPPORTED:")
+                SHOW("SUBMISSION CENTERS SUPPORTED:")
                 for submission_center in submission_centers:
-                    show(f"- {submission_center.get('name')} ({submission_center.get('uuid')})")
+                    SHOW(f"- {submission_center.get('name')} ({submission_center.get('uuid')})")
     suffix = ""
     if not submission_centers:
         submits_for = [sc.get('@id', None) for sc in user_record.get('submits_for', [])]
@@ -343,7 +343,7 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
             if error_if_none:
                 raise SyntaxError("Your user profile has no submission center declared,"
                                   " so you must specify --submission-center explicitly.")
-            show("ERROR: No submission center was inferred. Use the --submission-center option.")
+            SHOW("ERROR: No submission center was inferred. Use the --submission-center option.")
             show_submission_centers()
             exit(1)
         else:
@@ -355,7 +355,7 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
                 f"/SubmissionCenter/{submission_center}"
                 if not submission_center.startswith("/") else submission_center)
             if not (submission_center_object := portal.get_metadata(submission_center_path)):
-                show(f"ERROR: Submission center not found: {submission_center}")
+                SHOW(f"ERROR: Submission center not found: {submission_center}")
                 show_submission_centers()
                 exit(1)
             elif submission_center_name := submission_center_object.get("identifier"):
@@ -366,10 +366,10 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
                     annotated_submission_centers.append(f"{submission_center_name}")
     if annotated_submission_centers:
         if not quiet:
-            show(f"Submission center is{suffix}:", ", ".join(annotated_submission_centers))
+            SHOW(f"Submission center is{suffix}:", ", ".join(annotated_submission_centers))
     else:
         if not quiet:
-            show(f"Submission center is{suffix}:", ", ".join(submission_centers))
+            SHOW(f"Submission center is{suffix}:", ", ".join(submission_centers))
     return submission_centers
 
 
@@ -436,7 +436,7 @@ def _show_section(res, section, caveat_outcome=None, portal=None):
         return
 #   if section == "validation_output" and (ingestion_submission_uuid := res.get("uuid")):
 #       PRINT(f"\nIngestion Submission UUID: {ingestion_submission_uuid}")
-    show("\n----- %s%s -----" % (keyword_as_title(section), caveat))
+    SHOW("\n----- %s%s -----" % (keyword_as_title(section), caveat))
     if isinstance(section_data, dict):
         if file := section_data.get("file"):
             PRINT(f"File: {file}")
@@ -475,9 +475,9 @@ def _show_section(res, section, caveat_outcome=None, portal=None):
                     info["type"] = upload_file_type
             PRINT(yaml.dump(section_data))
         else:
-            [show(line) for line in section_data]
+            [SHOW(line) for line in section_data]
     else:  # We don't expect this, but such should be shown as-is, mostly to see what it is.
-        show(section_data)
+        SHOW(section_data)
 
 
 def _ingestion_submission_item_url(server, uuid):
@@ -561,7 +561,7 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     [submission] = creation_response.json()['@graph']
     submission_id = submission['@id']
     if DEBUG_PROTOCOL:  # pragma: no cover
-        show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} (bundle) type object: {submission.get('uuid', 'not-found')}")
+        SHOW(f"Created {INGESTION_SUBMISSION_TYPE_NAME} (bundle) type object: {submission.get('uuid', 'not-found')}")
     new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
     response = portal.post(new_style_submission_url,
                            data=submission_post_data,
@@ -691,7 +691,7 @@ def submit_any_ingestion(ingestion_filename, *,
                                  consortium=consortium, submission_center=submission_center)
 
     if portal.get("/health").status_code != 200:  # TODO: with newer version dcicutils do: if not portal.ping():
-        show(f"Portal credentials do not seem to work: {portal.keys_file} ({env})")
+        SHOW(f"Portal credentials do not seem to work: {portal.keys_file} ({env})")
         exit(1)
 
     exit_immediately_on_errors = False
@@ -760,9 +760,9 @@ def submit_any_ingestion(ingestion_filename, *,
         if not validate_remote_silent:
             if not yes_or_no(action_message):
                 if validate_remote_only:
-                    show("Aborting validation.")
+                    SHOW("Aborting validation.")
                 else:
-                    show("Aborting submission.")
+                    SHOW("Aborting submission.")
                 exit(1)
 
     if not os.path.exists(ingestion_filename):
@@ -843,9 +843,9 @@ def submit_any_ingestion(ingestion_filename, *,
                 detail = res.get('detail')
                 if detail:
                     message += ": " + detail
-                show(message)
+                SHOW(message)
                 if title == "Unsupported Media Type":
-                    show("NOTE: This error is known to occur if the server"
+                    SHOW("NOTE: This error is known to occur if the server"
                          " does not support metadata bundle submission.")
             raise
         if res is None:  # pragma: no cover
@@ -884,9 +884,9 @@ def submit_any_ingestion(ingestion_filename, *,
             detail = res.get('detail')
             if detail:
                 message += ": " + detail
-            show(message)
+            SHOW(message)
             if title == "Unsupported Media Type":
-                show("NOTE: This error is known to occur if the server"
+                SHOW("NOTE: This error is known to occur if the server"
                      " does not support metadata bundle submission.")
         raise
 
@@ -899,16 +899,16 @@ def submit_any_ingestion(ingestion_filename, *,
     """
 
     if validate_remote_silent:
-        show(f"Continuing with additional (server) validation: {portal.server}")
+        SHOW(f"Continuing with additional (server) validation: {portal.server}")
     if DEBUG_PROTOCOL:  # pragma: no cover
-        show(f"Created {INGESTION_SUBMISSION_TYPE_NAME} object: s3://{metadata_bundles_bucket}/{submission_uuid}",
+        SHOW(f"Created {INGESTION_SUBMISSION_TYPE_NAME} object: s3://{metadata_bundles_bucket}/{submission_uuid}",
              with_time=False)
     if verbose:
-        show(f"Metadata bundle upload bucket: {metadata_bundles_bucket}", with_time=False)
+        SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}", with_time=False)
     if not validation:
-        show(f"Submission tracking ID: {submission_uuid}", with_time=False)
+        SHOW(f"Submission tracking ID: {submission_uuid}", with_time=False)
     else:
-        show(f"Validation tracking ID: {submission_uuid}", with_time=False)
+        SHOW(f"Validation tracking ID: {submission_uuid}", with_time=False)
 
     check_done, check_status, check_response = _check_submit_ingestion(
             submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
@@ -934,11 +934,11 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if check_status == "success":
         if validation:
-            show("Validation results: OK")
-            show(f"Ready to continue with submission to {portal.server}: {ingestion_filename}")
+            SHOW("Validation results: OK")
+            SHOW(f"Ready to continue with submission to {portal.server}: {ingestion_filename}")
             if yes_or_no("Continue with submission?"):
                 submission_uuid = initiate_submission(first_time=False)
-                show(f"Submission tracking ID: {submission_uuid}")
+                SHOW(f"Submission tracking ID: {submission_uuid}")
                 check_done, check_status, check_response = _check_submit_ingestion(
                         submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
                         show_details=show_details, report=False, messages=True,
@@ -1050,9 +1050,9 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
 
     action = "validation" if validation else "ingestion"
     if validation:
-        show(f"Waiting for validation results ...")
+        SHOW(f"Waiting for validation results ...")
     else:
-        show(f"Checking {action} for submission ID: %s ..." % uuid, with_time=False)
+        SHOW(f"Checking {action} for submission ID: %s ..." % uuid, with_time=False)
 
     def check_ingestion_progress():
         return _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server)
@@ -1068,11 +1068,11 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
 
     if not check_done:
         command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
-        show(f"Exiting after check processing timeout using {command_summary!r}.")
+        SHOW(f"Exiting after check processing timeout using {command_summary!r}.")
         exit(1)
 
     """
-    show("Final status: %s" % check_status.title(), with_time=True)
+    SHOW("Final status: %s" % check_status.title(), with_time=True)
 
     if check_status == "error" and check_response.get("errors"):
         _show_section(check_response, "errors")
@@ -1315,7 +1315,7 @@ def _show_upload_result(result,
         if _get_section(result, 'upload_info'):
             _show_section(result, 'upload_info', portal=portal)
         else:
-            show("Uploads: None")
+            SHOW("Uploads: None")
 
     # New March 2023 ...
 
@@ -1323,22 +1323,22 @@ def _show_upload_result(result,
         _show_section(result, 'validation_output')
 
     if show_processing_status and result.get('processing_status'):
-        show("\n----- Processing Status -----")
+        SHOW("\n----- Processing Status -----")
         state = result['processing_status'].get('state')
         if state:
-            show(f"State: {state.title()}")
+            SHOW(f"State: {state.title()}")
         outcome = result['processing_status'].get('outcome')
         if outcome:
-            show(f"Outcome: {outcome.title()}")
+            SHOW(f"Outcome: {outcome.title()}")
         progress = result['processing_status'].get('progress')
         if progress:
-            show(f"Progress: {progress.title()}")
+            SHOW(f"Progress: {progress.title()}")
 
     if show_datafile_url and result.get('parameters'):
         datafile_url = result['parameters'].get('datafile_url')
         if datafile_url:
-            show("----- DataFile URL -----")
-            show(datafile_url)
+            SHOW("----- DataFile URL -----")
+            SHOW(datafile_url)
 
 
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False, subfolders=False):
@@ -1383,7 +1383,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
                            no_query=no_query, folder=upload_folder,
                            subfolders=subfolders)
             else:
-                show("No uploads attempted.")
+                SHOW("No uploads attempted.")
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
@@ -1491,7 +1491,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
     try:
         source = path
         target = upload_credentials['upload_url']
-        show("Uploading %s to: %s" % (source, target))
+        SHOW("Uploading %s to: %s" % (source, target))
         command = ['aws', 's3', 'cp']
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
@@ -1507,8 +1507,8 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
     else:
         end = time.time()
         duration = end - start
-        # show("Upload duration: %.2f seconds" % duration)
-        show(f"Upload of {os.path.basename(source)}: OK -> {'%.1f' % duration} seconds")
+        # SHOW("Upload duration: %.2f seconds" % duration)
+        SHOW(f"Upload of {os.path.basename(source)}: OK -> {'%.1f' % duration} seconds")
 
 
 def _running_on_windows_native():
@@ -1539,11 +1539,11 @@ def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
     post_item = compute_file_post_data(filename=filename, context_attributes=context_attributes)
 
     if DEBUG_PROTOCOL:  # pragma: no cover
-        show("Creating FileOther type object ...")
+        SHOW("Creating FileOther type object ...")
     response = Portal(auth).post_metadata(object_type=schema_name, data=post_item)
     if DEBUG_PROTOCOL:  # pragma: no cover
         type_object_message = f" {response.get('@graph', [{'uuid': 'not-found'}])[0].get('uuid', 'not-found')}"
-        show(f"Created FileOther type object: {type_object_message}")
+        SHOW(f"Created FileOther type object: {type_object_message}")
 
     metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
                                                                            method='POST', schema_name=schema_name,
@@ -1624,10 +1624,10 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
         file_name = upload_spec["filename"]
         if not (file_paths := search_for_file(file_name, location=folder, recursive=subfolders)) or len(file_paths) > 1:
             if len(file_paths) > 1:
-                show(f"No upload attempted for file {file_name} because multiple copies"
+                SHOW(f"No upload attempted for file {file_name} because multiple copies"
                      f" were found in folder {folder}: {', '.join(file_paths)}.")
             else:
-                show(f"Upload file not found: {file_name}")
+                SHOW(f"Upload file not found: {file_name}")
             continue
         file_path = file_paths[0]
         uuid = upload_spec['uuid']
@@ -1680,13 +1680,13 @@ class UploadMessageWrapper:
                     SUBMITR_SELECTIVE_UPLOADS
                     and not yes_or_no(f"Upload {file_name}?")
                 ):
-                    show("OK, not uploading it.")
+                    SHOW("OK, not uploading it.")
                     perform_upload = False
             if perform_upload:
                 try:
                     result = function(*args, **kwargs)
                 except Exception as e:
-                    show("%s: %s" % (e.__class__.__name__, e))
+                    SHOW("%s: %s" % (e.__class__.__name__, e))
             return result
         return wrapper
 
@@ -1716,10 +1716,10 @@ def _upload_extra_files(
         if (not (extra_file_paths := search_for_file(extra_file_name, location=folder,
                                                      recursive=recursive)) or len(extra_file_paths) > 1):
             if len(extra_file_paths) > 1:
-                show(f"No upload attempted for file {extra_file_name} because multiple"
+                SHOW(f"No upload attempted for file {extra_file_name} because multiple"
                      f" copies were found in folder {folder}: {', '.join(extra_file_paths)}.")
             else:
-                show(f"Upload file not found: {extra_file_name}")
+                SHOW(f"Upload file not found: {extra_file_name}")
             continue
         extra_file_path = extra_file_paths[0]
         wrapped_execute_prearranged_upload = uploader_wrapper.wrap_upload_function(
@@ -1774,7 +1774,7 @@ def _upload_item_data(item_filename, uuid, server, env, no_query=False, app=None
     if not no_query:
         file_size = _format_file_size(_get_file_size(item_filename))
         if not yes_or_no("Upload %s (%s) to %s?" % (item_filename, file_size, server)):
-            show("Aborting submission.")
+            SHOW("Aborting submission.")
             exit(1)
 
     upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=portal.key)
