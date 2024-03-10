@@ -141,6 +141,8 @@ def main(simulated_args_for_testing=None):
                         help="Synonym for --sub-directories", default=False)
     parser.add_argument('--ref-nocache', action="store_true",
                         help="Do not cache reference (linkTo) lookups.", default=False)
+    parser.add_argument('--noprogress', action="store_true",
+                        help="Do not track progress of parsing.", default=False)
     parser.add_argument('--app',
                         help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")
@@ -154,6 +156,7 @@ def main(simulated_args_for_testing=None):
                         help="Output the parsed JSON of the metadata file.", default=False)
     parser.add_argument('--json-only', action="store_true",
                         help="Output ONLY the parsed JSON of the metadata file.", default=False)
+    parser.add_argument('--output', help="Output file for results.", default=False)
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
@@ -215,6 +218,8 @@ def main(simulated_args_for_testing=None):
                              ref_nocache=args.ref_nocache,
                              verbose_json=args.json,
                              verbose=args.verbose,
+                             noprogress=args.noprogress,
+                             output=args.output,
                              debug=args.debug,
                              debug_sleep=args.debug_sleep)
 

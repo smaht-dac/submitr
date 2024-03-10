@@ -600,6 +600,8 @@ def submit_any_ingestion(ingestion_filename, *,
                          ref_nocache=False,
                          verbose_json=False,
                          verbose=False,
+                         noprogress=False,
+                         output=None,
                          debug=False,
                          debug_sleep=None):
     """
@@ -693,7 +695,7 @@ def submit_any_ingestion(ingestion_filename, *,
                           validate_remote_only=validate_remote_only,
                           autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
                           exit_immediately_on_errors=exit_immediately_on_errors,
-                          ref_nocache=ref_nocache,
+                          ref_nocache=ref_nocache, noprogress=noprogress,
                           json_only=json_only, verbose_json=verbose_json, verbose=verbose, debug_sleep=debug_sleep)
 
     maybe_ingestion_type = ''
@@ -1780,7 +1782,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       validate_local_only: bool = False, validate_remote_only: bool = False,
                       upload_folder: Optional[str] = None,
                       subfolders: bool = False, exit_immediately_on_errors: bool = False,
-                      ref_nocache: bool = False, json_only: bool = False,
+                      ref_nocache: bool = False, json_only: bool = False, noprogress: bool = False,
                       verbose_json: bool = False, verbose: bool = False, debug_sleep: Optional[str] = None) -> int:
 
     def ref_lookup_strategy(type_name: str, schema: dict, value: str) -> (int, Optional[str]):
@@ -1825,7 +1827,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                      nrefs_resolved: Optional[int] = None,
                      nrefs_unresolved: Optional[int] = None,
                      nlookups: Optional[int] = None,
-                     ncachehits: Optional[int] = None) -> None:
+                     ncachehits: Optional[int] = None,
+                     ref_incorrect: Optional[int] = None) -> None:
             nonlocal total_rows, processed_rows
             ERASE_LINE = "\033[K"
             if nrows > 0:
@@ -1839,11 +1842,13 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             if nrefs_resolved is not None:
                 message += f" ‖ Refs: {nrefs_resolved}"
                 if nrefs_unresolved is not None:
-                    message += f" | Missing: {nrefs_unresolved}"
-            if nlookups is not None:
-                message += f" | Lookups: {nlookups}"
-            if ncachehits is not None and ncachehits > 0:
-                message += f" | Cache Hits: {ncachehits}"
+                    message += f" | Unresolved: {nrefs_unresolved}"
+                if nlookups is not None:
+                    message += f" | Lookups: {nlookups}"
+                if ref_incorrect is not None:
+                    message += f" | Incorrect: {ref_incorrect}"
+                if ncachehits is not None and ncachehits > 0:
+                    message += f" | Cache Hits: {ncachehits}"
             message += f" ‖ {'%.1f' % (time.time() - start)}s"
             message += f" | {(float(processed_rows) / float(max(total_rows, 1)) * 100):.1f}%"
             print(f"{ERASE_LINE}{message}\r", end="")
@@ -1856,7 +1861,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                             ref_lookup_strategy=ref_lookup_strategy,
                                             ref_lookup_nocache=ref_nocache,
-                                            progress=progress if verbose else None,
+                                            progress=progress if not noprogress else None,
                                             debug_sleep=debug_sleep)
         structured_data._load_file(ingestion_filename)
         if verbose:
