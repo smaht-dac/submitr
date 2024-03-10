@@ -21,9 +21,10 @@ from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 from dcicutils.exceptions import InvalidParameterError
 from dcicutils.file_utils import search_for_file
+from dcicutils.function_cache_decorator import function_cache
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
-    environ_bool, is_uuid, PRINT as __PRINT, url_path_join, ignorable, remove_prefix, str_to_bool as asbool
+    environ_bool, is_uuid, url_path_join, ignorable, remove_prefix, str_to_bool as asbool
 )
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
@@ -33,52 +34,8 @@ from urllib.parse import urlparse
 from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
 from .scripts.cli_utils import print_boxed
-from .utils import show as __show, keyword_as_title, check_repeatedly
-from dcicutils.function_cache_decorator import function_cache
-
-
-# TODO: Clean up this SHOW/PRINT stuff (lots of test to change when this is done).
-# We do this SHOW/PRINT variable assignment here so we can easily output to file too.
-def _show(*args, **kwargs):  # noqa
-    __show(*args, **kwargs)
-def _print(*args, **kwargs):  # noqa
-    __PRINT(*args, **kwargs)
-SHOW = _show  # noqa
-PRINT = _print
-PRINT_STDOUT = _print
-PRINT_OUTPUT = _print
-
-
-def setup_for_output_file_option(output_file: str) -> None:
-    global SHOW, PRINT, PRINT_STDOUT, PRINT_OUTPUT
-    if os.path.exists(output_file):
-        PRINT(f"Output file already exists: {output_file}")
-        if not yes_or_no("Overwrite this file?"):
-            exit(1)
-        with io.open(output_file, "w"):
-            pass
-    PRINT(f"Logging to output file: {output_file}")
-    def append_to_output_file(*args):  # noqa
-        string = io.StringIO()
-        __PRINT(*args, file=string)
-        with io.open(output_file, "a") as f:
-            f.write(string.getvalue())
-    def show_and_output_to_file(*args, **kwargs):  # noqa
-        append_to_output_file(*args)
-        _show(*args, **kwargs)
-    def print_and_output_to_file(*args, **kwargs):  # noqa
-        append_to_output_file(*args)
-        _print(*args, **kwargs)
-    def print_to_stdout_only(*args, **kwargs):  # noqa
-        __PRINT(*args, **kwargs)
-    def print_to_output_file_only(*args):  # noqa
-        append_to_output_file(*args)
-    SHOW = show_and_output_to_file
-    PRINT = print_and_output_to_file
-    PRINT_STDOUT = print_to_stdout_only
-    PRINT_OUTPUT = print_to_output_file_only
-    append_to_output_file(f"TIME: {_current_datetime_formatted()}")
-    append_to_output_file(f"COMMAND: {' '.join(sys.argv)}")
+from .utils import keyword_as_title, check_repeatedly
+from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, setup_for_output_file_option
 
 
 class SubmissionProtocol:
@@ -682,7 +639,8 @@ def submit_any_ingestion(ingestion_filename, *,
     # Setup for output to specified output file, in addition to stdout),
     # except in this case we will not output large amounts of output to stdout.
     if output_file:
-        setup_for_output_file_option(output_file)
+        global PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW
+        PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW = setup_for_output_file_option(output_file)
 
     portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file,
                             report=not json_only or verbose, verbose=verbose)
@@ -1454,7 +1412,7 @@ def get_s3_encrypt_key_id(*, upload_credentials, auth):
     if 's3_encrypt_key_id' in upload_credentials:
         s3_encrypt_key_id = upload_credentials.get('s3_encrypt_key_id')
         if DEBUG_PROTOCOL:  # pragma: no cover
-            __PRINT(f"Extracted s3_encrypt_key_id from upload_credentials: {s3_encrypt_key_id}")
+            PRINT(f"Extracted s3_encrypt_key_id from upload_credentials: {s3_encrypt_key_id}")
     else:
         if DEBUG_PROTOCOL:  # pragma: no cover
             PRINT(f"No s3_encrypt_key_id entry found in upload_credentials.")
@@ -2247,11 +2205,6 @@ def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optiona
             return dt.astimezone(tzlocal).strftime(f"%Y-%m-%d %H:%M:%S %Z")
     except Exception:
         return None
-
-
-def _current_datetime_formatted() -> str:
-    tzlocal = (now := datetime.now()).astimezone().tzinfo
-    return now.astimezone(tzlocal).strftime(f"%Y-%m-%d %H:%M:%S %Z")
 
 
 def _pytesting():
