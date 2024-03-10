@@ -50,6 +50,38 @@ PRINT = _print
 print_stdout = _print
 print_output = _print
 
+def setup_for_output_file_option(output_file: str) -> None:
+    global show, print, PRINT, print_stdout, print_output
+    if os.path.exists(output_file):
+        print(f"Output file already exists: {output_file}")
+        if not yes_or_no("Overwrite this file?"):
+            exit(1)
+        with io.open(output_file, "w"):
+            pass
+    print(f"Logging to output file: {output_file}")
+    def append_to_output_file(*args):  # noqa
+        string = io.StringIO()
+        __print(*args, file=string)
+        with io.open(output_file, "a") as f:
+            f.write(string.getvalue())
+    def show_and_output_to_file(*args, **kwargs):  # noqa
+        append_to_output_file(*args)
+        _show(*args, **kwargs)
+    def print_and_output_to_file(*args, **kwargs):  # noqa
+        append_to_output_file(*args)
+        _print(*args, **kwargs)
+    def print_to_stdout_only(*args, **kwargs):  # noqa
+        __print(*args, **kwargs)
+    def print_to_output_file_only(*args):  # noqa
+        append_to_output_file(*args)
+    show = show_and_output_to_file
+    print = print_and_output_to_file
+    PRINT = print_and_output_to_file
+    print_stdout = print_to_stdout_only
+    print_output = print_to_output_file_only
+    append_to_output_file(f"TIME: {_current_datetime_formatted()}")
+    append_to_output_file(f"COMMAND: {' '.join(sys.argv)}")
+
 
 class SubmissionProtocol:
     S3 = 's3'
@@ -652,36 +684,7 @@ def submit_any_ingestion(ingestion_filename, *,
     # Setup for output to specified output file, in addition to stdout),
     # except in this case we will not output large amounts of output to stdout.
     if output_file:
-        global show, print, PRINT, print_stdout, print_output
-        if os.path.exists(output_file):
-            print(f"Output file already exists: {output_file}")
-            if not yes_or_no("Overwrite this file?"):
-                exit(1)
-            with io.open(output_file, "w"):
-                pass
-        print(f"Logging to output file: {output_file}")
-        def append_to_output_file(*args):  # noqa
-            string = io.StringIO()
-            __print(*args, file=string)
-            with io.open(output_file, "a") as f:
-                f.write(string.getvalue())
-        def show_and_output_to_file(*args, **kwargs):  # noqa
-            append_to_output_file(*args)
-            _show(*args, **kwargs)
-        def print_and_output_to_file(*args, **kwargs):  # noqa
-            append_to_output_file(*args)
-            _print(*args, **kwargs)
-        def print_to_stdout_only(*args, **kwargs):  # noqa
-            __print(*args, **kwargs)
-        def print_to_output_file_only(*args):  # noqa
-            append_to_output_file(*args)
-        show = show_and_output_to_file
-        print = print_and_output_to_file
-        PRINT = print_and_output_to_file
-        print_stdout = print_to_stdout_only
-        print_output = print_to_output_file_only
-        append_to_output_file(f"TIME: {_current_datetime_formatted()}")
-        append_to_output_file(f"COMMAND: {' '.join(sys.argv)}")
+        setup_for_output_file_option(output_file)
 
     portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file,
                             report=not json_only or verbose, verbose=verbose)
