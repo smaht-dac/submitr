@@ -702,7 +702,7 @@ def submit_any_ingestion(ingestion_filename, *,
                           validate_remote_only=validate_remote_only,
                           autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
                           exit_immediately_on_errors=exit_immediately_on_errors,
-                          ref_nocache=ref_nocache, noprogress=noprogress,
+                          ref_nocache=ref_nocache, output_file=output_file, noprogress=noprogress,
                           json_only=json_only, verbose_json=verbose_json, verbose=verbose, debug_sleep=debug_sleep)
 
     maybe_ingestion_type = ''
@@ -1791,7 +1791,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       validate_local_only: bool = False, validate_remote_only: bool = False,
                       upload_folder: Optional[str] = None,
                       subfolders: bool = False, exit_immediately_on_errors: bool = False,
-                      ref_nocache: bool = False, json_only: bool = False, noprogress: bool = False,
+                      ref_nocache: bool = False, output_file: Optional[str] = None,
+                      json_only: bool = False, noprogress: bool = False,
                       verbose_json: bool = False, verbose: bool = False, debug_sleep: Optional[str] = None) -> int:
 
     def ref_lookup_strategy(type_name: str, schema: dict, value: str) -> (int, Optional[str]):
@@ -1918,8 +1919,11 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                        ingestion_filename, upload_folder=upload_folder,
                                        recursive=subfolders, validate_remote_only=validate_remote_only)
     if exit_immediately_on_errors and not validation_okay:
-        PRINT()
-        PRINT("There are some preliminary errors outlined above. Please fix them before trying again. No action taken.")
+        if output_file:
+            PRINT(f"There are some preliminary ERRORs outlined in the output file: {output_file}")
+        else:
+            PRINT(f"\nThere are some preliminary ERRORs outlined above.")
+        PRINT(f"Please fix them before trying again. No action taken.")
         exit(1)
     if not validation_okay:
         question_suffix = " with validation" if validate_local_only or validate_remote_only else ""
