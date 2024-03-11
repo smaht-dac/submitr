@@ -876,9 +876,9 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if validate_remote_only:
         if check_status == "success":
-            PRINT("Validation results: OK")
+            PRINT("Validation results (server): OK")
         elif validate_remote_silent:
-            PRINT(f"Validation results: ERROR"
+            PRINT(f"Validation results (server): ERROR"
                   f"{f' ({check_status})' if check_status not in ['failure', 'error'] else ''}")
             if check_response and (additional_data := check_response.get("additional_data")):
                 if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
@@ -892,7 +892,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if check_status == "success":
         if validation:
-            SHOW("Validation results: OK")
+            SHOW("Validation results (server): OK")
             SHOW(f"Ready to continue with submission to {portal.server}: {ingestion_filename}")
             if yes_or_no("Continue with submission?"):
                 submission_uuid = initiate_submission(first_time=False)
@@ -909,7 +909,7 @@ def submit_any_ingestion(ingestion_filename, *,
                        subfolders=subfolders)
     else:
         if validate_remote_silent:
-            PRINT(f"Validation results: ERROR"
+            PRINT(f"Validation results (server): ERROR"
                   f"{f' ({check_status})' if check_status not in ['failure', 'error'] else ''}")
             if check_response and (additional_data := check_response.get("additional_data")):
                 if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
