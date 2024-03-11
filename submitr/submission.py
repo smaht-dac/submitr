@@ -1862,6 +1862,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         last_progress_message = ""
 
         def progress(nrows: int,
+                     nsheets: int,
+                     nrefs_total: Optional[int] = None,
                      nrefs_resolved: Optional[int] = None,
                      nrefs_unresolved: Optional[int] = None,
                      nlookups: Optional[int] = None,
@@ -1870,15 +1872,25 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             nonlocal total_rows, processed_rows, last_progress_message
             ERASE_LINE = "\033[K"
             if nrows > 0:
+                if total_rows == 0:
+                    if nsheets > 0:
+                        message = (
+                            f"Submission file has{' only' if nsheets == 1 else ''}"
+                            f" {nsheets} sheet{'s' if nsheets != 1 else ''} and a total of {nrows} rows.")
+                    else:
+                        message = f"Submission file has a total of {nrows} rows."
+                    PRINT_STDOUT(message)
                 total_rows += nrows
             elif nrows < 0:
                 processed_rows += -nrows
             message = (
                 f"Rows: {total_rows} | "
-                f"Processed: {processed_rows} | "
+                f"Parsed: {processed_rows} | "
                 f"Remaining: {total_rows - processed_rows}")
-            if nrefs_resolved is not None:
-                message += f" ‖ Refs: {nrefs_resolved}"
+            if nrefs_total is not None:
+                message += f" ‖ Refs: {nrefs_total}"
+                # if nrefs_resolved is not None:
+                #     message += f" | Resolved: {nrefs_resolved}"
                 if nrefs_unresolved is not None:
                     message += f" | Unresolved: {nrefs_unresolved}"
                 if nlookups is not None:
