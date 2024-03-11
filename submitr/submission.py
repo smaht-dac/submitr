@@ -1866,7 +1866,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                      nrefs_unresolved: Optional[int] = None,
                      nlookups: Optional[int] = None,
                      ncachehits: Optional[int] = None,
-                     ref_incorrect: Optional[int] = None) -> None:
+                     ref_invalid: Optional[int] = None) -> None:
             nonlocal total_rows, processed_rows, last_progress_message
             ERASE_LINE = "\033[K"
             if nrows > 0:
@@ -1883,8 +1883,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     message += f" | Unresolved: {nrefs_unresolved}"
                 if nlookups is not None:
                     message += f" | Lookups: {nlookups}"
-                if ref_incorrect is not None:
-                    message += f" | Incorrect: {ref_incorrect}"
+                if ref_invalid is not None:
+                    message += f" | Invalid: {ref_invalid}"
                 if ncachehits is not None and ncachehits > 0:
                     message += f" | Cache Hits: {ncachehits}"
             message += f" ‖ {'%.1f' % (time.time() - start)}s"
@@ -1929,8 +1929,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         PRINT_OUTPUT(f"Reference lookup found count: {structured_data.ref_lookup_found_count}")
         PRINT_OUTPUT(f"Reference lookup not found count: {structured_data.ref_lookup_notfound_count}")
         PRINT_OUTPUT(f"Reference lookup error count: {structured_data.ref_lookup_error_count}")
-        PRINT_OUTPUT(f"Reference incorrect identifying property count:"
-                     f" {structured_data.ref_incorrect_identifying_property_count}")
+        PRINT_OUTPUT(f"Reference invalid identifying property count:"
+                     f" {structured_data.ref_invalid_identifying_property_count}")
     if json_only:
         PRINT_OUTPUT(json.dumps(structured_data.data, indent=4))
         exit(1)

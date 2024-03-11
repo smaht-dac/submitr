@@ -107,7 +107,7 @@ def check_repeatedly(check_function: Callable,
     def output(message):
         show(message, with_time=False, same_line=True)
     if not check_message:
-        check_message = f"Checking {action}"
+        check_message = f"Checkin for {action} completion"
     if not wait_message:
         wait_message = f"Waiting for {action} completion"
     if not done_message:
@@ -124,7 +124,9 @@ def check_repeatedly(check_function: Callable,
     while True:
         if messages:
             output(f"{check_message} {f'| Status: {check_status.title()}' if check_status else ''}"
-                   f" | Checked: {ntimes}x | Elapsed: {duration()} ...")
+                   f" ‖ Checked: {ntimes}x"
+                   f" | Next: {wait_seconds - 0}s"
+                   f" ‖ {duration()}")
         check_function_response = check_function()
         ntimes += 1
         if isinstance(check_function_response, Tuple) and len(check_function_response) >= 2:
@@ -137,16 +139,19 @@ def check_repeatedly(check_function: Callable,
         if check_done:
             if messages:
                 output(f"{done_message} {f'| Status: {check_status.title()}' if check_status else ''}"
-                       f" | Elapsed: {duration()}\n")
+                       f" ‖ {duration()}\n")
             return check_function_response
         if ntimes >= repeat_count > 0:
             if messages:
-                output(f"{stop_message} {f'| Status: {check_status.title()}' if check_status else ''}"
-                       f" | Checked: {ntimes}x | Elapsed: {duration()}\n")
+                output(f"{stop_message} {f' Status: {check_status.title()}' if check_status else ''}"
+                       f" ‖ Checked: {ntimes}x"
+                       f" | Next: {wait_seconds - 0}s"
+                       f" ‖ {duration()}\n")
             return check_function_response if check_function_returning_tuple else False
         for i in range(wait_seconds):
-            time.sleep(1)
+            time.sleep(0.2)
             if messages:
                 output(f"{wait_message} {f'| Status: {check_status.title()}' if check_status else ''}"
-                       f" | Checked: {ntimes}x"
-                       f" | Next check: {wait_seconds - i}s | Elapsed: {duration()} ...")
+                       f" ‖ Checked: {ntimes}x"
+                       f" | Next: {wait_seconds - i}s"
+                       f" ‖ {duration()}")
