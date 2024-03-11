@@ -2087,7 +2087,7 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
     if files := structured_data.upload_files_located(location=[upload_folder, os.path.dirname(ingestion_filename)],
                                                      recursive=recursive):
         PRINT_OUTPUT(f"\n> Resolved file references:")
-        nfiles_output = 0 
+        nfiles_output = 0
         if files_found := [file for file in files if file.get("path")]:
             for file in files_found:
                 nfiles_output += 1
