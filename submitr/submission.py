@@ -703,7 +703,8 @@ def submit_any_ingestion(ingestion_filename, *,
                           autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
                           exit_immediately_on_errors=exit_immediately_on_errors,
                           ref_nocache=ref_nocache, output_file=output_file, noprogress=noprogress,
-                          json_only=json_only, verbose_json=verbose_json, verbose=verbose, debug_sleep=debug_sleep)
+                          json_only=json_only, verbose_json=verbose_json,
+                          verbose=verbose, debug=debug, debug_sleep=debug_sleep)
 
     maybe_ingestion_type = ''
     if ingestion_type != DEFAULT_INGESTION_TYPE:
@@ -1793,7 +1794,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       subfolders: bool = False, exit_immediately_on_errors: bool = False,
                       ref_nocache: bool = False, output_file: Optional[str] = None,
                       json_only: bool = False, noprogress: bool = False,
-                      verbose_json: bool = False, verbose: bool = False, debug_sleep: Optional[str] = None) -> int:
+                      verbose_json: bool = False, verbose: bool = False, quiet: bool = False,
+                      debug: bool = False, debug_sleep: Optional[str] = None) -> int:
 
     # N.B. This same bit of code is in smaht-portal; not sure best way to share;
     # It really should not go in dcicutils (structured_data) as this know pretty
@@ -1925,7 +1927,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                                  ref_lookup_strategy=ref_lookup_strategy,
                                                  ref_lookup_nocache=ref_nocache,
                                                  debug_sleep=debug_sleep)
-    if verbose:
+    if debug:
         duration = time.time() - start
         PRINT_OUTPUT(f"Preliminary validation complete (results below): {'%.1f' % duration} seconds")
         PRINT_OUTPUT(f"Reference total count: {structured_data.ref_total_count}")
@@ -1956,6 +1958,10 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         _print_structured_data_verbose(portal, structured_data,
                                        ingestion_filename, upload_folder=upload_folder,
                                        recursive=subfolders, validate_remote_only=validate_remote_only)
+    elif not quiet:
+        _print_structured_data_status(portal, structured_data,
+                                      validate_remote_only=validate_remote_only,
+                                      report_updates_only=True)
     if exit_immediately_on_errors and not validation_okay:
         if output_file:
             PRINT(f"There are some preliminary ERRORs outlined in the output file: {output_file}")
@@ -1970,8 +1976,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             exit(1)
     if validate_local_only:
         exit(0 if validation_okay else 1)
-    if verbose:
-        PRINT()
+    # if verbose:
+    #     PRINT()
 
 
 def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str,
@@ -2081,38 +2087,85 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
     if files := structured_data.upload_files_located(location=[upload_folder, os.path.dirname(ingestion_filename)],
                                                      recursive=recursive):
         PRINT_OUTPUT(f"\n> Resolved file references:")
+        nfiles_output = 0 
         if files_found := [file for file in files if file.get("path")]:
             for file in files_found:
+                nfiles_output += 1
                 path = file.get("path")
                 PRINT_OUTPUT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
                              f" [{_format_file_size(_get_file_size(path))}]")
-    _print_structured_data_status(portal, structured_data, validate_remote_only=validate_remote_only)
+        if nfiles_output > 0:
+            PRINT_OUTPUT()
+    _print_structured_data_status(portal, structured_data,
+                                  validate_remote_only=validate_remote_only, report_updates_only=True)
 
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet,
-                                  validate_remote_only: bool = False) -> None:
-    will_or_would = "Will" if not validate_remote_only else "Would"
-    PRINT_OUTPUT("\n> Object create/update situation:")
+                                  validate_remote_only: bool = False,
+                                  report_updates_only: bool = False) -> None:
+
     diffs = structured_data.compare()
+
+    ncreates = 0
+    nupdates = 0
+    nsubstantive_updates = 0
     for object_type in diffs:
-        PRINT_OUTPUT(f"  TYPE: {object_type}")
         for object_info in diffs[object_type]:
-            PRINT_OUTPUT(f"  - OBJECT: {object_info.path}")
-            if not object_info.uuid:
-                PRINT_OUTPUT(f"    Does not exist -> {will_or_would} be CREATED")
+            if object_info.uuid:
+                if object_info.diffs:
+                    nsubstantive_updates += 1
+                ncreates += 1
             else:
-                PRINT_OUTPUT(f"    Already exists -> {object_info.uuid} -> {will_or_would} be UPDATED", end="")
+                nupdates += 1
+
+    to_or_which_would = "to" if not validate_remote_only else "which would"
+
+    if ncreates > 0:
+        if nupdates > 0:
+            message = f"Objects {to_or_which_would} be -> Created: {ncreates} | Updated: {nupdates}"
+            if nsubstantive_updates == 0:
+                message += " (but no substantive differences)"
+        else:
+            message = f"Objects {to_or_which_would} be created: {ncreates}"
+    elif nupdates:
+        message = f"Objects {to_or_which_would} be updated: {nupdates}"
+        if nsubstantive_updates == 0:
+            message += " (but no substantive differences)"
+    else:
+        message = "No objects to create or update."
+        return
+
+    if report_updates_only and nsubstantive_updates == 0:
+        PRINT(f"{message}")
+        return
+    else:
+        PRINT(f"{message} (details below) ...")
+
+    will_or_would = "Will" if not validate_remote_only else "Would"
+
+    PRINT()
+    for object_type in sorted(diffs):
+        PRINT(f"  TYPE: {object_type}")
+        for object_info in diffs[object_type]:
+            PRINT(f"  - OBJECT: {object_info.path}")
+            if not object_info.uuid and not report_updates_only:
+                PRINT(f"    Does not exist -> {will_or_would} be CREATED")
+            else:
+                message = f"    Already exists -> {object_info.uuid} -> {will_or_would} be UPDATED"
                 if not object_info.diffs:
-                    PRINT_OUTPUT(" (but NO substantive diffs)")
+                    message += " (but NO substantive diffs)"
+                    PRINT(message)
                 else:
-                    PRINT_OUTPUT(" (substantive DIFFs below)")
+                    message += " (substantive DIFFs below)"
+                    PRINT(message)
                     for diff_path in object_info.diffs:
                         if (diff := object_info.diffs[diff_path]).creating_value:
-                            PRINT_OUTPUT(f"     CREATE {diff_path}: {diff.value}")
+                            PRINT(f"     CREATE {diff_path}: {diff.value}")
                         elif diff.updating_value:
-                            PRINT_OUTPUT(f"     UPDATE {diff_path}: {diff.updating_value} -> {diff.value}")
+                            PRINT(f"     UPDATE {diff_path}: {diff.updating_value} -> {diff.value}")
                         elif (diff := object_info.diffs[diff_path]).deleting_value:
-                            PRINT_OUTPUT(f"     DELETE {diff_path}: {diff.value}")
+                            PRINT(f"     DELETE {diff_path}: {diff.value}")
+    PRINT()
 
 
 def _print_json_with_prefix(data, prefix):

@@ -55,7 +55,7 @@ def setup_for_output_file_option(output_file: str) -> Tuple[Callable, Callable, 
     SHOW = show_and_output_to_file
     PRINT = print_and_output_to_file
     PRINT_STDOUT = print_to_stdout_only
-    PRINT_OUTPUT = print_to_output_file_only
+    PRINT_OUTPUT = print_to_output_file_only  # if an output file was specified, if not, stdout
     append_to_output_file(f"TIME: {current_datetime_formatted()}")
     append_to_output_file(f"COMMAND: {' '.join(sys.argv)}")
     return PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW
