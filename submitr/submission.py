@@ -2150,6 +2150,9 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 nupdates += increment
                 nlookups += status.get("lookups") or 0
                 bar.update(increment)
+            else:
+                nlookups += status.get("lookups") or 0
+                bar.update(increment)
             # duration = time.time() - started
             # nprocessed = ncreates + nupdates
             # rate = nprocessed / duration
