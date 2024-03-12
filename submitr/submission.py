@@ -2120,7 +2120,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 nobjects = status.get("objects")
                 PRINT(f"Analyzing submission file which has {ntypes} type{'s' if ntypes != 1 else ''}"
                       f" and {nobjects} object{'s' if nobjects != 1 else ''}.")
-                bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | RATE: {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} ]"
+                bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | RATE: {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
                 bar = tqdm(total=nobjects, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
                 return
             duration = time.time() - started
