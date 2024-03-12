@@ -1815,7 +1815,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         # /SubmittedFile/{accession}     # NOT FOUND
         # /File/{accession}              # OK
         #
-        def ref_validator(schema: dict, property_name: str, property_value: str) -> Optional[bool]:
+        def ref_validator(schema: Optional[dict],
+                          property_name: Optional[str], property_value: Optional[str]) -> Optional[bool]:
             """
             Returns False iff the type represented by the given schema, can NOT be referenced by
             the given property name with the given property value, otherwise returns None.
@@ -1839,16 +1840,20 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                         return False
             return None
 
-        if schema and (schema_properties := schema.get("properties")):
+        if not schema and value:
+            nonlocal portal
+            if not (schema := portal.get_schema(type_name)):
+                return Portal.LOOKUP_DEFAULT, ref_validator
+        if value and (schema_properties := schema.get("properties")):
             if schema_properties.get("accession") and _is_accession_id(value):
                 # Case: lookup by accession (only by root).
-                return StructuredDataSet.REF_LOOKUP_ROOT, ref_validator
+                return Portal.LOOKUP_ROOT, ref_validator
             elif schema_property_info_submitted_id := schema_properties.get("submitted_id"):
                 if schema_property_pattern_submitted_id := schema_property_info_submitted_id.get("pattern"):
                     if re.match(schema_property_pattern_submitted_id, value):
                         # Case: lookup by submitted_id (only by specified type).
-                        return StructuredDataSet.REF_LOOKUP_SPECIFIED_TYPE, ref_validator
-        return StructuredDataSet.REF_LOOKUP_DEFAULT, ref_validator
+                        return Portal.LOOKUP_SPECIFIED_TYPE, ref_validator
+        return Portal.LOOKUP_DEFAULT, ref_validator
 
     start = time.time()
 
@@ -2111,33 +2116,50 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
         nobjects = 0
         ncreates = 0
         nupdates = 0
-        started = time.time()
-        def progress_report(status: dict):  # noqa
-            nonlocal bar, ntypes, nobjects, ncreates, nupdates, debug
+        nlookups = 0
+        # started = time.time()
+        def handle_control_c(signum, frame):  # noqa
+            if yes_or_no("\nCTRL-C: You have interrupted this process. Do you want to TERMINATE processing?"):
+                if bar:
+                    bar.close()
+                PRINT("Premature exit.")
+                exit(1)
+            PRINT_STDOUT("Continuing ...")
+        def progress_report(status: dict) -> None:  # noqa
+            nonlocal bar, ntypes, nobjects, ncreates, nupdates, nlookups, debug
             increment = 1
             if status.get("start"):
+                signal.signal(signal.SIGINT, handle_control_c)
                 ntypes = status.get("types")
                 nobjects = status.get("objects")
                 PRINT(f"Analyzing submission file which has {ntypes} type{'s' if ntypes != 1 else ''}"
                       f" and {nobjects} object{'s' if nobjects != 1 else ''}.")
-                bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | RATE: {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
+                bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
                 bar = tqdm(total=nobjects, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
                 return
-            duration = time.time() - started
-            if status.get("create"):
+            elif status.get("finish"):
+                if bar:
+                    bar.close()
+                signal.signal(signal.SIGINT, signal.SIG_DFL)
+                return
+            elif status.get("create"):
                 ncreates += increment
+                nlookups += status.get("lookups") or 0
                 bar.update(increment)
             elif status.get("update"):
                 nupdates += increment
+                nlookups += status.get("lookups") or 0
                 bar.update(increment)
-            nprocessed = ncreates + nupdates
-            rate = nprocessed / duration
+            # duration = time.time() - started
+            # nprocessed = ncreates + nupdates
+            # rate = nprocessed / duration
             # nremaining = nobjects - nprocessed
             # duration_remaining = (nremaining / rate) if rate > 0 else 0
             message = (
-                f"Items: {nobjects} | Checked: {ncreates + nupdates} ‖ Creates: {ncreates} | Updates: {nupdates}")
-            if debug:
-                message += f" | Rate: {rate:.1f}%"
+                f"▶ Items: {nobjects} | Checked: {ncreates + nupdates}"
+                f" ‖ Creates: {ncreates} | Updates: {nupdates} | Lookups: {nlookups}")
+            # if debug:
+            #    message += f" | Rate: {rate:.1f}%"
             message += " | Progress"
             bar.set_description(message)
         return progress_report
