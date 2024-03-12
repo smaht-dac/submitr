@@ -12,6 +12,7 @@ import signal
 import subprocess
 import sys
 import time
+from tqdm import tqdm
 from typing import BinaryIO, Dict, List, Optional, Tuple
 import yaml
 
@@ -35,7 +36,7 @@ from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
 from .scripts.cli_utils import print_boxed
 from .utils import keyword_as_title, check_repeatedly
-from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, setup_for_output_file_option
+from .output import ERASE_LINE, PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, setup_for_output_file_option
 
 
 class SubmissionProtocol:
@@ -1838,7 +1839,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                         return False
             return None
 
-        if schema_properties := schema.get("properties"):
+        if schema and (schema_properties := schema.get("properties")):
             if schema_properties.get("accession") and _is_accession_id(value):
                 # Case: lookup by accession (only by root).
                 return StructuredDataSet.REF_LOOKUP_ROOT, ref_validator
@@ -1872,15 +1873,14 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                      ncachehits: Optional[int] = None,
                      ref_invalid: Optional[int] = None) -> None:
             nonlocal total_rows, processed_rows, last_progress_message
-            ERASE_LINE = "\033[K"
             if nrows > 0:
                 if total_rows == 0:
                     if nsheets > 0:
                         message = (
-                            f"Submission file has{' only' if nsheets == 1 else ''}"
+                            f"Parsing submission file which has{' only' if nsheets == 1 else ''}"
                             f" {nsheets} sheet{'s' if nsheets != 1 else ''} and a total of {nrows} rows.")
                     else:
-                        message = f"Submission file has a total of {nrows} rows."
+                        message = f"Parsing submission file which has a total of {nrows} rows."
                     PRINT_STDOUT(message)
                 total_rows += nrows
             elif nrows < 0:
@@ -1961,7 +1961,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     elif not quiet:
         _print_structured_data_status(portal, structured_data,
                                       validate_remote_only=validate_remote_only,
-                                      report_updates_only=True)
+                                      report_updates_only=True, debug=debug)
     if exit_immediately_on_errors and not validation_okay:
         if output_file:
             PRINT(f"There are some preliminary ERRORs outlined in the output file: {output_file}")
@@ -2001,21 +2001,22 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
         PRINT_OUTPUT("Validation results (preliminary): ERROR")
 
     if initial_validation_errors:
+        PRINT_OUTPUT(f"- Initial errors: {len(initial_validation_errors)}")
         for error in initial_validation_errors:
             PRINT_OUTPUT(f"- ERROR: {error}")
 
     if ref_validation_errors:
-        PRINT_OUTPUT("- Reference errors:")
+        PRINT_OUTPUT(f"- Reference errors: {len(ref_validation_errors)}")
         for error in ref_validation_errors:
             PRINT_OUTPUT(f"  - ERROR: {error}")
 
     if file_validation_errors:
-        PRINT_OUTPUT("- File reference errors:")
+        PRINT_OUTPUT("- File reference errors: {len(file_validation_errors)}")
         for error in file_validation_errors:
             PRINT_OUTPUT(f"  - ERROR: {error}")
 
     if data_validation_errors:
-        PRINT_OUTPUT("- Data errors:")
+        PRINT_OUTPUT("- Data errors: {len(data_validation_errors)}")
         for error in data_validation_errors:
             PRINT_OUTPUT(f"  - ERROR: {error}")
 
@@ -2102,9 +2103,46 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet,
                                   validate_remote_only: bool = False,
-                                  report_updates_only: bool = False) -> None:
+                                  report_updates_only: bool = False, debug: bool = False) -> None:
 
-    diffs = structured_data.compare()
+    def define_progress_callback(debug: bool = False) -> None:
+        bar = None
+        ntypes = 0
+        nobjects = 0
+        ncreates = 0
+        nupdates = 0
+        started = time.time()
+        def progress_report(status: dict):  # noqa
+            nonlocal bar, ntypes, nobjects, ncreates, nupdates, debug
+            increment = 1
+            if status.get("start"):
+                ntypes = status.get("types")
+                nobjects = status.get("objects")
+                PRINT(f"Analyzing submission file which has {ntypes} type{'s' if ntypes != 1 else ''}"
+                      f" and {nobjects} object{'s' if nobjects != 1 else ''}.")
+                bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | RATE: {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} ]"
+                bar = tqdm(total=nobjects, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
+                return
+            duration = time.time() - started
+            if status.get("create"):
+                ncreates += increment
+                bar.update(increment)
+            elif status.get("update"):
+                nupdates += increment
+                bar.update(increment)
+            nprocessed = ncreates + nupdates
+            rate = nprocessed / duration
+            # nremaining = nobjects - nprocessed
+            # duration_remaining = (nremaining / rate) if rate > 0 else 0
+            message = (
+                f"Items: {nobjects} | Checked: {ncreates + nupdates} ‖ Creates: {ncreates} | Updates: {nupdates}")
+            if debug:
+                message += f" | Rate: {rate:.1f}%"
+            message += " | Progress"
+            bar.set_description(message)
+        return progress_report
+
+    diffs = structured_data.compare(progress=define_progress_callback())
 
     ncreates = 0
     nupdates = 0

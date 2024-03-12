@@ -23,6 +23,7 @@ PRINT = _print
 PRINT_STDOUT = _print
 PRINT_OUTPUT = _print
 SHOW = _show
+ERASE_LINE = "\033[K"
 
 
 def setup_for_output_file_option(output_file: str) -> Tuple[Callable, Callable, Callable, Callable]:
@@ -39,6 +40,7 @@ def setup_for_output_file_option(output_file: str) -> Tuple[Callable, Callable, 
         __PRINT(*args, file=string)
         with io.open(output_file, "a") as f:
             f.write(string.getvalue())
+            f.flush()
     def show_and_output_to_file(*args, **kwargs):  # noqa
         append_to_output_file(*args)
         _show(*args, **kwargs)

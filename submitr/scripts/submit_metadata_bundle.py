@@ -48,11 +48,11 @@ OPTIONS:
   To specify that any sub-directories of the directory containing
   the upload file(s) should be searched, recursively.
 --keys KEYS-FILE
-  To specify an alternate credentials/keys
-  file to the default ~/.smaht-keys.json file.
+  To specify an alternate credentials/keys file,
+  rather than the default ~/.smaht-keys.json file.
   Alternatively, set your SMAHT_KEYS environment variable.
 --output OUTPUT-FILE
-  Writes any logging output to the specified file;
+  Writes all logging output to the specified file;
   and refrains from printing lengthy content to stdout.
 --verbose
   Displays more verbose output.
@@ -93,7 +93,11 @@ ADVANCED OPTIONS:
 --details
   Displays slightly more detailed output.
 --noprogress
-  Do not print progress output.
+  Do not print progress of (client-side) parsing/validation output.
+--progress-extra
+  Displasy extra info in progress of (client-side) parsing/validation.
+--debug
+  Displays some debugging related output.
 --yes
   Automatically answer 'yes' to any confirmation questions.
 ===
@@ -147,7 +151,10 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--ref-nocache', action="store_true",
                         help="Do not cache reference (linkTo) lookups.", default=False)
     parser.add_argument('--noprogress', action="store_true",
-                        help="Do not track progress of parsing.", default=False)
+                        help="Do not track progress of client-side parsing/validation.", default=False)
+    parser.add_argument('--progress-extra', action="store_true",
+                        help="Include extra info in progress of client-side tracking parsing/validation.",
+                        default=False)
     parser.add_argument('--app',
                         help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")
