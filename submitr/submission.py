@@ -1068,7 +1068,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
 
     if not _pytesting():
         progress_interval = 0.5  # seconds
-        progress = define_progress_callback((ATTEMPTS_BEFORE_TIMEOUT * PROGRESS_CHECK_INTERVAL) / progress_interval, title="Validation" if validation else "Submission")
+        progress = define_progress_callback((ATTEMPTS_BEFORE_TIMEOUT * PROGRESS_CHECK_INTERVAL) /
+                                            progress_interval, title="Validation" if validation else "Submission")
         nchecks = 0
         check_last = None
         check_done = False
@@ -1160,7 +1161,7 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
         lines.append(f"Validation Only: Yes")
     if submitted_by := result.get("submitted_by", {}).get("display_title"):
         if ((submission_centers := result.get("submission_centers", [])) and
-            (submission_center := submission_centers[0].get("display_title"))):
+            (submission_center := submission_centers[0].get("display_title"))):  # noqa
             lines.append(f"Submitted By: {submitted_by} ({submission_center})")
         else:
             lines.append(f"Submitted By: {submitted_by}")
