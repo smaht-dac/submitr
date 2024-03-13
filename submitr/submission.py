@@ -1039,7 +1039,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                 bar.update(increment)
             else:
                 bar.update(increment)
-            message = f"▶ Checks: {nchecks} | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
+            message = f"▶ Status Checks: {nchecks} | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
             bar.set_description(message)
         return progress_report
 
@@ -1913,13 +1913,14 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     if nsheets > 0:
                         PRINT(
                             f"Parsing submission file which has{' only' if nsheets == 1 else ''}"
-                            f" {nsheets} sheet{'s' if nsheets != 1 else ''} and a total of {nrows} rows.")
+                            f" {nsheets} sheet{'s' if nsheets != 1 else ''} and a total of {nrows} rows ...")
                     else:
-                        PRINT(f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''}.")
+                        PRINT(
+                            f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''} ...")
                 elif nsheets > 0:
-                    PRINT(f"Parsing submission file which has {nsheets} sheet{'s' if nsheets != 1 else ''}.")
+                    PRINT(f"Parsing submission file which has {nsheets} sheet{'s' if nsheets != 1 else ''} ...")
                 else:
-                    PRINT(f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''}.")
+                    PRINT(f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''} ...")
                 bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
                 bar = tqdm(total=nrows, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
                 return
@@ -2163,7 +2164,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 ntypes = status.get("types")
                 nobjects = status.get("objects")
                 PRINT(f"Analyzing submission file which has {ntypes} type{'s' if ntypes != 1 else ''}"
-                      f" and {nobjects} object{'s' if nobjects != 1 else ''}.")
+                      f" and {nobjects} object{'s' if nobjects != 1 else ''} ...")
                 bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
                 bar = tqdm(total=nobjects, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
                 return
