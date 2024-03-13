@@ -30,10 +30,10 @@ OPTIONS:
   To specifiy the path to your metatdata file;
   only the directory of this is used to locate your upload files.
 --directory DIRECTORY
-  To specify the directory containing the files to upload.
---sub-directories
-  To specify that any sub-directories of the directory containing
-  the upload file(s) should be searched, recursively.
+  To specify a directory containing the files to upload;
+  this directory will be search, recursively.
+--directory-only
+  Same as --directory but does NOT search recursively.
 --KEYS-FILE
   To specify an alternate credentials/keys
   file to the default ~/.smaht-keys.json file.
@@ -62,21 +62,22 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--bundle_filename', '-b', help="Synonym for --bundle.")
     parser.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=None)
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
+    parser.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
     parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
     parser.add_argument('--yes', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
     parser.add_argument('--no_query', '-nq', action="store_true",
                         help="Synonym for --yes.", default=False)
-    parser.add_argument('--sub-directories', '-sd', action="store_true",
-                        help="Search sub-directories of folder for upload files.", default=False)
     parser.add_argument('--subfolders', '-sf', action="store_true",
-                        help="Synonym for --sub-directories.", default=False)
+                        help="Obsolete", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
+    directory_only = False
     if args.directory:
         args.upload_folder = args.directory
-    if args.sub_directories:
-        args.subfolders = True
+    if args.directory_only:
+        args.upload_folder = args.directory_only
+        directory_only = True
     if args.bundle:
         args.bundle_filename = args.bundle
 
@@ -115,8 +116,10 @@ def main(simulated_args_for_testing=None):
                        keys_file=keys_file,
                        bundle_filename=args.bundle_filename,
                        server=args.server,
-                       upload_folder=args.upload_folder, no_query=args.no_query,
-                       subfolders=args.subfolders, app=args.app)
+                       upload_folder=args.upload_folder,
+                       no_query=args.no_query,
+                       subfolders=not directory_only,
+                       app=args.app)
 
 
 if __name__ == '__main__':

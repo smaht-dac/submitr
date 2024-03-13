@@ -994,7 +994,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                             report: bool = True, messages: bool = False,
                             progress: Optional[Callable] = None) -> Tuple[bool, str, dict]:
 
-    def define_progress_callback(max_checks: int) -> None:
+    def define_progress_callback(max_checks: int, title: str) -> None:
         bar = None
         nchecks = 0
         next_check = 0
@@ -1023,7 +1023,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
             else:
                 bar.update(increment)
             message = (
-                f"▶ Status Checks: {nchecks} | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress")
+                f"▶ {title} Checks: {nchecks} | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress")
             bar.set_description(message)
         return progress_report
 
@@ -1065,7 +1065,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
         attempts_before_timeout = 100
         progress_check_interval = 4  # seconds
         progress_interval = 0.5  # seconds
-        progress = define_progress_callback(attempts_before_timeout)
+        progress = define_progress_callback(attempts_before_timeout, title="Validation" if validation else "Submission")
         nchecks = 0
         check_last = None
         check_done = False

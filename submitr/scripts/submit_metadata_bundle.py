@@ -138,7 +138,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
     parser.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
     parser.add_argument('--subfolders', '-sf', action="store_true",  # obsolete
-                        help="Synonym for --sub-directories", default=False)
+                        help="Obsolete", default=False)
     parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
     parser.add_argument('--ingestion_type', '--ingestion-type', '-t',
                         help=f"The ingestion type (default: {DEFAULT_INGESTION_TYPE}).",
@@ -216,7 +216,9 @@ def main(simulated_args_for_testing=None):
                              server=args.server,
                              consortium=args.consortium,
                              submission_center=args.submission_center,
-                             no_query=args.no_query, subfolders=not directory_only, app=args.app,
+                             no_query=args.no_query,
+                             subfolders=not directory_only,
+                             app=args.app,
                              submission_protocol=args.submission_protocol,
                              upload_folder=args.upload_folder,
                              show_details=args.details,
