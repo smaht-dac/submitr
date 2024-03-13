@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 from tqdm import tqdm
-from typing import BinaryIO, Dict, List, Optional, Tuple
+from typing import BinaryIO, Callable, Dict, List, Optional, Tuple
 import yaml
 
 # get_env_real_url would rely on env_utils
@@ -36,7 +36,7 @@ from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
 from .scripts.cli_utils import print_boxed
 from .utils import keyword_as_title, check_repeatedly
-from .output import ERASE_LINE, PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, setup_for_output_file_option
+from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, setup_for_output_file_option
 
 
 class SubmissionProtocol:
@@ -991,7 +991,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                             show_details: bool = False,
                             validation: bool = False, validate_remote_silent: bool = False,
                             verbose: bool = False,
-                            report: bool = True, messages: bool = False) -> Tuple[bool, str, dict]:
+                            report: bool = True, messages: bool = False,
+                            progress: Optional[Callable] = None) -> Tuple[bool, str, dict]:
 
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
@@ -1855,86 +1856,86 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                         return Portal.LOOKUP_SPECIFIED_TYPE, ref_validator
         return Portal.LOOKUP_DEFAULT, ref_validator
 
-    start = time.time()
+    def define_progress_callback(debug: bool = False) -> None:
+        bar = None
+        nsheets = 0
+        nrows = 0
+        nrows_processed = 0
+        nrefs_total = 0
+        nrefs_resolved = 0
+        nrefs_unresolved = 0
+        nrefs_lookup = 0
+        nrefs_cache_hit = 0
+        nrefs_invalid = 0
 
-    if True:
-
-        def handle_control_c(signum, frame):
-            PRINT('INTERRUPT')
-            if not yes_or_no("CTRL-C: You have interrupted this process. Do you want to continue?"):
+        def handle_control_c(signum, frame):  # noqa
+            if yes_or_no("\nCTRL-C: You have interrupted this process. Do you want to TERMINATE processing?"):
+                PRINT("Premature exit.")
                 exit(1)
-            PRINT('CONTINUE')
-
-        total_rows = 0
-        processed_rows = 0
-        last_progress_message = ""
-
-        def progress(nrows: int,
-                     nsheets: int,
-                     nrefs_total: Optional[int] = None,
-                     nrefs_resolved: Optional[int] = None,
-                     nrefs_unresolved: Optional[int] = None,
-                     nlookups: Optional[int] = None,
-                     ncachehits: Optional[int] = None,
-                     ref_invalid: Optional[int] = None) -> None:
-            nonlocal total_rows, processed_rows, last_progress_message
-            if nrows > 0:
-                if total_rows == 0:
+            PRINT_STDOUT("Continuing ...")
+        def progress_report(status: dict) -> None:  # noqa
+            nonlocal bar, nsheets, nrows, nrows_processed
+            nonlocal nrefs_total, nrefs_resolved, nrefs_unresolved, nrefs_lookup, nrefs_cache_hit, nrefs_invalid
+            increment = 1
+            if status.get("start"):
+                signal.signal(signal.SIGINT, handle_control_c)
+                nsheets = status.get("sheets") or 0
+                nrows = status.get("rows") or 0
+                if nrows > 0:
                     if nsheets > 0:
-                        message = (
+                        PRINT(
                             f"Parsing submission file which has{' only' if nsheets == 1 else ''}"
                             f" {nsheets} sheet{'s' if nsheets != 1 else ''} and a total of {nrows} rows.")
                     else:
-                        message = f"Parsing submission file which has a total of {nrows} rows."
-                    PRINT_STDOUT(message)
-                total_rows += nrows
-            elif nrows < 0:
-                processed_rows += -nrows
-            message = (
-                f"Rows: {total_rows} | "
-                f"Parsed: {processed_rows} | "
-                f"Remaining: {total_rows - processed_rows}")
-            if nrefs_total is not None:
+                        PRINT(f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''}.")
+                elif nsheets > 0:
+                    PRINT(f"Parsing submission file which has {nsheets} sheet{'s' if nsheets != 1 else ''}.")
+                else:
+                    PRINT(f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''}.")
+                bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
+                bar = tqdm(total=nrows, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
+                return
+            elif status.get("finish"):
+                bar.close()
+                signal.signal(signal.SIGINT, signal.SIG_DFL)
+                return
+            elif status.get("parse"):
+                nrows_processed += increment
+                nrefs_total += status.get("nrefs_total") or 0
+                nrefs_resolved += status.get("nrefs_resolved") or 0
+                nrefs_unresolved += status.get("nrefs_unresolved") or 0
+                nrefs_lookup += status.get("nrefs_lookup") or 0
+                nrefs_cache_hit += status.get("nrefs_cache_hit") or 0
+                nrefs_invalid += status.get("nrefs_invalid") or 0
+                bar.update(increment)
+            else:
+                bar.update(increment)
+#           message = (
+#               f"Items: {nrows} | Checked: {ncreates + nupdates} ‖ Creates: {ncreates} | Updates: {nupdates}")
+            message = f"▶ Rows: {nrows} | Parsed: {nrows_processed}"
+            if nrefs_total > 0:
                 message += f" ‖ Refs: {nrefs_total}"
-                # if nrefs_resolved is not None:
-                #     message += f" | Resolved: {nrefs_resolved}"
-                if nrefs_unresolved is not None:
+                if nrefs_unresolved > 0:
                     message += f" | Unresolved: {nrefs_unresolved}"
-                if nlookups is not None:
-                    message += f" | Lookups: {nlookups}"
-                if ref_invalid is not None:
-                    message += f" | Invalid: {ref_invalid}"
-                if ncachehits is not None and ncachehits > 0:
-                    message += f" | Cache Hits: {ncachehits}"
-            message += f" ‖ {'%.1f' % (time.time() - start)}s"
-            message += f" | {(float(processed_rows) / float(max(total_rows, 1)) * 100):.1f}%"
-            last_progress_message = f"{message}"
-            PRINT_STDOUT(f"{ERASE_LINE}{last_progress_message}\r", end="")
+                if nrefs_lookup > 0:
+                    message += f" | Lookups: {nrefs_lookup}"
+                if nrefs_invalid > 0:
+                    message += f" | Invalid: {nrefs_invalid}"
+                if nrefs_cache_hit > 0:
+                    message += f" | Hits: {nrefs_cache_hit}"
+            message += " | Progress"
+            bar.set_description(message)
 
-        signal.signal(signal.SIGINT, handle_control_c)
+        return progress_report
 
-        if verbose:
-            PRINT("Starting preliminary validation.")
+    structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
+                                        ref_lookup_strategy=ref_lookup_strategy,
+                                        ref_lookup_nocache=ref_nocache,
+                                        progress=None if noprogress else define_progress_callback(),
+                                        debug_sleep=debug_sleep)
+    structured_data._load_file(ingestion_filename)
 
-        structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
-                                            ref_lookup_strategy=ref_lookup_strategy,
-                                            ref_lookup_nocache=ref_nocache,
-                                            progress=progress if not noprogress else None,
-                                            debug_sleep=debug_sleep)
-        structured_data._load_file(ingestion_filename)
-        if not noprogress:
-            PRINT(last_progress_message)
-
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    else:
-        structured_data = StructuredDataSet.load(ingestion_filename, portal, autoadd=autoadd,
-                                                 ref_lookup_strategy=ref_lookup_strategy,
-                                                 ref_lookup_nocache=ref_nocache,
-                                                 debug_sleep=debug_sleep)
     if debug:
-        duration = time.time() - start
-        PRINT_OUTPUT(f"Preliminary validation complete (results below): {'%.1f' % duration} seconds")
         PRINT_OUTPUT(f"Reference total count: {structured_data.ref_total_count}")
         PRINT_OUTPUT(f"Reference total found count: {structured_data.ref_total_found_count}")
         PRINT_OUTPUT(f"Reference total not found count: {structured_data.ref_total_notfound_count}")
