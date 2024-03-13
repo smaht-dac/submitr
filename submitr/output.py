@@ -1,6 +1,7 @@
 from datetime import datetime
 import io
 import os
+import pkg_resources
 import sys
 from typing import Callable, Tuple
 from dcicutils.command_utils import yes_or_no
@@ -60,4 +61,12 @@ def setup_for_output_file_option(output_file: str) -> Tuple[Callable, Callable, 
     PRINT_OUTPUT = print_to_output_file_only  # if an output file was specified, if not, stdout
     append_to_output_file(f"TIME: {current_datetime_formatted()}")
     append_to_output_file(f"COMMAND: {' '.join(sys.argv)}")
+    append_to_output_file(f"VERSION: {get_version()}")
     return PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW
+
+
+def get_version() -> str:
+    try:
+        return pkg_resources.get_distribution("smaht-submitr").version
+    except Exception:
+        return ""

@@ -890,6 +890,8 @@ def submit_any_ingestion(ingestion_filename, *,
             if check_response and isinstance(other_errors := check_response.get("errors"), list):
                 for error in other_errors:
                     PRINT_OUTPUT("- " + error)
+            if output_file:
+                PRINT_STDOUT(f"Please check your output file for details: {output_file}")
         exit(0)
 
     if check_status == "success":
@@ -921,6 +923,8 @@ def submit_any_ingestion(ingestion_filename, *,
             if check_response and isinstance(other_errors := check_response.get("errors"), list):
                 for error in other_errors:
                     PRINT_OUTPUT("- " + error)
+            if output_file:
+                PRINT_STDOUT(f"Please check your output file for details: {output_file}")
     exit(0)
 
 
@@ -2001,9 +2005,17 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if verbose_json:
         PRINT_OUTPUT(f"Parsed JSON:")
         PRINT_OUTPUT(json.dumps(structured_data.data, indent=4))
-    validation_okay = _validate_data(structured_data, portal, ingestion_filename, upload_folder, recursive=subfolders)
+    validation_okay = _validate_data(structured_data, portal, ingestion_filename,
+                                     upload_folder, recursive=subfolders, debug=debug)
     if validation_okay:
         PRINT("Validation results (preliminary): OK")
+    elif exit_immediately_on_errors:
+        if output_file:
+            PRINT_STDOUT(f"There are some preliminary ERRORs outlined in your output file: {output_file}")
+        else:
+            PRINT_STDOUT(f"\nThere are some preliminary ERRORs outlined above.")
+        PRINT_STDOUT(f"Please fix them before trying again. No action taken.")
+        exit(1)
     if verbose:
         _print_structured_data_verbose(portal, structured_data,
                                        ingestion_filename, upload_folder=upload_folder,
@@ -2012,13 +2024,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         _print_structured_data_status(portal, structured_data,
                                       validate_remote_only=validate_remote_only,
                                       report_updates_only=True, debug=debug)
-    if exit_immediately_on_errors and not validation_okay:
-        if output_file:
-            PRINT(f"There are some preliminary ERRORs outlined in the output file: {output_file}")
-        else:
-            PRINT(f"\nThere are some preliminary ERRORs outlined above.")
-        PRINT(f"Please fix them before trying again. No action taken.")
-        exit(1)
     if not validation_okay:
         question_suffix = " with validation" if validate_local_only or validate_remote_only else ""
         if not yes_or_no(f"There are some preliminary errors outlined above;"
@@ -2031,7 +2036,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
 
 
 def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str,
-                   upload_folder: str, recursive: bool) -> bool:
+                   upload_folder: str, recursive: bool, debug: bool = False) -> bool:
     nerrors = 0
 
     if initial_validation_errors := _validate_initial(structured_data, portal):
@@ -2057,28 +2062,37 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
 
     if ref_validation_errors:
         PRINT_OUTPUT(f"- Reference errors: {len(ref_validation_errors)}")
-        for error in ref_validation_errors:
-            PRINT_OUTPUT(f"  - ERROR: {error}")
+        if debug:
+            for error in ref_validation_errors:
+                PRINT_OUTPUT(f"  - ERROR: {error}")
+        else:
+            for error in ref_validation_errors:
+                PRINT_OUTPUT(f"  - ERROR: {error}")
 
     if file_validation_errors:
-        PRINT_OUTPUT("- File reference errors: {len(file_validation_errors)}")
+        PRINT_OUTPUT(f"- File reference errors: {len(file_validation_errors)}")
         for error in file_validation_errors:
             PRINT_OUTPUT(f"  - ERROR: {error}")
 
     if data_validation_errors:
-        PRINT_OUTPUT("- Data errors: {len(data_validation_errors)}")
+        PRINT_OUTPUT(f"- Data errors: {len(data_validation_errors)}")
         for error in data_validation_errors:
             PRINT_OUTPUT(f"  - ERROR: {error}")
 
     return not (nerrors > 0)
 
 
-def _validate_references(structured_data: StructuredDataSet, ingestion_filename: str) -> List[str]:
+def _validate_references(structured_data: StructuredDataSet, ingestion_filename: str, debug: bool = False) -> List[str]:
     ref_validation_errors = []
     if (ref_errors := structured_data.ref_errors):
         for ref_error in ref_errors:
-            ref_validation_errors.append(f"{_format_issue(ref_error, ingestion_filename)}")
-    return ref_validation_errors
+            if debug:
+                ref_validation_errors.append(f"{_format_issue(ref_error, ingestion_filename)}")
+            else:
+                if ref := ref_error.get("error"):
+                    if ref not in ref_validation_errors:
+                        ref_validation_errors.append(ref)
+    return sorted(ref_validation_errors)
 
 
 def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
@@ -2090,7 +2104,7 @@ def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
         if files_not_found := [file for file in files if not file.get("path")]:
             for file in files_not_found:
                 file_validation_errors.append(f"{file.get('type')}: {file.get('file')} -> Not found")
-    return file_validation_errors
+    return sorted(file_validation_errors)
 
 
 def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> List[str]:
