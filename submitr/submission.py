@@ -1159,6 +1159,7 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
     errors = []
     validation_info = None
     submission_type = "Submission"
+    submission_validation = None
     if submission_parameters := result.get("parameters", {}):
         if submission_validation := asbool(submission_parameters.get("validate_only")):
             submission_type = "Validation"
