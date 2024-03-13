@@ -38,8 +38,6 @@ from .scripts.cli_utils import print_boxed
 from .utils import keyword_as_title, check_repeatedly
 from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, setup_for_output_file_option
 
-PROGRESS_CHECK_INTERVAL = 10
-ATTEMPTS_BEFORE_TIMEOUT = 1
 
 class SubmissionProtocol:
     S3 = 's3'
@@ -353,6 +351,10 @@ def _do_app_arg_defaulting(app_args, user_record, portal=None, quiet=False, verb
                 app_args[arg] = val
             elif val is None:
                 del app_args[arg]
+
+
+PROGRESS_CHECK_INTERVAL = 7  # seconds
+ATTEMPTS_BEFORE_TIMEOUT = 100
 
 
 def _get_section(res, section):
@@ -992,6 +994,38 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                             report: bool = True, messages: bool = False,
                             progress: Optional[Callable] = None) -> Tuple[bool, str, dict]:
 
+    def define_progress_callback(max_checks: int) -> None:
+        bar = None
+        nchecks = 0
+        next_check = 0
+        def handle_control_c(signum, frame):  # noqa
+            if yes_or_no("\nCTRL-C: You have interrupted this process. Do you want to TERMINATE processing?"):
+                PRINT("Premature exit.")
+                exit(1)
+            PRINT_STDOUT("Continuing ...")
+        def progress_report(status: dict) -> None:  # noqa
+            nonlocal bar, nchecks, next_check, max_checks
+            increment = 1
+            if status.get("start"):
+                signal.signal(signal.SIGINT, handle_control_c)
+                bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
+                bar = tqdm(total=max_checks, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
+                return
+            elif status.get("finish"):
+                bar.update(max_checks - nchecks)
+                bar.close()
+                signal.signal(signal.SIGINT, signal.SIG_DFL)
+                return
+            elif status.get("check"):
+                nchecks += 1
+                next_check = round(status.get("next") or 0)
+                bar.update(increment)
+            else:
+                bar.update(increment)
+            message = f"▶ Status Checks: {nchecks} | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
+            bar.set_description(message)
+        return progress_report
+
     if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
         app = DEFAULT_APP
 
@@ -1026,38 +1060,6 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                             messages=messages, action=action, verbose=verbose)
         )
 
-    def define_progress_callback(max_checks: int) -> None:
-        bar = None
-        nchecks = 0
-        next_check = 0
-        def handle_control_c(signum, frame):  # noqa
-            if yes_or_no("\nCTRL-C: You have interrupted this process. Do you want to TERMINATE processing?"):
-                PRINT("Premature exit.")
-                exit(1)
-            PRINT_STDOUT("Continuing ...")
-        def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, nchecks, next_check, max_checks
-            increment = 1
-            if status.get("start"):
-                signal.signal(signal.SIGINT, handle_control_c)
-                bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
-                bar = tqdm(total=max_checks, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
-                return
-            elif status.get("finish"):
-                bar.update(max_checks - nchecks)
-                bar.close()
-                signal.signal(signal.SIGINT, signal.SIG_DFL)
-                return
-            elif status.get("check"):
-                nchecks += 1
-                next_check = round(status.get("next") or 0)
-                bar.update(increment)
-            else:
-                bar.update(increment)
-            message = f"▶ Status Checks: {nchecks} | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
-            bar.set_description(message)
-        return progress_report
-
     if not _pytesting():
         attempts_before_timeout = 100
         progress_check_interval = 4  # seconds
@@ -1088,15 +1090,10 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
             progress({"check": True, "next": progress_check_interval - (time.time() - check_last)})
             time.sleep(progress_interval)
 
-        if not check_done:
-            command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
-            SHOW(f"Timed out waiting for {action}. Use this command to check status: {command_summary}")
-            exit(1)
-    else:
-        if not check_done:
-            command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
-            SHOW(f"Exiting after check processing timeout using {command_summary!r}.")
-            exit(1)
+    if not check_done:
+        command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
+        SHOW(f"Timed out waiting for {action}. Use this command to check status: {command_summary}")
+        exit(1)
 
     if not validate_remote_silent and not _pytesting():
         _print_submission_summary(portal, check_response)
@@ -1932,14 +1929,13 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     if nsheets > 0:
                         PRINT(
                             f"Parsing submission file which has{' only' if nsheets == 1 else ''}"
-                            f" {nsheets} sheet{'s' if nsheets != 1 else ''} and a total of {nrows} rows ...")
+                            f" {nsheets} sheet{'s' if nsheets != 1 else ''} and a total of {nrows} rows.")
                     else:
-                        PRINT(
-                            f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''} ...")
+                        PRINT(f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''}.")
                 elif nsheets > 0:
-                    PRINT(f"Parsing submission file which has {nsheets} sheet{'s' if nsheets != 1 else ''} ...")
+                    PRINT(f"Parsing submission file which has {nsheets} sheet{'s' if nsheets != 1 else ''}.")
                 else:
-                    PRINT(f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''} ...")
+                    PRINT(f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''}.")
                 bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
                 bar = tqdm(total=nrows, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
                 return
@@ -1971,7 +1967,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     message += f" | Invalid: {nrefs_invalid}"
                 if nrefs_cache_hit > 0:
                     message += f" | Hits: {nrefs_cache_hit}"
-            message += " ‖ Progress"
+            message += " | Progress"
             bar.set_description(message)
 
         return progress_report
@@ -2183,7 +2179,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 ntypes = status.get("types")
                 nobjects = status.get("objects")
                 PRINT(f"Analyzing submission file which has {ntypes} type{'s' if ntypes != 1 else ''}"
-                      f" and {nobjects} object{'s' if nobjects != 1 else ''} ...")
+                      f" and {nobjects} object{'s' if nobjects != 1 else ''}.")
                 bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
                 bar = tqdm(total=nobjects, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
                 return
@@ -2213,7 +2209,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 f" ‖ Creates: {ncreates} | Updates: {nupdates} | Lookups: {nlookups}")
             # if debug:
             #    message += f" | Rate: {rate:.1f}%"
-            message += " ‖ Progress"
+            message += " | Progress"
             bar.set_description(message)
         return progress_report
 
