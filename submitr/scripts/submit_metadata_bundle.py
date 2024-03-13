@@ -43,10 +43,8 @@ OPTIONS:
   Default is to use the submission center associated with your account.
 --directory DIRECTORY
   To specify a directory containing the files to upload; in addition
-  to the default of using the directory containing the submitted file.
---sub-directories
-  To specify that any sub-directories of the directory containing
-  the upload file(s) should be searched, recursively.
+  to the default of using the directory containing the submitted file;
+  this directory will be search, recursively.
 --keys KEYS-FILE
   To specify an alternate credentials/keys file,
   rather than the default ~/.smaht-keys.json file.
@@ -86,6 +84,8 @@ ADVANCED OPTIONS:
   Perform ONLY updates (PATCHes) for submitted data.
 --post-only
   Perform ONLY creates (POSTs) for submitted data.
+--directory-only
+  Same as --directory but does NOT search recursively.
 --json
   Displays the submitted metadata as formatted JSON.
 --json-only
@@ -136,6 +136,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--validate-local-only', action="store_true",
                         help="Validate submitted data locally only (on client-side).")
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
+    parser.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
     parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
     parser.add_argument('--ingestion_type', '--ingestion-type', '-t',
                         help=f"The ingestion type (default: {DEFAULT_INGESTION_TYPE}).",
@@ -144,10 +145,6 @@ def main(simulated_args_for_testing=None):
                         help="Suppress (yes/no) requests for user input.", default=False)
     parser.add_argument('--no_query', '--no-query', '-nq', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
-    parser.add_argument('--sub-directories', '-sd', action="store_true",
-                        help="Search sub-directories of folder for upload files.", default=False)
-    parser.add_argument('--subfolders', '-sf', action="store_true",
-                        help="Synonym for --sub-directories", default=False)
     parser.add_argument('--ref-nocache', action="store_true",
                         help="Do not cache reference (linkTo) lookups.", default=False)
     parser.add_argument('--noprogress', action="store_true",
@@ -174,10 +171,12 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
+    directory_only = False
     if args.directory:
         args.upload_folder = args.directory
-    if args.sub_directories:
-        args.subfolders = True
+    if args.directory_only:
+        args.upload_folder = args.directory_only
+        directory_only = True
 
     _setup_validate_related_options(args)
 
@@ -215,7 +214,7 @@ def main(simulated_args_for_testing=None):
                              server=args.server,
                              consortium=args.consortium,
                              submission_center=args.submission_center,
-                             no_query=args.no_query, subfolders=args.subfolders, app=args.app,
+                             no_query=args.no_query, subfolders=not directory_only, app=args.app,
                              submission_protocol=args.submission_protocol,
                              upload_folder=args.upload_folder,
                              show_details=args.details,
