@@ -137,6 +137,8 @@ def main(simulated_args_for_testing=None):
                         help="Validate submitted data locally only (on client-side).")
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
     parser.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
+    parser.add_argument('--subfolders', '-sf', action="store_true",  # obsolete
+                        help="Synonym for --sub-directories", default=False)
     parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
     parser.add_argument('--ingestion_type', '--ingestion-type', '-t',
                         help=f"The ingestion type (default: {DEFAULT_INGESTION_TYPE}).",
