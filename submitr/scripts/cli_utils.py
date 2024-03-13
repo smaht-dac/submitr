@@ -95,13 +95,24 @@ class CustomArgumentParser(argparse.ArgumentParser):
 
 
 def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Callable]] = None) -> None:
-    length = max(len(line) for line in lines)
+    macro_name = None
+    macro_value = None
+    if right_justified_macro and (len(right_justified_macro) == 2):
+        macro_name = right_justified_macro[0]
+        macro_value = right_justified_macro[1]()
+        lines_tmp = []
+        for line in lines:
+            if line.endswith(macro_name):
+                line = line.replace(macro_name, right_justified_macro[1]() + " ")
+            lines_tmp.append(line)
+        length = max(len(line) for line in lines_tmp)
+    else:
+        length = max(len(line) for line in lines)
     for line in lines:
         if line == "===":
             PRINT(f"+{'-' * (length - len(line) + 5)}+")
-        elif right_justified_macro and (len(right_justified_macro) == 2) and line.endswith(right_justified_macro[0]):
-            line = line.replace(right_justified_macro[0], len(right_justified_macro[0]) * " ")
-            version = right_justified_macro[1]()
-            PRINT(f"| {line}{' ' * (length - len(line) - len(version) - 1)} {version} |")
+        elif macro_name and line.endswith(macro_name):
+            line = line.replace(macro_name, "")
+            PRINT(f"| {line}{' ' * (length - len(line) - len(macro_value) - 1)} {macro_value} |")
         else:
             PRINT(f"| {line}{' ' * (length - len(line))} |")
