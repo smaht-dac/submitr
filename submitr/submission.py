@@ -906,7 +906,7 @@ def submit_any_ingestion(ingestion_filename, *,
                         submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
                         show_details=show_details, report=False, messages=True,
                         validation=False, validate_remote_silent=False,
-                        verbose=verbose)
+                        verbose=verbose, debug_sleep=debug_sleep)
             else:
                 exit(0)
         do_any_uploads(check_response, keydict=portal.key, ingestion_filename=ingestion_filename,
@@ -997,11 +997,24 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                             validation: bool = False, validate_remote_silent: bool = False,
                             verbose: bool = False,
                             report: bool = True, messages: bool = False,
-                            progress: Optional[Callable] = None) -> Tuple[bool, str, dict]:
+                            progress: Optional[Callable] = None,
+                            debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
+
+    portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP, report=report)
+
+    # Maximum amount of time (approximately) we will wait for a response from server (seconds).
+    PROGRESS_MAX_TIME = 90
+    # How often we actually check the server (seconds).
+    PROGRESS_CHECK_SERVER_INTERVAL = 5
+    # How often the (tqdm) progress meter updates (seconds).
+    PROGRESS_INTERVAL = 0.5
+    # How many times the (tqdm) progress meter updates (derived from above).
+    PROGRESS_MAX_CHECKS = round(PROGRESS_MAX_TIME / PROGRESS_INTERVAL)
 
     def define_progress_callback(max_checks: int, title: str) -> None:
         bar = None
         nchecks = 0
+        nchecks_server = 0
         next_check = 0
         def handle_control_c(signum, frame):  # noqa
             if yes_or_no("\nCTRL-C: You have interrupted this process. Do you want to TERMINATE processing?"):
@@ -1009,8 +1022,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                 exit(1)
             PRINT_STDOUT("Continuing ...")
         def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, nchecks, next_check, max_checks
-            increment = 1
+            nonlocal bar, max_checks, nchecks, nchecks_server, next_check
             if status.get("start"):
                 signal.signal(signal.SIGINT, handle_control_c)
                 bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
@@ -1021,21 +1033,17 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                 bar.close()
                 signal.signal(signal.SIGINT, signal.SIG_DFL)
                 return
+            elif status.get("check_server"):
+                nchecks_server += 1
             elif status.get("check"):
                 if (next_check := status.get("next")) is not None:
                     next_check = round(status.get("next") or 0)
-                else:
-                    nchecks += 1
-                bar.update(increment)
+                nchecks += 1
+                bar.update(1)
             message = (
-                f"▶ {title} Checks: {nchecks} | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress")
+                f"▶ {title} Checks: {nchecks_server} | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress")
             bar.set_description(message)
         return progress_report
-
-    if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
-        app = DEFAULT_APP
-
-    portal = _define_portal(env=env, server=server, app=app, report=report)
 
     if not _pytesting():
         if not (uuid_metadata := portal.get_metadata(uuid)):
@@ -1053,6 +1061,35 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
     else:
         SHOW(f"Checking {action} for submission ID: %s ..." % uuid, with_time=False)
 
+    if not _pytesting():
+        progress = define_progress_callback(PROGRESS_MAX_CHECKS, title="Validation" if validation else "Submission")
+        server_check_count = 0
+        most_recent_server_check_time = None
+        check_done = False
+        check_status = None
+        check_response = None
+        for n in range(PROGRESS_MAX_CHECKS):
+            if ((most_recent_server_check_time is None) or
+                ((time.time() - most_recent_server_check_time) >= PROGRESS_CHECK_SERVER_INTERVAL)):
+                if most_recent_server_check_time is None:
+                    progress({"start": True})
+                else:
+                    progress({"check_server": True})
+                # Do the actual server check here.
+                [check_done, check_status, check_response] = (
+                    _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server))
+                if check_done:
+                    break
+                server_check_count += 1
+                most_recent_server_check_time = time.time()
+            progress({"check": True,
+                      "next": PROGRESS_CHECK_SERVER_INTERVAL - (time.time() - most_recent_server_check_time)})
+            time.sleep(PROGRESS_INTERVAL)
+        if check_done:
+            progress({"finish": True, "done": True, "status": check_status, "response": check_response})
+        else:
+            progress({"finish": True})
+
     if _pytesting():
         def check_ingestion_progress():
             return _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server)
@@ -1065,35 +1102,6 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                              repeat_count=ATTEMPTS_BEFORE_TIMEOUT,
                              messages=messages, action=action, verbose=verbose)
         )
-
-    if not _pytesting():
-        progress_interval = 0.5  # seconds
-        progress = define_progress_callback((ATTEMPTS_BEFORE_TIMEOUT * PROGRESS_CHECK_INTERVAL) /
-                                            progress_interval, title="Validation" if validation else "Submission")
-        nchecks = 0
-        check_last = None
-        check_done = False
-        check_status = None
-        check_response = None
-        while True:
-            now = time.time()
-            if (check_last is None) or (now - check_last) >= PROGRESS_CHECK_INTERVAL:
-                if check_last is None:
-                    progress({"start": True})
-                else:
-                    progress({"check": True})
-                [check_done, check_status, check_response] = (
-                    _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server))
-                nchecks += 1
-                check_last = time.time()
-                if nchecks >= ATTEMPTS_BEFORE_TIMEOUT:
-                    progress({"finish": True})
-                    break
-                if check_done:
-                    progress({"finish": True, "done": True, "status": check_status, "response": check_response})
-                    break
-            progress({"check": True, "next": PROGRESS_CHECK_INTERVAL - (time.time() - check_last)})
-            time.sleep(progress_interval)
 
     if not check_done:
         command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
@@ -2158,18 +2166,18 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
         PRINT_OUTPUT(f"\n> Resolved object (linkTo) references:")
         for resolved_ref in sorted(resolved_refs):
             PRINT_OUTPUT(f"  - {resolved_ref}")
-    if files := structured_data.upload_files_located(location=[upload_folder, os.path.dirname(ingestion_filename)],
+    if files := structured_data.upload_files_located(location=[upload_folder, os.path.dirname(ingestion_filename) or "."],
                                                      recursive=recursive):
-        PRINT_OUTPUT(f"\n> Resolved file references:")
-        nfiles_output = 0
+        printed_header = False
         if files_found := [file for file in files if file.get("path")]:
             for file in files_found:
-                nfiles_output += 1
                 path = file.get("path")
+                if not printed_header:
+                    PRINT_OUTPUT(f"\n> Resolved file references:")
+                    printed_header = True
                 PRINT_OUTPUT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
                              f" [{_format_file_size(_get_file_size(path))}]")
-        if nfiles_output > 0:
-            PRINT_OUTPUT()
+    PRINT_OUTPUT()
     _print_structured_data_status(portal, structured_data,
                                   validate_remote_only=validate_remote_only, report_updates_only=True, verbose=verbose)
 
