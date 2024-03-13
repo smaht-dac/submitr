@@ -1041,7 +1041,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                 nchecks += 1
                 bar.update(1)
             message = (
-                f"▶ {title} Checks: {nchecks_server} | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress")
+                f"▶ {title} Checks: {nchecks_server}"
+                f" | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress")
             bar.set_description(message)
         return progress_report
 
@@ -1070,7 +1071,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
         check_response = None
         for n in range(PROGRESS_MAX_CHECKS):
             if ((most_recent_server_check_time is None) or
-                ((time.time() - most_recent_server_check_time) >= PROGRESS_CHECK_SERVER_INTERVAL)):
+                ((time.time() - most_recent_server_check_time) >= PROGRESS_CHECK_SERVER_INTERVAL)):  # noqa
                 if most_recent_server_check_time is None:
                     progress({"start": True})
                 else:
@@ -2166,7 +2167,8 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
         PRINT_OUTPUT(f"\n> Resolved object (linkTo) references:")
         for resolved_ref in sorted(resolved_refs):
             PRINT_OUTPUT(f"  - {resolved_ref}")
-    if files := structured_data.upload_files_located(location=[upload_folder, os.path.dirname(ingestion_filename) or "."],
+    if files := structured_data.upload_files_located(location=[upload_folder,
+                                                               os.path.dirname(ingestion_filename) or "."],
                                                      recursive=recursive):
         printed_header = False
         if files_found := [file for file in files if file.get("path")]:
