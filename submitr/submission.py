@@ -1158,6 +1158,12 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
         lines.append(f"{submission_type} Time: {date_created}")
     if submission_validation:
         lines.append(f"Validation Only: Yes")
+    if submitted_by := result.get("submitted_by", {}).get("display_title"):
+        if ((submission_centers := result.get("submission_centers", [])) and
+            (submission_center := submission_centers[0].get("display_title"))):
+            lines.append(f"Submitted By: {submitted_by} ({submission_center})")
+        else:
+            lines.append(f"Submitted By: {submitted_by}")
     if additional_data := result.get("additional_data"):
         if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
             summary_lines = []
