@@ -1022,7 +1022,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                 bar.update(increment)
             else:
                 bar.update(increment)
-            message = f"▶ Status Checks: {nchecks} | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
+            message = (
+                f"▶ Status Checks: {nchecks} | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress")
             bar.set_description(message)
         return progress_report
 
@@ -1055,9 +1056,9 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
         # and waiting PROGRESS_CHECK_INTERVAL seconds between each check.
         [check_done, check_status, check_response] = (
             check_repeatedly(check_ingestion_progress,
-                            wait_seconds=PROGRESS_CHECK_INTERVAL,
-                            repeat_count=ATTEMPTS_BEFORE_TIMEOUT,
-                            messages=messages, action=action, verbose=verbose)
+                             wait_seconds=PROGRESS_CHECK_INTERVAL,
+                             repeat_count=ATTEMPTS_BEFORE_TIMEOUT,
+                             messages=messages, action=action, verbose=verbose)
         )
 
     if not _pytesting():
@@ -1070,7 +1071,6 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
         check_done = False
         check_status = None
         check_response = None
-        start = time.time()
         while True:
             if (check_last is None) or (time.time() - check_last) >= progress_check_interval:
                 if check_last is None:
