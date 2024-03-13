@@ -38,6 +38,8 @@ from .scripts.cli_utils import print_boxed
 from .utils import keyword_as_title, check_repeatedly
 from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, setup_for_output_file_option
 
+PROGRESS_CHECK_INTERVAL = 10
+ATTEMPTS_BEFORE_TIMEOUT = 1
 
 class SubmissionProtocol:
     S3 = 's3'
@@ -1011,6 +1013,19 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
     else:
         SHOW(f"Checking {action} for submission ID: %s ..." % uuid, with_time=False)
 
+    if _pytesting():
+        def check_ingestion_progress():
+            return _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server)
+
+        # Check the ingestion processing repeatedly, up to ATTEMPTS_BEFORE_TIMEOUT times,
+        # and waiting PROGRESS_CHECK_INTERVAL seconds between each check.
+        [check_done, check_status, check_response] = (
+            check_repeatedly(check_ingestion_progress,
+                            wait_seconds=PROGRESS_CHECK_INTERVAL,
+                            repeat_count=ATTEMPTS_BEFORE_TIMEOUT,
+                            messages=messages, action=action, verbose=verbose)
+        )
+
     def define_progress_callback(max_checks: int) -> None:
         bar = None
         nchecks = 0
@@ -1043,36 +1058,35 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
             bar.set_description(message)
         return progress_report
 
-    attempts_before_timeout = 100
-    progress_check_interval = 4  # seconds
-    progress_interval = 0.5  # seconds
-
-    progress = define_progress_callback(attempts_before_timeout)
-
-    nchecks = 0
-    check_last = None
-    check_done = False
-    check_status = None
-    check_response = None
-    start = time.time()
-    while True:
-        if (check_last is None) or (time.time() - check_last) >= progress_check_interval:
-            if check_last is None:
-                progress({"start": True})
-            else:
-                progress({"check": True})
-            [check_done, check_status, check_response] = (
-                _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server))
-            nchecks += 1
-            check_last = time.time()
-            if nchecks >= attempts_before_timeout:
-                progress({"finish": True})
-                break
-            if check_done:
-                progress({"finish": True, "done": True, "status": check_status, "response": check_response})
-                break
-        progress({"check": True, "next": progress_check_interval - (time.time() - check_last)})
-        time.sleep(progress_interval)
+    if not _pytesting():
+        attempts_before_timeout = 100
+        progress_check_interval = 4  # seconds
+        progress_interval = 0.5  # seconds
+        progress = define_progress_callback(attempts_before_timeout)
+        nchecks = 0
+        check_last = None
+        check_done = False
+        check_status = None
+        check_response = None
+        start = time.time()
+        while True:
+            if (check_last is None) or (time.time() - check_last) >= progress_check_interval:
+                if check_last is None:
+                    progress({"start": True})
+                else:
+                    progress({"check": True})
+                [check_done, check_status, check_response] = (
+                    _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server))
+                nchecks += 1
+                check_last = time.time()
+                if nchecks >= attempts_before_timeout:
+                    progress({"finish": True})
+                    break
+                if check_done:
+                    progress({"finish": True, "done": True, "status": check_status, "response": check_response})
+                    break
+            progress({"check": True, "next": progress_check_interval - (time.time() - check_last)})
+            time.sleep(progress_interval)
 
     if not check_done:
         command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
