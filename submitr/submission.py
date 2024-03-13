@@ -1015,6 +1015,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
         bar = None
         nchecks = 0
         nchecks_server = 0
+        check_status = "Unknown"
         next_check = 0
         def handle_control_c(signum, frame):  # noqa
             if yes_or_no("\nCTRL-C: You have interrupted this process. Do you want to TERMINATE processing?"):
@@ -1022,7 +1023,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                 exit(1)
             PRINT_STDOUT("Continuing ...")
         def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, max_checks, nchecks, nchecks_server, next_check
+            nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status
             if status.get("start"):
                 signal.signal(signal.SIGINT, handle_control_c)
                 bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
@@ -1034,6 +1035,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                 signal.signal(signal.SIGINT, signal.SIG_DFL)
                 return
             elif status.get("check_server"):
+                check_status = status.get("status")
                 nchecks_server += 1
             elif status.get("check"):
                 if (next_check := status.get("next")) is not None:
@@ -1041,8 +1043,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                 nchecks += 1
                 bar.update(1)
             message = (
-                f"▶ {title} Checks: {nchecks_server}"
-                f" | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress")
+                f"▶ {title} Checks: {nchecks_server} | Status: {check_status}"
+                f" | Next: {'Now' if next_check == 0 else str(next_check) + 's'} ‖ Progress")
             bar.set_description(message)
         return progress_report
 
@@ -1075,7 +1077,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                 if most_recent_server_check_time is None:
                     progress({"start": True})
                 else:
-                    progress({"check_server": True})
+                    progress({"check_server": True, "status": (check_status or "unknown").title()})
                 # Do the actual server check here.
                 [check_done, check_status, check_response] = (
                     _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server))
