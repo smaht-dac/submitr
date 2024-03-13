@@ -353,10 +353,6 @@ def _do_app_arg_defaulting(app_args, user_record, portal=None, quiet=False, verb
                 del app_args[arg]
 
 
-PROGRESS_CHECK_INTERVAL = 7  # seconds
-ATTEMPTS_BEFORE_TIMEOUT = 100
-
-
 def _get_section(res, section):
     """
     Given a description of an ingestion submission, returns a section name within that ingestion.
@@ -1015,41 +1011,73 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
     else:
         SHOW(f"Checking {action} for submission ID: %s ..." % uuid, with_time=False)
 
-    def check_ingestion_progress():
-        return _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server)
+    def define_progress_callback(max_checks: int) -> None:
+        bar = None
+        nchecks = 0
+        next_check = 0
+        def handle_control_c(signum, frame):  # noqa
+            if yes_or_no("\nCTRL-C: You have interrupted this process. Do you want to TERMINATE processing?"):
+                PRINT("Premature exit.")
+                exit(1)
+            PRINT_STDOUT("Continuing ...")
+        def progress_report(status: dict) -> None:  # noqa
+            nonlocal bar, nchecks, next_check, max_checks
+            increment = 1
+            if status.get("start"):
+                signal.signal(signal.SIGINT, handle_control_c)
+                bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
+                bar = tqdm(total=max_checks, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
+                return
+            elif status.get("finish"):
+                bar.update(max_checks - nchecks)
+                bar.close()
+                signal.signal(signal.SIGINT, signal.SIG_DFL)
+                return
+            elif status.get("check"):
+                nchecks += 1
+                next_check = round(status.get("next") or 0)
+                bar.update(increment)
+            else:
+                bar.update(increment)
+            message = f"▶ Checks: {nchecks} | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
+            bar.set_description(message)
+        return progress_report
 
-    # Check the ingestion processing repeatedly, up to ATTEMPTS_BEFORE_TIMEOUT times,
-    # and waiting PROGRESS_CHECK_INTERVAL seconds between each check.
-    [check_done, check_status, check_response] = (
-        check_repeatedly(check_ingestion_progress,
-                         wait_seconds=PROGRESS_CHECK_INTERVAL,
-                         repeat_count=ATTEMPTS_BEFORE_TIMEOUT,
-                         messages=messages, action=action, verbose=verbose)
-    )
+    attempts_before_timeout = 100
+    progress_check_interval = 4  # seconds
+    progress_interval = 0.5  # seconds
+
+    progress = define_progress_callback(attempts_before_timeout)
+
+    nchecks = 0
+    check_last = None
+    check_done = False
+    check_status = None
+    check_response = None
+    start = time.time()
+    while True:
+        if (check_last is None) or (time.time() - check_last) >= progress_check_interval:
+            if check_last is None:
+                progress({"start": True})
+            else:
+                progress({"check": True})
+            [check_done, check_status, check_response] = (
+                _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server))
+            nchecks += 1
+            check_last = time.time()
+            if nchecks >= attempts_before_timeout:
+                progress({"finish": True})
+                break
+            if check_done:
+                progress({"finish": True, "done": True, "status": check_status, "response": check_response})
+                break
+        progress({"check": True, "next": progress_check_interval - (time.time() - check_last)})
+        time.sleep(progress_interval)
 
     if not check_done:
         command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
-        SHOW(f"Exiting after check processing timeout using {command_summary!r}.")
+        SHOW(f"Timed out waiting for {action}. Use this command to check status: {command_summary}")
         exit(1)
-
-    """
-    SHOW("Final status: %s" % check_status.title(), with_time=True)
-
-    if check_status == "error" and check_response.get("errors"):
-        _show_section(check_response, "errors")
-
-    caveat_check_status = None if check_status == "success" else check_status
-    _show_section(check_response, "validation_output", caveat_outcome=caveat_check_status)
-    _show_section(check_response, "post_output", caveat_outcome=caveat_check_status)
-    _show_section(check_response, "result")
-
-    if check_status == "success":
-        _show_section(check_response, "upload_info", portal=portal)
-
-    if show_details:
-        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
-        _show_detailed_results(uuid, metadata_bundles_bucket)
-    """
 
     if not validate_remote_silent and not _pytesting():
         _print_submission_summary(portal, check_response)
@@ -1059,11 +1087,11 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
 
 def _summarize_submission(uuid: str, app: str, server: Optional[str] = None, env: Optional[str] = None):
     if env:
-        command_summary = f"check-submit --app {app} --env {env} {uuid}"
+        command_summary = f"check-submission --env {env} {uuid}"
     elif server:
-        command_summary = f"check-submit --app {app} --server {server} {uuid}"
+        command_summary = f"check-submission --server {server} {uuid}"
     else:  # unsatisfying, but not worth raising an error
-        command_summary = f"check-submit --app {app} {uuid}"
+        command_summary = f"check-submission {uuid}"
     return command_summary
 
 
@@ -1923,7 +1951,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     message += f" | Invalid: {nrefs_invalid}"
                 if nrefs_cache_hit > 0:
                     message += f" | Hits: {nrefs_cache_hit}"
-            message += " | Progress"
+            message += " ‖ Progress"
             bar.set_description(message)
 
         return progress_report
@@ -2165,7 +2193,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 f" ‖ Creates: {ncreates} | Updates: {nupdates} | Lookups: {nlookups}")
             # if debug:
             #    message += f" | Rate: {rate:.1f}%"
-            message += " | Progress"
+            message += " ‖ Progress"
             bar.set_description(message)
         return progress_report
 
