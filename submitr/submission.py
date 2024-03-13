@@ -1011,7 +1011,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
     # How many times the (tqdm) progress meter updates (derived from above).
     PROGRESS_MAX_CHECKS = round(PROGRESS_MAX_TIME / PROGRESS_INTERVAL)
 
-    def define_progress_callback(max_checks: int, title: str) -> None:
+    def define_progress_callback(max_checks: int, title: str, include_status: bool = False) -> None:
         bar = None
         nchecks = 0
         nchecks_server = 0
@@ -1024,16 +1024,16 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
             PRINT_STDOUT("Continuing ...")
         def progress_report(status: dict) -> None:  # noqa
             nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status
+            done = False
             if status.get("start"):
                 signal.signal(signal.SIGINT, handle_control_c)
                 bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
                 bar = tqdm(total=max_checks, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
                 return
             elif status.get("finish") or nchecks >= max_checks:
+                check_status = status.get("status")
                 bar.update(max_checks - nchecks)
-                bar.close()
-                signal.signal(signal.SIGINT, signal.SIG_DFL)
-                return
+                done = True
             elif status.get("check_server"):
                 check_status = status.get("status")
                 nchecks_server += 1
@@ -1042,10 +1042,14 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                     next_check = round(status.get("next") or 0)
                 nchecks += 1
                 bar.update(1)
-            message = (
-                f"▶ {title} Checks: {nchecks_server} | Status: {check_status}"
-                f" | Next: {'Now' if next_check == 0 else str(next_check) + 's'} ‖ Progress")
+            message = f"▶ {title} Checks: {nchecks_server}"
+            if include_status:
+                message += f" | Status: {check_status}"
+            message += f" | Next: {'Now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
             bar.set_description(message)
+            if done:
+                bar.close()
+                signal.signal(signal.SIGINT, signal.SIG_DFL)
         return progress_report
 
     if not _pytesting():
@@ -1065,7 +1069,9 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
         SHOW(f"Checking {action} for submission ID: %s ..." % uuid, with_time=False)
 
     if not _pytesting():
-        progress = define_progress_callback(PROGRESS_MAX_CHECKS, title="Validation" if validation else "Submission")
+        progress = define_progress_callback(PROGRESS_MAX_CHECKS,
+                                            title="Validation" if validation else "Submission",
+                                            include_status=not validation)
         server_check_count = 0
         most_recent_server_check_time = None
         check_done = False
@@ -1089,7 +1095,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                       "next": PROGRESS_CHECK_SERVER_INTERVAL - (time.time() - most_recent_server_check_time)})
             time.sleep(PROGRESS_INTERVAL)
         if check_done:
-            progress({"finish": True, "done": True, "status": check_status, "response": check_response})
+            progress({"finish": True, "done": True,
+                      "status": (check_status or "unknown").title(), "response": check_response})
         else:
             progress({"finish": True})
 
