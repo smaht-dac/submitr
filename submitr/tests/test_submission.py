@@ -1324,7 +1324,7 @@ class Scenario:
         # adjusted_scenario = Scenario(start_time=wait_time, wait_time_delta=self.wait_time_delta)
         # time_out_time = adjusted_scenario.get_time_after_wait()
         return [f"Exiting after check processing timeout"
-                f" using 'check-submit --app {DEFAULT_APP} --server {SOME_SERVER} {SOME_UUID}'."]
+                f" using 'check-submision --server {SOME_SERVER} {SOME_UUID}'."]
 
     def make_outcome_lines(self, get_attempts, *, outcome):
         end_time = self.get_elapsed_time_for_get_attempts(get_attempts)
@@ -3003,19 +3003,19 @@ def test_summarize_submission():
 
     # env supplied
     summary = _summarize_submission(uuid='some-uuid', env='some-env', app='some-app')
-    assert summary == "check-submit --app some-app --env some-env some-uuid"
+    assert summary == "check-submission --env some-env some-uuid"
 
     # server supplied
     summary = _summarize_submission(uuid='some-uuid', server='some-server', app='some-app')
-    assert summary == "check-submit --app some-app --server some-server some-uuid"
+    assert summary == "check-submission --server some-server some-uuid"
 
     # If both are supplied, env wins.
     summary = _summarize_submission(uuid='some-uuid', server='some-server', env='some-env', app='some-app')
-    assert summary == "check-submit --app some-app --env some-env some-uuid"
+    assert summary == "check-submission --env some-env some-uuid"
 
     # If neither is supplied, well, that shouldn't really happen, but we'll see this:
     summary = _summarize_submission(uuid='some-uuid', server=None, env=None, app='some-app')
-    assert summary == "check-submit --app some-app some-uuid"
+    assert summary == "check-submission some-uuid"
 
 
 def test_check_ingestion_progress():

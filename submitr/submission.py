@@ -1088,10 +1088,15 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
             progress({"check": True, "next": progress_check_interval - (time.time() - check_last)})
             time.sleep(progress_interval)
 
-    if not check_done:
-        command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
-        SHOW(f"Timed out waiting for {action}. Use this command to check status: {command_summary}")
-        exit(1)
+        if not check_done:
+            command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
+            SHOW(f"Timed out waiting for {action}. Use this command to check status: {command_summary}")
+            exit(1)
+    else:
+        if not check_done:
+            command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
+            SHOW(f"Exiting after check processing timeout using {command_summary!r}.")
+            exit(1)
 
     if not validate_remote_silent and not _pytesting():
         _print_submission_summary(portal, check_response)
