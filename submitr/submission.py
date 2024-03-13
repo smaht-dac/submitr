@@ -355,6 +355,7 @@ def _do_app_arg_defaulting(app_args, user_record, portal=None, quiet=False, verb
 
 PROGRESS_CHECK_INTERVAL = 7  # seconds
 ATTEMPTS_BEFORE_TIMEOUT = 100
+ATTEMPTS_BEFORE_TIMEOUT = 4
 
 
 def _get_section(res, section):
@@ -1015,16 +1016,16 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                 bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
                 bar = tqdm(total=max_checks, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
                 return
-            elif status.get("finish"):
+            elif status.get("finish") or nchecks >= max_checks:
                 bar.update(max_checks - nchecks)
                 bar.close()
                 signal.signal(signal.SIGINT, signal.SIG_DFL)
                 return
             elif status.get("check"):
-                nchecks += 1
-                next_check = round(status.get("next") or 0)
-                bar.update(increment)
-            else:
+                if (next_check := status.get("next")) is not None:
+                    next_check = round(status.get("next") or 0)
+                else:
+                    nchecks += 1
                 bar.update(increment)
             message = (
                 f"▶ {title} Checks: {nchecks} | Next: {'now' if next_check == 0 else str(next_check) + 's'} ‖ Progress")
@@ -1066,17 +1067,16 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
         )
 
     if not _pytesting():
-        attempts_before_timeout = 100
-        progress_check_interval = 4  # seconds
         progress_interval = 0.5  # seconds
-        progress = define_progress_callback(attempts_before_timeout, title="Validation" if validation else "Submission")
+        progress = define_progress_callback((ATTEMPTS_BEFORE_TIMEOUT * PROGRESS_CHECK_INTERVAL) / progress_interval, title="Validation" if validation else "Submission")
         nchecks = 0
         check_last = None
         check_done = False
         check_status = None
         check_response = None
         while True:
-            if (check_last is None) or (time.time() - check_last) >= progress_check_interval:
+            now = time.time()
+            if (check_last is None) or (now - check_last) >= PROGRESS_CHECK_INTERVAL:
                 if check_last is None:
                     progress({"start": True})
                 else:
@@ -1085,13 +1085,13 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                     _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server))
                 nchecks += 1
                 check_last = time.time()
-                if nchecks >= attempts_before_timeout:
+                if nchecks >= ATTEMPTS_BEFORE_TIMEOUT:
                     progress({"finish": True})
                     break
                 if check_done:
                     progress({"finish": True, "done": True, "status": check_status, "response": check_response})
                     break
-            progress({"check": True, "next": progress_check_interval - (time.time() - check_last)})
+            progress({"check": True, "next": PROGRESS_CHECK_INTERVAL - (time.time() - check_last)})
             time.sleep(progress_interval)
 
     if not check_done:
@@ -2025,11 +2025,11 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if verbose:
         _print_structured_data_verbose(portal, structured_data,
                                        ingestion_filename, upload_folder=upload_folder,
-                                       recursive=subfolders, validate_remote_only=validate_remote_only)
+                                       recursive=subfolders, validate_remote_only=validate_remote_only, verbose=verbose)
     elif not quiet:
         _print_structured_data_status(portal, structured_data,
                                       validate_remote_only=validate_remote_only,
-                                      report_updates_only=True, debug=debug)
+                                      report_updates_only=True, verbose=verbose, debug=debug)
     if not validation_okay:
         question_suffix = " with validation" if validate_local_only or validate_remote_only else ""
         if not yes_or_no(f"There are some preliminary errors outlined above;"
@@ -2143,7 +2143,8 @@ def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> Lis
 
 
 def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDataSet, ingestion_filename: str,
-                                   upload_folder: str, recursive: bool, validate_remote_only: bool = False) -> None:
+                                   upload_folder: str, recursive: bool, validate_remote_only: bool = False,
+                                   verbose: bool = False) -> None:
     if (reader_warnings := structured_data.reader_warnings):
         PRINT_OUTPUT(f"\n> Parser WARNINGS:")
         for reader_warning in reader_warnings:
@@ -2169,12 +2170,16 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
         if nfiles_output > 0:
             PRINT_OUTPUT()
     _print_structured_data_status(portal, structured_data,
-                                  validate_remote_only=validate_remote_only, report_updates_only=True)
+                                  validate_remote_only=validate_remote_only, report_updates_only=True, verbose=verbose)
 
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet,
                                   validate_remote_only: bool = False,
-                                  report_updates_only: bool = False, debug: bool = False) -> None:
+                                  report_updates_only: bool = False,
+                                  verbose: bool = False, debug: bool = False) -> None:
+
+    if verbose:
+        report_updates_only = False
 
     def define_progress_callback(debug: bool = False) -> None:
         bar = None
@@ -2243,9 +2248,9 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
             if object_info.uuid:
                 if object_info.diffs:
                     nsubstantive_updates += 1
-                ncreates += 1
-            else:
                 nupdates += 1
+            else:
+                ncreates += 1
 
     to_or_which_would = "to" if not validate_remote_only else "which would"
 
@@ -2268,16 +2273,30 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
         PRINT(f"{message}")
         return
     else:
-        PRINT(f"{message} (details below) ...")
+        if report_updates_only:
+            PRINT(f"{message} | Update details below ...")
+        else:
+            PRINT(f"{message} | Details below ...")
 
     will_or_would = "Will" if not validate_remote_only else "Would"
 
-    PRINT()
+    nreported = 0
+    printed_newline = False
     for object_type in sorted(diffs):
-        PRINT(f"  TYPE: {object_type}")
+        printed_type = False
         for object_info in diffs[object_type]:
+            if report_updates_only and (not object_info.uuid or not object_info.diffs):
+                # Create or non-substantive update, and report-updates-only.
+                continue
+            nreported += 1
+            if not printed_newline:
+                PRINT()
+                printed_newline = True
+            if not printed_type:
+                PRINT(f"  TYPE: {object_type}")
+                printed_type = True
             PRINT(f"  - OBJECT: {object_info.path}")
-            if not object_info.uuid and not report_updates_only:
+            if not object_info.uuid:
                 PRINT(f"    Does not exist -> {will_or_would} be CREATED")
             else:
                 message = f"    Already exists -> {object_info.uuid} -> {will_or_would} be UPDATED"
@@ -2294,7 +2313,8 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                             PRINT(f"     UPDATE {diff_path}: {diff.updating_value} -> {diff.value}")
                         elif (diff := object_info.diffs[diff_path]).deleting_value:
                             PRINT(f"     DELETE {diff_path}: {diff.value}")
-    PRINT()
+    if nreported:
+        PRINT()
 
 
 def _print_json_with_prefix(data, prefix):
