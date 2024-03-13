@@ -2040,7 +2040,8 @@ def _validate_references(structured_data: StructuredDataSet, ingestion_filename:
 def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
                     upload_folder: str, recursive: bool) -> List[str]:
     file_validation_errors = []
-    if files := structured_data.upload_files_located(location=[upload_folder, os.path.dirname(ingestion_filename)],
+    if files := structured_data.upload_files_located(location=[upload_folder,
+                                                               os.path.dirname(ingestion_filename) or "."],
                                                      recursive=recursive):
         if files_not_found := [file for file in files if not file.get("path")]:
             for file in files_not_found:
