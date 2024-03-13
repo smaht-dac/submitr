@@ -2465,5 +2465,10 @@ def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optiona
         return None
 
 
+def _ping(app: str, env: str, server: str, keys_file: str, verbose: bool = False) -> bool:
+    portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file, report=verbose)
+    return portal.ping()
+
+
 def _pytesting():
     return "pytest" in sys.modules

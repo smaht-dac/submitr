@@ -10,6 +10,7 @@ from ..submission import (
     DEFAULT_INGESTION_TYPE,
     DEFAULT_SUBMISSION_PROTOCOL,
     SUBMISSION_PROTOCOLS,
+    _ping,
     _pytesting
 )
 
@@ -98,6 +99,8 @@ ADVANCED OPTIONS:
   Displasy extra info in progress of (client-side) parsing/validation.
 --debug
   Displays some debugging related output.
+--ping
+  Pings the server; to test connectivity.
 --yes
   Automatically answer 'yes' to any confirmation questions.
 ===
@@ -171,6 +174,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
+    parser.add_argument('--ping', action="store_true", help="Ping server.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     directory_only = False
@@ -179,6 +183,26 @@ def main(simulated_args_for_testing=None):
     if args.directory_only:
         args.upload_folder = args.directory_only
         directory_only = True
+
+    keys_file = args.keys or os.environ.get("SMAHT_KEYS")
+    if keys_file:
+        if not keys_file.endswith(".json") or not os.path.exists(keys_file):
+            PRINT(f"The --keys argument ({keys_file}) must be the name of an existing .json file.")
+            exit(1)
+
+    if args.ping or (args.bundle_filename and args.bundle_filename.lower() == "ping"):
+        ping_okay = _ping(
+            env=args.env or os.environ.get("SMAHT_ENV"),
+            server=args.server,
+            app=args.app,
+            keys_file=keys_file,
+            verbose=True)
+        if ping_okay:
+            PRINT("Ping success. Your connection appears to be OK.")
+            exit(0)
+        else:
+            PRINT("Ping failure. Your connection appears to be problematic.")
+            exit(1)
 
     _setup_validate_related_options(args)
 
@@ -195,12 +219,6 @@ def main(simulated_args_for_testing=None):
 
     if args.yes:
         args.no_query = True
-
-    keys_file = args.keys or os.environ.get("SMAHT_KEYS")
-    if keys_file:
-        if not keys_file.endswith(".json") or not os.path.exists(keys_file):
-            PRINT(f"The --keys argument ({keys_file}) must be the name of an existing .json file.")
-            exit(1)
 
     if args.noadmin:
         os.environ["SMAHT_NOADMIN"] = "true"
