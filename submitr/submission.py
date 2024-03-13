@@ -2057,7 +2057,7 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
     if initial_validation_errors := _validate_initial(structured_data, portal):
         nerrors += len(initial_validation_errors)
 
-    if ref_validation_errors := _validate_references(structured_data, ingestion_filename):
+    if ref_validation_errors := _validate_references(structured_data, ingestion_filename, debug=debug):
         nerrors += len(ref_validation_errors)
 
     if file_validation_errors := _validate_files(structured_data, ingestion_filename, upload_folder, recursive):
