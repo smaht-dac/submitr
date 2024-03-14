@@ -2093,7 +2093,7 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
                 PRINT_OUTPUT(f"  - ERROR: {error}")
         else:
             for error in ref_validation_errors:
-                PRINT_OUTPUT(f"  - ERROR: {error}")
+                PRINT_OUTPUT(f"  - ERROR: {error['ref']} (refs: {error['count']})")
 
     if file_validation_errors:
         PRINT_OUTPUT(f"- File reference errors: {len(file_validation_errors)}")
@@ -2116,9 +2116,14 @@ def _validate_references(structured_data: StructuredDataSet, ingestion_filename:
                 ref_validation_errors.append(f"{_format_issue(ref_error, ingestion_filename)}")
             else:
                 if ref := ref_error.get("error"):
-                    if ref not in ref_validation_errors:
-                        ref_validation_errors.append(ref)
-    return sorted(ref_validation_errors)
+                    if ref_error := [r for r in ref_validation_errors if r.get("ref") == ref]:
+                        ref_error[0]["count"] += 1
+                    else:
+                        ref_validation_errors.append({"ref": ref, "count": 1})
+    if debug:
+        return sorted(ref_validation_errors)
+    else:
+        return sorted(ref_validation_errors, key=lambda item: item["ref"])
 
 
 def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
@@ -2129,7 +2134,7 @@ def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
                                                      recursive=recursive):
         if files_not_found := [file for file in files if not file.get("path")]:
             for file in files_not_found:
-                file_validation_errors.append(f"{file.get('type')}: {file.get('file')} -> Not found")
+                file_validation_errors.append(f"{file.get('type')}: {file.get('file')} -> File not found")
     return sorted(file_validation_errors)
 
 
