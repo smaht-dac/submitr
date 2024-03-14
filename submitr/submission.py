@@ -1179,7 +1179,7 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
     if date_created := _format_portal_object_datetime(result.get("date_created"), True):
         lines.append(f"{submission_type} Time: {date_created}")
     if submission_validation:
-        lines.append(f"Validation Only: Yes")
+        lines.append(f"Validation Only: Yes ◀")
     if submitted_by := result.get("submitted_by", {}).get("display_title"):
         consortia = None
         submission_center = None
@@ -2523,7 +2523,7 @@ def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optiona
         dt = datetime.fromisoformat(value).replace(tzinfo=pytz.utc)
         tzlocal = datetime.now().astimezone().tzinfo
         if verbose:
-            return dt.astimezone(tzlocal).strftime(f"%-I:%M %p %Z | %A, %B %-d, %Y")
+            return dt.astimezone(tzlocal).strftime(f"%A, %B %-d, %Y | %-I:%M %p %Z")
         else:
             return dt.astimezone(tzlocal).strftime(f"%Y-%m-%d %H:%M:%S %Z")
     except Exception:
