@@ -2074,7 +2074,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         nfiles = len(file_validation_errors)
         PRINT(f"However there {'are' if nfiles != 1 else 'is'} {nfiles} file{'s' if nfiles != 1 else ''}"
               f" referenced which {'are' if nfiles != 1 else 'is'} missing.")
-        if yes_or_no(f"Do you want to see this list of missing files?"):
+        if yes_or_no(f"Do you want to see a list of these {nfiles} missing file{'s' if nfiles != 1 else ''}?"):
             for error in file_validation_errors:
                 PRINT(f"- {error}")
         if not yes_or_no(f"Do you want to continue {'validation' if validate_remote_only else 'submitting'}"
