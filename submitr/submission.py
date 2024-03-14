@@ -1581,7 +1581,8 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
         end = time.time()
         duration = end - start
         # SHOW("Upload duration: %.2f seconds" % duration)
-        SHOW(f"Upload of {os.path.basename(source)}: OK -> {'%.1f' % duration}s | {formatted_file_size} | {(file_size / duration):.1f}bps")
+        SHOW(f"Upload of {os.path.basename(source)}: OK ->"
+             f" {'%.1f' % duration}s | {formatted_file_size} | {(file_size / duration):.1f}bps")
 
 
 def _running_on_windows_native():
