@@ -33,12 +33,18 @@ def main(simulated_args_for_testing=None):
             exit(2)
         args.submission_uuid = "dummy"
 
+    env_from_env = False
+    if not args.env:
+        args.env = os.environ.get("SMAHT_ENV")
+        env_from_env = True
+
     with script_catch_errors():
         return _check_submit_ingestion(
                 args.submission_uuid,
-                env=args.env or os.environ.get("SMAHT_ENV"),
+                env=args.env,
                 keys_file=args.keys or os.environ.get("SMAHT_KEYS"),
                 server=args.server,
+                env_from_env=env_from_env,
                 show_details=(args.verbose or args.details)
         )
 

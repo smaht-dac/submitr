@@ -994,12 +994,13 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                             app: Optional[OrchestratedApp] = None,
                             show_details: bool = False,
                             validation: bool = False, validate_remote_silent: bool = False,
+                            env_from_env: bool = False,
                             verbose: bool = False,
                             report: bool = True, messages: bool = False,
                             progress: Optional[Callable] = None,
                             debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
 
-    portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP, report=report)
+    portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP, env_from_env=env_from_env, report=report)
 
     # Maximum amount of time (approximately) we will wait for a response from server (seconds).
     PROGRESS_MAX_TIME = 90
@@ -1423,7 +1424,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
-                   upload_folder=None, no_query=False, subfolders=False, app=None, keys_file=None):
+                   upload_folder=None, no_query=False, subfolders=False, app=None, keys_file=None, env_from_env=False):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -1438,7 +1439,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     :param subfolders: bool to search subdirectories within upload_folder for files
     """
 
-    portal = _define_portal(key=keydict, keys_file=keys_file, env=env, server=server, app=app, report=True)
+    portal = _define_portal(key=keydict, keys_file=keys_file, env=env,
+                            server=server, app=app, env_from_env=env_from_env, report=True)
 
     if not (response := portal.get_metadata(uuid)):
         if accession_id := _extract_accession_id(uuid):

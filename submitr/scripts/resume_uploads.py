@@ -109,10 +109,16 @@ def main(simulated_args_for_testing=None):
         PRINT(f"Specified upload directory not found: {args.upload_folder}")
         exit(1)
 
+    env_from_env = False
+    if not args.env:
+        args.env = os.environ.get("SMAHT_ENV")
+        env_from_env = True
+
     with script_catch_errors():
 
         resume_uploads(uuid=args.uuid,
-                       env=args.env or os.environ.get("SMAHT_ENV"),
+                       env=args.env,
+                       env_from_env=env_from_env,
                        keys_file=keys_file,
                        bundle_filename=args.bundle_filename,
                        server=args.server,

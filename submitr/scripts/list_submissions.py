@@ -17,9 +17,15 @@ def main(simulated_args_for_testing=None):
     args.add_argument("--verbose", action="store_true", help="Verbose output.", default=False)
     args = args.parse_args()
 
+    env_from_env = False
+    if not args.env:
+        args.env = os.environ.get("SMAHT_ENV")
+        env_from_env = True
+
     with script_catch_errors():
-        portal = _define_portal(env=args.env or os.environ.get("SMAHT_ENV"),
-                                keys_file=args.keys or os.environ.get("SMAHT_KEYS"))
+        portal = _define_portal(env=args.env,
+                                env_from_env=env_from_env,
+                                keys_file=args.keys or os.environ.get("SMAHT_KEYS"), report=args.verbose)
         _print_recent_submissions(portal, details=args.details, verbose=args.verbose, count=args.count)
 
 
