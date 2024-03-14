@@ -14,6 +14,8 @@ def main(simulated_args_for_testing=None):
     args.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=None)
     args.add_argument("--count", type=int, help="Maximum number of items to show.", default=30)
     args.add_argument("--details", action="store_true", help="Detailed output.", default=False)
+    args.add_argument("--user", help="For the given user.", default=False)
+    args.add_argument("--mine", help="For the calling user.", default=False)
     args.add_argument("--verbose", action="store_true", help="Verbose output.", default=False)
     args = args.parse_args()
 
@@ -21,6 +23,8 @@ def main(simulated_args_for_testing=None):
     if not args.env:
         args.env = os.environ.get("SMAHT_ENV")
         env_from_env = True
+
+    # TODO: handle --mine and --user
 
     with script_catch_errors():
         portal = _define_portal(env=args.env,

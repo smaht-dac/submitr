@@ -1560,9 +1560,11 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
 
     start = time.time()
     try:
+        file_size = _get_file_size(path)
+        formatted_file_size = _format_file_size(file_size)
         source = path
         target = upload_credentials['upload_url']
-        SHOW("Uploading %s to: %s" % (source, target))
+        SHOW("Uploading %s ({formatted_file_size}) to: %s" % (source, target))
         command = ['aws', 's3', 'cp']
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
@@ -1579,7 +1581,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
         end = time.time()
         duration = end - start
         # SHOW("Upload duration: %.2f seconds" % duration)
-        SHOW(f"Upload of {os.path.basename(source)}: OK -> {'%.1f' % duration} seconds")
+        SHOW(f"Upload of {os.path.basename(source)}: OK -> {'%.1f' % duration}s | {formatted_file_size} | {(file_size / duration):.1f}bps")
 
 
 def _running_on_windows_native():
@@ -2051,20 +2053,20 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     structured_data._load_file(ingestion_filename)
 
     if debug:
-        PRINT_OUTPUT(f"Reference total count: {structured_data.ref_total_count}")
-        PRINT_OUTPUT(f"Reference total found count: {structured_data.ref_total_found_count}")
-        PRINT_OUTPUT(f"Reference total not found count: {structured_data.ref_total_notfound_count}")
-        PRINT_OUTPUT(f"Reference exists cache hit count: {structured_data.ref_exists_cache_hit_count}")
-        PRINT_OUTPUT(f"Reference exists cache miss count: {structured_data.ref_exists_cache_miss_count}")
-        PRINT_OUTPUT(f"Reference exists internal count: {structured_data.ref_exists_internal_count}")
-        PRINT_OUTPUT(f"Reference exists external count: {structured_data.ref_exists_external_count}")
-        PRINT_OUTPUT(f"Reference lookup cache hit count: {structured_data.ref_lookup_cache_hit_count}")
-        PRINT_OUTPUT(f"Reference lookup cache miss count: {structured_data.ref_lookup_cache_miss_count}")
-        PRINT_OUTPUT(f"Reference lookup count: {structured_data.ref_lookup_count}")
-        PRINT_OUTPUT(f"Reference lookup found count: {structured_data.ref_lookup_found_count}")
-        PRINT_OUTPUT(f"Reference lookup not found count: {structured_data.ref_lookup_notfound_count}")
-        PRINT_OUTPUT(f"Reference lookup error count: {structured_data.ref_lookup_error_count}")
-        PRINT_OUTPUT(f"Reference invalid identifying property count:"
+        PRINT_OUTPUT(f"DEBUG: Reference total count: {structured_data.ref_total_count}")
+        PRINT_OUTPUT(f"DEBUG: Reference total found count: {structured_data.ref_total_found_count}")
+        PRINT_OUTPUT(f"DEBUG: Reference total not found count: {structured_data.ref_total_notfound_count}")
+        PRINT_OUTPUT(f"DEBUG: Reference exists cache hit count: {structured_data.ref_exists_cache_hit_count}")
+        PRINT_OUTPUT(f"DEBUG: Reference exists cache miss count: {structured_data.ref_exists_cache_miss_count}")
+        PRINT_OUTPUT(f"DEBUG: Reference exists internal count: {structured_data.ref_exists_internal_count}")
+        PRINT_OUTPUT(f"DEBUG: Reference exists external count: {structured_data.ref_exists_external_count}")
+        PRINT_OUTPUT(f"DEBUG: Reference lookup cache hit count: {structured_data.ref_lookup_cache_hit_count}")
+        PRINT_OUTPUT(f"DEBUG: Reference lookup cache miss count: {structured_data.ref_lookup_cache_miss_count}")
+        PRINT_OUTPUT(f"DEBUG: Reference lookup count: {structured_data.ref_lookup_count}")
+        PRINT_OUTPUT(f"DEBUG: Reference lookup found count: {structured_data.ref_lookup_found_count}")
+        PRINT_OUTPUT(f"DEBUG: Reference lookup not found count: {structured_data.ref_lookup_notfound_count}")
+        PRINT_OUTPUT(f"DEBUG: Reference lookup error count: {structured_data.ref_lookup_error_count}")
+        PRINT_OUTPUT(f"DEBUG: Reference invalid identifying property count:"
                      f" {structured_data.ref_invalid_identifying_property_count}")
     if json_only:
         PRINT_OUTPUT(json.dumps(structured_data.data, indent=4))
@@ -2099,7 +2101,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             exit(1)
     if nfiles_found > 0:
         PRINT(f"Files referenced for upload (and which exist): {nfiles_found}")
-    else:
+    elif not file_validation_errors:
         PRINT("No files to upload were referenced.")
 
     if verbose:
@@ -2183,8 +2185,8 @@ def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
                                                                os.path.dirname(ingestion_filename) or "."],
                                                      recursive=recursive):
         if files_not_found := [file for file in files if not file.get("path")]:
-            for file in files_not_found:
-                file_validation_errors.append(f"{file.get('type')}: {file.get('file')} -> File not found")
+            for file in sorted(files_not_found, key=lambda key: key.get("file")):
+                file_validation_errors.append(f"{file.get('file')} -> File not found ({file.get('type')})")
     return len(files) - len(file_validation_errors), sorted(file_validation_errors)
 
 
@@ -2283,7 +2285,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 ntypes = status.get("types")
                 nobjects = status.get("objects")
                 PRINT(f"Analyzing submission file which has {ntypes} type{'s' if ntypes != 1 else ''}"
-                      f" and {nobjects} object{'s' if nobjects != 1 else ''}.")
+                      f" and a total of {nobjects} object{'s' if nobjects != 1 else ''}.")
                 bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
                 bar = tqdm(total=nobjects, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
                 return
