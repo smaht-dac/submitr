@@ -1396,8 +1396,10 @@ def _show_upload_result(result,
 
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False, subfolders=False):
 
-    def display_file_info(file: str) -> None:
+    def display_file_info(upload_file_info: dict) -> None:
         nonlocal upload_folder, subfolders
+        file = upload_file_info.get("filename")
+        file_uuid = upload_file_info.get("uuid")
         if file:
             if file_paths := search_for_file(file, location=upload_folder, recursive=subfolders):
                 if len(file_paths) == 1:
@@ -1407,7 +1409,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
                     PRINT(f"No upload attempted for file {file} because multiple"
                           f" copies were found in folder {upload_folder}: {', '.join(file_paths)}.")
                     return False
-            PRINT(f"Cannot find file to upload: {file}")
+            PRINT(f"Cannot find file to upload: {file} ({file_uuid})")
         return False
 
     upload_info = _get_section(res, 'upload_info')
@@ -1421,7 +1423,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
     if upload_info:
         files_to_upload = []
         for upload_file_info in upload_info:
-            if display_file_info(upload_file_info.get("filename")):
+            if display_file_info(upload_file_info):
                 files_to_upload.append(upload_file_info)
         if len(files_to_upload) == 0:
             return
