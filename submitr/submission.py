@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 from tqdm import tqdm
-from typing import BinaryIO, Callable, Dict, List, Optional, Tuple
+from typing import BinaryIO, Dict, List, Optional, Tuple
 import yaml
 
 # get_env_real_url would rely on env_utils
