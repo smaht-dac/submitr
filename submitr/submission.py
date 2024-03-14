@@ -1170,13 +1170,15 @@ def _print_submission_summary(portal: Portal, result: dict,
                               nofiles: bool = False, check_submission_script: bool = False) -> None:
     if not result:
         return
-    is_admin = None
-    if check_submission_script:
+    def is_admin_user(user_record: Optional[dict]) -> bool:  # noqa
+        nonlocal portal, check_submission_script
+        if not check_submission_script or not user_record or not (user_uuid := user_record.get("uuid")):
+            return None
         try:
-            user_record = _get_user_record(portal.server, auth=portal.key_pair, quiet=True)
-            is_admin = _is_admin_user(user_record)
+            user_record = portal.get_metadata(user_uuid)
+            return "admin" in user_record.get("groups", [])
         except Exception:
-            pass
+            return None
     lines = []
     errors = []
     validation_info = None
@@ -1209,7 +1211,7 @@ def _print_submission_summary(portal: Portal, result: dict,
             lines.append(f"Submitted By: {submitted_by} ({submission_center})")
         else:
             lines.append(f"Submitted By: {submitted_by}")
-        if is_admin:
+        if is_admin_user(result.get("submitted_by")) is True:
             lines[len(lines) - 1] += " ▶ Admin"
     if processing_status := result.get("processing_status"):
         summary_lines = []
