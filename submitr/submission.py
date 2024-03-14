@@ -2418,8 +2418,10 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
     portal = None
     try:
         # TODO: raise_exception does not totally work here (see portal_utils.py).
-        portal = Portal(key or keys_file, env=env, server=server, app=app, raise_exception=False)
+        portal = Portal(key or keys_file, env=env, server=server, app=app, raise_exception=True)
     except Exception as e:
+        if _pytesting():
+            raise e
         if "not found in keys-file" in str(e):
             PRINT(f"ERROR: Environment ({env}) not found in keys file: {keys_file or get_default_keys_file()}")
             exit(1)
