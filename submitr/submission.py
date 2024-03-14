@@ -998,6 +998,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                             verbose: bool = False,
                             report: bool = True, messages: bool = False,
                             nofiles: bool = False, noprogress: bool = False,
+                            check_submission_script: bool = False,
                             debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
 
     portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP, env_from_env=env_from_env, report=report)
@@ -1124,7 +1125,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
         exit(1)
 
     if not validate_remote_silent and not _pytesting():
-        _print_submission_summary(portal, check_response, nofiles=nofiles)
+        _print_submission_summary(portal, check_response,
+                                  nofiles=nofiles, check_submission_script=check_submission_script)
 
     return check_done, check_status, check_response
 
@@ -1164,9 +1166,17 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
     return submission_post_data
 
 
-def _print_submission_summary(portal: Portal, result: dict, nofiles: bool = False) -> None:
+def _print_submission_summary(portal: Portal, result: dict,
+                              nofiles: bool = False, check_submission_script: bool = False) -> None:
     if not result:
         return
+    is_admin = None
+    if check_submission_script:
+        try:
+            user_record = _get_user_record(portal.server, auth=portal.key_pair, quiet=True)
+            is_admin = _is_admin_user(user_record)
+        except Exception:
+            pass
     lines = []
     errors = []
     validation_info = None
@@ -1199,6 +1209,8 @@ def _print_submission_summary(portal: Portal, result: dict, nofiles: bool = Fals
             lines.append(f"Submitted By: {submitted_by} ({submission_center})")
         else:
             lines.append(f"Submitted By: {submitted_by}")
+        if is_admin:
+            lines[len(lines) - 1] += " ▶ Admin"
     if processing_status := result.get("processing_status"):
         summary_lines = []
         if additional_data := result.get("additional_data"):

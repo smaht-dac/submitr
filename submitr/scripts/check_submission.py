@@ -45,7 +45,8 @@ def main(simulated_args_for_testing=None):
                 keys_file=args.keys or os.environ.get("SMAHT_KEYS"),
                 server=args.server,
                 env_from_env=env_from_env,
-                show_details=(args.verbose or args.details)
+                show_details=(args.verbose or args.details),
+                check_submission_script=True
         )
 
 
