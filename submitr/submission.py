@@ -603,6 +603,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          verbose=False,
                          noprogress=False,
                          output_file=None,
+                         env_from_env=False,
                          debug=False,
                          debug_sleep=None):
     """
@@ -642,8 +643,8 @@ def submit_any_ingestion(ingestion_filename, *,
         global PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW
         PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW = setup_for_output_file_option(output_file)
 
-    portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file,
-                            report=not json_only or verbose, verbose=verbose)
+    portal = _define_portal(env=env, env_from_env=env_from_env, server=server, app=app,
+                            keys_file=keys_file, report=not json_only or verbose, verbose=verbose)
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=portal.app,
                                  consortium=consortium, submission_center=submission_center)
@@ -1062,10 +1063,11 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
 
     action = "validation" if validation else "ingestion"
     if validation:
-        SHOW(f"Waiting for validation results ...")
+        SHOW(f"Waiting (up to about {PROGRESS_MAX_TIME}s) for validation results.")
     else:
         SHOW(f"Checking {action} for submission ID: %s ..." % uuid, with_time=False)
 
+    started = time.time()
     if not _pytesting():
         progress = define_progress_callback(PROGRESS_MAX_CHECKS,
                                             title="Validation" if validation else "Submission",
@@ -1113,7 +1115,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
 
     if not check_done:
         command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
-        SHOW(f"Timed out waiting for {action}. Use this command to check status: {command_summary}")
+        SHOW(f"Timed out (after {round(time.time() - started)}s) waiting for {action}.")
+        SHOW(f"Use this command to check status: {command_summary}")
         exit(1)
 
     if not validate_remote_silent and not _pytesting():
@@ -2297,7 +2300,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
         if nsubstantive_updates == 0:
             message += " (but no substantive differences)"
     else:
-        message = "No objects to create or update."
+        message = "No objects {to_or_which_would} create or update."
         return
 
     if report_updates_only and nsubstantive_updates == 0:
@@ -2399,19 +2402,46 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
 
 def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server: Optional[str] = None,
                    app: Optional[str] = None, keys_file: Optional[str] = None,
+                   env_from_env: bool = False,
                    report: bool = False, verbose: bool = False) -> Portal:
+
+    def get_default_keys_file():
+        nonlocal app
+        return os.path.expanduser(os.path.join(Portal.KEYS_FILE_DIRECTORY, f".{app.lower()}-keys.json"))
+
+    raise_exception = True
     if not app:
         app = DEFAULT_APP
         app_default = True
     else:
         app_default = False
-    if not (portal := Portal(key or keys_file, env=env, server=server, app=app, raise_exception=False)).key:
-        raise Exception(
-            f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")
+    portal = None
+    try:
+        # TODO: raise_exception does not totally work here (see portal_utils.py).
+        portal = Portal(key or keys_file, env=env, server=server, app=app, raise_exception=False)
+    except Exception as e:
+        if "not found in keys-file" in str(e):
+            PRINT(f"ERROR: Environment ({env}) not found in keys file: {keys_file or get_default_keys_file()}")
+            exit(1)
+    if not portal or not portal.key:
+        try:
+            if keys_file and not os.path.exists(keys_file):
+                PRINT(f"ERROR: No keys file found: {keys_file or get_default_keys_file()}")
+                exit(1)
+            else:
+                default_keys_file = get_default_keys_file()
+                if not os.path.exists(default_keys_file):
+                    PRINT(f"ERROR: No default keys file found: {default_keys_file}")
+                    exit(1)
+        except Exception:
+            pass
+        if raise_exception:
+            raise Exception(
+                f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")
     if report:
         if verbose:
             PRINT(f"Portal app name is{' (default)' if app_default else ''}: {app}")
-        PRINT(f"Portal environment (in keys file) is: {portal.env}")
+        PRINT(f"Portal environment (in keys file) is: {portal.env}{' (from SMAHT_ENV)' if env_from_env else ''}")
         PRINT(f"Portal keys file is: {portal.keys_file}")
         PRINT(f"Portal server is: {portal.server}")
         if portal.key_id and len(portal.key_id) > 2:
@@ -2482,8 +2512,10 @@ def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optiona
         return None
 
 
-def _ping(app: str, env: str, server: str, keys_file: str, verbose: bool = False) -> bool:
-    portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file, report=verbose)
+def _ping(app: str, env: str, server: str, keys_file: str,
+          env_from_env: bool = False, verbose: bool = False) -> bool:
+    portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file,
+                            env_from_env=env_from_env, report=verbose)
     return portal.ping()
 
 

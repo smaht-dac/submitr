@@ -187,13 +187,22 @@ def main(simulated_args_for_testing=None):
 
     keys_file = args.keys or os.environ.get("SMAHT_KEYS")
     if keys_file:
-        if not keys_file.endswith(".json") or not os.path.exists(keys_file):
-            PRINT(f"The --keys argument ({keys_file}) must be the name of an existing .json file.")
+        if not keys_file.endswith(".json"):
+            PRINT(f"ERROR: The specified keys file is not a .json file: {keys_file}")
             exit(1)
+        if not keys_file.endswith(".json") or not os.path.exists(keys_file):
+            PRINT(f"ERROR: The --keys argument must be the name of an existing .json file: {keys_file}")
+            exit(1)
+
+    env_from_env = False
+    if not args.env:
+        args.env = os.environ.get("SMAHT_ENV")
+        env_from_env = True
 
     if args.ping or (args.bundle_filename and args.bundle_filename.lower() == "ping"):
         ping_okay = _ping(
             env=args.env or os.environ.get("SMAHT_ENV"),
+            env_from_env=env_from_env,
             server=args.server,
             app=args.app,
             keys_file=keys_file,
@@ -230,7 +239,7 @@ def main(simulated_args_for_testing=None):
             exit(1)
 
         submit_any_ingestion(ingestion_filename=args.bundle_filename, ingestion_type=args.ingestion_type,
-                             env=args.env or os.environ.get("SMAHT_ENV"),
+                             env=args.env, env_from_env=env_from_env,
                              keys_file=keys_file,
                              server=args.server,
                              consortium=args.consortium,
@@ -267,7 +276,7 @@ def _sanity_check_submitted_file(file_name: str) -> bool:
     with a "-inserts" suffix. Returns True if passed sanity check otherwise False.
     """
     if not os.path.exists(file_name):
-        PRINT(f"Submission file does not exist: {file_name}")
+        PRINT(f"ERROR: Submission file does not exist: {file_name}")
         return False
 
     if file_name.endswith(".json"):
