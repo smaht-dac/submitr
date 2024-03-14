@@ -1949,6 +1949,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                         return Portal.LOOKUP_SPECIFIED_TYPE, ref_validator
         return Portal.LOOKUP_DEFAULT, ref_validator
 
+    structured_data = None  # TEMPORARY WORKAROUND FOR DCICUTILS BUG
+
     def define_progress_callback(debug: bool = False) -> None:
         bar = None
         nsheets = 0
@@ -1967,7 +1969,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 exit(1)
             PRINT_STDOUT("Continuing ...")
         def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, nsheets, nrows, nrows_processed, noprogress
+            nonlocal bar, nsheets, nrows, nrows_processed, verbose, noprogress
             nonlocal nrefs_total, nrefs_resolved, nrefs_unresolved, nrefs_lookup, nrefs_cache_hit, nrefs_invalid
             if noprogress:
                 return
@@ -1996,12 +1998,15 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 return
             elif status.get("parse"):
                 nrows_processed += increment
-                nrefs_total += status.get("nrefs_total") or 0
-                nrefs_resolved += status.get("nrefs_resolved") or 0
-                nrefs_unresolved += status.get("nrefs_unresolved") or 0
-                nrefs_lookup += status.get("nrefs_lookup") or 0
-                nrefs_cache_hit += status.get("nrefs_cache_hit") or 0
-                nrefs_invalid += status.get("nrefs_invalid") or 0
+                nrefs_total = status.get("refs") or 0
+                nrefs_resolved = status.get("refs_found") or 0
+                nrefs_unresolved = status.get("refs_not_found") or 0
+                nrefs_lookup = status.get("refs_lookup") or 0
+                nrefs_cache_hit = status.get("refs_cache_hit") or 0
+                if not status.get("refs_cache_hit"):  # TEMPORARY WORKAROUND FOR DCICUTILS BUG
+                    if structured_data:
+                        nrefs_cache_hit = structured_data.ref_exists_cache_hit_count
+                nrefs_invalid = status.get("refs_invalid") or 0
                 bar.update(increment)
             else:
                 bar.update(increment)
@@ -2010,11 +2015,11 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 message += f" ‖ Refs: {nrefs_total}"
                 if nrefs_unresolved > 0:
                     message += f" | Unresolved: {nrefs_unresolved}"
-                if nrefs_lookup > 0:
+                if verbose and (nrefs_lookup > 0):
                     message += f" | Lookups: {nrefs_lookup}"
                 if nrefs_invalid > 0:
                     message += f" | Invalid: {nrefs_invalid}"
-                if nrefs_cache_hit > 0:
+                if verbose and (nrefs_cache_hit > 0):
                     message += f" | Hits: {nrefs_cache_hit}"
             message += " | Progress"
             bar.set_description(message)
