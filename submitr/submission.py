@@ -874,7 +874,7 @@ def submit_any_ingestion(ingestion_filename, *,
             submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
             show_details=show_details, report=False, messages=True,
             validation=validation, validate_remote_silent=validate_remote_silent,
-            noprogress=noprogress, verbose=verbose)
+            nofiles=True, noprogress=noprogress, verbose=verbose)
 
     if validate_remote_only:
         if check_status == "success":
@@ -905,7 +905,7 @@ def submit_any_ingestion(ingestion_filename, *,
                         submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
                         show_details=show_details, report=False, messages=True,
                         validation=False, validate_remote_silent=False,
-                        noprogress=noprogress, verbose=verbose, debug_sleep=debug_sleep)
+                        nofiles=True, noprogress=noprogress, verbose=verbose, debug_sleep=debug_sleep)
             else:
                 exit(0)
         do_any_uploads(check_response, keydict=portal.key, ingestion_filename=ingestion_filename,
@@ -997,7 +997,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                             env_from_env: bool = False,
                             verbose: bool = False,
                             report: bool = True, messages: bool = False,
-                            noprogress: bool = False,
+                            nofiles: bool = False, noprogress: bool = False,
                             debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
 
     portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP, env_from_env=env_from_env, report=report)
@@ -1123,7 +1123,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
         exit(1)
 
     if not validate_remote_silent and not _pytesting():
-        _print_submission_summary(portal, check_response)
+        _print_submission_summary(portal, check_response, nofiles=nofiles)
 
     return check_done, check_status, check_response
 
@@ -1163,7 +1163,7 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
     return submission_post_data
 
 
-def _print_submission_summary(portal: Portal, result: dict) -> None:
+def _print_submission_summary(portal: Portal, result: dict, nofiles: bool = False) -> None:
     if not result:
         return
     lines = []
@@ -1258,7 +1258,7 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
         if summary_lines:
             lines.append("===")
             lines += summary_lines
-    if additional_data:
+    if additional_data and not nofiles:
         if upload_files := additional_data.get("upload_info"):
             lines.append("===")
             lines.append(f"Upload Files: {len(upload_files)} ...")
