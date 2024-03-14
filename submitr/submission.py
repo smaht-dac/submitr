@@ -1564,7 +1564,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
         formatted_file_size = _format_file_size(file_size)
         source = path
         target = upload_credentials['upload_url']
-        SHOW("Uploading %s ({formatted_file_size}) to: %s" % (source, target))
+        SHOW(f"Uploading %s ({formatted_file_size}) to: %s" % (source, target))
         command = ['aws', 's3', 'cp']
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
