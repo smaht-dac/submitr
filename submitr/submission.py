@@ -1181,11 +1181,38 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
     if submission_validation:
         lines.append(f"Validation Only: Yes")
     if submitted_by := result.get("submitted_by", {}).get("display_title"):
-        if ((submission_centers := result.get("submission_centers", [])) and
-            (submission_center := submission_centers[0].get("display_title"))):  # noqa
+        consortia = None
+        submission_center = None
+        if consortia := result.get("consortia", []):
+            consortium = consortia[0].get("display_title")
+        if submission_centers := result.get("submission_centers", []):
+            submission_center = submission_centers[0].get("display_title")
+        if consortia:
+            if submission_center:
+                lines.append(f"Submitted By: {submitted_by} ({consortium} | {submission_center})")
+            else:
+                lines.append(f"Submitted By: {submitted_by} ({consortia})")
+        elif submission_center:
             lines.append(f"Submitted By: {submitted_by} ({submission_center})")
         else:
             lines.append(f"Submitted By: {submitted_by}")
+    if processing_status := result.get("processing_status"):
+        summary_lines = []
+        if additional_data := result.get("additional_data"):
+            if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
+                if status := [info for info in validation_info if info.lower().startswith("status:")]:
+                    summary_lines.append(status[0])
+        if state := processing_status.get("state"):
+            summary_lines.append(f"State: {state.title()}")
+        if progress := processing_status.get("progress"):
+            summary_lines.append(f"Progress: {progress.title()}")
+        if outcome := processing_status.get("outcome"):
+            summary_lines.append(f"Outcome: {outcome.title()}")
+        if main_status := result.get("status"):
+            summary_lines.append(f"{main_status.title()}")
+        if summary := " | ".join(summary_lines):
+            lines.append("===")
+            lines.append(summary)
     if additional_data := result.get("additional_data"):
         if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
             summary_lines = []
@@ -1208,21 +1235,6 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
             if summary := " | ".join(summary_lines):
                 lines.append("===")
                 lines.append(summary)
-    if processing_status := result.get("processing_status"):
-        summary_lines = []
-        if state := processing_status.get("state"):
-            summary_lines.append(f"State: {state.title()}")
-        if progress := processing_status.get("progress"):
-            summary_lines.append(f"Progress: {progress.title()}")
-        if outcome := processing_status.get("outcome"):
-            summary_lines.append(f"Outcome: {outcome.title()}")
-        if validation_info:
-            if status := [info for info in validation_info if info.lower().startswith("status")]:
-                summary_lines.append(status[0])
-            pass
-        if summary := " | ".join(summary_lines):
-            lines.append("===")
-            lines.append(summary)
     if validation_info:
         summary_lines = []
         if s3_data_file := [info for info in validation_info if info.lower().startswith("s3 file: ")]:
@@ -1246,6 +1258,8 @@ def _print_submission_summary(portal: Portal, result: dict) -> None:
             lines += summary_lines
     if additional_data:
         if upload_files := additional_data.get("upload_info"):
+            lines.append("===")
+            lines.append(f"Upload Files: {len(upload_files)} ...")
             for upload_file in upload_files:
                 upload_file_uuid = upload_file.get("uuid")
                 upload_file_name = upload_file.get("filename")
