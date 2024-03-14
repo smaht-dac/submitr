@@ -7,7 +7,7 @@ Change Log
 ----------
 
 
-0.6.4
+0.6.5
 =====
 
 * This branch (draft) made from branch dmichaels-20240205 (on 2024-02-23) was

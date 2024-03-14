@@ -874,7 +874,7 @@ def submit_any_ingestion(ingestion_filename, *,
             submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
             show_details=show_details, report=False, messages=True,
             validation=validation, validate_remote_silent=validate_remote_silent,
-            verbose=verbose)
+            noprogress=noprogress, verbose=verbose)
 
     if validate_remote_only:
         if check_status == "success":
@@ -905,7 +905,7 @@ def submit_any_ingestion(ingestion_filename, *,
                         submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
                         show_details=show_details, report=False, messages=True,
                         validation=False, validate_remote_silent=False,
-                        verbose=verbose, debug_sleep=debug_sleep)
+                        noprogress=noprogress, verbose=verbose, debug_sleep=debug_sleep)
             else:
                 exit(0)
         do_any_uploads(check_response, keydict=portal.key, ingestion_filename=ingestion_filename,
@@ -997,7 +997,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                             env_from_env: bool = False,
                             verbose: bool = False,
                             report: bool = True, messages: bool = False,
-                            progress: Optional[Callable] = None,
+                            noprogress: bool = False,
                             debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
 
     portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP, env_from_env=env_from_env, report=report)
@@ -1023,7 +1023,9 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                 exit(1)
             PRINT_STDOUT("Continuing ...")
         def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status
+            nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status, noprogress
+            if noprogress:
+                return
             done = False
             if status.get("start"):
                 signal.signal(signal.SIGINT, handle_control_c)
@@ -1965,8 +1967,10 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 exit(1)
             PRINT_STDOUT("Continuing ...")
         def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, nsheets, nrows, nrows_processed
+            nonlocal bar, nsheets, nrows, nrows_processed, noprogress
             nonlocal nrefs_total, nrefs_resolved, nrefs_unresolved, nrefs_lookup, nrefs_cache_hit, nrefs_invalid
+            if noprogress:
+                return
             increment = 1
             if status.get("start"):
                 signal.signal(signal.SIGINT, handle_control_c)
@@ -2083,7 +2087,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     elif not quiet:
         _print_structured_data_status(portal, structured_data,
                                       validate_remote_only=validate_remote_only,
-                                      report_updates_only=True, verbose=verbose, debug=debug)
+                                      report_updates_only=True, noprogress=noprogress, verbose=verbose, debug=debug)
     if not validation_okay:
         question_suffix = " with validation" if validate_local_only or validate_remote_only else ""
         if not yes_or_no(f"There are some preliminary errors outlined above;"
@@ -2220,13 +2224,14 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
                              f" [{_format_file_size(_get_file_size(path))}]")
     PRINT_OUTPUT()
     _print_structured_data_status(portal, structured_data,
-                                  validate_remote_only=validate_remote_only, report_updates_only=True, verbose=verbose)
+                                  validate_remote_only=validate_remote_only,
+                                  report_updates_only=True, noprogress=noprogress, verbose=verbose)
 
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet,
                                   validate_remote_only: bool = False,
                                   report_updates_only: bool = False,
-                                  verbose: bool = False, debug: bool = False) -> None:
+                                  noprogress: bool = False, verbose: bool = False, debug: bool = False) -> None:
 
     if verbose:
         report_updates_only = False
@@ -2247,7 +2252,9 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 exit(1)
             PRINT_STDOUT("Continuing ...")
         def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, ntypes, nobjects, ncreates, nupdates, nlookups, debug
+            nonlocal bar, ntypes, nobjects, ncreates, nupdates, nlookups, debug, noprogress
+            if noprogress:
+                return
             increment = 1
             if status.get("start"):
                 signal.signal(signal.SIGINT, handle_control_c)
