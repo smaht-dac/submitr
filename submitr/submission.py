@@ -1062,7 +1062,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
             raise Exception(f"Cannot find object given uuid: {uuid}")
         if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
             undesired_type = portal.get_schema_type(uuid_metadata)
-            raise Exception(f"Given ID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
+            raise Exception(f"Given ID is not for a submission or validation: {uuid} ({undesired_type})"
+                            f" | Accession: {uuid_metadata.get('accession')}")
 
     action = "validation" if validation else "ingestion"
     if validation:
