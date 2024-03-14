@@ -2202,7 +2202,7 @@ def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> Lis
 
 def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDataSet, ingestion_filename: str,
                                    upload_folder: str, recursive: bool, validate_remote_only: bool = False,
-                                   verbose: bool = False) -> None:
+                                   noprogress: bool = False, verbose: bool = False) -> None:
     if (reader_warnings := structured_data.reader_warnings):
         PRINT_OUTPUT(f"\n> Parser WARNINGS:")
         for reader_warning in reader_warnings:
