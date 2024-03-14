@@ -177,9 +177,10 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--ping', action="store_true", help="Ping server.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
-    directory_only = False
+    directory_only = True
     if args.directory:
         args.upload_folder = args.directory
+        directory_only = False
     if args.directory_only:
         args.upload_folder = args.directory_only
         directory_only = True

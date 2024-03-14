@@ -393,8 +393,6 @@ def _show_section(res, section, caveat_outcome=None, portal=None):
         caveat = ""
     if not section_data:
         return
-#   if section == "validation_output" and (ingestion_submission_uuid := res.get("uuid")):
-#       PRINT(f"\nIngestion Submission UUID: {ingestion_submission_uuid}")
     SHOW("\n----- %s%s -----" % (keyword_as_title(section), caveat))
     if isinstance(section_data, dict):
         if file := section_data.get("file"):
@@ -1984,8 +1982,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 bar.update(increment)
             else:
                 bar.update(increment)
-#           message = (
-#               f"Items: {nrows} | Checked: {ncreates + nupdates} ‖ Creates: {ncreates} | Updates: {nupdates}")
             message = f"▶ Rows: {nrows} | Parsed: {nrows_processed}"
             if nrefs_total > 0:
                 message += f" ‖ Refs: {nrefs_total}"
@@ -2042,6 +2038,24 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             PRINT_STDOUT(f"\nThere are some preliminary ERRORs outlined above.")
         PRINT_STDOUT(f"Please fix them before trying again. No action taken.")
         exit(1)
+
+    # Check files separately because we might want to let them get away with missing files.
+    nfiles_found, file_validation_errors = _validate_files(structured_data, ingestion_filename,
+                                                           upload_folder, recursive=subfolders)
+    if file_validation_errors:
+        nfiles = len(file_validation_errors)
+        PRINT(f"However there {'are' if nfiles != 1 else 'is'} {nfiles} file{'s' if nfiles != 1 else ''}"
+              f" referenced which {'are' if nfiles != 1 else 'is'} missing.")
+        if yes_or_no(f"Do you want to see this list of missing files?"):
+            for error in file_validation_errors:
+                PRINT(f"- {error}")
+        if not yes_or_no(f"Do you want to continue even with {nfiles} file{'s' if nfiles != 1 else ''} missing?"):
+            exit(1)
+    if nfiles_found > 0:
+        PRINT(f"Files referenced for upload (and which exist): {nfiles_found}")
+    else:
+        PRINT("No files to upload were referenced.")
+
     if verbose:
         _print_structured_data_verbose(portal, structured_data,
                                        ingestion_filename, upload_folder=upload_folder,
@@ -2057,8 +2071,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             exit(1)
     if validate_local_only:
         exit(0 if validation_okay else 1)
-    # if verbose:
-    #     PRINT()
 
 
 def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str,
@@ -2070,9 +2082,6 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
 
     if ref_validation_errors := _validate_references(structured_data, ingestion_filename, debug=debug):
         nerrors += len(ref_validation_errors)
-
-    if file_validation_errors := _validate_files(structured_data, ingestion_filename, upload_folder, recursive):
-        nerrors += len(file_validation_errors)
 
     structured_data.validate()
     if data_validation_errors := structured_data.validation_errors:
@@ -2094,11 +2103,6 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
         else:
             for error in ref_validation_errors:
                 PRINT_OUTPUT(f"  - ERROR: {error['ref']} (refs: {error['count']})")
-
-    if file_validation_errors:
-        PRINT_OUTPUT(f"- File reference errors: {len(file_validation_errors)}")
-        for error in file_validation_errors:
-            PRINT_OUTPUT(f"  - ERROR: {error}")
 
     if data_validation_errors:
         PRINT_OUTPUT(f"- Data errors: {len(data_validation_errors)}")
@@ -2127,7 +2131,7 @@ def _validate_references(structured_data: StructuredDataSet, ingestion_filename:
 
 
 def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
-                    upload_folder: str, recursive: bool) -> List[str]:
+                    upload_folder: str, recursive: bool) -> Tuple[int, List[str]]:
     file_validation_errors = []
     if files := structured_data.upload_files_located(location=[upload_folder,
                                                                os.path.dirname(ingestion_filename) or "."],
@@ -2135,7 +2139,7 @@ def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
         if files_not_found := [file for file in files if not file.get("path")]:
             for file in files_not_found:
                 file_validation_errors.append(f"{file.get('type')}: {file.get('file')} -> File not found")
-    return sorted(file_validation_errors)
+    return len(files) - len(file_validation_errors), sorted(file_validation_errors)
 
 
 def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> List[str]:
