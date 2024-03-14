@@ -1560,11 +1560,16 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
 
     start = time.time()
     try:
-        file_size = _get_file_size(path)
-        formatted_file_size = _format_file_size(file_size)
+        file_size = 0
+        formatted_file_size = ""
+        try:
+            file_size = _get_file_size(path)
+            formatted_file_size = _format_file_size(file_size)
+        except Exception:
+            pass
         source = path
         target = upload_credentials['upload_url']
-        SHOW(f"Uploading %s ({formatted_file_size}) to: %s" % (source, target))
+        SHOW(f"Uploading %s{f' ({formatted_file_size})' if formatted_file_size else ''} to: %s" % (source, target))
         command = ['aws', 's3', 'cp']
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
@@ -1580,9 +1585,11 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
     else:
         end = time.time()
         duration = end - start
-        # SHOW("Upload duration: %.2f seconds" % duration)
-        SHOW(f"Upload of {os.path.basename(source)}: OK ->"
-             f" {'%.1f' % duration}s | {formatted_file_size} | {(file_size / duration):.1f}bps")
+        if formatted_file_size:
+            SHOW(f"Upload of {os.path.basename(source)}: OK ->"
+                 f" {'%.1f' % duration}s | {formatted_file_size} | {(file_size / duration):.1f}bps")
+        else:
+            SHOW(f"Upload of {os.path.basename(source)}: OK -> {'%.1f' % duration} seconds")
 
 
 def _running_on_windows_native():
