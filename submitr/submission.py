@@ -952,17 +952,41 @@ def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict
         return False, progress, response
 
 
-def _get_recent_submissions(portal: Portal, count: int = 30) -> List[dict]:
-    if submissions := portal.get_metadata(f"/search/?type=IngestionSubmission&sort=-date_created&from=0&limit={count}"):
+def _get_recent_submissions(portal: Portal, count: int = 30, name: Optional[str] = None) -> List[dict]:
+    url = f"/search/?type=IngestionSubmission&sort=-date_created&from=0&limit={count}"
+    if name:
+        # TODO: Does not seem to return the same stuff
+        url += f"&q={name}"
+    if submissions := portal.get_metadata(url):
         if submissions := submissions.get("@graph"):
             return submissions
     return []
 
 
 def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional[str] = None,
-                              details: bool = False, verbose: bool = False) -> bool:
+                              details: bool = False, verbose: bool = False,
+                              mine: bool = False, user: Optional[str] = None) -> bool:
+    user_name = None
+    if mine:
+        try:
+            user_record = _get_user_record(portal.server, auth=portal.key_pair, quiet=True)
+            user_name = user_record.get("display_title")
+        except Exception:
+            PRINT(f"Cannot find your user info.")
+            exit(1)
+    elif user:
+        if "@" in user or is_uuid(user):
+            try:
+                user_record = portal.get_metadata(f"/users/{user}")
+                user_name = user_record.get("display_title")
+            except Exception:
+                PRINT(f"Cannot find user info: {user}")
+                exit(1)
+        else:
+            user_name = user
+
     lines = []
-    if submissions := _get_recent_submissions(portal, count):
+    if submissions := _get_recent_submissions(portal, count, name=user_name):
         if message:
             PRINT(message)
         lines.append("===")

@@ -14,9 +14,10 @@ def main(simulated_args_for_testing=None):
     args.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=None)
     args.add_argument("--count", type=int, help="Maximum number of items to show.", default=30)
     args.add_argument("--details", action="store_true", help="Detailed output.", default=False)
-    args.add_argument("--user", help="For the given user.", default=False)
-    args.add_argument("--mine", help="For the calling user.", default=False)
+    args.add_argument("--user", help="For the given user (email or uuid or name).", default=False)
+    args.add_argument("--mine", action="store_true", help="For the calling user.", default=False)
     args.add_argument("--verbose", action="store_true", help="Verbose output.", default=False)
+    args.add_argument("--quiet", action="store_true", help="Quiet output.", default=False)
     args = args.parse_args()
 
     env_from_env = False
@@ -29,8 +30,9 @@ def main(simulated_args_for_testing=None):
     with script_catch_errors():
         portal = _define_portal(env=args.env,
                                 env_from_env=env_from_env,
-                                keys_file=args.keys or os.environ.get("SMAHT_KEYS"), report=args.verbose)
-        _print_recent_submissions(portal, details=args.details, verbose=args.verbose, count=args.count)
+                                keys_file=args.keys or os.environ.get("SMAHT_KEYS"), report=not args.quiet)
+        _print_recent_submissions(portal, details=args.details, verbose=args.verbose,
+                                  count=args.count, mine=args.mine, user=args.user)
 
 
 if __name__ == "__main__":
