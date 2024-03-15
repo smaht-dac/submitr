@@ -2163,7 +2163,7 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
     if data_validation_errors:
         PRINT_OUTPUT(f"- Data errors: {len(data_validation_errors)}")
         for error in data_validation_errors:
-            PRINT_OUTPUT(f"  - ERROR: {error}")
+            PRINT_OUTPUT(f"  - ERROR: {_format_issue(error, ingestion_filename)}")
 
     return not (nerrors > 0)
 
@@ -2447,7 +2447,7 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
     issue_message = None
     if issue:
         if error := issue.get("error"):
-            issue_message = error
+            issue_message = error.replace("'$.","'")
         elif warning := issue.get("warning"):
             issue_message = warning
         elif issue.get("truncated"):
