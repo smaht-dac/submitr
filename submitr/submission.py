@@ -1032,7 +1032,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
     portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP, env_from_env=env_from_env, report=report)
 
     # Maximum amount of time (approximately) we will wait for a response from server (seconds).
-    PROGRESS_MAX_TIME = 90
+    PROGRESS_MAX_TIME = 60 * 5  # five minutes (note this is for both server validation and submission)
     # How often we actually check the server (seconds).
     PROGRESS_CHECK_SERVER_INTERVAL = 5
     # How often the (tqdm) progress meter updates (seconds).
@@ -1148,8 +1148,10 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
 
     if not check_done:
         command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
-        SHOW(f"Timed out (after {round(time.time() - started)}s) waiting for {action}.")
-        SHOW(f"Use this command to check status: {command_summary}")
+        SHOW(f"Timed out (after {round(time.time() - started)}s) WAITING for {action}.")
+        if not validation:
+            SHOW(f"Your submission is still running on the server.")
+            SHOW(f"Use this command to check its status: {command_summary}")
         exit(1)
 
     if not validate_remote_silent and not _pytesting():
