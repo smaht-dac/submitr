@@ -2447,7 +2447,7 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
     issue_message = None
     if issue:
         if error := issue.get("error"):
-            issue_message = error.replace("'$.","'")
+            issue_message = error.replace("'$.", "'")
         elif warning := issue.get("warning"):
             issue_message = warning
         elif issue.get("truncated"):
