@@ -1006,7 +1006,7 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
                 line += f" | S"
             if details:
                 if ((submission_params := submission.get("parameters")) and
-                    (submission_file := submission_params.get("datafile"))):
+                    (submission_file := submission_params.get("datafile"))):  # noqa
                     line += f" | {submission_file}"
                 else:
                     line += " | -"
