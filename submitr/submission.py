@@ -1521,6 +1521,11 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
         undesired_type = portal.get_schema_type(response)
         raise Exception(f"Given ID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
 
+    if submission_parameters := response.get("parameters", {}):
+        if asbool(submission_parameters.get("validate_only")):
+            PRINT(f"This submission ID ({uuid}) is for a validation not an actual submission.")
+            exit(1)
+
     do_any_uploads(response,
                    keydict=portal.key,
                    ingestion_filename=bundle_filename,
