@@ -2119,7 +2119,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             PRINT_STDOUT(f"There are some preliminary ERRORs outlined in your output file: {output_file}")
         else:
             PRINT_STDOUT(f"\nThere are some preliminary ERRORs outlined above.")
-        PRINT_STDOUT(f"Please fix them before trying again. No action taken.")
+            PRINT_STDOUT(f"FYI: Use this option to write lengthy output to a file: --output FILE ")
+        PRINT_STDOUT(f"Please fix these problems before trying again. No action taken.")
         exit(1)
 
     # Check files separately because we might want to let them get away with missing files.
