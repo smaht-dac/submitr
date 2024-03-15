@@ -977,7 +977,7 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
     elif user:
         if "@" in user or is_uuid(user):
             try:
-                user_record = portal.get_metadata(f"/users/{user}")
+                user_record = portal.get_metadata(f"/users/{user.lower()}")
                 user_name = user_record.get("display_title")
             except Exception:
                 PRINT(f"Cannot find user info: {user}")
@@ -1004,8 +1004,12 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
                 line += f" | V"
             else:
                 line += f" | S"
-            if details and (submission_file := submission.get("parameters", {}).get("datafile")):
-                line += f" | {submission_file}"
+            if details:
+                if ((submission_params := submission.get("parameters")) and
+                    (submission_file := submission_params.get("datafile"))):
+                    line += f" | {submission_file}"
+                else:
+                    line += " | -"
             lines.append(line)
         if not verbose:
             lines.append("===")
