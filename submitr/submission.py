@@ -440,8 +440,10 @@ def _show_section(res, section, caveat_outcome=None, portal=None):
 def _ingestion_submission_item_url(server, uuid):
     return url_path_join(server, "ingestion-submissions", uuid) + "?format=json"
 
+
 # TRY_OLD_PROTOCOL = True
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
+
 
 def _post_files_data(submission_protocol, ingestion_filename) -> Dict[Literal['datafile'], Optional[BinaryIO]]:
     """
