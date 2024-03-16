@@ -440,11 +440,8 @@ def _show_section(res, section, caveat_outcome=None, portal=None):
 def _ingestion_submission_item_url(server, uuid):
     return url_path_join(server, "ingestion-submissions", uuid) + "?format=json"
 
-
+# TRY_OLD_PROTOCOL = True
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
-
-TRY_OLD_PROTOCOL = True
-
 
 def _post_files_data(submission_protocol, ingestion_filename) -> Dict[Literal['datafile'], Optional[BinaryIO]]:
     """
@@ -465,7 +462,8 @@ def _post_files_data(submission_protocol, ingestion_filename) -> Dict[Literal['d
 
 
 def _post_submission(server, keypair, ingestion_filename, creation_post_data, submission_post_data,
-                     submission_protocol=DEFAULT_SUBMISSION_PROTOCOL):
+                     submission_protocol=DEFAULT_SUBMISSION_PROTOCOL,
+                     validation=False):
     """ This takes care of managing the compatibility step of using either the old or new ingestion protocol.
 
     OLD PROTOCOL: Post directly to /submit_for_ingestion
@@ -481,6 +479,8 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     """
     portal = Portal(keypair, server=server)
 
+    """
+    Comment out older style protocol ...
     if submission_protocol == SubmissionProtocol.UPLOAD and TRY_OLD_PROTOCOL:
 
         old_style_submission_url = url_path_join(server, "submit_for_ingestion")
@@ -494,14 +494,15 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
         if response.status_code != 404:
 
             if DEBUG_PROTOCOL:  # pragma: no cover
-                PRINT("Old style protocol worked.")
+                PRINT('Old style protocol worked.')
 
             return response
 
         else:  # on 404, try new protocol ...
 
             if DEBUG_PROTOCOL:  # pragma: no cover
-                PRINT("Retrying with new protocol.")
+                PRINT('Retrying with new protocol.')
+    """
 
     creation_post_url = url_path_join(server, INGESTION_SUBMISSION_TYPE_NAME)
     if DEBUG_PROTOCOL:  # pragma: no cover
@@ -514,6 +515,11 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
         # this is the FileOther object info, its uuid and associated data file, which was uploaded
         # in this case (SubmissionProtocol.S3) directly to S3 from submit-ontology.
         creation_post_data["parameters"] = submission_post_data
+    if validation:
+        if creation_post_data.get("parameters"):
+            creation_post_data["parameters"]["validate_only"] = True
+        else:
+            creation_post_data["parameters"] = {"validate_only": True}
     creation_response = portal.post(creation_post_url, json=creation_post_data, raise_for_status=True)
     [submission] = creation_response.json()['@graph']
     submission_id = submission['@id']
@@ -763,8 +769,10 @@ def submit_any_ingestion(ingestion_filename, *,
         raise InvalidParameterError(parameter='submission_protocol', value=submission_protocol,
                                     options=SUBMISSION_PROTOCOLS)
 
-    def initiate_submission(first_time=True):
-        nonlocal submission_post_data, validate_remote, validate_remote_only, validate_remote_silent
+    def initiate_submission(first_time: bool = True,
+                            validation_submission_ingestion_object: Optional[dict] = None):
+        nonlocal portal, ingestion_filename, creation_post_data, submission_post_data, submission_protocol
+        nonlocal validate_remote, validate_remote_only, validate_remote_silent
         submission_post_data = copy.deepcopy(submission_post_data)
         if first_time:
             submission_post_data["validate_only"] = (
@@ -772,11 +780,17 @@ def submit_any_ingestion(ingestion_filename, *,
         else:
             submission_post_data["validate_only"] = False
             submission_post_data["validate_first"] = False
+            if validation_submission_ingestion_object:
+                # Record the associated validation UUID in the
+                # submission IngestionSubmission object; and conversely below.
+                validation_uuid = validation_submission_ingestion_object.get("uuid")
+                submission_post_data["validation_uuid"] = validation_uuid
         response = _post_submission(server=portal.server, keypair=portal.key_pair,
                                     ingestion_filename=ingestion_filename,
                                     creation_post_data=creation_post_data,
                                     submission_post_data=submission_post_data,
-                                    submission_protocol=submission_protocol)
+                                    submission_protocol=submission_protocol,
+                                    validation=first_time)
         try:
             # This can fail if the body doesn't contain JSON
             res = response.json()
@@ -812,7 +826,16 @@ def submit_any_ingestion(ingestion_filename, *,
             # This clause is not ordinarily entered. It handles a pathological case that we only hypothesize.
             # It does not require careful unit test coverage. -kmp 23-Feb-2022
             raise Exception("Bad JSON body in %s submission result." % response.status_code)
-        return res['submission_id']
+        submission_uuid = res["submission_id"]
+        if not first_time and validation_submission_ingestion_object and validation_uuid:
+            # Patch the validation IngestionSubmission object with the associated submission
+            # UUID in the submission IngestionSubmission object; and conversely above.
+            if validation_parameters := validation_submission_ingestion_object.get("parameters"):
+                validation_parameters["submission_uuid"] = submission_uuid
+                validation_parameters = {"parameters": validation_parameters}
+                portal.patch_metadata(object_id=validation_uuid, data=validation_parameters)
+            pass
+        return submission_uuid
 
     submission_uuid = initiate_submission(first_time=True)
 
@@ -899,7 +922,10 @@ def submit_any_ingestion(ingestion_filename, *,
             SHOW("Validation results (server): OK")
             SHOW(f"Ready to continue with submission to {portal.server}: {ingestion_filename}")
             if yes_or_no("Continue with submission?"):
-                submission_uuid = initiate_submission(first_time=False)
+                # TODO: I think we want to annotate/update the server validation ingestion object
+                # with a pointer to the submission ingestion object which we will be creating here.
+                submission_uuid = initiate_submission(first_time=False,
+                                                      validation_submission_ingestion_object=check_response)
                 SHOW(f"Submission tracking ID: {submission_uuid}")
                 check_done, check_status, check_response = _check_submit_ingestion(
                         submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
@@ -1032,6 +1058,7 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
     portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP, env_from_env=env_from_env, report=report)
 
     # Maximum amount of time (approximately) we will wait for a response from server (seconds).
+    PROGRESS_MAX_TIME = 5  # xyzzy
     PROGRESS_MAX_TIME = 60 * 5  # five minutes (note this is for both server validation and submission)
     # How often we actually check the server (seconds).
     PROGRESS_CHECK_SERVER_INTERVAL = 5
@@ -1093,6 +1120,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
             undesired_type = portal.get_schema_type(uuid_metadata)
             raise Exception(f"Given ID is not for a submission or validation: {uuid} ({undesired_type})"
                             f" | Accession: {uuid_metadata.get('accession')}")
+        if uuid_metadata.get("parameters", {}).get("validate_only"):
+            validation = True
 
     action = "validation" if validation else "ingestion"
     if validation:
@@ -1154,6 +1183,33 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
             SHOW(f"Use this command to check its status: {command_summary}")
         exit(1)
 
+    if (check_submission_script and check_response and
+        (check_parameters := check_response.get("parameters", {})) and
+        check_parameters.get("validate_only") and not check_parameters.get("submission_uuid")):  # noqa
+        # This is the check-submission script waiting for a VALIDATION (not a submission)
+        # to complete, i.e. the server validation part of submit-metadata-bundle had timed
+        # out previously. And this which server validation is now complete. We now want to give
+        # the user the opportunity to continue with the submission process, ala submit_any_ingestion;
+        # see around line 917 of that function. BUT how to know if this validation was already
+        # previous followed by an actual submit? I think we need the validation submission ingestion
+        # object to contain a pointer to the associated submission ingestion object and vice versa.
+        PRINT("This is a (server) validation which had not yet completed but now it is complete.")
+        validation_info = check_response.get("additional_data", {}).get("validation_output")
+        if isinstance(validation_info, list):
+            validation_errors = [item for item in validation_info if item.lower().startswith("errored")]
+            if validation_errors:
+                PRINT("However there were validation errors encountered.")
+            elif yes_or_no("Do you want to now continue with the submission for this metadata?"):
+                PRINT("TODO: Continue with submission process ...")
+                return
+                """
+                xxx
+                def initiate_submission(first_time: bool = True,
+                                        validation_submission_ingestion_object: Optional[dict] = None):
+                    nonlocal portal, ingestion_filename, creation_post_data, submission_post_data, submission_protocol
+                    nonlocal validate_remote, validate_remote_only, validate_remote_silent
+                xxx
+                """
     if not validate_remote_silent and not _pytesting():
         _print_submission_summary(portal, check_response,
                                   nofiles=nofiles, check_submission_script=check_submission_script)
@@ -1225,6 +1281,10 @@ def _print_submission_summary(portal: Portal, result: dict,
         lines.append(f"{submission_type} Time: {date_created}")
     if submission_validation:
         lines.append(f"Validation Only: Yes ◀")
+        if submission_parameters and (associated_submission_uuid := submission_parameters.get("submission_uuid")):
+            lines.append(f"Associated Submission ID: {associated_submission_uuid}")
+    elif submission_parameters and (associated_validation_uuid := submission_parameters.get("validation_uuid")):
+        lines.append(f"Associated Validation ID: {associated_validation_uuid}")
     if submitted_by := result.get("submitted_by", {}).get("display_title"):
         consortia = None
         submission_center = None

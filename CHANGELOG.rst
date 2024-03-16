@@ -19,6 +19,7 @@ Change Log
   controlled by pyproject.toml.
 * Changes to view-portal-object script (need to update this in dcicutils).
 * Support for submits_for to get submission center.
+* Got rid of "old style" protocol support (to simplify).
 
 
 0.5.4
