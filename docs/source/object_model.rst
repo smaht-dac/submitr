@@ -7,11 +7,11 @@ Object Model
 
 .. raw:: html
 
-    Below are the object <a target="_blank" href="http://localhost:8000/profiles/" style="color:black">types</a>
+    Below are the object <a target="_blank" href="https://data.smaht.org/profiles/" style="color:black">types</a>
     (and data) supported by SMaHT Portal which may be relevant for metadata submission;
     types marked with <b>(A)</b> indicate <i>abstract</i> types which may not be directly created.
     Click on the name for more details.
-    These can also be viewed within SMaHT Portal itself in a somewhat more rudimentary form <a target="_blank" href="http://localhost:8000/submission-schemas/"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:2pt;" /></a>
+    These can also be viewed within SMaHT Portal itself in a somewhat more rudimentary form <a target="_blank" href="https://data.smaht.org/submission-schemas/"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:2pt;" /></a>
 
     <p />
 
@@ -125,13 +125,13 @@ Data
 .. raw:: html
 
     <ul>
-            <li> <a target="_blank" href="http://localhost:8000/search/?type=Consortium">Consortia<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
-            <li> <a target="_blank" href="http://localhost:8000/search/?type=FileFormat">File Formats<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
-            <li> <a target="_blank" href="http://localhost:8000/search/?type=FileFormat&valid_item_types=AlignedReads">File Formats <small>(Aligned Reads)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a></li>
-            <li> <a target="_blank" href="http://localhost:8000/search/?type=FileFormat&valid_item_types=UnalignedReads">File Formats <small>(Unaligned Reads)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a></li>
-            <li> <a target="_blank" href="http://localhost:8000/search/?type=FileFormat&valid_item_types=VariantCalls">File Formats <small>(Variant Calls)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a></li>
-            <li> <a target="_blank" href="http://localhost:8000/search/?type=ReferenceGenome">Reference Genomes<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
-            <li> <a target="_blank" href="http://localhost:8000/search/?type=SubmissionCenter">Submission Centers<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+            <li> <a target="_blank" href="https://data.smaht.org/search/?type=Consortium">Consortia<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+            <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat">File Formats<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+            <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat&valid_item_types=AlignedReads">File Formats <small>(Aligned Reads)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a></li>
+            <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat&valid_item_types=UnalignedReads">File Formats <small>(Unaligned Reads)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a></li>
+            <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat&valid_item_types=VariantCalls">File Formats <small>(Variant Calls)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a></li>
+            <li> <a target="_blank" href="https://data.smaht.org/search/?type=ReferenceGenome">Reference Genomes<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+            <li> <a target="_blank" href="https://data.smaht.org/search/?type=SubmissionCenter">Submission Centers<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
     </ul>
 
 
@@ -142,14 +142,14 @@ See Also
 
     <ul>
         <li> <a href="object_model/type_hierarchy.html">Type Hierarchy</a> </li>
-        <li> <a target="_blank" href="http://localhost:8000/docs/additional-resources/sample-file-nomenclature">File and Sample Nomenclature<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
-        <li> <a target="_blank" href="http://localhost:8000/docs/user-guide/referencing-data">Referencing Existing Data<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
-        <li> <a target="_blank" href="http://localhost:8000/data/benchmarking">Benchmarking Data<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+        <li> <a target="_blank" href="https://data.smaht.org/docs/additional-resources/sample-file-nomenclature">File and Sample Nomenclature<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+        <li> <a target="_blank" href="https://data.smaht.org/docs/user-guide/referencing-data">Referencing Existing Data<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+        <li> <a target="_blank" href="https://data.smaht.org/data/benchmarking">Benchmarking Data<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
     </ul>
 
 .. raw:: html
 
-    <span style="color:#aaaaaa;">[ <small>Generated: 2024-03-15 9:43 PM EDT | <a target='_blank' style="color:#aaaaaa" href='http://localhost:8000/profiles/?format=json'>http://localhost:8000</a> 100.200.300</small> ]</span><p />
+    <span style="color:#aaaaaa;">[ <small>Generated: 2024-03-16 12:59 PM EDT | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> 0.30.2</small> ]</span><p />
     <p />
 
 

@@ -4,14 +4,14 @@ SubmissionCenter
 
 
 
-..    View <a target="_blank" href="http://localhost:8000/search/?type=SubmissionCenter" style="color:black"><b><i><u>objects</u></i></b></a>
-..    of this type: <a target="_blank" href="http://localhost:8000/search/?type=SubmissionCenter"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:2pt;" /></a>
+..    View <a target="_blank" href="https://data.smaht.org/search/?type=SubmissionCenter" style="color:black"><b><i><u>objects</u></i></b></a>
+..    of this type: <a target="_blank" href="https://data.smaht.org/search/?type=SubmissionCenter"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:2pt;" /></a>
 
 .. raw:: html
 
-    Summary of <a target="_blank" href="http://localhost:8000" style="color:black">SMaHT Portal</a> 
-    <a target="_blank" href="http://localhost:8000/search/?type=SubmissionCenter&format=json" style="color:black">object</a> <a target="_blank" href="http://localhost:8000/profiles/SubmissionCenter.json?format=json" style="color:black">type</a>
-    <a target="_blank" href="http://localhost:8000/profiles/SubmissionCenter.json" style="color:black"><b><u>SubmissionCenter</u></b></a><a target="_blank" href="http://localhost:8000/profiles/SubmissionCenter.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
+    Summary of <a target="_blank" href="https://data.smaht.org" style="color:black">SMaHT Portal</a> 
+    <a target="_blank" href="https://data.smaht.org/search/?type=SubmissionCenter&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/SubmissionCenter.json?format=json" style="color:black">type</a>
+    <a target="_blank" href="https://data.smaht.org/profiles/SubmissionCenter.json" style="color:black"><b><u>SubmissionCenter</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/SubmissionCenter.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
     
     Types <b>referencing</b> this type are: <a href='aligned_reads.html'><u>AlignedReads</u></a>, <a href='analyte.html'><u>Analyte</u></a>, <a href='analyte_preparation.html'><u>AnalytePreparation</u></a>, <a href='assay.html'><u>Assay</u></a>, <a href='cell_culture.html'><u>CellCulture</u></a>, <a href='cell_culture_mixture.html'><u>CellCultureMixture</u></a>, <a href='cell_culture_sample.html'><u>CellCultureSample</u></a>, <a href='cell_line.html'><u>CellLine</u></a>, <a href='cell_sample.html'><u>CellSample</u></a>, <a href='death_circumstances.html'><u>DeathCircumstances</u></a>, <a href='demographic.html'><u>Demographic</u></a>, <a href='diagnosis.html'><u>Diagnosis</u></a>, <a href='document.html'><u>Document</u></a>, <a href='donor.html'><u>Donor</u></a>, <a href='exposure.html'><u>Exposure</u></a>, <a href='file.html'><u>File</u></a>, <a href='file_format.html'><u>FileFormat</u></a>, <a href='file_set.html'><u>FileSet</u></a>, <a href='filter_set.html'><u>FilterSet</u></a>, <a href='histology.html'><u>Histology</u></a>, <a href='image.html'><u>Image</u></a>, <a href='library.html'><u>Library</u></a>, <a href='library_preparation.html'><u>LibraryPreparation</u></a>, <a href='medical_history.html'><u>MedicalHistory</u></a>, <a href='molecular_test.html'><u>MolecularTest</u></a>, <a href='ontology_term.html'><u>OntologyTerm</u></a>, <a href='output_file.html'><u>OutputFile</u></a>, <a href='preparation.html'><u>Preparation</u></a>, <a href='preparation_kit.html'><u>PreparationKit</u></a>, <a href='protocol.html'><u>Protocol</u></a>, <a href='quality_metric.html'><u>QualityMetric</u></a>, <a href='reference_file.html'><u>ReferenceFile</u></a>, <a href='reference_genome.html'><u>ReferenceGenome</u></a>, <a href='sample.html'><u>Sample</u></a>, <a href='sample_preparation.html'><u>SamplePreparation</u></a>, <a href='sample_source.html'><u>SampleSource</u></a>, <a href='sequencer.html'><u>Sequencer</u></a>, <a href='sequencing.html'><u>Sequencing</u></a>, <a href='software.html'><u>Software</u></a>, <a href='submitted_file.html'><u>SubmittedFile</u></a>, <a href='therapeutic.html'><u>Therapeutic</u></a>, <a href='tissue.html'><u>Tissue</u></a>, <a href='tissue_collection.html'><u>TissueCollection</u></a>, <a href='tissue_sample.html'><u>TissueSample</u></a>, <a href='treatment.html'><u>Treatment</u></a>, <a href='unaligned_reads.html'><u>UnalignedReads</u></a>, <a href='user.html'><u>User</u></a>, <a href='variant_calls.html'><u>VariantCalls</u></a>.
@@ -29,7 +29,7 @@ SubmissionCenter
 
   .. raw::  html
 
-    <i>See actual SubmissionCenter data <a target='_blank' href='http://localhost:8000/search/?type=SubmissionCenter'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
+    <i>See actual SubmissionCenter data <a target='_blank' href='https://data.smaht.org/search/?type=SubmissionCenter'><b>here<span class='fa fa-external-link' style='left:6pt;position:relative;top:1pt;' /></b></a></i>
 
 
 Required Properties
