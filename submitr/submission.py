@@ -484,24 +484,16 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
     """
     Comment out older style protocol ...
     if submission_protocol == SubmissionProtocol.UPLOAD and TRY_OLD_PROTOCOL:
-
         old_style_submission_url = url_path_join(server, "submit_for_ingestion")
         old_style_post_data = dict(creation_post_data, **submission_post_data)
-
-        response = portal.post(old_style_submission_url,
-                               data=old_style_post_data,
+        response = portal.post(old_style_submission_url, data=old_style_post_data,
                                files=_post_files_data(submission_protocol=submission_protocol,
                                                       ingestion_filename=ingestion_filename), headers=None)
-
         if response.status_code != 404:
-
             if DEBUG_PROTOCOL:  # pragma: no cover
                 PRINT('Old style protocol worked.')
-
             return response
-
         else:  # on 404, try new protocol ...
-
             if DEBUG_PROTOCOL:  # pragma: no cover
                 PRINT('Retrying with new protocol.')
     """
@@ -522,12 +514,14 @@ def _post_submission(server, keypair, ingestion_filename, creation_post_data, su
             creation_post_data["parameters"]["validate_only"] = True
         else:
             creation_post_data["parameters"] = {"validate_only": True}
+    # This creates the IngestionSubmission object.
     creation_response = portal.post(creation_post_url, json=creation_post_data, raise_for_status=True)
     [submission] = creation_response.json()['@graph']
     submission_id = submission['@id']
     if DEBUG_PROTOCOL:  # pragma: no cover
         SHOW(f"Created {INGESTION_SUBMISSION_TYPE_NAME} (bundle) type object: {submission.get('uuid', 'not-found')}")
     new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
+    # This actually kicks off the ingestion process and updates the IngestionSubmission object created above.
     response = portal.post(new_style_submission_url,
                            data=submission_post_data,
                            files=_post_files_data(submission_protocol=submission_protocol,
@@ -1195,23 +1189,203 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
         # see around line 917 of that function. BUT how to know if this validation was already
         # previous followed by an actual submit? I think we need the validation submission ingestion
         # object to contain a pointer to the associated submission ingestion object and vice versa.
-        PRINT("This is a (server) validation which had not yet completed but now it is complete.")
+        PRINT(f"This ID is for a server validation which had not yet completed but now is.")
+        PRINT(f"Details for this server validation ({uuid}) are:")
+        _print_submission_summary(portal, check_response,
+                                  nofiles=nofiles, check_submission_script=check_submission_script)
         validation_info = check_response.get("additional_data", {}).get("validation_output")
         if isinstance(validation_info, list):
             validation_errors = [item for item in validation_info if item.lower().startswith("errored")]
             if validation_errors:
-                PRINT("However there were validation errors encountered.")
+                PRINT("Since server validation errors were encountered: Exiting with no action.")
+                PRINT("You will need to correct any errors and resubmit via submit-metadata-bundle.")
+                exit(1)
             elif yes_or_no("Do you want to now continue with the submission for this metadata?"):
-                PRINT("TODO: Continue with submission process ...")
-                return
-                """
-                xxx
-                def initiate_submission(first_time: bool = True,
-                                        validation_submission_ingestion_object: Optional[dict] = None):
-                    nonlocal portal, ingestion_filename, creation_post_data, submission_post_data, submission_protocol
-                    nonlocal validate_remote, validate_remote_only, validate_remote_silent
-                xxx
-                """
+                # import pdb ; pdb.set_trace()
+                PRINT("TODO: Continue with submission process ... Not yet implemented.")
+                exit(2)
+            else:
+                PRINT("Exiting with no action.")
+                exit(0)
+                # TODO: Continue with submission process ala initiate_submission;
+                # the check_response will look like below; need the consortia,
+                # submission_centers, ingestion_type, etc; this function needs this info:
+                # def initiate_submission(first_time: bool = True,
+                #                         validation_submission_ingestion_object: Optional[dict] = None):
+                #     nonlocal portal, ingestion_filename, creation_post_data, submission_post_data, submission_protocol
+                #     nonlocal validate_remote, validate_remote_only, validate_remote_silent
+#               {
+#                   "status": "in review",
+#                   "consortia": [
+#                       {
+#                           "@id": "/consortia/358aed10-9b9d-4e26-ab84-4bd162da182b/",
+#                           "@type": [
+#                               "Consortium",
+#                               "Item"
+#                           ],
+#                           "uuid": "358aed10-9b9d-4e26-ab84-4bd162da182b",
+#                           "status": "released",
+#                           "display_title": "SMaHT",
+#                           "principals_allowed": {
+#                               "view": [
+#                                   "group.admin",
+#                                   "group.read-only-admin",
+#                                   "remoteuser.EMBED",
+#                                   "remoteuser.INDEXER",
+#                                   "role.consortium_member_rw",
+#                                   "role.consortium_member_rw.358aed10-9b9d-4e26-ab84-4bd162da182b",
+#                                   "role.submission_center_member_rw"
+#                               ],
+#                               "edit": [
+#                                   "group.admin"
+#                               ]
+#                           }
+#                       }
+#                   ],
+#                   "parameters": {
+#                       "autoadd": "{\"submission_centers\": [\"9626d82e-8110-4213-ac75-0a50adf890ff\"]}",
+#                       "datafile": "test_submission_from_doug_20231106.xlsx",
+#                       "post_only": "False",
+#                       "consortium": "/consortia/358aed10-9b9d-4e26-ab84-4bd162da182b/",
+#                       "patch_only": "False",
+#                       "ref_nocache": "False",
+#                       "validate_only": "True",
+#                       "ingestion_type": "metadata_bundle",
+#                       "validate_first": "True",
+#                       "submission_center": "/submission-centers/9626d82e-8110-4213-ac75-0a50adf890ff/",
+#                       "ingestion_directory": "/Users/dmichaels/repos/cgap/submitr/testdata/demo"
+#                   },
+#                   "object_name": "6f2bb098-8173-4a8a-8c84-5e3466fb71e0/datafile.xlsx",
+#                   "date_created": "2024-03-16T14:09:33.758037+00:00",
+#                   "submitted_by": {
+#                       "@id": "/users/74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68/",
+#                       "@type": [
+#                           "User",
+#                           "Item"
+#                       ],
+#                       "uuid": "74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68",
+#                       "display_title": "David Michaels",
+#                       "status": "current",
+#                       "principals_allowed": {
+#                           "view": [
+#                               "group.admin",
+#                               "remoteuser.EMBED",
+#                               "remoteuser.INDEXER",
+#                               "role.owner",
+#                               "userid.74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68"
+#                           ],
+#                           "edit": [
+#                               "group.admin"
+#                           ]
+#                       }
+#                   },
+#                   "last_modified": {
+#                       "modified_by": {
+#                           "@type": [
+#                               "User",
+#                               "Item"
+#                           ],
+#                           "status": "current",
+#                           "@id": "/users/74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68/",
+#                           "display_title": "David Michaels",
+#                           "uuid": "74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68",
+#                           "principals_allowed": {
+#                               "view": [
+#                                   "group.admin",
+#                                   "remoteuser.EMBED",
+#                                   "remoteuser.INDEXER",
+#                                   "role.owner",
+#                                   "userid.74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68"
+#                               ],
+#                               "edit": [
+#                                   "group.admin"
+#                               ]
+#                           }
+#                       },
+#                       "date_modified": "2024-03-16T14:09:33.762083+00:00"
+#                   },
+#                   "submission_id": "6f2bb098-8173-4a8a-8c84-5e3466fb71e0",
+#                   "ingestion_type": "metadata_bundle",
+#                   "schema_version": "1",
+#                   "additional_data": {
+#                       "upload_info": null,
+#                       "validation_output": [
+#                           "Submission UUID: 6f2bb098-8173-4a8a-8c84-5e3466fb71e0",
+#                           "Status: OK",
+#                           "File: test_submission_from_doug_20231106.xlsx",
+#                           "S3 File: s3://smaht-unit-testing-metadata-bundles/6f2bb098-8173-4a8a-8c84-5e3466fb71e0/datafile.xlsx",  # noqa
+#                           "Details: s3://smaht-unit-testing-metadata-bundles/6f2bb098-8173-4a8a-8c84-5e3466fb71e0/submission.json",  # noqa
+#                           "Total: 7",
+#                           "Types: 4",
+#                           "Created: 0",
+#                           "Updated: 0",
+#                           "Skipped: 7",
+#                           "Checked: 0"
+#                       ]
+#                   },
+#                   "processing_status": {
+#                       "state": "done",
+#                       "outcome": "success",
+#                       "progress": "complete"
+#                   },
+#                   "submission_centers": [
+#                       {
+#                           "display_title": "HMS DAC",
+#                           "@type": [
+#                               "SubmissionCenter",
+#                               "Item"
+#                           ],
+#                           "status": "public",
+#                           "@id": "/submission-centers/9626d82e-8110-4213-ac75-0a50adf890ff/",
+#                           "uuid": "9626d82e-8110-4213-ac75-0a50adf890ff",
+#                           "principals_allowed": {
+#                               "view": [
+#                                   "system.Everyone"
+#                               ],
+#                               "edit": [
+#                                   "group.admin"
+#                               ]
+#                           }
+#                       }
+#                   ],
+#                   "@id": "/ingestion-submissions/6f2bb098-8173-4a8a-8c84-5e3466fb71e0/",
+#                   "@type": [
+#                       "IngestionSubmission",
+#                       "Item"
+#                   ],
+#                   "uuid": "6f2bb098-8173-4a8a-8c84-5e3466fb71e0",
+#                   "principals_allowed": {
+#                       "view": [
+#                           "group.admin",
+#                           "group.read-only-admin",
+#                           "remoteuser.EMBED",
+#                           "remoteuser.INDEXER",
+#                           "role.submission_center_member_rw",
+#                           "role.submission_center_member_rw.9626d82e-8110-4213-ac75-0a50adf890ff"
+#                       ],
+#                       "edit": [
+#                           "group.admin",
+#                           "group.submitter"
+#                       ]
+#                   },
+#                   "@context": "/terms/",
+#                   "actions": [
+#                       {
+#                           "name": "create",
+#                           "title": "Create",
+#                           "profile": "/profiles/IngestionSubmission.json",
+#                           "href": "/ingestion-submissions/6f2bb098-8173-4a8a-8c84-5e3466fb71e0/?currentAction=create"
+#                       },
+#                       {
+#                           "name": "edit",
+#                           "title": "Edit",
+#                           "profile": "/profiles/IngestionSubmission.json",
+#                           "href": "/ingestion-submissions/6f2bb098-8173-4a8a-8c84-5e3466fb71e0/?currentAction=edit"
+#                       }
+#                   ],
+#                   "aggregated-items": {},
+#                   "validation-errors": []
+#               }
     if not validate_remote_silent and not _pytesting():
         _print_submission_summary(portal, check_response,
                                   nofiles=nofiles, check_submission_script=check_submission_script)
