@@ -1,6 +1,5 @@
 import boto3
 from botocore.exceptions import NoCredentialsError as BotoNoCredentialsError
-import copy
 from datetime import datetime
 from functools import lru_cache
 import io
@@ -20,7 +19,6 @@ import yaml
 # from dcicutils.env_utils import get_env_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
-from dcicutils.exceptions import InvalidParameterError
 from dcicutils.file_utils import search_for_file
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
@@ -37,6 +35,10 @@ from .exceptions import PortalPermissionError
 from .scripts.cli_utils import print_boxed
 from .utils import keyword_as_title, check_repeatedly
 from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, setup_for_output_file_option
+
+
+DEFAULT_INGESTION_TYPE = 'metadata_bundle'
+GENERIC_SCHEMA_TYPE = 'FileOther'
 
 
 class SubmissionProtocol:
@@ -445,6 +447,103 @@ def _ingestion_submission_item_url(server, uuid):
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
 
 
+def initiate_server_ingestion_process(
+        portal: Portal,
+        ingestion_filename: str,
+        consortia: Optional[List[str]],
+        submission_centers: Optional[List[str]],
+        validate_remote: bool = False,
+        validate_remote_only: bool = False,
+        validate_remote_silent: bool = False,
+        validation_ingestion_submission_object: Optional[dict] = None,
+        post_only: bool = False,
+        patch_only: bool = False,
+        autoadd: Optional[dict] = None,
+        debug: bool = False) -> Tuple[str, bool]:
+
+    is_server_validation = validate_remote_only or validate_remote_silent
+    is_server_submission = not is_server_validation
+
+    if is_server_submission and isinstance(validation_ingestion_submission_object, dict):
+        # This ingestion action is for a submission (rather than for a validation),
+        # and we were given an associated validation UUID (i.e. from a previous client
+        # initiated server validation); so we record this validation UUID in the
+        # submission IngestionSubmission object (to be created just below); and we will
+        # do the converse below, after the submission IngestionSubmission object creation.
+        validation_ingestion_submission_uuid = validation_ingestion_submission_object.get("uuid")
+    else:
+        validation_ingestion_submission_uuid = None
+
+    submission_post_data = {
+        "validate_only": is_server_validation,
+        "validate_first": validate_remote if is_server_validation else False,
+        "post_only": post_only,
+        "patch_only": patch_only,
+        "ref_nocache": False,  # Do not do this server-side at all; only client-side for testing.
+        "autoadd": json.dumps(autoadd),
+        "ingestion_directory": os.path.dirname(ingestion_filename),
+        **({"validation_uuid": validation_ingestion_submission_uuid} if validation_ingestion_submission_uuid else {})
+    }
+
+    response = _post_submission(portal=portal,
+                                ingestion_filename=ingestion_filename,
+                                consortia=consortia,
+                                submission_centers=submission_centers,
+                                submission_post_data=submission_post_data,
+                                is_server_validation=is_server_validation, debug=debug)
+    submission_uuid = response["submission_id"]
+
+    if validation_ingestion_submission_uuid:
+        # This ingestion action is for a submission (rather than for a validation),
+        # and we were given an associated validation UUID (i.e. from a previous client
+        # initiated server validation); so we record the associated submission UUID,
+        # created just above, in the validation IngestionSubmission object (via PATCH).
+        if validation_parameters := validation_ingestion_submission_object.get("parameters"):
+            validation_parameters["submission_uuid"] = submission_uuid
+            validation_parameters = {"parameters": validation_parameters}
+            portal.patch_metadata(object_id=validation_ingestion_submission_uuid, data=validation_parameters)
+
+    return submission_uuid, is_server_validation
+
+
+def _post_submission(portal: Portal,
+                     ingestion_filename: str,
+                     consortia: List[str],
+                     submission_centers: List[str],
+                     submission_post_data: dict,
+                     ingestion_type: str = DEFAULT_INGESTION_TYPE,
+                     submission_protocol: str = DEFAULT_SUBMISSION_PROTOCOL,
+                     is_server_validation: bool = False,
+                     debug: bool = False):
+    creation_post_data = {
+        "ingestion_type": ingestion_type,
+        "processing_status": {"state": "submitted"},
+        "consortia": consortia,
+        "submission_centers": submission_centers,
+        **({"parameters": {"validate_only": True}} if is_server_validation else {})
+    }
+    # This creates the IngestionSubmission object.
+    creation_post_url = url_path_join(portal.server, INGESTION_SUBMISSION_TYPE_NAME)
+    creation_response = portal.post(creation_post_url, json=creation_post_data, raise_for_status=True)
+    [submission] = creation_response.json()['@graph']
+    submission_id = submission['@id']
+    if debug:
+        PRINT(f"DEBUG: Created ingestion submission object: {submission_id}")
+    # This actually kicks off the ingestion process and updates the IngestionSubmission object created above.
+    new_style_submission_url = url_path_join(portal.server, submission_id, "submit_for_ingestion")
+    if debug:
+        PRINT(f"DEBUG: Initiating server {'validation' if is_server_validation else 'submission'} process.")
+    response = portal.post(new_style_submission_url,
+                           data=submission_post_data,
+                           files=_post_files_data(submission_protocol=submission_protocol,
+                                                  ingestion_filename=ingestion_filename),
+                           headers=None,
+                           raise_for_status=True)
+    if debug:
+        PRINT(f"DEBUG: Initiated server {'validation' if is_server_validation else 'submission'} process.")
+    return response.json()
+
+
 def _post_files_data(submission_protocol, ingestion_filename) -> Dict[Literal['datafile'], Optional[BinaryIO]]:
     """
     This composes a dictionary of the form {'datafile': <maybe-stream>}.
@@ -461,77 +560,6 @@ def _post_files_data(submission_protocol, ingestion_filename) -> Dict[Literal['d
         return {"datafile": io.open(ingestion_filename, 'rb')}
     else:
         return {"datafile": None}
-
-
-def _post_submission(server, keypair, ingestion_filename, creation_post_data, submission_post_data,
-                     submission_protocol=DEFAULT_SUBMISSION_PROTOCOL,
-                     validation=False):
-    """ This takes care of managing the compatibility step of using either the old or new ingestion protocol.
-
-    OLD PROTOCOL: Post directly to /submit_for_ingestion
-
-    NEW PROTOCOL: Create an IngestionSubmission and then use /ingestion-submissions/<guid>/submit_for_ingestion
-
-    :param server: the name of the server as a URL
-    :param keypair: a tuple which is a keypair (key_id, secret_key)
-    :param ingestion_filename: the bundle filename to be submitted
-    :param creation_post_data: data to become part of the post data for the creation
-    :param submission_post_data: data to become part of the post data for the ingestion
-    :return: the results of the ingestion call (whether by the one-step or two-step process)
-    """
-    portal = Portal(keypair, server=server)
-
-    """
-    Comment out older style protocol ...
-    if submission_protocol == SubmissionProtocol.UPLOAD and TRY_OLD_PROTOCOL:
-        old_style_submission_url = url_path_join(server, "submit_for_ingestion")
-        old_style_post_data = dict(creation_post_data, **submission_post_data)
-        response = portal.post(old_style_submission_url, data=old_style_post_data,
-                               files=_post_files_data(submission_protocol=submission_protocol,
-                                                      ingestion_filename=ingestion_filename), headers=None)
-        if response.status_code != 404:
-            if DEBUG_PROTOCOL:  # pragma: no cover
-                PRINT('Old style protocol worked.')
-            return response
-        else:  # on 404, try new protocol ...
-            if DEBUG_PROTOCOL:  # pragma: no cover
-                PRINT('Retrying with new protocol.')
-    """
-
-    creation_post_url = url_path_join(server, INGESTION_SUBMISSION_TYPE_NAME)
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT(f"Creating {INGESTION_SUBMISSION_TYPE_NAME} (bundle) type object ...")
-    if submission_protocol == SubmissionProtocol.S3:
-        # New with Fourfront ontology ingestion work (March 2023).
-        # Store the submission data in the parameters of the IngestionSubmission object
-        # here (it will get there later anyway via patch in ingester process), so that we can
-        # get at this info via show-upload-info, before the ingester picks this up; specifically,
-        # this is the FileOther object info, its uuid and associated data file, which was uploaded
-        # in this case (SubmissionProtocol.S3) directly to S3 from submit-ontology.
-        creation_post_data["parameters"] = submission_post_data
-    if validation:
-        if creation_post_data.get("parameters"):
-            creation_post_data["parameters"]["validate_only"] = True
-        else:
-            creation_post_data["parameters"] = {"validate_only": True}
-    # This creates the IngestionSubmission object.
-    creation_response = portal.post(creation_post_url, json=creation_post_data, raise_for_status=True)
-    [submission] = creation_response.json()['@graph']
-    submission_id = submission['@id']
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        SHOW(f"Created {INGESTION_SUBMISSION_TYPE_NAME} (bundle) type object: {submission.get('uuid', 'not-found')}")
-    new_style_submission_url = url_path_join(server, submission_id, "submit_for_ingestion")
-    # This actually kicks off the ingestion process and updates the IngestionSubmission object created above.
-    response = portal.post(new_style_submission_url,
-                           data=submission_post_data,
-                           files=_post_files_data(submission_protocol=submission_protocol,
-                                                  ingestion_filename=ingestion_filename), headers=None)
-    return response
-
-
-DEFAULT_INGESTION_TYPE = 'metadata_bundle'
-
-GENERIC_SCHEMA_TYPE = 'FileOther'
 
 
 def _resolve_app_args(institution, project, lab, award, app, consortium, submission_center):
@@ -677,7 +705,6 @@ def submit_any_ingestion(ingestion_filename, *,
         PRINT(f"DEBUG: validate_remote_silent = {validate_remote_silent}")
 
     validation_only = validate_local_only or validate_remote_only
-    validation = validation_only or validate_remote_silent
 
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
     if not _do_app_arg_defaulting(app_args, user_record, portal, quiet=json_only and not verbose, verbose=verbose):
@@ -708,6 +735,9 @@ def submit_any_ingestion(ingestion_filename, *,
                           ref_nocache=ref_nocache, output_file=output_file, noprogress=noprogress,
                           json_only=json_only, verbose_json=verbose_json,
                           verbose=verbose, debug=debug, debug_sleep=debug_sleep)
+    else:
+        if debug:
+            PRINT("DEBUG: Skipping local (client) validation.")
 
     maybe_ingestion_type = ''
     if ingestion_type != DEFAULT_INGESTION_TYPE:
@@ -730,152 +760,19 @@ def submit_any_ingestion(ingestion_filename, *,
     if not os.path.exists(ingestion_filename):
         raise ValueError("The file '%s' does not exist." % ingestion_filename)
 
-    creation_post_data = {
-        'ingestion_type': ingestion_type,
-        "processing_status": {
-            "state": "submitted"
-        },
-        **app_args,  # institution & project or lab & award
-    }
-
-    if submission_protocol == SubmissionProtocol.S3:
-
-        upload_result = upload_file_to_new_uuid(filename=ingestion_filename, schema_name=GENERIC_SCHEMA_TYPE,
-                                                auth=portal.key, **app_args)
-
-        submission_post_data = compute_s3_submission_post_data(ingestion_filename=ingestion_filename,
-                                                               ingestion_post_result=upload_result,
-                                                               # The rest of this is other_args to pass through...
-                                                               validate_remote_only=validate_remote_only, **app_args)
-
-    elif submission_protocol == SubmissionProtocol.UPLOAD:
-
-        submission_post_data = {
-            'validate_only': None,  # see initiate_submission below
-            'validate_first': validate_remote,
-            'post_only': post_only,
-            'patch_only': patch_only,
-            'ref_nocache': ref_nocache,
-            'autoadd': json.dumps(autoadd),
-            'ingestion_directory': os.path.dirname(ingestion_filename)
-        }
-
-    else:
-
-        raise InvalidParameterError(parameter='submission_protocol', value=submission_protocol,
-                                    options=SUBMISSION_PROTOCOLS)
-
-    def initiate_submission(first_time: bool = True,
-                            validation_submission_ingestion_object: Optional[dict] = None):
-        nonlocal portal, ingestion_filename, creation_post_data, submission_post_data, submission_protocol
-        nonlocal validate_remote, validate_remote_only, validate_remote_silent
-        submission_post_data = copy.deepcopy(submission_post_data)
-        if first_time:
-            submission_post_data["validate_only"] = (
-                validate_remote_only or (validate_remote and validate_remote_silent))
-        else:
-            submission_post_data["validate_only"] = False
-            submission_post_data["validate_first"] = False
-            if validation_submission_ingestion_object:
-                # Record the associated validation UUID in the
-                # submission IngestionSubmission object; and conversely below.
-                validation_uuid = validation_submission_ingestion_object.get("uuid")
-                submission_post_data["validation_uuid"] = validation_uuid
-        response = _post_submission(server=portal.server, keypair=portal.key_pair,
-                                    ingestion_filename=ingestion_filename,
-                                    creation_post_data=creation_post_data,
-                                    submission_post_data=submission_post_data,
-                                    submission_protocol=submission_protocol,
-                                    validation=first_time)
-        try:
-            # This can fail if the body doesn't contain JSON
-            res = response.json()
-        except Exception:  # pragma: no cover
-            # This clause is not ordinarily entered. It handles a pathological case that we only hypothesize.
-            # It does not require careful unit test coverage. -kmp 23-Feb-2022
-            res = None
-        try:
-            response.raise_for_status()
-        except Exception:
-            if res is not None:
-                # For example, if you call this on an old version of cgap-portal that does not support this request,
-                # the error will be a 415 error, because the tween code defaultly insists on application/json:
-                # {
-                #     "@type": ["HTTPUnsupportedMediaType", "Error"],
-                #     "status": "error",
-                #     "code": 415,
-                #     "title": "Unsupported Media Type",
-                #     "description": "",
-                #     "detail": "Request content type multipart/form-data is not 'application/json'"
-                # }
-                title = res.get('title')
-                message = title
-                detail = res.get('detail')
-                if detail:
-                    message += ": " + detail
-                SHOW(message)
-                if title == "Unsupported Media Type":
-                    SHOW("NOTE: This error is known to occur if the server"
-                         " does not support metadata bundle submission.")
-            raise
-        if res is None:  # pragma: no cover
-            # This clause is not ordinarily entered. It handles a pathological case that we only hypothesize.
-            # It does not require careful unit test coverage. -kmp 23-Feb-2022
-            raise Exception("Bad JSON body in %s submission result." % response.status_code)
-        submission_uuid = res["submission_id"]
-        if not first_time and validation_submission_ingestion_object and validation_uuid:
-            # Patch the validation IngestionSubmission object with the associated submission
-            # UUID in the submission IngestionSubmission object; and conversely above.
-            if validation_parameters := validation_submission_ingestion_object.get("parameters"):
-                validation_parameters["submission_uuid"] = submission_uuid
-                validation_parameters = {"parameters": validation_parameters}
-                portal.patch_metadata(object_id=validation_uuid, data=validation_parameters)
-            pass
-        return submission_uuid
-
-    submission_uuid = initiate_submission(first_time=True)
-
-    """
-    try:
-        # This can fail if the body doesn't contain JSON
-        res = response.json()
-    except Exception:  # pragma: no cover
-        # This clause is not ordinarily entered. It handles a pathological case that we only hypothesize.
-        # It does not require careful unit test coverage. -kmp 23-Feb-2022
-        res = None
-
-    try:
-        response.raise_for_status()
-    except Exception:
-        if res is not None:
-            # For example, if you call this on an old version of cgap-portal that does not support this request,
-            # the error will be a 415 error, because the tween code defaultly insists on application/json:
-            # {
-            #     "@type": ["HTTPUnsupportedMediaType", "Error"],
-            #     "status": "error",
-            #     "code": 415,
-            #     "title": "Unsupported Media Type",
-            #     "description": "",
-            #     "detail": "Request content type multipart/form-data is not 'application/json'"
-            # }
-            title = res.get('title')
-            message = title
-            detail = res.get('detail')
-            if detail:
-                message += ": " + detail
-            SHOW(message)
-            if title == "Unsupported Media Type":
-                SHOW("NOTE: This error is known to occur if the server"
-                     " does not support metadata bundle submission.")
-        raise
-
-    if res is None:  # pragma: no cover
-        # This clause is not ordinarily entered. It handles a pathological case that we only hypothesize.
-        # It does not require careful unit test coverage. -kmp 23-Feb-2022
-        raise Exception("Bad JSON body in %s submission result." % response.status_code)
-
-    uuid = res['submission_id']
-    """
+    # submission_uuid = initiate_submission(first_time=True, debug=debug)
+    submission_uuid, is_server_validation = initiate_server_ingestion_process(
+        portal=portal,
+        ingestion_filename=ingestion_filename,
+        consortia=app_args.get("consortia"),
+        submission_centers=app_args.get("submission_centers"),
+        validate_remote=validate_remote,
+        validate_remote_only=validate_remote_only,
+        validate_remote_silent=validate_remote_silent,
+        post_only=post_only,
+        patch_only=patch_only,
+        autoadd=autoadd,
+        debug=debug)
 
     if validate_remote_silent:
         SHOW(f"Continuing with additional (server) validation: {portal.server}")
@@ -884,15 +781,15 @@ def submit_any_ingestion(ingestion_filename, *,
              with_time=False)
     if verbose:
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}", with_time=False)
-    if not validation:
-        SHOW(f"Submission tracking ID: {submission_uuid}", with_time=False)
-    else:
+    if is_server_validation:
         SHOW(f"Validation tracking ID: {submission_uuid}", with_time=False)
+    else:
+        SHOW(f"Submission tracking ID: {submission_uuid}", with_time=False)
 
     check_done, check_status, check_response = _check_submit_ingestion(
             submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
             show_details=show_details, report=False, messages=True,
-            validation=validation, validate_remote_silent=validate_remote_silent,
+            validation=is_server_validation, validate_remote_silent=validate_remote_silent,
             nofiles=True, noprogress=noprogress, verbose=verbose)
 
     if validate_remote_only:
@@ -914,14 +811,25 @@ def submit_any_ingestion(ingestion_filename, *,
         exit(0)
 
     if check_status == "success":
-        if validation:
+        if is_server_validation:
             SHOW("Validation results (server): OK")
-            SHOW(f"Ready to continue with submission to {portal.server}: {ingestion_filename}")
-            if yes_or_no("Continue with submission?"):
+            SHOW(f"Ready to submit your metadata to {portal.server}: {ingestion_filename}")
+            if yes_or_no("Continue on with the actual submission?"):
                 # TODO: I think we want to annotate/update the server validation ingestion object
                 # with a pointer to the submission ingestion object which we will be creating here.
-                submission_uuid = initiate_submission(first_time=False,
-                                                      validation_submission_ingestion_object=check_response)
+                #               submission_uuid = initiate_submission(first_time=False,
+                #                                                     validation_ingestion_submission_object=check_response,
+                #                                                     debug=debug)
+                submission_uuid, _ = initiate_server_ingestion_process(
+                    portal=portal,
+                    ingestion_filename=ingestion_filename,
+                    consortia=app_args.get("consortia"),
+                    submission_centers=app_args.get("submission_centers"),
+                    validation_ingestion_submission_object=check_response,
+                    post_only=post_only,
+                    patch_only=patch_only,
+                    autoadd=autoadd,
+                    debug=debug)
                 SHOW(f"Submission tracking ID: {submission_uuid}")
                 check_done, check_status, check_response = _check_submit_ingestion(
                         submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
@@ -1181,7 +1089,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
 
     if (check_submission_script and check_response and
         (check_parameters := check_response.get("parameters", {})) and
-        check_parameters.get("validate_only") and not check_parameters.get("submission_uuid")):  # noqa
+        asbool(check_parameters.get("validate_only")) and
+        not check_parameters.get("submission_uuid")):  # noqa
         # This is the check-submission script waiting for a VALIDATION (not a submission)
         # to complete, i.e. the server validation part of submit-metadata-bundle had timed
         # out previously. And this which server validation is now complete. We now want to give
@@ -1211,181 +1120,9 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                 # the check_response will look like below; need the consortia,
                 # submission_centers, ingestion_type, etc; this function needs this info:
                 # def initiate_submission(first_time: bool = True,
-                #                         validation_submission_ingestion_object: Optional[dict] = None):
+                #                         validation_ingestion_submission_object: Optional[dict] = None):
                 #     nonlocal portal, ingestion_filename, creation_post_data, submission_post_data, submission_protocol
                 #     nonlocal validate_remote, validate_remote_only, validate_remote_silent
-#               {
-#                   "status": "in review",
-#                   "consortia": [
-#                       {
-#                           "@id": "/consortia/358aed10-9b9d-4e26-ab84-4bd162da182b/",
-#                           "@type": [
-#                               "Consortium",
-#                               "Item"
-#                           ],
-#                           "uuid": "358aed10-9b9d-4e26-ab84-4bd162da182b",
-#                           "status": "released",
-#                           "display_title": "SMaHT",
-#                           "principals_allowed": {
-#                               "view": [
-#                                   "group.admin",
-#                                   "group.read-only-admin",
-#                                   "remoteuser.EMBED",
-#                                   "remoteuser.INDEXER",
-#                                   "role.consortium_member_rw",
-#                                   "role.consortium_member_rw.358aed10-9b9d-4e26-ab84-4bd162da182b",
-#                                   "role.submission_center_member_rw"
-#                               ],
-#                               "edit": [
-#                                   "group.admin"
-#                               ]
-#                           }
-#                       }
-#                   ],
-#                   "parameters": {
-#                       "autoadd": "{\"submission_centers\": [\"9626d82e-8110-4213-ac75-0a50adf890ff\"]}",
-#                       "datafile": "test_submission_from_doug_20231106.xlsx",
-#                       "post_only": "False",
-#                       "consortium": "/consortia/358aed10-9b9d-4e26-ab84-4bd162da182b/",
-#                       "patch_only": "False",
-#                       "ref_nocache": "False",
-#                       "validate_only": "True",
-#                       "ingestion_type": "metadata_bundle",
-#                       "validate_first": "True",
-#                       "submission_center": "/submission-centers/9626d82e-8110-4213-ac75-0a50adf890ff/",
-#                       "ingestion_directory": "/Users/dmichaels/repos/cgap/submitr/testdata/demo"
-#                   },
-#                   "object_name": "6f2bb098-8173-4a8a-8c84-5e3466fb71e0/datafile.xlsx",
-#                   "date_created": "2024-03-16T14:09:33.758037+00:00",
-#                   "submitted_by": {
-#                       "@id": "/users/74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68/",
-#                       "@type": [
-#                           "User",
-#                           "Item"
-#                       ],
-#                       "uuid": "74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68",
-#                       "display_title": "David Michaels",
-#                       "status": "current",
-#                       "principals_allowed": {
-#                           "view": [
-#                               "group.admin",
-#                               "remoteuser.EMBED",
-#                               "remoteuser.INDEXER",
-#                               "role.owner",
-#                               "userid.74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68"
-#                           ],
-#                           "edit": [
-#                               "group.admin"
-#                           ]
-#                       }
-#                   },
-#                   "last_modified": {
-#                       "modified_by": {
-#                           "@type": [
-#                               "User",
-#                               "Item"
-#                           ],
-#                           "status": "current",
-#                           "@id": "/users/74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68/",
-#                           "display_title": "David Michaels",
-#                           "uuid": "74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68",
-#                           "principals_allowed": {
-#                               "view": [
-#                                   "group.admin",
-#                                   "remoteuser.EMBED",
-#                                   "remoteuser.INDEXER",
-#                                   "role.owner",
-#                                   "userid.74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68"
-#                               ],
-#                               "edit": [
-#                                   "group.admin"
-#                               ]
-#                           }
-#                       },
-#                       "date_modified": "2024-03-16T14:09:33.762083+00:00"
-#                   },
-#                   "submission_id": "6f2bb098-8173-4a8a-8c84-5e3466fb71e0",
-#                   "ingestion_type": "metadata_bundle",
-#                   "schema_version": "1",
-#                   "additional_data": {
-#                       "upload_info": null,
-#                       "validation_output": [
-#                           "Submission UUID: 6f2bb098-8173-4a8a-8c84-5e3466fb71e0",
-#                           "Status: OK",
-#                           "File: test_submission_from_doug_20231106.xlsx",
-#                           "S3 File: s3://smaht-unit-testing-metadata-bundles/6f2bb098-8173-4a8a-8c84-5e3466fb71e0/datafile.xlsx",  # noqa
-#                           "Details: s3://smaht-unit-testing-metadata-bundles/6f2bb098-8173-4a8a-8c84-5e3466fb71e0/submission.json",  # noqa
-#                           "Total: 7",
-#                           "Types: 4",
-#                           "Created: 0",
-#                           "Updated: 0",
-#                           "Skipped: 7",
-#                           "Checked: 0"
-#                       ]
-#                   },
-#                   "processing_status": {
-#                       "state": "done",
-#                       "outcome": "success",
-#                       "progress": "complete"
-#                   },
-#                   "submission_centers": [
-#                       {
-#                           "display_title": "HMS DAC",
-#                           "@type": [
-#                               "SubmissionCenter",
-#                               "Item"
-#                           ],
-#                           "status": "public",
-#                           "@id": "/submission-centers/9626d82e-8110-4213-ac75-0a50adf890ff/",
-#                           "uuid": "9626d82e-8110-4213-ac75-0a50adf890ff",
-#                           "principals_allowed": {
-#                               "view": [
-#                                   "system.Everyone"
-#                               ],
-#                               "edit": [
-#                                   "group.admin"
-#                               ]
-#                           }
-#                       }
-#                   ],
-#                   "@id": "/ingestion-submissions/6f2bb098-8173-4a8a-8c84-5e3466fb71e0/",
-#                   "@type": [
-#                       "IngestionSubmission",
-#                       "Item"
-#                   ],
-#                   "uuid": "6f2bb098-8173-4a8a-8c84-5e3466fb71e0",
-#                   "principals_allowed": {
-#                       "view": [
-#                           "group.admin",
-#                           "group.read-only-admin",
-#                           "remoteuser.EMBED",
-#                           "remoteuser.INDEXER",
-#                           "role.submission_center_member_rw",
-#                           "role.submission_center_member_rw.9626d82e-8110-4213-ac75-0a50adf890ff"
-#                       ],
-#                       "edit": [
-#                           "group.admin",
-#                           "group.submitter"
-#                       ]
-#                   },
-#                   "@context": "/terms/",
-#                   "actions": [
-#                       {
-#                           "name": "create",
-#                           "title": "Create",
-#                           "profile": "/profiles/IngestionSubmission.json",
-#                           "href": "/ingestion-submissions/6f2bb098-8173-4a8a-8c84-5e3466fb71e0/?currentAction=create"
-#                       },
-#                       {
-#                           "name": "edit",
-#                           "title": "Edit",
-#                           "profile": "/profiles/IngestionSubmission.json",
-#                           "href": "/ingestion-submissions/6f2bb098-8173-4a8a-8c84-5e3466fb71e0/?currentAction=edit"
-#                       }
-#                   ],
-#                   "aggregated-items": {},
-#                   "validation-errors": []
-#               }
     if not validate_remote_silent and not _pytesting():
         _print_submission_summary(portal, check_response,
                                   nofiles=nofiles, check_submission_script=check_submission_script)
@@ -2329,6 +2066,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                         ref_lookup_nocache=ref_nocache,
                                         progress=None if noprogress else define_progress_callback(),
                                         debug_sleep=debug_sleep)
+    PRINT("*** CLIENT VALIDATION ***")
     structured_data._load_file(ingestion_filename)
 
     if debug:

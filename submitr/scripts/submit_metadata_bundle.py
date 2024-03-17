@@ -73,14 +73,19 @@ ADVANCED OPTIONS:
   Performs ONLY, but BOTH client-side (local) and
   server-side (remote) validation only WITHOUT submitting.
   Same as --validate with slightly different command interaction.
---validate-local-only
-  Performs ONLY client-side (local) validation WITHOUT submitting.
+  Client validation: Yes | Client initiated server validation: Yes
 --validate-remote-only
   Performs ONLY server-side (remote) validation WITHOUT submitting.
+  Client validation: Yes | Client initiated server validation: Yes
+--validate-local-only
+  Performs ONLY client-side (local) validation WITHOUT submission.
+  Client validation: Yes | Client initiated server validation: No
 --validate-local
-  Performs only client-side (local) validation before submitting.
+  Performs only client-side (local) validation before submission.
+  Client validation: Yes | Client initiated server validation: No
 --validate-remote
-  Performs only server-side (remote) validation before submitting.
+  Performs only server-side (remote) validation before submission.
+  Client validation: No | Client initiated server validation: No
 --patch-only
   Perform ONLY updates (PATCHes) for submitted data.
 --post-only

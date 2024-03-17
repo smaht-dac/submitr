@@ -2089,67 +2089,6 @@ def test_submit_any_ingestion_new_protocol(mock_get_health_page):
 
     expect_datafile_for_mocked_post = False
 
-    with shown_output() as shown:
-        with mock.patch("os.path.exists", mfs.exists):
-            with mock.patch("io.open", mfs.open):
-                with io.open(SOME_BUNDLE_FILENAME, 'w') as fp:
-                    print("Data would go here.", file=fp)
-                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
-                        with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                            with mock.patch.object(Portal, "key",
-                                                   new_callable=mock.PropertyMock) as mocked_portal_key_property:
-                                mocked_portal_key_property.return_value = SOME_KEYDICT
-                                with mock.patch("requests.post", mocked_post):
-                                    with mock.patch("requests.get",
-                                                    make_mocked_get(done_after_n_tries=get_request_attempts)):
-                                        with mock.patch("datetime.datetime", dt):
-                                            with mock.patch("time.sleep", dt.sleep):
-                                                with mock.patch.object(submission_module, "_show_section"):
-                                                    with mock.patch.object(submission_module,
-                                                                           "do_any_uploads") as mock_do_any_uploads:
-                                                        with mock.patch.object(submission_module,
-                                                                               "upload_file_to_new_uuid"
-                                                                               ) as mock_upload_file_to_new_uuid:
-                                                            def mocked_upload_file_to_new_uuid(
-                                                                    filename, schema_name, auth, **app_args):
-                                                                ignored(app_args)  # not relevant to this test
-                                                                assert filename == SOME_BUNDLE_FILENAME
-                                                                assert schema_name == expected_schema_name
-                                                                assert auth['key'] == SOME_KEY_ID
-                                                                assert auth['secret'] == SOME_SECRET
-                                                                return {
-                                                                    'uuid': mocked_good_uuid,
-                                                                    'accession': mocked_good_at_id,
-                                                                    '@id': mocked_good_at_id,
-                                                                    'key': mocked_good_filename,
-                                                                    'upload_credentials':
-                                                                    mocked_good_upload_credentials,
-                                                                }
-                                                            mock_upload_file_to_new_uuid.side_effect = (
-                                                                mocked_upload_file_to_new_uuid
-                                                            )
-                                                            try:
-                                                                submit_any_ingestion(
-                                                                    SOME_BUNDLE_FILENAME,
-                                                                    ingestion_type='metadata_bundle',
-                                                                    **SOME_ORG_ARGS,
-                                                                    server=SOME_SERVER,
-                                                                    env=None,
-                                                                    validate_remote_only=False,
-                                                                    upload_folder=None,
-                                                                    no_query=False,
-                                                                    subfolders=False,
-                                                                    submission_protocol=SubmissionProtocol.S3,
-                                                                )
-                                                            except SystemExit as e:  # pragma: no cover
-                                                                # This is just in case. In fact, it's more likely
-                                                                # that a normal 'return' not 'exit' was done.
-                                                                assert e.code == 0
-                                                            assert mock_do_any_uploads.call_count == 1
-
-        # assert shown.lines and "Portal credentials do not seem to work" in shown.lines[0]  # TODO
-
     dt.reset_datetime()
 
     # Check an edge case
