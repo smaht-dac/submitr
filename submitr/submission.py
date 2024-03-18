@@ -1,3 +1,4 @@
+import ast
 import boto3
 from botocore.exceptions import NoCredentialsError as BotoNoCredentialsError
 from datetime import datetime
@@ -24,7 +25,7 @@ from dcicutils.file_utils import search_for_file
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
-    environ_bool, is_uuid, url_path_join, ignorable, remove_prefix, str_to_bool as asbool
+    environ_bool, is_uuid, url_path_join, ignorable, normalize_spaces, remove_prefix, str_to_bool as asbool
 )
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
@@ -35,7 +36,7 @@ from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
 from .scripts.cli_utils import print_boxed
 from .utils import keyword_as_title
-from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, setup_for_output_file_option
+from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 
 
 DEFAULT_INGESTION_TYPE = 'metadata_bundle'
@@ -448,7 +449,7 @@ def _ingestion_submission_item_url(server, uuid):
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
 
 
-def initiate_server_ingestion_process(
+def _initiate_server_ingestion_process(
         portal: Portal,
         ingestion_filename: str,
         consortia: Optional[List[str]],
@@ -750,8 +751,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
         SHOW(f"Continuing with additional (server) validation: {portal.server}")
 
-        # submission_uuid = initiate_submission(first_time=True, debug=debug)
-        submission_uuid = initiate_server_ingestion_process(
+        validation_uuid = _initiate_server_ingestion_process(
             is_server_validation=True,
             portal=portal,
             ingestion_filename=ingestion_filename,
@@ -762,31 +762,19 @@ def submit_any_ingestion(ingestion_filename, *,
             autoadd=autoadd,
             debug=debug)
 
-        SHOW(f"Validation tracking ID: {submission_uuid}")
+        SHOW(f"Validation tracking ID: {validation_uuid}")
 
-        server_validation_done, server_validation_status, server_validation_response = _check_ingestion_process(
-                submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
+        server_validation_done, server_validation_status, server_validation_response = _monitor_ingestion_process(
+                validation_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
                 show_details=show_details, report=False, messages=True,
                 validation=True,
                 nofiles=True, noprogress=noprogress, verbose=verbose)
 
-        if server_validation_status == "success":
-            PRINT("Validation results (server): OK")
-        else:
-            PRINT(f"Validation results (server): ERROR"
-                  f"{f' ({server_validation_status})' if server_validation_status not in ['failure', 'error'] else ''}")
-            if server_validation_response and (additional_data := server_validation_response.get("additional_data")):
-                if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
-                    if errors := [info for info in validation_info if info.lower().startswith("error:")]:
-                        for error in errors:
-                            PRINT_OUTPUT("- " + error.replace("Error", "ERROR:"))
-            if server_validation_response and isinstance(other_errors :=
-                                                         server_validation_response.get("errors"), list):
-                for error in other_errors:
-                    PRINT_OUTPUT("- " + error)
-            if output_file:
-                PRINT_STDOUT(f"Please check your output file for details: {output_file}")
+        if server_validation_status != "success":
             exit(1)
+
+        PRINT("Validation results (server): OK")
+
     else:
         server_validation_response = None
         PRINT("Skipping server validation (as requested via --validate-remote-skip).")
@@ -800,7 +788,7 @@ def submit_any_ingestion(ingestion_filename, *,
     if not yes_or_no("Continue on with the actual submission?"):
         exit(0)
 
-    submission_uuid = initiate_server_ingestion_process(
+    submission_uuid = _initiate_server_ingestion_process(
         is_server_validation=False,
         validation_ingestion_submission_object=server_validation_response,
         portal=portal,
@@ -814,11 +802,17 @@ def submit_any_ingestion(ingestion_filename, *,
 
     SHOW(f"Submission tracking ID: {submission_uuid}")
 
-    submission_done, submission_status, submission_response = _check_ingestion_process(
+    submission_done, submission_status, submission_response = _monitor_ingestion_process(
             submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
             show_details=show_details, report=False, messages=True,
             validation=False,
             nofiles=True, noprogress=noprogress, verbose=verbose, debug_sleep=debug_sleep)
+
+    if submission_status != "success":
+        exit(1)
+
+    if verbose:
+        PRINT("Submission complete!")
 
     do_any_uploads(submission_response, keydict=portal.key, ingestion_filename=ingestion_filename,
                    upload_folder=upload_folder, no_query=no_query,
@@ -891,16 +885,16 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
     return False
 
 
-def _check_ingestion_process(uuid: str, server: str, env: str, keys_file: Optional[str] = None,
-                             app: Optional[OrchestratedApp] = None,
-                             show_details: bool = False,
-                             validation: bool = False,
-                             env_from_env: bool = False,
-                             verbose: bool = False,
-                             report: bool = True, messages: bool = False,
-                             nofiles: bool = False, noprogress: bool = False,
-                             check_submission_script: bool = False,
-                             debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
+def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Optional[str] = None,
+                               app: Optional[OrchestratedApp] = None,
+                               show_details: bool = False,
+                               validation: bool = False,
+                               env_from_env: bool = False,
+                               verbose: bool = False,
+                               report: bool = True, messages: bool = False,
+                               nofiles: bool = False, noprogress: bool = False,
+                               check_submission_script: bool = False,
+                               debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
 
     # Maximum amount of time (approximately) we will wait for a response from server (seconds).
     PROGRESS_MAX_TIME = 5  # xyzzy
@@ -1051,11 +1045,83 @@ def _check_ingestion_process(uuid: str, server: str, env: str, keys_file: Option
                 #     nonlocal portal, ingestion_filename, creation_post_data, submission_post_data, submission_protocol
                 #     nonlocal validate_remote_only, validate_remote_silent
 
-    # if not validate_remote_silent and not _pytesting():
-    _print_submission_summary(portal, check_response,
-                              nofiles=nofiles, check_submission_script=check_submission_script)
+    if verbose or not validation:
+        _print_submission_summary(portal, check_response,
+                                  nofiles=nofiles, check_submission_script=check_submission_script)
+
+    # If not sucessful then output any validation/submission results.
+    if check_status != "success":
+        PRINT(f"{'Validation' if validation else 'Submission'} results (server): ERROR"
+              f"{f' ({check_status})' if check_status not in ['failure', 'error'] else ''}")
+        if check_response and (additional_data := check_response.get("additional_data")):
+            if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
+                if errors := [info for info in validation_info if info.lower().startswith("error:")]:
+                    for error in errors:
+                        PRINT_OUTPUT(f"- {_format_server_error(error, indent=2)}")
+        if check_response and isinstance(other_errors := check_response.get("errors"), list):
+            for error in other_errors:
+                PRINT_OUTPUT("- " + error)
+        if output_file := get_output_file():
+            PRINT_STDOUT(f"Please check your output file for details: {output_file}")
+        exit(1)
 
     return check_done, check_status, check_response
+
+
+def _format_server_error(error: str, indent: int = 0) -> str:
+    """
+    Make an attempt at parsing and formatting a server (validation/submission) error.
+    If we can't do it then just return the string as given. Here for example is what
+    we hope a "typical" server error message looks like:
+    'Error: /Software/DAX_SOFTWARE_VEPX Exception encountered on VirtualAppURL: /Software?skip_indexing=true&check_only=true&skip_links=trueBODY: {\'submitted_id\': \'DAX_SOFTWARE_VEPX\', \'category\': [\'Variant Annotation\'], \'title\': \'VEP\', \'version\': \'1.0.1\', \'consortia\': [\'smaht\'], \'submission_centers\': [\'9626d82e-8110-4213-ac75-0a50adf890ff\']}MSG: HTTP POST failed.Raw Exception: Bad response: 422 Unprocessable Entity (not 200 OK or 3xx redirect for http://localhost/Software?skip_indexing=true&check_only=true&skip_links=true)b\'{"@type": ["ValidationFailure", "Error"], "status": "error", "code": 422, "title": "Unprocessable Entity", "description": "Failed validation", "errors": [{"location": "submitted_id", "name": "Submission Code Mismatch", "description": "Submitted ID DAX_SOFTWARE_VEPX start (DAX) does not match options for given submission centers: [\\\'DAC\\\']."}]}\''  # noqa
+    """
+
+    def load_json_fuzzy(value: str) -> Optional[dict]:
+        if isinstance(value, str):
+            if (value := normalize_spaces(value)).endswith("'"):
+                value = value[:-1]
+            try:
+                value = json.loads(value)
+            except Exception:
+                try:
+                    value = ast.literal_eval(value)
+                except Exception:
+                    try:
+                        value = json.loads(value := value.replace("\\", ""))
+                    except Exception:
+                        try:
+                            value = json.loads(value := value.replace("'", '"'))
+                        except Exception:
+                            pass
+            if isinstance(value, dict):
+                value.pop("@type", None)
+                return value
+
+    def format_json_with_indent(value: dict, indent: int = 0) -> Optional[str]:
+        if isinstance(value, dict):
+            result = json.dumps(value, indent=4)
+            if indent > 0:
+                result = f"{indent * ' '}{result}"
+                result = result.replace("\n", f"\n{indent * ' '}")
+            return result
+
+    pattern = r"\s*Error:\s*(.+?)\s*Exception.*BODY:\s*({.*})MSG:\s*(.*?)Raw Exception.*({\"@type\":.*)"
+    match = re.match(pattern, error)
+    if match and len(match.groups()) == 4:
+        path = match.group(1)
+        body = match.group(2)
+        message = match.group(3)
+        if message.endswith("."):
+            message = message[:-1]
+        error = match.group(4)
+        body = load_json_fuzzy(body)
+        error = load_json_fuzzy(error)
+        if path and message and error and body:
+            result = f"ERROR: {message} ▶ {path}"
+            result += f"\n{format_json_with_indent(error, indent=indent)}"
+            result += f"\n{format_json_with_indent(body, indent=indent)}"
+            return result
+    return error.replace("Error:", "ERROR:")
 
 
 def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict]:

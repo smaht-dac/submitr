@@ -3,7 +3,7 @@ import io
 import os
 import pkg_resources
 import sys
-from typing import Callable, Tuple
+from typing import Callable, Optional, Tuple
 from dcicutils.command_utils import yes_or_no
 from dcicutils.misc_utils import PRINT as __PRINT
 from .utils import show as __show
@@ -26,15 +26,18 @@ PRINT_OUTPUT = _print
 SHOW = _show
 ERASE_LINE = "\033[K"
 
+_OUTPUT_FILE = None
+
 
 def setup_for_output_file_option(output_file: str) -> Tuple[Callable, Callable, Callable, Callable]:
-    global SHOW, PRINT, PRINT_STDOUT, PRINT_OUTPUT
+    global SHOW, PRINT, PRINT_STDOUT, PRINT_OUTPUT, _OUTPUT_FILE
     if os.path.exists(output_file):
         PRINT(f"Output file already exists: {output_file}")
         if not yes_or_no("Overwrite this file?"):
             exit(1)
         with io.open(output_file, "w"):
             pass
+    _OUTPUT_FILE = output_file  # Assuming this is only called once/globally
     PRINT(f"Logging to output file: {output_file}")
     def append_to_output_file(*args):  # noqa
         string = io.StringIO()
@@ -63,6 +66,10 @@ def setup_for_output_file_option(output_file: str) -> Tuple[Callable, Callable, 
     append_to_output_file(f"COMMAND: {' '.join(sys.argv)}")
     append_to_output_file(f"VERSION: {get_version()}")
     return PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW
+
+
+def get_output_file() -> Optional[str]:
+    return _OUTPUT_FILE
 
 
 def get_version() -> str:
