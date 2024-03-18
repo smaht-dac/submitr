@@ -1,0 +1,9 @@
+From Doug (2024-03-07):
+https://hms-dbmi.slack.com/archives/D03ES1MDFHT/p1709844398091829
+Put these [dependencies] files in src/encoded/tests/data/temp-local-inserts/ and set load_test_data = snovault.loadxl:load_local_data in src/encoded/development.ini
+Also need these file reference errors:
+PS00433.m84046_231208_203705_s3.bc2062.ft.bam
+STC001-01A_R1.fastq.gz
+STC001-01A_R2.fastq.gz
+STC001-01A.bam
+STC001-01A.vcf.gz

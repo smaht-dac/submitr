@@ -1,0 +1,112 @@
+[
+    {
+        "md5sum": "88712af9626d5cbba82007cf8e3f90b2",
+        "status": "uploaded",
+        "aliases": [
+            "smaht:ReferenceFile-complete-reference-bwt-no-alt_GCA_000001405.15_GRCh38_no_decoy"
+        ],
+        "accession": "SMAFIA6PK1S1",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "data_type": [
+            "Index"
+        ],
+        "file_size": 3099922624,
+        "description": "Complete genome reference BWT index. Version GCA_000001405.15 for build hg38/GRCh38. Does NOT include ALT contigs",
+        "extra_files": [
+            {
+                "href": "/reference-files/f5ad62fa-5a76-4cf3-bf66-3b71d740be22/@@download/SMAFIA6PK1S1.ann",
+                "uuid": "f5ad62fa-5a76-4cf3-bf66-3b71d740be22",
+                "status": "uploaded",
+                "filename": "SMAFIA6PK1S1.ann",
+                "accession": "SMAFIA6PK1S1",
+                "upload_key": "f5ad62fa-5a76-4cf3-bf66-3b71d740be22/SMAFIA6PK1S1.ann",
+                "file_format": "106199e5-5a85-4817-9a55-7b31698e1fda"
+            },
+            {
+                "href": "/reference-files/f5ad62fa-5a76-4cf3-bf66-3b71d740be22/@@download/SMAFIA6PK1S1.amb",
+                "uuid": "f5ad62fa-5a76-4cf3-bf66-3b71d740be22",
+                "status": "uploaded",
+                "filename": "SMAFIA6PK1S1.amb",
+                "accession": "SMAFIA6PK1S1",
+                "upload_key": "f5ad62fa-5a76-4cf3-bf66-3b71d740be22/SMAFIA6PK1S1.amb",
+                "file_format": "8db70ed6-0121-4fe1-a72e-d91dc5aa6cd3"
+            },
+            {
+                "href": "/reference-files/f5ad62fa-5a76-4cf3-bf66-3b71d740be22/@@download/SMAFIA6PK1S1.sa",
+                "uuid": "f5ad62fa-5a76-4cf3-bf66-3b71d740be22",
+                "status": "uploaded",
+                "filename": "SMAFIA6PK1S1.sa",
+                "accession": "SMAFIA6PK1S1",
+                "upload_key": "f5ad62fa-5a76-4cf3-bf66-3b71d740be22/SMAFIA6PK1S1.sa",
+                "file_format": "11f2fc36-9a65-4d60-9365-d8ff241df4f7"
+            },
+            {
+                "href": "/reference-files/f5ad62fa-5a76-4cf3-bf66-3b71d740be22/@@download/SMAFIA6PK1S1.pac",
+                "uuid": "f5ad62fa-5a76-4cf3-bf66-3b71d740be22",
+                "status": "uploaded",
+                "filename": "SMAFIA6PK1S1.pac",
+                "accession": "SMAFIA6PK1S1",
+                "upload_key": "f5ad62fa-5a76-4cf3-bf66-3b71d740be22/SMAFIA6PK1S1.pac",
+                "file_format": "7373ca48-0b3e-467b-967a-80870846f89b"
+            }
+        ],
+        "file_format": "813b0001-5f3f-4e28-9203-4cdf261e19c4",
+        "data_category": [
+            "Reference Genome"
+        ],
+        "content_md5sum": "88712af9626d5cbba82007cf8e3f90b2",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "s3_lifecycle_status": "standard",
+        "uuid": "f5ad62fa-5a76-4cf3-bf66-3b71d740be22"
+    },
+    {
+        "md5sum": "a6da8681616c05eb542f1d91606a7b2f",
+        "status": "uploaded",
+        "aliases": [
+            "smaht:ReferenceFile-complete-reference-fasta-no-alt_GCA_000001405.15_GRCh38_no_decoy"
+        ],
+        "accession": "SMAFI23ELK2A",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "data_type": [
+            "Reference Sequence"
+        ],
+        "file_size": 3144230986,
+        "description": "Complete genome reference sequence in FASTA format. Version GCA_000001405.15 for build hg38/GRCh38. Does NOT include ALT contigs",
+        "extra_files": [
+            {
+                "href": "/reference-files/cca516c0-3931-4fbe-bc2c-c26fe9ba23fa/@@download/SMAFI23ELK2A.dict",
+                "uuid": "cca516c0-3931-4fbe-bc2c-c26fe9ba23fa",
+                "status": "uploaded",
+                "filename": "SMAFI23ELK2A.dict",
+                "accession": "SMAFI23ELK2A",
+                "upload_key": "cca516c0-3931-4fbe-bc2c-c26fe9ba23fa/SMAFI23ELK2A.dict",
+                "file_format": "4ed9f7e0-2b2f-4aca-9533-a0a652b43442"
+            },
+            {
+                "href": "/reference-files/cca516c0-3931-4fbe-bc2c-c26fe9ba23fa/@@download/SMAFI23ELK2A.fa.fai",
+                "uuid": "cca516c0-3931-4fbe-bc2c-c26fe9ba23fa",
+                "status": "uploaded",
+                "filename": "SMAFI23ELK2A.fa.fai",
+                "accession": "SMAFI23ELK2A",
+                "upload_key": "cca516c0-3931-4fbe-bc2c-c26fe9ba23fa/SMAFI23ELK2A.fa.fai",
+                "file_format": "fb728bb4-bc56-46d5-8df5-a05562826b9a"
+            }
+        ],
+        "file_format": "5ced774b-a73e-4d1b-8186-d7fbbde7a3c2",
+        "data_category": [
+            "Reference Genome"
+        ],
+        "content_md5sum": "a6da8681616c05eb542f1d91606a7b2f",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "s3_lifecycle_status": "standard",
+        "uuid": "cca516c0-3931-4fbe-bc2c-c26fe9ba23fa"
+    }
+]
