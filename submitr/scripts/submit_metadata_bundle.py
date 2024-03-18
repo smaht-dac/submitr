@@ -80,12 +80,6 @@ ADVANCED OPTIONS:
 --validate-local-only
   Performs ONLY client-side (local) validation WITHOUT submission.
   Client validation: Yes | Client initiated server validation: No
---validate-local
-  Performs only client-side (local) validation before submission.
-  Client validation: Yes | Client initiated server validation: No
---validate-remote
-  Performs only server-side (remote) validation before submission.
-  Client validation: No | Client initiated server validation: No
 --patch-only
   Perform ONLY updates (PATCHes) for submitted data.
 --post-only
@@ -131,18 +125,11 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--validate', '-v', action="store_true",
                         help="Perform both client-side and server-side validation first.", default=False)
     parser.add_argument('--validate-only', action="store_true",
-                        help="Only perform validation of submitted data (on server-side).", default=False)
-    parser.add_argument('--validate-remote', action="store_true",
-                        help="Perform validation of submitted data before submitting (on server-side).", default=False)
-    parser.add_argument('--validate-remote-silent', action="store_true",
-                        help="Perform validation of submitted data before submitting"
-                             "without prompting to submit to server for validation.", default=False)
-    parser.add_argument('--validate-remote-only', action="store_true",
-                        help="Only perform validation of submitted data (on server-side).", default=False)
-    parser.add_argument('--validate-local', action="store_true",
-                        help="Validate submitted data locally (on client-side).")
+                        help="Same as --validate.", default=False)
     parser.add_argument('--validate-local-only', action="store_true",
                         help="Validate submitted data locally only (on client-side).")
+    parser.add_argument('--validate-remote-only', action="store_true",
+                        help="Only perform validation of submitted data (on server-side).", default=False)
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
     parser.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
     parser.add_argument('--subfolders', '-sf', action="store_true",  # obsolete
@@ -257,11 +244,9 @@ def main(simulated_args_for_testing=None):
                              show_details=args.details,
                              post_only=args.post_only,
                              patch_only=args.patch_only,
-                             validate_local=args.validate_local,
+                             submit=args.submit,
                              validate_local_only=args.validate_local_only,
-                             validate_remote=args.validate_remote,
                              validate_remote_only=args.validate_remote_only,
-                             validate_remote_silent=args.validate_remote_silent,
                              json_only=args.json_only,
                              ref_nocache=args.ref_nocache,
                              verbose_json=args.json,
@@ -298,18 +283,28 @@ def _sanity_check_submitted_file(file_name: str) -> bool:
 def _setup_validate_related_options(args: argparse.Namespace):
 
     validate_option_count = 0
+
     if args.validate:
+        args.submit = False
+        args.validate_local_only = False
+        args.validate_remote_only = False
         validate_option_count += 1
-    if args.validate_only:
+    elif args.validate_only:
+        args.submit = False
+        args.validate_local_only = False
+        args.validate_remote_only = False
         validate_option_count += 1
-    if args.validate_local:
+    elif args.validate_local_only:
+        args.submit = False
+        args.validate_local_only = True
+        args.validate_remote_only = False
         validate_option_count += 1
-    if args.validate_local_only:
+    elif args.validate_remote_only:
+        args.submit = False
+        args.validate_local_only = False
+        args.validate_remote_only = True
         validate_option_count += 1
-    if args.validate_remote:
-        validate_option_count += 1
-    if args.validate_remote_only:
-        validate_option_count += 1
+
     if validate_option_count > 0:
         if validate_option_count > 1:
             PRINT("Only specify ONE of the validate options.")
@@ -322,56 +317,10 @@ def _setup_validate_related_options(args: argparse.Namespace):
             if not args.json_only:
                 PRINT(f"You MUST specify either --validate or --submit. Use --help for all options.")
                 exit(1)
-
-    if args.submit:
-        # L-LO-R-RO-RS = T-F-F-F-T
-        args.validate_local = True
+    else:
+        args.submit = True
         args.validate_local_only = False
-        args.validate_remote = True
         args.validate_remote_only = False
-        args.validate_remote_silent = True
-    elif args.validate:
-        # L-LO-R-RO-RS = T-F-T-T-T
-        args.validate_local = True
-        args.validate_local_only = False
-        args.validate_remote = True
-        args.validate_remote_only = True
-        args.validate_remote_silent = True
-    elif args.validate_only:
-        # L-LO-R-RO-RS = T-F-F-T-F
-        args.validate_local = True
-        args.validate_local_only = False
-        args.validate_remote = False
-        args.validate_remote_only = True
-        args.validate_remote_silent = False
-    elif args.validate_local:
-        # L-LO-R-RO-RS = T-F-F-F-F
-        args.validate_local = True
-        args.validate_local_only = False
-        args.validate_remote = False
-        args.validate_remote_only = False
-        args.validate_remote_silent = False
-    elif args.validate_local_only:
-        # L-LO-R-RO-RS = F-T-F-F-F
-        args.validate_local = False
-        args.validate_local_only = True
-        args.validate_remote = False
-        args.validate_remote_only = False
-        args.validate_remote_silent = False
-    elif args.validate_remote:
-        # L-LO-R-RO-RS = F-F-T-F-F
-        args.validate_local = False
-        args.validate_local_only = False
-        args.validate_remote = True
-        args.validate_remote_only = False
-        args.validate_remote_silent = False
-    elif args.validate_remote_only:
-        # L-LO-R-RO-RS = F-F-F-T-F
-        args.validate_local = False
-        args.validate_local_only = False
-        args.validate_remote = False
-        args.validate_remote_only = True
-        args.validate_remote_silent = False
 
     delattr(args, "validate")
     delattr(args, "validate_only")
