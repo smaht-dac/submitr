@@ -1365,7 +1365,8 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
         if file:
             if file_paths := search_for_file(file, location=upload_folder, recursive=subfolders):
                 if len(file_paths) == 1:
-                    PRINT(f"File to upload: {_format_path(file_paths[0])} ({_format_file_size(_get_file_size(file_paths[0]))})")
+                    PRINT(f"File to upload: {_format_path(file_paths[0])}"
+                          f" ({_format_file_size(_get_file_size(file_paths[0]))})")
                     return True
                 else:
                     PRINT(f"No upload attempted for file {file} because multiple"
@@ -1521,8 +1522,8 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
             pass
         source = path
         target = upload_credentials['upload_url']
-        SHOW(f"Uploading {_format_path(source)}{f' ({formatted_file_size})' if formatted_file_size else ''} to: {target}")
-        # SHOW(f"Uploading %s{f' ({formatted_file_size})' if formatted_file_size else ''} to: %s" % (_format_path(source), target))
+        SHOW(f"Uploading {_format_path(source)}{f' ({formatted_file_size})' if formatted_file_size else ''}"
+             f" to: {target}")
         command = ['aws', 's3', 'cp']
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
@@ -2529,6 +2530,7 @@ def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optiona
             return dt.astimezone(tzlocal).strftime(f"%Y-%m-%d %H:%M:%S %Z")
     except Exception:
         return None
+
 
 def _format_path(path: str) -> str:
     if os.path.isabs(path) and path.startswith(os.path.expanduser("~")):
