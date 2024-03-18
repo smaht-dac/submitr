@@ -304,7 +304,7 @@ def _setup_validate_related_options(args: argparse.Namespace):
             PRINT(f"May NOT specify BOTH --submit AND --validate.")
             exit(1)
     elif not args.submit:
-        if not args.json_only and  not _pytesting():
+        if not args.json_only and not _pytesting():
             PRINT(f"You MUST specify either --validate or --submit. Use --help for all options.")
             exit(1)
 
