@@ -258,7 +258,7 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
     if portal:
         for consortium in consortia:
             consortium_path = f"/Consortium/{consortium}" if not consortium.startswith("/") else consortium
-            if not (consortium_object := portal.get_metadata(consortium_path)):
+            if not (consortium_object := portal.get_metadata(consortium_path, raise_exception=False)):
                 SHOW(f"ERROR: Consortium not found: {consortium}")
                 show_consortia()
                 exit(1)
@@ -316,7 +316,7 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
             submission_center_path = (
                 f"/SubmissionCenter/{submission_center}"
                 if not submission_center.startswith("/") else submission_center)
-            if not (submission_center_object := portal.get_metadata(submission_center_path)):
+            if not (submission_center_object := portal.get_metadata(submission_center_path, raise_exception=False)):
                 SHOW(f"ERROR: Submission center not found: {submission_center}")
                 show_submission_centers()
                 exit(1)
