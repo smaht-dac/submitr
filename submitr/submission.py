@@ -5,6 +5,7 @@ from functools import lru_cache
 import io
 import json
 import os
+from pathlib import Path
 import pytz
 import re
 import signal
@@ -700,7 +701,7 @@ def submit_any_ingestion(ingestion_filename, *,
     if not _do_app_arg_defaulting(app_args, user_record, portal, quiet=json_only and not verbose, verbose=verbose):
         pass
     if not json_only:
-        PRINT(f"Submission file to {'validate' if validation_only else 'ingest'}: {ingestion_filename}")
+        PRINT(f"Submission file to {'validate' if validation_only else 'ingest'}: {_format_path(ingestion_filename)}")
 
     autoadd = None
     if app_args and isinstance(submission_centers := app_args.get("submission_centers"), list):
@@ -720,6 +721,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if not validate_remote_only:
         _validate_locally(ingestion_filename, portal,
+                          submit=submit,
                           validate_local_only=validate_local_only,
                           validate_remote_only=validate_remote_only,
                           autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
@@ -786,7 +788,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
     # Server submission.
 
-    SHOW(f"Ready to submit your metadata to {portal.server}: {ingestion_filename}")
+    SHOW(f"Ready to submit your metadata to {portal.server}: {_format_path(ingestion_filename)}")
     if not yes_or_no("Continue on with the actual submission?"):
         exit(0)
 
@@ -1363,13 +1365,13 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
         if file:
             if file_paths := search_for_file(file, location=upload_folder, recursive=subfolders):
                 if len(file_paths) == 1:
-                    PRINT(f"File to upload: {file_paths[0]} ({_format_file_size(_get_file_size(file_paths[0]))})")
+                    PRINT(f"File to upload: {_format_path(file_paths[0])} ({_format_file_size(_get_file_size(file_paths[0]))})")
                     return True
                 else:
                     PRINT(f"No upload attempted for file {file} because multiple"
                           f" copies were found in folder {upload_folder}: {', '.join(file_paths)}.")
                     return False
-            PRINT(f"Cannot find file to upload: {file} ({file_uuid})")
+            PRINT(f"ERROR: Cannot find file to upload: {_format_path(file)} ({file_uuid})")
         return False
 
     upload_info = _get_section(res, 'upload_info')
@@ -1519,7 +1521,8 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
             pass
         source = path
         target = upload_credentials['upload_url']
-        SHOW(f"Uploading %s{f' ({formatted_file_size})' if formatted_file_size else ''} to: %s" % (source, target))
+        SHOW(f"Uploading {_format_path(source)}{f' ({formatted_file_size})' if formatted_file_size else ''} to: {target}")
+        # SHOW(f"Uploading %s{f' ({formatted_file_size})' if formatted_file_size else ''} to: %s" % (_format_path(source), target))
         command = ['aws', 's3', 'cp']
         if s3_encrypt_key_id:
             command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
@@ -1861,7 +1864,7 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
 
 
 def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional[dict] = None,
-                      validate_local_only: bool = False, validate_remote_only: bool = False,
+                      submit: bool = False, validate_local_only: bool = False, validate_remote_only: bool = False,
                       upload_folder: Optional[str] = None,
                       subfolders: bool = False, exit_immediately_on_errors: bool = False,
                       ref_nocache: bool = False, output_file: Optional[str] = None,
@@ -2003,13 +2006,18 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
 
         return progress_report
 
+    if debug:
+        PRINT("DEBUG: Starting client validation.")
+
     structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                         ref_lookup_strategy=ref_lookup_strategy,
                                         ref_lookup_nocache=ref_nocache,
                                         progress=None if noprogress else define_progress_callback(),
                                         debug_sleep=debug_sleep)
-    PRINT("*** CLIENT VALIDATION ***")
     structured_data._load_file(ingestion_filename)
+
+    if debug:
+        PRINT("DEBUG: Finished client validation.")
 
     if debug:
         PRINT_OUTPUT(f"DEBUG: Reference total count: {structured_data.ref_total_count}")
@@ -2056,7 +2064,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         if yes_or_no(f"Do you want to see a list of these {nfiles} missing file{'s' if nfiles != 1 else ''}?"):
             for error in file_validation_errors:
                 PRINT(f"- {error}")
-        if not yes_or_no(f"Do you want to continue {'validation' if validate_remote_only else 'submitting'}"
+        if not yes_or_no(f"Do you want to continue {'submitting' if submit else 'validation'}"
                          f" even with {nfiles} file{'s' if nfiles != 1 else ''} missing?"):
             exit(1)
     if nfiles_found > 0:
@@ -2521,6 +2529,11 @@ def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optiona
             return dt.astimezone(tzlocal).strftime(f"%Y-%m-%d %H:%M:%S %Z")
     except Exception:
         return None
+
+def _format_path(path: str) -> str:
+    if os.path.isabs(path) and path.startswith(os.path.expanduser("~")):
+        path = "~/" + Path(path).relative_to(Path.home()).as_posix()
+    return path
 
 
 def _ping(app: str, env: str, server: str, keys_file: str,
