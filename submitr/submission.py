@@ -735,8 +735,8 @@ def submit_any_ingestion(ingestion_filename, *,
             # We actaully do exit from _validate_locally if validate_local_only is True.
             # This return is just emphasize that fact.
             return
-    elif debug:
-        PRINT("DEBUG: Skipping local (client) validation.")
+    else:
+        PRINT("Skipping local (client) validation (as requested via --validate-remote-only).")
 
     if is_admin_user and not no_query and (submit or not validate_remote_skip):
         # More feedback/points-of-contact for admin users; more automatic for non-admin.
@@ -1053,16 +1053,34 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     if check_status != "success":
         PRINT(f"{'Validation' if validation else 'Submission'} results (server): ERROR"
               f"{f' ({check_status})' if check_status not in ['failure', 'error'] else ''}")
+        printed_newline = False
         if check_response and (additional_data := check_response.get("additional_data")):
-            if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
-                if errors := [info for info in validation_info if info.lower().startswith("error:")]:
-                    for error in errors:
-                        PRINT_OUTPUT(f"- {_format_server_error(error, indent=2)}")
+            if (validation_info := additional_data.get("validation_output")):
+                if isinstance(validation_info, list):
+                    if errors := [info for info in validation_info if info.lower().startswith("error:")]:
+                        for error in errors:
+                            if not printed_newline:
+                                PRINT_OUTPUT("")
+                                printed_newline = True
+                            PRINT_OUTPUT(f"- {_format_server_error(error, indent=2)}")
+                elif isinstance(validation_info, dict):
+                    if (ref_errors := validation_info.get("ref")) and isinstance(ref_errors, list):
+                        if ref_errors := _validate_references(ref_errors, None):
+                            if not printed_newline:
+                                PRINT_OUTPUT("")
+                                printed_newline = True
+                            _print_reference_errors(ref_errors)
         if check_response and isinstance(other_errors := check_response.get("errors"), list):
             for error in other_errors:
+                if not printed_newline:
+                    PRINT_OUTPUT("")
+                    printed_newline = True
                 PRINT_OUTPUT("- " + error)
         if output_file := get_output_file():
-            PRINT_STDOUT(f"Please check your output file for details: {output_file}")
+            PRINT_STDOUT(f"Exiting with server validation errors; see your output file: {output_file}")
+        else:
+            PRINT_STDOUT("\nExiting with no action with server validation errors.")
+            PRINT_STDOUT("Use the --output FILE option to write errors to a file.")
         exit(1)
 
     return check_done, check_status, check_response
@@ -2121,11 +2139,10 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         PRINT("Validation results (preliminary): OK")
     elif exit_immediately_on_errors:
         if output_file:
-            PRINT_STDOUT(f"There are some preliminary ERRORs outlined in your output file: {output_file}")
+            PRINT_STDOUT(f"Exiting with preliminary validation errors; see your output file: {output_file}")
         else:
-            PRINT_STDOUT(f"\nThere are some preliminary ERRORs outlined above.")
-            PRINT_STDOUT(f"FYI: Use this option to write lengthy output to a file: --output FILE ")
-        PRINT_STDOUT(f"Please fix these problems before trying again. No action taken.")
+            PRINT_STDOUT(f"\nExiting with preliminary validation errors.")
+            PRINT_STDOUT("Use the --output FILE option to write errors to a file.")
         exit(1)
 
     # Check files separately because we might want to let them get away with missing files.
@@ -2173,7 +2190,7 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
     if initial_validation_errors := _validate_initial(structured_data, portal):
         nerrors += len(initial_validation_errors)
 
-    if ref_validation_errors := _validate_references(structured_data, ingestion_filename, debug=debug):
+    if ref_validation_errors := _validate_references(structured_data.ref_errors, ingestion_filename, debug=debug):
         nerrors += len(ref_validation_errors)
 
     structured_data.validate()
@@ -2189,13 +2206,14 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
             PRINT_OUTPUT(f"- ERROR: {error}")
 
     if ref_validation_errors:
-        PRINT_OUTPUT(f"- Reference errors: {len(ref_validation_errors)}")
-        if debug:
-            for error in ref_validation_errors:
-                PRINT_OUTPUT(f"  - ERROR: {error}")
-        else:
-            for error in ref_validation_errors:
-                PRINT_OUTPUT(f"  - ERROR: {error['ref']} (refs: {error['count']})")
+        _print_reference_errors(ref_validation_errors)
+        # PRINT_OUTPUT(f"- Reference errors: {len(ref_validation_errors)}")
+        # if debug:
+        #     for error in ref_validation_errors:
+        #         PRINT_OUTPUT(f"  - ERROR: {error}")
+        # else:
+        #     for error in ref_validation_errors:
+        #         PRINT_OUTPUT(f"  - ERROR: {error['ref']} (refs: {error['count']})")
 
     if data_validation_errors:
         PRINT_OUTPUT(f"- Data errors: {len(data_validation_errors)}")
@@ -2205,9 +2223,20 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
     return not (nerrors > 0)
 
 
-def _validate_references(structured_data: StructuredDataSet, ingestion_filename: str, debug: bool = False) -> List[str]:
+def _print_reference_errors(ref_errors: List[dict], debug: bool = False) -> None:
+    if isinstance(ref_errors, list) and ref_errors:
+        PRINT_OUTPUT(f"- Reference errors: {len(ref_errors)}")
+        if debug:
+            for ref_error in ref_errors:
+                PRINT_OUTPUT(f"  - ERROR: {ref_error}")
+        else:
+            for ref_error in ref_errors:
+                PRINT_OUTPUT(f"  - ERROR: {ref_error['ref']} (refs: {ref_error['count']})")
+
+
+def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: str, debug: bool = False) -> List[str]:
     ref_validation_errors = []
-    if (ref_errors := structured_data.ref_errors):
+    if isinstance(ref_errors, list):
         for ref_error in ref_errors:
             if debug:
                 ref_validation_errors.append(f"{_format_issue(ref_error, ingestion_filename)}")

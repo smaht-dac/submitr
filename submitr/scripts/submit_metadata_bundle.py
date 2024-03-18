@@ -285,52 +285,49 @@ def _sanity_check_submitted_file(file_name: str) -> bool:
 
 def _setup_validate_related_options(args: argparse.Namespace):
 
-    validate_option_count = 0
-
     # Being very explicity here for clarity.
+    validate_option_count = 0
     if args.validate:
-        args.submit = False
-        args.validate_local_only = False
-        args.validate_remote_only = False
-        args.validate_remote_skip = False
         validate_option_count += 1
-    elif args.validate_only:
-        args.submit = False
-        args.validate_local_only = False
-        args.validate_remote_only = False
-        args.validate_remote_skip = False
+    if args.validate_only:
         validate_option_count += 1
-    elif args.validate_local_only:
-        args.submit = False
-        args.validate_local_only = True
-        args.validate_remote_only = False
-        args.validate_remote_skip = False
+    if args.validate_local_only:
         validate_option_count += 1
-    elif args.validate_remote_only:
-        args.submit = False
-        args.validate_local_only = False
-        args.validate_remote_only = True
-        args.validate_remote_skip = False
-        validate_option_count += 1
-    elif args.validate_remote_skip:
-        args.submit = False
-        args.validate_local_only = False
-        args.validate_remote_only = False
-        args.validate_remote_skip = True
+    if args.validate_remote_only:
         validate_option_count += 1
 
     if validate_option_count > 0:
         if validate_option_count > 1:
             PRINT("Only specify ONE of the validate options.")
             exit(1)
-        if args.submit:
+        elif args.submit:
             PRINT(f"May NOT specify BOTH --submit AND --validate.")
             exit(1)
     elif not args.submit:
-        if not _pytesting():
-            if not args.json_only:
-                PRINT(f"You MUST specify either --validate or --submit. Use --help for all options.")
-                exit(1)
+        if not args.json_only and  not _pytesting():
+            PRINT(f"You MUST specify either --validate or --submit. Use --help for all options.")
+            exit(1)
+
+    if args.json_only:
+        if args.submit:
+            PRINT("The --json-only option is not allowed with --submit.")
+            exit(1)
+        elif validate_option_count > 0 or args.validate_remote_skip:
+            PRINT("The --json-only option is not allowed with the validate options.")
+            exit(1)
+
+    if args.validate or args.validate_only:
+        args.submit = False
+        args.validate_local_only = False
+        args.validate_remote_only = False
+    elif args.validate_local_only:
+        args.submit = False
+        args.validate_local_only = True
+        args.validate_remote_only = False
+    elif args.validate_remote_only:
+        args.submit = False
+        args.validate_local_only = False
+        args.validate_remote_only = True
     else:
         args.submit = True
         args.validate_local_only = False
@@ -338,6 +335,10 @@ def _setup_validate_related_options(args: argparse.Namespace):
 
     delattr(args, "validate")
     delattr(args, "validate_only")
+
+    if args.validate_remote_skip and not args.submit:
+        PRINT(f"The --validate-remote-skip option only useful (for advanced users) with --submit.")
+        exit(1)
 
 
 if __name__ == '__main__':
