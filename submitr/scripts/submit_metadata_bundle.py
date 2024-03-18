@@ -166,6 +166,7 @@ def main(simulated_args_for_testing=None):
                         help="Output ONLY the parsed JSON of the metadata file.", default=False)
     parser.add_argument('--output', help="Output file for results.", default=False)
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
+    parser.add_argument('--timeout', help="Wait timeout for server validation/submission.")
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
     parser.add_argument('--ping', action="store_true", help="Ping server.", default=False)
@@ -227,6 +228,12 @@ def main(simulated_args_for_testing=None):
     if args.noadmin:
         os.environ["SMAHT_NOADMIN"] = "true"
 
+    if args.timeout:
+        if not args.timeout.isdigit():
+            args.timeout = None
+        else:
+            args.timeout = int(args.timeout)
+
     with script_catch_errors():
 
         if not _sanity_check_submitted_file(args.bundle_filename):
@@ -256,6 +263,7 @@ def main(simulated_args_for_testing=None):
                              verbose=args.verbose,
                              noprogress=args.noprogress,
                              output_file=args.output,
+                             timeout=args.timeout,
                              debug=args.debug,
                              debug_sleep=args.debug_sleep)
 

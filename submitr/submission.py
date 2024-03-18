@@ -42,6 +42,15 @@ from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, se
 DEFAULT_INGESTION_TYPE = 'metadata_bundle'
 GENERIC_SCHEMA_TYPE = 'FileOther'
 
+# Maximum amount of time (approximately) we will wait for a response from server (seconds).
+PROGRESS_TIMEOUT = 60 * 5  # five minutes (note this is for both server validation and submission)
+# How often we actually check the server (seconds).
+PROGRESS_CHECK_SERVER_INTERVAL = 5
+# How often the (tqdm) progress meter updates (seconds).
+PROGRESS_INTERVAL = 0.5
+# How many times the (tqdm) progress meter updates (derived from above).
+PROGRESS_MAX_CHECKS = round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL)
+
 
 class SubmissionProtocol:
     S3 = 's3'
@@ -629,10 +638,14 @@ def submit_any_ingestion(ingestion_filename, *,
                          noprogress=False,
                          output_file=None,
                          env_from_env=False,
+                         timeout=None,
                          debug=False,
                          debug_sleep=None):
 
-    # perform_client_initiated_remote_validate_only_before_submit = True
+    if timeout:
+        global PROGRESS_TIMEOUT, PROGRESS_MAX_CHECKS
+        PROGRESS_TIMEOUT = timeout
+        PROGRESS_MAX_CHECKS = round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL)
 
     """
     Does the core action of submitting a metadata bundle.
@@ -896,16 +909,6 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                                check_submission_script: bool = False,
                                debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
 
-    # Maximum amount of time (approximately) we will wait for a response from server (seconds).
-    PROGRESS_MAX_TIME = 5  # xyzzy
-    PROGRESS_MAX_TIME = 60 * 5  # five minutes (note this is for both server validation and submission)
-    # How often we actually check the server (seconds).
-    PROGRESS_CHECK_SERVER_INTERVAL = 5
-    # How often the (tqdm) progress meter updates (seconds).
-    PROGRESS_INTERVAL = 0.5
-    # How many times the (tqdm) progress meter updates (derived from above).
-    PROGRESS_MAX_CHECKS = round(PROGRESS_MAX_TIME / PROGRESS_INTERVAL)
-
     def define_progress_callback(max_checks: int, title: str, include_status: bool = False) -> None:
         bar = None
         nchecks = 0
@@ -965,7 +968,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
 
     action = "validation" if validation else "ingestion"
     if validation:
-        SHOW(f"Waiting (up to about {PROGRESS_MAX_TIME}s) for validation results.")
+        SHOW(f"Waiting (up to about {PROGRESS_TIMEOUT}s) for validation results.")
     else:
         SHOW(f"Checking {action} for submission ID: %s ..." % uuid)
 
@@ -1334,7 +1337,8 @@ def _print_submission_summary(portal: Portal, result: dict,
         print_boxed(lines, right_justified_macro=("[UUID]", lambda: submission_uuid))
         if errors:
             for error in errors:
-                PRINT(error.replace("Error", "ERROR:"))
+                # PRINT(error.replace("Error:", "ERROR:"))
+                PRINT(_format_server_error(error))
 
 
 def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
