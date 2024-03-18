@@ -33,7 +33,7 @@ from urllib.parse import urlparse
 from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
 from .scripts.cli_utils import print_boxed
-from .utils import keyword_as_title, check_repeatedly
+from .utils import keyword_as_title
 from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, setup_for_output_file_option
 
 
@@ -629,7 +629,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          debug=False,
                          debug_sleep=None):
 
-    perform_client_initiated_remote_validate_only_before_submit = True
+    # perform_client_initiated_remote_validate_only_before_submit = True
 
     """
     Does the core action of submitting a metadata bundle.
