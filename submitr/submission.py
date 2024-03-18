@@ -1815,7 +1815,7 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
 
     if not no_query:
         file_size = _format_file_size(_get_file_size(item_filename))
-        if not yes_or_no("Upload %s (%s) to %s?" % (item_filename, file_size, server)):
+        if not yes_or_no(f"Upload {_format_path(item_filename)} ({file_size}) to {server}?"):
             SHOW("Aborting submission.")
             exit(1)
 
