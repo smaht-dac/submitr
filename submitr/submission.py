@@ -732,7 +732,7 @@ def submit_any_ingestion(ingestion_filename, *,
                           json_only=json_only, verbose_json=verbose_json,
                           verbose=verbose, debug=debug, debug_sleep=debug_sleep)
         if validate_local_only:
-            # We actaully do exit from _validate_locally if validate_local_only is True.
+            # We actually do exit from _validate_locally if validate_local_only is True.
             # This return is just emphasize that fact.
             return
     else:
@@ -2223,17 +2223,6 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
     return not (nerrors > 0)
 
 
-def _print_reference_errors(ref_errors: List[dict], debug: bool = False) -> None:
-    if isinstance(ref_errors, list) and ref_errors:
-        PRINT_OUTPUT(f"- Reference errors: {len(ref_errors)}")
-        if debug:
-            for ref_error in ref_errors:
-                PRINT_OUTPUT(f"  - ERROR: {ref_error}")
-        else:
-            for ref_error in ref_errors:
-                PRINT_OUTPUT(f"  - ERROR: {ref_error['ref']} (refs: {ref_error['count']})")
-
-
 def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: str, debug: bool = False) -> List[str]:
     ref_validation_errors = []
     if isinstance(ref_errors, list):
@@ -2250,6 +2239,17 @@ def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: s
         return sorted(ref_validation_errors)
     else:
         return sorted(ref_validation_errors, key=lambda item: item["ref"])
+
+
+def _print_reference_errors(ref_errors: List[dict], debug: bool = False) -> None:
+    if isinstance(ref_errors, list) and ref_errors:
+        PRINT_OUTPUT(f"- Reference errors: {len(ref_errors)}")
+        if debug:
+            for ref_error in ref_errors:
+                PRINT_OUTPUT(f"  - ERROR: {ref_error}")
+        else:
+            for ref_error in ref_errors:
+                PRINT_OUTPUT(f"  - ERROR: {ref_error['ref']} (refs: {ref_error['count']})")
 
 
 def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
