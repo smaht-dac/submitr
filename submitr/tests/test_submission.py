@@ -34,7 +34,7 @@ from ..submission import (  # noqa
     _check_ingestion_progress,  # noQA - again, testing a protected member
     _get_defaulted_lab, _get_defaulted_award, SubmissionProtocol, compute_file_post_data,
     upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE, DEFAULT_APP, _summarize_submission,
-    _get_defaulted_submission_centers, _get_defaulted_consortia, _do_app_arg_defaulting, _check_submit_ingestion
+    _get_defaulted_submission_centers, _get_defaulted_consortia, _do_app_arg_defaulting, _check_ingestion_process
 )
 from ..utils import FakeResponse
 

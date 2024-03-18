@@ -3,7 +3,7 @@ import os
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.common import ORCHESTRATED_APPS
 from ..base import DEFAULT_APP
-from ..submission import _check_submit_ingestion, _pytesting
+from ..submission import _check_ingestion_process, _pytesting
 
 
 EPILOG = __doc__
@@ -39,7 +39,7 @@ def main(simulated_args_for_testing=None):
         env_from_env = True
 
     with script_catch_errors():
-        return _check_submit_ingestion(
+        return _check_ingestion_process(
                 args.submission_uuid,
                 env=args.env,
                 keys_file=args.keys or os.environ.get("SMAHT_KEYS"),

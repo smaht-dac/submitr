@@ -616,6 +616,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          submit=False,
                          validate_local_only=False,
                          validate_remote_only=False,
+                         validate_remote_skip=False,
                          post_only=False,
                          patch_only=False,
                          keys_file=None,
@@ -731,57 +732,64 @@ def submit_any_ingestion(ingestion_filename, *,
                           verbose=verbose, debug=debug, debug_sleep=debug_sleep)
         if validate_local_only:
             # We actaully do exit from _validate_locally if validate_local_only is True.
-            # This return is just to give emphasis to that fact.
+            # This return is just emphasize that fact.
             return
     elif debug:
         PRINT("DEBUG: Skipping local (client) validation.")
 
-    if is_admin_user and not no_query:
+    if is_admin_user and not no_query and (submit or not validate_remote_skip):
         # More feedback/points-of-contact for admin users; more automatic for non-admin.
-        if not yes_or_no(f"Continue with validation against {portal.server}?"):
+        if not yes_or_no(f"Continue with server {'validation' if not validate_remote_skip else 'submission'}"
+                         f" against {portal.server}?"):
             SHOW("Aborting before server validation.")
             exit(1)
 
     # Server validation.
 
-    SHOW(f"Continuing with additional (server) validation: {portal.server}")
+    if not validate_remote_skip:
 
-    # submission_uuid = initiate_submission(first_time=True, debug=debug)
-    submission_uuid = initiate_server_ingestion_process(
-        is_server_validation=True,
-        portal=portal,
-        ingestion_filename=ingestion_filename,
-        consortia=app_args.get("consortia"),
-        submission_centers=app_args.get("submission_centers"),
-        post_only=post_only,
-        patch_only=patch_only,
-        autoadd=autoadd,
-        debug=debug)
+        SHOW(f"Continuing with additional (server) validation: {portal.server}")
 
-    SHOW(f"Validation tracking ID: {submission_uuid}")
+        # submission_uuid = initiate_submission(first_time=True, debug=debug)
+        submission_uuid = initiate_server_ingestion_process(
+            is_server_validation=True,
+            portal=portal,
+            ingestion_filename=ingestion_filename,
+            consortia=app_args.get("consortia"),
+            submission_centers=app_args.get("submission_centers"),
+            post_only=post_only,
+            patch_only=patch_only,
+            autoadd=autoadd,
+            debug=debug)
 
-    server_validation_done, server_validation_status, server_validation_response = _check_submit_ingestion(
-            submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
-            show_details=show_details, report=False, messages=True,
-            validation=True,
-            nofiles=True, noprogress=noprogress, verbose=verbose)
+        SHOW(f"Validation tracking ID: {submission_uuid}")
 
-    if server_validation_status == "success":
-        PRINT("Validation results (server): OK")
+        server_validation_done, server_validation_status, server_validation_response = _check_ingestion_process(
+                submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
+                show_details=show_details, report=False, messages=True,
+                validation=True,
+                nofiles=True, noprogress=noprogress, verbose=verbose)
+
+        if server_validation_status == "success":
+            PRINT("Validation results (server): OK")
+        else:
+            PRINT(f"Validation results (server): ERROR"
+                  f"{f' ({server_validation_status})' if server_validation_status not in ['failure', 'error'] else ''}")
+            if server_validation_response and (additional_data := server_validation_response.get("additional_data")):
+                if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
+                    if errors := [info for info in validation_info if info.lower().startswith("error:")]:
+                        for error in errors:
+                            PRINT_OUTPUT("- " + error.replace("Error", "ERROR:"))
+            if server_validation_response and isinstance(other_errors :=
+                                                         server_validation_response.get("errors"), list):
+                for error in other_errors:
+                    PRINT_OUTPUT("- " + error)
+            if output_file:
+                PRINT_STDOUT(f"Please check your output file for details: {output_file}")
+            exit(1)
     else:
-        PRINT(f"Validation results (server): ERROR"
-              f"{f' ({server_validation_status})' if server_validation_status not in ['failure', 'error'] else ''}")
-        if server_validation_response and (additional_data := server_validation_response.get("additional_data")):
-            if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, list):
-                if errors := [info for info in validation_info if info.lower().startswith("error:")]:
-                    for error in errors:
-                        PRINT_OUTPUT("- " + error.replace("Error", "ERROR:"))
-        if server_validation_response and isinstance(other_errors := server_validation_response.get("errors"), list):
-            for error in other_errors:
-                PRINT_OUTPUT("- " + error)
-        if output_file:
-            PRINT_STDOUT(f"Please check your output file for details: {output_file}")
-        exit(1)
+        server_validation_response = None
+        PRINT("Skipping server validation (as requested via --validate-remote-skip).")
 
     if validate_remote_only:
         exit(0)
@@ -806,7 +814,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
     SHOW(f"Submission tracking ID: {submission_uuid}")
 
-    submission_done, submission_status, submission_response = _check_submit_ingestion(
+    submission_done, submission_status, submission_response = _check_ingestion_process(
             submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
             show_details=show_details, report=False, messages=True,
             validation=False,
@@ -815,30 +823,6 @@ def submit_any_ingestion(ingestion_filename, *,
     do_any_uploads(submission_response, keydict=portal.key, ingestion_filename=ingestion_filename,
                    upload_folder=upload_folder, no_query=no_query,
                    subfolders=subfolders)
-
-
-def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict]:
-    """
-    Calls endpoint to get this status of the IngestionSubmission uuid (in outer scope);
-    this is used as an argument to check_repeatedly below to call over and over.
-    Returns tuple with: done-indicator (True or False), short-status (str), full-response (dict)
-    From outer scope: server, keypair, uuid (of IngestionSubmission)
-    """
-    tracking_url = _ingestion_submission_item_url(server=server, uuid=uuid)
-    response = Portal(keypair).get(tracking_url)
-    response_status_code = response.status_code
-    response = response.json()
-    if response_status_code == 404:
-        return True, f"Not found - {uuid}", response
-    # FYI this processing_status and its state, progress, outcome properties were ultimately set
-    # from within the ingester process, from within types.ingestion.SubmissionFolio.processing_status.
-    status = response.get("processing_status", {})
-    if status.get("state") == "done":
-        outcome = status.get("outcome")
-        return True, outcome, response
-    else:
-        progress = status.get("progress")
-        return False, progress, response
 
 
 def _get_recent_submissions(portal: Portal, count: int = 30, name: Optional[str] = None) -> List[dict]:
@@ -907,18 +891,16 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
     return False
 
 
-def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optional[str] = None,
-                            app: Optional[OrchestratedApp] = None,
-                            show_details: bool = False,
-                            validation: bool = False,
-                            env_from_env: bool = False,
-                            verbose: bool = False,
-                            report: bool = True, messages: bool = False,
-                            nofiles: bool = False, noprogress: bool = False,
-                            check_submission_script: bool = False,
-                            debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
-
-    portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP, env_from_env=env_from_env, report=report)
+def _check_ingestion_process(uuid: str, server: str, env: str, keys_file: Optional[str] = None,
+                             app: Optional[OrchestratedApp] = None,
+                             show_details: bool = False,
+                             validation: bool = False,
+                             env_from_env: bool = False,
+                             verbose: bool = False,
+                             report: bool = True, messages: bool = False,
+                             nofiles: bool = False, noprogress: bool = False,
+                             check_submission_script: bool = False,
+                             debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
 
     # Maximum amount of time (approximately) we will wait for a response from server (seconds).
     PROGRESS_MAX_TIME = 5  # xyzzy
@@ -972,6 +954,8 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                 bar.close()
                 signal.signal(signal.SIGINT, signal.SIG_DFL)
         return progress_report
+
+    portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP, env_from_env=env_from_env, report=report)
 
     if not (uuid_metadata := portal.get_metadata(uuid)):
         message = f"Submission ID not found: {uuid}" if uuid != "dummy" else "No submission ID specified."
@@ -1072,6 +1056,30 @@ def _check_submit_ingestion(uuid: str, server: str, env: str, keys_file: Optiona
                               nofiles=nofiles, check_submission_script=check_submission_script)
 
     return check_done, check_status, check_response
+
+
+def _check_ingestion_progress(uuid, *, keypair, server) -> Tuple[bool, str, dict]:
+    """
+    Calls endpoint to get this status of the IngestionSubmission uuid (in outer scope);
+    this is used as an argument to check_repeatedly below to call over and over.
+    Returns tuple with: done-indicator (True or False), short-status (str), full-response (dict)
+    From outer scope: server, keypair, uuid (of IngestionSubmission)
+    """
+    tracking_url = _ingestion_submission_item_url(server=server, uuid=uuid)
+    response = Portal(keypair).get(tracking_url)
+    response_status_code = response.status_code
+    response = response.json()
+    if response_status_code == 404:
+        return True, f"Not found - {uuid}", response
+    # FYI this processing_status and its state, progress, outcome properties were ultimately set
+    # from within the ingester process, from within types.ingestion.SubmissionFolio.processing_status.
+    status = response.get("processing_status", {})
+    if status.get("state") == "done":
+        outcome = status.get("outcome")
+        return True, outcome, response
+    else:
+        progress = status.get("progress")
+        return False, progress, response
 
 
 def _summarize_submission(uuid: str, app: str, server: Optional[str] = None, env: Optional[str] = None):
@@ -1435,7 +1443,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
         # Subsume function of upload-item-data into resume-uploads for convenience.
         if portal.is_schema_type(response, FILE_TYPE_NAME):
             _upload_item_data(item_filename=uuid, uuid=None, server=portal.server,
-                              env=portal.env, directory=upload_folder, no_query=no_query, app=app, report=False)
+                              env=portal.env, directory=upload_folder, recursive=subfolders,
+                              no_query=no_query, app=app, report=False)
             return
 
         undesired_type = portal.get_schema_type(response)
@@ -1763,7 +1772,8 @@ def _upload_extra_files(
         wrapped_execute_prearranged_upload(extra_file_path, extra_file_credentials, auth=auth)
 
 
-def _upload_item_data(item_filename, uuid, server, env, no_query=False, app=None, report=True, **kwargs):
+def _upload_item_data(item_filename, uuid, server, env, directory=None, recursive=False,
+                      no_query=False, app=None, report=True):
     """
     Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
 
@@ -1776,8 +1786,6 @@ def _upload_item_data(item_filename, uuid, server, env, no_query=False, app=None
     :param no_query: bool to suppress requests for user input
     :return:
     """
-
-    directory = kwargs.get("directory")
 
     # Allow the given "file name" to be uuid for submitted File object, or associated accession
     # ID (e.g. SMAFIP2PIEDG), or the (S3) accession ID based file name (e.g. SMAFIP2PIEDG.fastq).
@@ -1802,9 +1810,8 @@ def _upload_item_data(item_filename, uuid, server, env, no_query=False, app=None
         if not (item_filename := uuid_metadata.get("filename")):
             raise Exception(f"Cannot determine file name: {uuid}")
 
-    if not os.path.isfile(item_filename):
-        if directory and not os.path.isfile(item_filename := os.path.join(directory, item_filename)):
-            raise Exception(f"File not found: {item_filename}")
+    if not (item_filename := search_for_file(item_filename, location=directory, recursive=recursive, single=True)):
+        raise Exception(f"File not found: {item_filename}")
 
     if not no_query:
         file_size = _format_file_size(_get_file_size(item_filename))
@@ -2089,7 +2096,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                          f" do you want to continue{question_suffix}?"):
             exit(1)
     if validate_local_only:
-        PRINT("Terminating because validation only was requested.")
+        PRINT("Terminating as requested (via --validate-local-only).")
         exit(0 if validation_okay else 1)
 
 

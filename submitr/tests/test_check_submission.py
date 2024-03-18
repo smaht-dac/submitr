@@ -15,11 +15,11 @@ def test_check_submission_script():
 
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
         ignored(expect_call_args)
-        with mock.patch.object(check_submission_module, "_check_submit_ingestion") as mock_check_submit_ingestion:
+        with mock.patch.object(check_submission_module, "_check_ingestion_process") as mock_check_ingestion_process:
             with system_exit_expected(exit_code=expect_exit_code):
                 check_submission_main(args_in)
                 raise AssertionError("check_submission_main should not exit normally.")  # pragma: no cover
-            assert mock_check_submit_ingestion.call_count == (1 if expect_called else 0)
+            assert mock_check_ingestion_process.call_count == (1 if expect_called else 0)
 
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
     test_it(args_in=[SAMPLE_GUID], expect_exit_code=0, expect_called=True,

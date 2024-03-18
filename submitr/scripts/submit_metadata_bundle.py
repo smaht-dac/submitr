@@ -130,6 +130,8 @@ def main(simulated_args_for_testing=None):
                         help="Validate submitted data locally only (on client-side).")
     parser.add_argument('--validate-remote-only', action="store_true",
                         help="Only perform validation of submitted data (on server-side).", default=False)
+    parser.add_argument('--validate-remote-skip', action="store_true",
+                        help="Skip the remote validation step.", default=False)
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
     parser.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
     parser.add_argument('--subfolders', '-sf', action="store_true",  # obsolete
@@ -247,6 +249,7 @@ def main(simulated_args_for_testing=None):
                              submit=args.submit,
                              validate_local_only=args.validate_local_only,
                              validate_remote_only=args.validate_remote_only,
+                             validate_remote_skip=args.validate_remote_skip,
                              json_only=args.json_only,
                              ref_nocache=args.ref_nocache,
                              verbose_json=args.json,
@@ -284,25 +287,36 @@ def _setup_validate_related_options(args: argparse.Namespace):
 
     validate_option_count = 0
 
+    # Being very explicity here for clarity.
     if args.validate:
         args.submit = False
         args.validate_local_only = False
         args.validate_remote_only = False
+        args.validate_remote_skip = False
         validate_option_count += 1
     elif args.validate_only:
         args.submit = False
         args.validate_local_only = False
         args.validate_remote_only = False
+        args.validate_remote_skip = False
         validate_option_count += 1
     elif args.validate_local_only:
         args.submit = False
         args.validate_local_only = True
         args.validate_remote_only = False
+        args.validate_remote_skip = False
         validate_option_count += 1
     elif args.validate_remote_only:
         args.submit = False
         args.validate_local_only = False
         args.validate_remote_only = True
+        args.validate_remote_skip = False
+        validate_option_count += 1
+    elif args.validate_remote_skip:
+        args.submit = False
+        args.validate_local_only = False
+        args.validate_remote_only = False
+        args.validate_remote_skip = True
         validate_option_count += 1
 
     if validate_option_count > 0:
