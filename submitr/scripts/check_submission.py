@@ -26,6 +26,7 @@ def main(simulated_args_for_testing=None):
     args.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=None)
     args.add_argument('--details', action="store_true", help="More detailed output.", default=False)
     args.add_argument('--verbose', action="store_true", help="More verbose output.", default=False)
+    args.add_argument('--debug', action="store_true", help="Debugging output.", default=False)
     args = args.parse_args(args=simulated_args_for_testing)
 
     if not args.submission_uuid:
@@ -46,7 +47,9 @@ def main(simulated_args_for_testing=None):
                 server=args.server,
                 env_from_env=env_from_env,
                 show_details=(args.verbose or args.details),
-                check_submission_script=True
+                check_submission_script=True,
+                verbose=args.verbose,
+                debug=args.debug
         )
 
 
