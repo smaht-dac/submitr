@@ -1270,13 +1270,18 @@ def _print_submission_summary(portal: Portal, result: dict,
     validation_info = None
     submission_type = "Submission"
     submission_validation = None
+    was_server_validation_timeout = False
     if submission_parameters := result.get("parameters", {}):
         if submission_validation := _tobool(submission_parameters.get("validate_only")):
             submission_type = "Validation"
         if submission_file := submission_parameters.get("datafile"):
             if submission_file == "null":
+                # This submission was a continuance via check-submission of a
+                # server validation (via submit-metadata-bundle) which timed out;
+                # we will note this fact very subtly in the output.
                 if validation_datafile := submission_parameters.get("validation_datafile"):
                     submission_file = validation_datafile
+                    was_server_validation_timeout = True
             lines.append(f"Submission File: {submission_file}")
     if submission_uuid := result.get("uuid"):
         lines.append(f"{submission_type} ID: {submission_uuid}")
@@ -1287,7 +1292,7 @@ def _print_submission_summary(portal: Portal, result: dict,
         if submission_parameters and (associated_submission_uuid := submission_parameters.get("submission_uuid")):
             lines.append(f"Associated Submission ID: {associated_submission_uuid}")
     elif submission_parameters and (associated_validation_uuid := submission_parameters.get("validation_uuid")):
-        lines.append(f"Associated Validation ID: {associated_validation_uuid}")
+        lines.append(f"Associated Validation ID: {associated_validation_uuid}{' (ω)' if was_server_validation_timeout else ''}")
     if submitted_by := result.get("submitted_by", {}).get("display_title"):
         consortia = None
         submission_center = None
