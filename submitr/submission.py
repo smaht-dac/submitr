@@ -14,7 +14,7 @@ import subprocess
 import sys
 import time
 from tqdm import tqdm
-from typing import BinaryIO, Dict, List, Optional, Tuple
+from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 import yaml
 
 # get_env_real_url would rely on env_utils
@@ -25,7 +25,7 @@ from dcicutils.file_utils import search_for_file
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
-    environ_bool, is_uuid, url_path_join, ignorable, normalize_spaces, remove_prefix, str_to_bool as asbool
+    environ_bool, is_uuid, url_path_join, ignorable, normalize_spaces, remove_prefix, str_to_bool
 )
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
@@ -905,7 +905,7 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
             submission_uuid = submission.get("uuid")
             submission_created = submission.get("date_created")
             line = f"{submission_uuid}: {_format_portal_object_datetime(submission_created)}"
-            if asbool(submission.get("parameters", {}).get("validate_only")):
+            if _tobool(submission.get("parameters", {}).get("validate_only")):
                 line += f" | V"
             else:
                 line += f" | S"
@@ -989,7 +989,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         undesired_type = portal.get_schema_type(uuid_metadata)
         raise Exception(f"Given ID is not for a submission or validation: {uuid} ({undesired_type})"
                         f" | Accession: {uuid_metadata.get('accession')}")
-    if asbool(uuid_metadata.get("parameters", {}).get("validate_only")):
+    if _tobool(uuid_metadata.get("parameters", {}).get("validate_only")):
         validation = True
 
     action = "validation" if validation else "ingestion"
@@ -1039,7 +1039,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
 
     if (check_submission_script and check_response and
         (check_parameters := check_response.get("parameters", {})) and
-        asbool(check_parameters.get("validate_only")) and
+        _tobool(check_parameters.get("validate_only")) and
         not check_parameters.get("submission_uuid")):  # noqa
         # This is the check-submission script waiting for a VALIDATION (not a submission)
         # to complete, i.e. the server validation part of submit-metadata-bundle had timed
@@ -1262,7 +1262,7 @@ def _print_submission_summary(portal: Portal, result: dict,
     submission_type = "Submission"
     submission_validation = None
     if submission_parameters := result.get("parameters", {}):
-        if submission_validation := asbool(submission_parameters.get("validate_only")):
+        if submission_validation := _tobool(submission_parameters.get("validate_only")):
             submission_type = "Validation"
         if submission_file := submission_parameters.get("datafile"):
             lines.append(f"Submission File: {submission_file}")
@@ -1578,7 +1578,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
         raise Exception(f"Given ID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
 
     if submission_parameters := response.get("parameters", {}):
-        if asbool(submission_parameters.get("validate_only")):
+        if _tobool(submission_parameters.get("validate_only")):
             PRINT(f"This submission ID ({uuid}) is for a validation not an actual submission.")
             exit(1)
 
@@ -2651,6 +2651,18 @@ def _extract_accession_id(value: str) -> Optional[str]:
         value, _ = os.path.splitext(value)
         if _is_accession_id(value):
             return value
+
+
+def _tobool(value: Any, fallback: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    elif isinstance(value, str):
+        try:
+            return str_to_bool(value)
+        except Exception:
+            return fallback
+    else:
+        return fallback
 
 
 def _get_file_size(file: str) -> int:
