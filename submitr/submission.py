@@ -1265,6 +1265,9 @@ def _print_submission_summary(portal: Portal, result: dict,
         if submission_validation := _tobool(submission_parameters.get("validate_only")):
             submission_type = "Validation"
         if submission_file := submission_parameters.get("datafile"):
+            if submission_file == "null":
+                if validation_datafile := submission_parameters.get("validation_datafile"):
+                    submission_file = validation_datafile
             lines.append(f"Submission File: {submission_file}")
     if submission_uuid := result.get("uuid"):
         lines.append(f"{submission_type} ID: {submission_uuid}")
