@@ -985,7 +985,6 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         if _print_recent_submissions(portal, message=message):
             return
         raise Exception(f"Cannot find object given uuid: {uuid}")
-    import pdb ; pdb.set_trace()
     if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
         undesired_type = portal.get_schema_type(uuid_metadata)
         raise Exception(f"Given ID is not for a submission or validation: {uuid} ({undesired_type})"
