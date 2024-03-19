@@ -96,7 +96,7 @@ def main(simulated_args_for_testing=None):
             exit(1)
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
-        PRINT(f"WARNING: Directory does not exist: {args.upload_folder}")
+        PRINT(f"Directory does not exist: {args.upload_folder}")
         exit(1)
 
     if args.bundle_filename and not os.path.isdir(os.path.normpath(os.path.dirname(args.bundle_filename))):

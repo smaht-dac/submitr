@@ -217,10 +217,11 @@ def main(simulated_args_for_testing=None):
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
         PRINT(f"WARNING: Directory does not exist: {args.upload_folder}")
-        # TODO: exist breaks test ...
-        # FAILED submitr/tests/test_submit_metadata_bundle.py::test_submit_metadata_bundle_script[None]
-        # FAILED submitr/tests/test_submit_metadata_bundle.py::test_submit_metadata_bundle_script[foo.bar]
-        # exit(1)
+        if not _pytesting():
+            # TODO: exist breaks test ...
+            # FAILED submitr/tests/test_submit_metadata_bundle.py::test_submit_metadata_bundle_script[None]
+            # FAILED submitr/tests/test_submit_metadata_bundle.py::test_submit_metadata_bundle_script[foo.bar]
+            exit(1)
 
     if args.yes:
         args.no_query = True

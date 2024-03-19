@@ -932,6 +932,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                                report: bool = True, messages: bool = False,
                                nofiles: bool = False, noprogress: bool = False,
                                check_submission_script: bool = False,
+                               upload_directory: Optional[str] = None,
+                               upload_directory_recursive: bool = False,
                                debug: bool = False,
                                debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
 
@@ -1085,6 +1087,13 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 nofiles=True, noprogress=noprogress, verbose=verbose, debug_sleep=debug_sleep)
         if submission_status != "success":
             exit(1)
+        if verbose:
+            PRINT("Submission complete!")
+        do_any_uploads(submission_response, keydict=portal.key,
+                       upload_folder=upload_directory, subfolders=upload_directory_recursive)
+        # do_any_uploads(submission_response, keydict=portal.key, ingestion_filename=ingestion_filename,
+        #                upload_folder=upload_folder, no_query=no_query,
+        #                subfolders=subfolders)
         return
 
     if check_submission_script or verbose or not validation:
@@ -1940,8 +1949,11 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
         if not (item_filename := uuid_metadata.get("filename")):
             raise Exception(f"Cannot determine file name: {uuid}")
 
-    if not (item_filename := search_for_file(item_filename, location=directory, recursive=recursive, single=True)):
+    if not (item_filename_found := search_for_file(item_filename, location=directory,
+                                                   recursive=recursive, single=True)):
         raise Exception(f"File not found: {item_filename}")
+    else:
+        item_filename = item_filename_found
 
     if not no_query:
         file_size = _format_file_size(_get_file_size(item_filename))
