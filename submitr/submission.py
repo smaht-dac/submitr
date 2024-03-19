@@ -1292,7 +1292,8 @@ def _print_submission_summary(portal: Portal, result: dict,
         if submission_parameters and (associated_submission_uuid := submission_parameters.get("submission_uuid")):
             lines.append(f"Associated Submission ID: {associated_submission_uuid}")
     elif submission_parameters and (associated_validation_uuid := submission_parameters.get("validation_uuid")):
-        lines.append(f"Associated Validation ID: {associated_validation_uuid}{' (ω)' if was_server_validation_timeout else ''}")
+        lines.append(f"Associated Validation ID:"
+                     f" {associated_validation_uuid}{' (ω)' if was_server_validation_timeout else ''}")
     if submitted_by := result.get("submitted_by", {}).get("display_title"):
         consortia = None
         submission_center = None
