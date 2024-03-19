@@ -16,19 +16,18 @@ is an Excel spreadsheet file (e.g. ``your_metadata_file.xlsx``),
 comprised of one or more sheets.
 Note these important aspects of using the Excel spreadsheet format:
 
-#. Each sheet name must be the `exact` name of a SMaHT Portal `object` (or `item`) defined within the system.
-#. Each sheet must have as its first row, a special `header` row, which enumerates in each column, the `exact` names of the Portal object `properties` as the column names; order does `not` matter.
-#. Each sheet may contain any number of `data` rows (`directly` below the header row), each representing an instance of the Portal object.
-#. The values in the cells/columns of each data row correspond each to the property named in same column of the header row. 
-#. The first column in the header row which is empty marks the end of the header, and any subsequent columns will be entirely ignored.
-#. The first row which is entirely empty marks the end of the input, and any subsequenct rows will be entirely ignored;
-   this means you can include comments in your spreadsheet in rows after (below) the first blank row indicating the end of data input.
-#. Sheets which are marked as "hidden" will be ignored; this provides a way of including sheets with other auxiliary information
-   without its content interfering the submission tool.
-#. Sheets which have a name enclosed in parenthesis, for example ``(My Comments)``, will be completely ignored;
-   this provides a way of including sheets with other auxiliary information
-   without its content interfering the submission tool.
-#. The name of the spreadsheet file must be suffixed with ``.xls`` or ``.xlsx``; there are no other requirements for the name of this file.
+#. The spreadsheet must have a **file suffix** of ``.xls`` or ``.xlsx``; there are no other requirements for the name of this file.
+#. Each sheet name must be the `exact` name of a SMaHT Portal item or `object` defined within the system (e.g. ``AlignedReads``).
+#. Each sheet must have as its **first row** a special `header` row, which enumerates in each column, the `exact` names of the Portal object **properties** as the column names; order does `not` matter.
+#. Each sheet may contain any number of **data rows** (`directly` below the header row), each representing an instance of the Portal object.
+#. The values in the cells/columns of each data row correspond to the `property` named in the same column of the header row.
+
+Note these important rules defining exactly the parts of the spreadsheet which are **relevant** for metadata submission.
+
+#. The **first row** which is entirely **empty** marks the **end of the data**, and any subsequent rows will be entirely **ignored**; this means you can include comments in your spreadsheet in rows after (below) the first blank row indicating the end of data input.
+#. The **first column** in the header row which is **empty** marks the **end of the header**, and any subsequent columns will be entirely **ignored**.
+#. Sheets which are marked as **hidden** will be **ignored**; this provides a way of including sheets with other auxiliary information without their contents interfering with the submission tool.
+#. Sheets which have a name enclosed in parenthesis, for example ``(My Comments)``, will similarly be treated as **hidden** as described above.
 
 Despite the rather dense chunk of text here, it is actually pretty intuitive, straightforward, and almost self-explanatory.
 Here is screenshot of a simple example Excel spreadsheet: 
@@ -46,20 +45,20 @@ representing (in this example) data for the Portal objects ``CellCultureSample``
 .. note::
     For an actual **example**, as well as a **template**, please see the `Metadata <#id1>`_ section below.
 
-.. tip::
-    As mentioned above (in case you missed it), you can include arbitrary comments or auxiliary information
-    in your spreadsheet, without that content intefering with the parsing of the spreadsheet,
-    by making individual sheets **hidden**. Such hidden sheets will be completely ignored.
-    To hide a sheet in Excel right-click on the tab and choose **Hide**. To **unhide** select
-    **Format** > **Sheet** > **Unhide...** from the menu-bar. Also mentioned above,
-    if your sheet name is enclosed in parenthesis, for example :boldcode:`(My Comments)`, then it will also be completely ignored;
-    again, useful for arbitrary comments, and without having to hide/unhide sheets.
+.. .. tip::
+..     As mentioned above (in case you missed it), you can include arbitrary comments or auxiliary information
+..     in your spreadsheet, without that content intefering with the parsing of the spreadsheet,
+..     by making individual sheets **hidden**. Such hidden sheets will be completely ignored.
+..     To hide a sheet in Excel right-click on the tab and choose **Hide**. To **unhide** select
+..     **Format** > **Sheet** > **Unhide...** from the menu-bar. Also mentioned above,
+..     if your sheet name is enclosed in parenthesis, for example :boldcode:`(My Comments)`, then it will also be completely ignored;
+..     again, useful for arbitrary comments, and without having to hide/unhide sheets.
 
 .. tip::
 
     Other file formats besides Excel actually `are` supported; see the `Advanced Usage <advanced_usage.html#other-files-formats>`_ section for more information.
 
-Below we describe the various object property `types` supported by ``smaht-submitr``.
+SMaHT object `properties` have different `types`. Many of the types are simply text (or `strings`). Other types are described below.
 
 Object Reference Properties
 ---------------------------
@@ -77,35 +76,8 @@ if this is not the case then an error will result.
 
 The identifying value property for an object varies depending on the specific object in question;
 though the ``uuid`` property is always common to `all` objects; other common identifying properties
-are ``submitted_id`` and ``accession``.
-
-Nested Properties
------------------
-
-Some Portal object properties defined to contain other `nested` objects.
-Since a (Excel spreadsheet) inherently defines a "flat" structure,
-rather than the more hierarchical structure supported by
-Portal objects (which are actually :toplink:`JSON <https://en.wikipedia.org/wiki/JSON>` objects),
-in which such nested objects can be defined,
-a special syntactic convention is needed to be able to reference the properties of these nested objects.
-
-For this we will use a `dot-notation` whereby dots (``.``) are used to separate a parent property from its child property.
-For example, if an object (e.g. `ReferenceFile <object_model/types/reference_file.html>`_) defines an ``extra_files`` property which itself
-refers to an object containing a ``file_format`` property,
-then to reference that nested ``file_format`` property, the spreadsheet column header would need to be ``extra_files.file_format``.
-
-Array Properties
-----------------
-
-Some Portal object properties are defined to be lists (or `arrays`) of values.
-To define the values for such array properties, separate the individual array values by a pipe character (``|``).
-For example if an object defines a ``molecules`` property as an array type, then to set this
-value to an array with the two elements ``DNA`` and ``RNA``, use the value ``DNA|RNA`` in the associated spreadsheet cell.
-
-Less common, but still supported, is the ability to set values for individual array elements.
-This is accomplished by the convention suffixing the property name in the column header with
-a pound sign (``#``) followed by an integer representing the zero-indexed array element.
-For example to set the first element of the ``molecules`` property (using the example above), use column header value ``molecule#0``.
+are ``submitted_id`` and ``accession``. The identifying properties for each object type (and other
+relevant info) can be found in the `Object Model <object_model.html>`_ section.
 
 Date/Time Properties
 --------------------
@@ -122,6 +94,34 @@ Boolean Properties
 
 For Portal object properties which are defined as `boolean` values, meaning either `true` or `false`,
 simply use these values, i.e. ``true`` or ``false`` (case-insensitive).
+
+Array Properties
+----------------
+
+Some Portal object properties are defined to be lists (or `arrays`) of values.
+To define the values for such array properties, separate the individual array values by a pipe character (``|``).
+For example if an object defines a ``molecules`` property as an array type, then to set this
+value to an array with the two elements ``DNA`` and ``RNA``, use the value ``DNA|RNA`` in the associated spreadsheet cell.
+
+Less common, but still supported, is the ability to set values for individual array elements.
+This is accomplished by the convention suffixing the property name in the column header with
+a pound sign (``#``) followed by an integer representing the zero-indexed array element.
+For example to set the first element of the ``molecules`` property (using the example above), use column header value ``molecule#0``.
+
+Nested Properties
+-----------------
+
+Some Portal object properties defined to contain other `nested` objects.
+Since a (Excel spreadsheet) inherently defines a "flat" structure,
+rather than the more hierarchical structure supported by
+Portal objects (which are actually :toplink:`JSON <https://en.wikipedia.org/wiki/JSON>` objects),
+in which such nested objects can be defined,
+a special syntactic convention is needed to be able to reference the properties of these nested objects.
+
+For this we will use a `dot-notation` whereby dots (``.``) are used to separate a parent property from its child property.
+For example, if an object (e.g. `ReferenceFile <object_model/types/reference_file.html>`_) defines an ``extra_files`` property which itself
+refers to an object containing a ``file_format`` property,
+then to reference that nested ``file_format`` property, the spreadsheet column header would need to be ``extra_files.file_format``.
 
 Implicit Properties
 -------------------
@@ -213,7 +213,7 @@ Validation
 
 As mentioned in the `previous section <usage.html#submission>`_, using the ``--submit`` option `will` perform
 validation of your metadata before submitting it (after prompting you to do so).
-But if you want to `only` run validation `without` submitting the metadata to SMaHT Portal,
+But if you want to `only` run validation `without` the possibility of submitting the metadata to SMaHT Portal,
 then invoke ``submit-metadata-bundle`` with the :boldcode:`--validate` option like::
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --validate
@@ -236,8 +236,44 @@ To be more specific about the the validation checks, they include the following:
     You can learn more about the details of ths validation process
     in the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
 
+If you're getting a ton of validation errors dumped to your terminal screen,
+you many want to use the ``--output FILE`` object which will cause all output
+to be saved to the specified file; and this will also refrain writing lengthy content to the terminal.
+
+Getting Submission Info
+=======================
+To view relevant information about a submission use the :boldcode:`check-submission` command like this::
+
+   check-submission --env <environment-name> <uuid>
+
+where the ``<uuid>`` argument is the UUID for the submission which should have been displayed
+in the output of the ``submit-metadata-bundle`` command (e.g. see `screenshot <usage.html#example-screenshots>`_).
+
+Listing Recent Submissions
+--------------------------
+To view a list of recent submissions (with submission UUID and submission date/time),
+in order of most recent first, use the :boldcode:`list-submissions` command like this::
+
+   list-submissions --env <environment-name>
+
+Use the ``--verbose`` option to list more information for each of the recent submissions shown.
+You can control the maximum number of results output using the ``--count`` option with an integer count argument.
+Use the ``--mine`` option to see only your submissions; and use the ``--user EMAIL`` to see only submissions from the named user (by email).
+
 Screenshots
 ===========
+
+Here is a visual of a spreasheet snippet featuriing reference properties:
+
+.. image:: _static/images/submitr_spreadsheet_ref.png
+    :target: _static/images/submitr_spreadsheet_ref.png
+    :alt: Spreadsheet Reference Screenshot
+
+Here is a visual of a spreasheet snippet featuriing date/time and array properties:
+
+.. image:: _static/images/submitr_spreadsheet_date_time_and_array.png
+    :target: _static/images/submitr_spreadsheet_date_time_and_array.png
+    :alt: Spreadsheet Reference Screenshot
 
 The output of a successful ``submit-metadata-bundle --submit`` will look something like this:
 
@@ -259,23 +295,3 @@ And if you additionally specify the ``--verbose`` option the output will look so
 .. image:: _static/images/validate_verbose_output.png
     :target: _static/images/validate_verbose_output.png
     :alt: Validation Verbose Output Screenshot
-
-Getting Submission Info
-=======================
-To view relevant information about a submission use the :boldcode:`check-submission` command like this::
-
-   check-submission --env <environment-name> <uuid>
-
-where the ``<uuid>`` argument is the UUID for the submission which should have been displayed
-in the output of the ``submit-metadata-bundle`` command (e.g. see `screenshot <usage.html#example-screenshots>`_).
-
-Listing Recent Submissions
---------------------------
-To view a list of recent submissions (with submission UUID and submission date/time),
-in order of most recent first, use the :boldcode:`list-submissions` command like this::
-
-   list-submissions --env <environment-name>
-
-Use the ``--verbose`` option to list more information for each of the recent submissions shown.
-You can control the maximum number of results output using the ``--count`` option with an integer count argument.
-

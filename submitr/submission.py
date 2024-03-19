@@ -1007,9 +1007,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     if not check_done:
         command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
         SHOW(f"Timed out (after {round(time.time() - started)}s) WAITING for {action}.")
-        if not validation:
-            SHOW(f"Your submission is still running on the server.")
-            SHOW(f"Use this command to check its status: {command_summary}")
+        SHOW(f"Your {'validation' if validation else 'submission'} is still running on the server.")
+        SHOW(f"Use this command to check its status: {command_summary}")
         exit(1)
 
     if (check_submission_script and check_response and
