@@ -125,7 +125,7 @@ as this may cause problems.
 
 With ``pyenv`` you can create any number of (named) isolated installation environments,
 each with its own version of Python, and each `guaranteed` not interfere with one another.
-Using ``brew``, you can install ``pyenv`` like this::
+Using ``brew``, you can install ``pyenv`` on **MacOS** like this::
 
     brew install pyenv pyenv-virtualenv
 
@@ -133,6 +133,10 @@ Using ``brew``, you can install ``pyenv`` like this::
 
     FYI there are (of course) other ways to install ``pyenv``, for example with
     ``curl -L https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash``
+
+Installation of ``pyenv`` on **Linux** can be done thus::
+
+    curl https://pyenv.run | bash
 
 Configuring Pyenv
 ~~~~~~~~~~~~~~~~~
