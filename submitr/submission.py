@@ -1285,10 +1285,10 @@ def _print_submission_summary(portal: Portal, result: dict,
     errors = []
     validation_info = None
     submission_type = "Submission"
-    submission_validation = None
+    validation = None
     was_server_validation_timeout = False
     if submission_parameters := result.get("parameters", {}):
-        if submission_validation := _tobool(submission_parameters.get("validate_only")):
+        if validation := _tobool(submission_parameters.get("validate_only")):
             submission_type = "Validation"
         if submission_file := submission_parameters.get("datafile"):
             if submission_file == "null":
@@ -1303,7 +1303,7 @@ def _print_submission_summary(portal: Portal, result: dict,
         lines.append(f"{submission_type} ID: {submission_uuid}")
     if date_created := _format_portal_object_datetime(result.get("date_created"), True):
         lines.append(f"{submission_type} Time: {date_created}")
-    if submission_validation:
+    if validation:
         lines.append(f"Validation Only: Yes ◀ ◀ ◀")
         if submission_parameters and (associated_submission_uuid := submission_parameters.get("submission_uuid")):
             lines.append(f"Associated Submission ID: {associated_submission_uuid}")
@@ -1404,7 +1404,7 @@ def _print_submission_summary(portal: Portal, result: dict,
                 if upload_file_type:
                     lines.append(f"Upload File Type: {upload_file_type}")
     if lines:
-        lines = ["===", f"SMaHT {'Validation' if submission_validation else 'Submission'} Summary [UUID]", "==="] + lines + ["==="]
+        lines = ["===", f"SMaHT {'Validation' if validation else 'Submission'} Summary [UUID]", "==="] + lines + ["==="]
         if errors:
             lines += ["ERRORS ITEMIZED BELOW ...", "==="]
         print_boxed(lines, right_justified_macro=("[UUID]", lambda: submission_uuid))
