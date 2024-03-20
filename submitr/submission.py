@@ -1053,9 +1053,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 if not check_submission_script_initial_check_ran:
                     check_submission_script_initial_check_ran = True
                     PRINT(f"This ID is for a server validation that had not yet completed; waiting for completion.")
-                    if verbose:
-                        PRINT(f"Details for this server validation ({uuid}) are:")
-                        _print_submission_summary(portal, check_response, nofiles=nofiles, check_submission_script=True)
+                    PRINT(f"Details for this server validation ({uuid}) below:")
+                    _print_submission_summary(portal, check_response, nofiles=nofiles, check_submission_script=True)
             server_check_count += 1
             most_recent_server_check_time = time.time()
         progress({"check": True,
@@ -1086,9 +1085,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         if not check_submission_script_initial_check_ran:
             check_submission_script_initial_check_ran = True
             PRINT(f"This ID is for a server validation that had not yet completed but now is.")
-            if verbose:
-                PRINT(f"Details for this server validation ({uuid}) below:")
-                _print_submission_summary(portal, check_response, nofiles=nofiles, check_submission_script=True)
+            PRINT(f"Details for this server validation ({uuid}) below:")
+            _print_submission_summary(portal, check_response, nofiles=nofiles, check_submission_script=True)
         validation_info = check_response.get("additional_data", {}).get("validation_output")
         if isinstance(validation_info, list):
             validation_errors = [item for item in validation_info if item.lower().startswith("errored")]
