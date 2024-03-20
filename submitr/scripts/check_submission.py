@@ -27,6 +27,7 @@ def main(simulated_args_for_testing=None):
     args.add_argument('--directory', '-d', help="Directory of the upload files (if resuming submission).")
     args.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
     args.add_argument('--details', action="store_true", help="More detailed output.", default=False)
+    args.add_argument('--timeout', help="Wait timeout for server validation/submission.")
     args.add_argument('--verbose', action="store_true", help="More verbose output.", default=False)
     args.add_argument('--debug', action="store_true", help="Debugging output.", default=False)
     args = args.parse_args(args=simulated_args_for_testing)
@@ -57,6 +58,12 @@ def main(simulated_args_for_testing=None):
     if upload_directory and not os.path.isdir(upload_directory):
         print(f"Directory does not exist: {upload_directory}")
         exit(1)
+
+    if args.timeout:
+        if not args.timeout.isdigit():
+            args.timeout = None
+        else:
+            args.timeout = int(args.timeout)
 
     with script_catch_errors():
         return _monitor_ingestion_process(

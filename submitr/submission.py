@@ -47,7 +47,7 @@ PROGRESS_TIMEOUT = 60 * 5  # five minutes (note this is for both server validati
 # How often we actually check the server (seconds).
 PROGRESS_CHECK_SERVER_INTERVAL = 5
 # How often the (tqdm) progress meter updates (seconds).
-PROGRESS_INTERVAL = 0.5
+PROGRESS_INTERVAL = 8.0
 # How many times the (tqdm) progress meter updates (derived from above).
 PROGRESS_MAX_CHECKS = round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL)
 
@@ -668,11 +668,6 @@ def submit_any_ingestion(ingestion_filename, *,
                          debug=False,
                          debug_sleep=None):
 
-    if timeout:
-        global PROGRESS_TIMEOUT, PROGRESS_MAX_CHECKS
-        PROGRESS_TIMEOUT = timeout
-        PROGRESS_MAX_CHECKS = round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL)
-
     """
     Does the core action of submitting a metadata bundle.
 
@@ -809,7 +804,8 @@ def submit_any_ingestion(ingestion_filename, *,
                 validation_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
                 show_details=show_details, report=False, messages=True,
                 validation=True,
-                nofiles=True, noprogress=noprogress, verbose=verbose, debug=debug)
+                nofiles=True, noprogress=noprogress, timeout=timeout,
+                verbose=verbose, debug=debug, debug_sleep=debug_sleep)
 
         if server_validation_status != "success":
             exit(1)
@@ -848,7 +844,8 @@ def submit_any_ingestion(ingestion_filename, *,
             submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
             show_details=show_details, report=False, messages=True,
             validation=False,
-            nofiles=True, noprogress=noprogress, verbose=verbose, debug=debug, debug_sleep=debug_sleep)
+            nofiles=True, noprogress=noprogress, timeout=timeout,
+            verbose=verbose, debug=debug, debug_sleep=debug_sleep)
 
     if submission_status != "success":
         exit(1)
@@ -938,8 +935,14 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                                check_submission_script: bool = False,
                                upload_directory: Optional[str] = None,
                                upload_directory_recursive: bool = False,
+                               timeout: Optional[int] = None,
                                debug: bool = False,
                                debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
+
+    if timeout:
+        global PROGRESS_TIMEOUT, PROGRESS_MAX_CHECKS
+        PROGRESS_TIMEOUT = timeout
+        PROGRESS_MAX_CHECKS = round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL)
 
     def define_progress_callback(max_checks: int, title: str, include_status: bool = False) -> None:
         bar = None
@@ -1088,7 +1091,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
                 show_details=show_details, report=False, messages=True,
                 validation=False,
-                nofiles=True, noprogress=noprogress, verbose=verbose, debug_sleep=debug_sleep)
+                nofiles=True, noprogress=noprogress, timeout=timeout,
+                verbose=verbose, debug=debug, debug_sleep=debug_sleep)
         if submission_status != "success":
             exit(1)
         if verbose:
@@ -1120,7 +1124,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                         PRINT_OUTPUT(f"- Data errors: {len(validation_errors)}")
                         for validation_error in validation_errors:
                             PRINT_OUTPUT(f"    - {_format_issue(validation_error)}")
-                    if (ref_errors := validation_info.get("ref")) and isinstance(ref_errors, list):
+                    if ref_errors := (validation_info.get("ref") if debug else validation_info.get("ref_grouped")):
                         if ref_errors := _validate_references(ref_errors, None):
                             _print_reference_errors(ref_errors)
         if check_response and isinstance(other_errors := check_response.get("errors"), list):
@@ -2290,6 +2294,8 @@ def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: s
                 ref_validation_errors.append(f"{_format_issue(ref_error, ingestion_filename)}")
             elif ref_error.get("truncated") is True:
                 ref_validation_errors_truncated = {"ref": f"{_format_issue(ref_error, ingestion_filename)}"}
+            elif ref_error.get("ref"):
+                ref_validation_errors.append(ref_error)
             else:
                 if ref := ref_error.get("error"):
                     if ref_error := [r for r in ref_validation_errors if r.get("ref") == ref]:
@@ -2307,16 +2313,22 @@ def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: s
 
 def _print_reference_errors(ref_errors: List[dict], debug: bool = False) -> None:
     if isinstance(ref_errors, list) and ref_errors:
-        PRINT_OUTPUT(f"- Reference errors: {len(ref_errors)}")
+        nref_errors = len([r for r in ref_errors if not r.get('ref', '').startswith('Truncated')])
+        PRINT_OUTPUT(f"- Reference errors: {nref_errors}")
         if debug:
             for ref_error in ref_errors:
                 PRINT_OUTPUT(f"  - ERROR: {ref_error}")
         else:
+            truncated = None
             for ref_error in ref_errors:
-                if isinstance(count := ref_error.get("count"), int):
+                if ref_error["ref"].startswith("Truncated"):
+                    truncated = ref_error["ref"]
+                elif isinstance(count := ref_error.get("count"), int):
                     PRINT_OUTPUT(f"  - ERROR: {ref_error['ref']} (refs: {count})")
                 else:
                     PRINT_OUTPUT(f"  - ERROR: {ref_error['ref']}")
+            if truncated:
+                PRINT_OUTPUT(f"  - {truncated}")
 
 
 def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
