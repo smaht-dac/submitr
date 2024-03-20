@@ -130,13 +130,15 @@ def main(simulated_args_for_testing=None):
                         help="Validate submitted data locally only (on client-side).")
     parser.add_argument('--validate-remote-only', action="store_true",
                         help="Only perform validation of submitted data (on server-side).", default=False)
+    parser.add_argument('--validate-local-skip', action="store_true",
+                        help="Skip the local (client) validation step.", default=False)
     parser.add_argument('--validate-remote-skip', action="store_true",
-                        help="Skip the remote validation step.", default=False)
+                        help="Skip the remote (server) validation step.", default=False)
     parser.add_argument('--directory', '-d', help="Directory of the upload files.")
     parser.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
     parser.add_argument('--subfolders', '-sf', action="store_true",  # obsolete
                         help="Obsolete", default=False)
-    parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
+    parser.add_argument('--upload_folder', '-u', help="Same as --directory.")
     parser.add_argument('--ingestion_type', '--ingestion-type', '-t',
                         help=f"The ingestion type (default: {DEFAULT_INGESTION_TYPE}).",
                         default=DEFAULT_INGESTION_TYPE)
@@ -257,6 +259,7 @@ def main(simulated_args_for_testing=None):
                              submit=args.submit,
                              validate_local_only=args.validate_local_only,
                              validate_remote_only=args.validate_remote_only,
+                             validate_local_skip=args.validate_local_skip,
                              validate_remote_skip=args.validate_remote_skip,
                              json_only=args.json_only,
                              ref_nocache=args.ref_nocache,
@@ -294,60 +297,48 @@ def _sanity_check_submitted_file(file_name: str) -> bool:
 
 def _setup_validate_related_options(args: argparse.Namespace):
 
-    # Being very explicity here for clarity.
-    validate_option_count = 0
-    if args.validate:
-        validate_option_count += 1
-    if args.validate_only:
-        validate_option_count += 1
-    if args.validate_local_only:
-        validate_option_count += 1
-    if args.validate_remote_only:
-        validate_option_count += 1
+    if args.submit:
+        if args.validate or args.validate_only or args.validate_local_only or args.validate_remote_only:
+            PRINT(f"May not specify both --submit AND validate options.")
+            exit(1)
 
-    if validate_option_count > 0:
-        if validate_option_count > 1:
-            PRINT("Only specify ONE of the validate options.")
-            exit(1)
-        elif args.submit:
-            PRINT(f"May NOT specify BOTH --submit AND --validate.")
-            exit(1)
-    elif not args.submit:
-        if not args.json_only and not _pytesting():
-            PRINT(f"You MUST specify either --validate or --submit. Use --help for all options.")
-            exit(1)
+    if not args.submit:
+        if not (args.validate or args.validate_only or args.validate_local_only and args.validate_remote_only):
+            PRINT(f"Must specify either --validate or --submit options. Use --help for all options.")
+
+    if args.validate_local_only and args.validate_remote_only:
+        PRINT(f"May not specify both --validate-local-only and --validate-remote-only options.")
+        exit(1)
+
+    if args.validate_local_only and args.validate_local_skip:
+        PRINT(f"May not specify both --validate-local-only and --validate-local-skip options.")
+        exit(1)
+
+    if args.validate_remote_only and args.validate_remote_skip:
+        PRINT(f"May not specify both --validate-remote-only and --validate-remote-skip options.")
+        exit(1)
+
+    if args.validate_local_skip and args.validate_remote_skip and (args.validate or args.validate_only):
+        PRINT(f"May not specify both validation and not validation.")
+        exit(1)
 
     if args.json_only:
         if args.submit:
             PRINT("The --json-only option is not allowed with --submit.")
             exit(1)
-        elif validate_option_count > 0 or args.validate_remote_skip:
-            PRINT("The --json-only option is not allowed with the validate options.")
+        if args.validate_remote_only or args.validate_local_skip:
+            PRINT("The --json-only option is not allowed with these validate options.")
             exit(1)
 
-    if args.validate or args.validate_only:
-        args.submit = False
-        args.validate_local_only = False
-        args.validate_remote_only = False
-    elif args.validate_local_only:
-        args.submit = False
-        args.validate_local_only = True
-        args.validate_remote_only = False
-    elif args.validate_remote_only:
-        args.submit = False
-        args.validate_local_only = False
-        args.validate_remote_only = True
-    else:
-        args.submit = True
-        args.validate_local_only = False
-        args.validate_remote_only = False
+    # Ultimately only want these options:
+    # - args.submit -> If False then doing validation only
+    # - args.validate_local_only -> Same as --validate-remote-only except not allowed with --submit
+    # - args.validate_remote_only -> Same as --validate-local-only except not allowed with --submit
+    # - args.validate_local_skip
+    # - args.validate_remote_skip
 
     delattr(args, "validate")
     delattr(args, "validate_only")
-
-    if args.validate_remote_skip and not args.submit:
-        PRINT(f"The --validate-remote-skip option only useful (for advanced users) with --submit.")
-        exit(1)
 
 
 if __name__ == '__main__':

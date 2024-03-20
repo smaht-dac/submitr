@@ -651,6 +651,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          submit=False,
                          validate_local_only=False,
                          validate_remote_only=False,
+                         validate_local_skip=False,
                          validate_remote_skip=False,
                          post_only=False,
                          patch_only=False,
@@ -702,6 +703,7 @@ def submit_any_ingestion(ingestion_filename, *,
         app_default = False
         PRINT(f"App name is: {app}")
     """
+    validation = not submit
 
     # Setup for output to specified output file, in addition to stdout),
     # except in this case we will not output large amounts of output to stdout.
@@ -719,29 +721,30 @@ def submit_any_ingestion(ingestion_filename, *,
         SHOW(f"Portal credentials do not seem to work: {portal.keys_file} ({env})")
         exit(1)
 
-    exit_immediately_on_errors = False
     user_record = _get_user_record(portal.server, auth=portal.key_pair, quiet=json_only and not verbose)
     is_admin_user = _is_admin_user(user_record)
-    if not is_admin_user and not (validate_remote_only or validate_local_only):
-        # If user is not an admin, and no other validate related options are
-        # specified, then default to server-side and client-side validation,
-        # i.e. act as-if the --validate option was specified.
-        # validate_remote_silent = True
+    exit_immediately_on_errors = False
+    if not is_admin_user:
         exit_immediately_on_errors = True
-    if not is_admin_user or validate_local_only or (validate_remote_only and not is_admin_user):
+        if validate_local_only or validate_remote_skip:
+            if validate_remote_only or validate_local_skip:
+                PRINT("WARNING: Skipping all validation is definitely not recommended.")
+            else:
+                PRINT("WARNING: Skipping remote (server) validation is not recommended.")
+        elif validate_remote_only or validate_local_skip:
+            PRINT("WARNING: Skipping local (client) validation is not recommended.")
+    elif validate_local_only:
         exit_immediately_on_errors = True
 
     if debug:
         PRINT(f"DEBUG: validate_local_only = {validate_local_only}")
         PRINT(f"DEBUG: validate_remote_only = {validate_remote_only}")
 
-    validation_only = validate_local_only or validate_remote_only
-
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
     if not _do_app_arg_defaulting(app_args, user_record, portal, quiet=json_only and not verbose, verbose=verbose):
         pass
     if not json_only:
-        PRINT(f"Submission file to {'validate' if validation_only else 'ingest'}: {_format_path(ingestion_filename)}")
+        PRINT(f"Submission file to {'validate' if validation else 'ingest'}: {_format_path(ingestion_filename)}")
 
     autoadd = None
     if app_args and isinstance(submission_centers := app_args.get("submission_centers"), list):
@@ -759,11 +762,10 @@ def submit_any_ingestion(ingestion_filename, *,
     if verbose:
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
 
-    if not validate_remote_only:
+    if not validate_remote_only and not validate_local_skip:
         _validate_locally(ingestion_filename, portal,
-                          submit=submit,
+                          validation=validation,
                           validate_local_only=validate_local_only,
-                          validate_remote_only=validate_remote_only,
                           autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
                           exit_immediately_on_errors=exit_immediately_on_errors,
                           ref_nocache=ref_nocache, output_file=output_file, noprogress=noprogress,
@@ -774,18 +776,19 @@ def submit_any_ingestion(ingestion_filename, *,
             # This return is just emphasize that fact.
             return
     else:
-        PRINT("Skipping local (client) validation (as requested via --validate-remote-only).")
+        PRINT(f"Skipping local (client) validation (as requested via"
+              f" {'--validate-remote-only' if validate_remote_only else '--validate-local-skip'}).")
 
-    if is_admin_user and not no_query and (submit or not validate_remote_skip):
+    if is_admin_user and not no_query:
         # More feedback/points-of-contact for admin users; more automatic for non-admin.
-        if not yes_or_no(f"Continue with server {'validation' if not validate_remote_skip else 'submission'}"
+        if not yes_or_no(f"Continue with server {'validation' if validation else 'submission'}"
                          f" against {portal.server}?"):
             SHOW("Aborting before server validation.")
             exit(1)
 
     # Server validation.
 
-    if not validate_remote_skip:
+    if not validate_local_only and not validate_remote_skip:
 
         SHOW(f"Continuing with additional (server) validation: {portal.server}")
 
@@ -815,7 +818,8 @@ def submit_any_ingestion(ingestion_filename, *,
 
     else:
         server_validation_response = None
-        PRINT("Skipping server validation (as requested via --validate-remote-skip).")
+        PRINT("Skipping remote (server) validation (as requested via"
+              f" {'--validate-local-only' if validate_local_only else '--validate-remote-skip'}).")
 
     if validate_remote_only:
         exit(0)
@@ -1104,15 +1108,11 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     if check_status != "success":
         PRINT(f"{'Validation' if validation else 'Submission'} results (server): ERROR"
               f"{f' ({check_status})' if check_status not in ['failure', 'error'] else ''}")
-        # printed_newline = False
         if check_response and (additional_data := check_response.get("additional_data")):
             if (validation_info := additional_data.get("validation_output")):
                 if isinstance(validation_info, list):
                     if errors := [info for info in validation_info if info.lower().startswith("error:")]:
                         for error in errors:
-                            # if not printed_newline:
-                                # PRINT_OUTPUT("")
-                                # printed_newline = True
                             PRINT_OUTPUT(f"- {_format_server_error(error, indent=2)}")
                 elif isinstance(validation_info, dict):
                     if ((validation_errors := validation_info.get("validation")) and
@@ -1122,15 +1122,9 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                             PRINT_OUTPUT(f"    - {_format_issue(validation_error)}")
                     if (ref_errors := validation_info.get("ref")) and isinstance(ref_errors, list):
                         if ref_errors := _validate_references(ref_errors, None):
-                            # if not printed_newline:
-                                # PRINT_OUTPUT("")
-                                # printed_newline = True
                             _print_reference_errors(ref_errors)
         if check_response and isinstance(other_errors := check_response.get("errors"), list):
             for error in other_errors:
-                # if not printed_newline:
-                    # PRINT_OUTPUT("")
-                    # printed_newline = True
                 PRINT_OUTPUT("- " + error)
         if output_file := get_output_file():
             PRINT_STDOUT(f"Exiting with server validation errors; see your output file: {output_file}")
@@ -2025,7 +2019,7 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
 
 
 def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional[dict] = None,
-                      submit: bool = False, validate_local_only: bool = False, validate_remote_only: bool = False,
+                      validation: bool = False, validate_local_only: bool = False,
                       upload_folder: Optional[str] = None,
                       subfolders: bool = False, exit_immediately_on_errors: bool = False,
                       ref_nocache: bool = False, output_file: Optional[str] = None,
@@ -2224,7 +2218,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         if yes_or_no(f"Do you want to see a list of these {nfiles} missing file{'s' if nfiles != 1 else ''}?"):
             for error in file_validation_errors:
                 PRINT(f"- {error}")
-        if not yes_or_no(f"Do you want to continue {'submitting' if submit else 'validation'}"
+        if not yes_or_no(f"Do you want to continue {'validation' if validation else 'submitting'}"
                          f" even with {nfiles} file{'s' if nfiles != 1 else ''} missing?"):
             exit(1)
     if nfiles_found > 0:
@@ -2233,19 +2227,14 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         PRINT("No files to upload were referenced.")
 
     if verbose:
-        _print_structured_data_verbose(portal, structured_data,
-                                       ingestion_filename, upload_folder=upload_folder,
-                                       recursive=subfolders, validate_remote_only=validate_remote_only, verbose=verbose)
+        _print_structured_data_verbose(portal, structured_data, ingestion_filename, upload_folder=upload_folder,
+                                       recursive=subfolders, validation=validation, verbose=verbose)
     elif not quiet:
-        _print_structured_data_status(portal, structured_data,
-                                      validate_local_only=validate_local_only,
-                                      validate_remote_only=validate_remote_only,
-                                      report_updates_only=True,
-                                      noprogress=noprogress, verbose=verbose, debug=debug)
+        _print_structured_data_status(portal, structured_data, validation=validation,
+                                      report_updates_only=True, noprogress=noprogress, verbose=verbose, debug=debug)
     if not validation_okay:
-        question_suffix = " with validation" if validate_local_only or validate_remote_only else ""
         if not yes_or_no(f"There are some preliminary errors outlined above;"
-                         f" do you want to continue{question_suffix}?"):
+                         f" do you want to continue with {'validation' if validation else 'submission'}?"):
             exit(1)
     if validate_local_only:
         PRINT("Terminating as requested (via --validate-local-only).")
@@ -2372,7 +2361,7 @@ def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> Lis
 
 
 def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDataSet, ingestion_filename: str,
-                                   upload_folder: str, recursive: bool, validate_remote_only: bool = False,
+                                   upload_folder: str, recursive: bool, validation: bool = False,
                                    noprogress: bool = False, verbose: bool = False) -> None:
     if (reader_warnings := structured_data.reader_warnings):
         PRINT_OUTPUT(f"\n> Parser WARNINGS:")
@@ -2400,12 +2389,12 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
                              f" [{_format_file_size(_get_file_size(path))}]")
     PRINT_OUTPUT()
     _print_structured_data_status(portal, structured_data,
-                                  validate_remote_only=validate_remote_only,
+                                  validation=validation,
                                   report_updates_only=True, noprogress=noprogress, verbose=verbose)
 
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet,
-                                  validate_local_only: bool = False, validate_remote_only: bool = False,
+                                  validation: bool = False,
                                   report_updates_only: bool = False,
                                   noprogress: bool = False, verbose: bool = False, debug: bool = False) -> None:
 
@@ -2485,7 +2474,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
             else:
                 ncreates += 1
 
-    to_or_which_would = "to" if not (validate_local_only or validate_remote_only) else "which would"
+    to_or_which_would = "which would" if validation else "to"
 
     if ncreates > 0:
         if nupdates > 0:
@@ -2511,7 +2500,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
         else:
             PRINT(f"{message} | Details below ...")
 
-    will_or_would = "Will" if not validate_remote_only else "Would"
+    will_or_would = "Would" if validation else "Will"
 
     nreported = 0
     printed_newline = False
