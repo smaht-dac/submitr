@@ -47,7 +47,7 @@ PROGRESS_TIMEOUT = 60 * 5  # five minutes (note this is for both server validati
 # How often we actually check the server (seconds).
 PROGRESS_CHECK_SERVER_INTERVAL = 5
 # How often the (tqdm) progress meter updates (seconds).
-PROGRESS_INTERVAL = 8.0
+PROGRESS_INTERVAL = 1.0
 # How many times the (tqdm) progress meter updates (derived from above).
 PROGRESS_MAX_CHECKS = round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL)
 
@@ -955,7 +955,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     if timeout:
         global PROGRESS_TIMEOUT, PROGRESS_MAX_CHECKS
         PROGRESS_TIMEOUT = timeout
-        PROGRESS_MAX_CHECKS = round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL)
+        PROGRESS_MAX_CHECKS = max(round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL), 1)
 
     def define_progress_callback(max_checks: int, title: str, include_status: bool = False) -> None:
         bar = None
@@ -1404,7 +1404,7 @@ def _print_submission_summary(portal: Portal, result: dict,
                 if upload_file_type:
                     lines.append(f"Upload File Type: {upload_file_type}")
     if lines:
-        lines = ["===", "SMaHT Submission Summary [UUID]", "==="] + lines + ["==="]
+        lines = ["===", f"SMaHT {'Validation' if submission_validation else 'Submission'} Summary [UUID]", "==="] + lines + ["==="]
         if errors:
             lines += ["ERRORS ITEMIZED BELOW ...", "==="]
         print_boxed(lines, right_justified_macro=("[UUID]", lambda: submission_uuid))
