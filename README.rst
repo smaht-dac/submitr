@@ -2,7 +2,7 @@
 .. image:: https://staging.smaht.org/static/img/docs/submitr_logo.png
     :target: https://pypi.org/project/smaht-submitr/
     :alt: SMaHT remote Metadata Submission Tool: submitr
-    :align: center
+    :align: left
 
 |
 
