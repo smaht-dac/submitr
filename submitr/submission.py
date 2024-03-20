@@ -1104,31 +1104,33 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     if check_status != "success":
         PRINT(f"{'Validation' if validation else 'Submission'} results (server): ERROR"
               f"{f' ({check_status})' if check_status not in ['failure', 'error'] else ''}")
-        printed_newline = False
+        # printed_newline = False
         if check_response and (additional_data := check_response.get("additional_data")):
             if (validation_info := additional_data.get("validation_output")):
                 if isinstance(validation_info, list):
                     if errors := [info for info in validation_info if info.lower().startswith("error:")]:
                         for error in errors:
-                            if not printed_newline:
-                                PRINT_OUTPUT("")
-                                printed_newline = True
+                            # if not printed_newline:
+                                # PRINT_OUTPUT("")
+                                # printed_newline = True
                             PRINT_OUTPUT(f"- {_format_server_error(error, indent=2)}")
                 elif isinstance(validation_info, dict):
+                    if ((validation_errors := validation_info.get("validation")) and
+                        isinstance(validation_errors, list) and validation_errors):  # noqa
+                        PRINT_OUTPUT(f"- Data errors: {len(validation_errors)}")
+                        for validation_error in validation_errors:
+                            PRINT_OUTPUT(f"    - {_format_issue(validation_error)}")
                     if (ref_errors := validation_info.get("ref")) and isinstance(ref_errors, list):
                         if ref_errors := _validate_references(ref_errors, None):
-                            if not printed_newline:
-                                PRINT_OUTPUT("")
-                                printed_newline = True
+                            # if not printed_newline:
+                                # PRINT_OUTPUT("")
+                                # printed_newline = True
                             _print_reference_errors(ref_errors)
-                    if (validation_errors := validation_info.get("validation")) and isinstance(validation_errors, list):
-                        for validation_error in validation_errors:
-                            PRINT_OUTPUT(f"    - _format_issue(validation_error)")
         if check_response and isinstance(other_errors := check_response.get("errors"), list):
             for error in other_errors:
-                if not printed_newline:
-                    PRINT_OUTPUT("")
-                    printed_newline = True
+                # if not printed_newline:
+                    # PRINT_OUTPUT("")
+                    # printed_newline = True
                 PRINT_OUTPUT("- " + error)
         if output_file := get_output_file():
             PRINT_STDOUT(f"Exiting with server validation errors; see your output file: {output_file}")
@@ -2270,7 +2272,12 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
     if initial_validation_errors:
         PRINT_OUTPUT(f"- Initial errors: {len(initial_validation_errors)}")
         for error in initial_validation_errors:
-            PRINT_OUTPUT(f"- ERROR: {error}")
+            PRINT_OUTPUT(f"  - ERROR: {error}")
+
+    if data_validation_errors:
+        PRINT_OUTPUT(f"- Data errors: {len(data_validation_errors)}")
+        for error in data_validation_errors:
+            PRINT_OUTPUT(f"  - ERROR: {_format_issue(error, ingestion_filename)}")
 
     if ref_validation_errors:
         _print_reference_errors(ref_validation_errors)
@@ -2282,22 +2289,18 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
         #     for error in ref_validation_errors:
         #         PRINT_OUTPUT(f"  - ERROR: {error['ref']} (refs: {error['count']})")
 
-    if data_validation_errors:
-        PRINT_OUTPUT(f"- Data errors: {len(data_validation_errors)}")
-        for error in data_validation_errors:
-            PRINT_OUTPUT(f"  - ERROR: {_format_issue(error, ingestion_filename)}")
-
     return not (nerrors > 0)
 
 
 def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: str, debug: bool = False) -> List[str]:
     ref_validation_errors = []
+    ref_validation_errors_truncated = None
     if isinstance(ref_errors, list):
         for ref_error in ref_errors:
             if debug:
                 ref_validation_errors.append(f"{_format_issue(ref_error, ingestion_filename)}")
             elif ref_error.get("truncated") is True:
-                ref_validation_errors.append({"ref": f"{_format_issue(ref_error, ingestion_filename)}"})
+                ref_validation_errors_truncated = {"ref": f"{_format_issue(ref_error, ingestion_filename)}"}
             else:
                 if ref := ref_error.get("error"):
                     if ref_error := [r for r in ref_validation_errors if r.get("ref") == ref]:
@@ -2305,9 +2308,12 @@ def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: s
                     else:
                         ref_validation_errors.append({"ref": ref, "count": 1})
     if debug:
-        return sorted(ref_validation_errors)
+        ref_validation_errors = sorted(ref_validation_errors)
     else:
-        return sorted(ref_validation_errors, key=lambda item: item.get("ref"))
+        ref_validation_errors = sorted(ref_validation_errors, key=lambda item: item.get("ref"))
+    if ref_validation_errors_truncated:
+        ref_validation_errors.append(ref_validation_errors_truncated)
+    return ref_validation_errors
 
 
 def _print_reference_errors(ref_errors: List[dict], debug: bool = False) -> None:
