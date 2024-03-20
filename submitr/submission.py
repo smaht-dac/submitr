@@ -924,6 +924,10 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
                     line_detail += f"{submitted_by}"
                 if ((submission_params := submission.get("parameters")) and
                     (submission_file := submission_params.get("datafile"))):  # noqa
+                    if submission_file == "null":
+                        if validation_datafile := submission_params.get("validation_datafile"):
+                            was_server_validation_timeout = True
+                            submission_file = f"{validation_datafile} (ω)"
                     if line_detail:
                         line_detail += " | "
                     line_detail += f"{submission_file}"
