@@ -898,7 +898,10 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
         lines.append("===")
         lines.append("Recent Submissions [COUNT]")
         lines.append("===")
+        index = 0
         for submission in submissions:
+            if details and (index > 0):
+                lines.append("===")
             if verbose:
                 PRINT()
                 _print_submission_summary(portal, submission)
@@ -907,16 +910,26 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
             submission_created = submission.get("date_created")
             line = f"{submission_uuid}: {_format_portal_object_datetime(submission_created)}"
             if _tobool(submission.get("parameters", {}).get("validate_only")):
-                line += f" | V"
+                line += f" (V)"
             else:
-                line += f" | S"
+                line += f" (S)"
+            if submission.get("processing_status", {}).get("outcome") == "success":
+                line += f" ▶ OK"
+            lines.append(line)
             if details:
+                line_detail = ""
+                if submitted_by := submission.get("submitted_by", {}).get("display_title"):
+                    if line_detail:
+                        line_detail += " | "
+                    line_detail += f"{submitted_by}"
                 if ((submission_params := submission.get("parameters")) and
                     (submission_file := submission_params.get("datafile"))):  # noqa
-                    line += f" | {submission_file}"
-                else:
-                    line += " | -"
-            lines.append(line)
+                    if line_detail:
+                        line_detail += " | "
+                    line_detail += f"{submission_file}"
+                if line_detail:
+                    lines.append(line_detail)
+            index += 1
         if not verbose:
             lines.append("===")
             print_boxed(lines, right_justified_macro=("[COUNT]", lambda: f"Showing: {len(submissions)}"))
