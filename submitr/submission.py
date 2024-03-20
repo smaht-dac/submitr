@@ -996,7 +996,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
 
     action = "validation" if validation else "ingestion"
     if validation:
-        SHOW(f"Waiting (up to about {PROGRESS_TIMEOUT}s) for validation results.")
+        SHOW(f"Waiting (up to about {PROGRESS_TIMEOUT}s) for server validation results.")
     else:
         SHOW(f"Checking {action} for submission ID: %s ..." % uuid)
 
@@ -1121,6 +1121,9 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                                 PRINT_OUTPUT("")
                                 printed_newline = True
                             _print_reference_errors(ref_errors)
+                    if (validation_errors := validation_info.get("validation")) and isinstance(validation_errors, list):
+                        for validation_error in validation_errors:
+                            PRINT_OUTPUT(f"    - _format_issue(validation_error)")
         if check_response and isinstance(other_errors := check_response.get("errors"), list):
             for error in other_errors:
                 if not printed_newline:
@@ -2293,6 +2296,8 @@ def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: s
         for ref_error in ref_errors:
             if debug:
                 ref_validation_errors.append(f"{_format_issue(ref_error, ingestion_filename)}")
+            elif ref_error.get("truncated") is True:
+                ref_validation_errors.append({"ref": f"{_format_issue(ref_error, ingestion_filename)}"})
             else:
                 if ref := ref_error.get("error"):
                     if ref_error := [r for r in ref_validation_errors if r.get("ref") == ref]:
@@ -2302,7 +2307,7 @@ def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: s
     if debug:
         return sorted(ref_validation_errors)
     else:
-        return sorted(ref_validation_errors, key=lambda item: item["ref"])
+        return sorted(ref_validation_errors, key=lambda item: item.get("ref"))
 
 
 def _print_reference_errors(ref_errors: List[dict], debug: bool = False) -> None:
@@ -2313,7 +2318,10 @@ def _print_reference_errors(ref_errors: List[dict], debug: bool = False) -> None
                 PRINT_OUTPUT(f"  - ERROR: {ref_error}")
         else:
             for ref_error in ref_errors:
-                PRINT_OUTPUT(f"  - ERROR: {ref_error['ref']} (refs: {ref_error['count']})")
+                if isinstance(count := ref_error.get("count"), int):
+                    PRINT_OUTPUT(f"  - ERROR: {ref_error['ref']} (refs: {count})")
+                else:
+                    PRINT_OUTPUT(f"  - ERROR: {ref_error['ref']}")
 
 
 def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
