@@ -717,23 +717,25 @@ def submit_any_ingestion(ingestion_filename, *,
         exit(1)
 
     user_record = _get_user_record(portal.server, auth=portal.key_pair, quiet=json_only and not verbose)
-    is_admin_user = _is_admin_user(user_record)
-    exit_immediately_on_errors = False
-    if not is_admin_user:
-        exit_immediately_on_errors = True
-        if validate_local_only or validate_remote_skip:
-            if validate_remote_only or validate_local_skip:
-                PRINT("WARNING: Skipping all validation is definitely not recommended.")
-            else:
-                PRINT("WARNING: Skipping remote (server) validation is not recommended.")
-        elif validate_remote_only or validate_local_skip:
-            PRINT("WARNING: Skipping local (client) validation is not recommended.")
-    elif validate_local_only:
-        exit_immediately_on_errors = True
+    # Nevermind: Too confusing for both testing and general usage
+    # to have different behaviours for admin and non-admin users.
+    # is_admin_user = _is_admin_user(user_record)
+    exit_immediately_on_errors = True
+    if validate_local_only or validate_remote_skip:
+        if validate_remote_only or validate_local_skip:
+            PRINT("WARNING: Skipping all validation is definitely not recommended.")
+        else:
+            PRINT("WARNING: Skipping remote (server) validation is not recommended.")
+    elif validate_remote_only or validate_local_skip:
+        PRINT("WARNING: Skipping local (client) validation is not recommended.")
 
     if debug:
+        PRINT(f"DEBUG: submit = {submit}")
+        PRINT(f"DEBUG: validation = {validation}")
         PRINT(f"DEBUG: validate_local_only = {validate_local_only}")
         PRINT(f"DEBUG: validate_remote_only = {validate_remote_only}")
+        PRINT(f"DEBUG: validate_local_skip = {validate_local_skip}")
+        PRINT(f"DEBUG: validate_remote_skip = {validate_remote_skip}")
 
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
     if not _do_app_arg_defaulting(app_args, user_record, portal, quiet=json_only and not verbose, verbose=verbose):
@@ -774,12 +776,14 @@ def submit_any_ingestion(ingestion_filename, *,
         PRINT(f"Skipping local (client) validation (as requested via"
               f" {'--validate-remote-only' if validate_remote_only else '--validate-local-skip'}).")
 
-    if is_admin_user and not no_query:
-        # More feedback/points-of-contact for admin users; more automatic for non-admin.
-        if not yes_or_no(f"Continue with server {'validation' if validation else 'submission'}"
-                         f" against {portal.server}?"):
-            SHOW("Aborting before server validation.")
-            exit(1)
+    # Nevermind: Too confusing for both testing and general usage
+    # to have different behaviours for admin and non-admin users.
+    # if is_admin_user and not no_query:
+    #     # More feedback/points-of-contact for admin users; more automatic for non-admin.
+    #     if not yes_or_no(f"Continue with server {'validation' if validation else 'submission'}"
+    #                      f" against {portal.server}?"):
+    #         SHOW("Aborting before server validation.")
+    #         exit(1)
 
     # Server validation.
 

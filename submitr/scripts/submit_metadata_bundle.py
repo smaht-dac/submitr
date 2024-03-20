@@ -70,16 +70,17 @@ _HELP_ADVANCED = _HELP.strip() + f"""
 ADVANCED OPTIONS:
 ===
 --validate-only
+  Same as --validate with slightly different command interaction.
   Performs ONLY, but BOTH client-side (local) and
   server-side (remote) validation only WITHOUT submitting.
-  Same as --validate with slightly different command interaction.
-  Client validation: Yes | Client initiated server validation: Yes
 --validate-remote-only
   Performs ONLY server-side (remote) validation WITHOUT submitting.
-  Client validation: Yes | Client initiated server validation: Yes
 --validate-local-only
   Performs ONLY client-side (local) validation WITHOUT submission.
-  Client validation: Yes | Client initiated server validation: No
+--validate-local-skip
+  Skips client-side (local) validation.
+--validate-remote-skip
+  Skips server-side (remote) validation.
 --patch-only
   Perform ONLY updates (PATCHes) for submitted data.
 --post-only
@@ -94,6 +95,8 @@ ADVANCED OPTIONS:
   Displays slightly more detailed output.
 --noprogress
   Do not print progress of (client-side) parsing/validation output.
+--timeout SECONDS
+  Maximum umber of seconds to wait for server validation or submission.
 --progress-extra
   Displasy extra info in progress of (client-side) parsing/validation.
 --debug
