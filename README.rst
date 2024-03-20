@@ -54,8 +54,8 @@ Installation
 Installing this system involves these steps:
 
 1. Install Python and optionally a virtual environment manager of your choice (e.g. ``pyenv``)..
-3. Install this package with: ``pip install smaht-submitr``
-4. Setup your SMaHT Portal credentials file: ``~/.smaht-keys.json``. See `SMaHT Submitr Credentals <https://submitr.readthedocs.io/en/draft/installation.html>`_ for more in this.
+2. Install this package with: ``pip install smaht-submitr``
+3. Setup your SMaHT Portal credentials file: ``~/.smaht-keys.json``. See `SMaHT Submitr Credentials <https://submitr.readthedocs.io/en/draft/installation.html>`_ for more in this.
 
 See detailed information about installation see: `Installing SMaHT Submitr <https://submitr.readthedocs.io/en/draft/installation.html>`_.
 
