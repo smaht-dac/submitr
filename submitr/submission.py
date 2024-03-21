@@ -1157,8 +1157,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                         ref_errors = validation_info.get("ref")
                     elif not (ref_errors := validation_info.get("ref_grouped")):
                         ref_errors = validation_info.get("ref")
-                    if ref_errors and (ref_errors := _validate_references(ref_errors, None)):
-                        _print_reference_errors(ref_errors)
+                    if ref_errors and (ref_errors := _validate_references(ref_errors, None, debug=debug)):
+                        _print_reference_errors(ref_errors, debug=debug)
         if check_response and isinstance(other_errors := check_response.get("errors"), list):
             for error in other_errors:
                 PRINT_OUTPUT("- " + error)
@@ -2215,11 +2215,11 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 message += f" ‖ Refs: {nrefs_total}"
                 if nrefs_unresolved > 0:
                     message += f" | Unresolved: {nrefs_unresolved}"
-                if verbose and (nrefs_lookup > 0):
+                if (verbose or debug) and (nrefs_lookup > 0):
                     message += f" | Lookups: {nrefs_lookup}"
                 if nrefs_invalid > 0:
                     message += f" | Invalid: {nrefs_invalid}"
-                if verbose and (nrefs_cache_hit > 0):
+                if (verbose or debug) and (nrefs_cache_hit > 0):
                     message += f" | Hits: {nrefs_cache_hit}"
             message += " | Progress"
             bar.set_description(message)
@@ -2232,7 +2232,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                         ref_lookup_strategy=ref_lookup_strategy,
                                         ref_lookup_nocache=ref_nocache,
-                                        progress=None if noprogress else define_progress_callback(),
+                                        progress=None if noprogress else define_progress_callback(debug=debug),
                                         debug_sleep=debug_sleep)
     structured_data._load_file(ingestion_filename)
 
@@ -2341,7 +2341,7 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
             PRINT_OUTPUT(f"  - ERROR: {_format_issue(error, ingestion_filename)}")
 
     if ref_validation_errors:
-        _print_reference_errors(ref_validation_errors)
+        _print_reference_errors(ref_validation_errors, debug=debug)
         # PRINT_OUTPUT(f"- Reference errors: {len(ref_validation_errors)}")
         # if debug:
         #     for error in ref_validation_errors:
@@ -2381,7 +2381,7 @@ def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: s
 
 def _print_reference_errors(ref_errors: List[dict], debug: bool = False) -> None:
     if isinstance(ref_errors, list) and ref_errors:
-        nref_errors = len([r for r in ref_errors if not r.get('ref', '').startswith('Truncated')])
+        nref_errors = len([r for r in ref_errors if not isinstance(r, dict) or r.get('ref', '').startswith('Truncated')])
         PRINT_OUTPUT(f"- Reference errors: {nref_errors}")
         if debug:
             for ref_error in ref_errors:
@@ -2497,7 +2497,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 exit(1)
             PRINT_STDOUT("Continuing ...")
         def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, ntypes, nobjects, ncreates, nupdates, nlookups, debug, noprogress
+            nonlocal bar, ntypes, nobjects, ncreates, nupdates, nlookups, noprogress
             if noprogress:
                 return
             increment = 1
@@ -2540,7 +2540,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
             bar.set_description(message)
         return progress_report
 
-    diffs = structured_data.compare(progress=define_progress_callback())
+    diffs = structured_data.compare(progress=define_progress_callback(debug=debug))
 
     ncreates = 0
     nupdates = 0
