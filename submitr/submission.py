@@ -2382,7 +2382,7 @@ def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: s
 def _print_reference_errors(ref_errors: List[dict], debug: bool = False) -> None:
     if isinstance(ref_errors, list) and ref_errors:
         nref_errors = len([r for r in ref_errors
-                           if not isinstance(r, dict) or r.get('ref', '').startswith('Truncated')])
+                           if (not isinstance(r, dict)) or (not r.get('ref', '').startswith('Truncated'))])
         PRINT_OUTPUT(f"- Reference errors: {nref_errors}")
         if debug:
             for ref_error in ref_errors:
