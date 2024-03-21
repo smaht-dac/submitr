@@ -761,7 +761,8 @@ def test_resume_uploads():
                             ingestion_filename=SOME_BUNDLE_FILENAME,
                             upload_folder=None,
                             no_query=False,
-                            subfolders=False)
+                            subfolders=False,
+                            portal=None)
 
     with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):

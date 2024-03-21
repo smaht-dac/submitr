@@ -1574,7 +1574,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
         for upload_file_info in upload_info:
             if display_file_info(upload_file_info):
                 files_to_upload.append(upload_file_info)
-            else:
+            elif portal:
                 resume_upload_commands.append(f"resume-uploads --env {portal.env} {upload_file_info.get('uuid')}")
         if len(files_to_upload) == 0:
             return
