@@ -1569,16 +1569,21 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
     if not upload_folder and ingestion_filename:
         if ingestion_directory := os.path.dirname(ingestion_filename):
             upload_folder = ingestion_directory
-    resume_upload_commands = []  # for message for files not found
+    resume_upload_commands = []
+    resume_upload_commands_missing = []
     if upload_info:
         files_to_upload = []
         for upload_file_info in upload_info:
             if display_file_info(upload_file_info):
                 files_to_upload.append(upload_file_info)
+                if portal:
+                    resume_upload_commands.append(f"resume-uploads --env {portal.env} {upload_file_info.get('uuid')}")
             elif portal:
-                resume_upload_commands.append(f"resume-uploads --env {portal.env} {upload_file_info.get('uuid')}")
+                resume_upload_commands_missing.append(
+                    f"resume-uploads --env {portal.env} {upload_file_info.get('uuid')}")
         if len(files_to_upload) == 0:
             return
+        noupload = False
         if no_query:
             do_uploads(files_to_upload, auth=keydict, no_query=no_query, folder=upload_folder,
                        subfolders=subfolders)
@@ -1590,15 +1595,26 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
                            no_query=no_query, folder=upload_folder,
                            subfolders=subfolders)
             else:
+                noupload = True
                 SHOW("No uploads attempted.")
-    if resume_upload_commands:
-        nresume_upload_commands = len(resume_upload_commands)
-        PRINT(f"There {'were' if nresume_upload_commands != 1 else 'was'} {nresume_upload_commands} missing"
-              f" file{'s' if nresume_upload_commands != 1 else ''} as mentioned above.")
-        if yes_or_no(f"Do you want to see the resume-uploads command{'s' if nresume_upload_commands != 1 else ''}"
-                     f" to use to upload {'these' if nresume_upload_commands != 1 else 'this'} separately?"):
-            for resume_upload_command in resume_upload_commands:
-                PRINT(f"▶ {resume_upload_command}")
+                if resume_upload_commands:
+                    resume_upload_commands += resume_upload_commands_missing
+                    nresume_upload_commands = len(resume_upload_commands)
+                    if yes_or_no(f"Do you want to see the resume-uploads"
+                                 f" command{'s' if nresume_upload_commands != 1 else ''} to use to"
+                                 f" upload {'these' if nresume_upload_commands != 1 else 'this'} separately?"):
+                        for resume_upload_command in resume_upload_commands:
+                            PRINT(f"▶ {resume_upload_command}")
+    if not noupload and resume_upload_commands_missing:
+        nresume_upload_commands_missing = len(resume_upload_commands_missing)
+        PRINT(f"There {'were' if nresume_upload_commands_missing != 1 else 'was'}"
+              f" {nresume_upload_commands_missing} missing"
+              f" file{'s' if nresume_upload_commands_missing != 1 else ''} as mentioned above.")
+        if yes_or_no(f"Do you want to see the resume-uploads"
+                     f" command{'s' if nresume_upload_commands_missing != 1 else ''}"
+                     f" to use to upload {'these' if nresume_upload_commands_missing != 1 else 'this'} separately?"):
+            for resume_upload_command_missing in resume_upload_commands_missing:
+                PRINT(f"▶ {resume_upload_command_missing}")
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
