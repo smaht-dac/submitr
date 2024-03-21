@@ -1153,9 +1153,12 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                         PRINT_OUTPUT(f"- Data errors: {len(validation_errors)}")
                         for validation_error in validation_errors:
                             PRINT_OUTPUT(f"    - {_format_issue(validation_error)}")
-                    if ref_errors := (validation_info.get("ref") if debug else validation_info.get("ref_grouped")):
-                        if ref_errors := _validate_references(ref_errors, None):
-                            _print_reference_errors(ref_errors)
+                    if debug:
+                        ref_errors = validation_info.get("ref")
+                    elif not (ref_errors := validation_info.get("ref_grouped")):
+                        ref_errors = validation_info.get("ref")
+                    if ref_errors and (ref_errors := _validate_references(ref_errors, None)):
+                        _print_reference_errors(ref_errors)
         if check_response and isinstance(other_errors := check_response.get("errors"), list):
             for error in other_errors:
                 PRINT_OUTPUT("- " + error)
