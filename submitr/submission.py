@@ -2817,7 +2817,7 @@ def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optiona
 
 
 def _format_path(path: str) -> str:
-    if os.path.isabs(path) and path.startswith(os.path.expanduser("~")):
+    if isinstance(path, str) and os.path.isabs(path) and path.startswith(os.path.expanduser("~")):
         path = "~/" + Path(path).relative_to(Path.home()).as_posix()
     return path
 
