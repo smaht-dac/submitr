@@ -2734,7 +2734,7 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         if verbose:
             PRINT(f"Portal app name is{' (default)' if app_default else ''}: {app}")
         PRINT(f"Portal environment (in keys file) is: {portal.env}{' (from SMAHT_ENV)' if env_from_env else ''}")
-        PRINT(f"Portal keys file is: {portal.keys_file}")
+        PRINT(f"Portal keys file is: {_format_path(portal.keys_file)}")
         PRINT(f"Portal server is: {portal.server}")
         if portal.key_id and len(portal.key_id) > 2:
             PRINT(f"Portal key prefix is: {portal.key_id[:2]}******")
