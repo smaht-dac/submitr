@@ -1087,12 +1087,19 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             check_submission_script_initial_check_ran = True
             PRINT(f"This ID is for a server validation that had not yet completed but now is.")
             PRINT(f"Details for this server validation ({uuid}) below:")
-            _print_submission_summary(portal, check_response, nofiles=nofiles, check_submission_script=True)
+            _print_submission_summary(portal, check_response, nofiles=nofiles,
+                                      check_submission_script=True, include_errors=True)
         validation_info = check_response.get("additional_data", {}).get("validation_output")
+        # TODO: Cleanup/unify error structure from client and server!
         if isinstance(validation_info, list):
             validation_errors = [item for item in validation_info if item.lower().startswith("errored")]
             if validation_errors:
-                PRINT("Since server validation errors were encountered: Exiting with no action.")
+                PRINT("\nServer validation errors were encountered for this metadata.")
+                PRINT("You will need to correct any errors and resubmit via submit-metadata-bundle.")
+                exit(1)
+        elif isinstance(validation_info, dict):
+            if validation_info.get("ref") or validation_info.get("validation"):
+                PRINT("\nServer validation errors were encountered for this metadata.")
                 PRINT("You will need to correct any errors and resubmit via submit-metadata-bundle.")
                 exit(1)
         PRINT("Validation results (server): OK")
@@ -1288,7 +1295,9 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
 
 
 def _print_submission_summary(portal: Portal, result: dict,
-                              nofiles: bool = False, check_submission_script: bool = False) -> None:
+                              nofiles: bool = False,
+                              check_submission_script: bool = False,
+                              include_errors: bool = False) -> None:
     if not result:
         return
     def is_admin_user(user_record: Optional[dict]) -> bool:  # noqa
@@ -1347,6 +1356,12 @@ def _print_submission_summary(portal: Portal, result: dict,
             lines.append(f"Submitted By: {submitted_by}")
         if is_admin_user(result.get("submitted_by")) is True:
             lines[len(lines) - 1] += " ▶ Admin"
+    if additional_data := result.get("additional_data"):
+        if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, dict):
+            # TODO: Cleanup/unify error structure from client and server!
+            if ref_errors := _validate_references(validation_info["ref"], None):
+                errors.extend(_format_reference_errors(ref_errors))
+            pass
     if processing_status := result.get("processing_status"):
         summary_lines = []
         if additional_data := result.get("additional_data"):
@@ -1424,12 +1439,11 @@ def _print_submission_summary(portal: Portal, result: dict,
                     lines.append(f"Upload File Type: {upload_file_type}")
     if lines:
         lines = ["===", f"SMaHT {'Validation' if validation else 'Submission'} Summary [UUID]", "==="] + lines + ["==="]
-        if errors:
+        if errors and include_errors:
             lines += ["ERRORS ITEMIZED BELOW ...", "==="]
         print_boxed(lines, right_justified_macro=("[UUID]", lambda: submission_uuid))
-        if errors:
+        if errors and include_errors:
             for error in errors:
-                # PRINT(error.replace("Error:", "ERROR:"))
                 PRINT(_format_server_error(error))
 
 
@@ -2380,24 +2394,32 @@ def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: s
 
 
 def _print_reference_errors(ref_errors: List[dict], debug: bool = False) -> None:
+    if errors := _format_reference_errors(ref_errors=ref_errors, debug=debug):
+        for error in errors:
+            PRINT_OUTPUT(error)
+
+
+def _format_reference_errors(ref_errors: List[dict], debug: bool = False) -> List[str]:
+    errors = []
     if isinstance(ref_errors, list) and ref_errors:
         nref_errors = len([r for r in ref_errors
                            if (not isinstance(r, dict)) or (not r.get('ref', '').startswith('Truncated'))])
-        PRINT_OUTPUT(f"- Reference errors: {nref_errors}")
+        errors.append(f"- Reference errors: {nref_errors}")
         if debug:
             for ref_error in ref_errors:
-                PRINT_OUTPUT(f"  - ERROR: {ref_error}")
+                errors.append(f"  - ERROR: {ref_error}")
         else:
             truncated = None
             for ref_error in ref_errors:
                 if ref_error["ref"].startswith("Truncated"):
                     truncated = ref_error["ref"]
                 elif isinstance(count := ref_error.get("count"), int):
-                    PRINT_OUTPUT(f"  - ERROR: {ref_error['ref']} (refs: {count})")
+                    errors.append(f"  - ERROR: {ref_error['ref']} (refs: {count})")
                 else:
-                    PRINT_OUTPUT(f"  - ERROR: {ref_error['ref']}")
+                    errors.append(f"  - ERROR: {ref_error['ref']}")
             if truncated:
-                PRINT_OUTPUT(f"  - {truncated}")
+                errors.append(f"  - {truncated}")
+    return errors
 
 
 def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
