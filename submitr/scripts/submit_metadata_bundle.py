@@ -92,6 +92,8 @@ ADVANCED OPTIONS:
   Displays the submitted metadata as formatted JSON.
 --json-only
   Displays ONLY the submitted metadata as formatted JSON; nothing else.
+--info
+  Displays ONLY info about the submitted metadata; nothing else.
 --details
   Displays slightly more detailed output.
 --noprogress
