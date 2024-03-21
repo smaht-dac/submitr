@@ -11,6 +11,7 @@ from ..submission import (
     DEFAULT_SUBMISSION_PROTOCOL,
     SUBMISSION_PROTOCOLS,
     _ping,
+    _print_metadata_file_info,
     _pytesting
 )
 
@@ -169,6 +170,8 @@ def main(simulated_args_for_testing=None):
                         help="Output the parsed JSON of the metadata file.", default=False)
     parser.add_argument('--json-only', action="store_true",
                         help="Output ONLY the parsed JSON of the metadata file.", default=False)
+    parser.add_argument('--info', action="store_true",
+                        help="Output information about the given metadata file.", default=False)
     parser.add_argument('--output', help="Output file for results.", default=False)
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--timeout', help="Wait timeout for server validation/submission.")
@@ -240,6 +243,13 @@ def main(simulated_args_for_testing=None):
         else:
             args.timeout = int(args.timeout)
 
+    if args.info:
+        if not os.path.exists(args.bundle_filename):
+            PRINT(f"File does not exist: {args.bundle_filename}")
+            exit(1)
+        _print_metadata_file_info(args.bundle_filename)
+        exit(0)
+
     with script_catch_errors():
 
         if not _sanity_check_submitted_file(args.bundle_filename):
@@ -299,6 +309,9 @@ def _sanity_check_submitted_file(file_name: str) -> bool:
 
 
 def _setup_validate_related_options(args: argparse.Namespace):
+
+    if args.info:
+        return
 
     if args.submit:
         if args.validate or args.validate_only or args.validate_local_only or args.validate_remote_only:

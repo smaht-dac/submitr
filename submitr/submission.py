@@ -2796,6 +2796,27 @@ def _format_path(path: str) -> str:
     return path
 
 
+def _print_metadata_file_info(file: str) -> None:
+    header = f"Metadata File: {os.path.basename(file)} | Size: {_format_file_size(_get_file_size(file))}"
+    lines = []
+    if file.endswith(".xlsx") or file.endswith(".xls"):
+        from dcicutils.data_readers import Excel
+        excel = Excel(file)
+        nrows_total = 0
+        nsheets = 0
+        for sheet_name in sorted(excel.sheet_names):
+            nsheets += 1
+            nrows = 0
+            for row in excel.sheet_reader(sheet_name):
+                nrows += 1
+            lines.append(f"- Sheet: {sheet_name} ▶ Rows: {nrows}")
+            nrows_total += nrows
+        PRINT(f"{header} | Sheets: {nsheets} | Rows: {nrows_total}")
+        PRINT("\n".join(lines))
+    else:
+        PRINT(header)
+
+
 def _ping(app: str, env: str, server: str, keys_file: str,
           env_from_env: bool = False, verbose: bool = False) -> bool:
     portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file,
