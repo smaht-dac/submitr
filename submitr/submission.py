@@ -1025,7 +1025,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     if validation:
         SHOW(f"Waiting (up to about {PROGRESS_TIMEOUT}s) for server validation results.")
     else:
-        SHOW(f"Checking {action} for submission ID: %s ..." % uuid)
+        SHOW(f"Waiting (up to about {PROGRESS_TIMEOUT}s) for submission results.")
+        # SHOW(f"Checking {action} for submission ID: %s ..." % uuid)
 
     started = time.time()
     progress = define_progress_callback(PROGRESS_MAX_CHECKS,
@@ -1593,11 +1594,11 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
     if resume_upload_commands:
         nresume_upload_commands = len(resume_upload_commands)
         PRINT(f"There {'were' if nresume_upload_commands != 1 else 'was'} {nresume_upload_commands} missing"
-              f" files{'s' if nresume_upload_commands != 1 else ''} as mentioned above.")
+              f" file{'s' if nresume_upload_commands != 1 else ''} as mentioned above.")
         if yes_or_no(f"Do you want to see the resume-uploads command{'s' if nresume_upload_commands != 1 else ''}"
-                     f" to use upload these separately?"):
+                     f" to use upload {'these' if nresume_upload_commands else 'this'} separately?"):
             for resume_upload_command in resume_upload_commands:
-                PRINT(f"> {resume_upload_command}")
+                PRINT(f"▶ {resume_upload_command}")
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
