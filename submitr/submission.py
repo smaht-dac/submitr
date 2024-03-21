@@ -858,7 +858,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
     do_any_uploads(submission_response, keydict=portal.key, ingestion_filename=ingestion_filename,
                    upload_folder=upload_folder, no_query=no_query,
-                   subfolders=subfolders)
+                   subfolders=subfolders, portal=portal)
 
 
 def _get_recent_submissions(portal: Portal, count: int = 30, name: Optional[str] = None) -> List[dict]:
@@ -1126,7 +1126,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             exit(1)
         PRINT("Submission complete!")
         do_any_uploads(submission_response, keydict=portal.key,
-                       upload_folder=upload_directory, subfolders=upload_directory_recursive)
+                       upload_folder=upload_directory, subfolders=upload_directory_recursive, portal=portal)
         # do_any_uploads(submission_response, keydict=portal.key, ingestion_filename=ingestion_filename,
         #                upload_folder=upload_folder, no_query=no_query,
         #                subfolders=subfolders)
@@ -1540,7 +1540,8 @@ def _show_upload_result(result,
             SHOW(datafile_url)
 
 
-def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no_query=False, subfolders=False):
+def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
+                   no_query=False, subfolders=False, portal=None):
 
     def display_file_info(upload_file_info: dict) -> None:
         nonlocal upload_folder, subfolders
@@ -1556,7 +1557,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
                     PRINT(f"No upload attempted for file {file} because multiple"
                           f" copies were found in folder {upload_folder}: {', '.join(file_paths)}.")
                     return False
-            PRINT(f"ERROR: Cannot find file to upload: {_format_path(file)} ({file_uuid})")
+            PRINT(f"WARNING: Cannot find file to upload: {_format_path(file)} ({file_uuid})")
         return False
 
     upload_info = _get_section(res, 'upload_info')
@@ -1567,11 +1568,14 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
     if not upload_folder and ingestion_filename:
         if ingestion_directory := os.path.dirname(ingestion_filename):
             upload_folder = ingestion_directory
+    resume_upload_commands = []  # for message for files not found
     if upload_info:
         files_to_upload = []
         for upload_file_info in upload_info:
             if display_file_info(upload_file_info):
                 files_to_upload.append(upload_file_info)
+            else:
+                resume_upload_commands.append(f"resume-uploads --env {portal.env} {upload_file_info.get('uuid')}")
         if len(files_to_upload) == 0:
             return
         if no_query:
@@ -1586,6 +1590,14 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None, no
                            subfolders=subfolders)
             else:
                 SHOW("No uploads attempted.")
+    if resume_upload_commands:
+        nresume_upload_commands = len(resume_upload_commands)
+        PRINT(f"There {'were' if nresume_upload_commands != 1 else 'was'} {nresume_upload_commands} missing"
+              f" files{'s' if nresume_upload_commands != 1 else ''} as mentioned above.")
+        if yes_or_no(f"Do you want to see the resume-uploads command{'s' if nresume_upload_commands != 1 else ''}"
+                     f" to use upload these separately?" ):
+            for resume_upload_command in resume_upload_commands:
+                PRINT(f"> {resume_upload_command}")
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
@@ -1636,7 +1648,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                    ingestion_filename=bundle_filename,
                    upload_folder=upload_folder,
                    no_query=no_query,
-                   subfolders=subfolders)
+                   subfolders=subfolders,
+                   portal=portal)
 
 
 @function_cache(serialize_key=True)
@@ -2245,14 +2258,21 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                                            upload_folder, recursive=subfolders)
     if file_validation_errors:
         nfiles = len(file_validation_errors)
-        PRINT(f"However there {'are' if nfiles != 1 else 'is'} {nfiles} file{'s' if nfiles != 1 else ''}"
-              f" referenced which {'are' if nfiles != 1 else 'is'} missing.")
-        if yes_or_no(f"Do you want to see a list of these {nfiles} missing file{'s' if nfiles != 1 else ''}?"):
-            for error in file_validation_errors:
-                PRINT(f"- {error}")
-        if not yes_or_no(f"Do you want to continue {'validation' if validation else 'submitting'}"
-                         f" even with {nfiles} file{'s' if nfiles != 1 else ''} missing?"):
-            exit(1)
+        if nfiles == 1:
+            PRINT(f"WARNING: There is one file referenced which is missing (below).")
+            PRINT(f"- {file_validation_errors[0]}")
+        else:
+            PRINT(f"WARNING: However there are {nfiles} files referenced which are missing.")
+            if yes_or_no(f"Do you want to see a list of these {nfiles} missing file{'s' if nfiles != 1 else ''}?"):
+                for error in file_validation_errors:
+                    PRINT(f"- {error}")
+        if not validation:
+            if not yes_or_no(f"Do you want to continue even with"
+                             f" {'these' if nfiles != 1 else 'this'} missing file{'s' if nfiles != 1 else ''}?"):
+                exit(1)
+        else:
+            PRINT(f"Continuing validation process even with {'these' if nfiles != 1 else 'this'}"
+                  f" missing file{'s' if nfiles != 1 else ''} as noted above.")
     if nfiles_found > 0:
         PRINT(f"Files referenced for upload (and which exist): {nfiles_found}")
     elif not file_validation_errors:
