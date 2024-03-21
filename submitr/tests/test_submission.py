@@ -762,7 +762,7 @@ def test_resume_uploads():
                             upload_folder=None,
                             no_query=False,
                             subfolders=False,
-                            portal=None)
+                            portal=mock.ANY)
 
     with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
