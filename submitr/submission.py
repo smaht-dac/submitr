@@ -1571,6 +1571,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
             upload_folder = ingestion_directory
     resume_upload_commands = []
     resume_upload_commands_missing = []
+    noupload = False
     if upload_info:
         files_to_upload = []
         for upload_file_info in upload_info:
@@ -1583,7 +1584,6 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
                     f"resume-uploads --env {portal.env} {upload_file_info.get('uuid')}")
         if len(files_to_upload) == 0:
             return
-        noupload = False
         if no_query:
             do_uploads(files_to_upload, auth=keydict, no_query=no_query, folder=upload_folder,
                        subfolders=subfolders)
