@@ -1595,7 +1595,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
         PRINT(f"There {'were' if nresume_upload_commands != 1 else 'was'} {nresume_upload_commands} missing"
               f" files{'s' if nresume_upload_commands != 1 else ''} as mentioned above.")
         if yes_or_no(f"Do you want to see the resume-uploads command{'s' if nresume_upload_commands != 1 else ''}"
-                     f" to use upload these separately?" ):
+                     f" to use upload these separately?"):
             for resume_upload_command in resume_upload_commands:
                 PRINT(f"> {resume_upload_command}")
 
