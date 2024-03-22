@@ -2280,10 +2280,15 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if validation_okay:
         PRINT("Validation results (preliminary): OK")
     elif exit_immediately_on_errors:
+        if verbose:
+            _print_structured_data_verbose(portal, structured_data, ingestion_filename, upload_folder=upload_folder,
+                                           recursive=subfolders, validation=validation, noanalyze=True, verbose=verbose)
         if output_file:
             PRINT_STDOUT(f"Exiting with preliminary validation errors; see your output file: {output_file}")
         else:
-            PRINT_STDOUT(f"\nExiting with preliminary validation errors.")
+            if not verbose:
+                PRINT_STDOUT()
+            PRINT_STDOUT(f"Exiting with preliminary validation errors.")
             PRINT_STDOUT("Use the --output FILE option to write errors to a file.")
         exit(1)
 
@@ -2344,17 +2349,28 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
     if nerrors > 0:
         PRINT_OUTPUT("Validation results (preliminary): ERROR")
 
+    printed_newline = False
+
     if initial_validation_errors:
+        if not printed_newline:
+            PRINT_OUTPUT()
+            printed_newline = True
         PRINT_OUTPUT(f"- Initial errors: {len(initial_validation_errors)}")
         for error in initial_validation_errors:
             PRINT_OUTPUT(f"  - ERROR: {error}")
 
     if data_validation_errors:
+        if not printed_newline:
+            PRINT_OUTPUT()
+            printed_newline = True
         PRINT_OUTPUT(f"- Data errors: {len(data_validation_errors)}")
         for error in data_validation_errors:
             PRINT_OUTPUT(f"  - ERROR: {_format_issue(error, ingestion_filename)}")
 
     if ref_validation_errors:
+        if not printed_newline:
+            PRINT_OUTPUT()
+            printed_newline = True
         _print_reference_errors(ref_validation_errors, debug=debug)
         # PRINT_OUTPUT(f"- Reference errors: {len(ref_validation_errors)}")
         # if debug:
@@ -2465,9 +2481,9 @@ def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> Lis
 
 def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDataSet, ingestion_filename: str,
                                    upload_folder: str, recursive: bool, validation: bool = False,
-                                   noprogress: bool = False, verbose: bool = False) -> None:
+                                   noanalyze: bool = False, noprogress: bool = False, verbose: bool = False) -> None:
     if (reader_warnings := structured_data.reader_warnings):
-        PRINT_OUTPUT(f"\n> Parser WARNINGS:")
+        PRINT_OUTPUT(f"\n> Parser warnings:")
         for reader_warning in reader_warnings:
             PRINT_OUTPUT(f"  - {_format_issue(reader_warning, ingestion_filename)}")
     PRINT_OUTPUT(f"\n> Types submitting:")
@@ -2491,9 +2507,10 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
                 PRINT_OUTPUT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
                              f" [{_format_file_size(_get_file_size(path))}]")
     PRINT_OUTPUT()
-    _print_structured_data_status(portal, structured_data,
-                                  validation=validation,
-                                  report_updates_only=True, noprogress=noprogress, verbose=verbose)
+    if not noanalyze:
+        _print_structured_data_status(portal, structured_data,
+                                      validation=validation,
+                                      report_updates_only=True, noprogress=noprogress, verbose=verbose)
 
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet,
@@ -2656,10 +2673,14 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
         show_file = original_file and (original_file.endswith(".zip") or
                                        original_file.endswith(".tgz") or original_file.endswith(".gz"))
         src_file = issue_src.get("file") if show_file else ""
+        src_sheet = issue_src.get("sheet")
         src_type = issue_src.get("type")
         src_column = issue_src.get("column")
         src_row = issue_src.get("row", 0)
-        if src_file:
+        if src_sheet:
+            src = f"{src_sheet}"
+            sep = ":"
+        elif src_file:
             src = f"{os.path.basename(src_file)}"
             sep = ":"
         else:
