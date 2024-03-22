@@ -706,7 +706,8 @@ def submit_any_ingestion(ingestion_filename, *,
         PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW = setup_for_output_file_option(output_file)
 
     portal = _define_portal(env=env, env_from_env=env_from_env, server=server, app=app,
-                            keys_file=keys_file, report=not json_only or verbose, verbose=verbose)
+                            keys_file=keys_file, report=not json_only or verbose, verbose=verbose,
+                            note="Metadata Validation" if validation else "Metadata Submission")
 
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=portal.app,
                                  consortium=consortium, submission_center=submission_center)
@@ -1655,7 +1656,8 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
-                   upload_folder=None, no_query=False, subfolders=False, app=None, keys_file=None, env_from_env=False):
+                   upload_folder=None, no_query=False, subfolders=False,
+                   output_file=None, app=None, keys_file=None, env_from_env=False):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -1669,6 +1671,10 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     :param no_query: bool to suppress requests for user input
     :param subfolders: bool to search subdirectories within upload_folder for files
     """
+
+    if output_file:
+        global PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW
+        PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW = setup_for_output_file_option(output_file)
 
     portal = _define_portal(key=keydict, keys_file=keys_file, env=env,
                             server=server, app=app, env_from_env=env_from_env, report=True)
@@ -2125,6 +2131,9 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       json_only: bool = False, noprogress: bool = False,
                       verbose_json: bool = False, verbose: bool = False, quiet: bool = False,
                       debug: bool = False, debug_sleep: Optional[str] = None) -> StructuredDataSet:
+
+    if json_only:
+        noprogress = True
 
     # N.B. This same bit of code is in smaht-portal; not sure best way to share;
     # It really should not go in dcicutils (structured_data) as this know pretty
@@ -2765,9 +2774,8 @@ def _format_src(issue: dict) -> str:
 
 
 def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server: Optional[str] = None,
-                   app: Optional[str] = None, keys_file: Optional[str] = None,
-                   env_from_env: bool = False,
-                   report: bool = False, verbose: bool = False) -> Portal:
+                   app: Optional[str] = None, keys_file: Optional[str] = None, env_from_env: bool = False,
+                   report: bool = False, verbose: bool = False, note: Optional[str] = None) -> Portal:
 
     def get_default_keys_file():
         nonlocal app
@@ -2803,7 +2811,10 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
             raise Exception(
                 f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")
     if report:
-        PRINT(f"SMaHT submitr version: {get_version()}")
+        message = f"SMaHT submitr version: {get_version()}"
+        if note:
+            message += f" | {note}"
+        PRINT(message)
         if verbose:
             PRINT(f"Portal app name is{' (default)' if app_default else ''}: {app}")
         PRINT(f"Portal environment (in keys file) is: {portal.env}{' (from SMAHT_ENV)' if env_from_env else ''}")
