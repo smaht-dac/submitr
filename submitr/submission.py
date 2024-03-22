@@ -2189,7 +2189,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         nrefs_resolved = 0
         nrefs_unresolved = 0
         nrefs_lookup = 0
-        nrefs_cache_hit = 0
+        nrefs_exists_cache_hit = 0
+        nrefs_lookup_cache_hit = 0
         nrefs_invalid = 0
 
         def handle_control_c(signum, frame):  # noqa
@@ -2199,7 +2200,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             PRINT_STDOUT("Continuing ...")
         def progress_report(status: dict) -> None:  # noqa
             nonlocal bar, nsheets, nrows, nrows_processed, verbose, noprogress
-            nonlocal nrefs_total, nrefs_resolved, nrefs_unresolved, nrefs_lookup, nrefs_cache_hit, nrefs_invalid
+            nonlocal nrefs_total, nrefs_resolved, nrefs_unresolved, nrefs_lookup
+            nonlocal nrefs_exists_cache_hit, nrefs_lookup_cache_hit, nrefs_invalid
             if noprogress:
                 return
             increment = 1
@@ -2221,20 +2223,15 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
                 bar = tqdm(total=nrows, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
                 return
-            elif status.get("finish"):
-                bar.close()
-                signal.signal(signal.SIGINT, signal.SIG_DFL)
-                return
-            elif status.get("parse"):
-                nrows_processed += increment
+            elif status.get("parse") or status.get("finish"):
+                if not status.get("finish"):
+                    nrows_processed += increment
                 nrefs_total = status.get("refs") or 0
                 nrefs_resolved = status.get("refs_found") or 0
                 nrefs_unresolved = status.get("refs_not_found") or 0
                 nrefs_lookup = status.get("refs_lookup") or 0
-                nrefs_cache_hit = status.get("refs_cache_hit") or 0
-                if not status.get("refs_cache_hit"):  # TEMPORARY WORKAROUND FOR DCICUTILS BUG
-                    if structured_data:
-                        nrefs_cache_hit = structured_data.ref_exists_cache_hit_count
+                nrefs_exists_cache_hit = status.get("refs_exists_cache_hit") or 0
+                nrefs_lookup_cache_hit = status.get("refs_lookup_cache_hit") or 0
                 nrefs_invalid = status.get("refs_invalid") or 0
                 bar.update(increment)
             else:
@@ -2248,10 +2245,15 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     message += f" | Lookups: {nrefs_lookup}"
                 if nrefs_invalid > 0:
                     message += f" | Invalid: {nrefs_invalid}"
-                if (verbose or debug) and (nrefs_cache_hit > 0):
-                    message += f" | Hits: {nrefs_cache_hit}"
+                if (verbose or debug) and (nrefs_exists_cache_hit > 0):
+                    message += f" | Hits: {nrefs_exists_cache_hit}"
+                    if debug:
+                        message += f" [{nrefs_lookup_cache_hit}]"
             message += " | Progress"
             bar.set_description(message)
+            if status.get("finish"):
+                bar.close()
+                signal.signal(signal.SIGINT, signal.SIG_DFL)
 
         return progress_report
 
