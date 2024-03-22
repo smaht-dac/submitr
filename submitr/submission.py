@@ -2279,7 +2279,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 message += f" ‖ Refs: {nrefs_total}"
                 if nrefs_unresolved > 0:
                     message += f" | Unresolved: {nrefs_unresolved}"
-                if (verbose or debug) and (nrefs_lookup > 0):
+                if nrefs_lookup > 0:
                     message += f" | Lookups: {nrefs_lookup}"
                 if nrefs_invalid > 0:
                     message += f" | Invalid: {nrefs_invalid}"
