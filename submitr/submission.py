@@ -961,6 +961,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                                upload_directory_recursive: bool = False,
                                timeout: Optional[int] = None,
                                verbose: bool = False, debug: bool = False,
+                               note: Optional[str] = None,
                                debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
 
     if timeout:
@@ -1011,7 +1012,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 signal.signal(signal.SIGINT, signal.SIG_DFL)
         return progress_report
 
-    portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP, env_from_env=env_from_env, report=report)
+    portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP,
+                            env_from_env=env_from_env, report=report, note=note)
 
     if not (uuid_metadata := portal.get_metadata(uuid)):
         message = f"Submission ID not found: {uuid}" if uuid != "dummy" else "No submission ID specified."
@@ -1677,7 +1679,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
         PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW = setup_for_output_file_option(output_file)
 
     portal = _define_portal(key=keydict, keys_file=keys_file, env=env,
-                            server=server, app=app, env_from_env=env_from_env, report=True)
+                            server=server, app=app, env_from_env=env_from_env,
+                            report=True, note="Resuming File Upload")
 
     if not (response := portal.get_metadata(uuid)):
         if accession_id := _extract_accession_id(uuid):
@@ -2660,13 +2663,13 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
         if nupdates > 0:
             message = f"Objects {to_or_which_would} be -> Created: {ncreates} | Updated: {nupdates}"
             if nsubstantive_updates == 0:
-                message += " (but no substantive differences)"
+                message += " (no substantive differences)"
         else:
             message = f"Objects {to_or_which_would} be created: {ncreates}"
     elif nupdates:
         message = f"Objects {to_or_which_would} be updated: {nupdates}"
         if nsubstantive_updates == 0:
-            message += " (but no substantive differences)"
+            message += " (no substantive differences)"
     else:
         message = "No objects {to_or_which_would} create or update."
         return
@@ -2703,7 +2706,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
             else:
                 message = f"    Already exists -> {object_info.uuid} -> {will_or_would} be UPDATED"
                 if not object_info.diffs:
-                    message += " (but NO substantive diffs)"
+                    message += " (no substantive diffs)"
                     PRINT(message)
                 else:
                     message += " (substantive DIFFs below)"

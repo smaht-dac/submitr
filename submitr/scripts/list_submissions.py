@@ -30,7 +30,8 @@ def main(simulated_args_for_testing=None):
     with script_catch_errors():
         portal = _define_portal(env=args.env,
                                 env_from_env=env_from_env,
-                                keys_file=args.keys or os.environ.get("SMAHT_KEYS"), report=not args.quiet)
+                                keys_file=args.keys or os.environ.get("SMAHT_KEYS"),
+                                report=not args.quiet, note="Listing Submissions")
         _print_recent_submissions(portal, details=args.details, verbose=args.verbose,
                                   count=args.count, mine=args.mine, user=args.user)
 

@@ -77,7 +77,8 @@ def main(simulated_args_for_testing=None):
                 verbose=args.verbose,
                 debug=args.debug,
                 upload_directory=upload_directory,
-                upload_directory_recursive=not upload_directory_only
+                upload_directory_recursive=not upload_directory_only,
+                note="Checking Submission"
         )
 
 
