@@ -2309,9 +2309,29 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             PRINT_STDOUT("Use the --output FILE option to write errors to a file.")
         exit(1)
 
-    # Check files separately because we might want to let them get away with missing files.
+    _review_upload_files(structured_data, ingestion_filename,
+                         validation=validation, directory=upload_folder, recursive=subfolders)
+
+    if verbose:
+        _print_structured_data_verbose(portal, structured_data, ingestion_filename, upload_folder=upload_folder,
+                                       recursive=subfolders, validation=validation, verbose=verbose)
+    elif not quiet:
+        _print_structured_data_status(portal, structured_data, validation=validation,
+                                      report_updates_only=True, noprogress=noprogress, verbose=verbose, debug=debug)
+    if not validation_okay:
+        if not yes_or_no(f"There are some preliminary errors outlined above;"
+                         f" do you want to continue with {'validation' if validation else 'submission'}?"):
+            exit(1)
+    if validate_local_only:
+        PRINT("Terminating as requested (via --validate-local-only).")
+        exit(0 if validation_okay else 1)
+
+
+def _review_upload_files(structured_data: StructuredDataSet, ingestion_filename: str, validation: bool = False,
+                         directory: Optional[str] = None, recursive: bool = False) -> None:
+
     nfiles_found, file_validation_errors = _validate_files(structured_data, ingestion_filename,
-                                                           upload_folder, recursive=subfolders)
+                                                           upload_folder=directory, recursive=recursive)
     if file_validation_errors:
         nfiles = len(file_validation_errors)
         if nfiles == 1:
@@ -2327,26 +2347,12 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                              f" {'these' if nfiles != 1 else 'this'} missing file{'s' if nfiles != 1 else ''}?"):
                 exit(1)
         else:
-            PRINT(f"Continuing validation process even with {'these' if nfiles != 1 else 'this'}"
+            PRINT(f"Continuing even with {'these' if nfiles != 1 else 'this'}"
                   f" missing file{'s' if nfiles != 1 else ''} as noted above.")
     if nfiles_found > 0:
         PRINT(f"Files referenced for upload (and which exist): {nfiles_found}")
     elif not file_validation_errors:
         PRINT("No files to upload were referenced.")
-
-    if verbose:
-        _print_structured_data_verbose(portal, structured_data, ingestion_filename, upload_folder=upload_folder,
-                                       recursive=subfolders, validation=validation, verbose=verbose)
-    elif not quiet:
-        _print_structured_data_status(portal, structured_data, validation=validation,
-                                      report_updates_only=True, noprogress=noprogress, verbose=verbose, debug=debug)
-    if not validation_okay:
-        if not yes_or_no(f"There are some preliminary errors outlined above;"
-                         f" do you want to continue with {'validation' if validation else 'submission'}?"):
-            exit(1)
-    if validate_local_only:
-        PRINT("Terminating as requested (via --validate-local-only).")
-        exit(0 if validation_okay else 1)
 
 
 def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str,
