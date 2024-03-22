@@ -759,14 +759,14 @@ def submit_any_ingestion(ingestion_filename, *,
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
 
     if not validate_remote_only and not validate_local_skip:
-        _validate_locally(ingestion_filename, portal,
-                          validation=validation,
-                          validate_local_only=validate_local_only,
-                          autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
-                          exit_immediately_on_errors=exit_immediately_on_errors,
-                          ref_nocache=ref_nocache, output_file=output_file, noprogress=noprogress,
-                          json_only=json_only, verbose_json=verbose_json,
-                          verbose=verbose, debug=debug, debug_sleep=debug_sleep)
+        structured_data = _validate_locally(ingestion_filename, portal,
+                                            validation=validation,
+                                            validate_local_only=validate_local_only,
+                                            autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
+                                            exit_immediately_on_errors=exit_immediately_on_errors,
+                                            ref_nocache=ref_nocache, output_file=output_file, noprogress=noprogress,
+                                            json_only=json_only, verbose_json=verbose_json,
+                                            verbose=verbose, debug=debug, debug_sleep=debug_sleep)
         if validate_local_only:
             # We actually do exit from _validate_locally if validate_local_only is True.
             # This return is just emphasize that fact.
@@ -854,6 +854,11 @@ def submit_any_ingestion(ingestion_filename, *,
         exit(1)
 
     PRINT("Submission complete!")
+
+    # Now that submission has successfully complete, review the files to upload and then do it.
+
+    _review_upload_files(structured_data, ingestion_filename,
+                         validation=validation, directory=upload_folder, recursive=subfolders)
 
     do_any_uploads(submission_response, keydict=portal.key, ingestion_filename=ingestion_filename,
                    upload_folder=upload_folder, no_query=no_query,
@@ -2119,7 +2124,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       ref_nocache: bool = False, output_file: Optional[str] = None,
                       json_only: bool = False, noprogress: bool = False,
                       verbose_json: bool = False, verbose: bool = False, quiet: bool = False,
-                      debug: bool = False, debug_sleep: Optional[str] = None) -> int:
+                      debug: bool = False, debug_sleep: Optional[str] = None) -> StructuredDataSet:
 
     # N.B. This same bit of code is in smaht-portal; not sure best way to share;
     # It really should not go in dcicutils (structured_data) as this know pretty
@@ -2309,8 +2314,9 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             PRINT_STDOUT("Use the --output FILE option to write errors to a file.")
         exit(1)
 
-    _review_upload_files(structured_data, ingestion_filename,
-                         validation=validation, directory=upload_folder, recursive=subfolders)
+    # They don't want to present upload file info on validate, only on submit.
+    # _review_upload_files(structured_data, ingestion_filename,
+    #                      validation=validation, directory=upload_folder, recursive=subfolders)
 
     if verbose:
         _print_structured_data_verbose(portal, structured_data, ingestion_filename, upload_folder=upload_folder,
@@ -2325,6 +2331,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if validate_local_only:
         PRINT("Terminating as requested (via --validate-local-only).")
         exit(0 if validation_okay else 1)
+
+    return structured_data
 
 
 def _review_upload_files(structured_data: StructuredDataSet, ingestion_filename: str, validation: bool = False,
