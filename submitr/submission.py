@@ -297,7 +297,6 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
         and false otherwise.
     :return: the @id of a submission center to use
     """
-    # TODO: Need to support submits_for ...
     def show_submission_centers():
         nonlocal portal
         if portal:
@@ -712,7 +711,7 @@ def submit_any_ingestion(ingestion_filename, *,
     app_args = _resolve_app_args(institution=institution, project=project, lab=lab, award=award, app=portal.app,
                                  consortium=consortium, submission_center=submission_center)
 
-    if portal.get("/health").status_code != 200:  # TODO: with newer version dcicutils do: if not portal.ping():
+    if not portal.ping():
         SHOW(f"Portal credentials do not seem to work: {portal.keys_file} ({env})")
         exit(1)
 
@@ -864,7 +863,7 @@ def submit_any_ingestion(ingestion_filename, *,
 def _get_recent_submissions(portal: Portal, count: int = 30, name: Optional[str] = None) -> List[dict]:
     url = f"/search/?type=IngestionSubmission&sort=-date_created&from=0&limit={count}"
     if name:
-        # TODO: Does not seem to return the same stuff
+        # TODO: Does not seem to return the same stuff; of not great consequence yet.
         url += f"&q={name}"
     if submissions := portal.get_metadata(url):
         if submissions := submissions.get("@graph"):
@@ -949,14 +948,13 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                                show_details: bool = False,
                                validation: bool = False,
                                env_from_env: bool = False,
-                               verbose: bool = False,
                                report: bool = True, messages: bool = False,
                                nofiles: bool = False, noprogress: bool = False,
                                check_submission_script: bool = False,
                                upload_directory: Optional[str] = None,
                                upload_directory_recursive: bool = False,
                                timeout: Optional[int] = None,
-                               debug: bool = False,
+                               verbose: bool = False, debug: bool = False,
                                debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
 
     if timeout:
@@ -1055,7 +1053,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                     check_submission_script_initial_check_ran = True
                     PRINT(f"This ID is for a server validation that had not yet completed; waiting for completion.")
                     PRINT(f"Details for this server validation ({uuid}) below:")
-                    _print_submission_summary(portal, check_response, nofiles=nofiles, check_submission_script=True)
+                    _print_submission_summary(portal, check_response, nofiles=nofiles,
+                                              check_submission_script=True, verbose=verbose, debug=debug)
             server_check_count += 1
             most_recent_server_check_time = time.time()
         progress({"check": True,
@@ -1088,7 +1087,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             PRINT(f"This ID is for a server validation that had not yet completed but now is.")
             PRINT(f"Details for this server validation ({uuid}) below:")
             _print_submission_summary(portal, check_response, nofiles=nofiles,
-                                      check_submission_script=True, include_errors=True)
+                                      check_submission_script=True, include_errors=True,
+                                      verbose=verbose, debug=debug)
         validation_info = check_response.get("additional_data", {}).get("validation_output")
         # TODO: Cleanup/unify error structure from client and server!
         if isinstance(validation_info, list):
@@ -1140,9 +1140,10 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         #                subfolders=subfolders)
         return
 
-    if check_submission_script or verbose or not validation:
+    if check_submission_script or debug or not validation:
         _print_submission_summary(portal, check_response,
-                                  nofiles=nofiles, check_submission_script=check_submission_script)
+                                  nofiles=nofiles, check_submission_script=check_submission_script,
+                                  verbose=verbose, debug=debug)
 
     # If not sucessful then output any validation/submission results.
     if check_status != "success":
@@ -1175,7 +1176,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                         if not printed_newline:
                             PRINT_OUTPUT()
                             printed_newline = True
-                        _print_reference_errors(ref_errors, debug=debug)
+                        _print_reference_errors(ref_errors, verbose=verbose, debug=debug)
         if check_response and isinstance(other_errors := check_response.get("errors"), list) and other_errors:
             if not printed_newline:
                 PRINT_OUTPUT()
@@ -1310,7 +1311,8 @@ def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, *
 def _print_submission_summary(portal: Portal, result: dict,
                               nofiles: bool = False,
                               check_submission_script: bool = False,
-                              include_errors: bool = False) -> None:
+                              include_errors: bool = False,
+                              verbose: bool = False, debug: bool = False) -> None:
     if not result:
         return
     def is_admin_user(user_record: Optional[dict]) -> bool:  # noqa
@@ -1373,7 +1375,7 @@ def _print_submission_summary(portal: Portal, result: dict,
         if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, dict):
             # TODO: Cleanup/unify error structure from client and server!
             if ref_errors := _validate_references(validation_info["ref"], None):
-                errors.extend(_format_reference_errors(ref_errors))
+                errors.extend(_format_reference_errors(ref_errors, verbose=verbose, debug=debug))
             pass
     if processing_status := result.get("processing_status"):
         summary_lines = []
@@ -2289,7 +2291,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         PRINT_OUTPUT(f"Parsed JSON:")
         PRINT_OUTPUT(json.dumps(structured_data.data, indent=4))
     validation_okay = _validate_data(structured_data, portal, ingestion_filename,
-                                     upload_folder, recursive=subfolders, debug=debug)
+                                     upload_folder, recursive=subfolders, verbose=verbose, debug=debug)
     if validation_okay:
         PRINT("Validation results (preliminary): OK")
     elif exit_immediately_on_errors:
@@ -2346,7 +2348,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
 
 
 def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str,
-                   upload_folder: str, recursive: bool, debug: bool = False) -> bool:
+                   upload_folder: str, recursive: bool, verbose: bool = False, debug: bool = False) -> bool:
     nerrors = 0
 
     if initial_validation_errors := _validate_initial(structured_data, portal):
@@ -2384,7 +2386,7 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
         if not printed_newline:
             PRINT_OUTPUT()
             printed_newline = True
-        _print_reference_errors(ref_validation_errors, debug=debug)
+        _print_reference_errors(ref_validation_errors, verbose=verbose, debug=debug)
         # PRINT_OUTPUT(f"- Reference errors: {len(ref_validation_errors)}")
         # if debug:
         #     for error in ref_validation_errors:
@@ -2397,6 +2399,13 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
 
 
 def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: str, debug: bool = False) -> List[str]:
+    def normalize(ref_errors: Optional[List[dict]]) -> None:  # noqa
+        # Server sends back fill path to "file"; adjust to basename; fix on server (TODO).
+        if isinstance(ref_errors, list):
+            for ref_error in ref_errors:
+                if isinstance(src := ref_error.get("src"), dict) and isinstance(file := src.get("file"), str):
+                    src["file"] = os.path.basename(file)
+    normalize(ref_errors)
     ref_validation_errors = []
     ref_validation_errors_truncated = None
     if isinstance(ref_errors, list):
@@ -2406,13 +2415,23 @@ def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: s
             elif ref_error.get("truncated") is True:
                 ref_validation_errors_truncated = {"ref": f"{_format_issue(ref_error, ingestion_filename)}"}
             elif ref_error.get("ref"):
+                # TODO: Can we actually get here?
                 ref_validation_errors.append(ref_error)
             else:
                 if ref := ref_error.get("error"):
-                    if ref_error := [r for r in ref_validation_errors if r.get("ref") == ref]:
-                        ref_error[0]["count"] += 1
+                    if ref_error_existing := [r for r in ref_validation_errors if r.get("ref") == ref]:
+                        ref_error_existing = ref_error_existing[0]
+                        ref_error_existing["count"] += 1
+                        if isinstance(src := ref_error.get("src"), dict):
+                            if isinstance(ref_error_existing.get("srcs"), list):
+                                ref_error_existing["srcs"].append(src)
+                            else:
+                                ref_error_existing["srcs"] = [src]
                     else:
-                        ref_validation_errors.append({"ref": ref, "count": 1})
+                        ref_validation_error = {"ref": ref, "count": 1}
+                        if isinstance(src := ref_error.get("src"), dict):
+                            ref_validation_error["srcs"] = [src]
+                        ref_validation_errors.append(ref_validation_error)
     if debug:
         ref_validation_errors = sorted(ref_validation_errors)
     else:
@@ -2422,13 +2441,13 @@ def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: s
     return ref_validation_errors
 
 
-def _print_reference_errors(ref_errors: List[dict], debug: bool = False) -> None:
-    if errors := _format_reference_errors(ref_errors=ref_errors, debug=debug):
+def _print_reference_errors(ref_errors: List[dict], verbose: bool = False, debug: bool = False) -> None:
+    if errors := _format_reference_errors(ref_errors=ref_errors, verbose=verbose, debug=debug):
         for error in errors:
             PRINT_OUTPUT(error)
 
 
-def _format_reference_errors(ref_errors: List[dict], debug: bool = False) -> List[str]:
+def _format_reference_errors(ref_errors: List[dict], verbose: bool = False, debug: bool = False) -> List[str]:
     errors = []
     if isinstance(ref_errors, list) and ref_errors:
         nref_errors = len([r for r in ref_errors
@@ -2444,6 +2463,9 @@ def _format_reference_errors(ref_errors: List[dict], debug: bool = False) -> Lis
                     truncated = ref_error["ref"]
                 elif isinstance(count := ref_error.get("count"), int):
                     errors.append(f"  - ERROR: {ref_error['ref']} (refs: {count})")
+                    if verbose and isinstance(srcs := ref_error.get("srcs"), list):
+                        for src in srcs:
+                            errors.append(f"    - {_format_src(src)}")
                 else:
                     errors.append(f"  - ERROR: {ref_error['ref']}")
             if truncated:
@@ -2680,40 +2702,6 @@ def _print_json_with_prefix(data, prefix):
 
 
 def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
-    def src_string(issue: dict) -> str:
-        if not isinstance(issue, dict) or not isinstance(issue_src := issue.get("src"), dict):
-            return ""
-        show_file = original_file and (original_file.endswith(".zip") or
-                                       original_file.endswith(".tgz") or original_file.endswith(".gz"))
-        src_file = issue_src.get("file") if show_file else ""
-        src_sheet = issue_src.get("sheet")
-        src_type = issue_src.get("type")
-        src_column = issue_src.get("column")
-        src_row = issue_src.get("row", 0)
-        if src_sheet:
-            src = f"{src_sheet}"
-            sep = ":"
-        elif src_file:
-            src = f"{os.path.basename(src_file)}"
-            sep = ":"
-        else:
-            src = ""
-            sep = "."
-        if src_type:
-            src += (sep if src else "") + src_type
-            sep = "."
-        if src_column:
-            src += (sep if src else "") + src_column
-        if src_row > 0:
-            src += (" " if src else "") + f"[{src_row}]"
-        if not src:
-            if issue.get("warning"):
-                src = "Warning"
-            elif issue.get("error"):
-                src = "Error"
-            else:
-                src = "Issue"
-        return src
     issue_message = None
     if issue:
         if error := issue.get("error"):
@@ -2723,7 +2711,41 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
             issue_message = warning
         elif issue.get("truncated"):
             return f"Truncated result set | More: {issue.get('more')} | See: {issue.get('details')}"
-    return f"{src_string(issue)}: {issue_message}" if issue_message else ""
+    return f"{_format_src(issue)}: {issue_message}" if issue_message else ""
+
+
+def _format_src(issue: dict) -> str:
+    def file_without_extension(file: str) -> str:
+        if isinstance(file, str):
+            if file.endswith(".gz"):
+                file = file[:-3]
+            if (dot := file.rfind(".")) > 0:
+                file = file[:dot]
+        return file
+    if not isinstance(issue, dict):
+        return ""
+    if not isinstance(issue_src := issue.get("src"), dict):
+        issue_src = issue
+    if src_type := issue_src.get("type"):
+        src = src_type
+    elif src_sheet := issue_src.get("sheet"):
+        src = src_sheet
+    elif src_file := file_without_extension(issue_src.get("file")):
+        src = src_file
+    else:
+        src = ""
+    if src_column := issue_src.get("column"):
+        src = f"{src}.{src_column}" if src else src_column
+    if (src_row := issue_src.get("row", 0)) > 0:
+        src = f"{src} [{src_row}]" if src else f"[{src_row}]"
+    if not src:
+        if issue.get("warning"):
+            src = "Warning"
+        elif issue.get("error"):
+            src = "Error"
+        else:
+            src = "Issue"
+    return src
 
 
 def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server: Optional[str] = None,
