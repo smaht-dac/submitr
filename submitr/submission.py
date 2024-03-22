@@ -461,14 +461,16 @@ DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
 def _initiate_server_ingestion_process(
         portal: Portal,
         ingestion_filename: str,
-        consortia: Optional[List[str]],
-        submission_centers: Optional[List[str]],
+        consortia: Optional[List[str]] = None,
+        submission_centers: Optional[List[str]] = None,
         is_server_validation: bool = False,
         is_resume_submission: bool = False,
         validation_ingestion_submission_object: Optional[dict] = None,
         post_only: bool = False,
         patch_only: bool = False,
         autoadd: Optional[dict] = None,
+        datafile_size: Optional[Any] = None,
+        datafile_md5: Optional[Any] = None,
         debug: bool = False) -> str:
 
     if isinstance(validation_ingestion_submission_object, dict):
@@ -491,7 +493,9 @@ def _initiate_server_ingestion_process(
         "patch_only": patch_only,
         "ref_nocache": False,  # Do not do this server-side at all; only client-side for testing.
         "autoadd": json.dumps(autoadd),
-        "ingestion_directory": os.path.dirname(ingestion_filename) if ingestion_filename else None
+        "ingestion_directory": os.path.dirname(ingestion_filename) if ingestion_filename else None,
+        "datafile_size": datafile_size or _get_file_size(ingestion_filename),
+        "datafile_md5": datafile_md5 or _get_file_md5(ingestion_filename)
     }
 
     if validation_ingestion_submission_uuid:
@@ -793,9 +797,9 @@ def submit_any_ingestion(ingestion_filename, *,
         SHOW(f"Continuing with additional (server) validation: {portal.server}")
 
         validation_uuid = _initiate_server_ingestion_process(
-            is_server_validation=True,
             portal=portal,
             ingestion_filename=ingestion_filename,
+            is_server_validation=True,
             consortia=app_args.get("consortia"),
             submission_centers=app_args.get("submission_centers"),
             post_only=post_only,
@@ -832,10 +836,10 @@ def submit_any_ingestion(ingestion_filename, *,
         exit(0)
 
     submission_uuid = _initiate_server_ingestion_process(
-        is_server_validation=False,
-        validation_ingestion_submission_object=server_validation_response,
         portal=portal,
         ingestion_filename=ingestion_filename,
+        is_server_validation=False,
+        validation_ingestion_submission_object=server_validation_response,
         consortia=app_args.get("consortia"),
         submission_centers=app_args.get("submission_centers"),
         post_only=post_only,
@@ -1116,22 +1120,25 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             PRINT("Exiting with no action.")
             exit(0)
         # Get parameters for this submission from the validation IngestionSubmission object.
-        if consortium := check_response.get("parameters", {}).get("consortium"):
+        consortia = None
+        submission_centers = None
+        if consortium := check_parameters.get("consortium"):
             consortia = [consortium]
-        if submission_center := check_response.get("parameters", {}).get("submission_center"):
+        if submission_center := check_parameters.get("submission_center"):
             submission_centers = [submission_center]
-        autoadd = check_response.get("parameters", {}).get("autoadd")
         if debug:
             PRINT("DEBUG: Continuing with submission process after a previous server validation timeout.")
         submission_uuid = _initiate_server_ingestion_process(
+            portal=portal,
+            ingestion_filename=None,
             is_server_validation=False,
             is_resume_submission=True,
             validation_ingestion_submission_object=check_response,
-            portal=portal,
-            ingestion_filename=None,
             consortia=consortia,
             submission_centers=submission_centers,
-            autoadd=autoadd)
+            autoadd=check_parameters.get("autoadd"),
+            datafile_size=check_parameters.get("datafile_size"),
+            datafile_md5=check_parameters.get("datafile_md5"))
         SHOW(f"Submission tracking ID: {submission_uuid}")
         submission_done, submission_status, submission_response = _monitor_ingestion_process(
                 submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
@@ -1355,6 +1362,19 @@ def _print_submission_summary(portal: Portal, result: dict,
         lines.append(f"{submission_type} ID: {submission_uuid}")
     if date_created := _format_portal_object_datetime(result.get("date_created"), True):
         lines.append(f"{submission_type} Time: {date_created}")
+    if submission_parameters:
+        extra_file_info = ""
+        if (datafile_size := submission_parameters.get("datafile_size", None)) is not None:
+            if not isinstance(datafile_size, int) and isinstance(datafile_size, str) and datafile_size.isdigit():
+                datafile_size = int(datafile_size)
+            if isinstance(datafile_size, int):
+                extra_file_info += f"{_format_file_size(datafile_size)}"
+        if datafile_md5 := submission_parameters.get("datafile_md5"):
+            if extra_file_info:
+                extra_file_info += " | "
+            extra_file_info += f"MD5: {datafile_md5}"
+        if extra_file_info:
+            lines.append(f"Submission File Info: {extra_file_info}")
     if validation:
         lines.append(f"Validation Only: Yes ◀ ◀ ◀")
         if submission_parameters and (associated_submission_uuid := submission_parameters.get("submission_uuid")):
@@ -2881,10 +2901,18 @@ def _tobool(value: Any, fallback: bool = False) -> bool:
 
 
 def _get_file_size(file: str) -> int:
-    return os.path.getsize(file)
+    try:
+        return os.path.getsize(file) if isinstance(file, str) else ""
+    except Exception:
+        return ""
 
 
 def _format_file_size(nbytes: int) -> str:
+    if not isinstance(nbytes, int):
+        if isinstance(nbytes, str) and nbytes.isdigit():
+            nbytes = int(bytes)
+        else:
+            return ""
     for unit in ["b", "Kb", "Mb", "Gb", "Tb", "Pb", "Eb", "Zb"]:
         if abs(nbytes) < 1024.0:
             return f"{nbytes:3.1f}{unit}"
@@ -2914,6 +2942,8 @@ def _format_path(path: str) -> str:
 
 
 def _get_file_md5(file: str) -> str:
+    if not isinstance(file, str):
+        return ""
     try:
         md5 = hashlib.md5()
         with open(file, "rb") as file:
