@@ -1148,15 +1148,22 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     if check_status != "success":
         PRINT(f"{'Validation' if validation else 'Submission'} results (server): ERROR"
               f"{f' ({check_status})' if check_status not in ['failure', 'error'] else ''}")
+        printed_newline = False
         if check_response and (additional_data := check_response.get("additional_data")):
             if (validation_info := additional_data.get("validation_output")):
                 if isinstance(validation_info, list):
                     if errors := [info for info in validation_info if info.lower().startswith("error:")]:
+                        if not printed_newline:
+                            PRINT_OUTPUT()
+                            printed_newline = True
                         for error in errors:
                             PRINT_OUTPUT(f"- {_format_server_error(error, indent=2)}")
                 elif isinstance(validation_info, dict):
                     if ((validation_errors := validation_info.get("validation")) and
                         isinstance(validation_errors, list) and validation_errors):  # noqa
+                        if not printed_newline:
+                            PRINT_OUTPUT()
+                            printed_newline = True
                         PRINT_OUTPUT(f"- Data errors: {len(validation_errors)}")
                         for validation_error in validation_errors:
                             PRINT_OUTPUT(f"    - {_format_issue(validation_error)}")
@@ -1165,8 +1172,14 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                     elif not (ref_errors := validation_info.get("ref_grouped")):
                         ref_errors = validation_info.get("ref")
                     if ref_errors and (ref_errors := _validate_references(ref_errors, None, debug=debug)):
+                        if not printed_newline:
+                            PRINT_OUTPUT()
+                            printed_newline = True
                         _print_reference_errors(ref_errors, debug=debug)
-        if check_response and isinstance(other_errors := check_response.get("errors"), list):
+        if check_response and isinstance(other_errors := check_response.get("errors"), list) and other_errors:
+            if not printed_newline:
+                PRINT_OUTPUT()
+                printed_newline = True
             for error in other_errors:
                 PRINT_OUTPUT("- " + error)
         if output_file := get_output_file():
