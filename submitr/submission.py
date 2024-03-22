@@ -3,6 +3,7 @@ import boto3
 from botocore.exceptions import NoCredentialsError as BotoNoCredentialsError
 from datetime import datetime
 from functools import lru_cache
+import hashlib
 import io
 import json
 import os
@@ -2892,13 +2893,16 @@ def _format_file_size(nbytes: int) -> str:
 
 
 def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optional[str]:  # noqa
+    return _format_datetime(datetime.fromisoformat(value).replace(tzinfo=pytz.utc))
+
+
+def _format_datetime(value: datetime, verbose: bool = False) -> Optional[str]:  # noqa
     try:
-        dt = datetime.fromisoformat(value).replace(tzinfo=pytz.utc)
         tzlocal = datetime.now().astimezone().tzinfo
         if verbose:
-            return dt.astimezone(tzlocal).strftime(f"%A, %B %-d, %Y | %-I:%M %p %Z")
+            return value.astimezone(tzlocal).strftime(f"%A, %B %-d, %Y | %-I:%M %p %Z")
         else:
-            return dt.astimezone(tzlocal).strftime(f"%Y-%m-%d %H:%M:%S %Z")
+            return value.astimezone(tzlocal).strftime(f"%Y-%m-%d %H:%M:%S %Z")
     except Exception:
         return None
 
@@ -2909,8 +2913,32 @@ def _format_path(path: str) -> str:
     return path
 
 
+def _get_file_md5(file: str) -> str:
+    try:
+        md5 = hashlib.md5()
+        with open(file, "rb") as file:
+            for chunk in iter(lambda: file.read(4096), b""):
+                md5.update(chunk)
+        return md5.hexdigest()
+    except Exception:
+        return ""
+
+
+def _get_file_last_modified_datetime(file: str) -> str:
+    try:
+        return _format_datetime(datetime.fromtimestamp(os.path.getmtime(file)))
+    except Exception:
+        return ""
+
+
 def _print_metadata_file_info(file: str) -> None:
-    header = f"Metadata File: {os.path.basename(file)} | Size: {_format_file_size(_get_file_size(file))}"
+    header = f"Metadata File: {os.path.basename(file)}\n"
+    if size := _format_file_size(_get_file_size(file)):
+        header += f"Size: {size}"
+    if modified := _get_file_last_modified_datetime(file):
+        header += f" | Modified: {modified}"
+    if md5 := _get_file_md5(file):
+        header += f" | MD5: {md5}"
     lines = []
     if file.endswith(".xlsx") or file.endswith(".xls"):
         from dcicutils.data_readers import Excel
