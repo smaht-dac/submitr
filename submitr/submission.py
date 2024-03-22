@@ -2270,7 +2270,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                         ref_lookup_nocache=ref_nocache,
                                         progress=None if noprogress else define_progress_callback(debug=debug),
                                         debug_sleep=debug_sleep)
-    structured_data._load_file(ingestion_filename)
+    structured_data.load_file(ingestion_filename)
 
     if debug:
         PRINT("DEBUG: Finished client validation.")
