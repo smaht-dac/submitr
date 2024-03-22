@@ -34,7 +34,7 @@ from typing_extensions import Literal
 from urllib.parse import urlparse
 from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
-from .scripts.cli_utils import print_boxed
+from .scripts.cli_utils import get_version, print_boxed
 from .utils import keyword_as_title
 from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 
@@ -2752,6 +2752,7 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
             raise Exception(
                 f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")
     if report:
+        PRINT(f"SMaHT submitr version: {get_version()}")
         if verbose:
             PRINT(f"Portal app name is{' (default)' if app_default else ''}: {app}")
         PRINT(f"Portal environment (in keys file) is: {portal.env}{' (from SMAHT_ENV)' if env_from_env else ''}")

@@ -55,7 +55,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
         if args.doc:
             args.help_web = True
         if args.version:
-            if version := self.get_version():
+            if version := self._get_version():
                 PRINT(f"{self._package or 'COMMAND'}: {version} | {self.COPYRIGHT}")
             else:
                 PRINT(f"{self._package or 'COMMAND'}: No version available | {self.COPYRIGHT}")
@@ -82,13 +82,10 @@ class CustomArgumentParser(argparse.ArgumentParser):
             lines = lines[1:]
         if lines[len(lines) - 1] == "":
             lines = lines[:len(lines) - 1]
-        print_boxed(lines, right_justified_macro=("[VERSION]", self.get_version))
+        print_boxed(lines, right_justified_macro=("[VERSION]", self._get_version))
 
-    def get_version(self) -> str:
-        try:
-            return pkg_resources.get_distribution(self._package).version
-        except Exception:
-            return ""
+    def _get_version(self) -> str:
+        return get_version(self._package)
 
     def is_pytest(self):
         return "pytest" in sys.modules
@@ -116,3 +113,10 @@ def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Cal
             PRINT(f"| {line}{' ' * (length - len(line) - len(macro_value) - 1)} {macro_value} |")
         else:
             PRINT(f"| {line}{' ' * (length - len(line))} |")
+
+
+def get_version(package: str = "smaht-submitr") -> str:
+    try:
+        return pkg_resources.get_distribution(package).version
+    except Exception:
+        return ""
