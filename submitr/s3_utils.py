@@ -128,7 +128,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             return None
         pass
 
-    def verify_with_any_already_uploaded_file():
+    def verify_with_any_already_uploaded_file() -> None:
         nonlocal file, file_size
         if existing_file_info := get_uploaded_file_info():
             # The file we are uploading already exists in S3.
@@ -174,7 +174,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     upload_file_callback = define_upload_file_callback() if print_progress else None
 
     previous_interrupt_handler = None
-    def handle_interrupt(signum, frame):  # noqa
+    def handle_interrupt(signum, frame) -> None:  # noqa
         def handle_secondary_interrupt(signum, frame):  # noqa
             printf("\nEnter 'yes' to really quit (exit) or CTRL-\\ ...")
         nonlocal previous_interrupt_handler, upload_file_callback
