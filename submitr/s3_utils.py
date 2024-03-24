@@ -19,8 +19,6 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                           verify_upload: bool = True,
                           catch_interrupt: bool = True) -> bool:
 
-    print_preamble = False
-    verify_upload = False
     if not isinstance(file, str) or not file or not isinstance(s3_uri, str) or not s3_uri:
         return False
     if not os.path.exists(file):
@@ -121,8 +119,10 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
 
     previous_interrupt_handler = None
     def handle_interrupt(signum, frame):  # noqa
+        def handle_secondary_interrupt(signum, frame):  # noqa
+            printf("\nEnter 'yes' to really quit (exit) or CTRL-\\ ...")
         nonlocal previous_interrupt_handler, upload_file_callback
-        signal.signal(signal.SIGINT, lambda signum, frame: None)
+        signal.signal(signal.SIGINT, handle_secondary_interrupt)
         if upload_file_callback:
             upload_file_callback.pause_output()
         if yes_or_no("\nATTENTION! You have interrupted this upload. Do you want to stop (exit)?"):

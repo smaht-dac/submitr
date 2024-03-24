@@ -165,6 +165,7 @@ def get_s3_bucket_and_key_from_s3_uri(uri: str) -> Tuple[str, str]:
 
 
 def format_duration(seconds: Union[int, float]):
+    seconds_actual = seconds
     seconds = round(max(seconds, 0))
     durations = [("year", 31536000), ("day", 86400), ("hour", 3600), ("minute", 60), ("second", 1)]
     parts = []
@@ -172,13 +173,13 @@ def format_duration(seconds: Union[int, float]):
         if seconds >= duration:
             count = seconds // duration
             seconds %= duration
-            if count > 1:
-                name += "s"  # Pluralize the unit if count > 1
+            if count != 1:
+                name += "s"
             parts.append(f"{count} {name}")
     if len(parts) == 0:
-        return "0 seconds"
+        return f"{seconds_actual:.1f} seconds"
     elif len(parts) == 1:
-        return parts[0]
+        return f"{seconds_actual:.1f} seconds"
     else:
         return " ".join(parts[:-1]) + " " + parts[-1]
 
@@ -193,4 +194,7 @@ def format_size(nbytes: Union[int, float], precision: int = 2) -> str:
     while abs(nbytes) >= ONE_K and index < MAX_UNITS_INDEX:
         nbytes /= ONE_K
         index += 1
-    return f"{nbytes:.{precision}f} {UNITS[index]}"
+    if index == 0 and nbytes == 1:
+        return "1 byte"
+    unit = UNITS[index]
+    return f"{nbytes:.{precision}f} {unit}"

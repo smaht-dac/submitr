@@ -35,7 +35,7 @@ from urllib.parse import urlparse
 from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
 from .scripts.cli_utils import get_version, print_boxed
-from .utils import keyword_as_title
+from .utils import format_size, keyword_as_title
 from .s3_utils import upload_file_to_aws_s3
 from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 
@@ -1368,7 +1368,7 @@ def _print_submission_summary(portal: Portal, result: dict,
             if not isinstance(datafile_size, int) and isinstance(datafile_size, str) and datafile_size.isdigit():
                 datafile_size = int(datafile_size)
             if isinstance(datafile_size, int):
-                extra_file_info += f"{_format_file_size(datafile_size)}"
+                extra_file_info += f"{format_size(datafile_size)}"
         if datafile_md5 := submission_parameters.get("datafile_md5"):
             if extra_file_info:
                 extra_file_info += " | "
@@ -1613,7 +1613,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
             if file_paths := search_for_file(file, location=upload_folder, recursive=subfolders):
                 if len(file_paths) == 1:
                     PRINT(f"File to upload: {_format_path(file_paths[0])}"
-                          f" ({_format_file_size(_get_file_size(file_paths[0]))})")
+                          f" ({format_size(_get_file_size(file_paths[0]))})")
                     return True
                 else:
                     PRINT(f"No upload attempted for file {file} because multiple"
@@ -1803,15 +1803,6 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
                           print_function=PRINT,
                           verify_upload=True,
                           catch_interrupt=True)
-    upload_file_to_aws_s3(file=path,
-                          s3_uri=s3_uri,
-                          aws_credentials=aws_credentials,
-                          aws_kms_key_id=aws_kms_key_id,
-                          print_progress=True,
-                          print_function=PRINT,
-                          verify_upload=True,
-                          catch_interrupt=True)
-
 
 def _running_on_windows_native():
     return os.name == 'nt'
@@ -2075,7 +2066,7 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
         item_filename = item_filename_found
 
     if not no_query:
-        file_size = _format_file_size(_get_file_size(item_filename))
+        file_size = format_size(_get_file_size(item_filename))
         if not yes_or_no(f"Upload {_format_path(item_filename)} ({file_size}) to {server}?"):
             SHOW("Aborting submission.")
             exit(1)
@@ -2574,7 +2565,7 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
                     PRINT_OUTPUT(f"\n> Resolved file references:")
                     printed_header = True
                 PRINT_OUTPUT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
-                             f" [{_format_file_size(_get_file_size(path))}]")
+                             f" [{format_size(_get_file_size(path))}]")
     PRINT_OUTPUT()
     if not noanalyze:
         _print_structured_data_status(portal, structured_data,
@@ -2890,19 +2881,6 @@ def _get_file_size(file: str) -> int:
         return os.path.getsize(file) if isinstance(file, str) else ""
     except Exception:
         return ""
-
-
-def _format_file_size(nbytes: int) -> str:
-    if not isinstance(nbytes, int):
-        if isinstance(nbytes, str) and nbytes.isdigit():
-            nbytes = int(bytes)
-        else:
-            return ""
-    for unit in ["b", "Kb", "Mb", "Gb", "Tb", "Pb", "Eb", "Zb"]:
-        if abs(nbytes) < 1024.0:
-            return f"{nbytes:3.1f}{unit}"
-        nbytes /= 1024.0
-    return f"{nbytes:.1f}Yb"
 
 
 def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optional[str]:  # noqa
