@@ -20,7 +20,7 @@ _BIG_FILE_SIZE = 1024 * 1024 * 50
 
 # Uploads the given file with the given AWS credentials to AWS S3.
 # Displays progress bar and other info; checks if file already
-# exists; verifies upload; catches interruptes; et cetera.
+# exists; verifies upload; catches interrupts; et cetera.
 def upload_file_to_aws_s3(file: str, s3_uri: str,
                           aws_credentials: Optional[dict] = None,
                           aws_kms_key_id: Optional[str] = None,
