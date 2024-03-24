@@ -1804,6 +1804,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
                           verify_upload=True,
                           catch_interrupt=True)
 
+
 def _running_on_windows_native():
     return os.name == 'nt'
 
@@ -2926,7 +2927,7 @@ def _get_file_last_modified_datetime(file: str) -> str:
 
 def _print_metadata_file_info(file: str) -> None:
     header = f"Metadata File: {os.path.basename(file)}\n"
-    if size := _format_file_size(_get_file_size(file)):
+    if size := format_size(_get_file_size(file)):
         header += f"Size: {size}"
     if modified := _get_file_last_modified_datetime(file):
         header += f" | Modified: {modified}"
