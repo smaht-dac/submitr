@@ -15,7 +15,7 @@ from .utils import (
 # This is to control whether or not we first prompt the user to take the time
 # to do a checksum on the local file to see if it appears to be exactly the
 # the same as an already exisiting file in AWS S3.
-_BIG_FILE_SIZE = 1024 * 1024 * 20
+_BIG_FILE_SIZE = 1024 * 1024 * 50
 
 
 # Uploads the given file with the given AWS credentials to AWS S3.
@@ -134,17 +134,12 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             # The file we are uploading already exists in S3.
             printf(f"WARNING: This file already exists in AWS S3:"
                    f" {format_size(existing_file_info['size'])} | {existing_file_info['modified']}")
-            file_checksum = None
-            file_difference = ""
             if files_appear_to_be_the_same := (existing_file_info["size"] == file_size):
                 # File sizes are the same. See if these files appear to be the same according
                 # to their checksums; but if it is a big file prompt the user first to check.
-                compare_checksums = False
-                if existing_file_info["size"] >= _BIG_FILE_SIZE:
+                if not (compare_checksums := existing_file_info["size"] < _BIG_FILE_SIZE):
                     if yes_or_no("Do you want to see if these files appear to be exactly the same?"):
                         compare_checksums = True
-                else:
-                    compare_checksums = True
                 if compare_checksums:
                     if (file_checksum := get_file_md5_like_aws_s3_etag(file)) != existing_file_info["sum"]:
                         files_appear_to_be_the_same = False
