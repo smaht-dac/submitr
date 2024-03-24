@@ -96,7 +96,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             nonlocal bar
             bar.disable = False
         def cleanup() -> None:  # noqa
-            nonlocal bar
+            nonlocal bar, bar_message
             bar.set_description(bar_message)
             # N.B. Do NOT do a bar.disable = True before this or it messes up output on
             # multiple calls; found out the hard way; a couple hour will never get back :-/
