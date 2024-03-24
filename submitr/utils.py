@@ -194,7 +194,10 @@ def format_size(nbytes: Union[int, float], precision: int = 2) -> str:
     while abs(nbytes) >= ONE_K and index < MAX_UNITS_INDEX:
         nbytes /= ONE_K
         index += 1
-    if index == 0 and nbytes == 1:
-        return "1 byte"
+    if index == 0:
+        if nbytes == 0:
+            return "0 bytes"
+        elif nbytes == 1:
+            return "1 byte"
     unit = UNITS[index]
     return f"{nbytes:.{precision}f} {unit}"

@@ -48,6 +48,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         nonlocal file
         started = time.time()
         nbytes_transferred = 0
+        nbytes_zero = (nbytes_file == 0)
         ncallbacks = 0
         upload_done = None
         bar_message = "▶ Upload progress"
@@ -75,7 +76,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                 bar.set_description(bar_message)
                 cleanup()
                 duration = time.time() - started
-                upload_done = (f"Upload done: {format_size(nbytes_transferred)}"
+                upload_done = (f"Upload done: {format_size(nbytes_transferred if not nbytes_zero else 0)}"
                                f" in {format_duration(duration)}"
                                f" | {format_size(nbytes_transferred / duration)} per second ◀")
         def pause_output() -> None:  # noqa
