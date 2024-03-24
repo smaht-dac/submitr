@@ -15,7 +15,7 @@ from .utils import (
 # This is to control whether or not we first prompt the user to take the time
 # to do a checksum on the local file to see if it appears to be exactly the
 # the same as an already exisiting file in AWS S3.
-_BIG_FILE_SIZE = 1024 * 1024 * 50
+_BIG_FILE_SIZE = 1024 * 1024 * 20
 
 
 def upload_file_to_aws_s3(file: str, s3_uri: str,
@@ -109,7 +109,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                                                ["function", "pause_output", "resume_output", "cleanup", "done"])
         return upload_file_callback_type(upload_file_callback, pause_output, resume_output, cleanup, done)
 
-    def get_upload_file_info() -> Optional[dict]:
+    def get_uploaded_file_info() -> Optional[dict]:
         nonlocal file, aws_credentials, s3_bucket, s3_key
         try:
             s3_client = boto3.client("s3", **aws_credentials)
@@ -125,10 +125,41 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             return None
         pass
 
+    def verify_with_any_already_uploaded_file():
+        nonlocal file, file_size
+        if existing_file_info := get_uploaded_file_info():
+            # The file we are uploading already exists in S3.
+            printf(f"WARNING: This file already exists in AWS S3:"
+                   f" {format_size(existing_file_info['size'])} | {existing_file_info['modified']}")
+            file_checksum = None
+            file_difference = ""
+            if files_appear_to_be_the_same := (existing_file_info["size"] == file_size):
+                # File sizes are the same. See if these files appear to be the same according
+                # to their checksums; but if it is a big file prompt the user first to check.
+                compare_checksums = False
+                if existing_file_info["size"] >= _BIG_FILE_SIZE:
+                    if yes_or_no("Do you want to see if these files appear to be exactly the same?"):
+                        compare_checksums = True
+                else:
+                    compare_checksums = True
+                if compare_checksums:
+                    if (file_checksum := get_file_md5_like_aws_s3_etag(file)) != existing_file_info["sum"]:
+                        files_appear_to_be_the_same = False
+                        file_difference = f" | checksum: {file_checksum} vs {existing_file_info['sum']}"
+            else:
+                file_difference = f" | size: {file_size} vs {existing_file_info['size']}"
+            if not files_appear_to_be_the_same:
+                printf(f"These files appear to be different{file_difference}")
+            else:
+                printf(f"These files appear to be the same | checksum: {existing_file_info['sum']}")
+            if not yes_or_no("Do you want to continue with this upload anyways?"):
+                printf(f"Skipping upload of {os.path.basename(file)} ({format_size(file_size)}) to: {s3_uri}")
+                return False
+
     def verify_uploaded_file() -> None:
         nonlocal file, file_size, aws_credentials, s3_bucket, s3_key, file_size
         printf("Verifying upload ... ", end="")
-        if file_info := get_upload_file_info():
+        if file_info := get_uploaded_file_info():
             if file_info["size"] == file_size:
                 printf("OK")
             else:
@@ -139,34 +170,8 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     if print_preamble is True:
         printf(f"Uploading {os.path.basename(file)} ({format_size(file_size)}) to: {s3_uri}")
 
-    if verify_upload and (existing_file_info := get_upload_file_info()):
-        # The file we are uploading already exists in S3.
-        printf(f"WARNING: This file already exists in AWS S3:"
-               f" {format_size(existing_file_info['size'])} | {existing_file_info['modified']}")
-        file_checksum = None
-        file_difference = ""
-        if files_appear_to_be_the_same := (existing_file_info["size"] == file_size):
-            # File sizes are the same. See if these files appear to be the same according
-            # to their checksums; but if it is a big file prompt the user first to check.
-            compare_checksums = False
-            if existing_file_info["size"] >= _BIG_FILE_SIZE:
-                if yes_or_no("Do you want to see if these files appear to be exactly the same?"):
-                    compare_checksums = True
-            else:
-                compare_checksums = True
-            if compare_checksums:
-                if (file_checksum := get_file_md5_like_aws_s3_etag(file)) != existing_file_info["sum"]:
-                    files_appear_to_be_the_same = False
-                    file_difference = f" | checksum: {file_checksum} vs {existing_file_info['sum']}"
-        else:
-            file_difference = f" | size: {file_size} vs {existing_file_info['size']}"
-        if not files_appear_to_be_the_same:
-            printf(f"These files appear to be different{file_difference}")
-        else:
-            printf(f"These files appear to be the same | checksum: {existing_file_info['sum']}")
-        if not yes_or_no("Do you want to continue with this upload?"):
-            printf(f"Skipping upload of {os.path.basename(file)} ({format_size(file_size)}) to: {s3_uri}")
-            return False
+    if verify_upload:
+        verify_with_any_already_uploaded_file()
 
     upload_file_callback = define_upload_file_callback() if print_progress else None
 
