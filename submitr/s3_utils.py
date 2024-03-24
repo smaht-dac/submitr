@@ -56,7 +56,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     file_size = os.path.getsize(file)
 
     def define_upload_file_callback() -> None:
-        nonlocal file, file_size
+        nonlocal file_size
         started = time.time()
         nbytes_transferred = 0
         nbytes_zero = (file_size == 0)
@@ -70,7 +70,6 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             # The execution of this may be in any number of child threads due to the way upload_fileobj
             # works; we do not create the progress bar until the upload actually starts because if we
             # do we get some initial bar output file.
-            nonlocal s3_bucket, s3_key, printf
             nonlocal started, file_size, nbytes_transferred, ncallbacks, upload_done, bar
             ncallbacks += 1
             nbytes_transferred += nbytes_chunk
@@ -102,7 +101,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             # multiple calls; found out the hard way; a couple hour will never get back :-/
             bar.close()
         def done() -> Optional[str]:  # noqa
-            nonlocal bar, ncallbacks, upload_done
+            nonlocal ncallbacks, upload_done, printf
             if ncallbacks == 0:
                 upload_file_callback(max(file_size, 1))
             cleanup()
@@ -113,7 +112,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         return upload_file_callback_type(upload_file_callback, pause_output, resume_output, cleanup, done)
 
     def get_uploaded_file_info() -> Optional[dict]:
-        nonlocal file, aws_credentials, s3_bucket, s3_key
+        nonlocal aws_credentials, s3_bucket, s3_key
         try:
             s3_client = boto3.client("s3", **aws_credentials)
             s3_file_head = s3_client.head_object(Bucket=s3_bucket, Key=s3_key)
