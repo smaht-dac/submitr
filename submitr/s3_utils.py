@@ -70,7 +70,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             # The execution of this may be in any number of child threads due to the way upload_fileobj
             # works; we do not create the progress bar until the upload actually starts because if we
             # do we get some initial bar output file.
-            nonlocal aws_credentials, s3_bucket, s3_key, printf
+            nonlocal s3_bucket, s3_key, printf
             nonlocal started, file_size, nbytes_transferred, ncallbacks, upload_done, bar
             ncallbacks += 1
             nbytes_transferred += nbytes_chunk
@@ -122,7 +122,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             return {
                 "modified": format_datetime(s3_file_head["LastModified"]),
                 "size": s3_file_head["ContentLength"],
-                "sum": s3_file_etag
+                "checksum": s3_file_etag
             }
         except Exception:
             return None
@@ -141,21 +141,21 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                     if yes_or_no("Do you want to see if these files appear to be exactly the same?"):
                         compare_checksums = True
                 if compare_checksums:
-                    if (file_checksum := get_file_md5_like_aws_s3_etag(file)) != existing_file_info["sum"]:
+                    if (file_checksum := get_file_md5_like_aws_s3_etag(file)) != existing_file_info["checksum"]:
                         files_appear_to_be_the_same = False
-                        file_difference = f" | checksum: {file_checksum} vs {existing_file_info['sum']}"
+                        file_difference = f" | checksum: {file_checksum} vs {existing_file_info['checksum']}"
             else:
                 file_difference = f" | size: {file_size} vs {existing_file_info['size']}"
             if not files_appear_to_be_the_same:
                 printf(f"These files appear to be different{file_difference}")
             else:
-                printf(f"These files appear to be the same | checksum: {existing_file_info['sum']}")
+                printf(f"These files appear to be the same | checksum: {existing_file_info['checksum']}")
             if not yes_or_no("Do you want to continue with this upload anyways?"):
                 printf(f"Skipping upload of {os.path.basename(file)} ({format_size(file_size)}) to: {s3_uri}")
                 return False
 
     def verify_uploaded_file() -> None:
-        nonlocal file, file_size, aws_credentials, s3_bucket, s3_key, file_size
+        nonlocal file_size
         printf("Verifying upload ... ", end="")
         if file_info := get_uploaded_file_info():
             if file_info["size"] == file_size:
