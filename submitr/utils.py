@@ -1,8 +1,9 @@
-import datetime
+from datetime import datetime
 import io
+import hashlib
 import re
 import time
-from typing import Any, Callable, Tuple, Union
+from typing import Any, Callable, Optional, Tuple, Union
 from dcicutils.misc_utils import ignored, PRINT
 from json import dumps as json_dumps, loads as json_loads
 
@@ -25,7 +26,7 @@ def show(*args, with_time: bool = False, same_line: bool = False):
     """
     output = io.StringIO()
     if with_time:
-        hh_mm_ss = str(datetime.datetime.now().strftime(TIMESTAMP_PATTERN))
+        hh_mm_ss = str(datetime.now().strftime(TIMESTAMP_PATTERN))
         print(hh_mm_ss, *args, end="", file=output)
     else:
         print(*args, end="", file=output)
@@ -201,3 +202,82 @@ def format_size(nbytes: Union[int, float], precision: int = 2) -> str:
             return "1 byte"
     unit = UNITS[index]
     return f"{nbytes:.{precision}f} {unit}"
+
+
+def format_datetime(value: datetime, verbose: bool = False) -> Optional[str]:
+    try:
+        tzlocal = datetime.now().astimezone().tzinfo
+        if verbose:
+            return value.astimezone(tzlocal).strftime(f"%A, %B %-d, %Y | %-I:%M %p %Z")
+        else:
+            return value.astimezone(tzlocal).strftime(f"%Y-%m-%d %H:%M:%S %Z")
+    except Exception:
+        return None
+
+
+def get_file_md5(file: str) -> str:
+    if not isinstance(file, str):
+        return ""
+    try:
+        md5 = hashlib.md5()
+        with open(file, "rb") as file:
+            for chunk in iter(lambda: file.read(4096), b""):
+                md5.update(chunk)
+        return md5.hexdigest()
+    except Exception:
+        return ""
+
+
+def get_file_md5_like_aws_s3_etag(file: str) -> Optional[str]:
+    try:
+        with io.open(file, "rb") as f:
+            return _get_file_md5_like_aws_s3_etag(f)
+    except Exception:
+        return None
+
+
+def _get_file_md5_like_aws_s3_etag(f: io.BufferedReader) -> str:
+    """
+    Returns the AWS S3 "ETag" for the given file; this value is md5-like but
+    not the same as a normal md5. We use this to compare that a file in S3
+    appears to be the exact the same file as a local file. Adapted from:
+    https://stackoverflow.com/questions/75723647/calculate-md5-from-aws-s3-etag
+    """
+    from hashlib import md5
+    MULTIPART_THRESHOLD = 8388608
+    MULTIPART_CHUNKSIZE = 8388608
+    # BUFFER_SIZE = 1048576
+    # Verify some assumptions are correct
+    # assert(MULTIPART_CHUNKSIZE >= MULTIPART_THRESHOLD)
+    # assert((MULTIPART_THRESHOLD % BUFFER_SIZE) == 0)
+    # assert((MULTIPART_CHUNKSIZE % BUFFER_SIZE) == 0)
+    hash = md5()
+    read = 0
+    chunks = None
+    while True:
+        # Read some from stdin, if we're at the end, stop reading
+        bits = f.read(1048576)
+        if len(bits) == 0:
+            break
+        read += len(bits)
+        hash.update(bits)
+        if chunks is None:
+            # We're handling a multi-part upload, so switch to calculating
+            # hashes of each chunk
+            if read >= MULTIPART_THRESHOLD:
+                chunks = b''
+        if chunks is not None:
+            if (read % MULTIPART_CHUNKSIZE) == 0:
+                # Dont with a chunk, add it to the list of hashes to hash later
+                chunks += hash.digest()
+                hash = md5()
+    if chunks is None:
+        # Normal upload, just output the MD5 hash
+        etag = hash.hexdigest()
+    else:
+        # Multipart upload, need to output the hash of the hashes
+        if (read % MULTIPART_CHUNKSIZE) != 0:
+            # Add the last part if we have a partial chunk
+            chunks += hash.digest()
+        etag = md5(chunks).hexdigest() + "-" + str(len(chunks) // 16)
+    return etag

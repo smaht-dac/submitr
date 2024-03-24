@@ -7,7 +7,12 @@ import time
 from tqdm import tqdm
 from typing import Callable, Optional
 from dcicutils.command_utils import yes_or_no
-from .utils import get_s3_bucket_and_key_from_s3_uri, format_duration, format_size
+from .utils import (
+    get_file_md5_like_aws_s3_etag, get_s3_bucket_and_key_from_s3_uri,
+    format_datetime, format_duration, format_size
+)
+
+_BIG_FILE_SIZE = 1024 * 1024
 
 
 def upload_file_to_aws_s3(file: str, s3_uri: str,
@@ -31,16 +36,16 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     printf = print_function if callable(print_function) else print
 
     if isinstance(aws_credentials, dict):
-        s3_client_args = {
+        aws_credentials = {
             "region_name": aws_credentials.get("AWS_DEFAULT_REGION") or "us-east-1",
             "aws_access_key_id": aws_credentials.get("AWS_ACCESS_KEY_ID"),
             "aws_secret_access_key": aws_credentials.get("AWS_SECRET_ACCESS_KEY"),
             "aws_session_token": aws_credentials.get("AWS_SESSION_TOKEN") or aws_credentials.get("AWS_SECURITY_TOKEN")
         }
     else:
-        s3_client_args = {}
+        aws_credentials = {}
     if aws_kms_key_id:
-        s3_client_args["SSEKMSKeyId"] = aws_kms_key_id
+        aws_credentials["SSEKMSKeyId"] = aws_kms_key_id
 
     nbytes_file = os.path.getsize(file)
 
@@ -52,14 +57,14 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         ncallbacks = 0
         upload_done = None
         bar_message = "▶ Upload progress"
-        bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining}"
+        bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
         bar = tqdm(total=max(nbytes_file, 1), desc=bar_message,
                    dynamic_ncols=True, bar_format=bar_format, unit="", file=sys.stdout)
         def upload_file_callback(nbytes_chunk: int) -> None:  # noqa
             # The execution of this may be in any number of child threads due to the way upload_fileobj
             # works; we do not create the progress bar until the upload actually starts because if we
             # do we get some initial bar output file.
-            nonlocal s3_client_args, s3_bucket, s3_key, printf
+            nonlocal aws_credentials, s3_bucket, s3_key, printf
             nonlocal started, nbytes_file, nbytes_transferred, ncallbacks, upload_done, bar
             ncallbacks += 1
             nbytes_transferred += nbytes_chunk
@@ -71,11 +76,10 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             bar.n = nbytes_transferred
             bar.update(0)
             if nbytes_transferred >= nbytes_file:
-                # This set_description seems to be need make sure the
-                # last bit is flushed out; in the case of interrupt.
-                bar.set_description(bar_message)
-                cleanup()
                 duration = time.time() - started
+                # The set_description seems to be need make sure the
+                # last bit is flushed out; in the case of interrupt.
+                cleanup()
                 upload_done = (f"Upload done: {format_size(nbytes_transferred if not nbytes_zero else 0)}"
                                f" in {format_duration(duration)}"
                                f" | {format_size(nbytes_transferred / duration)} per second ◀")
@@ -87,6 +91,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             bar.disable = False
         def cleanup() -> None:  # noqa
             nonlocal bar
+            bar.set_description(bar_message)
             # N.B. Do NOT do a bar.disable = True before this or it messes up output on
             # multiple calls; found out the hard way; a couple hour will never get back :-/
             bar.close()
@@ -94,7 +99,6 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             nonlocal bar, ncallbacks, upload_done
             if ncallbacks == 0:
                 upload_file_callback(max(nbytes_file, 1))
-            bar.set_description(bar_message)
             cleanup()
             if upload_done:
                 printf(upload_done)
@@ -102,19 +106,59 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                                                ["function", "pause_output", "resume_output", "cleanup", "done"])
         return upload_file_callback_type(upload_file_callback, pause_output, resume_output, cleanup, done)
 
+    def get_upload_file_info() -> Optional[dict]:
+        nonlocal file, aws_credentials, s3_bucket, s3_key
+        try:
+            s3_client = boto3.client("s3", **aws_credentials)
+            s3_file_head = s3_client.head_object(Bucket=s3_bucket, Key=s3_key)
+            if (s3_file_etag := s3_file_head["ETag"]) and s3_file_etag.startswith('"') and s3_file_etag.endswith('"'):
+                s3_file_etag = s3_file_etag[1:-1]
+            return {
+                "modified": format_datetime(s3_file_head["LastModified"]),
+                "size": s3_file_head["ContentLength"],
+                "sum": s3_file_etag
+            }
+        except Exception:
+            return None
+        pass
+
     def verify_upload_file() -> None:
-        nonlocal file, nbytes_file, s3_client_args, s3_bucket, s3_key
+        nonlocal file, nbytes_file, aws_credentials, s3_bucket, s3_key, nbytes_file
         printf("Verifying upload ... ", end="")
-        # If we don't recreate a new s3 client object we get the previous file size if any.
-        s3_client = boto3.client("s3", **s3_client_args)
-        s3_file_head = s3_client.head_object(Bucket=s3_bucket, Key=s3_key)
-        if (content_length := s3_file_head.get("ContentLength")) == nbytes_file:
-            printf("OK")
+        if file_info := get_upload_file_info():
+            if file_info["size"] == nbytes_file:
+                printf("OK")
+            else:
+                printf("File size inconsistency.")
         else:
-            printf(f"ERROR (file size inconsistency: {nbytes_file} vs. {content_length})")
+            printf("Cannot verify.")
 
     if print_preamble is True:
         printf(f"Uploading {os.path.basename(file)} ({format_size(nbytes_file)}) to: {s3_uri}")
+
+    if verify_upload and (existing_file_info := get_upload_file_info()):
+        # The file we are uploading already exists in S3.
+        printf(f"WARNING: This file already exists in AWS S3:"
+               f" {format_size(existing_file_info['size'])} | {existing_file_info['modified']}")
+        if (files_appear_to_be_the_same := (existing_file_info["size"] == nbytes_file)) is True:
+            # File sizes are the same. See if these files appear to be the same according
+            # to their checksums; but if it is a big file prompt the user first to check.
+            compare_checksums = False
+            if existing_file_info["size"] >= _BIG_FILE_SIZE:
+                if yes_or_no("Do you want to see if these files appear to be exactly the same?"):
+                    compare_checksums = True
+            else:
+                compare_checksums = True
+            if compare_checksums:
+                if (file_checksum := get_file_md5_like_aws_s3_etag(file)) != existing_file_info["sum"]:
+                    files_appear_to_be_the_same = True
+        if files_appear_to_be_the_same:
+            printf(f"These files appear to be the same | checksum: {existing_file_info['sum']}")
+        else:
+            printf(f"These files appear to be different | checksum: {existing_file_info['sum']} vs {file_checksum}")
+        if not yes_or_no("Do you want to continue with this upload?"):
+            printf(f"Skipping upload of {os.path.basename(file)} ({format_size(nbytes_file)}) to: {s3_uri}")
+            return False
 
     upload_file_callback = define_upload_file_callback() if print_progress else None
 
@@ -139,7 +183,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     if catch_interrupt is True:
         previous_interrupt_handler = signal.signal(signal.SIGINT, handle_interrupt)
 
-    s3_client = boto3.client("s3", **s3_client_args)
+    s3_client = boto3.client("s3", **aws_credentials)
     with open(file, "rb") as f:
         s3_client.upload_fileobj(f, s3_bucket, s3_key,
                                  Callback=upload_file_callback.function if upload_file_callback else None)
