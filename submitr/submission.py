@@ -6,7 +6,6 @@ from functools import lru_cache
 import io
 import json
 import os
-from pathlib import Path
 import pytz
 import re
 import signal
@@ -24,7 +23,7 @@ from dcicutils.file_utils import search_for_file
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
-    environ_bool, is_uuid, url_path_join, ignorable, normalize_spaces, remove_prefix, str_to_bool
+    environ_bool, is_uuid, url_path_join, ignorable, normalize_spaces, remove_prefix
 )
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
@@ -35,8 +34,8 @@ from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
 from .scripts.cli_utils import get_version, print_boxed
 from .utils import (
-    format_datetime, format_size, get_file_md5,
-    get_file_modified_datetime, get_file_size, keyword_as_title
+    format_datetime, format_size, format_path, get_file_md5,
+    get_file_modified_datetime, get_file_size, keyword_as_title, tobool
 )
 from .s3_utils import upload_file_to_aws_s3
 from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
@@ -748,7 +747,7 @@ def submit_any_ingestion(ingestion_filename, *,
     if not _do_app_arg_defaulting(app_args, user_record, portal, quiet=json_only and not verbose, verbose=verbose):
         pass
     if not json_only:
-        PRINT(f"Submission file to {'validate' if validation else 'ingest'}: {_format_path(ingestion_filename)}")
+        PRINT(f"Submission file to {'validate' if validation else 'ingest'}: {format_path(ingestion_filename)}")
 
     autoadd = None
     if app_args and isinstance(submission_centers := app_args.get("submission_centers"), list):
@@ -833,7 +832,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
     # Server submission.
 
-    SHOW(f"Ready to submit your metadata to {portal.server}: {_format_path(ingestion_filename)}")
+    SHOW(f"Ready to submit your metadata to {portal.server}: {format_path(ingestion_filename)}")
     if not yes_or_no("Continue on with the actual submission?"):
         exit(0)
 
@@ -924,7 +923,7 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
             submission_uuid = submission.get("uuid")
             submission_created = submission.get("date_created")
             line = f"{submission_uuid}: {_format_portal_object_datetime(submission_created)}"
-            if _tobool(submission.get("parameters", {}).get("validate_only")):
+            if tobool(submission.get("parameters", {}).get("validate_only")):
                 line += f" (V)"
             else:
                 line += f" (S)"
@@ -1031,7 +1030,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         undesired_type = portal.get_schema_type(uuid_metadata)
         raise Exception(f"Given ID is not for a submission or validation: {uuid} ({undesired_type})"
                         f" | Accession: {uuid_metadata.get('accession')}")
-    if _tobool(uuid_metadata.get("parameters", {}).get("validate_only")):
+    if tobool(uuid_metadata.get("parameters", {}).get("validate_only")):
         validation = True
 
     action = "validation" if validation else "ingestion"
@@ -1090,7 +1089,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
 
     if (check_submission_script and check_response and
         (check_parameters := check_response.get("parameters", {})) and
-        _tobool(check_parameters.get("validate_only")) and
+        tobool(check_parameters.get("validate_only")) and
         not check_parameters.get("submission_uuid")):  # noqa
         # This is the check-submission script waiting for a VALIDATION (not a submission)
         # to complete, i.e. the server validation part of submit-metadata-bundle had timed
@@ -1349,7 +1348,7 @@ def _print_submission_summary(portal: Portal, result: dict,
     validation = None
     was_server_validation_timeout = False
     if submission_parameters := result.get("parameters", {}):
-        if validation := _tobool(submission_parameters.get("validate_only")):
+        if validation := tobool(submission_parameters.get("validate_only")):
             submission_type = "Validation"
         if submission_file := submission_parameters.get("datafile"):
             if submission_file == "null":
@@ -1614,14 +1613,14 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
         if file:
             if file_paths := search_for_file(file, location=upload_folder, recursive=subfolders):
                 if len(file_paths) == 1:
-                    PRINT(f"File to upload: {_format_path(file_paths[0])}"
+                    PRINT(f"File to upload: {format_path(file_paths[0])}"
                           f" ({format_size(get_file_size(file_paths[0]))})")
                     return True
                 else:
                     PRINT(f"No upload attempted for file {file} because multiple"
                           f" copies were found in folder {upload_folder}: {', '.join(file_paths)}.")
                     return False
-            PRINT(f"WARNING: Cannot find file to upload: {_format_path(file)} ({file_uuid})")
+            PRINT(f"WARNING: Cannot find file to upload: {format_path(file)} ({file_uuid})")
         return False
 
     upload_info = _get_section(res, 'upload_info')
@@ -1725,7 +1724,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
         raise Exception(f"Given ID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
 
     if submission_parameters := response.get("parameters", {}):
-        if _tobool(submission_parameters.get("validate_only")):
+        if tobool(submission_parameters.get("validate_only")):
             PRINT(f"This submission ID ({uuid}) is for a validation not an actual submission.")
             exit(1)
 
@@ -2070,7 +2069,7 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
 
     if not no_query:
         file_size = format_size(get_file_size(item_filename))
-        if not yes_or_no(f"Upload {_format_path(item_filename)} ({file_size}) to {server}?"):
+        if not yes_or_no(f"Upload {format_path(item_filename)} ({file_size}) to {server}?"):
             SHOW("Aborting submission.")
             exit(1)
 
@@ -2821,7 +2820,7 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         if verbose:
             PRINT(f"Portal app name is{' (default)' if app_default else ''}: {app}")
         PRINT(f"Portal environment (in keys file) is: {portal.env}{' (from SMAHT_ENV)' if env_from_env else ''}")
-        PRINT(f"Portal keys file is: {_format_path(portal.keys_file)}")
+        PRINT(f"Portal keys file is: {format_path(portal.keys_file)}")
         PRINT(f"Portal server is: {portal.server}")
         if portal.key_id and len(portal.key_id) > 2:
             PRINT(f"Portal key prefix is: {portal.key_id[:2]}******")
@@ -2867,37 +2866,8 @@ def _extract_accession_id(value: str) -> Optional[str]:
             return value
 
 
-def _tobool(value: Any, fallback: bool = False) -> bool:
-    if isinstance(value, bool):
-        return value
-    elif isinstance(value, str):
-        try:
-            return str_to_bool(value)
-        except Exception:
-            return fallback
-    else:
-        return fallback
-
-
 def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optional[str]:  # noqa
     return format_datetime(datetime.fromisoformat(value).replace(tzinfo=pytz.utc))
-
-
-def format_datetime(value: datetime, verbose: bool = False) -> Optional[str]:  # noqa
-    try:
-        tzlocal = datetime.now().astimezone().tzinfo
-        if verbose:
-            return value.astimezone(tzlocal).strftime(f"%A, %B %-d, %Y | %-I:%M %p %Z")
-        else:
-            return value.astimezone(tzlocal).strftime(f"%Y-%m-%d %H:%M:%S %Z")
-    except Exception:
-        return None
-
-
-def _format_path(path: str) -> str:
-    if isinstance(path, str) and os.path.isabs(path) and path.startswith(os.path.expanduser("~")):
-        path = "~/" + Path(path).relative_to(Path.home()).as_posix()
-    return path
 
 
 def _print_metadata_file_info(file: str) -> None:

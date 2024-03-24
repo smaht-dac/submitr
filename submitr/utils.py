@@ -3,9 +3,10 @@ import io
 import hashlib
 import re
 import os
+from pathlib import Path
 import time
 from typing import Any, Callable, Optional, Tuple, Union
-from dcicutils.misc_utils import ignored, PRINT
+from dcicutils.misc_utils import ignored, PRINT, str_to_bool
 from json import dumps as json_dumps, loads as json_loads
 
 
@@ -166,6 +167,18 @@ def get_s3_bucket_and_key_from_s3_uri(uri: str) -> Tuple[str, str]:
     return None, None
 
 
+def tobool(value: Any, fallback: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    elif isinstance(value, str):
+        try:
+            return str_to_bool(value)
+        except Exception:
+            return fallback
+    else:
+        return fallback
+
+
 def format_duration(seconds: Union[int, float]):
     seconds_actual = seconds
     seconds = round(max(seconds, 0))
@@ -214,6 +227,12 @@ def format_datetime(value: datetime, verbose: bool = False) -> Optional[str]:
             return value.astimezone(tzlocal).strftime(f"%Y-%m-%d %H:%M:%S %Z")
     except Exception:
         return None
+
+
+def format_path(path: str) -> str:
+    if isinstance(path, str) and os.path.isabs(path) and path.startswith(os.path.expanduser("~")):
+        path = "~/" + Path(path).relative_to(Path.home()).as_posix()
+    return path
 
 
 def get_file_size(file: str) -> int:
