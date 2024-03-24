@@ -3,7 +3,6 @@ import boto3
 from botocore.exceptions import NoCredentialsError as BotoNoCredentialsError
 from datetime import datetime
 from functools import lru_cache
-import hashlib
 import io
 import json
 import os
@@ -35,7 +34,10 @@ from urllib.parse import urlparse
 from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
 from .scripts.cli_utils import get_version, print_boxed
-from .utils import format_size, keyword_as_title
+from .utils import (
+    format_datetime, format_size, get_file_md5,
+    get_file_modified_datetime, get_file_size, keyword_as_title
+)
 from .s3_utils import upload_file_to_aws_s3
 from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 
@@ -494,8 +496,8 @@ def _initiate_server_ingestion_process(
         "ref_nocache": False,  # Do not do this server-side at all; only client-side for testing.
         "autoadd": json.dumps(autoadd),
         "ingestion_directory": os.path.dirname(ingestion_filename) if ingestion_filename else None,
-        "datafile_size": datafile_size or _get_file_size(ingestion_filename),
-        "datafile_md5": datafile_md5 or _get_file_md5(ingestion_filename)
+        "datafile_size": datafile_size or get_file_size(ingestion_filename),
+        "datafile_md5": datafile_md5 or get_file_md5(ingestion_filename)
     }
 
     if validation_ingestion_submission_uuid:
@@ -1613,7 +1615,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
             if file_paths := search_for_file(file, location=upload_folder, recursive=subfolders):
                 if len(file_paths) == 1:
                     PRINT(f"File to upload: {_format_path(file_paths[0])}"
-                          f" ({format_size(_get_file_size(file_paths[0]))})")
+                          f" ({format_size(get_file_size(file_paths[0]))})")
                     return True
                 else:
                     PRINT(f"No upload attempted for file {file} because multiple"
@@ -2067,7 +2069,7 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
         item_filename = item_filename_found
 
     if not no_query:
-        file_size = format_size(_get_file_size(item_filename))
+        file_size = format_size(get_file_size(item_filename))
         if not yes_or_no(f"Upload {_format_path(item_filename)} ({file_size}) to {server}?"):
             SHOW("Aborting submission.")
             exit(1)
@@ -2566,7 +2568,7 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
                     PRINT_OUTPUT(f"\n> Resolved file references:")
                     printed_header = True
                 PRINT_OUTPUT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
-                             f" [{format_size(_get_file_size(path))}]")
+                             f" [{format_size(get_file_size(path))}]")
     PRINT_OUTPUT()
     if not noanalyze:
         _print_structured_data_status(portal, structured_data,
@@ -2877,18 +2879,11 @@ def _tobool(value: Any, fallback: bool = False) -> bool:
         return fallback
 
 
-def _get_file_size(file: str) -> int:
-    try:
-        return os.path.getsize(file) if isinstance(file, str) else ""
-    except Exception:
-        return ""
-
-
 def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optional[str]:  # noqa
-    return _format_datetime(datetime.fromisoformat(value).replace(tzinfo=pytz.utc))
+    return format_datetime(datetime.fromisoformat(value).replace(tzinfo=pytz.utc))
 
 
-def _format_datetime(value: datetime, verbose: bool = False) -> Optional[str]:  # noqa
+def format_datetime(value: datetime, verbose: bool = False) -> Optional[str]:  # noqa
     try:
         tzlocal = datetime.now().astimezone().tzinfo
         if verbose:
@@ -2905,33 +2900,13 @@ def _format_path(path: str) -> str:
     return path
 
 
-def _get_file_md5(file: str) -> str:
-    if not isinstance(file, str):
-        return ""
-    try:
-        md5 = hashlib.md5()
-        with open(file, "rb") as file:
-            for chunk in iter(lambda: file.read(4096), b""):
-                md5.update(chunk)
-        return md5.hexdigest()
-    except Exception:
-        return ""
-
-
-def _get_file_last_modified_datetime(file: str) -> str:
-    try:
-        return _format_datetime(datetime.fromtimestamp(os.path.getmtime(file)))
-    except Exception:
-        return ""
-
-
 def _print_metadata_file_info(file: str) -> None:
     header = f"Metadata File: {os.path.basename(file)}\n"
-    if size := format_size(_get_file_size(file)):
+    if size := format_size(get_file_size(file)):
         header += f"Size: {size}"
-    if modified := _get_file_last_modified_datetime(file):
+    if modified := get_file_modified_datetime(file):
         header += f" | Modified: {modified}"
-    if md5 := _get_file_md5(file):
+    if md5 := get_file_md5(file):
         header += f" | MD5: {md5}"
     lines = []
     if file.endswith(".xlsx") or file.endswith(".xls"):

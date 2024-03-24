@@ -2,6 +2,7 @@ from datetime import datetime
 import io
 import hashlib
 import re
+import os
 import time
 from typing import Any, Callable, Optional, Tuple, Union
 from dcicutils.misc_utils import ignored, PRINT
@@ -215,6 +216,20 @@ def format_datetime(value: datetime, verbose: bool = False) -> Optional[str]:
         return None
 
 
+def get_file_size(file: str) -> int:
+    try:
+        return os.path.getsize(file) if isinstance(file, str) else ""
+    except Exception:
+        return -1
+
+
+def get_file_modified_datetime(file: str) -> str:
+    try:
+        return format_datetime(datetime.fromtimestamp(os.path.getmtime(file)))
+    except Exception:
+        return ""
+
+
 def get_file_md5(file: str) -> str:
     if not isinstance(file, str):
         return ""
@@ -243,7 +258,6 @@ def _get_file_md5_like_aws_s3_etag(f: io.BufferedReader) -> str:
     appears to be the exact the same file as a local file. Adapted from:
     https://stackoverflow.com/questions/75723647/calculate-md5-from-aws-s3-etag
     """
-    from hashlib import md5
     MULTIPART_THRESHOLD = 8388608
     MULTIPART_CHUNKSIZE = 8388608
     # BUFFER_SIZE = 1048576
@@ -251,7 +265,7 @@ def _get_file_md5_like_aws_s3_etag(f: io.BufferedReader) -> str:
     # assert(MULTIPART_CHUNKSIZE >= MULTIPART_THRESHOLD)
     # assert((MULTIPART_THRESHOLD % BUFFER_SIZE) == 0)
     # assert((MULTIPART_CHUNKSIZE % BUFFER_SIZE) == 0)
-    hash = md5()
+    hash = hashlib.md5()
     read = 0
     chunks = None
     while True:
@@ -270,7 +284,7 @@ def _get_file_md5_like_aws_s3_etag(f: io.BufferedReader) -> str:
             if (read % MULTIPART_CHUNKSIZE) == 0:
                 # Dont with a chunk, add it to the list of hashes to hash later
                 chunks += hash.digest()
-                hash = md5()
+                hash = hashlib.md5()
     if chunks is None:
         # Normal upload, just output the MD5 hash
         etag = hash.hexdigest()
@@ -279,5 +293,5 @@ def _get_file_md5_like_aws_s3_etag(f: io.BufferedReader) -> str:
         if (read % MULTIPART_CHUNKSIZE) != 0:
             # Add the last part if we have a partial chunk
             chunks += hash.digest()
-        etag = md5(chunks).hexdigest() + "-" + str(len(chunks) // 16)
+        etag = hashlib.md5(chunks).hexdigest() + "-" + str(len(chunks) // 16)
     return etag
