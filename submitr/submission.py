@@ -11,7 +11,6 @@ from pathlib import Path
 import pytz
 import re
 import signal
-import subprocess
 import sys
 import time
 from tqdm import tqdm
@@ -37,6 +36,7 @@ from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
 from .scripts.cli_utils import get_version, print_boxed
 from .utils import keyword_as_title
+from .s3_utils import upload_file_to_aws_s3
 from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 
 
@@ -1785,47 +1785,32 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
     if DEBUG_PROTOCOL:  # pragma: no cover
         PRINT(f"Upload credentials contain {conjoined_list(list(upload_credentials.keys()))}.")
     try:
-        s3_encrypt_key_id = get_s3_encrypt_key_id(upload_credentials=upload_credentials, auth=auth)
-        extra_env = dict(AWS_ACCESS_KEY_ID=upload_credentials['AccessKeyId'],
-                         AWS_SECRET_ACCESS_KEY=upload_credentials['SecretAccessKey'],
-                         AWS_SECURITY_TOKEN=upload_credentials['SessionToken'])
-        env = dict(os.environ, **extra_env)
+        s3_uri = upload_credentials["upload_url"]
+        aws_credentials = {
+            "AWS_ACCESS_KEY_ID": upload_credentials["AccessKeyId"],
+            "AWS_SECRET_ACCESS_KEY": upload_credentials["SecretAccessKey"],
+            "AWS_SECURITY_TOKEN": upload_credentials["SessionToken"]
+        }
+        aws_kms_key_id = get_s3_encrypt_key_id(upload_credentials=upload_credentials, auth=auth)
     except Exception as e:
         raise ValueError("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
 
-    start = time.time()
-    try:
-        file_size = 0
-        formatted_file_size = ""
-        try:
-            file_size = _get_file_size(path)
-            formatted_file_size = _format_file_size(file_size)
-        except Exception:
-            pass
-        source = path
-        target = upload_credentials['upload_url']
-        SHOW(f"Uploading {_format_path(source)}{f' ({formatted_file_size})' if formatted_file_size else ''}"
-             f" to: {target}")
-        command = ['aws', 's3', 'cp']
-        if s3_encrypt_key_id:
-            command = command + ['--sse', 'aws:kms', '--sse-kms-key-id', s3_encrypt_key_id]
-        command = command + ['--only-show-errors', source, target]
-        options = {}
-        if _running_on_windows_native():
-            options = {"shell": True}
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f"DEBUG CLI: {' '.join(command)} | ENV INCLUDES: {conjoined_list(list(extra_env.keys()))}")
-        subprocess.check_call(command, env=env, **options)
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError("Upload failed with exit code %d" % e.returncode)
-    else:
-        end = time.time()
-        duration = end - start
-        if formatted_file_size:
-            SHOW(f"Upload of {os.path.basename(source)}: OK ->"
-                 f" {'%.1f' % duration}s | {formatted_file_size} | {(file_size / duration):.1f}bps")
-        else:
-            SHOW(f"Upload of {os.path.basename(source)}: OK -> {'%.1f' % duration} seconds")
+    upload_file_to_aws_s3(file=path,
+                          s3_uri=s3_uri,
+                          aws_credentials=aws_credentials,
+                          aws_kms_key_id=aws_kms_key_id,
+                          print_progress=True,
+                          print_function=PRINT,
+                          verify_upload=True,
+                          catch_interrupt=True)
+    upload_file_to_aws_s3(file=path,
+                          s3_uri=s3_uri,
+                          aws_credentials=aws_credentials,
+                          aws_kms_key_id=aws_kms_key_id,
+                          print_progress=True,
+                          print_function=PRINT,
+                          verify_upload=True,
+                          catch_interrupt=True)
 
 
 def _running_on_windows_native():

@@ -1,5 +1,6 @@
 import datetime
 import io
+import re
 import time
 from typing import Any, Callable, Tuple, Union
 from dcicutils.misc_utils import ignored, PRINT
@@ -155,3 +156,41 @@ def check_repeatedly(check_function: Callable,
                        f" ‖ Checked: {ntimes}x"
                        f" | Next: {wait_seconds - i}s"
                        f" ‖ {duration()}")
+
+
+def get_s3_bucket_and_key_from_s3_uri(uri: str) -> Tuple[str, str]:
+    if match := re.match(r"s3://([^/]+)/(.+)", uri):
+        return (match.group(1), match.group(2))
+    return None, None
+
+
+def format_duration(seconds: Union[int, float]):
+    seconds = round(max(seconds, 0))
+    durations = [("year", 31536000), ("day", 86400), ("hour", 3600), ("minute", 60), ("second", 1)]
+    parts = []
+    for name, duration in durations:
+        if seconds >= duration:
+            count = seconds // duration
+            seconds %= duration
+            if count > 1:
+                name += "s"  # Pluralize the unit if count > 1
+            parts.append(f"{count} {name}")
+    if len(parts) == 0:
+        return "0 seconds"
+    elif len(parts) == 1:
+        return parts[0]
+    else:
+        return " ".join(parts[:-1]) + " " + parts[-1]
+
+
+def format_size(nbytes: Union[int, float], precision: int = 2) -> str:
+    UNITS = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+    MAX_UNITS_INDEX = len(UNITS) - 1
+    ONE_K = 1024
+    index = 0
+    if (precision := max(precision, 0)) and (nbytes <= ONE_K):
+        precision -= 1
+    while abs(nbytes) >= ONE_K and index < MAX_UNITS_INDEX:
+        nbytes /= ONE_K
+        index += 1
+    return f"{nbytes:.{precision}f} {UNITS[index]}"
