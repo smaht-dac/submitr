@@ -1613,14 +1613,14 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
         if file:
             if file_paths := search_for_file(file, location=upload_folder, recursive=subfolders):
                 if len(file_paths) == 1:
-                    PRINT(f"File to upload: {format_path(file_paths[0])}"
+                    PRINT(f"File to upload to AWS S3: {format_path(file_paths[0])}"
                           f" ({format_size(get_file_size(file_paths[0]))})")
                     return True
                 else:
                     PRINT(f"No upload attempted for file {file} because multiple"
                           f" copies were found in folder {upload_folder}: {', '.join(file_paths)}.")
                     return False
-            PRINT(f"WARNING: Cannot find file to upload: {format_path(file)} ({file_uuid})")
+            PRINT(f"WARNING: Cannot find file to upload to AWS S3: {format_path(file)} ({file_uuid})")
         return False
 
     upload_info = _get_section(res, 'upload_info')

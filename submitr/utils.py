@@ -81,87 +81,6 @@ class FakeResponse:
             raise Exception(f"{self} raised for status.")
 
 
-# TODO: If deemed generally useful then move to dcicutils.
-# TODO: This is now obsolete.
-def check_repeatedly(check_function: Callable,
-                     wait_seconds: int = 10,
-                     repeat_count: int = -1,
-                     check_message: str = None,
-                     wait_message: str = None,
-                     done_message: str = None,
-                     stop_message: str = None,
-                     action: str = "processing",
-                     response_message: bool = True,
-                     messages: bool = True,
-                     verbose: bool = True) -> Union[Tuple[bool, str, Any], Any]:
-    """
-    Calls the given function (check_function) repeatedly, until it returns either a tuple whose first element is
-    truthy, or just a non-tuple truthy value, waiting between calls for the given number (wait_seconds) of seconds,
-    and trying for a maximum of the given number (repeat_count) of times; if repeat_count is non-positive (default),
-    then never stop calling the function. If the function returns either a tuple whose first element is truthy,
-    or just a non-tuple truthy value, then returns that value. If the function never returns a truthy value,
-    and repeat_count is postiive, then after that maxmimum number of tries (repeat_count), return False.
-
-    If the messages argument is True (default) then a message to the stdout will be printed indicating each time
-    the function is called, how long (in seconds) till the next call, and how many times in total it has been called.
-    Additionally, if the response_message argument is True (default) then if the function finally returns a truthy
-    value, then that value will be printed to the stdout.
-    """
-    ignored(response_message)  # TODO: Why is this not used? -kmp 2-Aug-2023
-
-    def output(message):
-        show(message, with_time=False, same_line=True)
-    if not check_message:
-        check_message = f"Checkin for {action} completion"
-    if not wait_message:
-        wait_message = f"Waiting for {action} completion"
-    if not done_message:
-        done_message = f"{action.title()} complete"
-    if not stop_message:
-        stop_message = f"Giving up waiting for {action} completion"
-    ntimes = 0
-    check_function_returning_tuple = True
-    check_status = "Not Done Yet"
-    start_time = time.time()
-    def duration():  # noqa
-        duration = time.time() - start_time
-        return f"{'%.1f' % duration}s"
-    while True:
-        if messages:
-            output(f"{check_message} {f'| Status: {check_status.title()}' if check_status else ''}"
-                   f" ‖ Checked: {ntimes}x"
-                   f" | Next: {wait_seconds - 0}s"
-                   f" ‖ {duration()}")
-        check_function_response = check_function()
-        ntimes += 1
-        if isinstance(check_function_response, Tuple) and len(check_function_response) >= 2:
-            check_done = check_function_response[0]
-            check_status = check_function_response[1]
-        else:
-            check_function_returning_tuple = False
-            check_done = check_function_response
-            check_status = None
-        if check_done:
-            if messages:
-                output(f"{done_message} {f'| Status: {check_status.title()}' if check_status else ''}"
-                       f" ‖ {duration()}\n")
-            return check_function_response
-        if ntimes >= repeat_count > 0:
-            if messages:
-                output(f"{stop_message} {f' Status: {check_status.title()}' if check_status else ''}"
-                       f" ‖ Checked: {ntimes}x"
-                       f" | Next: {wait_seconds - 0}s"
-                       f" ‖ {duration()}\n")
-            return check_function_response if check_function_returning_tuple else False
-        for i in range(wait_seconds):
-            time.sleep(0.2)
-            if messages:
-                output(f"{wait_message} {f'| Status: {check_status.title()}' if check_status else ''}"
-                       f" ‖ Checked: {ntimes}x"
-                       f" | Next: {wait_seconds - i}s"
-                       f" ‖ {duration()}")
-
-
 def get_s3_bucket_and_key_from_s3_uri(uri: str) -> Tuple[str, str]:
     if match := re.match(r"s3://([^/]+)/(.+)", uri):
         return (match.group(1), match.group(2))
@@ -211,10 +130,7 @@ def format_size(nbytes: Union[int, float], precision: int = 2) -> str:
         nbytes /= ONE_K
         index += 1
     if index == 0:
-        if nbytes == 0:
-            return "0 bytes"
-        elif nbytes == 1:
-            return "1 byte"
+        return f"{nbytes} byte{'s' if nbytes != 1 else ''}"
     unit = UNITS[index]
     return f"{nbytes:.{precision}f} {unit}"
 
