@@ -1406,8 +1406,9 @@ def _print_submission_summary(portal: Portal, result: dict,
             if ref_errors := _validate_references(validation_info.get("ref"), None):
                 errors.extend(_format_reference_errors(ref_errors, verbose=verbose, debug=debug))
             if validation_errors := validation_info.get("validation"):
+                errors.append(f"- Validation errors: {len(validation_errors)}")
                 for validation_error in validation_errors:
-                    errors.append(f"- {_format_issue(validation_error)}")
+                    errors.append(f"  - {_format_issue(validation_error)}")
     if processing_status := result.get("processing_status"):
         summary_lines = []
         if additional_data := result.get("additional_data"):
