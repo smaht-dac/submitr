@@ -34,7 +34,7 @@ from .base import DEFAULT_APP
 from .exceptions import PortalPermissionError
 from .scripts.cli_utils import get_version, print_boxed
 from .utils import (
-    format_datetime, format_size, format_path, get_file_md5_like_aws_s3_etag,
+    format_datetime, format_size, format_path, get_file_md5, get_file_md5_like_aws_s3_etag,
     get_file_modified_datetime, get_file_size, keyword_as_title, tobool
 )
 from .s3_utils import upload_file_to_aws_s3
@@ -2872,14 +2872,16 @@ def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optiona
 
 
 def _print_metadata_file_info(file: str) -> None:
-    header = f"Metadata File: {os.path.basename(file)}\n"
-    if size := format_size(get_file_size(file)):
-        header += f"Size: {size}"
+    PRINT(f"Metadata File: {os.path.basename(file)}")
+    if size := get_file_size(file):
+        PRINT(f"Size: {format_size(size)} ({size})")
     if modified := get_file_modified_datetime(file):
-        header += f" | Modified: {modified}"
-    if md5 := _get_file_md5(file):
-        header += f" | MD5: {md5}"
-    lines = []
+        PRINT(f"Modified: {modified}")
+    if md5 := get_file_md5(file):
+        PRINT(f"MD5: {md5}")
+    if etag := get_file_md5_like_aws_s3_etag(file):
+        PRINT(f"S3 Etag: {etag}{' (same)' if md5 == etag else ''}")
+    sheet_lines = []
     if file.endswith(".xlsx") or file.endswith(".xls"):
         from dcicutils.data_readers import Excel
         excel = Excel(file)
@@ -2890,12 +2892,10 @@ def _print_metadata_file_info(file: str) -> None:
             nrows = 0
             for row in excel.sheet_reader(sheet_name):
                 nrows += 1
-            lines.append(f"- Sheet: {sheet_name} ▶ Rows: {nrows}")
+            sheet_lines.append(f"- Sheet: {sheet_name} ▶ Rows: {nrows}")
             nrows_total += nrows
-        PRINT(f"{header} | Sheets: {nsheets} | Rows: {nrows_total}")
-        PRINT("\n".join(lines))
-    else:
-        PRINT(header)
+        sheet_lines = "\n" + "\n".join(sheet_lines)
+        PRINT(f"Sheets: {nsheets} | Rows: {nrows_total}{sheet_lines}")
 
 
 def _ping(app: str, env: str, server: str, keys_file: str,
