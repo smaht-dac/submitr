@@ -2867,7 +2867,7 @@ def _extract_accession_id(value: str) -> Optional[str]:
 
 
 def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optional[str]:  # noqa
-    return format_datetime(datetime.fromisoformat(value).replace(tzinfo=pytz.utc))
+    return format_datetime(datetime.fromisoformat(value))
 
 
 def _print_metadata_file_info(file: str) -> None:
@@ -2879,7 +2879,7 @@ def _print_metadata_file_info(file: str) -> None:
     if md5 := get_file_md5(file):
         PRINT(f"MD5: {md5}")
     if etag := get_file_md5_like_aws_s3_etag(file):
-        PRINT(f"S3 ETag: {etag}{' (same)' if md5 == etag else ''}")
+        PRINT(f"S3 ETag: {etag}{' | Same as MD5' if md5 == etag else ''}")
     sheet_lines = []
     if file.endswith(".xlsx") or file.endswith(".xls"):
         from dcicutils.data_readers import Excel
