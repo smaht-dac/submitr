@@ -248,7 +248,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     with open(file, "rb") as f:
         try:
             s3.upload_fileobj(f, s3_bucket, s3_key,
-                               Callback=upload_file_callback.function if upload_file_callback else None)
+                              Callback=upload_file_callback.function if upload_file_callback else None)
         except Exception:
             printf(f"Upload aborted: {file}")
             upload_aborted = True
