@@ -181,6 +181,8 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
 
     previous_interrupt_handler = None
     def handle_interrupt(signum, frame) -> None:  # noqa
+        # Note that an interrupt does not actually stop
+        # the the upload thread(s) from continuing to run.
         def handle_secondary_interrupt(signum, frame):  # noqa
             printf("\nEnter 'yes' to really quit (exit) or CTRL-\\ ...")
         nonlocal previous_interrupt_handler, upload_file_callback
