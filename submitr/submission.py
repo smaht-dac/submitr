@@ -37,7 +37,7 @@ from .utils import (
     format_datetime, format_size, format_path, get_file_md5, get_file_md5_like_aws_s3_etag,
     get_file_modified_datetime, get_file_size, keyword_as_title, tobool
 )
-from .s3_utils import upload_file_to_aws_s3, BIG_FILE_SIZE
+from .s3_utils import upload_file_to_aws_s3
 from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 
 
