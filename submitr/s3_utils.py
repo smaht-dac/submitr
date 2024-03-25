@@ -3,6 +3,7 @@ from collections import namedtuple
 import os
 import signal
 import sys
+import threading
 import time
 from tqdm import tqdm
 from typing import Callable, Optional
@@ -12,10 +13,11 @@ from .utils import (
     format_datetime, format_duration, format_size
 )
 
+
 # This is to control whether or not we first prompt the user to take the time
 # to do a checksum on the local file to see if it appears to be exactly the
 # the same as an already exisiting file in AWS S3.
-_BIG_FILE_SIZE = 1024 * 1024 * 50
+_BIG_FILE_SIZE = 1024 * 1024 * 250  # 250 MB
 
 
 # Uploads the given file with the given AWS credentials to AWS S3.
@@ -63,11 +65,14 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         nbytes_zero = (file_size == 0)
         ncallbacks = 0
         upload_done = None
+        should_abort = False
         bar_message = "▶ Upload progress"
         bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
         bar = tqdm(total=max(file_size, 1), desc=bar_message,
                    dynamic_ncols=True, bar_format=bar_format, unit="", file=sys.stdout)
-        def upload_file_callback(nbytes_chunk: int) -> None:  # noqa
+        threads_aborted = set()
+        thread_lock = threading.Lock()
+        def _upload_file_callback(nbytes_chunk: int) -> None:  # noqa
             # The execution of this may be in any number of child threads due to the way upload_fileobj
             # works; we do not create the progress bar until the upload actually starts because if we
             # do we get some initial bar output file.
@@ -89,6 +94,21 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                 upload_done = (f"Upload done: {format_size(nbytes_transferred if not nbytes_zero else 0)}"
                                f" in {format_duration(duration)}"
                                f" | {format_size(nbytes_transferred / duration)} per second ◀")
+        def upload_file_callback(nbytes_chunk: int) -> None:  # noqa
+            nonlocal threads_aborted, thread_lock, should_abort
+            thread_id = threading.current_thread().ident
+            will_abort = False
+            with thread_lock:
+                # Queasy about raising an exception from within a lock.
+                if should_abort and thread_id not in threads_aborted:
+                    threads_aborted.add(thread_id)
+                    will_abort = True
+            if will_abort:
+                raise Exception("Abort upload.")
+            # For some reason using a try/except block here does not catch the abort exception above;
+            # but we do in fact successfully kill these upload_fileobj threads; and main caller below catches.
+            _upload_file_callback(nbytes_chunk)
+
         def pause_output() -> None:  # noqa
             nonlocal bar
             bar.disable = True
@@ -108,9 +128,14 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             cleanup()
             if upload_done:
                 printf(upload_done)
+        def abort_upload() -> None:  # noqa
+            nonlocal should_abort
+            with thread_lock:
+                should_abort = True
         upload_file_callback_type = namedtuple("upload_file_callback",
-                                               ["function", "pause_output", "resume_output", "cleanup", "done"])
-        return upload_file_callback_type(upload_file_callback, pause_output, resume_output, cleanup, done)
+                                               ["function", "pause_output", "resume_output",
+                                                "cleanup", "done", "abort_upload"])
+        return upload_file_callback_type(upload_file_callback, pause_output, resume_output, cleanup, done, abort_upload)
 
     def get_uploaded_file_info() -> Optional[dict]:
         nonlocal aws_credentials, s3_bucket, s3_key
@@ -194,7 +219,10 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             signal.signal(signal.SIGINT, previous_interrupt_handler)
             if upload_file_callback:
                 upload_file_callback.cleanup()
-            printf("Upload aborted.")
+            printf("Aborting upload ...")
+            if upload_file_callback:
+                upload_file_callback.abort_upload()
+                return
             exit(1)
         signal.signal(signal.SIGINT, handle_interrupt)
         if upload_file_callback:
@@ -203,18 +231,23 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     if catch_interrupt is True:
         previous_interrupt_handler = signal.signal(signal.SIGINT, handle_interrupt)
 
+    upload_aborted = False
     s3_client = boto3.client("s3", **aws_credentials)
     with open(file, "rb") as f:
-        s3_client.upload_fileobj(f, s3_bucket, s3_key,
-                                 Callback=upload_file_callback.function if upload_file_callback else None)
+        try:
+            s3_client.upload_fileobj(f, s3_bucket, s3_key,
+                                     Callback=upload_file_callback.function if upload_file_callback else None)
+        except Exception:
+            printf(f"Upload aborted: {file}")
+            upload_aborted = True
 
     if upload_file_callback:
         upload_file_callback.done()
 
-    if verify_upload:
+    if not upload_aborted and verify_upload:
         verify_uploaded_file()
 
     if catch_interrupt is True:
         signal.signal(signal.SIGINT, previous_interrupt_handler)
 
-    return True
+    return not upload_aborted
