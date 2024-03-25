@@ -141,6 +141,8 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                 elif not (compare_checksums := existing_file_info["size"] < _BIG_FILE_SIZE):
                     if yes_or_no("Do you want to see if these files appear to be exactly the same?"):
                         compare_checksums = True
+                    else:
+                        files_appear_to_be_the_same = None
                 if compare_checksums:
                     if not file_checksum:
                         file_checksum = get_file_md5_like_aws_s3_etag(file)
@@ -149,9 +151,9 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                         file_difference = f" | checksum: {file_checksum} vs {existing_file_info['checksum']}"
             else:
                 file_difference = f" | size: {file_size} vs {existing_file_info['size']}"
-            if not files_appear_to_be_the_same:
+            if files_appear_to_be_the_same is False:
                 printf(f"These files appear to be different{file_difference}")
-            else:
+            elif files_appear_to_be_the_same is True:
                 printf(f"These files appear to be the same | checksum: {existing_file_info['checksum']}")
             if not yes_or_no("Do you want to continue with this upload anyways?"):
                 printf(f"Skipping upload of {os.path.basename(file)} ({format_size(file_size)}) to: {s3_uri}")
