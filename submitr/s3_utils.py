@@ -189,16 +189,20 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                 return False
         return True
 
-    def verify_uploaded_file() -> None:
+    def verify_uploaded_file() -> bool:
         nonlocal file_size
         printf("Verifying upload ... ", end="")
         if file_info := get_uploaded_file_info():
-            if file_info["size"] == file_size:
-                printf("OK")
-            else:
-                printf("File size inconsistency.")
-        else:
-            printf("Cannot verify.")
+            if file_info["size"] != file_size:
+                printf(f"WARNING: File size mismatch ▶ {file_size} vs {file_info['size']}")
+                return False
+            if file_checksum and file_info["checksum"] and file_checksum != file_info["checksum"]:
+                printf(f"WARNING: File checksum mismatch ▶ {file_checksum} vs {file_info['checksum']}")
+                return False
+            printf("OK")
+            return True
+        printf("WARNING: Cannot verify.")
+        return False
 
     def define_interrupt_handler() -> None:
         nonlocal catch_interrupt
