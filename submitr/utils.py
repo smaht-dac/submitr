@@ -82,6 +82,7 @@ class FakeResponse:
 
 
 # TODO: If deemed generally useful then move to dcicutils.
+# TODO: This is now obsolete.
 def check_repeatedly(check_function: Callable,
                      wait_seconds: int = 10,
                      repeat_count: int = -1,
@@ -272,7 +273,7 @@ def get_file_md5_like_aws_s3_etag(file: str) -> Optional[str]:
 
 def _get_file_md5_like_aws_s3_etag(f: io.BufferedReader) -> str:
     """
-    Returns the AWS S3 "ETag" for the given file; this value is md5-like but
+    Returns the AWS S3 "Etag" for the given file; this value is md5-like but
     not the same as a normal md5. We use this to compare that a file in S3
     appears to be the exact the same file as a local file. Adapted from:
     https://stackoverflow.com/questions/75723647/calculate-md5-from-aws-s3-etag
