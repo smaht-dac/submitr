@@ -4,9 +4,8 @@ import hashlib
 import re
 import os
 from pathlib import Path
-import time
-from typing import Any, Callable, Optional, Tuple, Union
-from dcicutils.misc_utils import ignored, PRINT, str_to_bool
+from typing import Any, Optional, Tuple, Union
+from dcicutils.misc_utils import PRINT, str_to_bool
 from json import dumps as json_dumps, loads as json_loads
 
 
