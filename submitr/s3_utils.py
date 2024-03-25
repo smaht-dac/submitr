@@ -76,7 +76,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                    dynamic_ncols=True, bar_format=bar_format, unit="", file=sys.stdout)
         threads_aborted = set()
         thread_lock = threading.Lock()
-        def _upload_file_callback(nbytes_chunk: int) -> None:  # noqa
+        def upload_file_callback_internal(nbytes_chunk: int) -> None:  # noqa
             # The execution of this may be in any number of child threads due to the way upload_fileobj
             # works; we do not create the progress bar until the upload actually starts because if we
             # do we get some initial bar output file.
@@ -111,7 +111,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                 raise Exception("Abort upload.")
             # For some reason using a try/except block here does not catch the abort exception above;
             # but we do in fact successfully kill these upload_fileobj threads; and main caller below catches.
-            _upload_file_callback(nbytes_chunk)
+            upload_file_callback_internal(nbytes_chunk)
 
         def pause_output() -> None:  # noqa
             nonlocal bar
