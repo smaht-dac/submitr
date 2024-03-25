@@ -1406,7 +1406,6 @@ def _print_submission_summary(portal: Portal, result: dict,
             # TODO: Cleanup/unify error structure from client and server!
             if ref_errors := _validate_references(validation_info["ref"], None):
                 errors.extend(_format_reference_errors(ref_errors, verbose=verbose, debug=debug))
-            pass
     if processing_status := result.get("processing_status"):
         summary_lines = []
         if additional_data := result.get("additional_data"):

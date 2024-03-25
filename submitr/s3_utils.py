@@ -126,7 +126,6 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             }
         except Exception:
             return None
-        pass
 
     def verify_with_any_already_uploaded_file() -> None:
         nonlocal file, file_size, file_checksum
