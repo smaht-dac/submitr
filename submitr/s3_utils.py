@@ -66,13 +66,12 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         nonlocal file_size
         started = time.time()
         nbytes_transferred = 0
-        nbytes_zero = (file_size == 0)
         ncallbacks = 0
         upload_done = None
         should_abort = False
         bar_message = "▶ Upload progress"
         bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
-        bar = tqdm(total=max(file_size, 1), desc=bar_message,
+        bar = tqdm(total=file_size, desc=bar_message,
                    dynamic_ncols=True, bar_format=bar_format, unit="", file=sys.stdout)
         threads_aborted = set()
         thread_lock = threading.Lock()
@@ -95,8 +94,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                 # The set_description seems to be need make sure the
                 # last bit is flushed out; in the case of interrupt.
                 cleanup()
-                upload_done = (f"Upload done: {format_size(nbytes_transferred if not nbytes_zero else 0)}"
-                               f" in {format_duration(duration)}"
+                upload_done = (f"Upload done: {format_size(nbytes_transferred)} in {format_duration(duration)}"
                                f" | {format_size(nbytes_transferred / duration)} per second ◀")
         def upload_file_callback(nbytes_chunk: int) -> None:  # noqa
             nonlocal threads_aborted, thread_lock, should_abort
@@ -128,7 +126,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         def done() -> Optional[str]:  # noqa
             nonlocal ncallbacks, upload_done, printf
             if ncallbacks == 0:
-                upload_file_callback(max(file_size, 1))
+                upload_file_callback(file_size)
             cleanup()
             if upload_done:
                 printf(upload_done)
