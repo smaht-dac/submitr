@@ -22,6 +22,7 @@ _BIG_FILE_SIZE = 1024 * 1024 * 50
 # Displays progress bar and other info; checks if file already
 # exists; verifies upload; catches interrupts; et cetera.
 def upload_file_to_aws_s3(file: str, s3_uri: str,
+                          file_checksum: Optional[str] = None,
                           aws_credentials: Optional[dict] = None,
                           aws_kms_key_id: Optional[str] = None,
                           print_progress: bool = True,
@@ -128,7 +129,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         pass
 
     def verify_with_any_already_uploaded_file() -> None:
-        nonlocal file, file_size
+        nonlocal file, file_size, file_checksum
         if existing_file_info := get_uploaded_file_info():
             # The file we are uploading already exists in S3.
             printf(f"WARNING: This file already exists in AWS S3:"
@@ -136,11 +137,15 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             if files_appear_to_be_the_same := (existing_file_info["size"] == file_size):
                 # File sizes are the same. See if these files appear to be the same according
                 # to their checksums; but if it is a big file prompt the user first to check.
-                if not (compare_checksums := existing_file_info["size"] < _BIG_FILE_SIZE):
+                if file_checksum:
+                    compare_checksums = True
+                elif not (compare_checksums := existing_file_info["size"] < _BIG_FILE_SIZE):
                     if yes_or_no("Do you want to see if these files appear to be exactly the same?"):
                         compare_checksums = True
                 if compare_checksums:
-                    if (file_checksum := get_file_md5_like_aws_s3_etag(file)) != existing_file_info["checksum"]:
+                    if not file_checksum:
+                        file_checksum = get_file_md5_like_aws_s3_etag(file)
+                    if file_checksum != existing_file_info["checksum"]:
                         files_appear_to_be_the_same = False
                         file_difference = f" | checksum: {file_checksum} vs {existing_file_info['checksum']}"
             else:
