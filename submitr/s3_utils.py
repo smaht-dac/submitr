@@ -157,6 +157,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             if not yes_or_no("Do you want to continue with this upload anyways?"):
                 printf(f"Skipping upload of {os.path.basename(file)} ({format_size(file_size)}) to: {s3_uri}")
                 return False
+        return True
 
     def verify_uploaded_file() -> None:
         nonlocal file_size
@@ -173,7 +174,8 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         printf(f"Uploading {os.path.basename(file)} ({format_size(file_size)}) to: {s3_uri}")
 
     if verify_upload:
-        verify_with_any_already_uploaded_file()
+        if not verify_with_any_already_uploaded_file():
+            return False
 
     upload_file_callback = define_upload_file_callback() if print_progress else None
 
