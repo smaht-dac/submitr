@@ -6,7 +6,6 @@ from functools import lru_cache
 import io
 import json
 import os
-import pytz
 import re
 import signal
 import sys
