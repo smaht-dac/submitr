@@ -37,7 +37,7 @@ from .utils import (
     format_datetime, format_size, format_path, get_file_md5, get_file_md5_like_aws_s3_etag,
     get_file_modified_datetime, get_file_size, keyword_as_title, tobool
 )
-from .s3_utils import upload_file_to_aws_s3
+from .s3_utils import upload_file_to_aws_s3, BIG_FILE_SIZE
 from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 
 
@@ -496,7 +496,7 @@ def _initiate_server_ingestion_process(
         "autoadd": json.dumps(autoadd),
         "ingestion_directory": os.path.dirname(ingestion_filename) if ingestion_filename else None,
         "datafile_size": datafile_size or get_file_size(ingestion_filename),
-        "datafile_md5": datafile_md5 or _get_file_md5(ingestion_filename)
+        "datafile_md5": datafile_md5 or get_file_md5(ingestion_filename)
     }
 
     if validation_ingestion_submission_uuid:
@@ -1796,7 +1796,6 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
         raise ValueError("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
 
     upload_file_to_aws_s3(file=path,
-                          file_checksum=_get_file_md5(path),
                           s3_uri=s3_uri,
                           aws_credentials=aws_credentials,
                           aws_kms_key_id=aws_kms_key_id,
@@ -2903,11 +2902,6 @@ def _ping(app: str, env: str, server: str, keys_file: str,
     portal = _define_portal(env=env, server=server, app=app, keys_file=keys_file,
                             env_from_env=env_from_env, report=verbose)
     return portal.ping()
-
-
-@lru_cache(maxsize=1024)
-def _get_file_md5(file: str):
-    return get_file_md5_like_aws_s3_etag(file)
 
 
 def _pytesting():

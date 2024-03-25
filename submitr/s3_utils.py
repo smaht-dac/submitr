@@ -15,7 +15,7 @@ from .utils import (
 # This is to control whether or not we first prompt the user to take the time
 # to do a checksum on the local file to see if it appears to be exactly the
 # the same as an already exisiting file in AWS S3.
-_BIG_FILE_SIZE = 1024 * 1024 * 50
+BIG_FILE_SIZE = 1024 * 1024 * 50
 
 
 # Uploads the given file with the given AWS credentials to AWS S3.
@@ -138,7 +138,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                 # to their checksums; but if it is a big file prompt the user first to check.
                 if file_checksum:
                     compare_checksums = True
-                elif not (compare_checksums := existing_file_info["size"] < _BIG_FILE_SIZE):
+                elif not (compare_checksums := existing_file_info["size"] < BIG_FILE_SIZE):
                     if yes_or_no("Do you want to see if these files appear to be exactly the same?"):
                         compare_checksums = True
                 if compare_checksums:
