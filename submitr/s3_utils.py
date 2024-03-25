@@ -29,9 +29,9 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                           aws_kms_key_id: Optional[str] = None,
                           print_progress: bool = True,
                           print_preamble: bool = True,
-                          print_function: Optional[Callable] = print,
                           verify_upload: bool = True,
-                          catch_interrupt: bool = True) -> bool:
+                          catch_interrupt: bool = True,
+                          print_function: Optional[Callable] = print) -> bool:
 
     if not isinstance(file, str) or not file or not isinstance(s3_uri, str) or not s3_uri:
         return False
@@ -42,7 +42,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     if not s3_bucket or not s3_key:
         return False
 
-    printf = print_function if callable(print_function) else print
+    file_size = os.path.getsize(file)
 
     if isinstance(aws_credentials, dict):
         aws_credentials = {
@@ -56,7 +56,11 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     if aws_kms_key_id:
         aws_credentials["SSEKMSKeyId"] = aws_kms_key_id
 
-    file_size = os.path.getsize(file)
+    print_progress = print_progress is True
+    print_preamble = print_preamble is True
+    verify_upload = verify_upload is True
+    catch_interrupt = catch_interrupt is True
+    printf = print_function if callable(print_function) else print
 
     def define_upload_file_callback() -> None:
         nonlocal file_size
@@ -140,8 +144,8 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     def get_uploaded_file_info() -> Optional[dict]:
         nonlocal aws_credentials, s3_bucket, s3_key
         try:
-            s3_client = boto3.client("s3", **aws_credentials)
-            s3_file_head = s3_client.head_object(Bucket=s3_bucket, Key=s3_key)
+            s3 = boto3.client("s3", **aws_credentials)
+            s3_file_head = s3.head_object(Bucket=s3_bucket, Key=s3_key)
             if (s3_file_etag := s3_file_head["ETag"]) and s3_file_etag.startswith('"') and s3_file_etag.endswith('"'):
                 s3_file_etag = s3_file_etag[1:-1]
             return {
@@ -196,47 +200,55 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         else:
             printf("Cannot verify.")
 
-    if print_preamble is True:
+    def define_interrupt_handler() -> None:
+        nonlocal catch_interrupt
+        def handle_interrupt(signum, frame) -> None:  # noqa
+            # Note that an interrupt does not actually stop
+            # the upload thread(s) from continuing to run.
+            def handle_secondary_interrupt(signum, frame):  # noqa
+                printf("\nEnter 'yes' to really quit (exit) or CTRL-\\ ...")
+            nonlocal upload_file_callback
+            signal.signal(signal.SIGINT, handle_secondary_interrupt)
+            if upload_file_callback:
+                upload_file_callback.pause_output()
+            if yes_or_no("\nATTENTION! You have interrupted this upload. Do you want to stop (exit)?"):
+                restore_interrupt_handler()
+                if upload_file_callback:
+                    upload_file_callback.cleanup()
+                printf("Aborting upload ...")
+                if upload_file_callback:
+                    upload_file_callback.abort_upload()
+                    return
+                exit(1)
+            signal.signal(signal.SIGINT, handle_interrupt)
+            if upload_file_callback:
+                upload_file_callback.resume_output()
+        def restore_interrupt_handler() -> None:  # noqa
+            nonlocal previous_interrupt_handler
+            if previous_interrupt_handler:
+                signal.signal(signal.SIGINT, previous_interrupt_handler)
+        if catch_interrupt:
+            previous_interrupt_handler = signal.signal(signal.SIGINT, handle_interrupt)
+        else:
+            previous_interrupt_handler = None
+        interrupt_handler_type = namedtuple("interrupt_handler", ["restore"])
+        return interrupt_handler_type(restore_interrupt_handler)
+
+    if print_preamble:
         printf(f"Uploading {os.path.basename(file)} ({format_size(file_size)}) to: {s3_uri}")
 
-    if verify_upload:
-        if not verify_with_any_already_uploaded_file():
-            return False
+    if verify_upload and not verify_with_any_already_uploaded_file():
+        return False
 
     upload_file_callback = define_upload_file_callback() if print_progress else None
-
-    previous_interrupt_handler = None
-    def handle_interrupt(signum, frame) -> None:  # noqa
-        # Note that an interrupt does not actually stop
-        # the the upload thread(s) from continuing to run.
-        def handle_secondary_interrupt(signum, frame):  # noqa
-            printf("\nEnter 'yes' to really quit (exit) or CTRL-\\ ...")
-        nonlocal previous_interrupt_handler, upload_file_callback
-        signal.signal(signal.SIGINT, handle_secondary_interrupt)
-        if upload_file_callback:
-            upload_file_callback.pause_output()
-        if yes_or_no("\nATTENTION! You have interrupted this upload. Do you want to stop (exit)?"):
-            signal.signal(signal.SIGINT, previous_interrupt_handler)
-            if upload_file_callback:
-                upload_file_callback.cleanup()
-            printf("Aborting upload ...")
-            if upload_file_callback:
-                upload_file_callback.abort_upload()
-                return
-            exit(1)
-        signal.signal(signal.SIGINT, handle_interrupt)
-        if upload_file_callback:
-            upload_file_callback.resume_output()
-
-    if catch_interrupt is True:
-        previous_interrupt_handler = signal.signal(signal.SIGINT, handle_interrupt)
+    interrupt_handler = define_interrupt_handler()
 
     upload_aborted = False
-    s3_client = boto3.client("s3", **aws_credentials)
+    s3 = boto3.client("s3", **aws_credentials)
     with open(file, "rb") as f:
         try:
-            s3_client.upload_fileobj(f, s3_bucket, s3_key,
-                                     Callback=upload_file_callback.function if upload_file_callback else None)
+            s3.upload_fileobj(f, s3_bucket, s3_key,
+                               Callback=upload_file_callback.function if upload_file_callback else None)
         except Exception:
             printf(f"Upload aborted: {file}")
             upload_aborted = True
@@ -247,7 +259,6 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     if not upload_aborted and verify_upload:
         verify_uploaded_file()
 
-    if catch_interrupt is True:
-        signal.signal(signal.SIGINT, previous_interrupt_handler)
+    interrupt_handler.restore()
 
     return not upload_aborted
