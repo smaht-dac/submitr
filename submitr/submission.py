@@ -2065,6 +2065,7 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
                                                    recursive=recursive, single=True)):
         raise Exception(f"File not found: {item_filename}")
     else:
+        PRINT(f"File to upload to AWS S3: {format_path(item_filename_found)}")
         item_filename = item_filename_found
 
     if not no_query:
