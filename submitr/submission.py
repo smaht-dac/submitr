@@ -29,15 +29,16 @@ from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, 
 from dcicutils.structured_data import Portal, StructuredDataSet
 from typing_extensions import Literal
 from urllib.parse import urlparse
-from .base import DEFAULT_APP
-from .exceptions import PortalPermissionError
-from .scripts.cli_utils import get_version, print_boxed
-from .utils import (
+from submitr.base import DEFAULT_APP
+from submitr.exceptions import PortalPermissionError
+from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
+from submitr.progress_bar import ProgressBar
+from submitr.scripts.cli_utils import get_version, print_boxed
+from submitr.s3_utils import upload_file_to_aws_s3
+from submitr.utils import (
     format_datetime, format_size, format_path, get_file_md5, get_file_md5_like_aws_s3_etag,
     get_file_modified_datetime, get_file_size, keyword_as_title, tobool
 )
-from .s3_utils import upload_file_to_aws_s3
-from .output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 
 
 DEFAULT_INGESTION_TYPE = 'metadata_bundle'
@@ -976,7 +977,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         PROGRESS_MAX_CHECKS = max(round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL), 1)
 
     def define_progress_callback(max_checks: int, title: str, include_status: bool = False) -> None:
-        bar = None
+        bar = ProgressBar(max_checks, "Calculating")
         nchecks = 0
         nchecks_server = 0
         check_status = "Unknown"
@@ -985,11 +986,6 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         ingestion_total = 0
         ingestion_started = 0
         ingestion_started_second_round = 0
-        def handle_control_c(signum, frame):  # noqa
-            if yes_or_no("\nCTRL-C: You have interrupted this process. Do you want to TERMINATE processing?"):
-                PRINT("Premature exit.")
-                exit(1)
-            PRINT_STDOUT("Continuing ...")
         def progress_report(status: dict) -> None:  # noqa
             nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status, noprogress, validation
             nonlocal ingestion_total, ingestion_started, ingestion_started_second_round, verbose
@@ -1004,23 +1000,17 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             ingestion_item_second_round = ingestion_status.get("ingestion_item_second_round", 0)
             ingestion_done = status.get("ingestion_done", 0) > 0
             # This string is from the /ingestion-status endpoint, really as a convenience/courtesey
-            # so we don't have to cobbble together our own string; but we could also build the
+            # so we don't have to cobble together our own string; but we could also build the
             # message ourselves manually here from the counts contained in the same response.
             ingestion_message = (status.get("ingestion_message_verbose", "")
                                  if verbose else status.get("ingestion_message", ""))
             # Phases: 0 means waiting for server response; 1 means loadxl round one; 2 means loadxl round two.
             ingestion_phase = 2 if ingestion_started_second_round > 0 else (1 if ingestion_started > 0 else 0)
             done = False
-            if status.get("start"):
-                signal.signal(signal.SIGINT, handle_control_c)
-                bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
-                bar = tqdm(total=max_checks, desc="Calculating", dynamic_ncols=True,
-                           bar_format=bar_format, unit="", file=sys.stdout)
-                return
-            elif status.get("finish") or nchecks >= max_checks:
+            if status.get("finish") or nchecks >= max_checks:
                 check_status = status.get("status")
                 if ingestion_phase == 0:
-                    bar.update(max_checks - nchecks)
+                    bar.increment_progress(max_checks - nchecks)
                 done = True
             elif status.get("check_server"):
                 check_status = status.get("status")
@@ -1030,36 +1020,30 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                     next_check = round(status.get("next") or 0)
                 nchecks += 1
                 if ingestion_phase == 0:
-                    bar.update(1)
+                    bar.increment_progress(1)
             message = f"▶ {title} Pings: {nchecks_server}"
             if ingestion_started == 0:
                 # message += f" | Waiting on server ... "
                 message += f" | Waiting on server"
             else:
-                # FYI: bar.update(0) needed after bar.n assigned make ETA correct.
                 if ingestion_done:
-                    bar.total = ingestion_total
-                    bar.n = ingestion_total
-                    bar.update(0)
+                    bar.set_total(ingestion_total)
+                    bar.set_progress(ingestion_total)
                 elif ingestion_phase == 2:
-                    bar.total = ingestion_total
-                    bar.n = ingestion_item_second_round
-                    bar.update(0)
+                    bar.set_total(ingestion_total)
+                    bar.set_progress(ingestion_item_second_round)
                 elif ingestion_phase == 1:
-                    bar.total = ingestion_total
-                    bar.n = ingestion_item
-                    bar.update(0)
+                    bar.set_total(ingestion_total)
+                    bar.set_progress(ingestion_item)
                 if ingestion_message:
                     message += " | " + ingestion_message
             if include_status:
                 message += f" | Status: {check_status}"
             # message += f" | Next: {'Now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
-            # message += f" ‖ Progress"
-            message += f" "
+            message += "[progress]"
             bar.set_description(message)
             if done:
-                bar.close()
-                signal.signal(signal.SIGINT, signal.SIG_DFL)
+                bar.done()
         return progress_report
 
     portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP,
@@ -2251,7 +2235,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     structured_data = None  # TEMPORARY WORKAROUND FOR DCICUTILS BUG
 
     def define_progress_callback(debug: bool = False) -> None:
-        bar = None
         nsheets = 0
         nrows = 0
         nrows_processed = 0
@@ -2262,12 +2245,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         nrefs_exists_cache_hit = 0
         nrefs_lookup_cache_hit = 0
         nrefs_invalid = 0
+        bar = ProgressBar(nrows, "Calculating")
 
-        def handle_control_c(signum, frame):  # noqa
-            if yes_or_no("\nCTRL-C: You have interrupted this process. Do you want to TERMINATE processing?"):
-                PRINT("Premature exit.")
-                exit(1)
-            PRINT_STDOUT("Continuing ...")
         def progress_report(status: dict) -> None:  # noqa
             nonlocal bar, nsheets, nrows, nrows_processed, verbose, noprogress
             nonlocal nrefs_total, nrefs_resolved, nrefs_unresolved, nrefs_lookup
@@ -2276,10 +2255,10 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 return
             increment = 1
             if status.get("start"):
-                signal.signal(signal.SIGINT, handle_control_c)
                 nsheets = status.get("sheets") or 0
                 nrows = status.get("rows") or 0
                 if nrows > 0:
+                    bar.set_total(nrows)
                     if nsheets > 0:
                         PRINT(
                             f"Parsing submission file which has{' only' if nsheets == 1 else ''}"
@@ -2290,8 +2269,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     PRINT(f"Parsing submission file which has {nsheets} sheet{'s' if nsheets != 1 else ''}.")
                 else:
                     PRINT(f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''}.")
-                bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
-                bar = tqdm(total=nrows, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
                 return
             elif status.get("parse") or status.get("finish"):
                 if not status.get("finish"):
@@ -2304,9 +2281,9 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 nrefs_lookup_cache_hit = status.get("refs_lookup_cache_hit") or 0
                 nrefs_invalid = status.get("refs_invalid") or 0
                 if not status.get("finish"):
-                    bar.update(increment)
+                    bar.increment_progress(increment)
             elif not status.get("finish"):
-                bar.update(increment)
+                bar.increment_progress(increment)
             message = f"▶ Rows: {nrows} | Parsed: {nrows_processed}"
             if nrefs_total > 0:
                 message += f" ‖ Refs: {nrefs_total}"
@@ -2320,12 +2297,12 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     message += f" | Hits: {nrefs_exists_cache_hit}"
                     if debug:
                         message += f" [{nrefs_lookup_cache_hit}]"
-            message += " | Progress"
+            # message += " | Progress"
+            message += "[progress]"
             bar.set_description(message)
             if status.get("finish"):
-                bar.update(0)
-                bar.close()
-                signal.signal(signal.SIGINT, signal.SIG_DFL)
+                bar._bar.update(0)
+                bar.done()
 
         return progress_report
 
