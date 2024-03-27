@@ -1024,37 +1024,10 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 bar.update(1)
                 # These strings are ultimately from the snovault.loadxl.PROGRESS enum (minus the "ingestion_" prefix).
                 ingestion_started = status.get("ingestion_start", 0)
-#               ingestion_total = status.get("ingestion_total", 0)
-#               ingestion_processed = status.get("ingestion_item", 0)
-#               ingestion_lookups = status.get("ingestion_get", 0)
-#               ingestion_posts = status.get("ingestion_post", 0)
-#               ingestion_patches = status.get("ingestion_patch", 0)
-#               ingestion_errors = status.get("ingestion_error", 0)
-#               ingestion_started_second_round = status.get("ingestion_start_second_round", 0)
-#               ingestion_processed_second_round = status.get("ingestion_item_second_round", 0)
-#               ingestion_done = status.get("ingestion_done", 0)
             message = f"▶ {title} Pings: {nchecks_server}"
             if ingestion_started == 0:
                 message += f" | Waiting on server"
             else:
-#               if ingestion_total > 0:
-#                   message += f" | Items: {ingestion_total}"
-#               if ingestion_started_second_round > 0:
-#                   if ingestion_done > 0:
-#                       message += (f" | {'Validated' if validation else 'Processed'}:"
-#                                   f" {max(ingestion_processed, ingestion_processed_second_round)}")
-#                   else:
-#                       message += f" | {'Validated' if validation else 'Processed'}: {ingestion_processed_second_round}"
-#               elif ingestion_processed > 0:
-#                   message += f" | {'Prevalidated' if validation else 'Preprocessed'}: {ingestion_processed}"
-#               if ingestion_posts > 0:
-#                   message += f" | {'Posts' if validation else 'Creates'}: {ingestion_posts}"
-#               if ingestion_patches > 0:
-#                   message += f" | {'Patches' if validation else 'Updates'}: {ingestion_patches}"
-#               if ingestion_lookups > 0:
-#                   message += f" | Lookups: {ingestion_lookups}"
-#               if ingestion_errors > 0:
-#                   message += f" | Errors: {ingestion_errors}"
                 if verbose:
                     if ingestion_message := status.get("ingestion_message_verbose"):
                         message += " | " + ingestion_message
@@ -1213,9 +1186,6 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         PRINT("Submission complete!")
         do_any_uploads(submission_response, keydict=portal.key,
                        upload_folder=upload_directory, subfolders=upload_directory_recursive, portal=portal)
-        # do_any_uploads(submission_response, keydict=portal.key, ingestion_filename=ingestion_filename,
-        #                upload_folder=upload_folder, no_query=no_query,
-        #                subfolders=subfolders)
         return
 
     if check_submission_script or debug or not validation:
