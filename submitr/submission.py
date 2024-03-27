@@ -982,16 +982,12 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         check_status = "Unknown"
         next_check = 0
         # From (new/2024-03-25) /ingestion-status/{submission_uuid} call.
-        ingestion_started = 0
         ingestion_total = 0
-        ingestion_processed = 0
-        ingestion_lookups = 0
-        ingestion_posts = 0
-        ingestion_patches = 0
-        ingestion_errors = 0
+        ingestion_started = 0
+        ingestion_item = 0
         ingestion_started_second_round = 0
-        ingestion_processed_second_round = 0
-        ingestion_done = 0
+        ingestion_item_second_round = 0
+        ingestion_phase = 0
         def handle_control_c(signum, frame):  # noqa
             if yes_or_no("\nCTRL-C: You have interrupted this process. Do you want to TERMINATE processing?"):
                 PRINT("Premature exit.")
@@ -999,11 +995,24 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             PRINT_STDOUT("Continuing ...")
         def progress_report(status: dict) -> None:  # noqa
             nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status, noprogress, validation
-            nonlocal ingestion_started, ingestion_total, ingestion_processed, ingestion_lookups
-            nonlocal ingestion_posts, ingestion_patches, ingestion_errors
-            nonlocal ingestion_started_second_round, ingestion_processed_second_round, ingestion_done
+            nonlocal ingestion_total , ingestion_started, ingestion_started_second_round
             if noprogress:
                 return
+            # This are from the (new/2024-03-25) /ingestion-status/{submission_uuid} call.
+            # These key name come ultimately from snovault.loadxl.PROGRESS (minus "ingestion_" prefix).
+            ingestion_total = ingestion_status.get("ingestion_total", 0)
+            ingestion_started = ingestion_status.get("ingestion_start", 0)
+            ingestion_item = ingestion_status.get("ingestion_item", 0)
+            ingestion_started_second_round = ingestion_status.get("ingestion_start_second_round", 0)
+            ingestion_item_second_round = ingestion_status.get("ingestion_item_second_round", 0)
+            ingestion_done = status.get("ingestion_done", 0) > 0
+            # This string is from the /ingestion-status endpoint, really as a convenience/courtesey
+            # so we don't have to cobbble together our own string; but we could also build the
+            # message ourselves manually here from the counts contained in the same response.
+            ingestion_message = status.get("ingestion_message", "")
+            ingestion_message_verbose = status.get("ingestion_message_verbose", "")
+            # Phases: 0 means waiting for server response; 1 means loadxl round one; 2 means loadxl round two.
+            ingestion_phase = 2 if ingestion_started_second_round > 0 else (1 if ingestion_started > 0 else 0)
             done = False
             if status.get("start"):
                 signal.signal(signal.SIGINT, handle_control_c)
@@ -1012,7 +1021,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 return
             elif status.get("finish") or nchecks >= max_checks:
                 check_status = status.get("status")
-                bar.update(max_checks - nchecks)
+                if ingestion_phase == 0:
+                    bar.update(max_checks - nchecks)
                 done = True
             elif status.get("check_server"):
                 check_status = status.get("status")
@@ -1021,13 +1031,24 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 if (next_check := status.get("next")) is not None:
                     next_check = round(status.get("next") or 0)
                 nchecks += 1
-                bar.update(1)
-                # These strings are ultimately from the snovault.loadxl.PROGRESS enum (minus the "ingestion_" prefix).
-                ingestion_started = status.get("ingestion_start", 0)
+                if ingestion_phase == 0:
+                    bar.update(1)
             message = f"▶ {title} Pings: {nchecks_server}"
             if ingestion_started == 0:
                 message += f" | Waiting on server"
             else:
+                if ingestion_done:
+                    bar.total = ingestion_total
+                    bar.n = ingestion_total
+                    bar.update(0)
+                elif ingestion_phase == 2:
+                    bar.total = ingestion_total
+                    bar.n = ingestion_item_second_round
+                    bar.update(0)
+                elif ingestion_phase == 1:
+                    bar.total = ingestion_total
+                    bar.n = ingestion_item
+                    bar.update(0)
                 if verbose:
                     if ingestion_message := status.get("ingestion_message_verbose"):
                         message += " | " + ingestion_message
@@ -1035,11 +1056,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                     message += " | " + ingestion_message
             if include_status:
                 message += f" | Status: {check_status}"
-            #message += f" | Next: {'Now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
+            # message += f" | Next: {'Now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
             message += f" ‖ Progress"
-            if ingestion_started > 0 and not ("Item" in message):
-                import pdb ; pdb.set_trace()
-                pass
             bar.set_description(message)
             if done:
                 bar.close()
@@ -1071,7 +1089,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     started = time.time()
     progress = define_progress_callback(PROGRESS_MAX_CHECKS,
                                         title="Validation" if validation else "Submission",
-                                        include_status=not validation)
+                                        include_status=False)  # include_status=not validation
     server_check_count = 0
     most_recent_server_check_time = None
     check_submission_script_initial_check_ran = False
