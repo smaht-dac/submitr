@@ -46,9 +46,9 @@ GENERIC_SCHEMA_TYPE = 'FileOther'
 # Maximum amount of time (approximately) we will wait for a response from server (seconds).
 PROGRESS_TIMEOUT = 60 * 5  # five minutes (note this is for both server validation and submission)
 # How often we actually check the server (seconds).
-PROGRESS_CHECK_SERVER_INTERVAL = 5
+PROGRESS_CHECK_SERVER_INTERVAL = 1
 # How often the (tqdm) progress meter updates (seconds).
-PROGRESS_INTERVAL = 1.0
+PROGRESS_INTERVAL = 1.0  # xyzzy
 # How many times the (tqdm) progress meter updates (derived from above).
 PROGRESS_MAX_CHECKS = round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL)
 
@@ -661,6 +661,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          patch_only=False,
                          keys_file=None,
                          show_details=False,
+                         noanalyze=False,
                          json_only=False,
                          ref_nocache=False,
                          verbose_json=False,
@@ -771,7 +772,7 @@ def submit_any_ingestion(ingestion_filename, *,
                                             autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
                                             exit_immediately_on_errors=exit_immediately_on_errors,
                                             ref_nocache=ref_nocache, output_file=output_file, noprogress=noprogress,
-                                            json_only=json_only, verbose_json=verbose_json,
+                                            noanalyze=noanalyze, json_only=json_only, verbose_json=verbose_json,
                                             verbose=verbose, debug=debug, debug_sleep=debug_sleep)
         if validate_local_only:
             # We actually do exit from _validate_locally if validate_local_only is True.
@@ -980,13 +981,27 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         nchecks_server = 0
         check_status = "Unknown"
         next_check = 0
+        # From (new/2024-03-25) /ingestion-status/{submission_uuid} call.
+        ingestion_started = 0
+        ingestion_total = 0
+        ingestion_processed = 0
+        ingestion_lookups = 0
+        ingestion_posts = 0
+        ingestion_patches = 0
+        ingestion_errors = 0
+        ingestion_started_second_round = 0
+        ingestion_processed_second_round = 0
+        ingestion_done = 0
         def handle_control_c(signum, frame):  # noqa
             if yes_or_no("\nCTRL-C: You have interrupted this process. Do you want to TERMINATE processing?"):
                 PRINT("Premature exit.")
                 exit(1)
             PRINT_STDOUT("Continuing ...")
         def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status, noprogress
+            nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status, noprogress, validation
+            nonlocal ingestion_started, ingestion_total, ingestion_processed, ingestion_lookups
+            nonlocal ingestion_posts, ingestion_patches, ingestion_errors
+            nonlocal ingestion_started_second_round, ingestion_processed_second_round, ingestion_done
             if noprogress:
                 return
             done = False
@@ -1007,10 +1022,51 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                     next_check = round(status.get("next") or 0)
                 nchecks += 1
                 bar.update(1)
-            message = f"▶ {title} Checks: {nchecks_server}"
+                # These strings are ultimately from the snovault.loadxl.PROGRESS enum (minus the "ingestion_" prefix).
+                ingestion_started = status.get("ingestion_start", 0)
+#               ingestion_total = status.get("ingestion_total", 0)
+#               ingestion_processed = status.get("ingestion_item", 0)
+#               ingestion_lookups = status.get("ingestion_get", 0)
+#               ingestion_posts = status.get("ingestion_post", 0)
+#               ingestion_patches = status.get("ingestion_patch", 0)
+#               ingestion_errors = status.get("ingestion_error", 0)
+#               ingestion_started_second_round = status.get("ingestion_start_second_round", 0)
+#               ingestion_processed_second_round = status.get("ingestion_item_second_round", 0)
+#               ingestion_done = status.get("ingestion_done", 0)
+            message = f"▶ {title} Pings: {nchecks_server}"
+            if ingestion_started == 0:
+                message += f" | Waiting on server"
+            else:
+#               if ingestion_total > 0:
+#                   message += f" | Items: {ingestion_total}"
+#               if ingestion_started_second_round > 0:
+#                   if ingestion_done > 0:
+#                       message += (f" | {'Validated' if validation else 'Processed'}:"
+#                                   f" {max(ingestion_processed, ingestion_processed_second_round)}")
+#                   else:
+#                       message += f" | {'Validated' if validation else 'Processed'}: {ingestion_processed_second_round}"
+#               elif ingestion_processed > 0:
+#                   message += f" | {'Prevalidated' if validation else 'Preprocessed'}: {ingestion_processed}"
+#               if ingestion_posts > 0:
+#                   message += f" | {'Posts' if validation else 'Creates'}: {ingestion_posts}"
+#               if ingestion_patches > 0:
+#                   message += f" | {'Patches' if validation else 'Updates'}: {ingestion_patches}"
+#               if ingestion_lookups > 0:
+#                   message += f" | Lookups: {ingestion_lookups}"
+#               if ingestion_errors > 0:
+#                   message += f" | Errors: {ingestion_errors}"
+                if verbose:
+                    if ingestion_message := status.get("ingestion_message_verbose"):
+                        message += " | " + ingestion_message
+                elif ingestion_message := status.get("ingestion_message"):
+                    message += " | " + ingestion_message
             if include_status:
                 message += f" | Status: {check_status}"
-            message += f" | Next: {'Now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
+            #message += f" | Next: {'Now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
+            message += f" ‖ Progress"
+            if ingestion_started > 0 and not ("Item" in message):
+                import pdb ; pdb.set_trace()
+                pass
             bar.set_description(message)
             if done:
                 bar.close()
@@ -1049,16 +1105,21 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     check_done = False
     check_status = None
     check_response = None
+    ingestion_status = {}
     for n in range(PROGRESS_MAX_CHECKS):
         if ((most_recent_server_check_time is None) or
             ((time.time() - most_recent_server_check_time) >= PROGRESS_CHECK_SERVER_INTERVAL)):  # noqa
             if most_recent_server_check_time is None:
-                progress({"start": True})
+                progress({"start": True, **ingestion_status})
             else:
-                progress({"check_server": True, "status": (check_status or "unknown").title()})
-            # Do the actual server check here.
+                progress({"check_server": True, "status": (check_status or "unknown").title(), **ingestion_status})
+            # Do the actual portal check here (i.e by fetching the IngestionSubmission object)..
             [check_done, check_status, check_response] = (
                 _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server))
+            # Do the (new/2024-03-25) portal ingestion-status check here which reads
+            # from Redis where the ingester is (now/2024-03-25) writing.
+            ingestion_status = portal.get(f"/ingestion-status/{uuid}").json()
+            ingestion_status = {"ingestion_" + key: value for key, value in ingestion_status.items()}
             if check_done:
                 break
             if check_submission_script:
@@ -1071,13 +1132,14 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             server_check_count += 1
             most_recent_server_check_time = time.time()
         progress({"check": True,
-                  "next": PROGRESS_CHECK_SERVER_INTERVAL - (time.time() - most_recent_server_check_time)})
+                  "next": PROGRESS_CHECK_SERVER_INTERVAL - (time.time() - most_recent_server_check_time),
+                  **ingestion_status})
         time.sleep(PROGRESS_INTERVAL)
     if check_done:
         progress({"finish": True, "done": True,
-                  "status": (check_status or "unknown").title(), "response": check_response})
+                  "status": (check_status or "unknown").title(), "response": check_response, **ingestion_status})
     else:
-        progress({"finish": True})
+        progress({"finish": True, **ingestion_status})
 
     if not check_done:
         command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
@@ -2133,7 +2195,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       upload_folder: Optional[str] = None,
                       subfolders: bool = False, exit_immediately_on_errors: bool = False,
                       ref_nocache: bool = False, output_file: Optional[str] = None,
-                      json_only: bool = False, noprogress: bool = False,
+                      noanalyze: bool = False, json_only: bool = False, noprogress: bool = False,
                       verbose_json: bool = False, verbose: bool = False, quiet: bool = False,
                       debug: bool = False, debug_sleep: Optional[str] = None) -> StructuredDataSet:
 
@@ -2336,8 +2398,11 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         _print_structured_data_verbose(portal, structured_data, ingestion_filename, upload_folder=upload_folder,
                                        recursive=subfolders, validation=validation, verbose=verbose)
     elif not quiet:
-        _print_structured_data_status(portal, structured_data, validation=validation,
-                                      report_updates_only=True, noprogress=noprogress, verbose=verbose, debug=debug)
+        if not noanalyze:
+            _print_structured_data_status(portal, structured_data, validation=validation,
+                                          report_updates_only=True, noprogress=noprogress, verbose=verbose, debug=debug)
+        else:
+            PRINT("Skipping analysis of metadata wrt creates/updates to be done (via --noanalyze).")
     if not validation_okay:
         if not yes_or_no(f"There are some preliminary errors outlined above;"
                          f" do you want to continue with {'validation' if validation else 'submission'}?"):
@@ -2576,6 +2641,8 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
         _print_structured_data_status(portal, structured_data,
                                       validation=validation,
                                       report_updates_only=True, noprogress=noprogress, verbose=verbose)
+    else:
+        PRINT("Skipping analysis of metadata wrt creates/updates to be done (via --noanalyze).")
 
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet,

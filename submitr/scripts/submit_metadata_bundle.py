@@ -168,6 +168,8 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--noadmin', action="store_true",
                         help="For testing only; assume not admin user.", default=False)
     parser.add_argument('--details', action="store_true", help="More details in output.", default=False)
+    parser.add_argument('--noanalyze', action="store_true",
+                        help="Do not analyze metadata for creates/updates to be done..", default=False)
     parser.add_argument('--json', action="store_true",
                         help="Output the parsed JSON of the metadata file.", default=False)
     parser.add_argument('--json-only', action="store_true",
@@ -276,6 +278,7 @@ def main(simulated_args_for_testing=None):
                              validate_remote_only=args.validate_remote_only,
                              validate_local_skip=args.validate_local_skip,
                              validate_remote_skip=args.validate_remote_skip,
+                             noanalyze=args.noanalyze,
                              json_only=args.json_only,
                              ref_nocache=args.ref_nocache,
                              verbose_json=args.json,
