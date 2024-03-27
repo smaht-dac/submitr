@@ -984,10 +984,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         # From (new/2024-03-25) /ingestion-status/{submission_uuid} call.
         ingestion_total = 0
         ingestion_started = 0
-        ingestion_item = 0
         ingestion_started_second_round = 0
-        ingestion_item_second_round = 0
-        ingestion_phase = 0
         def handle_control_c(signum, frame):  # noqa
             if yes_or_no("\nCTRL-C: You have interrupted this process. Do you want to TERMINATE processing?"):
                 PRINT("Premature exit.")
@@ -995,7 +992,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             PRINT_STDOUT("Continuing ...")
         def progress_report(status: dict) -> None:  # noqa
             nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status, noprogress, validation
-            nonlocal ingestion_total , ingestion_started, ingestion_started_second_round
+            nonlocal ingestion_total, ingestion_started, ingestion_started_second_round, verbose
             if noprogress:
                 return
             # This are from the (new/2024-03-25) /ingestion-status/{submission_uuid} call.
@@ -1009,8 +1006,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             # This string is from the /ingestion-status endpoint, really as a convenience/courtesey
             # so we don't have to cobbble together our own string; but we could also build the
             # message ourselves manually here from the counts contained in the same response.
-            ingestion_message = status.get("ingestion_message", "")
-            ingestion_message_verbose = status.get("ingestion_message_verbose", "")
+            ingestion_message = (status.get("ingestion_message_verbose", "")
+                                 if verbose else status.get("ingestion_message", ""))
             # Phases: 0 means waiting for server response; 1 means loadxl round one; 2 means loadxl round two.
             ingestion_phase = 2 if ingestion_started_second_round > 0 else (1 if ingestion_started > 0 else 0)
             done = False
@@ -1037,6 +1034,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             if ingestion_started == 0:
                 message += f" | Waiting on server"
             else:
+                # FYI: bar.update(0) needed after bar.n assigned make ETA correct.
                 if ingestion_done:
                     bar.total = ingestion_total
                     bar.n = ingestion_total
@@ -1049,10 +1047,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                     bar.total = ingestion_total
                     bar.n = ingestion_item
                     bar.update(0)
-                if verbose:
-                    if ingestion_message := status.get("ingestion_message_verbose"):
-                        message += " | " + ingestion_message
-                elif ingestion_message := status.get("ingestion_message"):
+                if ingestion_message:
                     message += " | " + ingestion_message
             if include_status:
                 message += f" | Status: {check_status}"
