@@ -187,7 +187,7 @@ def test_c4_383_regression_action():
                                 with mock.patch(
                                         "dcicutils.portal_utils.Portal.get_metadata") as mock_requests_get_metadata:
 
-                                    def mocked_requests_get_metadata(url):
+                                    def mocked_requests_get_metadata(url, raise_exception=True):
                                         return INGESTION_FRAGMENT_WITH_UPLOAD_INFO
 
                                     def mocked_requests_get(url, raise_for_status=False, *args, **kwargs):

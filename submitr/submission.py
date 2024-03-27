@@ -1014,7 +1014,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             if status.get("start"):
                 signal.signal(signal.SIGINT, handle_control_c)
                 bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
-                bar = tqdm(total=max_checks, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
+                bar = tqdm(total=max_checks, desc="Calculating", dynamic_ncols=True,
+                           bar_format=bar_format, unit="", file=sys.stdout)
                 return
             elif status.get("finish") or nchecks >= max_checks:
                 check_status = status.get("status")
@@ -1032,6 +1033,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                     bar.update(1)
             message = f"▶ {title} Pings: {nchecks_server}"
             if ingestion_started == 0:
+                # message += f" | Waiting on server ... "
                 message += f" | Waiting on server"
             else:
                 # FYI: bar.update(0) needed after bar.n assigned make ETA correct.
@@ -1052,7 +1054,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             if include_status:
                 message += f" | Status: {check_status}"
             # message += f" | Next: {'Now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
-            message += f" ‖ Progress"
+            # message += f" ‖ Progress"
+            message += f" "
             bar.set_description(message)
             if done:
                 bar.close()
@@ -1751,10 +1754,13 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                             server=server, app=app, env_from_env=env_from_env,
                             report=True, note="Resuming File Upload")
 
-    if not (response := portal.get_metadata(uuid)):
+    if not (response := portal.get_metadata(uuid, raise_exception=False)):
         if accession_id := _extract_accession_id(uuid):
-            if not (response := portal.get_metadata(uuid := accession_id)):
-                raise Exception(f"Given accession ID not found: {uuid}")
+            if not (response := portal.get_metadata(accession_id)):
+                raise Exception(f"Given accession ID not found: {accession_id}")
+            if (display_title := response.get("display_title")) and not (uuid == display_title):
+                raise Exception(f"Accession ID found but wrong filename: {accession_id} vs {uuid}")
+            uuid = accession_id
         else:
             raise Exception(f"Given ID not found: {uuid}")
 
@@ -2297,8 +2303,9 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 nrefs_exists_cache_hit = status.get("refs_exists_cache_hit") or 0
                 nrefs_lookup_cache_hit = status.get("refs_lookup_cache_hit") or 0
                 nrefs_invalid = status.get("refs_invalid") or 0
-                bar.update(increment)
-            else:
+                if not status.get("finish"):
+                    bar.update(increment)
+            elif not status.get("finish"):
                 bar.update(increment)
             message = f"▶ Rows: {nrows} | Parsed: {nrows_processed}"
             if nrefs_total > 0:
@@ -2316,6 +2323,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             message += " | Progress"
             bar.set_description(message)
             if status.get("finish"):
+                bar.update(0)
                 bar.close()
                 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
