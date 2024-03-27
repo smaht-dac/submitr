@@ -1,9 +1,12 @@
+# import argparse
 import pytest
 import tempfile
 from unittest import mock
 from .. import submission as submission_module
 from ..submission import DEFAULT_INGESTION_TYPE
-from ..scripts.submit_metadata_bundle import main as submit_metadata_bundle_main
+from ..scripts.submit_metadata_bundle import (
+    main as submit_metadata_bundle_main
+)
 from ..scripts import submit_metadata_bundle as submit_metadata_bundle_module
 from .testing_helpers import system_exit_expected, argparse_errors_muffled
 
@@ -37,7 +40,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'server': None,
         # 'institution': None,
         # 'project': None,
-        'validate_only': False,
+        'validate_remote_only': False,
         'upload_folder': None,
         'no_query': False,
         'subfolders': False,
@@ -49,7 +52,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'server': "some-server",
         # 'institution': "some-institution",
         # 'project': "some-project",
-        'validate_only': True,
+        'validate_remote_only': True,
         'upload_folder': None,
         'no_query': False,
         'subfolders': False,
@@ -72,7 +75,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'server': "some-server",
         # 'institution': "some-institution",
         # 'project': "some-project",
-        'validate_only': False,
+        'validate_remote_only': False,
         'upload_folder': 'a-folder',
         'no_query': False,
         'subfolders': False,
@@ -102,7 +105,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'server': "some-server",
         # 'institution': "some-institution",
         # 'project': "some-project",
-        'validate_only': True,
+        'validate_remote_only': True,
         'upload_folder': 'a-folder',
         'no_query': False,
         'subfolders': False,
@@ -136,7 +139,7 @@ def test_submit_metadata_bundle_script(keyfile):
         'server': "some-server",
         # 'institution': "some-institution",
         # 'project': "some-project",
-        'validate_only': True,
+        'validate_remote_only': True,
         'upload_folder': None,
         'no_query': True,
         'subfolders': True,

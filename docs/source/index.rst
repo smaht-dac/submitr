@@ -1,73 +1,118 @@
 .. raw:: html
 
-   <div style="width: 100%; text-align: center;">
-     <iframe src="_static/logo.html" style="width: 575px; height: 220px; border: none; margin: 0; padding: 0;" />
+   <div style="width: 100%; text-align: left; margin-left:-10px">
+     <iframe src="_static/logo.html" style="width: 555px; height: 155px; border: none; margin: 0; padding: 0;" />
       [SMaHT submitr logo]
      </iframe>
    </div>
 
-.. warning::
-
-   **THIS IS A PRE-RELEASE VERSION.**
-   Version 1.0 is forthcoming circa February 2024.
-
+-----------------------------
 
 ========
 Overview
 ========
 
-------------------------------------------------
-smaht-submitr: A remote file submitter for SMaHT
-------------------------------------------------
+**smaht-submitr**: A metadata and file submission tool for :toplink:`SMaHT Portal <https://data.smaht.org/>`.
 
-.. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
-    :target: https://github.com/smaht-dac/submitr/actions
-    :alt: Build Status
+.. note::
+   You need a SMaHT account to use this software. For information on obtaining an account please see the
+   `SMaHT Portal Account Creation <account_creation.html>`_ page. See the `About <about.html>`_ page 
+   for more general information about this tool and the SMaHT project.
 
-.. image:: https://coveralls.io/repos/github/smaht-dac/submitr/badge.svg
-    :target: https://coveralls.io/github/smaht-dac/submitr
-    :alt: Coverage Percentage
+.. .. image:: https://github.com/smaht-dac/submitr/actions/workflows/main.yml/badge.svg
+..     :target: https://github.com/smaht-dac/submitr/actions
+..     :alt: Build Status
 
-.. image:: https://readthedocs.org/projects/submitr/badge/?version=latest
-    :target: https://submitr.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
+.. .. image:: https://coveralls.io/repos/github/smaht-dac/submitr/badge.svg
+..     :target: https://coveralls.io/github/smaht-dac/submitr
+..     :alt: Coverage Percentage
+
+.. .. image:: https://readthedocs.org/projects/submitr/badge/?version=latest
+..     :target: https://submitr.readthedocs.io/en/latest/?badge=latest
+..     :alt: Documentation Status
 
 
 Description
 ===========
 
-The ``smaht-submitr`` is a command-line tool for uploading files to SMaHT.
-It is implemented as Python package and distributed on `PyPi <https://pypi.org/>`_ here: `smaht-submitr <https://pypi.org/project/smaht-submitr/>`_
+The :boldcode:`smaht-submitr` software is a command-line tool for importing and uploading
+metadata and files into the :toplink:`SMaHT Portal <https://data.smaht.org/>`.
+It is implemented as Python package and distributed on :toplink:`PyPi <https://pypi.org/>`
+here: :toplink:`smaht-submitr <https://pypi.org/project/smaht-submitr/>`.
+This document explains how to get up and running with the use of this tool.
+
+.. raw:: html
+
+    For more information about this software and the SMaHT project see: <strong><a href="about.html">About</a></strong>
+    <br /> <br />
+
+.. tip::
+    This documentation covers the `mechanics` of using ``smaht-submitr``.
+    It does not at this time cover the `semantics` of the metadata;
+    though there is an `Object Model <object_model.html>`_ reference.
+    For more information on this aspect of submission please see: **TBD**
 
 
 System Requirements
 ===================
 
-* ``python`` (>= ``3.8`` and <= ``3.11``) 
-* ``pip`` (>= ``22.0.0``)
-* ``poetry`` (>= ``1.4.0``)
-* ``smaht-portal`` (>= ``1.0.0``)
+* ``python`` 3.9, 3.10, or 3.11
+
+.. note::
+    These instructions are targeted specifically for **Mac OS X** users.
+    For **Linux** users, these should be generally applicable (with slight modifications);
+    presumed to be a bit more advanced, such users should have little difficulty.
+    For **Windows** users, very little testing has been done; not recommended; but more experienced users should be able to work through it.
 
 
 What To Do Next
 ===============
 
-Advanced users who have already installed Python
-can proceed to instructions for **Installing smaht-submitr**.
+More experienced users who already have Python installed
+to their satisfaction can proceed to instructions for `Installation <installation.html>`_.
 
 Less experienced users should start with instructions
-for **Installing Prerequisites**,
+for `Installation Prerequisites <installation_prerequisites.html>`_,
 which will introduce some basics for working with the terminal
-and installing the dependencies to run this package.
+and installing the dependencies for this tool:
 
+* `Installation Prerequisites <installation_prerequisites.html>`_
 
+Below (and to the left) is the general table of contents for this documentation.
 
 .. toctree::
   :maxdepth: 1
+  :caption: General  ℹ️
 
   self
-  installing_prerequisites
+  about
+
+.. toctree::
+  :caption: Setup  ⚙️
+  :maxdepth: 1
+
   installation
+  account_creation
   credentials
+
+.. toctree::
+  :caption: Documentation  📄
+  :maxdepth: 1
+
   usage
-  submitr
+  uploading_files
+  advanced_usage
+
+..  Commented out (2023-03-04) from below toctree: Decided do not really need this as this is live on portal.
+..  consortia
+..  submission_centers
+..  file_formats
+..  reference_genomes
+
+.. toctree::
+  :caption: Reference 🔍
+  :maxdepth: 1
+
+
+  object_model
+  glossary

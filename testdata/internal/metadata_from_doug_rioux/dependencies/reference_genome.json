@@ -1,0 +1,36 @@
+[
+    {
+        "code": "GRCh38",
+        "files": [
+            "cca516c0-3931-4fbe-bc2c-c26fe9ba23fa",
+            "f5ad62fa-5a76-4cf3-bf66-3b71d740be22"
+        ],
+        "title": "GRCh38 [GCA_000001405.15]",
+        "status": "released",
+        "aliases": [
+            "smaht:ReferenceGenome-GRCh38_GCA_000001405.15"
+        ],
+        "accession": "SMARGS3396DF",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "GRCh38",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "e89937e6-80d3-4605-8dea-4a74c7981a9f"
+    },
+    {
+        "title": "GRCh37 [GCA_000001405.14]",
+        "status": "released",
+        "accession": "SMARGDAAV8KH",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "GRCh37",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "8ec9174c-6c16-4868-82d1-00b4e295a47b"
+    }
+]

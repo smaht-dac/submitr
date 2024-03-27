@@ -15,7 +15,7 @@ from .testing_helpers import system_exit_expected, argparse_errors_muffled
 @pytest.mark.parametrize("keyfile", [None, "foo.bar"])
 def test_resume_uploads_script(keyfile):
 
-    def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
+    def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None, expect_output=[]):
         output = []
         with argparse_errors_muffled():
             with temporary_directory() as tmpdir:
@@ -24,7 +24,7 @@ def test_resume_uploads_script(keyfile):
                 for i in range(len(args_in)):
                     if "${tmpdir}" in args_in[i]:
                         args_in[i] = args_in[i].replace("${tmpdir}", tmpdir)
-                with mock.patch.object(resume_uploads_module, "print") as mock_print:
+                with mock.patch.object(resume_uploads_module, "PRINT") as mock_print:
                     mock_print.side_effect = lambda *args: output.append(" ".join(args))
                     with mock.patch.object(resume_uploads_module, "resume_uploads") as mock_resume_uploads:
                         with system_exit_expected(exit_code=expect_exit_code):
@@ -33,9 +33,10 @@ def test_resume_uploads_script(keyfile):
                         assert mock_resume_uploads.call_count == (1 if expect_called else 0)
                         if expect_called:
                             assert mock_resume_uploads.called_with(**expect_call_args)
-                        assert output == []
+                        assert output == expect_output
 
-    test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
+    test_it(args_in=[], expect_exit_code=2, expect_called=False,
+            expect_output=["Missing submission UUID or referenced file UUID or accession ID."])  # Missing args
     test_it(args_in=['some-guid'], expect_exit_code=0, expect_called=True, expect_call_args={
         'bundle_filename': None,
         'env': None,
@@ -174,7 +175,7 @@ def test_c4_383_regression_action():
             upload_info["filename"] = os.path.join(current_dir, upload_info["filename"])
             open(upload_info["filename"], "w")
         with override_environ(SMAHT_KEYS_FILE=None):
-            with mock.patch.object(resume_uploads_module, "print") as mock_print:
+            with mock.patch.object(resume_uploads_module, "PRINT") as mock_print:
                 mock_print.side_effect = lambda *args: output.append(" ".join(args))
                 # This is the directory we expect the uploaded file to get merged against.
                 # We want to really run the code logic to make sure it does this,

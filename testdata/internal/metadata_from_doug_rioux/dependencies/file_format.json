@@ -1,0 +1,1191 @@
+[
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-rck"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "rck",
+        "description": "RCK (Read Count Keeper) format, used to store pileup read counts by strand and allele",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "rck",
+        "uuid": "228190b1-4178-46ad-872e-9b8ca1931a31"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-bed"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bed",
+        "description": "BED (Browser Extensible Data) format is a text file format used to store genomic regions as coordinates and associated annotations",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "bed",
+        "uuid": "4c04f6de-89a7-4477-8dc4-811b50c67401"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-png"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "png",
+        "description": "PNG (Portable Graphics Format). Format used to represent an uncompressed image",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "png",
+        "uuid": "7c525767-e142-45f6-b4c3-84f52bc6f4cc"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-rck_tar_index"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "rck_tar_index",
+        "description": "Companion format to RCK archive. Format used to represent the index of files in the archive",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "rck.tar.index",
+        "uuid": "1c7dc723-811c-4fcf-b8e5-d5e17a2013f7"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-alt"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "alt",
+        "description": "Companion format to BWT",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "alt",
+        "uuid": "9ed3e9f9-fee2-47e3-bbe3-c63a52f8d3b8"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-vcf"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "vcf",
+        "description": "Format used to represent genomics variants",
+        "valid_item_types": [
+            "OutputFile",
+            "ReferenceFile",
+            "VariantCalls"
+        ],
+        "extra_file_formats": [
+            "ec96f95a-cf13-4633-ab0d-c4a5138bbe0b"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "vcf",
+        "uuid": "fcc2647d-301b-4888-8d9d-83ea4270309c"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-dbnsfp_gz_tbi"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "dbnsfp_gz_tbi",
+        "description": "Companion format to compressed dbNSFP. Format used to represent the index of a compressed dbNSFP file (Tabix generated)",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "dbnsfp.gz.tbi",
+        "uuid": "311ac7bf-e1d5-463f-af15-61ebfea29608"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-sa"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "sa",
+        "description": "Companion format to BWT",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "sa",
+        "uuid": "11f2fc36-9a65-4d60-9365-d8ff241df4f7"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-priors"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "priors",
+        "description": "TXT format to report metrics generated by Sentieon OrientationBias algorithm",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "priors",
+        "uuid": "c4f4538f-ff79-42f0-a3be-d416251475ae"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-tsv_gz"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "tsv_gz",
+        "description": "Compressed version of a TSV file. Format used to represent Tab-Separate Values",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "extra_file_formats": [
+            "829ed303-e427-4d9a-a217-be75ad11317e"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "tsv.gz",
+        "uuid": "11ca3783-db6e-430e-997b-9cf0ca275814"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-tsv_gz_tbi"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "tsv_gz_tbi",
+        "description": "Companion format to compressed TSV. Format used to represent the index of a compressed TSV file (Tabix generated)",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "tsv.gz.tbi",
+        "uuid": "829ed303-e427-4d9a-a217-be75ad11317e"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-tar"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "tar",
+        "description": "Format used to represent an archive of files",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "tar",
+        "uuid": "39866342-e4f8-4a50-87bf-b61a782549c8"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-ann"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "ann",
+        "description": "Companion format to BWT",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "ann",
+        "uuid": "106199e5-5a85-4817-9a55-7b31698e1fda"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-gvcf"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "gvcf",
+        "description": "Format used to represent genomics variant sites, GVCF has records for all sites (whether there is a variant call there or not)",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "gvcf",
+        "uuid": "f592a45e-3b8a-4bad-bfd4-52acf9fd663d"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-bed_gz"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bed_gz",
+        "description": "Compressed version of a BED file. Format used to store genomic regions as coordinates and associated annotations",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "extra_file_formats": [
+            "40346690-6359-4436-97ff-562698ab4b31"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "bed.gz",
+        "uuid": "4f074eca-29a0-4a49-b335-aef988e6cbd7"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-bigWig"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bigWig",
+        "description": "Binary version of a Wig file. Format used for display of dense continuous data with genomic coordinates",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "bw",
+        "uuid": "33f30c42-d582-4163-af44-fecf586b9dd3"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-vcf_gz"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "vcf_gz",
+        "description": "Compressed version of a VCF file. Format used to represent genomics variants",
+        "valid_item_types": [
+            "OutputFile",
+            "ReferenceFile",
+            "VariantCalls"
+        ],
+        "extra_file_formats": [
+            "f84f1922-7f4e-4afc-922f-bec620969bf1",
+            "ec465f66-f1ae-44e0-9885-a2b24e7ce268"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "vcf.gz",
+        "uuid": "1b8f525f-aecb-4211-9ae5-a2c998b05599"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-vcf_idx"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "vcf_idx",
+        "description": "Companion format to VCF. Format used to represent the index of a VCF file",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "vcf.idx",
+        "uuid": "ec96f95a-cf13-4633-ab0d-c4a5138bbe0b"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-fastq_gz"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "fastq_gz",
+        "description": "Format used to represent short read sequence data, compressed",
+        "valid_item_types": [
+            "OutputFile",
+            "ReferenceFile",
+            "UnalignedReads"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "fastq.gz",
+        "other_allowed_extensions": [
+            "fq.gz"
+        ],
+        "uuid": "c13d06cf-218e-4f61-aaf0-91f226248b2c"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-contamination"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "contamination",
+        "description": "TXT format to report metrics generated by Sentieon ContaminationModel algorithm",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "contamination",
+        "uuid": "d0cba8b5-cd01-41f5-bfed-e5369293d2dd"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-json"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "json",
+        "description": "Format used to represent JavaScript Object Notation (JSON)",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "json",
+        "uuid": "ff12517a-d51e-45a4-8f44-a1cfe418dba5"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-zip"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "zip",
+        "description": "Archive file format that supports lossless data compression",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "zip",
+        "uuid": "1125243b-3acd-4793-9264-4abd7d788e58"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-bam_bai"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bam_bai",
+        "description": "Companion format to BAM. Format used to represent the index of a BAM file.",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "bam.bai",
+        "uuid": "d13d06c1-218e-4f61-aaf0-91f226248b3c"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-cram"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "cram",
+        "description": "Compressed version of a BAM file. Format used to represent aligned sequences",
+        "valid_item_types": [
+            "OutputFile",
+            "ReferenceFile",
+            "AlignedReads"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "cram",
+        "uuid": "d363c5f9-7159-45b1-b516-e5ec433f9b86"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-fa_fai"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "fa_fai",
+        "description": "Companion format to FASTA",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "fa.fai",
+        "uuid": "fb728bb4-bc56-46d5-8df5-a05562826b9a"
+    },
+    {
+        "status": "in review",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "fastq",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "fastq",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "uuid": "eb417c0a-70dd-42e3-9841-ac7f1ee22962"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-md5_list"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "md5_list",
+        "description": "Format to represent the list of contigs MD5 produced by cramtools getref command",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "md5_list",
+        "uuid": "1362126e-e6ee-4010-9fb8-06e9b39dbb83"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-sam"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "sam",
+        "description": "Format used to represent aligned sequences",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "sam",
+        "uuid": "3311fb05-a0df-43e5-b0af-234c82b6bee9"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-vcf_gz_stats"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "vcf_gz_stats",
+        "description": "Companion format to compressed VCF. Format used to collect metrics for a compressed VCF file",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "vcf.gz.stats",
+        "uuid": "ec465f66-f1ae-44e0-9885-a2b24e7ce268"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-vcf_gz_tbi"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "vcf_gz_tbi",
+        "description": "Companion format to compressed VCF. Format used to represent the index of a compressed VCF file (Tabix generated)",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "vcf.gz.tbi",
+        "uuid": "f84f1922-7f4e-4afc-922f-bec620969bf1"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-gff3"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "gff3",
+        "description": "GFF (General Feature Format) Version 3, used for storing genomic features as a text file",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "gff3",
+        "uuid": "f87864e0-7d55-46bd-a67a-fb8753ce87db"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-dbnsfp_gz"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "dbnsfp_gz",
+        "description": "Format to represent the dbNSFP database as a compressed VCF",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "extra_file_formats": [
+            "311ac7bf-e1d5-463f-af15-61ebfea29608",
+            "ac822ea4-d281-41e0-b9c9-f283c51f1c15"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "dbnsfp.gz",
+        "uuid": "65a2cca2-dae8-4ff2-ac8b-aa1e92f5416b"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-bwt"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bwt",
+        "description": "Format used to represent the genome index based on Burrows-Wheeler Transform (BWT)",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "extra_file_formats": [
+            "106199e5-5a85-4817-9a55-7b31698e1fda",
+            "8db70ed6-0121-4fe1-a72e-d91dc5aa6cd3",
+            "7373ca48-0b3e-467b-967a-80870846f89b",
+            "11f2fc36-9a65-4d60-9365-d8ff241df4f7",
+            "9ed3e9f9-fee2-47e3-bbe3-c63a52f8d3b8"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "bwt",
+        "uuid": "813b0001-5f3f-4e28-9203-4cdf261e19c4"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-plugins_tar"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "plugins_tar",
+        "description": "Companion format to VEP archive. Format used to represent VEP plugins as archive, compressed",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "plugins.tar.gz",
+        "uuid": "65ccbf65-80f9-41b4-b002-468500821c62"
+    },
+    {
+        "status": "in review",
+        "aliases": [
+            "smaht:FileFormat-bam_pbi"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bam_pbi",
+        "description": "Companion format to BAM. Format used to represent the index of a PacBio BAM file.",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "bam.pbi",
+        "uuid": "9941b00d-fffe-482b-b585-52e0b303e289"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-rck_gz_tbi"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "rck_gz_tbi",
+        "description": "Companion format to compressed RCK. Format used to represent the index of a compressed RCK file (Tabix generated)",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "rck.gz.tbi",
+        "uuid": "c55ace88-3289-49b0-a67a-c046e1004e5a"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-big"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "big",
+        "description": "Format used to represent a binary index for the genome",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "big",
+        "uuid": "f66af4df-c107-44f0-bc94-227f1b4ccf72"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-Rdata"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "Rdata",
+        "description": "Format used to represent R objects",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "Rdata",
+        "uuid": "ce424ef5-86c8-4522-aecf-6c1c98f365b5"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-wig"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "wig",
+        "description": "Format used for display of dense continuous data with genomic coordinates",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "wig",
+        "uuid": "19e290b5-2743-4311-a860-5dfca41858b1"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-vep_tar"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "vep_tar",
+        "description": "Format to represent VEP datasource as archive, compressed",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "extra_file_formats": [
+            "65ccbf65-80f9-41b4-b002-468500821c62"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "vep.tar.gz",
+        "uuid": "d05f9688-0ee1-4a86-83f4-656e6e21352a"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-fa"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "fa",
+        "description": "FASTA format. Format used to represent the genome reference sequence",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "extra_file_formats": [
+            "4ed9f7e0-2b2f-4aca-9533-a0a652b43442",
+            "fb728bb4-bc56-46d5-8df5-a05562826b9a"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "fa",
+        "uuid": "5ced774b-a73e-4d1b-8186-d7fbbde7a3c2"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-tsv"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "tsv",
+        "description": "Format used to represent Tab-Separate Values (TSV)",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "tsv",
+        "uuid": "c369d5d6-2861-47ab-bc39-99083cfe48bd"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-tar_gz"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "tar_gz",
+        "description": "Compressed version of a TAR archive. Format used to represent an archive of files",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "tar.gz",
+        "uuid": "f2ec3b9f-a898-4e6c-8da5-734a7a6410b8"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-pac"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "pac",
+        "description": "Companion format to BWT",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "pac",
+        "uuid": "7373ca48-0b3e-467b-967a-80870846f89b"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-amb"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "amb",
+        "description": "Companion format to BWT",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "amb",
+        "uuid": "8db70ed6-0121-4fe1-a72e-d91dc5aa6cd3"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-vcf_tar"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "vcf_tar",
+        "description": "Format used to represent an archive of compressed VCF files",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "vcf.tar",
+        "uuid": "3d140fc3-fd0e-4d09-8294-4536e388e665"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-txt"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "txt",
+        "description": "Format used to represent plain text",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "txt",
+        "uuid": "0cd4e777-a596-4927-95c8-b07716121aa3"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-chain"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "chain",
+        "description": "Format used to represent pairwise alignment that allow gaps in both sequences simultaneously, compressed",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "chain.gz",
+        "uuid": "dd1ef82d-da5e-4680-bd5c-cf471a87eb5b"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-rck_tar"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "rck_tar",
+        "description": "Format used to represent an archive of compressed RCK files",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "extra_file_formats": [
+            "1c7dc723-811c-4fcf-b8e5-d5e17a2013f7"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "rck.tar",
+        "uuid": "39f836d8-bbb1-46c7-80d4-e321d4a44204"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-bam"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bam",
+        "description": "Binary version of a SAM file. Format used to represent aligned sequences",
+        "valid_item_types": [
+            "OutputFile",
+            "ReferenceFile",
+            "AlignedReads",
+            "UnalignedReads"
+        ],
+        "extra_file_formats": [
+            "d13d06c1-218e-4f61-aaf0-91f226248b3c",
+            "9941b00d-fffe-482b-b585-52e0b303e289"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "bam",
+        "uuid": "d13d06cf-218e-4f61-aaf0-91f226248b3c"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-dbnsfp_readme_txt"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "dbnsfp_readme_txt",
+        "description": "Companion format to compressed dbNSFP. Format used to store dbNSFP README as plain text",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "dbnsfp.readme.txt",
+        "uuid": "ac822ea4-d281-41e0-b9c9-f283c51f1c15"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-gvcf_gz"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "gvcf_gz",
+        "description": "Compressed version of a GVCF file. Format used to represent genomics variant sites",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "extra_file_formats": [
+            "b01ee86e-b2c7-4725-81d7-798718674485"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "gvcf.gz",
+        "uuid": "ad47d469-4561-4234-bce2-820f08f58e7c"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-pdf"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "pdf",
+        "description": "Format used to represent Portable Document Format (PDF)",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "pdf",
+        "uuid": "81b7ce7f-64ed-4933-96d1-b6df498a7664"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-bed_gz_tbi"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bed_gz_tbi",
+        "description": "Companion format to compressed BED. Format used to represent the index of a compressed BED file (Tabix generated)",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "bed.gz.tbi",
+        "uuid": "40346690-6359-4436-97ff-562698ab4b31"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-rck_gz"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "rck_gz",
+        "description": "Compressed version of RCK file. Format used to store pileup read counts by strand and allele",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "extra_file_formats": [
+            "c55ace88-3289-49b0-a67a-c046e1004e5a"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "rck.gz",
+        "uuid": "20d4d3aa-5f1c-4b75-9e25-73f9f370fefa"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-dict"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "dict",
+        "description": "Companion format to FASTA",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "dict",
+        "uuid": "4ed9f7e0-2b2f-4aca-9533-a0a652b43442"
+    },
+    {
+        "status": "released",
+        "aliases": [
+            "smaht:FileFormat-gvcf_gz_tbi"
+        ],
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "gvcf_gz_tbi",
+        "description": "Companion format to compressed GVCF. Format used to represent the index of a compressed GVCF file (Tabix generated)",
+        "valid_item_types": [
+            "ReferenceFile",
+            "OutputFile"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "gvcf.gz.tbi",
+        "uuid": "b01ee86e-b2c7-4725-81d7-798718674485"
+    }
+]

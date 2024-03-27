@@ -1,0 +1,268 @@
+[
+    {
+        "code": "010",
+        "title": "scNanoSeq",
+        "status": "released",
+        "accession": "SMAASJXJ2JI4",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "sc_nanoseq",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "38338411-2198-4e32-adb7-b540e0d92f55"
+    },
+    {
+        "code": "104",
+        "title": "STORM-Seq",
+        "status": "released",
+        "accession": "SMAASVN9ZFHK",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "sc_storm_seq",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "ba2bf8d5-8c22-4ef3-aebf-e1aa5233e666"
+    },
+    {
+        "code": "004",
+        "title": "Fiber-seq",
+        "status": "released",
+        "accession": "SMAAS228R9AP",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bulk_fiberseq",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "dec3e4cd-86cb-46cb-9ef7-62b1483c7ada"
+    },
+    {
+        "code": "001",
+        "title": "WGS, PCR-free",
+        "status": "released",
+        "accession": "SMAASOMSCCDC",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bulk_wgs_pcr_free",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "87fbe483-31c6-4ff7-8abd-043d185150af"
+    },
+    {
+        "code": "103",
+        "title": "snRNA-Seq",
+        "status": "released",
+        "accession": "SMAASOYJA2TY",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "sc_snrna_seq",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "6f1d4d05-9ab7-4137-9c1d-4cc04f3dd665"
+    },
+    {
+        "code": "101",
+        "title": "RNA-Seq",
+        "status": "released",
+        "accession": "SMAASDZA8VHK",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bulk_rna_seq",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "beb12f96-624b-4fb8-afd5-8c637f5c0b97"
+    },
+    {
+        "code": "013",
+        "title": "PTA-amplified WGS",
+        "status": "released",
+        "accession": "SMAASM9572O9",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "sc_pta_wgs",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "dceddc0b-5fd9-4bf5-885b-aa1922d87622"
+    },
+    {
+        "code": "007",
+        "title": "CODEC",
+        "status": "released",
+        "accession": "SMAASUW98F3I",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "codec",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "ca21c2f3-f43e-4f49-8818-e79f5d3e71b2"
+    },
+    {
+        "code": "002",
+        "title": "WGS",
+        "status": "released",
+        "accession": "SMAASGTNE3K9",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bulk_wgs",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "b9cdc538-3c12-4b0e-a9b5-8ac12c70ac32"
+    },
+    {
+        "code": "105",
+        "title": "Tranquil-Seq",
+        "status": "released",
+        "accession": "SMAAS7MOWUZQ",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "sc_tranquil_seq",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "81c130b0-4267-4cf1-adc9-73922cd1b742"
+    },
+    {
+        "code": "008",
+        "title": "Duplex Sequencing",
+        "status": "released",
+        "accession": "SMAASBHUUONO",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "duplexseq",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "900aeceb-a5b3-480a-bebe-3b8f3be669fa"
+    },
+    {
+        "code": "003",
+        "title": "Ultra-Long WGS",
+        "status": "released",
+        "accession": "SMAASREHPGB4",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bulk_ultralong_wgs",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "761d868f-f910-4790-a0c1-068f088b8ff7"
+    },
+    {
+        "code": "102",
+        "title": "MAS-ISO-Seq",
+        "status": "released",
+        "accession": "SMAAS8HYTF22",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bulk_mas_iso_seq",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "5e7ebb66-8fc1-47fe-92b3-5d96b9af2788"
+    },
+    {
+        "code": "012",
+        "title": "MALBAC-amplified WGS",
+        "status": "released",
+        "accession": "SMAASA1W8W67",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "sc_malbac_wgs",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "6f0007ab-e6b4-46cb-9a66-087915200ae2"
+    },
+    {
+        "code": "009",
+        "title": "NanoSeq",
+        "status": "released",
+        "accession": "SMAASC4X2FOJ",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "nanoseq",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "65684293-f75a-41f5-9573-972e8a422f9c"
+    },
+    {
+        "code": "011",
+        "title": "DLP+",
+        "status": "released",
+        "accession": "SMAASNFX62AD",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "sc_dlp",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "c31deedb-826c-4c31-bbb9-413574a1b4c2"
+    },
+    {
+        "code": "014",
+        "title": "scDip-C",
+        "status": "released",
+        "accession": "SMAASU2A2OGV",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "sc_dipc",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "7aae08a2-2252-458b-b5b9-711afe23bd59"
+    },
+    {
+        "code": "006",
+        "title": "NTSeq",
+        "status": "released",
+        "accession": "SMAASKV51FLR",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bulk_ntseq",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "bd334bf1-c215-47e6-9906-bc663df3defc"
+    },
+    {
+        "code": "005",
+        "title": "Hi-C",
+        "status": "released",
+        "accession": "SMAASM2H5PS3",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "bulk_hic",
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "uuid": "d9551013-ef50-4704-b7dd-375d468000ee"
+    }
+]
