@@ -1069,7 +1069,6 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     progress = define_progress_callback(PROGRESS_MAX_CHECKS,
                                         title="Validation" if validation else "Submission",
                                         include_status=False)  # include_status=not validation
-    server_check_count = 0
     most_recent_server_check_time = None
     check_submission_script_initial_check_ran = False
     check_done = False
@@ -1099,7 +1098,6 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                     PRINT(f"Details for this server validation ({uuid}) below:")
                     _print_submission_summary(portal, check_response, nofiles=nofiles,
                                               check_submission_script=True, verbose=verbose, debug=debug)
-            server_check_count += 1
             most_recent_server_check_time = time.time()
         progress({"check": True,
                   "next": PROGRESS_CHECK_SERVER_INTERVAL - (time.time() - most_recent_server_check_time),
