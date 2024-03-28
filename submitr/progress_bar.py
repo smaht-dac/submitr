@@ -55,7 +55,6 @@ class ProgressBar:
                 # and while we're at it do a little ASCII progress animation;
                 # this requires the call place "[progress]" in their display
                 # string where the progress bar should actually go.
-                # text = text.replace(" : ", " ▶ ")
                 if self._disabled and "[progress]:" in text:
                     # And another hack to really disable output on interrupt;
                     # on interrupt we set tqdm.disable to True, but output still
