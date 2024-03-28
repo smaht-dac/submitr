@@ -12,8 +12,9 @@ class ProgressBar:
     def __init__(self, total: Optional[int] = None, description: Optional[str] = None,
                  catch_interrupt: bool = True,
                  interrupt: Optional[Callable] = None,
-                 interrupt_stop: Optional[Callable] = None,
                  interrupt_continue: Optional[Callable] = None,
+                 interrupt_stop: Optional[Callable] = None,
+                 interrupt_exit: bool = False,
                  interrupt_message: Optional[str] = None,
                  printf: Optional[Callable] = None,
                  tidy_output_hack: bool = True) -> None:
@@ -22,16 +23,22 @@ class ProgressBar:
         self._bar = None
         self._disabled = False
         self._done = False
-        self._catch_interrupt = (catch_interrupt is True)
-        self._interrupt = interrupt if callable(interrupt) else None
-        self._interrupt_stop = interrupt_stop if callable(interrupt_stop) else None
-        self._interrupt_continue = interrupt_continue if callable(interrupt_continue) else None
-        self._interrupt_message = interrupt_message if isinstance(interrupt_message, str) else None
-        self._interrupt_handler = None
         self._printf = printf if callable(printf) else print
         self._tidy_output_hack = (tidy_output_hack is True)
         self._stdout_write = None
         self._index = 0
+        # Interrupt handling.
+        self._catch_interrupt = (catch_interrupt is True)
+        self._interrupt = interrupt if callable(interrupt) else None
+        self._interrupt_continue = interrupt_continue if callable(interrupt_continue) else None
+        self._interrupt_stop = interrupt_stop if callable(interrupt_stop) else None
+        if (interrupt_exit in [True, False]) and not self._interrupt_stop:
+            self._interrupt_stop = lambda: interrupt_exit
+            self._interrupt_exit = interrupt_exit
+        else:
+            self._interrupt_exit = False
+        self._interrupt_message = interrupt_message if isinstance(interrupt_message, str) else None
+        self._interrupt_handler = None
         # Not in self._initialiaze as that could be called from a (sub) thread;
         # and in Python can only set a signal (SIGINT in our case) on the main thread.
         if self._catch_interrupt:
@@ -45,6 +52,7 @@ class ProgressBar:
                 nonlocal self
                 # Very minor tqdm output tidy-up which was bugging me;
                 # tqdm forces a colon (:) before the percentage, e.g. ":  25%|".
+                # and while we're at it do a little ASCII progress animation.
                 # text = text.replace(" : ", " ▶ ")
                 char = chars[self._index % len(chars)] if not self._done else "| ✓"; self._index += 1  # noqa
                 # text = text.replace(" : ", f" {char} ")
@@ -107,11 +115,16 @@ class ProgressBar:
                 signal(SIGINT, handle_secondary_interrupt)
             self._interrupt() if self._interrupt else None
             if yes_or_no(f"\nALERT! You have interrupted this {self._interrupt_message or 'process'}."
-                         f" Do you want to stop (exit)?"):
+                         f" Do you want to stop{' (exit)' if self._interrupt_exit else ''}?"):
+                self.done()
                 restore_interrupt_handler()
-                if (self._interrupt_stop() if self._interrupt else None) is False:
-                    return
-                exit(1)
+                # Here there was an interrupt (CTRL-C) and the user confirmed (yes)
+                # that they want to stop the process; if the interrupt_stop handler
+                # is defined and returns True, then we exit the entire process here,
+                # rather than simply returning, which is the default.
+                if (self._interrupt_stop() if self._interrupt_stop else None) is True:
+                    exit(1)
+                return
             if self._am_main_thread():
                 signal(SIGINT, handle_interrupt)
             self._interrupt_continue() if self._interrupt_continue else None

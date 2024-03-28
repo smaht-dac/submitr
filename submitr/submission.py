@@ -2625,7 +2625,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
         ncreates = 0
         nupdates = 0
         nlookups = 0
-        bar = ProgressBar(nobjects, "Calculating", interrupt_message="analysis")
+        bar = ProgressBar(nobjects, "Calculating", interrupt_exit=True, interrupt_message="analysis")
         def progress_report(status: dict) -> None:  # noqa
             nonlocal bar, ntypes, nobjects, ncreates, nupdates, nlookups, noprogress
             if noprogress:

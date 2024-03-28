@@ -63,16 +63,10 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     catch_interrupt = catch_interrupt is True
     printf = print_function if callable(print_function) else print
 
+    #bar = ProgressBar(file_size, "▶ Upload progress[progress]", catch_interrupt=True, tidy_output_hack=True)
     def define_upload_file_callback() -> None:
-        nonlocal file_size
-        bar = ProgressBar(file_size, "▶ Upload progress[progress]", catch_interrupt=True, tidy_output_hack=True)
-        started = time.time()
-        nbytes_transferred = 0
-        ncallbacks = 0
-        upload_done = None
-        should_abort = False
-        threads_aborted = set()
-        thread_lock = threading.Lock()
+        nonlocal file_size #, bar
+
         def upload_file_callback_internal(nbytes_chunk: int) -> None:  # noqa
             # The execution of this may be in any number of child threads due to the way upload_fileobj
             # works; we do not create the progress bar until the upload actually starts because if we
@@ -97,6 +91,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                 cleanup()
                 upload_done = (f"Upload done: {format_size(nbytes_transferred)} in {format_duration(duration)}"
                                f" | {format_size(nbytes_transferred / duration)} per second ◀")
+
         def upload_file_callback(nbytes_chunk: int) -> None:  # noqa
             nonlocal threads_aborted, thread_lock, should_abort
             thread_id = threading.current_thread().ident
@@ -128,10 +123,26 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             cleanup()
             if upload_done:
                 printf(upload_done)
-        def abort_upload() -> None:  # noqa
+        def abort_upload() -> bool:  # noqa
             nonlocal should_abort
             with thread_lock:
                 should_abort = True
+            return False 
+
+        bar = ProgressBar(file_size, "▶ Upload progress[progress]",
+                          interrupt=pause_output,
+                          interrupt_continue=resume_output,
+                          interrupt_stop=abort_upload,
+                          interrupt_message="upload",
+                          catch_interrupt=True, tidy_output_hack=True)
+
+        started = time.time()
+        nbytes_transferred = 0
+        ncallbacks = 0
+        upload_done = None
+        should_abort = False
+        threads_aborted = set()
+        thread_lock = threading.Lock()
         upload_file_callback_type = namedtuple("upload_file_callback",
                                                ["function", "pause_output", "resume_output",
                                                 "cleanup", "done", "abort_upload"])
@@ -200,6 +211,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         printf("WARNING: Cannot verify.")
         return False
 
+    # TODO: define behavior for interrupt via callbacks to ProgressBar.
     def define_interrupt_handler() -> None:
         nonlocal catch_interrupt
         def handle_interrupt(signum, frame) -> None:  # noqa
@@ -237,7 +249,6 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         return False
 
     upload_file_callback = define_upload_file_callback()
-    interrupt_handler = define_interrupt_handler()
 
     upload_aborted = False
     s3 = boto3.client("s3", **aws_credentials)
@@ -253,6 +264,6 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     if not upload_aborted and verify_upload:
         verify_uploaded_file()
 
-    interrupt_handler.restore()
+    # interrupt_handler.restore()  # TODO
 
     return not upload_aborted
