@@ -2,6 +2,7 @@ from collections import namedtuple
 from signal import signal, SIGINT
 import sys
 import threading
+import time
 from tqdm import tqdm
 from types import FrameType as frame
 from typing import Callable, Optional
@@ -55,6 +56,7 @@ class ProgressBar:
         self._tidy_output_hack = (tidy_output_hack is True)
         self._tidy_output_hack_original_stdout_write = None
         self._index = 0
+        self._started = time.time()
         self._stop_requested = False
         self._total = total if isinstance(total, int) and total >= 0 else 0
         self._description = self._format_description(description)
@@ -125,11 +127,12 @@ class ProgressBar:
     def set_description(self, value: str) -> None:
         self._description = self._format_description(value)
         if self._bar is not None:
-            self._bar.set_description(value)
+            self._bar.set_description(self._description)
 
     def done(self) -> None:
         if self._done or self._bar is None:
             return
+        self._ended = time.time()
         self._done = True
         self._bar.set_description(self._description)
         self._bar.update(0)
@@ -160,6 +163,14 @@ class ProgressBar:
     @property
     def stop_requested(self) -> bool:
         return self._stop_requested
+
+    @property
+    def started(self) -> None:
+        return self._started
+
+    @property
+    def duration(self) -> None:
+        return time.time() - self._started
 
     def _format_description(self, value: str) -> str:
         if not isinstance(value, str):

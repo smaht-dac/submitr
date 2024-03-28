@@ -975,7 +975,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         PROGRESS_MAX_CHECKS = max(round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL), 1)
 
     def define_progress_callback(max_checks: int, title: str, include_status: bool = False) -> None:
-        bar = ProgressBar(max_checks, "Calculating")
+        bar = ProgressBar(max_checks, "Calculating", interrupt_exit=True)
         nchecks = 0
         nchecks_server = 0
         check_status = "Unknown"
@@ -2242,7 +2242,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         nrefs_exists_cache_hit = 0
         nrefs_lookup_cache_hit = 0
         nrefs_invalid = 0
-        bar = ProgressBar(nrows, "Calculating")
+        bar = ProgressBar(nrows, "Calculating", interrupt_exit=True)
 
         def progress_report(status: dict) -> None:  # noqa
             nonlocal bar, nsheets, nrows, nrows_processed, verbose, noprogress
