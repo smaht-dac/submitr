@@ -77,14 +77,8 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             # handling) pause/disable the output of the progress bar; but bar.increment_progress(0)
             # still needs to be called so it takes.
             bar.set_progress(nbytes_transferred)
-            # bar.update(0)
-            if bar._bar is not None:
-                bar._bar.update(0)
             if nbytes_transferred >= file_size:
                 duration = time.time() - started
-                # The set_description seems to be need make sure the
-                # last bit is flushed out; in the case of interrupt.
-                cleanup()
                 upload_done = (f"Upload done: {format_size(nbytes_transferred)} in {format_duration(duration)}"
                                f" | {format_size(nbytes_transferred / duration)} per second ◀")
 
@@ -103,20 +97,11 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             # but we do in fact successfully kill these upload_fileobj threads; and main caller below catches.
             upload_file_callback_internal(nbytes_chunk)
 
-        def pause_output() -> None:  # noqa
-            nonlocal bar
-            bar.disable(True)
-        def resume_output() -> None:  # noqa
-            nonlocal bar
-            bar.disable(False)
-        def cleanup() -> None:  # noqa
-            nonlocal bar
-            bar.done()
         def done() -> Optional[str]:  # noqa
-            nonlocal ncallbacks, upload_done, printf
+            nonlocal bar, ncallbacks, upload_done, printf
             if ncallbacks == 0:
                 upload_file_callback(file_size)
-            cleanup()
+            bar.done()
             if upload_done:
                 printf(upload_done)
         def abort_upload() -> bool:  # noqa
@@ -127,8 +112,6 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
 
         bar = ProgressBar(file_size, "▶ Upload progress",
                           catch_interrupt=catch_interrupt,
-                          interrupt=pause_output,
-                          interrupt_continue=resume_output,
                           interrupt_stop=abort_upload,
                           interrupt_message="upload",
                           tidy_output_hack=True)
@@ -140,10 +123,8 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         should_abort = False
         threads_aborted = set()
         thread_lock = threading.Lock()
-        upload_file_callback_type = namedtuple("upload_file_callback",
-                                               ["function", "pause_output", "resume_output",
-                                                "cleanup", "done", "abort_upload"])
-        return upload_file_callback_type(upload_file_callback, pause_output, resume_output, cleanup, done, abort_upload)
+        upload_file_callback_type = namedtuple("upload_file_callback", ["function", "done", "abort_upload"])
+        return upload_file_callback_type(upload_file_callback, done, abort_upload)
 
     def get_uploaded_file_info() -> Optional[dict]:
         nonlocal aws_credentials, s3_bucket, s3_key

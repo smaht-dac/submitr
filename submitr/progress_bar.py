@@ -143,11 +143,12 @@ class ProgressBar:
             def handle_secondary_interrupt(signum: int, frame: frame) -> None:  # noqa
                 nonlocal self
                 self._printf("\nEnter 'yes' to 'no' or CTRL-\\ to completely abort ...")
-            if self._bar is not None:
-                self._bar.disable = True
-            sys.stdout.flush()
-            if self._bar is not None:
-                self._bar.disable = True
+#           if self._bar is not None:
+#               self._bar.disable = True
+#           sys.stdout.flush()
+#           if self._bar is not None:
+#               self._bar.disable = True
+            self.disable()
             self._interrupt() if self._interrupt else None
             if self._am_main_thread():
                 signal(SIGINT, handle_secondary_interrupt)
@@ -165,6 +166,7 @@ class ProgressBar:
             if self._am_main_thread():
                 signal(SIGINT, handle_interrupt)
             self._interrupt_continue() if self._interrupt_continue else None
+            self.enable()
         def restore_interrupt_handler() -> None:  # noqa
             nonlocal self, previous_interrupt_handler
             if (previous_interrupt_handler is not None) and self._am_main_thread():
