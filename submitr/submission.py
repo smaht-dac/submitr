@@ -45,9 +45,9 @@ GENERIC_SCHEMA_TYPE = 'FileOther'
 # Maximum amount of time (approximately) we will wait for a response from server (seconds).
 PROGRESS_TIMEOUT = 60 * 5  # five minutes (note this is for both server validation and submission)
 # How often we actually check the server (seconds).
-PROGRESS_CHECK_SERVER_INTERVAL = 1
+PROGRESS_CHECK_SERVER_INTERVAL = 3  # xyzzy
 # How often the (tqdm) progress meter updates (seconds).
-PROGRESS_INTERVAL = 1.0  # xyzzy
+PROGRESS_INTERVAL = 1  # xyzzy
 # How many times the (tqdm) progress meter updates (derived from above).
 PROGRESS_MAX_CHECKS = round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL)
 
@@ -1021,7 +1021,6 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                     bar.increment_progress(1)
             message = f"▶ {title} Pings: {nchecks_server}"
             if ingestion_started == 0:
-                # message += f" | Waiting on server ... "
                 message += f" | Waiting on server"
             else:
                 if ingestion_done:

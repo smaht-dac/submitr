@@ -54,7 +54,6 @@ class ProgressBar:
         self._done = False
         self._printf = printf if callable(printf) else print
         self._tidy_output_hack = (tidy_output_hack is True)
-        self._index = 0
         self._started = time.time()
         self._stop_requested = False
         # Interrupt handling. We doo not in do the actual (signal) interrupt setup
@@ -198,7 +197,7 @@ class ProgressBar:
 
     def _define_tidy_output_hack(self) -> None:
         def tidy_stdout_write(text: str) -> None:  # noqa
-            nonlocal self, sys_stdout_write
+            nonlocal self, sys_stdout_write, spin_index, spin_chars
             # Very minor tqdm output tidy-up which was bugging me; tqdm forces a
             # colon (:) before the percentage, e.g. ":  25%|"; and while we're at
             # it do a little ASCII progress animation; this requires a "[progress]"
@@ -210,9 +209,10 @@ class ProgressBar:
                 # dribbles out, so if here the output looks like it is from
                 # tqdm and we are disabled then do not output anything.
                 return
-            chars = ["|", "/", "—", "\\"]
-            char = chars[self._index % len(chars)] if not self._done else "| ✓"; self._index += 1  # noqa
-            text = text.replace("[progress]:", f" {char} ")
+            if "[progress]:" in text:
+                spin_char = spin_chars[spin_index % len(spin_chars)] if not self._done else "| ✓"
+                spin_index += 1
+                text = text.replace("[progress]:", f" {spin_char} ")
             sys_stdout_write(text)
             sys.stdout.flush()
         def restore_stdout_write() -> None:  # noqa
@@ -220,6 +220,8 @@ class ProgressBar:
             if sys_stdout_write is not None:
                 sys.stdout.write = sys_stdout_write
         sys_stdout_write = None
+        spin_index = 0
+        spin_chars = ["|", "/", "—", "\\"]
         if sys.stdout.write != tidy_stdout_write:
             sys_stdout_write = sys.stdout.write
             sys.stdout.write = tidy_stdout_write
