@@ -26,7 +26,7 @@ class ProgressBar:
         self._tidy_output_hack = (tidy_output_hack is True)
         self._stdout_write = None
         self._index = 0
-        self._description = self._description(description)
+        self._description = self._format_description(description)
         # Interrupt handling.
         self._catch_interrupt = (catch_interrupt is True)
         self._interrupt = interrupt if callable(interrupt) else None
@@ -78,7 +78,7 @@ class ProgressBar:
             self._bar.total = value
 
     def set_description(self, value: str) -> None:
-        self._description = self._description(value)
+        self._description = self._format_description(value)
         if self._bar is not None:
             self._bar.set_description(value)
 
@@ -113,7 +113,7 @@ class ProgressBar:
     def enable(self, value: bool = True) -> None:
         self.disable(not value)
 
-    def _description(self, value: str) -> str:
+    def _format_description(self, value: str) -> str:
         if self._tidy_output_hack and not value.endswith("[progress]"):
             value += "[progress]"
         return value
