@@ -1,7 +1,7 @@
 from collections import namedtuple
 from signal import signal, SIGINT
 import sys
-from sys import stdout
+import threading
 from tqdm import tqdm
 from types import FrameType as frame
 from typing import Callable, Optional
@@ -46,7 +46,7 @@ class ProgressBar:
 
     def _initialize(self):
         if self._tidy_output_hack:
-            self._stdout_write = stdout.write
+            self._stdout_write = sys.stdout.write
             chars = ["|", "/", "—", "\\"]
             def custom_stdout_write(text: str) -> None:  # noqa
                 nonlocal self
@@ -64,11 +64,11 @@ class ProgressBar:
                 char = chars[self._index % len(chars)] if not self._done else "| ✓"; self._index += 1  # noqa
                 text = text.replace("[progress]:", f" {char} ")
                 self._stdout_write(text)
-                stdout.flush()
-            stdout.write = custom_stdout_write
+                sys.stdout.flush()
+            sys.stdout.write = custom_stdout_write
         bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
         self._bar = tqdm(total=self._total, desc=self._description,
-                         dynamic_ncols=True, bar_format=bar_format, unit="", file=stdout)
+                         dynamic_ncols=True, bar_format=bar_format, unit="", file=sys.stdout)
         if self._disabled:
             self._bar.disable = True
 
@@ -100,10 +100,10 @@ class ProgressBar:
         # FYI: Do NOT do a bar.disable = True before a bar.close() or it messes up output
         # on multiple calls; found out the hard way; a couple hour will never get back :-/
         self._bar.close()
+        if self._tidy_output_hack and self._stdout_write:
+            sys.stdout.write = self._stdout_write
         if self._interrupt_handler:
             self._interrupt_handler.restore()
-        if self._tidy_output_hack and self._stdout_write:
-            stdout.write = self._stdout_write
 
     def disable(self, value: bool = True) -> None:
         self._disabled = (value is True)
@@ -124,7 +124,6 @@ class ProgressBar:
             if message:
                 if not message.endswith(" "):
                     message += " "
-                message += f" ---> ({self._disabled}|{self._bar.disable if self._bar is not None else 'NONE'})"
                 self._printf(message, end="")
                 sys.stdout.flush()
             response = input()
@@ -175,5 +174,4 @@ class ProgressBar:
 
     @staticmethod
     def _am_main_thread() -> bool:
-        import threading
         return threading.current_thread() == threading.main_thread()
