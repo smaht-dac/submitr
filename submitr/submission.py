@@ -2298,7 +2298,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             # message += "[progress]" # xyzzy
             bar.set_description(message)
             if status.get("finish"):
-                bar.done()
+                bar.done() # xyzzy
+                pass
 
         return progress_report
 

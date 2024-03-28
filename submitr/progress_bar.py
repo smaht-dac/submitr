@@ -7,6 +7,7 @@ from types import FrameType as frame
 from typing import Callable, Optional
 
 
+# Wrapper around tqdm command-line progress bar.
 class ProgressBar:
 
     def __init__(self, total: Optional[int] = None, description: Optional[str] = None,
@@ -77,11 +78,6 @@ class ProgressBar:
         if self._bar is not None:
             self._bar.total = value
 
-    def set_description(self, value: str) -> None:
-        self._description = self._format_description(value)
-        if self._bar is not None:
-            self._bar.set_description(value)
-
     def set_progress(self, value: int) -> None:
         self._initialize() if self._bar is None else None
         # Note that bar.update(0) is needed after bar.n assignment to make ETA correct.
@@ -91,6 +87,11 @@ class ProgressBar:
     def increment_progress(self, value: int) -> None:
         self._initialize() if self._bar is None else None
         self._bar.update(value)
+
+    def set_description(self, value: str) -> None:
+        self._description = self._format_description(value)
+        if self._bar is not None:
+            self._bar.set_description(value)
 
     def done(self) -> None:
         self._initialize() if self._bar is None else None
