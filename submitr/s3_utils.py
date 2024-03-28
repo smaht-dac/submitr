@@ -252,7 +252,6 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     upload_aborted = False
     s3 = boto3.client("s3", **aws_credentials)
     with open(file, "rb") as f:
-        import pdb ; pdb.set_trace()
         try:
             if aws_extra_args:
                 s3.upload_fileobj(f, s3_bucket, s3_key,
