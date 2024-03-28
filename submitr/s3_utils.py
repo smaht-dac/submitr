@@ -1,11 +1,8 @@
 import boto3
 from collections import namedtuple
 import os
-import signal
-import sys
 import threading
 import time
-from tqdm import tqdm
 from typing import Callable, Optional
 from dcicutils.command_utils import yes_or_no
 from submitr.progress_bar import ProgressBar
@@ -63,9 +60,8 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     catch_interrupt = catch_interrupt is True
     printf = print_function if callable(print_function) else print
 
-    #bar = ProgressBar(file_size, "▶ Upload progress[progress]", catch_interrupt=True, tidy_output_hack=True)
     def define_upload_file_callback() -> None:
-        nonlocal file_size #, bar
+        nonlocal file_size
 
         def upload_file_callback_internal(nbytes_chunk: int) -> None:  # noqa
             # The execution of this may be in any number of child threads due to the way upload_fileobj
@@ -127,14 +123,15 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             nonlocal should_abort
             with thread_lock:
                 should_abort = True
-            return False 
+            return False
 
-        bar = ProgressBar(file_size, "▶ Upload progress[progress]",
+        bar = ProgressBar(file_size, "▶ Upload progress",
+                          catch_interrupt=catch_interrupt,
                           interrupt=pause_output,
                           interrupt_continue=resume_output,
                           interrupt_stop=abort_upload,
                           interrupt_message="upload",
-                          catch_interrupt=True, tidy_output_hack=True)
+                          tidy_output_hack=True)
 
         started = time.time()
         nbytes_transferred = 0
@@ -211,37 +208,6 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         printf("WARNING: Cannot verify.")
         return False
 
-    # TODO: define behavior for interrupt via callbacks to ProgressBar.
-    def define_interrupt_handler() -> None:
-        nonlocal catch_interrupt
-        def handle_interrupt(signum, frame) -> None:  # noqa
-            # Note that an interrupt does not actually stop
-            # the upload thread(s) from continuing to run.
-            def handle_secondary_interrupt(signum, frame):  # noqa
-                printf("\nEnter 'yes' to really quit (exit) or CTRL-\\ ...")
-            nonlocal upload_file_callback
-            signal.signal(signal.SIGINT, handle_secondary_interrupt)
-            upload_file_callback.pause_output()
-            if yes_or_no("\nATTENTION! You have interrupted this upload. Do you want to stop (exit)?"):
-                restore_interrupt_handler()
-                upload_file_callback.cleanup()
-                printf("Aborting upload ...")
-                upload_file_callback.abort_upload()
-                return  # TODO
-                exit(1)
-            signal.signal(signal.SIGINT, handle_interrupt)
-            upload_file_callback.resume_output()
-        def restore_interrupt_handler() -> None:  # noqa
-            nonlocal previous_interrupt_handler
-            if previous_interrupt_handler:
-                signal.signal(signal.SIGINT, previous_interrupt_handler)
-        if catch_interrupt:
-            previous_interrupt_handler = signal.signal(signal.SIGINT, handle_interrupt)
-        else:
-            previous_interrupt_handler = None
-        interrupt_handler_type = namedtuple("interrupt_handler", ["restore"])
-        return interrupt_handler_type(restore_interrupt_handler)
-
     if print_preamble:
         printf(f"Uploading {os.path.basename(file)} ({format_size(file_size)}) to: {s3_uri}")
 
@@ -255,7 +221,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     with open(file, "rb") as f:
         try:
             s3.upload_fileobj(f, s3_bucket, s3_key, Callback=upload_file_callback.function)
-        except Exception as e:
+        except Exception:
             printf(f"Upload aborted: {file}")
             upload_aborted = True
 
@@ -263,7 +229,5 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
 
     if not upload_aborted and verify_upload:
         verify_uploaded_file()
-
-    # interrupt_handler.restore()  # TODO
 
     return not upload_aborted

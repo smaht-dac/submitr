@@ -1,10 +1,10 @@
 from collections import namedtuple
 from signal import signal, SIGINT
+import sys
 from sys import stdout
 from tqdm import tqdm
 from types import FrameType as frame
 from typing import Callable, Optional
-from dcicutils.command_utils import yes_or_no
 
 
 class ProgressBar:
@@ -19,7 +19,6 @@ class ProgressBar:
                  printf: Optional[Callable] = None,
                  tidy_output_hack: bool = True) -> None:
         self._total = total if isinstance(total, int) else 0
-        self._description = description if isinstance(description, str) else ""
         self._bar = None
         self._disabled = False
         self._done = False
@@ -27,6 +26,7 @@ class ProgressBar:
         self._tidy_output_hack = (tidy_output_hack is True)
         self._stdout_write = None
         self._index = 0
+        self._description = self._description(description)
         # Interrupt handling.
         self._catch_interrupt = (catch_interrupt is True)
         self._interrupt = interrupt if callable(interrupt) else None
@@ -52,10 +52,17 @@ class ProgressBar:
                 nonlocal self
                 # Very minor tqdm output tidy-up which was bugging me;
                 # tqdm forces a colon (:) before the percentage, e.g. ":  25%|".
-                # and while we're at it do a little ASCII progress animation.
+                # and while we're at it do a little ASCII progress animation;
+                # this requires the call place "[progress]" in their display
+                # string where the progress bar should actually go.
                 # text = text.replace(" : ", " ▶ ")
+                if self._disabled and "[progress]:" in text:
+                    # And another hack to really disable output on interrupt;
+                    # on interrupt we set tqdm.disable to True, but output still
+                    # dribbles out, so if here the output looks like it is from
+                    # tqdm and we are disabled then do not output anything.
+                    return
                 char = chars[self._index % len(chars)] if not self._done else "| ✓"; self._index += 1  # noqa
-                # text = text.replace(" : ", f" {char} ")
                 text = text.replace("[progress]:", f" {char} ")
                 self._stdout_write(text)
                 stdout.flush()
@@ -63,6 +70,8 @@ class ProgressBar:
         bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
         self._bar = tqdm(total=self._total, desc=self._description,
                          dynamic_ncols=True, bar_format=bar_format, unit="", file=stdout)
+        if self._disabled:
+            self._bar.disable = True
 
     def set_total(self, value: int) -> None:
         self._total = value
@@ -70,11 +79,11 @@ class ProgressBar:
             self._bar.total = value
 
     def set_description(self, value: str) -> None:
-        self._description = value
+        self._description = self._description(value)
         if self._bar is not None:
             self._bar.set_description(value)
 
-    def set_progress(self, value: str) -> None:
+    def set_progress(self, value: int) -> None:
         self._initialize() if self._bar is None else None
         # Note that bar.update(0) is needed after bar.n assignment to make ETA correct.
         self._bar.n = value
@@ -105,17 +114,46 @@ class ProgressBar:
     def enable(self, value: bool = True) -> None:
         self.disable(not value)
 
+    def _description(self, value: str) -> str:
+        if self._tidy_output_hack and not value.endswith("[progress]"):
+            value += "[progress]"
+        return value
+
+    def _confirmation(self, message: Optional[str] = None) -> bool:
+        # Effectively the same as dcicutils.command_utils.yes_or_no but with stdout flush.
+        while True:
+            if message:
+                if not message.endswith(" "):
+                    message += " "
+                message += f" ---> ({self._disabled}|{self._bar.disable if self._bar is not None else 'NONE'})"
+                self._printf(message, end="")
+                sys.stdout.flush()
+            response = input()
+            if not isinstance(response, str):
+                return False
+            if (response := response.strip().lower()) in ["yes", "y"]:
+                return True
+            if response in ["no", "n"]:
+                return False
+            self._printf("Please answer 'yes' or 'no'.")
+            sys.stdout.flush()
+
     def _define_interrupt_handler(self) -> None:
         def handle_interrupt(signum: int, frame: frame) -> None:  # noqa
             nonlocal self
             def handle_secondary_interrupt(signum: int, frame: frame) -> None:  # noqa
                 nonlocal self
                 self._printf("\nEnter 'yes' to 'no' or CTRL-\\ to completely abort ...")
+            if self._bar is not None:
+                self._bar.disable = True
+            sys.stdout.flush()
+            if self._bar is not None:
+                self._bar.disable = True
+            self._interrupt() if self._interrupt else None
             if self._am_main_thread():
                 signal(SIGINT, handle_secondary_interrupt)
-            self._interrupt() if self._interrupt else None
-            if yes_or_no(f"\nALERT! You have interrupted this {self._interrupt_message or 'process'}."
-                         f" Do you want to stop{' (exit)' if self._interrupt_exit else ''}?"):
+            if self._confirmation(f"\nALERT! You have interrupted this {self._interrupt_message or 'process'}."
+                                  f" Do you want to stop{' (exit)' if self._interrupt_exit else ''}?"):
                 self.done()
                 restore_interrupt_handler()
                 # Here there was an interrupt (CTRL-C) and the user confirmed (yes)

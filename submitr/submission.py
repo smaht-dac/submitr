@@ -7,7 +7,6 @@ import io
 import json
 import os
 import re
-import signal
 import sys
 import time
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple
@@ -1039,7 +1038,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             if include_status:
                 message += f" | Status: {check_status}"
             # message += f" | Next: {'Now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
-            message += "[progress]"
+            # message += "[progress]" # xyzzy
             bar.set_description(message)
             if done:
                 bar.done()
@@ -2296,7 +2295,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     message += f" | Hits: {nrefs_exists_cache_hit}"
                     if debug:
                         message += f" [{nrefs_lookup_cache_hit}]"
-            message += "[progress]"
+            # message += "[progress]" # xyzzy
             bar.set_description(message)
             if status.get("finish"):
                 bar._bar.update(0)
@@ -2637,7 +2636,6 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 bar.set_total(nobjects)
                 PRINT(f"Analyzing submission file which has {ntypes} type{'s' if ntypes != 1 else ''}"
                       f" and a total of {nobjects} object{'s' if nobjects != 1 else ''}.")
-                bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
                 return
             elif status.get("finish"):
                 bar.done()
@@ -2663,7 +2661,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 f" ‖ Creates: {ncreates} | Updates: {nupdates} | Lookups: {nlookups}")
             # if debug:
             #    message += f" | Rate: {rate:.1f}%"
-            message += " | Progress"
+            # message += " | Progress" # xyzzy
             bar.set_description(message)
         return progress_report
 
