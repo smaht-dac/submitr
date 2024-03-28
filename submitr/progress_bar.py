@@ -5,10 +5,39 @@ import threading
 from tqdm import tqdm
 from types import FrameType as frame
 from typing import Callable, Optional
+from contextlib import contextmanager
 
 
 # Wrapper around tqdm command-line progress bar.
 class ProgressBar:
+
+    @staticmethod
+    @contextmanager
+    def define(total: Optional[int] = None, description: Optional[str] = None,
+               catch_interrupt: bool = True,
+               interrupt: Optional[Callable] = None,
+               interrupt_continue: Optional[Callable] = None,
+               interrupt_stop: Optional[Callable] = None,
+               interrupt_exit: bool = False,
+               interrupt_message: Optional[str] = None,
+               printf: Optional[Callable] = None,
+               tidy_output_hack: bool = True) -> None:
+
+        progress_bar = ProgressBar(
+            total=total,
+            description=description,
+            catch_interrupt=catch_interrupt,
+            interrupt=interrupt,
+            interrupt_continue=interrupt_continue,
+            interrupt_stop=interrupt_stop,
+            interrupt_exit=interrupt_exit,
+            interrupt_message=interrupt_message,
+            printf=printf,
+            tidy_output_hack=tidy_output_hack)
+        try:
+            yield progress_bar
+        finally:
+            progress_bar.done()
 
     def __init__(self, total: Optional[int] = None, description: Optional[str] = None,
                  catch_interrupt: bool = True,
@@ -19,14 +48,15 @@ class ProgressBar:
                  interrupt_message: Optional[str] = None,
                  printf: Optional[Callable] = None,
                  tidy_output_hack: bool = True) -> None:
-        self._total = total if isinstance(total, int) else 0
         self._bar = None
         self._disabled = False
         self._done = False
         self._printf = printf if callable(printf) else print
         self._tidy_output_hack = (tidy_output_hack is True)
-        self._stdout_write = None
+        self._tidy_output_hack_original_stdout_write = None
         self._index = 0
+        self._stop_requested = False
+        self._total = total if isinstance(total, int) and total >= 0 else 0
         self._description = self._format_description(description)
         # Interrupt handling.
         self._catch_interrupt = (catch_interrupt is True)
@@ -47,8 +77,6 @@ class ProgressBar:
 
     def _initialize(self):
         if self._tidy_output_hack:
-            self._stdout_write = sys.stdout.write
-            chars = ["|", "/", "—", "\\"]
             def custom_stdout_write(text: str) -> None:  # noqa
                 nonlocal self
                 # Very minor tqdm output tidy-up which was bugging me; tqdm forces a
@@ -62,11 +90,14 @@ class ProgressBar:
                     # dribbles out, so if here the output looks like it is from
                     # tqdm and we are disabled then do not output anything.
                     return
+                chars = ["|", "/", "—", "\\"]
                 char = chars[self._index % len(chars)] if not self._done else "| ✓"; self._index += 1  # noqa
                 text = text.replace("[progress]:", f" {char} ")
-                self._stdout_write(text)
+                self._tidy_output_hack_original_stdout_write(text)
                 sys.stdout.flush()
-            sys.stdout.write = custom_stdout_write
+            if sys.stdout.write != custom_stdout_write:
+                self._tidy_output_hack_original_stdout_write = sys.stdout.write
+                sys.stdout.write = custom_stdout_write
         bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
         self._bar = tqdm(total=self._total, desc=self._description,
                          dynamic_ncols=True, bar_format=bar_format, unit="", file=sys.stdout)
@@ -74,19 +105,22 @@ class ProgressBar:
             self._bar.disable = True
 
     def set_total(self, value: int) -> None:
-        self._total = value
-        if self._bar is not None:
-            self._bar.total = value
+        if isinstance(value, int) and value >= 0:
+            self._total = value
+            if self._bar is not None:
+                self._bar.total = value
 
     def set_progress(self, value: int) -> None:
-        self._initialize() if self._bar is None else None
-        # Note that bar.update(0) is needed after bar.n assignment to make ETA correct.
-        self._bar.n = value
-        self._bar.update(0)
+        if isinstance(value, int) and value >= 0:
+            self._initialize() if self._bar is None else None
+            # Note that bar.update(0) is needed after bar.n assignment to make ETA correct.
+            self._bar.n = value
+            self._bar.update(0)
 
     def increment_progress(self, value: int) -> None:
-        self._initialize() if self._bar is None else None
-        self._bar.update(value)
+        if isinstance(value, int) and value >= 0:
+            self._initialize() if self._bar is None else None
+            self._bar.update(value)
 
     def set_description(self, value: str) -> None:
         self._description = self._format_description(value)
@@ -94,15 +128,16 @@ class ProgressBar:
             self._bar.set_description(value)
 
     def done(self) -> None:
-        self._initialize() if self._bar is None else None
+        if self._done or self._bar is None:
+            return
         self._done = True
         self._bar.set_description(self._description)
         self._bar.update(0)
         # FYI: Do NOT do a bar.disable = True before a bar.close() or it messes up output
         # on multiple calls; found out the hard way; a couple hour will never get back :-/
         self._bar.close()
-        if self._tidy_output_hack and self._stdout_write:
-            sys.stdout.write = self._stdout_write
+        if self._tidy_output_hack_original_stdout_write:
+            sys.stdout.write = self._tidy_output_hack_original_stdout_write
         if self._interrupt_handler:
             self._interrupt_handler.restore()
 
@@ -114,28 +149,24 @@ class ProgressBar:
     def enable(self, value: bool = True) -> None:
         self.disable(not value)
 
+    @property
+    def disabled(self) -> bool:
+        return self._disabled
+
+    @property
+    def enabled(self) -> bool:
+        return not self.disabled
+
+    @property
+    def stop_requested(self) -> bool:
+        return self._stop_requested
+
     def _format_description(self, value: str) -> str:
+        if not isinstance(value, str):
+            value = ""
         if self._tidy_output_hack and not value.endswith("[progress]"):
             value += "[progress]"
         return value
-
-    def _confirmation(self, message: Optional[str] = None) -> bool:
-        # Effectively the same as dcicutils.command_utils.yes_or_no but with stdout flush.
-        while True:
-            if message:
-                if not message.endswith(" "):
-                    message += " "
-                self._printf(message, end="")
-                sys.stdout.flush()
-            response = input()
-            if not isinstance(response, str):
-                return False
-            if (response := response.strip().lower()) in ["yes", "y"]:
-                return True
-            if response in ["no", "n"]:
-                return False
-            self._printf("Please answer 'yes' or 'no'.")
-            sys.stdout.flush()
 
     def _define_interrupt_handler(self) -> None:
         def handle_interrupt(signum: int, frame: frame) -> None:  # noqa
@@ -157,6 +188,7 @@ class ProgressBar:
                 # rather than simply returning, which is the default.
                 if (self._interrupt_stop() if self._interrupt_stop else None) is True:
                     exit(1)
+                self._stop_requested = True
                 return
             if self._am_main_thread():
                 signal(SIGINT, handle_interrupt)
@@ -172,6 +204,24 @@ class ProgressBar:
             previous_interrupt_handler = None
         interrupt_handler_type = namedtuple("interrupt_handler", ["restore"])
         return interrupt_handler_type(restore_interrupt_handler)
+
+    def _confirmation(self, message: Optional[str] = None) -> bool:
+        # Effectively the same as dcicutils.command_utils.yes_or_no but with stdout flush.
+        while True:
+            if message:
+                if not message.endswith(" "):
+                    message += " "
+                self._printf(message, end="")
+                sys.stdout.flush()
+            response = input()
+            if not isinstance(response, str):
+                return False
+            if (response := response.strip().lower()) in ["yes", "y"]:
+                return True
+            if response in ["no", "n"]:
+                return False
+            self._printf("Please answer 'yes' or 'no'.")
+            sys.stdout.flush()
 
     @staticmethod
     def _am_main_thread() -> bool:

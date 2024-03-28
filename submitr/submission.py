@@ -1038,7 +1038,6 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             if include_status:
                 message += f" | Status: {check_status}"
             # message += f" | Next: {'Now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
-            # message += "[progress]" # xyzzy
             bar.set_description(message)
             if done:
                 bar.done()
@@ -2295,11 +2294,9 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     message += f" | Hits: {nrefs_exists_cache_hit}"
                     if debug:
                         message += f" [{nrefs_lookup_cache_hit}]"
-            # message += "[progress]" # xyzzy
             bar.set_description(message)
             if status.get("finish"):
-                bar.done() # xyzzy
-                pass
+                bar.done()
 
         return progress_report
 
