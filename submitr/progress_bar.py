@@ -20,6 +20,7 @@ class ProgressBar:
         self._total = total if isinstance(total, int) else 0
         self._description = description if isinstance(description, str) else ""
         self._bar = None
+        self._disabled = False
         self._done = False
         self._catch_interrupt = (catch_interrupt is True)
         self._interrupt = interrupt if callable(interrupt) else None
@@ -31,6 +32,10 @@ class ProgressBar:
         self._tidy_output_hack = (tidy_output_hack is True)
         self._stdout_write = None
         self._index = 0
+        # Not in self._initialiaze as that could be called from a (sub) thread;
+        # and in Python can only set a signal (SIGINT in our case) on the main thread.
+        if self._catch_interrupt:
+            self._interrupt_handler = self._define_interrupt_handler()
 
     def _initialize(self):
         if self._tidy_output_hack:
@@ -41,14 +46,12 @@ class ProgressBar:
                 # Very minor tqdm output tidy-up which was bugging me;
                 # tqdm forces a colon (:) before the percentage, e.g. ":  25%|".
                 # text = text.replace(" : ", " ▶ ")
-                char = chars[self._index % len(chars)] if not self._done else "✓"; self._index += 1  # noqa
+                char = chars[self._index % len(chars)] if not self._done else "| ✓"; self._index += 1  # noqa
                 # text = text.replace(" : ", f" {char} ")
                 text = text.replace("[progress]:", f" {char} ")
                 self._stdout_write(text)
                 stdout.flush()
             stdout.write = custom_stdout_write
-        if self._catch_interrupt:
-            self._interrupt_handler = self._define_interrupt_handler()
         bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
         self._bar = tqdm(total=self._total, desc=self._description,
                          dynamic_ncols=True, bar_format=bar_format, unit="", file=stdout)
@@ -78,18 +81,30 @@ class ProgressBar:
         self._done = True
         self._bar.set_description(self._description)
         self._bar.update(0)
+        # FYI: Do NOT do a bar.disable = True before a bar.close() or it messes up output
+        # on multiple calls; found out the hard way; a couple hour will never get back :-/
         self._bar.close()
         if self._interrupt_handler:
             self._interrupt_handler.restore()
         if self._tidy_output_hack and self._stdout_write:
             stdout.write = self._stdout_write
 
+    def disable(self, value: bool = True) -> None:
+        self._disabled = (value is True)
+        if self._bar is not None:
+            self._bar.disable = self._disabled
+
+    def enable(self, value: bool = True) -> None:
+        self.disable(not value)
+
     def _define_interrupt_handler(self) -> None:
         def handle_interrupt(signum: int, frame: frame) -> None:  # noqa
+            nonlocal self
             def handle_secondary_interrupt(signum: int, frame: frame) -> None:  # noqa
                 nonlocal self
                 self._printf("\nEnter 'yes' to 'no' or CTRL-\\ to completely abort ...")
-            signal(SIGINT, handle_secondary_interrupt)
+            if self._am_main_thread():
+                signal(SIGINT, handle_secondary_interrupt)
             self._interrupt() if self._interrupt else None
             if yes_or_no(f"\nALERT! You have interrupted this {self._interrupt_message or 'process'}."
                          f" Do you want to stop (exit)?"):
@@ -97,11 +112,21 @@ class ProgressBar:
                 if (self._interrupt_stop() if self._interrupt else None) is False:
                     return
                 exit(1)
-            signal(SIGINT, handle_interrupt)
+            if self._am_main_thread():
+                signal(SIGINT, handle_interrupt)
             self._interrupt_continue() if self._interrupt_continue else None
         def restore_interrupt_handler() -> None:  # noqa
-            nonlocal previous_interrupt_handler
-            signal(SIGINT, previous_interrupt_handler)
-        previous_interrupt_handler = signal(SIGINT, handle_interrupt)
+            nonlocal self, previous_interrupt_handler
+            if (previous_interrupt_handler is not None) and self._am_main_thread():
+                signal(SIGINT, previous_interrupt_handler)
+        if self._am_main_thread():
+            previous_interrupt_handler = signal(SIGINT, handle_interrupt)
+        else:
+            previous_interrupt_handler = None
         interrupt_handler_type = namedtuple("interrupt_handler", ["restore"])
         return interrupt_handler_type(restore_interrupt_handler)
+
+    @staticmethod
+    def _am_main_thread() -> bool:
+        import threading
+        return threading.current_thread() == threading.main_thread()

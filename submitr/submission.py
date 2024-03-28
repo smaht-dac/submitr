@@ -10,7 +10,6 @@ import re
 import signal
 import sys
 import time
-from tqdm import tqdm
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 import yaml
 
@@ -2297,7 +2296,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     message += f" | Hits: {nrefs_exists_cache_hit}"
                     if debug:
                         message += f" [{nrefs_lookup_cache_hit}]"
-            # message += " | Progress"
             message += "[progress]"
             bar.set_description(message)
             if status.get("finish"):
@@ -2622,50 +2620,39 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
         report_updates_only = False
 
     def define_progress_callback(debug: bool = False) -> None:
-        bar = None
         ntypes = 0
         nobjects = 0
         ncreates = 0
         nupdates = 0
         nlookups = 0
-        # started = time.time()
-        def handle_control_c(signum, frame):  # noqa
-            if yes_or_no("\nCTRL-C: You have interrupted this process. Do you want to TERMINATE processing?"):
-                if bar:
-                    bar.close()
-                PRINT("Premature exit.")
-                exit(1)
-            PRINT_STDOUT("Continuing ...")
+        bar = ProgressBar(nobjects, "Calculating", interrupt_message="analysis")
         def progress_report(status: dict) -> None:  # noqa
             nonlocal bar, ntypes, nobjects, ncreates, nupdates, nlookups, noprogress
             if noprogress:
                 return
             increment = 1
             if status.get("start"):
-                signal.signal(signal.SIGINT, handle_control_c)
                 ntypes = status.get("types")
                 nobjects = status.get("objects")
+                bar.set_total(nobjects)
                 PRINT(f"Analyzing submission file which has {ntypes} type{'s' if ntypes != 1 else ''}"
                       f" and a total of {nobjects} object{'s' if nobjects != 1 else ''}.")
                 bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
-                bar = tqdm(total=nobjects, desc="Calculating", dynamic_ncols=True, bar_format=bar_format, unit="")
                 return
             elif status.get("finish"):
-                if bar:
-                    bar.close()
-                signal.signal(signal.SIGINT, signal.SIG_DFL)
+                bar.done()
                 return
             elif status.get("create"):
                 ncreates += increment
                 nlookups += status.get("lookups") or 0
-                bar.update(increment)
+                bar.increment_progress(increment)
             elif status.get("update"):
                 nupdates += increment
                 nlookups += status.get("lookups") or 0
-                bar.update(increment)
+                bar.increment_progress(increment)
             else:
                 nlookups += status.get("lookups") or 0
-                bar.update(increment)
+                bar.increment_progress(increment)
             # duration = time.time() - started
             # nprocessed = ncreates + nupdates
             # rate = nprocessed / duration
@@ -2680,6 +2667,8 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
             bar.set_description(message)
         return progress_report
 
+    # TODO: Allow abort of compare by returning some value from the
+    # progress callback that just breaks out of the loop in structured_data.
     diffs = structured_data.compare(progress=define_progress_callback(debug=debug))
 
     ncreates = 0

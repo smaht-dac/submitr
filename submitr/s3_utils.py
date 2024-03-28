@@ -8,7 +8,8 @@ import time
 from tqdm import tqdm
 from typing import Callable, Optional
 from dcicutils.command_utils import yes_or_no
-from .utils import (
+from submitr.progress_bar import ProgressBar
+from submitr.utils import (
     get_file_md5_like_aws_s3_etag, get_s3_bucket_and_key_from_s3_uri,
     format_datetime, format_duration, format_size
 )
@@ -64,15 +65,12 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
 
     def define_upload_file_callback() -> None:
         nonlocal file_size
+        bar = ProgressBar(file_size, "▶ Upload progress[progress]", catch_interrupt=True, tidy_output_hack=True)
         started = time.time()
         nbytes_transferred = 0
         ncallbacks = 0
         upload_done = None
         should_abort = False
-        bar_message = "▶ Upload progress"
-        bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
-        bar = tqdm(total=file_size, desc=bar_message,
-                   dynamic_ncols=True, bar_format=bar_format, unit="", file=sys.stdout)
         threads_aborted = set()
         thread_lock = threading.Lock()
         def upload_file_callback_internal(nbytes_chunk: int) -> None:  # noqa
@@ -82,13 +80,16 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             nonlocal started, file_size, nbytes_transferred, ncallbacks, upload_done, bar
             ncallbacks += 1
             nbytes_transferred += nbytes_chunk
-            # We do not use bar.update(nbytes_chunk) but rather set the total work done (bar.n)
-            # so far to nbytes_transferred, so that counts add up right when interrupted; during
-            # interrupt handling (outside in caller/main-thread) this callback continues executing,
-            # as upload_fileobj continues its work; we just (during interrupt handling) pause/disable
-            # the output of the progress bar; but bar.update(0) still needs to be called so it takes.
-            bar.n = nbytes_transferred
-            bar.update(0)
+            # We do not use bar.increment_progress(nbytes_chunk) but rather set the total work
+            # done (bar.set_total) so far to nbytes_transferred, so that counts add up right when
+            # interrupted; during interrupt handling (outside in caller/main-thread) this callback
+            # continues executing, as upload_fileobj continues its work; we just (during interrupt
+            # handling) pause/disable the output of the progress bar; but bar.increment_progress(0)
+            # still needs to be called so it takes.
+            bar.set_progress(nbytes_transferred)
+            # bar.update(0)
+            if bar._bar is not None:
+                bar._bar.update(0)
             if nbytes_transferred >= file_size:
                 duration = time.time() - started
                 # The set_description seems to be need make sure the
@@ -113,16 +114,13 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
 
         def pause_output() -> None:  # noqa
             nonlocal bar
-            bar.disable = True
+            bar.disable(True)
         def resume_output() -> None:  # noqa
             nonlocal bar
-            bar.disable = False
+            bar.disable(False)
         def cleanup() -> None:  # noqa
-            nonlocal bar, bar_message
-            bar.set_description(bar_message)
-            # N.B. Do NOT do a bar.disable = True before this or it messes up output on
-            # multiple calls; found out the hard way; a couple hour will never get back :-/
-            bar.close()
+            nonlocal bar
+            bar.done()
         def done() -> Optional[str]:  # noqa
             nonlocal ncallbacks, upload_done, printf
             if ncallbacks == 0:
@@ -211,20 +209,16 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                 printf("\nEnter 'yes' to really quit (exit) or CTRL-\\ ...")
             nonlocal upload_file_callback
             signal.signal(signal.SIGINT, handle_secondary_interrupt)
-            if upload_file_callback:
-                upload_file_callback.pause_output()
+            upload_file_callback.pause_output()
             if yes_or_no("\nATTENTION! You have interrupted this upload. Do you want to stop (exit)?"):
                 restore_interrupt_handler()
-                if upload_file_callback:
-                    upload_file_callback.cleanup()
+                upload_file_callback.cleanup()
                 printf("Aborting upload ...")
-                if upload_file_callback:
-                    upload_file_callback.abort_upload()
-                    return
+                upload_file_callback.abort_upload()
+                return  # TODO
                 exit(1)
             signal.signal(signal.SIGINT, handle_interrupt)
-            if upload_file_callback:
-                upload_file_callback.resume_output()
+            upload_file_callback.resume_output()
         def restore_interrupt_handler() -> None:  # noqa
             nonlocal previous_interrupt_handler
             if previous_interrupt_handler:
@@ -242,21 +236,19 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     if verify_upload and not verify_with_any_already_uploaded_file():
         return False
 
-    upload_file_callback = define_upload_file_callback() if print_progress else None
+    upload_file_callback = define_upload_file_callback()
     interrupt_handler = define_interrupt_handler()
 
     upload_aborted = False
     s3 = boto3.client("s3", **aws_credentials)
     with open(file, "rb") as f:
         try:
-            s3.upload_fileobj(f, s3_bucket, s3_key,
-                              Callback=upload_file_callback.function if upload_file_callback else None)
-        except Exception:
+            s3.upload_fileobj(f, s3_bucket, s3_key, Callback=upload_file_callback.function)
+        except Exception as e:
             printf(f"Upload aborted: {file}")
             upload_aborted = True
 
-    if upload_file_callback:
-        upload_file_callback.done()
+    upload_file_callback.done()
 
     if not upload_aborted and verify_upload:
         verify_uploaded_file()
