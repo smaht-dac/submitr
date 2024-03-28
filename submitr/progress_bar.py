@@ -50,11 +50,11 @@ class ProgressBar:
             chars = ["|", "/", "—", "\\"]
             def custom_stdout_write(text: str) -> None:  # noqa
                 nonlocal self
-                # Very minor tqdm output tidy-up which was bugging me;
-                # tqdm forces a colon (:) before the percentage, e.g. ":  25%|".
-                # and while we're at it do a little ASCII progress animation;
-                # this requires the call place "[progress]" in their display
-                # string where the progress bar should actually go.
+                # Very minor tqdm output tidy-up which was bugging me; tqdm forces a
+                # colon (:) before the percentage, e.g. ":  25%|"; and while we're at
+                # it do a little ASCII progress animation; this requires a "[progress]"
+                # value in their display string where the progress bar should actually
+                # go which we do in _format_description.
                 if self._disabled and "[progress]:" in text:
                     # And another hack to really disable output on interrupt;
                     # on interrupt we set tqdm.disable to True, but output still
@@ -143,11 +143,6 @@ class ProgressBar:
             def handle_secondary_interrupt(signum: int, frame: frame) -> None:  # noqa
                 nonlocal self
                 self._printf("\nEnter 'yes' to 'no' or CTRL-\\ to completely abort ...")
-#           if self._bar is not None:
-#               self._bar.disable = True
-#           sys.stdout.flush()
-#           if self._bar is not None:
-#               self._bar.disable = True
             self.disable()
             self._interrupt() if self._interrupt else None
             if self._am_main_thread():
