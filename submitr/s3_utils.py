@@ -54,7 +54,9 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     else:
         aws_credentials = {}
     if aws_kms_key_id:
-        aws_credentials["SSEKMSKeyId"] = aws_kms_key_id
+        aws_extra_args = {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": aws_kms_key_id}
+    else:
+        aws_extra_args = {}
 
     print_progress = print_progress is True
     print_preamble = print_preamble is True
@@ -250,9 +252,15 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     upload_aborted = False
     s3 = boto3.client("s3", **aws_credentials)
     with open(file, "rb") as f:
+        import pdb ; pdb.set_trace()
         try:
-            s3.upload_fileobj(f, s3_bucket, s3_key,
-                              Callback=upload_file_callback.function if upload_file_callback else None)
+            if aws_extra_args:
+                s3.upload_fileobj(f, s3_bucket, s3_key,
+                                  ExtraArgs=aws_extra_args,
+                                  Callback=upload_file_callback.function if upload_file_callback else None)
+            else:
+                s3.upload_fileobj(f, s3_bucket, s3_key,
+                                  Callback=upload_file_callback.function if upload_file_callback else None)
         except Exception:
             printf(f"Upload aborted: {file}")
             upload_aborted = True

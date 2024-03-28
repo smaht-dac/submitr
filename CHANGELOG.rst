@@ -21,6 +21,11 @@ Change Log
 * Support for submits_for to get submission center.
 * Got rid of "old style" protocol support (to simplify).
 
+0.7.0.1b59
+==========
+
+* 2024-03-28
+* Hotfix for handling KMS key for S3 upload in s3_utils.py.
 
 0.5.4
 =====
