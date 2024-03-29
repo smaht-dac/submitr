@@ -1000,9 +1000,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             # loadxl_started; the former is when the ingester listener is first hit.
             ingester_initiated = ingestion_status.get("ingester_initiate", None)
             ingester_parse_started = ingestion_status.get("ingester_parse_start", None)
-            ingester_parse_done = ingestion_status.get("ingester_parse_done", None)
             ingester_validate_started = ingestion_status.get("ingester_validate_start", None)
-            ingester_validate_done = ingestion_status.get("ingester_validate_done", None)
             loadxl_initiated = ingestion_status.get("loadxl_initiate", None)
             loadxl_total = ingestion_status.get("loadxl_total", 0)
             loadxl_started = ingestion_status.get("loadxl_start", 0)
