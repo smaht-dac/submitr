@@ -981,33 +981,37 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         check_status = "Unknown"
         next_check = 0
         # From (new/2024-03-25) /ingestion-status/{submission_uuid} call.
-        ingestion_total = 0
-        ingestion_started = 0
-        ingestion_started_second_round = 0
+        loadxl_total = 0
+        loadxl_started = 0
+        loadxl_started_second_round = 0
         def progress_report(status: dict) -> None:  # noqa
             nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status, noprogress, validation
-            nonlocal ingestion_total, ingestion_started, ingestion_started_second_round, verbose
+            nonlocal loadxl_total, loadxl_started, loadxl_started_second_round, verbose
             if noprogress:
                 return
             # This are from the (new/2024-03-25) /ingestion-status/{submission_uuid} call.
-            # These key name come ultimately from snovault.loadxl.PROGRESS.
-            ingestion_total = ingestion_status.get("loadxl_total", 0)
-            ingestion_started = ingestion_status.get("loadxl_start", 0)
-            ingestion_item = ingestion_status.get("loadxl_item", 0)
-            ingestion_started_second_round = ingestion_status.get("loadxl_start_second_round", 0)
-            ingestion_item_second_round = ingestion_status.get("loadxl_item_second_round", 0)
-            ingestion_done = status.get("loadxl_done", 0) > 0
+            # Some of these key name come ultimately from snovault.loadxl.PROGRESS; others
+            # from smaht-portal/ingestion. Note difference between ingester_initiated and
+            # loadxl_started; the former is when the ingester listener is first hit.
+            ingester_initiated = ingestion_status.get("ingester_initiate", None)
+            loadxl_initiated = ingestion_status.get("loadxl_initiate", None)
+            loadxl_total = ingestion_status.get("loadxl_total", 0)
+            loadxl_started = ingestion_status.get("loadxl_start", 0)
+            loadxl_item = ingestion_status.get("loadxl_item", 0)
+            loadxl_started_second_round = ingestion_status.get("loadxl_start_second_round", 0)
+            loadxl_item_second_round = ingestion_status.get("loadxl_item_second_round", 0)
+            loadxl_done = status.get("loadxl_done", 0) > 0
             # This string is from the /ingestion-status endpoint, really as a convenience/courtesey
             # so we don't have to cobble together our own string; but we could also build the
             # message ourselves manually here from the counts contained in the same response.
             ingestion_message = (status.get("loadxl_message_verbose", "")
                                  if verbose else status.get("loadxl_message", ""))
             # Phases: 0 means waiting for server response; 1 means loadxl round one; 2 means loadxl round two.
-            ingestion_phase = 2 if ingestion_started_second_round > 0 else (1 if ingestion_started > 0 else 0)
+            loadxl_phase = 2 if loadxl_started_second_round > 0 else (1 if loadxl_started > 0 else 0)
             done = False
             if status.get("finish") or nchecks >= max_checks:
                 check_status = status.get("status")
-                if ingestion_phase == 0:
+                if loadxl_phase == 0:
                     bar.increment_progress(max_checks - nchecks)
                 done = True
             elif status.get("check_server"):
@@ -1017,21 +1021,26 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 if (next_check := status.get("next")) is not None:
                     next_check = round(status.get("next") or 0)
                 nchecks += 1
-                if ingestion_phase == 0:
+                if loadxl_phase == 0:
                     bar.increment_progress(1)
             message = f"▶ {title} Pings: {nchecks_server}"
-            if ingestion_started == 0:
-                message += f" | Waiting on server"
+            if loadxl_started == 0:
+                if loadxl_initiated is not None:
+                    message += f" | Server INI"
+                elif ingester_initiated is not None:
+                    message += f" | Server ACK"
+                else:
+                    message += f" | Waiting on server"
             else:
-                if ingestion_done:
-                    bar.set_total(ingestion_total)
-                    bar.set_progress(ingestion_total)
-                elif ingestion_phase == 2:
-                    bar.set_total(ingestion_total)
-                    bar.set_progress(ingestion_item_second_round)
-                elif ingestion_phase == 1:
-                    bar.set_total(ingestion_total)
-                    bar.set_progress(ingestion_item)
+                if loadxl_done:
+                    bar.set_total(loadxl_total)
+                    bar.set_progress(loadxl_total)
+                elif loadxl_phase == 2:
+                    bar.set_total(loadxl_total)
+                    bar.set_progress(loadxl_item_second_round)
+                elif loadxl_phase == 1:
+                    bar.set_total(loadxl_total)
+                    bar.set_progress(loadxl_item)
                 if ingestion_message:
                     message += " | " + ingestion_message
             if include_status:
@@ -1080,12 +1089,11 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         # This is a very cheap call so do it on every progress iteration.
         ingestion_status = portal.get(f"/ingestion-status/{uuid}")
         if (ingestion_status.status_code == 200) and (ingestion_status := ingestion_status.json()):
-            # ingestion_status = {"ingestion_" + key: value for key, value in ingestion_status.items()}
-            ingestion_done = (ingestion_status.get("loadxl_done", 0) > 0)
+            loadxl_done = (ingestion_status.get("loadxl_done", 0) > 0)
         else:
             ingestion_status = {}
-            ingestion_done = False
-        if (ingestion_done or (most_recent_server_check_time is None) or
+            loadxl_done = False
+        if (loadxl_done or (most_recent_server_check_time is None) or
             ((time.time() - most_recent_server_check_time) >= PROGRESS_CHECK_SERVER_INTERVAL)):  # noqa
             if most_recent_server_check_time is None:
                 progress({"start": True, **ingestion_status})
