@@ -470,7 +470,8 @@ def _initiate_server_ingestion_process(
         autoadd: Optional[dict] = None,
         datafile_size: Optional[Any] = None,
         datafile_md5: Optional[Any] = None,
-        debug: bool = False) -> str:
+        debug: bool = False,
+        debug_sleep: Optional[str] = None) -> str:
 
     if isinstance(validation_ingestion_submission_object, dict):
         # This ingestion action is for a submission (rather than for a validation),
@@ -499,6 +500,8 @@ def _initiate_server_ingestion_process(
 
     if validation_ingestion_submission_uuid:
         submission_post_data["validation_uuid"] = validation_ingestion_submission_uuid
+    if debug_sleep:
+        submission_post_data["debug_sleep"] = debug_sleep
 
     if is_resume_submission and validation_ingestion_submission_object:
         if validation_parameters := validation_ingestion_submission_object.get("parameters"):
@@ -805,7 +808,8 @@ def submit_any_ingestion(ingestion_filename, *,
             post_only=post_only,
             patch_only=patch_only,
             autoadd=autoadd,
-            debug=debug)
+            debug=debug,
+            debug_sleep=debug_sleep)
 
         SHOW(f"Validation tracking ID: {validation_uuid}")
 
@@ -845,7 +849,8 @@ def submit_any_ingestion(ingestion_filename, *,
         post_only=post_only,
         patch_only=patch_only,
         autoadd=autoadd,
-        debug=debug)
+        debug=debug,
+        debug_sleep=debug_sleep)
 
     SHOW(f"Submission tracking ID: {submission_uuid}")
 
@@ -994,6 +999,10 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             # from smaht-portal/ingestion. Note difference between ingester_initiated and
             # loadxl_started; the former is when the ingester listener is first hit.
             ingester_initiated = ingestion_status.get("ingester_initiate", None)
+            ingester_parse_started = ingestion_status.get("ingester_parse_start", None)
+            ingester_parse_done = ingestion_status.get("ingester_parse_done", None)
+            ingester_validate_started = ingestion_status.get("ingester_validate_start", None)
+            ingester_validate_done = ingestion_status.get("ingester_validate_done", None)
             loadxl_initiated = ingestion_status.get("loadxl_initiate", None)
             loadxl_total = ingestion_status.get("loadxl_total", 0)
             loadxl_started = ingestion_status.get("loadxl_start", 0)
@@ -1023,10 +1032,14 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 nchecks += 1
                 if loadxl_phase == 0:
                     bar.increment_progress(1)
-            message = f"▶ {title} Pings: {nchecks_server}"
+            message = f"▶ {title} pings: {nchecks_server}"
             if loadxl_started == 0:
                 if loadxl_initiated is not None:
                     message += f" | Server INI"
+                elif ingester_parse_started is not None:
+                    message += f" | Server parsing"
+                elif ingester_validate_started is not None:
+                    message += f" | Server validating"
                 elif ingester_initiated is not None:
                     message += f" | Server ACK"
                 else:
@@ -1181,7 +1194,9 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             submission_centers=submission_centers,
             autoadd=check_parameters.get("autoadd"),
             datafile_size=check_parameters.get("datafile_size"),
-            datafile_md5=check_parameters.get("datafile_md5"))
+            datafile_md5=check_parameters.get("datafile_md5"),
+            debug=debug,
+            debug_sleep=debug_sleep)
         SHOW(f"Submission tracking ID: {submission_uuid}")
         submission_done, submission_status, submission_response = _monitor_ingestion_process(
                 submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
