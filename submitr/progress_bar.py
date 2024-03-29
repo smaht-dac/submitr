@@ -19,7 +19,7 @@ class ProgressBar:
                interrupt: Optional[Callable] = None,
                interrupt_continue: Optional[Callable] = None,
                interrupt_stop: Optional[Callable] = None,
-               interrupt_exit: bool = False,
+               interrupt_exit: bool = None,
                interrupt_message: Optional[str] = None,
                printf: Optional[Callable] = None,
                tidy_output_hack: bool = True) -> None:
@@ -63,11 +63,12 @@ class ProgressBar:
         self._interrupt = interrupt if callable(interrupt) else None
         self._interrupt_continue = interrupt_continue if callable(interrupt_continue) else None
         self._interrupt_stop = interrupt_stop if callable(interrupt_stop) else None
-        if (interrupt_exit in [True, False]) and not self._interrupt_stop:
-            self._interrupt_stop = lambda _: interrupt_exit
+        if interrupt_exit in [True, False]:
+            if not self._interrupt_stop:
+                self._interrupt_stop = lambda _: interrupt_exit
             self._interrupt_exit = interrupt_exit
         else:
-            self._interrupt_exit = False
+            self._interrupt_exit = None
         self._interrupt_message = interrupt_message if isinstance(interrupt_message, str) else None
         self._interrupt_handler = None
         if self._catch_interrupt:
@@ -102,7 +103,7 @@ class ProgressBar:
                 self._bar.update(0)
 
     def increment_progress(self, value: int) -> None:
-        if isinstance(value, int) and value >= 0:
+        if isinstance(value, int) and value > 0:
             if (self._bar is not None) or self._initialize():
                 self._bar.update(value)
 
@@ -133,6 +134,14 @@ class ProgressBar:
 
     def enable(self, value: bool = True) -> None:
         self.disable(not value)
+
+    @property
+    def total(self) -> int:
+        return self._bar.total if self._bar else 0
+
+    @property
+    def progress(self) -> int:
+        return self._bar.n if self._bar else 0
 
     @property
     def disabled(self) -> bool:
@@ -178,11 +187,11 @@ class ProgressBar:
                 # rather than simply returning, which is the default.
                 if self._interrupt_stop:
                     interrupt_stop = self._interrupt_stop(self)
-                    if interrupt_stop is True:
+                    if (interrupt_stop is True) or ((interrupt_stop is None) and (self._interrupt_exit is True)):
                         self.done()
                         restore_interrupt_handler()
                         exit(1)
-                    elif interrupt_stop is False:
+                    elif interrupt_stop is False or ((interrupt_stop is None) and (self._interrupt_exit is False)):
                         set_interrupt_handler(handle_interrupt)
                         self.enable()
                         return

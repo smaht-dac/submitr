@@ -1075,7 +1075,17 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     check_response = None
     ingestion_status = {}
     for n in range(PROGRESS_MAX_CHECKS):
-        if ((most_recent_server_check_time is None) or
+        # Do the (new/2024-03-25) portal ingestion-status check here which reads
+        # from Redis where the ingester is (now/2024-03-25) writing.
+        # This is a very cheap call so do it on every progress iteration.
+        if (((ingestion_status := portal.get(f"/ingestion-status/{uuid}")).status_code == 200) and
+            (ingestion_status := ingestion_status.json())):
+            ingestion_status = {"ingestion_" + key: value for key, value in ingestion_status.items()}
+            ingestion_done = (ingestion_status.get("ingestion_done", 0) > 0)
+        else:
+            ingestion_status = {}
+            ingestion_done = False
+        if (ingestion_done or (most_recent_server_check_time is None) or
             ((time.time() - most_recent_server_check_time) >= PROGRESS_CHECK_SERVER_INTERVAL)):  # noqa
             if most_recent_server_check_time is None:
                 progress({"start": True, **ingestion_status})
@@ -1084,10 +1094,6 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             # Do the actual portal check here (i.e by fetching the IngestionSubmission object)..
             [check_done, check_status, check_response] = (
                 _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server))
-            # Do the (new/2024-03-25) portal ingestion-status check here which reads
-            # from Redis where the ingester is (now/2024-03-25) writing.
-            ingestion_status = portal.get(f"/ingestion-status/{uuid}").json()
-            ingestion_status = {"ingestion_" + key: value for key, value in ingestion_status.items()}
             if check_done:
                 break
             if check_submission_script:
