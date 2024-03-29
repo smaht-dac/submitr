@@ -1087,7 +1087,6 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             # Do the (new/2024-03-25) portal ingestion-status check here which reads
             # from Redis where the ingester is (now/2024-03-25) writing.
             ingestion_status = portal.get(f"/ingestion-status/{uuid}").json()
-            import pdb ; pdb.set_trace()
             ingestion_status = {"ingestion_" + key: value for key, value in ingestion_status.items()}
             if check_done:
                 break
