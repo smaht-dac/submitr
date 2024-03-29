@@ -990,18 +990,18 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             if noprogress:
                 return
             # This are from the (new/2024-03-25) /ingestion-status/{submission_uuid} call.
-            # These key name come ultimately from snovault.loadxl.PROGRESS (minus "ingestion_" prefix).
-            ingestion_total = ingestion_status.get("ingestion_total", 0)
-            ingestion_started = ingestion_status.get("ingestion_start", 0)
-            ingestion_item = ingestion_status.get("ingestion_item", 0)
-            ingestion_started_second_round = ingestion_status.get("ingestion_start_second_round", 0)
-            ingestion_item_second_round = ingestion_status.get("ingestion_item_second_round", 0)
-            ingestion_done = status.get("ingestion_done", 0) > 0
+            # These key name come ultimately from snovault.loadxl.PROGRESS.
+            ingestion_total = ingestion_status.get("loadxl_total", 0)
+            ingestion_started = ingestion_status.get("loadxl_start", 0)
+            ingestion_item = ingestion_status.get("loadxl_item", 0)
+            ingestion_started_second_round = ingestion_status.get("loadxl_start_second_round", 0)
+            ingestion_item_second_round = ingestion_status.get("loadxl_item_second_round", 0)
+            ingestion_done = status.get("loadxl_done", 0) > 0
             # This string is from the /ingestion-status endpoint, really as a convenience/courtesey
             # so we don't have to cobble together our own string; but we could also build the
             # message ourselves manually here from the counts contained in the same response.
-            ingestion_message = (status.get("ingestion_message_verbose", "")
-                                 if verbose else status.get("ingestion_message", ""))
+            ingestion_message = (status.get("loadxl_message_verbose", "")
+                                 if verbose else status.get("loadxl_message", ""))
             # Phases: 0 means waiting for server response; 1 means loadxl round one; 2 means loadxl round two.
             ingestion_phase = 2 if ingestion_started_second_round > 0 else (1 if ingestion_started > 0 else 0)
             done = False
@@ -1080,8 +1080,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         # This is a very cheap call so do it on every progress iteration.
         ingestion_status = portal.get(f"/ingestion-status/{uuid}")
         if (ingestion_status.status_code == 200) and (ingestion_status := ingestion_status.json()):
-            ingestion_status = {"ingestion_" + key: value for key, value in ingestion_status.items()}
-            ingestion_done = (ingestion_status.get("ingestion_done", 0) > 0)
+            # ingestion_status = {"ingestion_" + key: value for key, value in ingestion_status.items()}
+            ingestion_done = (ingestion_status.get("loadxl_done", 0) > 0)
         else:
             ingestion_status = {}
             ingestion_done = False
