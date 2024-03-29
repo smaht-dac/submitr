@@ -77,7 +77,7 @@ class ProgressBar:
         self.set_total(total)
         self.set_description(description)
 
-    def _initialize(self):
+    def _initialize(self) -> bool:
         # Do not actually create the tqdm object unless/until we have a positive total.
         if (self._bar is None) and (self._total > 0):
             bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
@@ -85,6 +85,8 @@ class ProgressBar:
                              dynamic_ncols=True, bar_format=bar_format, unit="", file=sys.stdout)
             if self._disabled:
                 self._bar.disable = True
+            return True
+        return False
 
     def set_total(self, value: int) -> None:
         if isinstance(value, int) and value >= 0:
@@ -94,15 +96,15 @@ class ProgressBar:
 
     def set_progress(self, value: int) -> None:
         if isinstance(value, int) and value >= 0:
-            self._initialize() if self._bar is None else None
-            # Note that bar.update(0) is needed after bar.n assignment to make ETA correct.
-            self._bar.n = value
-            self._bar.update(0)
+            if (self._bar is not None) or self._initialize():
+                # Note that bar.update(0) is needed after bar.n assignment to make ETA correct.
+                self._bar.n = value
+                self._bar.update(0)
 
     def increment_progress(self, value: int) -> None:
         if isinstance(value, int) and value >= 0:
-            self._initialize() if self._bar is None else None
-            self._bar.update(value)
+            if (self._bar is not None) or self._initialize():
+                self._bar.update(value)
 
     def set_description(self, value: str) -> None:
         self._description = self._format_description(value)

@@ -132,6 +132,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     def get_uploaded_file_info() -> Optional[dict]:
         nonlocal aws_credentials, s3_bucket, s3_key
         try:
+            # Note that we do not need to use any KMS key for head_object.
             s3 = boto3.client("s3", **aws_credentials)
             s3_file_head = s3.head_object(Bucket=s3_bucket, Key=s3_key)
             if (s3_file_etag := s3_file_head["ETag"]) and s3_file_etag.startswith('"') and s3_file_etag.endswith('"'):
@@ -142,6 +143,8 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                 "checksum": s3_file_etag
             }
         except Exception:
+            # Ignore error for now because (1) verification usage not absolutely necessary,
+            # and (2) portal permission change for this not yet deployed everywhere.
             return None
 
     def verify_with_any_already_uploaded_file() -> None:
@@ -179,8 +182,8 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
 
     def verify_uploaded_file() -> bool:
         nonlocal file_size
-        printf("Verifying upload ... ", end="")
         if file_info := get_uploaded_file_info():
+            printf("Verifying upload ... ", end="")
             if file_info["size"] != file_size:
                 printf(f"WARNING: File size mismatch ▶ {file_size} vs {file_info['size']}")
                 return False
@@ -189,7 +192,6 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                 return False
             printf("OK")
             return True
-        printf("WARNING: Cannot verify.")
         return False
 
     if print_preamble:
