@@ -1078,8 +1078,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         # Do the (new/2024-03-25) portal ingestion-status check here which reads
         # from Redis where the ingester is (now/2024-03-25) writing.
         # This is a very cheap call so do it on every progress iteration.
-        if (((ingestion_status := portal.get(f"/ingestion-status/{uuid}")).status_code == 200) and
-            (ingestion_status := ingestion_status.json())):
+        ingestion_status = portal.get(f"/ingestion-status/{uuid}")
+        if (ingestion_status.status_code == 200) and (ingestion_status := ingestion_status.json()):
             ingestion_status = {"ingestion_" + key: value for key, value in ingestion_status.items()}
             ingestion_done = (ingestion_status.get("ingestion_done", 0) > 0)
         else:
