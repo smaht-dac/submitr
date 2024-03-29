@@ -1,5 +1,4 @@
 import boto3
-from botocore.client import Config as BotocoreClientConfig
 from collections import namedtuple
 import os
 import threading

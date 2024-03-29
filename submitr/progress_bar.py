@@ -169,8 +169,7 @@ class ProgressBar:
                 self._printf("\nEnter 'yes' to 'no' or CTRL-\\ to completely abort ...")
             self.disable()
             self._interrupt() if self._interrupt else None
-            if self._am_main_thread():
-                signal(SIGINT, handle_secondary_interrupt)
+            set_interrupt_handler(handle_secondary_interrupt)
             if self._confirmation(f"\nALERT! You have interrupted this {self._interrupt_message or 'process'}."
                                   f" Do you want to stop{' (exit)' if self._interrupt_exit else ''}?"):
                 self.done()
@@ -184,24 +183,23 @@ class ProgressBar:
                     if interrupt_stop is True:
                         exit(1)
                     elif interrupt_stop is False:
-                        if self._am_main_thread():
-                            signal(SIGINT, handle_interrupt)
+                        set_interrupt_handler(handle_interrupt)
                         self.enable()
                         return
                 self._stop_requested = True
                 return
-            if self._am_main_thread():
-                signal(SIGINT, handle_interrupt)
+            set_interrupt_handler(handle_interrupt)
             self._interrupt_continue() if self._interrupt_continue else None
             self.enable()
         def restore_interrupt_handler() -> None:  # noqa
             nonlocal self, previous_interrupt_handler
-            if (previous_interrupt_handler is not None) and self._am_main_thread():
-                signal(SIGINT, previous_interrupt_handler)
-        if self._am_main_thread():
-            previous_interrupt_handler = signal(SIGINT, handle_interrupt)
-        else:
-            previous_interrupt_handler = None
+            set_interrupt_handler(previous_interrupt_handler)
+        def set_interrupt_handler(interrupt_handler: Callable) -> Optional[Callable]:  # noqa
+            nonlocal self
+            if callable(interrupt_handler) and (threading.current_thread() == threading.main_thread()):
+                return signal(SIGINT, interrupt_handler)
+            return None
+        previous_interrupt_handler = set_interrupt_handler(handle_interrupt)
         return namedtuple("interrupt_handler", ["restore"])(restore_interrupt_handler)
 
     def _define_tidy_output_hack(self) -> None:
@@ -253,7 +251,3 @@ class ProgressBar:
                 return False
             self._printf("Please answer 'yes' or 'no'.")
             sys.stdout.flush()
-
-    @staticmethod
-    def _am_main_thread() -> bool:
-        return threading.current_thread() == threading.main_thread()
