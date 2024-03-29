@@ -177,8 +177,16 @@ class ProgressBar:
                 # that they want to stop the process; if the interrupt_stop handler
                 # is defined and returns True, then we exit the entire process here,
                 # rather than simply returning, which is the default.
-                if (self._interrupt_stop() if self._interrupt_stop else None) is True:
-                    exit(1)
+                import pdb ; pdb.set_trace()
+                if self._interrupt_stop:
+                    interrupt_stop = self._interrupt_stop(self)
+                    if interrupt_stop is True:
+                        exit(1)
+                    elif interrupt_stop is False:
+                        if self._am_main_thread():
+                            signal(SIGINT, handle_interrupt)
+                        self.enable()
+                        return
                 self._stop_requested = True
                 return
             if self._am_main_thread():
