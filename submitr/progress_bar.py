@@ -64,7 +64,7 @@ class ProgressBar:
         self._interrupt_continue = interrupt_continue if callable(interrupt_continue) else None
         self._interrupt_stop = interrupt_stop if callable(interrupt_stop) else None
         if (interrupt_exit in [True, False]) and not self._interrupt_stop:
-            self._interrupt_stop = lambda: interrupt_exit
+            self._interrupt_stop = lambda _: interrupt_exit
             self._interrupt_exit = interrupt_exit
         else:
             self._interrupt_exit = False
@@ -172,8 +172,6 @@ class ProgressBar:
             set_interrupt_handler(handle_secondary_interrupt)
             if self._confirmation(f"\nALERT! You have interrupted this {self._interrupt_message or 'process'}."
                                   f" Do you want to stop{' (exit)' if self._interrupt_exit else ''}?"):
-                self.done()
-                restore_interrupt_handler()
                 # Here there was an interrupt (CTRL-C) and the user confirmed (yes)
                 # that they want to stop the process; if the interrupt_stop handler
                 # is defined and returns True, then we exit the entire process here,
@@ -181,6 +179,8 @@ class ProgressBar:
                 if self._interrupt_stop:
                     interrupt_stop = self._interrupt_stop(self)
                     if interrupt_stop is True:
+                        self.done()
+                        restore_interrupt_handler()
                         exit(1)
                     elif interrupt_stop is False:
                         set_interrupt_handler(handle_interrupt)
