@@ -75,8 +75,11 @@ class ProgressBar:
             self._interrupt_handler = self._define_interrupt_handler()
         if self._tidy_output_hack is True:
             self._tidy_output_hack = self._define_tidy_output_hack()
-        self.set_total(total)
-        self.set_description(description)
+        # self.set_total(total)
+        # self.set_description(description)
+        self._total = total if isinstance(total, int) and total >= 0 else 0
+        self._description = self._format_description(description)
+        self._initialize()
 
     def _initialize(self) -> bool:
         # Do not actually create the tqdm object unless/until we have a positive total.
@@ -90,7 +93,7 @@ class ProgressBar:
         return False
 
     def set_total(self, value: int) -> None:
-        if isinstance(value, int) and value >= 0:
+        if isinstance(value, int) and value > 0:
             self._total = value
             if self._bar is not None:
                 self._bar.total = value

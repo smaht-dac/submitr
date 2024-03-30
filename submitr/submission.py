@@ -1004,12 +1004,12 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             ingester_parse_started = ingestion_status.get("ingester_parse_initiate", None)
             ingester_validate_started = ingestion_status.get("ingester_validate_initiate", None)
             loadxl_initiated = ingestion_status.get("loadxl_initiate", None)
-            loadxl_total = ingestion_status.get(PROGRESS_LOADXL.TOTAL.value, 0)
-            loadxl_started = ingestion_status.get(PROGRESS_LOADXL.START.value, 0)
-            loadxl_item = ingestion_status.get(PROGRESS_LOADXL.ITEM.value, 0)
-            loadxl_started_second_round = ingestion_status.get(PROGRESS_LOADXL.START_SECOND_ROUND.value, 0)
-            loadxl_item_second_round = ingestion_status.get(PROGRESS_LOADXL.ITEM_SECOND_ROUND.value, 0)
-            loadxl_done = status.get(PROGRESS_LOADXL.DONE.value, None)
+            loadxl_total = ingestion_status.get(PROGRESS_LOADXL.TOTAL, 0)
+            loadxl_started = ingestion_status.get(PROGRESS_LOADXL.START, 0)
+            loadxl_item = ingestion_status.get(PROGRESS_LOADXL.ITEM, 0)
+            loadxl_started_second_round = ingestion_status.get(PROGRESS_LOADXL.START_SECOND_ROUND, 0)
+            loadxl_item_second_round = ingestion_status.get(PROGRESS_LOADXL.ITEM_SECOND_ROUND, 0)
+            loadxl_done = status.get(PROGRESS_LOADXL.DONE, None)
             # This string is from the /ingestion-status endpoint, really as a convenience/courtesey
             # so we don't have to cobble together our own string; but we could also build the
             # message ourselves manually here from the counts contained in the same response.
@@ -1102,7 +1102,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         # This is a very cheap call so do it on every progress iteration.
         ingestion_status = portal.get(f"/ingestion-status/{uuid}")
         if (ingestion_status.status_code == 200) and (ingestion_status := ingestion_status.json()):
-            loadxl_done = (ingestion_status.get(PROGRESS_LOADXL.DONE.value, 0) > 0)
+            loadxl_done = (ingestion_status.get(PROGRESS_LOADXL.DONE, None) is not None)
         else:
             ingestion_status = {}
             loadxl_done = False
@@ -2281,9 +2281,9 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             if noprogress:
                 return
             increment = 1
-            if status.get(PROGRESS_PARSE.LOAD_START.value):
-                nsheets = status.get("sheets") or 0
-                nrows = status.get("rows") or 0
+            if status.get(PROGRESS_PARSE.LOAD_START):
+                nsheets = status.get(PROGRESS_PARSE.LOAD_COUNT_SHEETS) or 0
+                nrows = status.get(PROGRESS_PARSE.LOAD_COUNT_ROWS) or 0
                 if nrows > 0:
                     bar.set_total(nrows)
                     if nsheets > 0:
@@ -2297,19 +2297,19 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 else:
                     PRINT(f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''}.")
                 return
-            elif status.get(PROGRESS_PARSE.LOAD_ITEM.value) or status.get(PROGRESS_PARSE.LOAD_DONE.value):
-                if not status.get(PROGRESS_PARSE.LOAD_DONE.value):
+            elif status.get(PROGRESS_PARSE.LOAD_ITEM) or status.get(PROGRESS_PARSE.LOAD_DONE):
+                if not status.get(PROGRESS_PARSE.LOAD_DONE):
                     nrows_processed += increment
-                nrefs_total = status.get(PROGRESS_PARSE.LOAD_COUNT_REFS.value) or 0
-                nrefs_resolved = status.get("refs_found") or 0
-                nrefs_unresolved = status.get("refs_not_found") or 0
-                nrefs_lookup = status.get("refs_lookup") or 0
-                nrefs_exists_cache_hit = status.get("refs_exists_cache_hit") or 0
-                nrefs_lookup_cache_hit = status.get("refs_lookup_cache_hit") or 0
-                nrefs_invalid = status.get("refs_invalid") or 0
-                if not status.get(PROGRESS_PARSE.LOAD_DONE.value):
+                nrefs_total = status.get(PROGRESS_PARSE.LOAD_COUNT_REFS) or 0
+                nrefs_resolved = status.get(PROGRESS_PARSE.LOAD_COUNT_REFS_FOUND) or 0
+                nrefs_unresolved = status.get(PROGRESS_PARSE.LOAD_COUNT_REFS_NOT_FOUND) or 0
+                nrefs_lookup = status.get(PROGRESS_PARSE.LOAD_COUNT_REFS_LOOKUP) or 0
+                nrefs_exists_cache_hit = status.get(PROGRESS_PARSE.LOAD_COUNT_REFS_EXISTS_CACHE_HIT) or 0
+                nrefs_lookup_cache_hit = status.get(PROGRESS_PARSE.LOAD_COUNT_REFS_LOOKUP_CACHE_HIT) or 0
+                nrefs_invalid = status.get(PROGRESS_PARSE.LOAD_COUNT_REFS_INVALID) or 0
+                if not status.get(PROGRESS_PARSE.LOAD_DONE):
                     bar.increment_progress(increment)
-            elif not status.get(PROGRESS_PARSE.LOAD_DONE.value):
+            elif not status.get(PROGRESS_PARSE.LOAD_DONE):
                 bar.increment_progress(increment)
             message = f"▶ Rows: {nrows} | Parsed: {nrows_processed}"
             if nrefs_total > 0:
@@ -2325,7 +2325,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     if debug:
                         message += f" [{nrefs_lookup_cache_hit}]"
             bar.set_description(message)
-            if status.get(PROGRESS_PARSE.LOAD_DONE.value):
+            if status.get(PROGRESS_PARSE.LOAD_DONE):
                 bar.done()
 
         return progress_report
@@ -2657,7 +2657,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
             if noprogress:
                 return
             increment = 1
-            if status.get(PROGRESS_PARSE.ANALYZE_START.value):
+            if status.get(PROGRESS_PARSE.ANALYZE_START):
                 ntypes = status.get("types")
                 nobjects = status.get("objects")
                 bar.set_total(nobjects)
