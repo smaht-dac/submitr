@@ -25,6 +25,7 @@ from dcicutils.misc_utils import (
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
 from dcicutils.structured_data import Portal, StructuredDataSet
+from dcicutils.progress_constants import PROGRESS_LOADXL, PROGRESS_PARSE
 from typing_extensions import Literal
 from urllib.parse import urlparse
 from submitr.base import DEFAULT_APP
@@ -41,6 +42,7 @@ from submitr.utils import (
 
 DEFAULT_INGESTION_TYPE = 'metadata_bundle'
 GENERIC_SCHEMA_TYPE = 'FileOther'
+
 
 # Maximum amount of time (approximately) we will wait for a response from server (seconds).
 PROGRESS_TIMEOUT = 60 * 5  # five minutes (note this is for both server validation and submission)
@@ -987,8 +989,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         next_check = 0
         # From (new/2024-03-25) /ingestion-status/{submission_uuid} call.
         loadxl_total = 0
-        loadxl_started = 0
-        loadxl_started_second_round = 0
+        loadxl_started = None
+        loadxl_started_second_round = None
         def progress_report(status: dict) -> None:  # noqa
             nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status, noprogress, validation
             nonlocal loadxl_total, loadxl_started, loadxl_started_second_round, verbose
@@ -999,22 +1001,22 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             # from smaht-portal/ingestion. Note difference between ingester_initiated and
             # loadxl_started; the former is when the ingester listener is first hit.
             ingester_initiated = ingestion_status.get("ingester_initiate", None)
-            ingester_parse_started = ingestion_status.get("ingester_parse_start", None)
-            ingester_validate_started = ingestion_status.get("ingester_validate_start", None)
+            ingester_parse_started = ingestion_status.get("ingester_parse_initiate", None)
+            ingester_validate_started = ingestion_status.get("ingester_validate_initiate", None)
             loadxl_initiated = ingestion_status.get("loadxl_initiate", None)
-            loadxl_total = ingestion_status.get("loadxl_total", 0)
-            loadxl_started = ingestion_status.get("loadxl_start", 0)
-            loadxl_item = ingestion_status.get("loadxl_item", 0)
-            loadxl_started_second_round = ingestion_status.get("loadxl_start_second_round", 0)
-            loadxl_item_second_round = ingestion_status.get("loadxl_item_second_round", 0)
-            loadxl_done = status.get("loadxl_done", 0) > 0
+            loadxl_total = ingestion_status.get(PROGRESS_LOADXL.TOTAL.value, 0)
+            loadxl_started = ingestion_status.get(PROGRESS_LOADXL.START.value, 0)
+            loadxl_item = ingestion_status.get(PROGRESS_LOADXL.ITEM.value, 0)
+            loadxl_started_second_round = ingestion_status.get(PROGRESS_LOADXL.START_SECOND_ROUND.value, 0)
+            loadxl_item_second_round = ingestion_status.get(PROGRESS_LOADXL.ITEM_SECOND_ROUND.value, 0)
+            loadxl_done = status.get(PROGRESS_LOADXL.DONE.value, None)
             # This string is from the /ingestion-status endpoint, really as a convenience/courtesey
             # so we don't have to cobble together our own string; but we could also build the
             # message ourselves manually here from the counts contained in the same response.
             ingestion_message = (status.get("loadxl_message_verbose", "")
                                  if verbose else status.get("loadxl_message", ""))
             # Phases: 0 means waiting for server response; 1 means loadxl round one; 2 means loadxl round two.
-            loadxl_phase = 2 if loadxl_started_second_round > 0 else (1 if loadxl_started > 0 else 0)
+            loadxl_phase = 2 if loadxl_started_second_round is not None else (1 if loadxl_started is not None else 0)
             done = False
             if status.get("finish") or nchecks >= max_checks:
                 check_status = status.get("status")
@@ -1031,7 +1033,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 if loadxl_phase == 0:
                     bar.increment_progress(1)
             message = f"▶ {title} Pings: {nchecks_server}"
-            if loadxl_started == 0:
+            if loadxl_started is None:
                 if loadxl_initiated is not None:
                     message += f" | Server INI"
                 elif ingester_parse_started is not None:
@@ -1043,7 +1045,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 else:
                     message += f" | Waiting on server"
             else:
-                if loadxl_done:
+                if loadxl_done is not None:
                     bar.set_total(loadxl_total)
                     bar.set_progress(loadxl_total)
                 elif loadxl_phase == 2:
@@ -1100,14 +1102,14 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         # This is a very cheap call so do it on every progress iteration.
         ingestion_status = portal.get(f"/ingestion-status/{uuid}")
         if (ingestion_status.status_code == 200) and (ingestion_status := ingestion_status.json()):
-            loadxl_done = (ingestion_status.get("loadxl_done", 0) > 0)
+            loadxl_done = (ingestion_status.get(PROGRESS_LOADXL.DONE.value, 0) > 0)
         else:
             ingestion_status = {}
             loadxl_done = False
         if (loadxl_done or (most_recent_server_check_time is None) or
             ((time.time() - most_recent_server_check_time) >= PROGRESS_CHECK_SERVER_INTERVAL)):  # noqa
             if most_recent_server_check_time is None:
-                progress({"start": True, **ingestion_status})
+                progress(ingestion_status)
             else:
                 progress({"check_server": True, "status": (check_status or "unknown").title(), **ingestion_status})
             # Do the actual portal check here (i.e by fetching the IngestionSubmission object)..
@@ -2279,7 +2281,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             if noprogress:
                 return
             increment = 1
-            if status.get("start"):
+            if status.get(PROGRESS_PARSE.LOAD_START.value):
                 nsheets = status.get("sheets") or 0
                 nrows = status.get("rows") or 0
                 if nrows > 0:
@@ -2295,19 +2297,19 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 else:
                     PRINT(f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''}.")
                 return
-            elif status.get("parse") or status.get("finish"):
-                if not status.get("finish"):
+            elif status.get(PROGRESS_PARSE.LOAD_ITEM.value) or status.get(PROGRESS_PARSE.LOAD_DONE.value):
+                if not status.get(PROGRESS_PARSE.LOAD_DONE.value):
                     nrows_processed += increment
-                nrefs_total = status.get("refs") or 0
+                nrefs_total = status.get(PROGRESS_PARSE.LOAD_COUNT_REFS.value) or 0
                 nrefs_resolved = status.get("refs_found") or 0
                 nrefs_unresolved = status.get("refs_not_found") or 0
                 nrefs_lookup = status.get("refs_lookup") or 0
                 nrefs_exists_cache_hit = status.get("refs_exists_cache_hit") or 0
                 nrefs_lookup_cache_hit = status.get("refs_lookup_cache_hit") or 0
                 nrefs_invalid = status.get("refs_invalid") or 0
-                if not status.get("finish"):
+                if not status.get(PROGRESS_PARSE.LOAD_DONE.value):
                     bar.increment_progress(increment)
-            elif not status.get("finish"):
+            elif not status.get(PROGRESS_PARSE.LOAD_DONE.value):
                 bar.increment_progress(increment)
             message = f"▶ Rows: {nrows} | Parsed: {nrows_processed}"
             if nrefs_total > 0:
@@ -2323,7 +2325,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     if debug:
                         message += f" [{nrefs_lookup_cache_hit}]"
             bar.set_description(message)
-            if status.get("finish"):
+            if status.get(PROGRESS_PARSE.LOAD_DONE.value):
                 bar.done()
 
         return progress_report
@@ -2655,7 +2657,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
             if noprogress:
                 return
             increment = 1
-            if status.get("start"):
+            if status.get(PROGRESS_PARSE.ANALYZE_START.value):
                 ntypes = status.get("types")
                 nobjects = status.get("objects")
                 bar.set_total(nobjects)
