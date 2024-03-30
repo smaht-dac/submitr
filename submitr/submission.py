@@ -25,7 +25,7 @@ from dcicutils.misc_utils import (
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
 from dcicutils.structured_data import Portal, StructuredDataSet
-from dcicutils.progress_constants import PROGRESS_LOADXL, PROGRESS_PARSE
+from dcicutils.progress_constants import PROGRESS_INGESTER, PROGRESS_LOADXL, PROGRESS_PARSE
 from typing_extensions import Literal
 from urllib.parse import urlparse
 from submitr.base import DEFAULT_APP
@@ -1003,11 +1003,12 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             ingester_initiated = ingestion_status.get("ingester_initiate", None)
             ingester_parse_started = ingestion_status.get("ingester_parse_initiate", None)
             ingester_validate_started = ingestion_status.get("ingester_validate_initiate", None)
+            ingester_queued = ingestion_status.get(PROGRESS_INGESTER.QUEUED, None)
             loadxl_initiated = ingestion_status.get("loadxl_initiate", None)
             loadxl_total = ingestion_status.get(PROGRESS_LOADXL.TOTAL, 0)
-            loadxl_started = ingestion_status.get(PROGRESS_LOADXL.START, 0)
+            loadxl_started = ingestion_status.get(PROGRESS_LOADXL.START, None)
             loadxl_item = ingestion_status.get(PROGRESS_LOADXL.ITEM, 0)
-            loadxl_started_second_round = ingestion_status.get(PROGRESS_LOADXL.START_SECOND_ROUND, 0)
+            loadxl_started_second_round = ingestion_status.get(PROGRESS_LOADXL.START_SECOND_ROUND, None)
             loadxl_item_second_round = ingestion_status.get(PROGRESS_LOADXL.ITEM_SECOND_ROUND, 0)
             loadxl_done = status.get(PROGRESS_LOADXL.DONE, None)
             # This string is from the /ingestion-status endpoint, really as a convenience/courtesey
@@ -1035,13 +1036,15 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             message = f"▶ {title} Pings: {nchecks_server}"
             if loadxl_started is None:
                 if loadxl_initiated is not None:
-                    message += f" | Server INI"
+                    message += f" | Initializing"
                 elif ingester_parse_started is not None:
-                    message += f" | Server parsing"
+                    message += f" | Parsing"
                 elif ingester_validate_started is not None:
-                    message += f" | Server validating"
+                    message += f" | Validating"
                 elif ingester_initiated is not None:
-                    message += f" | Server ACK"
+                    message += f" | Acknowledged"
+                elif ingester_queued is not None:
+                    message += f" | Queued"
                 else:
                     message += f" | Waiting on server"
             else:
