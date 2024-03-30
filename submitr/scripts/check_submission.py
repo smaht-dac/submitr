@@ -26,6 +26,7 @@ def main(simulated_args_for_testing=None):
     args.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=None)
     args.add_argument('--directory', '-d', help="Directory of the upload files (if resuming submission).")
     args.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
+    args.add_argument('--output', help="Output file for results.", default=False)
     args.add_argument('--details', action="store_true", help="More detailed output.", default=False)
     args.add_argument('--timeout', help="Wait timeout for server validation/submission.")
     args.add_argument('--verbose', action="store_true", help="More verbose output.", default=False)
@@ -78,6 +79,7 @@ def main(simulated_args_for_testing=None):
                 debug=args.debug,
                 upload_directory=upload_directory,
                 upload_directory_recursive=not upload_directory_only,
+                output_file=args.output,
                 note="Checking Submission"
         )
 

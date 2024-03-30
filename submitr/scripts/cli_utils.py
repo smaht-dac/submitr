@@ -91,7 +91,8 @@ class CustomArgumentParser(argparse.ArgumentParser):
         return "pytest" in sys.modules
 
 
-def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Callable]] = None) -> None:
+def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Callable]] = None,
+                printf: Optional[Callable] = PRINT) -> None:
     macro_name = None
     macro_value = None
     if right_justified_macro and (len(right_justified_macro) == 2):
@@ -107,12 +108,12 @@ def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Cal
         length = max(len(line) for line in lines)
     for line in lines:
         if line == "===":
-            PRINT(f"+{'-' * (length - len(line) + 5)}+")
+            printf(f"+{'-' * (length - len(line) + 5)}+")
         elif macro_name and line.endswith(macro_name):
             line = line.replace(macro_name, "")
-            PRINT(f"| {line}{' ' * (length - len(line) - len(macro_value) - 1)} {macro_value} |")
+            printf(f"| {line}{' ' * (length - len(line) - len(macro_value) - 1)} {macro_value} |")
         else:
-            PRINT(f"| {line}{' ' * (length - len(line))} |")
+            printf(f"| {line}{' ' * (length - len(line))} |")
 
 
 def get_version(package: str = "smaht-submitr") -> str:

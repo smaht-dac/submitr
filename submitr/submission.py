@@ -39,6 +39,10 @@ from submitr.utils import (
     get_file_modified_datetime, get_file_size, keyword_as_title, tobool
 )
 
+def set_output_file(output_file):
+    if output_file:
+        global PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW
+        PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW = setup_for_output_file_option(output_file)
 
 DEFAULT_INGESTION_TYPE = 'metadata_bundle'
 GENERIC_SCHEMA_TYPE = 'FileOther'
@@ -974,7 +978,11 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                                timeout: Optional[int] = None,
                                verbose: bool = False, debug: bool = False,
                                note: Optional[str] = None,
+                               output_file: Optional[str] = None,
                                debug_sleep: Optional[int] = None) -> Tuple[bool, str, dict]:
+
+    if output_file:
+        set_output_file(output_file)
 
     if timeout:
         global PROGRESS_TIMEOUT, PROGRESS_MAX_CHECKS
@@ -1550,7 +1558,7 @@ def _print_submission_summary(portal: Portal, result: dict,
         lines = ["===", f"SMaHT {'Validation' if validation else 'Submission'} Summary [UUID]", "==="] + lines + ["==="]
         if errors and include_errors:
             lines += ["ERRORS ITEMIZED BELOW ...", "==="]
-        print_boxed(lines, right_justified_macro=("[UUID]", lambda: submission_uuid))
+        print_boxed(lines, right_justified_macro=("[UUID]", lambda: submission_uuid), printf=PRINT)
         if errors and include_errors:
             for error in errors:
                 PRINT(_format_server_error(error))
