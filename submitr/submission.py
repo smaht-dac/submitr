@@ -922,7 +922,7 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
                 lines.append("===")
             if verbose:
                 PRINT()
-                _print_submission_summary(portal, submission)
+                _print_submission_summary(portal, submission, verbose=verbose)
                 continue
             submission_uuid = submission.get("uuid")
             submission_created = submission.get("date_created")
@@ -1529,7 +1529,11 @@ def _print_submission_summary(portal: Portal, result: dict,
             for upload_file in upload_files:
                 upload_file_uuid = upload_file.get("uuid")
                 upload_file_name = upload_file.get("filename")
-                upload_file_accession_name, upload_file_type = _get_upload_file_info(portal, upload_file_uuid)
+                if verbose:
+                    upload_file_accession_name, upload_file_type = _get_upload_file_info(portal, upload_file_uuid)
+                else:
+                    upload_file_accession_name = None
+                    upload_file_type = None
                 lines.append("===")
                 lines.append(f"Upload File: {upload_file_name}")
                 lines.append(f"Upload File ID: {upload_file_uuid}")
