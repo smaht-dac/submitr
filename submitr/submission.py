@@ -39,10 +39,12 @@ from submitr.utils import (
     get_file_modified_datetime, get_file_size, keyword_as_title, tobool
 )
 
+
 def set_output_file(output_file):
     if output_file:
         global PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW
         PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW = setup_for_output_file_option(output_file)
+
 
 DEFAULT_INGESTION_TYPE = 'metadata_bundle'
 GENERIC_SCHEMA_TYPE = 'FileOther'
