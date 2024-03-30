@@ -1030,7 +1030,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 nchecks += 1
                 if loadxl_phase == 0:
                     bar.increment_progress(1)
-            message = f"▶ {title} pings: {nchecks_server}"
+            message = f"▶ {title} Pings: {nchecks_server}"
             if loadxl_started == 0:
                 if loadxl_initiated is not None:
                     message += f" | Server INI"
