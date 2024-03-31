@@ -165,6 +165,10 @@ def get_file_modified_datetime(file: str) -> str:
         return ""
 
 
+def get_file_checksum(file: str) -> str:
+    return get_file_md5_like_aws_s3_etag(file)
+
+
 def get_file_md5(file: str) -> str:
     if not isinstance(file, str):
         return ""

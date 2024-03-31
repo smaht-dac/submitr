@@ -35,7 +35,8 @@ from submitr.progress_bar import ProgressBar
 from submitr.scripts.cli_utils import get_version, print_boxed
 from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import (
-    format_datetime, format_size, format_path, get_file_md5, get_file_md5_like_aws_s3_etag,
+    format_datetime, format_size, format_path,
+    get_file_checksum, get_file_md5, get_file_md5_like_aws_s3_etag,
     get_file_modified_datetime, get_file_size, keyword_as_title, tobool
 )
 
@@ -477,7 +478,7 @@ def _initiate_server_ingestion_process(
         patch_only: bool = False,
         autoadd: Optional[dict] = None,
         datafile_size: Optional[Any] = None,
-        datafile_md5: Optional[Any] = None,
+        datafile_checksum: Optional[Any] = None,
         debug: bool = False,
         debug_sleep: Optional[str] = None) -> str:
 
@@ -503,7 +504,7 @@ def _initiate_server_ingestion_process(
         "autoadd": json.dumps(autoadd),
         "ingestion_directory": os.path.dirname(ingestion_filename) if ingestion_filename else None,
         "datafile_size": datafile_size or get_file_size(ingestion_filename),
-        "datafile_md5": datafile_md5 or get_file_md5(ingestion_filename)
+        "datafile_checksum": datafile_checksum or get_file_checksum(ingestion_filename)
     }
 
     if validation_ingestion_submission_uuid:
@@ -1010,11 +1011,11 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             # Some of these key name come ultimately from snovault.loadxl.PROGRESS; others
             # from smaht-portal/ingestion. Note difference between ingester_initiated and
             # loadxl_started; the former is when the ingester listener is first hit.
-            ingester_initiated = ingestion_status.get("ingester_initiate", None)
-            ingester_parse_started = ingestion_status.get("ingester_parse_initiate", None)
-            ingester_validate_started = ingestion_status.get("ingester_validate_initiate", None)
+            ingester_initiated = ingestion_status.get(PROGRESS_INGESTER.INITIATE, None)
+            ingester_parse_started = ingestion_status.get(PROGRESS_INGESTER.PARSE_LOAD_INITIATE, None)
+            ingester_validate_started = ingestion_status.get(PROGRESS_INGESTER.VALIDATE_LOAD_INITIATE, None)
             ingester_queued = ingestion_status.get(PROGRESS_INGESTER.QUEUED, None)
-            loadxl_initiated = ingestion_status.get("loadxl_initiate", None)
+            loadxl_initiated = ingestion_status.get(PROGRESS_INGESTER.LOADXL_INITIATE, None)
             loadxl_total = ingestion_status.get(PROGRESS_LOADXL.TOTAL, 0)
             loadxl_started = ingestion_status.get(PROGRESS_LOADXL.START, None)
             loadxl_item = ingestion_status.get(PROGRESS_LOADXL.ITEM, 0)
@@ -1207,7 +1208,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             submission_centers=submission_centers,
             autoadd=check_parameters.get("autoadd"),
             datafile_size=check_parameters.get("datafile_size"),
-            datafile_md5=check_parameters.get("datafile_md5"),
+            datafile_checksum=check_parameters.get("datafile_checksum"),
             debug=debug,
             debug_sleep=debug_sleep)
         SHOW(f"Submission tracking ID: {submission_uuid}")
@@ -1437,10 +1438,10 @@ def _print_submission_summary(portal: Portal, result: dict,
                 datafile_size = int(datafile_size)
             if isinstance(datafile_size, int):
                 extra_file_info += f"{format_size(datafile_size)}"
-        if datafile_md5 := submission_parameters.get("datafile_md5"):
+        if datafile_checksum := submission_parameters.get("datafile_checksum"):
             if extra_file_info:
                 extra_file_info += " | "
-            extra_file_info += f"MD5: {datafile_md5}"
+            extra_file_info += f"MD5: {datafile_checksum}"
         if extra_file_info:
             lines.append(f"Submission File Info: {extra_file_info}")
     if validation:
@@ -2671,8 +2672,8 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 return
             increment = 1
             if status.get(PROGRESS_PARSE.ANALYZE_START):
-                ntypes = status.get("types")
-                nobjects = status.get("objects")
+                ntypes = status.get(PROGRESS_PARSE.ANALYZE_COUNT_TYPES)
+                nobjects = status.get(PROGRESS_PARSE.ANALYZE_COUNT_ITEMS)
                 bar.set_total(nobjects)
                 PRINT(f"Analyzing submission file which has {ntypes} type{'s' if ntypes != 1 else ''}"
                       f" and a total of {nobjects} object{'s' if nobjects != 1 else ''}.")
