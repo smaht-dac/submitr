@@ -2678,19 +2678,21 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 PRINT(f"Analyzing submission file which has {ntypes} type{'s' if ntypes != 1 else ''}"
                       f" and a total of {nobjects} object{'s' if nobjects != 1 else ''}.")
                 return
-            elif status.get("finish"):
+            elif status.get(PROGRESS_PARSE.ANALYZE_DONE):
                 bar.done()
                 return
-            elif status.get("create"):
+            elif status.get(PROGRESS_PARSE.ANALYZE_CREATE):
                 ncreates += increment
-                nlookups += status.get("lookups") or 0
+                # TODO/XYZZY: This ANALYZE_COUNT_LOOKUP should be  ANALYZE_LOOKUP because
+                # it is not a total count it is incremental, but it can but greater than one.
+                nlookups += status.get(PROGRESS_PARSE.ANALYZE_COUNT_LOOKUP) or 0
                 bar.increment_progress(increment)
-            elif status.get("update"):
+            elif status.get(PROGRESS_PARSE.ANALYZE_UPDATE):
                 nupdates += increment
-                nlookups += status.get("lookups") or 0
+                nlookups += status.get(PROGRESS_PARSE.ANALYZE_COUNT_LOOKUP) or 0
                 bar.increment_progress(increment)
             else:
-                nlookups += status.get("lookups") or 0
+                nlookups += status.get(PROGRESS_PARSE.ANALYZE_COUNT_LOOKUP) or 0
                 bar.increment_progress(increment)
             # duration = time.time() - started
             # nprocessed = ncreates + nupdates
