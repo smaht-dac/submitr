@@ -941,7 +941,7 @@ def test_upload_file_to_uuid():
 
     with mock.patch("dcicutils.portal_utils.Portal.patch_metadata", return_value=SOME_UPLOAD_CREDENTIALS_RESULT):
         with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
-            metadata = upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_AUTH)
+            metadata = upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_AUTH, first_time=False)
             assert metadata == SOME_FILE_METADATA
             mocked_upload.assert_called_with(SOME_FILENAME, auth=SOME_AUTH,
                                              upload_credentials=SOME_UPLOAD_CREDENTIALS)
@@ -949,7 +949,7 @@ def test_upload_file_to_uuid():
     with mock.patch("dcicutils.portal_utils.Portal.patch_metadata", return_value=SOME_BAD_RESULT):
         with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
             try:
-                upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_AUTH)
+                upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_AUTH, first_time=False)
             except Exception as e:
                 assert str(e).startswith("Unable to obtain upload credentials")
             else:
@@ -983,7 +983,7 @@ def test_do_uploads(tmp_path):
 
         uploaded = {}
 
-        def mocked_upload_file(filename, uuid, auth):
+        def mocked_upload_file(filename, uuid, auth, first_time=False):
             if auth != SOME_AUTH:
                 raise Exception("Bad auth")
             uploaded[uuid] = filename
@@ -1094,7 +1094,8 @@ def test_do_uploads2(tmp_path):
         mock_upload.assert_called_with(
             filename=file_path,
             uuid=uuid,
-            auth=SOME_AUTH
+            auth=SOME_AUTH,
+            first_time=True
         )
 
     with shown_output() as shown:
@@ -1121,7 +1122,8 @@ def test_do_uploads2(tmp_path):
         mock_upload.assert_called_with(
             filename=file_path,
             uuid=uuid,
-            auth=SOME_AUTH
+            auth=SOME_AUTH,
+            first_time=True
         )
 
     with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:

@@ -37,7 +37,7 @@ from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import (
     format_datetime, format_size, format_path,
     get_file_checksum, get_file_md5, get_file_md5_like_aws_s3_etag,
-    get_file_modified_datetime, get_file_size, keyword_as_title, tobool
+    get_file_modified_datetime, get_file_size, get_s3_bucket_and_key_from_s3_uri, keyword_as_title, tobool
 )
 
 
@@ -1936,7 +1936,7 @@ def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
     return metadata
 
 
-def upload_file_to_uuid(filename, uuid, auth):
+def upload_file_to_uuid(filename, uuid, auth, first_time=False):
     """
     Upload file to a target environment.
 
@@ -1957,6 +1957,14 @@ def upload_file_to_uuid(filename, uuid, auth):
                                                                            method='PATCH', uuid=uuid,
                                                                            filename=filename, payload_data=patch_data)
 
+    if first_time:
+        if upload_url := upload_credentials.get('upload_url'):
+            s3_bucket, _ = get_s3_bucket_and_key_from_s3_uri(upload_url)
+            if s3_bucket:
+                # This assumes all files are going to the same bucket;
+                # which I think is a pretty solid assumption.
+                PRINT(f"Upload file destination AWS S3 bucket: {s3_bucket}")
+                pass
     execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
 
     return metadata
@@ -2002,6 +2010,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
     folder = folder or os.path.curdir
     if subfolders:
         folder = os.path.join(folder, '**')
+    first_time = True
     for upload_spec in upload_spec_list:
         file_name = upload_spec["filename"]
         if not (file_paths := search_for_file(file_name, location=folder, recursive=subfolders)) or len(file_paths) > 1:
@@ -2018,7 +2027,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
             upload_file_to_uuid, file_path
         )
         file_metadata = wrapped_upload_file_to_uuid(
-            filename=file_path, uuid=uuid, auth=auth
+            filename=file_path, uuid=uuid, auth=auth, first_time=first_time
         )
         if file_metadata:
             extra_files_credentials = file_metadata.get("extra_files_creds", [])
@@ -2030,6 +2039,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
                     auth,
                     recursive=subfolders,
                 )
+        first_time = False
 
 
 class UploadMessageWrapper:
