@@ -1071,7 +1071,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 elif loadxl_phase == 1:
                     bar.set_total(loadxl_total)
                     bar.set_progress(loadxl_item)
-                if ingester_queue_cleanup is not None:
+                if (ingester_queue_cleanup is not None) or done:
                     message += " | Done"
                 elif ingester_cleanup is not None:
                     message += " | Cleanup"
