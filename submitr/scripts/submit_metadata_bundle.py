@@ -253,7 +253,7 @@ def main(simulated_args_for_testing=None):
         if not os.path.exists(args.bundle_filename):
             PRINT(f"File does not exist: {args.bundle_filename}")
             exit(1)
-        _print_metadata_file_info(args.bundle_filename, refs=args.refs)
+        _print_metadata_file_info(args.bundle_filename, env=args.env, refs=args.refs, output_file=args.output)
         exit(0)
 
     with script_catch_errors():

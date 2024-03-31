@@ -1046,7 +1046,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 nchecks += 1
                 if loadxl_phase == 0:
                     bar.increment_progress(1)
-            message = f"▶ {title} Pings: {nchecks_server}"
+            # message = f"▶ {title} Pings: {nchecks_server}"
+            message = f"▶ Pings: {nchecks_server}"
             if loadxl_started is None:
                 if loadxl_initiated is not None:
                     message += f" | Initializing"
@@ -1233,7 +1234,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                        upload_folder=upload_directory, subfolders=upload_directory_recursive, portal=portal)
         return
 
-    if check_submission_script or debug or not validation:
+    if check_submission_script or verbose or debug:  # or not validation
         _print_submission_summary(portal, check_response,
                                   nofiles=nofiles, check_submission_script=check_submission_script,
                                   verbose=verbose, debug=debug)
@@ -2857,6 +2858,9 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         nonlocal app
         return os.path.expanduser(os.path.join(Portal.KEYS_FILE_DIRECTORY, f".{app.lower()}-keys.json"))
 
+    if not env and not env_from_env:
+        env_from_env = os.environ.get("SMAHT_ENV")
+
     raise_exception = True
     if not app:
         app = DEFAULT_APP
@@ -2944,7 +2948,9 @@ def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optiona
     return format_datetime(datetime.fromisoformat(value))
 
 
-def _print_metadata_file_info(file: str, refs: bool = False) -> None:
+def _print_metadata_file_info(file: str, env: str, refs: bool = False, output_file: Optional[str] = None) -> None:
+    if output_file:
+        set_output_file(output_file)
     PRINT(f"Metadata File: {os.path.basename(file)}")
     if size := get_file_size(file):
         PRINT(f"Size: {format_size(size)} ({size})")
@@ -2969,6 +2975,18 @@ def _print_metadata_file_info(file: str, refs: bool = False) -> None:
             nrows_total += nrows
         sheet_lines = "\n" + "\n".join(sheet_lines)
         PRINT(f"Sheets: {nsheets} | Rows: {nrows_total}{sheet_lines}")
+    if refs is True:
+        portal = _define_portal(env=env)
+        structured_data = StructuredDataSet(file, portal, norefs=True)
+        refs = structured_data.resolved_refs
+        PRINT(f"References: {len(refs) or 'None'}")
+        if output_file and len(refs) > 7:
+            PRINT_STDOUT(f"- See your output file: {output_file}")
+            for ref in sorted(refs):
+                PRINT_OUTPUT(f"- {ref}")
+        else:
+            for ref in sorted(refs):
+                PRINT(f"- {ref}")
 
 
 def _ping(app: str, env: str, server: str, keys_file: str,
