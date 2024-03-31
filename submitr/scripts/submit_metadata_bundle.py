@@ -176,6 +176,8 @@ def main(simulated_args_for_testing=None):
                         help="Output ONLY the parsed JSON of the metadata file.", default=False)
     parser.add_argument('--info', action="store_true",
                         help="Output information about the given metadata file.", default=False)
+    parser.add_argument('--refs', action="store_true",
+                        help="Outputs list of references from the metadata file; only with --info.", default=False)
     parser.add_argument('--output', help="Output file for results.", default=False)
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--timeout', help="Wait timeout for server validation/submission.")
@@ -251,7 +253,7 @@ def main(simulated_args_for_testing=None):
         if not os.path.exists(args.bundle_filename):
             PRINT(f"File does not exist: {args.bundle_filename}")
             exit(1)
-        _print_metadata_file_info(args.bundle_filename)
+        _print_metadata_file_info(args.bundle_filename, refs=args.refs)
         exit(0)
 
     with script_catch_errors():

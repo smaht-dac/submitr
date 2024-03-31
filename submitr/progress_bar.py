@@ -180,7 +180,7 @@ class ProgressBar:
                 nonlocal self
                 self._printf("\nEnter 'yes' to 'no' or CTRL-\\ to completely abort ...")
             self.disable()
-            self._interrupt() if self._interrupt else None
+            self._interrupt(self) if self._interrupt else None
             set_interrupt_handler(handle_secondary_interrupt)
             if self._confirmation(f"\nALERT! You have interrupted this {self._interrupt_message or 'process'}."
                                   f" Do you want to stop{' (exit)' if self._interrupt_exit else ''}?"):
@@ -201,7 +201,7 @@ class ProgressBar:
                 self._stop_requested = True
                 return
             set_interrupt_handler(handle_interrupt)
-            self._interrupt_continue() if self._interrupt_continue else None
+            self._interrupt_continue(self) if self._interrupt_continue else None
             self.enable()
         def restore_interrupt_handler() -> None:  # noqa
             nonlocal self, previous_interrupt_handler
@@ -222,7 +222,7 @@ class ProgressBar:
             # it do a little ASCII progress animation; this requires a "[progress]"
             # value in their display string where the progress bar should actually
             # go which we do in _format_description.
-            if self._disabled and "[progress]:" in text:
+            if (self._disabled or self._done) and "[progress]:" in text:
                 # And another hack to really disable output on interrupt;
                 # on interrupt we set tqdm.disable to True, but output still
                 # dribbles out, so if here the output looks like it is from

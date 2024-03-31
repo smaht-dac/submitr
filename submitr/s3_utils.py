@@ -106,7 +106,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             bar.done()
             if upload_done:
                 printf(upload_done)
-        def abort_upload() -> bool:  # noqa
+        def abort_upload(bar: ProgressBar) -> bool:  # noqa
             nonlocal should_abort
             with thread_lock:
                 should_abort = True
@@ -212,7 +212,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             else:
                 s3.upload_fileobj(f, s3_bucket, s3_key, Callback=upload_file_callback.function)
         except Exception:
-            printf(f"Upload aborted: {file}")
+            printf(f"\nUpload aborted: {file}")
             upload_aborted = True
 
     upload_file_callback.done()

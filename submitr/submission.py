@@ -2936,7 +2936,7 @@ def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optiona
     return format_datetime(datetime.fromisoformat(value))
 
 
-def _print_metadata_file_info(file: str) -> None:
+def _print_metadata_file_info(file: str, refs: bool = False) -> None:
     PRINT(f"Metadata File: {os.path.basename(file)}")
     if size := get_file_size(file):
         PRINT(f"Size: {format_size(size)} ({size})")
