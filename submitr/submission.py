@@ -1011,16 +1011,16 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             # Some of these key name come ultimately from snovault.loadxl.PROGRESS; others
             # from smaht-portal/ingestion. Note difference between ingester_initiated and
             # loadxl_started; the former is when the ingester listener is first hit.
-            ingester_initiated = ingestion_status.get(PROGRESS_INGESTER.INITIATE, None)
-            ingester_parse_started = ingestion_status.get(PROGRESS_INGESTER.PARSE_LOAD_INITIATE, None)
-            ingester_validate_started = ingestion_status.get(PROGRESS_INGESTER.VALIDATE_LOAD_INITIATE, None)
-            ingester_queued = ingestion_status.get(PROGRESS_INGESTER.QUEUED, None)
-            loadxl_initiated = ingestion_status.get(PROGRESS_INGESTER.LOADXL_INITIATE, None)
-            loadxl_total = ingestion_status.get(PROGRESS_LOADXL.TOTAL, 0)
-            loadxl_started = ingestion_status.get(PROGRESS_LOADXL.START, None)
-            loadxl_item = ingestion_status.get(PROGRESS_LOADXL.ITEM, 0)
-            loadxl_started_second_round = ingestion_status.get(PROGRESS_LOADXL.START_SECOND_ROUND, None)
-            loadxl_item_second_round = ingestion_status.get(PROGRESS_LOADXL.ITEM_SECOND_ROUND, 0)
+            ingester_initiated = status.get(PROGRESS_INGESTER.INITIATE, None)
+            ingester_parse_started = status.get(PROGRESS_INGESTER.PARSE_LOAD_INITIATE, None)
+            ingester_validate_started = status.get(PROGRESS_INGESTER.VALIDATE_LOAD_INITIATE, None)
+            ingester_queued = status.get(PROGRESS_INGESTER.QUEUED, None)
+            loadxl_initiated = status.get(PROGRESS_INGESTER.LOADXL_INITIATE, None)
+            loadxl_total = status.get(PROGRESS_LOADXL.TOTAL, 0)
+            loadxl_started = status.get(PROGRESS_LOADXL.START, None)
+            loadxl_item = status.get(PROGRESS_LOADXL.ITEM, 0)
+            loadxl_started_second_round = status.get(PROGRESS_LOADXL.START_SECOND_ROUND, None)
+            loadxl_item_second_round = status.get(PROGRESS_LOADXL.ITEM_SECOND_ROUND, 0)
             loadxl_done = status.get(PROGRESS_LOADXL.DONE, None)
             # This string is from the /ingestion-status endpoint, really as a convenience/courtesey
             # so we don't have to cobble together our own string; but we could also build the
