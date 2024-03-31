@@ -1015,6 +1015,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             ingester_parse_started = status.get(PROGRESS_INGESTER.PARSE_LOAD_INITIATE, None)
             ingester_validate_started = status.get(PROGRESS_INGESTER.VALIDATE_LOAD_INITIATE, None)
             ingester_queued = status.get(PROGRESS_INGESTER.QUEUED, None)
+            ingester_cleanup = status.get(PROGRESS_INGESTER.CLEANUP, None)
+            ingester_queue_cleanup = status.get(PROGRESS_INGESTER.QUEUE_CLEANUP, None)
             loadxl_initiated = status.get(PROGRESS_INGESTER.LOADXL_INITIATE, None)
             loadxl_total = status.get(PROGRESS_LOADXL.TOTAL, 0)
             loadxl_started = status.get(PROGRESS_LOADXL.START, None)
@@ -1068,6 +1070,12 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 elif loadxl_phase == 1:
                     bar.set_total(loadxl_total)
                     bar.set_progress(loadxl_item)
+                if ingester_queue_cleanup is not None:
+                    message += " | Done"
+                elif ingester_cleanup is not None:
+                    message += " | Cleanup"
+                elif loadxl_done is not None:
+                    message += " | Finishing Up"
                 if ingestion_message:
                     message += " | " + ingestion_message
             if include_status:
@@ -2683,16 +2691,14 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 return
             elif status.get(PROGRESS_PARSE.ANALYZE_CREATE):
                 ncreates += increment
-                # TODO/XYZZY: This ANALYZE_COUNT_LOOKUP should be  ANALYZE_LOOKUP because
-                # it is not a total count it is incremental, but it can but greater than one.
-                nlookups += status.get(PROGRESS_PARSE.ANALYZE_COUNT_LOOKUP) or 0
+                nlookups += status.get(PROGRESS_PARSE.ANALYZE_LOOKUPS) or 0
                 bar.increment_progress(increment)
             elif status.get(PROGRESS_PARSE.ANALYZE_UPDATE):
                 nupdates += increment
-                nlookups += status.get(PROGRESS_PARSE.ANALYZE_COUNT_LOOKUP) or 0
+                nlookups += status.get(PROGRESS_PARSE.ANALYZE_LOOKUPS) or 0
                 bar.increment_progress(increment)
             else:
-                nlookups += status.get(PROGRESS_PARSE.ANALYZE_COUNT_LOOKUP) or 0
+                nlookups += status.get(PROGRESS_PARSE.ANALYZE_LOOKUPS) or 0
                 bar.increment_progress(increment)
             # duration = time.time() - started
             # nprocessed = ncreates + nupdates
