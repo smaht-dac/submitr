@@ -115,6 +115,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         bar = ProgressBar(file_size, "▶ Upload progress",
                           catch_interrupt=catch_interrupt,
                           interrupt_stop=abort_upload,
+                          interrupt_continue=lambda _: False,
                           interrupt_message="upload",
                           tidy_output_hack=True)
 

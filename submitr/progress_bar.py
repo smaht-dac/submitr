@@ -196,7 +196,9 @@ class ProgressBar:
                         exit(1)
                     elif interrupt_stop is False or ((interrupt_stop is None) and (self._interrupt_exit is False)):
                         set_interrupt_handler(handle_interrupt)
-                        self.enable()
+                        interrupt_continue = self._interrupt_continue(self) if self._interrupt_continue else None
+                        if not (interrupt_continue is False):
+                            self.enable()
                         return
                 self._stop_requested = True
                 return
