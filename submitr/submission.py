@@ -994,7 +994,10 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         PROGRESS_MAX_CHECKS = max(round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL), 1)
 
     def define_progress_callback(max_checks: int, title: str, include_status: bool = False) -> None:
-        bar = ProgressBar(max_checks, "Calculating", interrupt_exit=True)
+        nonlocal validation
+        bar = ProgressBar(max_checks, "Calculating",
+                          interrupt_exit=True,
+                          interrupt_message=f"{'validation' if validation else 'submission'} waiting process")
         nchecks = 0
         nchecks_server = 0
         check_status = "Unknown"
