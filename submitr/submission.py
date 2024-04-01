@@ -25,7 +25,7 @@ from dcicutils.misc_utils import (
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
 from dcicutils.structured_data import Portal, StructuredDataSet
-from dcicutils.progress_constants import PROGRESS_INGESTER, PROGRESS_LOADXL, PROGRESS_PARSE
+from dcicutils.submitr.progress_constants import PROGRESS_INGESTER, PROGRESS_LOADXL, PROGRESS_PARSE
 from typing_extensions import Literal
 from urllib.parse import urlparse
 from submitr.base import DEFAULT_APP

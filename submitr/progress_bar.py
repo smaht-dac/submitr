@@ -40,7 +40,8 @@ class ProgressBar:
         finally:
             progress_bar.done()
 
-    def __init__(self, total: Optional[int] = None, description: Optional[str] = None,
+    def __init__(self, total: Optional[int] = None,
+                 description: Optional[str] = None,
                  catch_interrupt: bool = True,
                  interrupt: Optional[Callable] = None,
                  interrupt_continue: Optional[Callable] = None,
