@@ -129,6 +129,7 @@ def format_size(nbytes: Union[int, float], precision: int = 2) -> str:
         nbytes /= ONE_K
         index += 1
     if index == 0:
+        nbytes = int(nbytes)
         return f"{nbytes} byte{'s' if nbytes != 1 else ''}"
     unit = UNITS[index]
     return f"{nbytes:.{precision}f} {unit}"
