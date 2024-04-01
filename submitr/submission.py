@@ -2446,21 +2446,27 @@ def _review_upload_files(structured_data: StructuredDataSet, ingestion_filename:
                                                            upload_folder=directory, recursive=recursive)
     if file_validation_errors:
         nfiles = len(file_validation_errors)
-        if nfiles == 1:
-            PRINT(f"WARNING: There is one file referenced which is missing (below).")
-            PRINT(f"- {file_validation_errors[0]}")
+        if nfiles_found > 0:
+            PRINT(f"WARNING: There {'is' if nfiles == 1 else 'are'} {nfiles}"
+                  f" file{'' if nfiles == 1 else 's'} referenced which are missing.")
         else:
-            PRINT(f"WARNING: However there are {nfiles} files referenced which are missing.")
-            if yes_or_no(f"Do you want to see a list of these {nfiles} missing file{'s' if nfiles != 1 else ''}?"):
-                for error in file_validation_errors:
-                    PRINT(f"- {error}")
+            PRINT(f"WARNING: All {nfiles} file{'' if nfiles == 1 else 's'} are missing.")
+        if not (show_missing_files := (nfiles <= 3)):
+            show_missing_files = yes_or_no(f"Do you want to see a list of these {nfiles}"
+                                           f" missing file{'' if nfiles == 1 else 's'}?")
+        if show_missing_files:
+            for error in sorted(file_validation_errors):
+                PRINT(f"- {error}")
+        if nfiles_found == 0:
+            PRINT("No files found for upload.")
+            exit(1)
         if not validation:
             if not yes_or_no(f"Do you want to continue even with"
-                             f" {'these' if nfiles != 1 else 'this'} missing file{'s' if nfiles != 1 else ''}?"):
+                             f" {'this' if nfiles == 1 else 'these'} missing file{'' if nfiles == 1 else 's'}?"):
                 exit(1)
         else:
-            PRINT(f"Continuing even with {'these' if nfiles != 1 else 'this'}"
-                  f" missing file{'s' if nfiles != 1 else ''} as noted above.")
+            PRINT(f"Continuing even with {'this' if nfiles == 1 else 'these'}"
+                  f" missing file{'' if nfiles == 1 else 's'} as noted above.")
     if nfiles_found > 0:
         PRINT(f"Files referenced for upload (and which exist): {nfiles_found}")
     elif not file_validation_errors:
