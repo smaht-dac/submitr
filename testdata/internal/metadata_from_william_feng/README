@@ -21,7 +21,8 @@ o cwru_ttd_formatted_scdipc_pancreas_illumina_submission.xlsx
   https://hms-dbmi.slack.com/archives/D05LSGRQYV7/p1710535841495839
   From William Feng in Slack: 2024-03-29
   https://hms-dbmi.slack.com/archives/D05LSGRQYV7/p1711735795909289
-  - depends
+  - dependencies:
+    dependencies/cwru_ttd_formatted_scdipc_pancreas_illumina_submission/create_dependencies.py
 
 o bcm_formatted_ont_colo829blt50_hapmap_ipsc.xlsx
   From William Feng in Slack: 2024-03-28
