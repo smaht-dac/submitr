@@ -665,7 +665,8 @@ def test_do_any_uploads():
                         auth=SOME_KEYDICT,
                         folder=tmpdir,  # the folder part of given SOME_BUNDLE_FILENAME
                         no_query=False,
-                        subfolders=False
+                        subfolders=False,
+                        portal=mock.ANY
                     )
                     assert shown.lines == []
 
@@ -682,7 +683,8 @@ def test_do_any_uploads():
                         auth=SOME_KEYDICT,
                         folder=os.path.join(tmpdir, SOME_OTHER_BUNDLE_FOLDER[1:]),  # passed straight through
                         no_query=False,
-                        subfolders=False
+                        subfolders=False,
+                        portal=mock.ANY
                     )
                     assert shown.lines == []
 
@@ -699,7 +701,8 @@ def test_do_any_uploads():
                         auth=SOME_KEYDICT,
                         folder=tmpdir,  # No folder
                         no_query=False,
-                        subfolders=False
+                        subfolders=False,
+                        portal=mock.ANY
                     )
                     assert shown.lines == []
 
@@ -710,7 +713,7 @@ def test_do_any_uploads():
                         # from which a folder can be inferred
                         ingestion_filename=os.path.join(tmpdir, SOME_BUNDLE_FILENAME[1:]),
                         no_query=False,
-                        subfolders=True,
+                        subfolders=True
                     )
                     mock_uploads.assert_called_with(
                         SOME_UPLOAD_INFO,
@@ -718,7 +721,8 @@ def test_do_any_uploads():
                         # the folder part of given SOME_BUNDLE_FILENAME
                         folder=os.path.join(tmpdir, SOME_BUNDLE_FILENAME_FOLDER[1:]),
                         no_query=False,
-                        subfolders=True
+                        subfolders=True,
+                        portal=mock.ANY
                     )
                     assert shown.lines == []
 
@@ -740,7 +744,8 @@ def test_do_any_uploads():
                     # the folder part of given SOME_BUNDLE_FILENAME
                     folder=os.path.join(tmpdir, SOME_BUNDLE_FILENAME_FOLDER[1:]),
                     no_query=True,
-                    subfolders=False
+                    subfolders=False,
+                    portal=mock.ANY
                 )
                 assert shown.lines == []
 
@@ -941,7 +946,8 @@ def test_upload_file_to_uuid():
 
     with mock.patch("dcicutils.portal_utils.Portal.patch_metadata", return_value=SOME_UPLOAD_CREDENTIALS_RESULT):
         with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
-            metadata = upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_AUTH, first_time=False)
+            metadata = upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID,
+                                           auth=SOME_AUTH, first_time=False, portal=None)
             assert metadata == SOME_FILE_METADATA
             mocked_upload.assert_called_with(SOME_FILENAME, auth=SOME_AUTH,
                                              upload_credentials=SOME_UPLOAD_CREDENTIALS)
@@ -949,7 +955,8 @@ def test_upload_file_to_uuid():
     with mock.patch("dcicutils.portal_utils.Portal.patch_metadata", return_value=SOME_BAD_RESULT):
         with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
             try:
-                upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID, auth=SOME_AUTH, first_time=False)
+                upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID,
+                                    auth=SOME_AUTH, first_time=False, portal=None)
             except Exception as e:
                 assert str(e).startswith("Unable to obtain upload credentials")
             else:
@@ -983,7 +990,7 @@ def test_do_uploads(tmp_path):
 
         uploaded = {}
 
-        def mocked_upload_file(filename, uuid, auth, first_time=False):
+        def mocked_upload_file(filename, uuid, auth, first_time=False, portal=None):
             if auth != SOME_AUTH:
                 raise Exception("Bad auth")
             uploaded[uuid] = filename
@@ -1095,7 +1102,8 @@ def test_do_uploads2(tmp_path):
             filename=file_path,
             uuid=uuid,
             auth=SOME_AUTH,
-            first_time=True
+            first_time=True,
+            portal=mock.ANY
         )
 
     with shown_output() as shown:
@@ -1123,7 +1131,8 @@ def test_do_uploads2(tmp_path):
             filename=file_path,
             uuid=uuid,
             auth=SOME_AUTH,
-            first_time=True
+            first_time=True,
+            portal=mock.ANY
         )
 
     with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
@@ -1205,7 +1214,8 @@ def test_upload_item_data():
                         with mock.patch("dcicutils.portal_utils.Portal.get_schemas", return_value={}):
                             _upload_item_data(item_filename=some_filename,
                                               uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
-                            mock_upload.assert_called_with(filename=some_filename, uuid=SOME_UUID, auth=SOME_KEYDICT)
+                            mock_upload.assert_called_with(filename=some_filename,
+                                                           uuid=SOME_UUID, auth=SOME_KEYDICT, portal=mock.ANY)
 
         with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
             mocked_portal_key_property.return_value = SOME_KEYDICT
@@ -1231,7 +1241,8 @@ def test_upload_item_data():
                     with mock.patch("dcicutils.portal_utils.Portal.get_schemas", return_value={}):
                         _upload_item_data(item_filename=some_filename, uuid=SOME_UUID,
                                           server=SOME_SERVER, env=SOME_ENV, no_query=True)
-                        mock_upload.assert_called_with(filename=some_filename, uuid=SOME_UUID, auth=SOME_KEYDICT)
+                        mock_upload.assert_called_with(filename=some_filename,
+                                                       uuid=SOME_UUID, auth=SOME_KEYDICT, portal=mock.ANY)
 
 
 def get_today_datetime_for_time(time_to_use):

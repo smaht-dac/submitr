@@ -1736,14 +1736,14 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
             return
         if no_query:
             do_uploads(files_to_upload, auth=keydict, no_query=no_query, folder=upload_folder,
-                       subfolders=subfolders)
+                       subfolders=subfolders, portal=portal)
         else:
             message = ("Upload this file?" if len(files_to_upload) == 1
                        else f"Upload these {len(files_to_upload)} files?")
             if yes_or_no(message):
                 do_uploads(files_to_upload, auth=keydict,
                            no_query=no_query, folder=upload_folder,
-                           subfolders=subfolders)
+                           subfolders=subfolders, portal=portal)
             else:
                 noupload = True
                 SHOW("No uploads attempted.")
@@ -1940,7 +1940,7 @@ def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
     return metadata
 
 
-def upload_file_to_uuid(filename, uuid, auth, first_time=False):
+def upload_file_to_uuid(filename, uuid, auth, first_time=False, portal=None):
     """
     Upload file to a target environment.
 
@@ -1959,7 +1959,9 @@ def upload_file_to_uuid(filename, uuid, auth, first_time=False):
 
     metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
                                                                            method='PATCH', uuid=uuid,
-                                                                           filename=filename, payload_data=patch_data)
+                                                                           filename=filename,
+                                                                           payload_data=patch_data,
+                                                                           portal=portal)
 
     if first_time:
         if upload_url := upload_credentials.get('upload_url'):
@@ -1974,7 +1976,8 @@ def upload_file_to_uuid(filename, uuid, auth, first_time=False):
     return metadata
 
 
-def extract_metadata_and_upload_credentials(response, filename, method, payload_data, uuid=None, schema_name=None):
+def extract_metadata_and_upload_credentials(response, filename, method, payload_data,
+                                            uuid=None, schema_name=None, portal=None):
     try:
         [metadata] = response['@graph']
         upload_credentials = metadata['upload_credentials']
@@ -1988,7 +1991,16 @@ def extract_metadata_and_upload_credentials(response, filename, method, payload_
                 PRINT(f" schema_name={schema_name}")
             PRINT(f" response={response}")
             PRINT(f"Got error {type(e)}: {e}")
-        raise RuntimeError(f"Unable to obtain upload credentials for file {filename}.")
+        file_status = None
+        if portal and uuid:
+            try:
+                file_status = portal.get_metadata(uuid).get("status")
+            except Exception:
+                pass
+        message = f"Unable to obtain upload credentials for file {filename}."
+        if file_status:
+            message += f" File status: {file_status}"
+        raise RuntimeError(message)
     return metadata, upload_credentials
 
 
@@ -1996,7 +2008,7 @@ def extract_metadata_and_upload_credentials(response, filename, method, payload_
 SUBMITR_SELECTIVE_UPLOADS = environ_bool("SUBMITR_SELECTIVE_UPLOADS")
 
 
-def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=False):
+def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=False, portal=None):
     """
     Uploads the files mentioned in the give upload_spec_list.
 
@@ -2031,7 +2043,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=F
             upload_file_to_uuid, file_path
         )
         file_metadata = wrapped_upload_file_to_uuid(
-            filename=file_path, uuid=uuid, auth=auth, first_time=first_time
+            filename=file_path, uuid=uuid, auth=auth, first_time=first_time, portal=portal
         )
         if file_metadata:
             extra_files_credentials = file_metadata.get("extra_files_creds", [])
@@ -2175,7 +2187,7 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
             SHOW("Aborting submission.")
             exit(1)
 
-    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=portal.key)
+    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=portal.key, portal=portal)
 
 
 def _show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
