@@ -2883,7 +2883,7 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
 @lru_cache(maxsize=1)
 def _get_consortia(portal: Portal) -> List[str]:
     results = []
-    if consortia := portal.get_metadata("/consortia"):
+    if consortia := portal.get_metadata("/consortia?limit=1000"):
         consortia = sorted(consortia.get("@graph", []), key=lambda key: key.get("identifier"))
         for consortium in consortia:
             if ((consortium_name := consortium.get("identifier")) and
@@ -2895,7 +2895,7 @@ def _get_consortia(portal: Portal) -> List[str]:
 @lru_cache(maxsize=1)
 def _get_submission_centers(portal: Portal) -> List[str]:
     results = []
-    if submission_centers := portal.get_metadata("/submission-centers"):
+    if submission_centers := portal.get_metadata("/submission-centers?limit=1000"):
         submission_centers = sorted(submission_centers.get("@graph", []), key=lambda key: key.get("identifier"))
         for submission_center in submission_centers:
             if ((submission_center_name := submission_center.get("identifier")) and
