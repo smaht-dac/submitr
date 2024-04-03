@@ -1454,7 +1454,7 @@ def _print_submission_summary(portal: Portal, result: dict,
         if datafile_checksum := submission_parameters.get("datafile_checksum"):
             if extra_file_info:
                 extra_file_info += " | "
-            extra_file_info += f"MD5: {datafile_checksum}"
+            extra_file_info += f"Checksum: {datafile_checksum}"
         if extra_file_info:
             lines.append(f"Submission File Info: {extra_file_info}")
     if validation:
