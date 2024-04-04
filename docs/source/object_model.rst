@@ -125,13 +125,13 @@ Data
 .. raw:: html
 
     <ul>
-            <li> <a target="_blank" href="https://data.smaht.org/search/?type=Consortium">Consortia<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
-            <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat">File Formats<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
-            <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat&valid_item_types=AlignedReads">File Formats <small>(Aligned Reads)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a></li>
-            <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat&valid_item_types=UnalignedReads">File Formats <small>(Unaligned Reads)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a></li>
-            <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat&valid_item_types=VariantCalls">File Formats <small>(Variant Calls)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a></li>
-            <li> <a target="_blank" href="https://data.smaht.org/search/?type=ReferenceGenome">Reference Genomes<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
-            <li> <a target="_blank" href="https://data.smaht.org/search/?type=SubmissionCenter">Submission Centers<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+            <li> <a target="_blank" href="https://data.smaht.org/search/?type=Consortium">Consortia<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>&nbsp;&nbsp;&nbsp;<small>(or <a href="object_model/data/consortia.html">here</a>)</small>  </li>
+            <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat">File Formats<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>&nbsp;&nbsp;&nbsp;<small>(or <a href="object_model/data/file_formats.html#all-file-formats">here</a>)</small> </li>
+            <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat&valid_item_types=AlignedReads">File Formats <small>(Aligned Reads)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a>&nbsp;&nbsp;&nbsp;<small>(or <a href="object_model/data/file_formats.html#for-alignedreads">here</a>)</small> </li>
+                            <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat&valid_item_types=UnalignedReads">File Formats <small>(Unaligned Reads)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a>&nbsp;&nbsp;&nbsp;<small>(or <a href="object_model/data/file_formats.html#for-unalignedreads">here</a>)</small> </li>
+                                            <li> <a target="_blank" href="https://data.smaht.org/search/?type=FileFormat&valid_item_types=VariantCalls">File Formats <small>(Variant Calls)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a>&nbsp;&nbsp;&nbsp;<small>(or <a href="object_model/data/file_formats.html#for-variantcalls">here</a>)</small> </li>
+                                                            <li> <a target="_blank" href="https://data.smaht.org/search/?type=ReferenceGenome">Reference Genomes<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>&nbsp;&nbsp;&nbsp;<small>(or <a href="object_model/data/reference_genomes.html">here</a>)</small> </li>
+                                                            <li> <a target="_blank" href="https://data.smaht.org/search/?type=SubmissionCenter">Submission Centers<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>&nbsp;&nbsp;&nbsp;<small>(or <a href="object_model/data/submission_centers.html">here</a>)</small> </li>
     </ul>
 
 
@@ -149,7 +149,7 @@ See Also
 
 .. raw:: html
 
-    <span style="color:#aaaaaa;">[ <small>Generated: 2024-04-01 9:04 AM EDT | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> 0.33.3</small> ]</span><p />
+    <span style="color:#aaaaaa;">[ <small>Generated: 2024-04-04 9:29 AM EDT | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> 0.35.2</small> ]</span><p />
     <p />
 
 
