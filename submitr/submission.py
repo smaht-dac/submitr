@@ -480,6 +480,7 @@ def _initiate_server_ingestion_process(
         autoadd: Optional[dict] = None,
         datafile_size: Optional[Any] = None,
         datafile_checksum: Optional[Any] = None,
+        user: Optional[dict] = None,
         debug: bool = False,
         debug_sleep: Optional[str] = None) -> str:
 
@@ -505,7 +506,8 @@ def _initiate_server_ingestion_process(
         "autoadd": json.dumps(autoadd),
         "ingestion_directory": os.path.dirname(ingestion_filename) if ingestion_filename else None,
         "datafile_size": datafile_size or get_file_size(ingestion_filename),
-        "datafile_checksum": datafile_checksum or get_file_checksum(ingestion_filename)
+        "datafile_checksum": datafile_checksum or get_file_checksum(ingestion_filename),
+        "user": json.dumps(user)
     }
 
     if validation_ingestion_submission_uuid:
@@ -818,6 +820,9 @@ def submit_any_ingestion(ingestion_filename, *,
             post_only=post_only,
             patch_only=patch_only,
             autoadd=autoadd,
+            user={"uuid": user_record.get("uuid"),
+                  "email": user_record.get("email"),
+                  "name": user_record.get("display_title")} if user_record else None,
             debug=debug,
             debug_sleep=debug_sleep)
 
@@ -859,6 +864,9 @@ def submit_any_ingestion(ingestion_filename, *,
         post_only=post_only,
         patch_only=patch_only,
         autoadd=autoadd,
+        user={"uuid": user_record.get("uuid"),
+              "email": user_record.get("email"),
+              "name": user_record.get("display_title")} if user_record else None,
         debug=debug,
         debug_sleep=debug_sleep)
 
@@ -1222,6 +1230,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             autoadd=check_parameters.get("autoadd"),
             datafile_size=check_parameters.get("datafile_size"),
             datafile_checksum=check_parameters.get("datafile_checksum"),
+            user=check_parameters.get("user"),
             debug=debug,
             debug_sleep=debug_sleep)
         SHOW(f"Submission tracking ID: {submission_uuid}")
