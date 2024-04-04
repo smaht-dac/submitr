@@ -10,6 +10,9 @@ from ..submission import (
     DEFAULT_INGESTION_TYPE,
     DEFAULT_SUBMISSION_PROTOCOL,
     SUBMISSION_PROTOCOLS,
+    _define_portal,
+    _get_consortia,
+    _get_submission_centers,
     _ping,
     _print_metadata_file_info,
     _pytesting
@@ -121,6 +124,8 @@ def main(simulated_args_for_testing=None):
                         help="Portal environment name for server/credentials (e.g. in ~/.smaht-keys.json).")
     parser.add_argument('--consortium', help="Consoritium to use for submission.")
     parser.add_argument('--submission-center', help="Submission center to use for submission.")
+    parser.add_argument('--consortia', action="store_true", help="List known consoritia.")
+    parser.add_argument('--submission-centers', action="store_true", help="List known submission centers.")
     parser.add_argument('--post-only', action="store_true",
                         help="Only perform creates (POST) for submitted data.", default=False)
     parser.add_argument('--patch-only', action="store_true",
@@ -222,6 +227,28 @@ def main(simulated_args_for_testing=None):
         else:
             PRINT("Ping failure. Your connection appears to be problematic.")
             exit(1)
+
+    if args.consortia or (args.bundle_filename and args.bundle_filename.lower() == "consortia"):
+        portal = _define_portal(env=args.env)
+        consortia = _get_consortia(portal)
+        PRINT("Known Consortia:")
+        for consortium in consortia:
+            if ((consortium_name := consortium.get("name")) and
+                (consortium_uuid := consortium.get("uuid"))):  # noqa
+                PRINT(f"- {consortium_name}: {consortium_uuid}")
+        exit(0)
+
+    if (args.submission_centers or
+        (args.bundle_filename and args.bundle_filename.lower() in
+         ["submission_centers", "submission-centers", "submissioncenters"])):
+        portal = _define_portal(env=args.env)
+        submission_centers = _get_submission_centers(portal)
+        PRINT("Known Submission Centers:")
+        for submission_center in submission_centers:
+            if ((submission_center_name := submission_center.get("name")) and
+                (submission_center_uuid := submission_center.get("uuid"))):  # noqa
+                PRINT(f"- {submission_center_name}: {submission_center_uuid}")
+        exit(0)
 
     _setup_validate_related_options(args)
 
