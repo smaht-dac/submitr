@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "smaht-submitr"
-version = "0.7.0.1b77"  # TODO: To become 0.8.0
+version = "0.7.0.1b78"  # TODO: To become 0.8.0
 description = "Support for uploading file submissions to SMAHT."
 # TODO: Update this email address when a more specific one is available for SMaHT.
 authors = ["SMaHT DAC <smhelp@hms-dbmi.atlassian.net >"]
@@ -50,7 +50,7 @@ python = ">=3.8.0,<3.12"
 awscli = ">=1.32.49"
 boto3 = "^1.34.49"
 #dcicutils = "^8.8.0"
-dcicutils = "^8.8.1.1b29"
+dcicutils = "^8.8.2"
 PyYAML = "^6.0.1"
 requests = "^2.31.0"
 
