@@ -131,7 +131,9 @@ def _get_user_record(server, auth, quiet=False):
 
 
 def _is_admin_user(user: dict) -> bool:
-    return False if os.environ.get("SMAHT_NOADMIN") else ("admin" in user.get("groups", []))
+    if tobool(os.environ.get("SMAHT_NOADMIN")):
+        return False
+    return "admin" in user.get("groups", []) if isinstance(user, dict) else False
 
 
 def _get_defaulted_institution(institution, user_record, portal=None, quiet=False, verbose=False):
@@ -472,6 +474,7 @@ def _initiate_server_ingestion_process(
         ingestion_filename: str,
         consortia: Optional[List[str]] = None,
         submission_centers: Optional[List[str]] = None,
+        add_submission_center: Optional[str] = None,
         is_server_validation: bool = False,
         is_resume_submission: bool = False,
         validation_ingestion_submission_object: Optional[dict] = None,
@@ -525,6 +528,7 @@ def _initiate_server_ingestion_process(
                                 ingestion_filename=ingestion_filename,
                                 consortia=consortia,
                                 submission_centers=submission_centers,
+                                add_submission_center=add_submission_center,
                                 submission_post_data=submission_post_data,
                                 is_server_validation=is_server_validation, debug=debug)
     submission_uuid = response["submission_id"]
@@ -546,16 +550,21 @@ def _post_submission(portal: Portal,
                      consortia: List[str],
                      submission_centers: List[str],
                      submission_post_data: dict,
+                     add_submission_center: Optional[str] = None,
                      ingestion_type: str = DEFAULT_INGESTION_TYPE,
                      submission_protocol: str = DEFAULT_SUBMISSION_PROTOCOL,
                      is_server_validation: bool = False,
                      is_resume_submission: bool = False,
                      debug: bool = False):
+
+    creation_submission_centers = [*submission_centers]
+    if isinstance(add_submission_center, str) and (add_submission_center not in creation_submission_centers):
+        creation_submission_centers.append(add_submission_center)
     creation_post_data = {
         "ingestion_type": ingestion_type,
         "processing_status": {"state": "submitted"},
         "consortia": consortia,
-        "submission_centers": submission_centers
+        "submission_centers": creation_submission_centers
     }
     if is_server_validation:
         creation_post_data["parameters"] = {"validate_only": True}
@@ -661,6 +670,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          award=None,
                          consortium=None,
                          submission_center=None,
+                         add_submission_center=None,
                          app: OrchestratedApp = None,
                          upload_folder=None,
                          no_query=False,
@@ -776,6 +786,22 @@ def submit_any_ingestion(ingestion_filename, *,
             PRINT(f"Multiple submission centers: {', '.join(submission_centers)}")
             PRINT(f"You must specify onely one submission center using the --submission-center option.")
             exit(1)
+
+    if add_submission_center:
+        if not _is_admin_user(user_record):
+            PRINT("ERROR: Cannot use the --add-submission-center if you are not an admin user.")
+            exit(1)
+        known_submission_centers = _get_submission_centers(portal)
+        found_submission_centers = [submission_center for submission_center in known_submission_centers
+                                    if (submission_center.get("name") == add_submission_center) or
+                                       (submission_center.get("uuid") == add_submission_center)]
+        if not found_submission_centers or not found_submission_centers[0].get("uuid"):
+            PRINT(f"ERROR: Specified submission center ({add_submission_center}) not found. Use one of:")
+            for known_submission_center in known_submission_centers:
+                PRINT(f"- {known_submission_center.get('name')} ({known_submission_center.get('uuid')})")
+            exit(1)
+        add_submission_center = f"/submission-centers/{found_submission_centers[0]['uuid']}/"
+
     if verbose:
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
 
@@ -817,6 +843,7 @@ def submit_any_ingestion(ingestion_filename, *,
             is_server_validation=True,
             consortia=app_args.get("consortia"),
             submission_centers=app_args.get("submission_centers"),
+            add_submission_center=add_submission_center,
             post_only=post_only,
             patch_only=patch_only,
             autoadd=autoadd,
@@ -861,6 +888,7 @@ def submit_any_ingestion(ingestion_filename, *,
         validation_ingestion_submission_object=server_validation_response,
         consortia=app_args.get("consortia"),
         submission_centers=app_args.get("submission_centers"),
+        add_submission_center=add_submission_center,
         post_only=post_only,
         patch_only=patch_only,
         autoadd=autoadd,
@@ -1427,8 +1455,7 @@ def _print_submission_summary(portal: Portal, result: dict,
         if not check_submission_script or not user_record or not (user_uuid := user_record.get("uuid")):
             return None
         try:
-            user_record = portal.get_metadata(user_uuid)
-            return "admin" in user_record.get("groups", [])
+            return _is_admin_user(portal.get_metadata(user_uuid))
         except Exception:
             return None
     lines = []
@@ -1491,6 +1518,14 @@ def _print_submission_summary(portal: Portal, result: dict,
             lines.append(f"Submitted By: {submitted_by}")
         if is_admin_user(result.get("submitted_by")) is True:
             lines[len(lines) - 1] += " ▶ Admin"
+        # If more than one submission center print on separate line (only first one printed above).
+        if len(submission_centers) > 1:
+            submission_centers_line = ""
+            for submission_center in submission_centers:
+                if submission_centers_line:
+                    submission_centers_line += " | "
+                submission_centers_line += submission_center.get("display_title")
+            lines.append(f"Submission Centers: {submission_centers_line}")
     if additional_data := result.get("additional_data"):
         if (validation_info := additional_data.get("validation_output")) and isinstance(validation_info, dict):
             # TODO: Cleanup/unify error structure from client and server!

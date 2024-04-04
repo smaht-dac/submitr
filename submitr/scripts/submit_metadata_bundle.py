@@ -91,6 +91,10 @@ ADVANCED OPTIONS:
   Perform ONLY creates (POSTs) for submitted data.
 --directory-only
   Same as --directory but does NOT search recursively.
+--add-submission-center SUBMISSION-CENTER
+  To specify an additional submission center as having access to
+  the ingestion submission (object). Useful when different users
+  will be performing submit-metadata-bundle and resume-uploads.
 --json
   Displays the submitted metadata as formatted JSON.
 --json-only
@@ -126,6 +130,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--submission-center', help="Submission center to use for submission.")
     parser.add_argument('--consortia', action="store_true", help="List known consoritia.")
     parser.add_argument('--submission-centers', action="store_true", help="List known submission centers.")
+    parser.add_argument('--add-submission-center', help="Add submission center to the IngestionSubmission object.")
     parser.add_argument('--post-only', action="store_true",
                         help="Only perform creates (POST) for submitted data.", default=False)
     parser.add_argument('--patch-only', action="store_true",
@@ -294,6 +299,7 @@ def main(simulated_args_for_testing=None):
                              server=args.server,
                              consortium=args.consortium,
                              submission_center=args.submission_center,
+                             add_submission_center=args.add_submission_center,
                              no_query=args.no_query,
                              subfolders=not directory_only,
                              app=args.app,
