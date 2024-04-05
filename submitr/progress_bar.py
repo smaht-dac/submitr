@@ -57,7 +57,7 @@ class ProgressBar:
         self._tidy_output_hack = (tidy_output_hack is True)
         self._started = time.time()
         self._stop_requested = False
-        # Interrupt handling. We doo not in do the actual (signal) interrupt setup
+        # Interrupt handling. We do not in do the actual (signal) interrupt setup
         # in self._initialiaze as that could be called from a (sub) thread; and in
         # Python we can only set a signal (SIGINT in our case) on the main thread.
         self._catch_interrupt = (catch_interrupt is True)
@@ -76,8 +76,6 @@ class ProgressBar:
             self._interrupt_handler = self._define_interrupt_handler()
         if self._tidy_output_hack is True:
             self._tidy_output_hack = self._define_tidy_output_hack()
-        # self.set_total(total)
-        # self.set_description(description)
         self._total = total if isinstance(total, int) and total >= 0 else 0
         self._description = self._format_description(description)
         self._initialize()
@@ -102,14 +100,14 @@ class ProgressBar:
     def set_progress(self, value: int) -> None:
         if isinstance(value, int) and value >= 0:
             if (self._bar is not None) or self._initialize():
-                # Note that bar.update(0) is needed after bar.n assignment to make ETA correct.
                 self._bar.n = value
-                self._bar.update(0)
+                self._bar.refresh()
 
     def increment_progress(self, value: int) -> None:
         if isinstance(value, int) and value > 0:
             if (self._bar is not None) or self._initialize():
                 self._bar.update(value)
+                self._bar.refresh()
 
     def set_description(self, value: str) -> None:
         self._description = self._format_description(value)
@@ -122,7 +120,7 @@ class ProgressBar:
         self._ended = time.time()
         self._done = True
         self._bar.set_description(self._description)
-        self._bar.update(0)
+        self._bar.refresh()
         # FYI: Do NOT do a bar.disable = True before a bar.close() or it messes up output
         # on multiple calls; found out the hard way; a couple hour will never get back :-/
         self._bar.close()
@@ -232,7 +230,7 @@ class ProgressBar:
                 # tqdm and we are disabled then do not output anything.
                 return
             if "[progress]:" in text:
-                spin_char = spin_chars[spin_index % len(spin_chars)] if not self._done else "| ✓"
+                spin_char = spin_chars[spin_index % len(spin_chars)] if not ("100%|" in text) else "| ✓"
                 spin_index += 1
                 text = text.replace("[progress]:", f" {spin_char} ")
             sys_stdout_write(text)
@@ -241,12 +239,10 @@ class ProgressBar:
             nonlocal sys_stdout_write
             if sys_stdout_write is not None:
                 sys.stdout.write = sys_stdout_write
-        sys_stdout_write = None
         spin_index = 0
         spin_chars = ["|", "/", "—", "\\"]
-        if sys.stdout.write != tidy_stdout_write:
-            sys_stdout_write = sys.stdout.write
-            sys.stdout.write = tidy_stdout_write
+        sys_stdout_write = sys.stdout.write
+        sys.stdout.write = tidy_stdout_write
         return namedtuple("tidy_output_hack", ["restore"])(restore_stdout_write)
 
     def _confirmation(self, message: Optional[str] = None) -> bool:
