@@ -8,7 +8,6 @@ from types import FrameType as frame
 from typing import Callable, Optional
 from contextlib import contextmanager
 
-
 # Wrapper around tqdm command-line progress bar.
 class ProgressBar:
 

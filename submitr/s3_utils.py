@@ -81,7 +81,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             bar.set_progress(nbytes_transferred)
             if nbytes_transferred >= file_size:
                 duration = time.time() - started
-                upload_done = (f"Upload done: {format_size(nbytes_transferred)} in {format_duration(duration)}"
+                upload_done = (f"Upload complete: {format_size(nbytes_transferred)} in {format_duration(duration)}"
                                f" | {format_size(nbytes_transferred / duration)} per second ◀")
 
         def upload_file_callback(nbytes_chunk: int) -> None:  # noqa
