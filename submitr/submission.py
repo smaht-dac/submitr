@@ -1293,7 +1293,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                             PRINT_OUTPUT()
                             printed_newline = True
                         for error in errors:
-                            PRINT_OUTPUT(f"- {_format_server_error(error, indent=2)}")
+                            PRINT_OUTPUT(f"- {_format_server_error(error, indent=2, debug=debug)}")
                 elif isinstance(validation_info, dict):
                     if ((validation_errors := validation_info.get("validation")) and
                         isinstance(validation_errors, list) and validation_errors):  # noqa
@@ -1328,7 +1328,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     return check_done, check_status, check_response
 
 
-def _format_server_error(error: str, indent: int = 0) -> str:
+def _format_server_error(error: str, indent: int = 0, debug: bool = False) -> str:
     """
     Make an attempt at parsing and formatting a server (validation/submission) error.
     If we can't do it then just return the string as given. Here for example is what
@@ -1380,6 +1380,13 @@ def _format_server_error(error: str, indent: int = 0) -> str:
             result = f"ERROR: {message} ▶ {path}"
             result += f"\n{format_json_with_indent(error, indent=indent)}"
             result += f"\n{format_json_with_indent(body, indent=indent)}"
+            if not debug and error.get('title') and error.get('code') and error.get('description'):
+                result = f"ERROR: {message} {path}"
+                result += f"\n{indent * ' '}{error.get('title')} ({error.get('code')}): {error.get('description')}"
+                if isinstance(errors := error.get('errors', []), list) and errors:
+                    for error in errors:
+                        result += f"\n{indent * ' '}{error.get('name')} ({error.get('location')})"
+                        result += f"\n{indent * ' '}{error.get('description')}"
             return result
     return error.replace("Error:", "ERROR:")
 
@@ -1621,7 +1628,7 @@ def _print_submission_summary(portal: Portal, result: dict,
         print_boxed(lines, right_justified_macro=("[UUID]", lambda: submission_uuid), printf=PRINT)
         if errors and include_errors:
             for error in errors:
-                PRINT(_format_server_error(error))
+                PRINT(f"- {_format_server_error(error, indent=2, debug=debug)}")
 
 
 def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
@@ -2014,7 +2021,6 @@ def upload_file_to_uuid(filename, uuid, auth, first_time=False, portal=None):
                 # This assumes all files are going to the same bucket;
                 # which I think is a pretty solid assumption.
                 PRINT(f"Upload file destination AWS S3 bucket: {s3_bucket}")
-                pass
     execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
 
     return metadata
