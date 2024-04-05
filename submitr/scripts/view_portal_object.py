@@ -57,6 +57,7 @@
 
 import argparse
 from functools import lru_cache
+import io
 import json
 import pyperclip
 import os
@@ -97,6 +98,10 @@ def main():
                         help="Include all properties for schema usage.")
     parser.add_argument("--raw", action="store_true", required=False, default=False, help="Raw output.")
     parser.add_argument("--tree", action="store_true", required=False, default=False, help="Tree output for schemas.")
+    parser.add_argument("--post", type=str, required=False, default=None,
+                        help="POST data of the main arg type with data from file specified with this option.")
+    parser.add_argument("--patch", type=str, required=False, default=None,
+                        help="PATCH data of the main arg type with data from file specified with this option.")
     parser.add_argument("--database", action="store_true", required=False, default=False,
                         help="Read from database output.")
     parser.add_argument("--bool", action="store_true", required=False,
@@ -153,6 +158,13 @@ def main():
         args.schema = True
 
     if args.schema:
+        if args.post:
+            if post_data := _read_json_from_file(args.post):
+                if args.verbose:
+                    _print(f"POSTing data from file ({args.post}) as type: {args.uuid}")
+                portal.post_metadata(args.uuid, post_data)
+                if args.verbose:
+                    _print(f"Done POSTing data from file ({args.post}) as type: {args.uuid}")
         schema, schema_name = _get_schema(portal, args.uuid)
         if schema:
             if args.copy:
@@ -168,6 +180,17 @@ def main():
             _print_schema(schema, details=args.details, more_details=args.details,
                           all=args.all, raw=args.raw, raw_yaml=args.yaml)
             return
+    elif args.patch:
+        if patch_data := _read_json_from_file(args.patch):
+            if args.verbose:
+                _print(f"PATCHing data from file ({args.patch}) for object: {args.uuid}")
+            portal.patch_metadata(args.uuid, patch_data)
+            if args.verbose:
+                _print(f"Done PATCHing data from file ({args.patch}) as type: {args.uuid}")
+            return
+        else:
+            _print(f"No PATCH data found in file: {args.patch}")
+            exit(1)
 
     data = _get_portal_object(portal=portal, uuid=args.uuid, raw=args.raw,
                               database=args.database, check=args.bool, verbose=args.verbose)
@@ -231,7 +254,10 @@ def _get_portal_object(portal: Portal, uuid: str,
         _exit(f"Invalid status code ({response.status_code}) getting Portal object from {portal.server}: {uuid}")
     if not response.json:
         _exit(f"Invalid JSON getting Portal object: {uuid}")
-    return response.json()
+    response = response.json()
+    if raw:
+        response.pop("schema_version", None)
+    return response
 
 
 @lru_cache(maxsize=1)
@@ -543,6 +569,23 @@ def _print_tree(root_name: Optional[str],
     print(first + ((name_of(root_name) if callable(name_of) else root_name) or "root"))
     for line in tree_generator(root_name, prefix="   "):
         print(line)
+
+
+def _read_json_from_file(file: str) -> Optional[dict]:
+    if not os.path.exists(file):
+        _print(f"Cannot find file: {file}")
+        exit(1)
+    try:
+        with io.open(file, "r") as f:
+            try:
+                return json.load(f)
+            except Exception as e:
+                _print(f"Cannot parse JSON in file: {file}")
+                exit(1)
+    except Exception as e:
+        print(e)
+        _print(f"Cannot open file: {file}")
+        exit(1)
 
 
 def _print(*args, **kwargs):
