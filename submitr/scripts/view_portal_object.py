@@ -579,7 +579,7 @@ def _read_json_from_file(file: str) -> Optional[dict]:
         with io.open(file, "r") as f:
             try:
                 return json.load(f)
-            except Exception as e:
+            except Exception:
                 _print(f"Cannot parse JSON in file: {file}")
                 exit(1)
     except Exception as e:
