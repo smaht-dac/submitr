@@ -49,14 +49,14 @@ OPTIONS:
 --directory DIRECTORY
   To specify a directory containing the files to upload; in addition
   to the default of using the directory containing the submitted file;
-  this directory will be search, recursively.
+  this directory will be searched recursively.
 --keys KEYS-FILE
   To specify an alternate credentials/keys file,
   rather than the default ~/.smaht-keys.json file.
   Alternatively, set your SMAHT_KEYS environment variable.
 --output OUTPUT-FILE
   Writes all logging output to the specified file;
-  and refrains from printing lengthy content to stdout.
+  and refrains from printing lengthy content to output/stdout.
 --verbose
   Displays more verbose output.
 --help
@@ -80,11 +80,13 @@ ADVANCED OPTIONS:
 --validate-remote-only
   Performs ONLY server-side (remote) validation WITHOUT submitting.
 --validate-local-only
-  Performs ONLY client-side (local) validation WITHOUT submission.
+  Performs ONLY client-side (local) validation WITHOUT submitting.
 --validate-local-skip
   Skips client-side (local) validation.
 --validate-remote-skip
   Skips server-side (remote) validation.
+--noanalyze
+  Skips analysis of parsed metadata WRT creates/updates.
 --patch-only
   Perform ONLY updates (PATCHes) for submitted data.
 --post-only
@@ -95,10 +97,16 @@ ADVANCED OPTIONS:
   To specify an additional submission center as having access to
   the ingestion submission (object). Useful when different users
   will be performing submit-metadata-bundle and resume-uploads.
+--consortia
+  Displays ONLY all known consortia; nothing else.
+--submission-centers
+  Displays ONLY all known submission centers; nothing else.
 --json
   Displays the submitted metadata as formatted JSON.
 --json-only
   Displays ONLY the submitted metadata as formatted JSON; nothing else.
+--info
+  Displays ONLY info about the submitted metadata; nothing else.
 --info
   Displays ONLY info about the submitted metadata; nothing else.
 --details

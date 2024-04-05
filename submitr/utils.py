@@ -1,10 +1,13 @@
+from collections import namedtuple
 from datetime import datetime
 import io
 import hashlib
+import pkg_resources
 import re
+import requests
 import os
 from pathlib import Path
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 from dcicutils.misc_utils import PRINT, str_to_bool
 from json import dumps as json_dumps, loads as json_loads
 
@@ -235,3 +238,71 @@ def _get_file_md5_like_aws_s3_etag(f: io.BufferedReader) -> str:
             chunks += hash.digest()
         etag = hashlib.md5(chunks).hexdigest() + "-" + str(len(chunks) // 16)
     return etag
+
+
+def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Callable]] = None,
+                printf: Optional[Callable] = PRINT) -> None:
+    macro_name = None
+    macro_value = None
+    if right_justified_macro and (len(right_justified_macro) == 2):
+        macro_name = right_justified_macro[0]
+        macro_value = right_justified_macro[1]()
+        lines_tmp = []
+        for line in lines:
+            if line.endswith(macro_name):
+                line = line.replace(macro_name, right_justified_macro[1]() + " ")
+            lines_tmp.append(line)
+        length = max(len(line) for line in lines_tmp)
+    else:
+        length = max(len(line) for line in lines)
+    for line in lines:
+        if line == "===":
+            printf(f"+{'-' * (length - len(line) + 5)}+")
+        elif macro_name and line.endswith(macro_name):
+            line = line.replace(macro_name, "")
+            printf(f"| {line}{' ' * (length - len(line) - len(macro_value) - 1)} {macro_value} |")
+        else:
+            printf(f"| {line}{' ' * (length - len(line))} |")
+
+
+def get_version(package: str = "smaht-submitr") -> str:
+    try:
+        return pkg_resources.get_distribution(package).version
+    except Exception:
+        return ""
+
+
+def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool = True) -> object:
+    pypi_url = f"https://pypi.org/pypi/{package_name}/json"
+    try:
+        if (response := requests.get(pypi_url)).status_code == 200 and (response := response.json()):
+            latest_non_beta_version = response["info"]["version"]
+            releases = response["releases"]
+            latest_non_beta_release_date = datetime.fromisoformat(releases[latest_non_beta_version][0]["upload_time"])
+            latest_beta_version = None
+            latest_beta_release_date = None
+            #latest_non_beta_version = "0.8.0"  # xyzzy/test
+            #latest_non_beta_release_date = datetime.utcnow()  # xyzzy/test
+            if beta:
+                # Return the latest beta version but only if it
+                # is more recent than the latest non-beta version.
+                try:
+                    releases_reverse_sorted_by_time = (
+                        sorted(releases.items(), key=lambda item: item[1][0]["upload_time"], reverse=True))
+                    latest_beta_info = next(iter(releases_reverse_sorted_by_time))
+                    if (latest_beta_version := latest_beta_info[0]) == latest_non_beta_version:
+                        latest_beta_version = None
+                    else:
+                        latest_beta_release_date = datetime.fromisoformat(latest_beta_info[1][0]["upload_time"])
+                        if latest_non_beta_release_date > latest_beta_release_date:
+                            latest_beta_version = None
+                            latest_beta_release_date = None
+                except Exception:
+                    pass
+            return (namedtuple("most_recent_pypi_package_version",
+                               ["version", "release_date", "beta_version", "beta_release_date"])
+                    (latest_non_beta_version, format_datetime(latest_non_beta_release_date),
+                     latest_beta_version, format_datetime(latest_beta_release_date)))
+    except Exception:
+        pass
+    return None

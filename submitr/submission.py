@@ -33,12 +33,13 @@ from submitr.base import DEFAULT_APP
 from submitr.exceptions import PortalPermissionError
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 from submitr.progress_bar import ProgressBar
-from submitr.scripts.cli_utils import get_version, print_boxed
+from submitr.scripts.cli_utils import get_version
 from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import (
     format_datetime, format_size, format_path,
     get_file_checksum, get_file_md5, get_file_md5_like_aws_s3_etag,
-    get_file_modified_datetime, get_file_size, get_s3_bucket_and_key_from_s3_uri, keyword_as_title, tobool
+    get_file_modified_datetime, get_file_size, get_s3_bucket_and_key_from_s3_uri,
+    print_boxed, keyword_as_title, tobool
 )
 
 

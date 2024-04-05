@@ -2,9 +2,9 @@ import argparse
 import io
 import sys
 import webbrowser
-from typing import Callable, List, Optional, Tuple
-import pkg_resources
+from typing import Optional, Tuple
 from dcicutils.misc_utils import PRINT
+from submitr.utils import get_version, get_most_recent_version_info, print_boxed
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
@@ -54,13 +54,16 @@ class CustomArgumentParser(argparse.ArgumentParser):
             exit(2)
         if args.doc:
             args.help_web = True
-        if args.version:
+        if args.version or "version" in sys.argv:
             if version := self._get_version():
-                PRINT(f"{self._package or 'COMMAND'}: {version} | {self.COPYRIGHT}")
+                is_most_recent_version, more_recent_version_message = self._get_most_recent_version_info(version)
+                PRINT(f"{self._package or 'COMMAND'}: {version}{' ✓' if is_most_recent_version else ''} | {self.COPYRIGHT}")
+                if more_recent_version_message:
+                    PRINT(f"NOTE ▶ ▶ ▶ ▶ ▶ {more_recent_version_message}")
             else:
                 PRINT(f"{self._package or 'COMMAND'}: No version available | {self.COPYRIGHT}")
             exit(0)
-        elif args.help_advanced or args.help_web or args.help_raw:
+        elif args.help_advanced or args.help_web or args.help_raw or "help" in sys.argv:
             self.print_help()
             exit(0)
         return args
@@ -82,42 +85,36 @@ class CustomArgumentParser(argparse.ArgumentParser):
             lines = lines[1:]
         if lines[len(lines) - 1] == "":
             lines = lines[:len(lines) - 1]
+        _, more_recent_version_message = self._get_most_recent_version_info()
+        if more_recent_version_message:
+            lines.append(more_recent_version_message)
+            lines.append("===")
         print_boxed(lines, right_justified_macro=("[VERSION]", self._get_version))
 
     def _get_version(self) -> str:
         return get_version(self._package)
 
+    def _get_most_recent_version_info(self, this_version: Optional[str] = None) -> Tuple[Optional[bool], Optional[str]]:
+        if not this_version:
+            this_version = self._get_version()
+        is_beta_version = ("a" in this_version or "b" in this_version)
+        is_most_recent_version = False
+        more_recent_version_message = None
+        if most_recent_version_info := get_most_recent_version_info():
+            if ((most_recent_version_info.version == this_version) or
+                (most_recent_version_info.beta_version == this_version)):  # noqa
+                is_most_recent_version = True
+        more_recent_version_message = (
+            f"{self._package or 'COMMAND'}: {this_version}{' ✓' if is_most_recent_version else ''} | {self.COPYRIGHT}")
+        if not is_most_recent_version:
+            if is_beta_version and most_recent_version_info.beta_version:
+                most_recent_version = most_recent_version_info.beta_version
+            else:
+                most_recent_version = most_recent_version_info.version
+            more_recent_version_message = (
+                f"A more recent version of this{' beta' if is_beta_version else ''}"
+                f" software is available: {most_recent_version}")
+        return (is_most_recent_version, more_recent_version_message)
+
     def is_pytest(self):
         return "pytest" in sys.modules
-
-
-def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Callable]] = None,
-                printf: Optional[Callable] = PRINT) -> None:
-    macro_name = None
-    macro_value = None
-    if right_justified_macro and (len(right_justified_macro) == 2):
-        macro_name = right_justified_macro[0]
-        macro_value = right_justified_macro[1]()
-        lines_tmp = []
-        for line in lines:
-            if line.endswith(macro_name):
-                line = line.replace(macro_name, right_justified_macro[1]() + " ")
-            lines_tmp.append(line)
-        length = max(len(line) for line in lines_tmp)
-    else:
-        length = max(len(line) for line in lines)
-    for line in lines:
-        if line == "===":
-            printf(f"+{'-' * (length - len(line) + 5)}+")
-        elif macro_name and line.endswith(macro_name):
-            line = line.replace(macro_name, "")
-            printf(f"| {line}{' ' * (length - len(line) - len(macro_value) - 1)} {macro_value} |")
-        else:
-            printf(f"| {line}{' ' * (length - len(line))} |")
-
-
-def get_version(package: str = "smaht-submitr") -> str:
-    try:
-        return pkg_resources.get_distribution(package).version
-    except Exception:
-        return ""
