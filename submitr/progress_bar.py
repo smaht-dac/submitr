@@ -238,7 +238,7 @@ class ProgressBar:
 
     def _define_tidy_output_hack(self) -> None:
         def tidy_stdout_write(text: str) -> None:  # noqa
-            nonlocal self, sys_stdout_write, spin_index, spin_chars
+            nonlocal self, sys_stdout_write, spin_index, spin_chars, spin_nchars
             # Very minor tqdm output tidy-up which was bugging me; tqdm forces a
             # colon (:) before the percentage, e.g. ":  25%|"; and while we're at
             # it do a little ASCII progress animation; this requires a "[progress]"
@@ -251,17 +251,27 @@ class ProgressBar:
                 # tqdm and we are disabled then do not output anything.
                 return
             if "[progress]:" in text:
-                spin_char = spin_chars[spin_index % len(spin_chars)] if not ("100%|" in text) else "| ✓"
+                spin_char = spin_chars[spin_index % spin_nchars] if not ("100%|" in text) else "| ✓"
                 spin_index += 1
-                text = text.replace("[progress]:", f" {spin_char} ")
+                text = replace_first(text, "[progress]:", f" {spin_char}")
+                text = replace_first(text, "%|", "% ◀‖")
+                # Another oddity: for the rate sometimes tqdm prints something
+                # like "1.54s/" rather than "1.54/s"; something to do with the
+                # unit we gave, which is empty; idunno; just replace it here.
+                text = replace_first(text, "s/ ", "/s ")
             sys_stdout_write(text)
             sys.stdout.flush()
         def restore_stdout_write() -> None:  # noqa
             nonlocal sys_stdout_write
             if sys_stdout_write is not None:
                 sys.stdout.write = sys_stdout_write
+        def replace_first(value: str, replacing: str, replacement: str) -> str:
+            if (index := value.find(replacing)) >= 0:
+                return value[:index] + replacement + value[index + len(replacing):]
+            return value
         spin_index = 0
-        spin_chars = ["|", "/", "—", "\\"]
+        spin_chars = ["|", "/", "—", "◦", "\\"]
+        spin_nchars = len(spin_chars)
         sys_stdout_write = sys.stdout.write
         sys.stdout.write = tidy_stdout_write
         return namedtuple("tidy_output_hack", ["restore"])(restore_stdout_write)
