@@ -57,7 +57,8 @@ class CustomArgumentParser(argparse.ArgumentParser):
         if args.version or "version" in sys.argv:
             if version := self._get_version():
                 is_most_recent_version, more_recent_version_message = self._get_most_recent_version_info(version)
-                PRINT(f"{self._package or 'COMMAND'}: {version}{' ✓' if is_most_recent_version else ''} | {self.COPYRIGHT}")
+                PRINT(f"{self._package or 'COMMAND'}:"
+                      f" {version}{' ✓' if is_most_recent_version else ''} | {self.COPYRIGHT}")
                 if more_recent_version_message:
                     PRINT(f"NOTE ▶ ▶ ▶ ▶ ▶ {more_recent_version_message}")
             else:
