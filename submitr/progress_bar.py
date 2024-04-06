@@ -10,13 +10,24 @@ from contextlib import contextmanager
 
 
 class TQDM(tqdm):
+
+    """
     def moveto(self, n):
-        # Hack/workaround for apparent tqdm bug where (for example) if we use this twice
-        # in a row, and we interrupt (CTRL-C) the first one and abort the task, then the
-        # output for the second usage gets a bit garble; on the wrong line and whatnot;
-        # somehow, state is stuck across usages; can't quite see how from the tqdm code.
-        # This is a bit worrying but so far no other deleterious effects observed.
-        return
+      # Hack/workaround for apparent tqdm bug where (for example) if we use this twice
+      # in a row, and we interrupt (CTRL-C) the first one and abort the task, then the
+      # output for the second usage gets a bit garble; on the wrong line and whatnot;
+      # somehow, state is stuck across usages; can't quite see how from the tqdm code.
+      # This is a bit worrying but so far no other deleterious effects observed.
+      # This looks maybe promising:
+    return
+    """
+
+    # Nevermind the above; found a more pointed solution from here:
+    # https://stackoverflow.com/questions/41707229/why-is-tqdm-printing-to-a-newline-instead-of-updating-the-same-line
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self._instances:
+            self._instances.clear()
 
 
 # Wrapper around tqdm command-line progress bar.
