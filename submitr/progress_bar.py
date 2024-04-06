@@ -29,7 +29,8 @@ class TQDM(tqdm):
         super().__init__(*args, **kwargs)
 
 
-# Wrapper around tqdm command-line progress bar.
+# Wrapper around tqdm command-line progress bar; handles interrupts nicely;
+# more intuitive usage; cleans up some output oddities; et cetera.
 class ProgressBar:
 
     @staticmethod
