@@ -511,7 +511,7 @@ def _initiate_server_ingestion_process(
         "ingestion_directory": os.path.dirname(ingestion_filename) if ingestion_filename else None,
         "datafile_size": datafile_size or get_file_size(ingestion_filename),
         "datafile_checksum": datafile_checksum or get_file_checksum(ingestion_filename),
-        "user": json.dumps(user)
+        "user": json.dumps(user) if user else None
     }
 
     if validation_ingestion_submission_uuid:
@@ -1246,6 +1246,11 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             consortia = [consortium]
         if submission_center := check_parameters.get("submission_center"):
             submission_centers = [submission_center]
+        if isinstance(user := check_parameters.get("user"), str):
+            try:
+                user = json.loads(user)
+            except Exception:
+                user = None
         if debug:
             PRINT("DEBUG: Continuing with submission process after a previous server validation timeout.")
         submission_uuid = _initiate_server_ingestion_process(
@@ -1259,7 +1264,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             autoadd=check_parameters.get("autoadd"),
             datafile_size=check_parameters.get("datafile_size"),
             datafile_checksum=check_parameters.get("datafile_checksum"),
-            user=check_parameters.get("user"),
+            user=user,
             debug=debug,
             debug_sleep=debug_sleep)
         SHOW(f"Submission tracking ID: {submission_uuid}")
