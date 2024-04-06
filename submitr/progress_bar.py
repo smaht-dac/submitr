@@ -265,7 +265,7 @@ class ProgressBar:
             nonlocal sys_stdout_write
             if sys_stdout_write is not None:
                 sys.stdout.write = sys_stdout_write
-        def replace_first(value: str, replacing: str, replacement: str) -> str:
+        def replace_first(value: str, replacing: str, replacement: str) -> str:  # noqa
             if (index := value.find(replacing)) >= 0:
                 return value[:index] + replacement + value[index + len(replacing):]
             return value
