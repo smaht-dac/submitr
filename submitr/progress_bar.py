@@ -24,13 +24,13 @@ class TQDM(tqdm):
 
     # Nevermind the above; found a more pointed solution from here:
     # https://stackoverflow.com/questions/41707229/why-is-tqdm-printing-to-a-newline-instead-of-updating-the-same-line
+    # Why in the world would tqdm maintaining state across instances?? Whatever, this fixes it.
     def __init__(self, *args, **kwargs):
-        self._instances.clear() if self._instances else None
+        super()._instances.clear() if super()._instances else None
         super().__init__(*args, **kwargs)
 
 
-# Wrapper around tqdm command-line progress bar; handles interrupts nicely;
-# more intuitive usage; cleans up some output oddities; et cetera.
+# Wrapper around tqdm command-line progress bar.
 class ProgressBar:
 
     @staticmethod
@@ -198,7 +198,7 @@ class ProgressBar:
             nonlocal self
             def handle_secondary_interrupt(signum: int, frame: frame) -> None:  # noqa
                 nonlocal self
-                self._printf("\nEnter 'yes' to 'no' or CTRL-\\ to completely abort ...")
+                self._printf("\nEnter 'yes' or 'no' or CTRL-\\ to completely abort ...")
             self.disable()
             self._interrupt(self) if self._interrupt else None
             set_interrupt_handler(handle_secondary_interrupt)
