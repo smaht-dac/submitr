@@ -146,7 +146,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=None)
     parser.add_argument('--submit', action="store_true",
                         help="Actually submit the metadata for ingestion..", default=False)
-    parser.add_argument('--validate', '-v', action="store_true",
+    parser.add_argument('--validate', action="store_true",
                         help="Perform both client-side and server-side validation first.", default=False)
     parser.add_argument('--validate-only', action="store_true",
                         help="Same as --validate.", default=False)

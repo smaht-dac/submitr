@@ -30,7 +30,8 @@ class CustomArgumentParser(argparse.ArgumentParser):
                           help="Opens your browser to Web based documentation.", default=False)
         self.add_argument("--doc", action="store_true",
                           help="Synonym for --help-web.", default=False)
-        self.add_argument("--version", action="store_true", help="Print version.", default=False)
+        self.add_argument("--version", "-version", "--v", "-v", action="store_true",
+                          help="Print version.", default=False)
         if self.is_pytest():
             return super().parse_args(args)
         args = None
@@ -55,19 +56,41 @@ class CustomArgumentParser(argparse.ArgumentParser):
         if args.doc:
             args.help_web = True
         if args.version or "version" in sys.argv:
-            if version := self._get_version():
-                is_most_recent_version, more_recent_version_message = self._get_most_recent_version_info(version)
-                PRINT(f"{self._package or 'COMMAND'}:"
-                      f" {version}{' ✓' if is_most_recent_version else ''} | {self.COPYRIGHT}")
-                if more_recent_version_message:
-                    PRINT(f"NOTE ▶ ▶ ▶ ▶ ▶ {more_recent_version_message}")
-            else:
-                PRINT(f"{self._package or 'COMMAND'}: No version available | {self.COPYRIGHT}")
+            self.print_version(verbose="-v" not in sys.argv)
             exit(0)
         elif args.help_advanced or args.help_web or args.help_raw or "help" in sys.argv:
             self.print_help()
             exit(0)
         return args
+
+    def print_version(self, verbose: bool = False):
+        if version := self._get_version():
+            if verbose:
+                most_recent_version_info = get_most_recent_version_info()
+                has_most_recent_version = (
+                    (most_recent_version_info.version == version) or
+                    (most_recent_version_info.beta_version == version))
+                version = get_version()
+                print_boxed([
+                    "===",
+                    "smaht-submitr [VERSION]",
+                    "===",
+                    f"This version: {version}"
+                        f"{' ✓' if has_most_recent_version else ' ✗ A more recent version is available.'}",  # noqa
+                    f"Most recent version: {most_recent_version_info.version}"
+                        f" | {most_recent_version_info.release_date}",
+                    f"More recent beta version: {most_recent_version_info.beta_version}"
+                        f" | {most_recent_version_info.beta_release_date}",
+                    "===",
+                    "For all version please see: https://pypi.org/project/smaht-submitr",
+                    "===",
+                    self.COPYRIGHT,
+                    "==="
+                ], right_justified_macro=("[VERSION]", self._get_version))
+            else:
+                PRINT(f"{self._package or 'COMMAND'}: {version}")
+        else:
+            PRINT(f"{self._package or 'COMMAND'}: No version available")
 
     def print_help(self):
         if "--help-raw" in sys.argv:
