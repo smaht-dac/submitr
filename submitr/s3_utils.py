@@ -81,7 +81,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             bar.set_progress(nbytes_transferred)
             if nbytes_transferred >= file_size:
                 duration = time.time() - started
-                upload_done = (f"Upload complete: {format_size(nbytes_transferred)} in {format_duration(duration)}"
+                upload_done = (f"Upload complete: {os.path.basename(file)} | {format_size(nbytes_transferred)} in {format_duration(duration)}"
                                f" | {format_size(nbytes_transferred / duration)} per second ◀")
 
         def upload_file_callback(nbytes_chunk: int) -> None:  # noqa
@@ -183,7 +183,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     def verify_uploaded_file() -> bool:
         nonlocal file_size
         if file_info := get_uploaded_file_info():
-            printf("Verifying upload ... ", end="")
+            printf(f"Verifying upload: {os.path.basename(file)} ... ", end="")
             if file_info["size"] != file_size:
                 printf(f"WARNING: File size mismatch ▶ {file_size} vs {file_info['size']}")
                 return False
@@ -213,7 +213,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             else:
                 s3.upload_fileobj(f, s3_bucket, s3_key, Callback=upload_file_callback.function)
         except Exception:
-            printf(f"\nUpload aborted: {file}")
+            printf(f"Upload ABORTED: {file} ◀")
             upload_aborted = True
 
     upload_file_callback.done()
