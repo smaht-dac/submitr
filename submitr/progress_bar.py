@@ -25,9 +25,8 @@ class TQDM(tqdm):
     # Nevermind the above; found a more pointed solution from here:
     # https://stackoverflow.com/questions/41707229/why-is-tqdm-printing-to-a-newline-instead-of-updating-the-same-line
     def __init__(self, *args, **kwargs):
+        self._instances.clear() if self._instances else None
         super().__init__(*args, **kwargs)
-        if self._instances:
-            self._instances.clear()
 
 
 # Wrapper around tqdm command-line progress bar.
@@ -189,8 +188,8 @@ class ProgressBar:
     def _format_description(self, value: str) -> str:
         if not isinstance(value, str):
             value = ""
-        if self._tidy_output_hack and not value.endswith("[progress]"):
-            value += "[progress]"
+        if self._tidy_output_hack and not value.endswith(self._tidy_output_hack.sentinel):
+            value += self._tidy_output_hack.sentinel
         return value
 
     def _define_interrupt_handler(self) -> None:
@@ -237,27 +236,28 @@ class ProgressBar:
         return namedtuple("interrupt_handler", ["restore"])(restore_interrupt_handler)
 
     def _define_tidy_output_hack(self) -> None:
+        sys_stdout_write = sys.stdout.write
         def tidy_stdout_write(text: str) -> None:  # noqa
-            nonlocal self, sys_stdout_write, spin_index, spin_chars, spin_nchars
+            nonlocal self, sys_stdout_write, sentinel_internal, spin_chars, spin_index, spin_nchars
             # Very minor tqdm output tidy-up which was bugging me; tqdm forces a
             # colon (:) before the percentage, e.g. ":  25%|"; and while we're at
-            # it do a little ASCII progress animation; this requires a "[progress]"
-            # value in their display string where the progress bar should actually
-            # go which we do in _format_description.
-            if (self._disabled or self._done) and "[progress]:" in text:
+            # it do a little ASCII progress animation, requiring a special sentinal
+            # string ("[progress]") in the display string where the progress bar
+            # should actually go, which we do in _format_description.
+            if (self._disabled or self._done) and sentinel_internal in text:
                 # And another hack to really disable output on interrupt;
                 # on interrupt we set tqdm.disable to True, but output still
                 # dribbles out, so if here the output looks like it is from
                 # tqdm and we are disabled then do not output anything.
                 return
-            if "[progress]:" in text:
+            if sentinel_internal in text:
                 spin_char = spin_chars[spin_index % spin_nchars] if not ("100%|" in text) else "| ✓"
                 spin_index += 1
-                text = replace_first(text, "[progress]:", f" {spin_char}")
+                text = replace_first(text, sentinel_internal, f" {spin_char}")
                 text = replace_first(text, "%|", "% ◀‖")
-                # Another oddity: for the rate sometimes tqdm prints something
-                # like "1.54s/" rather than "1.54/s"; something to do with the
-                # unit we gave, which is empty; idunno; just replace it here.
+                # Another oddity: for the rate sometimes tqdm intermittently prints
+                # something like "1.54s/" rather than "1.54/s"; something to do with
+                # the unit we gave, which is empty; idunno; just replace it here.
                 text = replace_first(text, "s/ ", "/s ")
             sys_stdout_write(text)
             sys.stdout.flush()
@@ -269,12 +269,10 @@ class ProgressBar:
             if (index := value.find(replacing)) >= 0:
                 return value[:index] + replacement + value[index + len(replacing):]
             return value
-        spin_index = 0
-        spin_chars = ["|", "/", "—", "◦", "\\"]
-        spin_nchars = len(spin_chars)
-        sys_stdout_write = sys.stdout.write
         sys.stdout.write = tidy_stdout_write
-        return namedtuple("tidy_output_hack", ["restore"])(restore_stdout_write)
+        spin_chars = ["|", "/", "—", "◦", "\\"] ; spin_index = 0 ; spin_nchars = len(spin_chars)  # noqa
+        sentinel = "[progress]" ; sentinel_internal = f"{sentinel}:"  # noqa
+        return namedtuple("tidy_output_hack", ["restore", "sentinel"])(restore_stdout_write, sentinel)
 
     def _confirmation(self, message: Optional[str] = None) -> bool:
         # Effectively the same as dcicutils.command_utils.yes_or_no but with stdout flush.
