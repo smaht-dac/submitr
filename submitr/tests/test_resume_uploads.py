@@ -89,11 +89,13 @@ def test_resume_uploads_script(keyfile):
         'no_query': False,
         'subfolders': False,
     }
-    test_it(args_in=['some-guid', '--bundle', '${tmpdir}/some.file', '--env', 'some-env', '--server', 'http://some.server'],
+    test_it(args_in=['some-guid', '--bundle', '${tmpdir}/some.file',
+                     '--env', 'some-env', '--server', 'http://some.server'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=['--bundle', '${tmpdir}/some.file', '--env', 'some-env', '--server', 'http://some.server', 'some-guid'],
+    test_it(args_in=['--bundle', '${tmpdir}/some.file', '--env',
+                     'some-env', '--server', 'http://some.server', 'some-guid'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
@@ -107,11 +109,13 @@ def test_resume_uploads_script(keyfile):
         'subfolders': False,
     }
     test_it(args_in=['some-guid', '--bundle',
-                     '${tmpdir}/some.file', '--env', 'some-env', '--server', 'http://some.server', '--directory', '${tmpdir}/a-folder'],
+                     '${tmpdir}/some.file', '--env', 'some-env',
+                     '--server', 'http://some.server', '--directory', '${tmpdir}/a-folder'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=['--bundle', '${tmpdir}/some.file', '--env', 'some-env', '--server', 'http://some.server', 'some-guid',
+    test_it(args_in=['--bundle', '${tmpdir}/some.file', '--env', 'some-env',
+                     '--server', 'http://some.server', 'some-guid',
                      '--directory', '${tmpdir}/a-folder'],
             expect_exit_code=0,
             expect_called=True,
@@ -126,7 +130,8 @@ def test_resume_uploads_script(keyfile):
         'subfolders': False,
     }
     test_it(args_in=['some-guid', '--bundle',
-                     '${tmpdir}/some.file', '--server', 'http://some.server', '--directory', '${tmpdir}/a-folder', '--yes'],
+                     '${tmpdir}/some.file', '--server', 'http://some.server',
+                     '--directory', '${tmpdir}/a-folder', '--yes'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
@@ -140,7 +145,8 @@ def test_resume_uploads_script(keyfile):
         'subfolders': True,
     }
     test_it(args_in=['some-guid', '--bundle',
-                     '${tmpdir}/some.file', '--server', 'http://some.server', '--directory', '${tmpdir}/a-folder', '--yes'],
+                     '${tmpdir}/some.file', '--server', 'http://some.server',
+                     '--directory', '${tmpdir}/a-folder', '--yes'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
