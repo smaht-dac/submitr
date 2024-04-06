@@ -24,7 +24,7 @@ class TQDM(tqdm):
 
     # Nevermind the above; found a more pointed solution from here:
     # https://stackoverflow.com/questions/41707229/why-is-tqdm-printing-to-a-newline-instead-of-updating-the-same-line
-    # Why in the world would tqdm maintaining state across instances?? Whatever, this fixes it.
+    # Why in the world would tqdm be maintaining state across instances?? Whatever, this fixes it.
     def __init__(self, *args, **kwargs):
         super()._instances.clear() if super()._instances else None
         super().__init__(*args, **kwargs)
