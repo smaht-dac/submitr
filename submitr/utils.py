@@ -281,8 +281,6 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
             latest_non_beta_release_date = datetime.fromisoformat(releases[latest_non_beta_version][0]["upload_time"])
             latest_beta_version = None
             latest_beta_release_date = None
-            #latest_non_beta_version = "0.8.0"  # xyzzy/test
-            #latest_non_beta_release_date = datetime.utcnow()  # xyzzy/test
             if beta:
                 # Return the latest beta version but only if it
                 # is more recent than the latest non-beta version.
