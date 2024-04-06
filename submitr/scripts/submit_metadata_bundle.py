@@ -125,14 +125,25 @@ ADVANCED OPTIONS:
   Automatically answer 'yes' to any confirmation questions.
 ===
 """
+_OBSOLETE_OPTIONS = [
+    {"option": "-e", "message": "Use --env."},
+    {"option": "-s", "message": "Use --server."},
+    {"option": "-v", "message": "Use --validate."},
+    {"option": "-u", "message": "Use --directory-only; or --directory which searches recusively."},
+    {"option": "-d", "message": "Use --directory-only; or --directory which searches recusively."},
+    {"option": "-sd", "message": "Use --directory which defaults to searching recusively."},
+    {"option": "-sf", "message": "Use --directory which defaults to searching recusively."}
+]
 
 
 def main(simulated_args_for_testing=None):
-    parser = CustomArgumentParser(_HELP, _HELP_ADVANCED, CustomArgumentParser.HELP_URL, package="smaht-submitr")
+    parser = CustomArgumentParser(help=_HELP, help_advanced=_HELP_ADVANCED,
+                                  help_url=CustomArgumentParser.HELP_URL,
+                                  obsolete_options=_OBSOLETE_OPTIONS)
     parser.add_argument('bundle_filename', nargs="?", help='Local Excel filename that comprises the data bundle.')
-    parser.add_argument('--server', '-s',
+    parser.add_argument('--server',
                         help="HTTP(S) address of Portal server (e.g. in ~/.smaht-keys.json).")
-    parser.add_argument('--env', '-e',
+    parser.add_argument('--env',
                         help="Portal environment name for server/credentials (e.g. in ~/.smaht-keys.json).")
     parser.add_argument('--consortium', help="Consoritium to use for submission.")
     parser.add_argument('--submission-center', help="Submission center to use for submission.")
@@ -158,12 +169,12 @@ def main(simulated_args_for_testing=None):
                         help="Skip the local (client) validation step.", default=False)
     parser.add_argument('--validate-remote-skip', action="store_true",
                         help="Skip the remote (server) validation step.", default=False)
-    parser.add_argument('--directory', '-d', help="Directory of the upload files.")
+    parser.add_argument('--directory', help="Directory of the upload files.")
     parser.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
-    parser.add_argument('--subfolders', '-sf', action="store_true",  # obsolete
+    parser.add_argument('--subfolders', action="store_true",  # obsolete
                         help="Obsolete", default=False)
-    parser.add_argument('--upload_folder', '-u', help="Same as --directory.")
-    parser.add_argument('--ingestion_type', '--ingestion-type', '-t',
+    parser.add_argument('--upload_folder', help="Same as --directory.")
+    parser.add_argument('--ingestion_type', '--ingestion-type',
                         help=f"The ingestion type (default: {DEFAULT_INGESTION_TYPE}).",
                         default=DEFAULT_INGESTION_TYPE)
     parser.add_argument('--yes', action="store_true",

@@ -46,31 +46,39 @@ OPTIONS:
   {CustomArgumentParser.HELP_URL}#resuming-uploads
 ===
 """
+_OBSOLETE_OPTIONS = [
+    {"option": "-e", "message": "Use --env."},
+    {"option": "-s", "message": "Use --server."},
+    {"option": "-b", "message": "Use --bundle."},
+    {"option": "--bundle_filename", "message": "Use --bundle."},
+    {"option": "-u", "message": "Use --directory-only; or --directory which searches recusively."},
+    {"option": "-d", "message": "Use --directory-only; or --directory which searches recusively."},
+    {"option": "-nq", "message": "Use --no_query"},
+    {"option": "-nq", "message": "Use --yes"},
+    {"option": "--no_query", "message": "Use --yes"},
+    {"option": "-sf", "message": "Use --directory which defaults to searching recusively."},
+    {"option": "--subfolders", "message": "Use --directory which defaults to searching recusively."}
+]
 
 
 def main(simulated_args_for_testing=None):
-    parser = CustomArgumentParser(_HELP, package="smaht-submitr")
+    parser = CustomArgumentParser(help=_HELP, obsolete_options=_OBSOLETE_OPTIONS)
     parser.add_argument('uuid', nargs="?", help='IngestionSumission UUID (or upload file UUID or accession ID).')
-    parser.add_argument('--server', '-s',
+    parser.add_argument('--server',
                         help="HTTP(S) address of Portal server (e.g. in ~/.smaht-keys.json).")
-    parser.add_argument('--env', '-e',
+    parser.add_argument('--env',
                         help="Portal environment name for server/credentials (e.g. in ~/.smaht-keys.json).")
     parser.add_argument('--app',
                         help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")
     parser.add_argument('--bundle', help="location of the original Excel submission file")
-    parser.add_argument('--bundle_filename', '-b', help="Synonym for --bundle.")
     parser.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=None)
-    parser.add_argument('--directory', '-d', help="Directory of the upload files.")
+    parser.add_argument('--directory', help="Directory of the upload files.")
     parser.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
-    parser.add_argument('--upload_folder', '-u', help="Synonym for --directory.")
+    parser.add_argument('--upload_folder', help="Synonym for --directory.")
     parser.add_argument('--output', help="Output file for results.", default=False)
     parser.add_argument('--yes', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
-    parser.add_argument('--no_query', '-nq', action="store_true",
-                        help="Synonym for --yes.", default=False)
-    parser.add_argument('--subfolders', '-sf', action="store_true",
-                        help="Obsolete", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     directory_only = True
@@ -80,8 +88,6 @@ def main(simulated_args_for_testing=None):
     if args.directory_only:
         args.upload_folder = args.directory_only
         directory_only = True
-    if args.bundle:
-        args.bundle_filename = args.bundle
 
     if args.yes:
         args.no_query = True
@@ -100,8 +106,8 @@ def main(simulated_args_for_testing=None):
         PRINT(f"Directory does not exist: {args.upload_folder}")
         exit(1)
 
-    if args.bundle_filename and not os.path.isdir(os.path.normpath(os.path.dirname(args.bundle_filename))):
-        PRINT(f"Specified bundle file not found: {args.bundle_filename}")
+    if args.bundle and not os.path.isdir(os.path.normpath(os.path.dirname(args.bundle))):
+        PRINT(f"Specified bundle file not found: {args.bundle}")
         exit(1)
 
     if not args.upload_folder and args.directory:
@@ -122,10 +128,10 @@ def main(simulated_args_for_testing=None):
                        env=args.env,
                        env_from_env=env_from_env,
                        keys_file=keys_file,
-                       bundle_filename=args.bundle_filename,
+                       bundle_filename=args.bundle,
                        server=args.server,
                        upload_folder=args.upload_folder,
-                       no_query=args.no_query,
+                       no_query=args.yes,
                        subfolders=not directory_only,
                        output_file=args.output,
                        app=args.app)

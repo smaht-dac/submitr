@@ -38,7 +38,7 @@ def test_resume_uploads_script(keyfile):
     test_it(args_in=[], expect_exit_code=2, expect_called=False,
             expect_output=["Missing submission UUID or referenced file UUID or accession ID."])  # Missing args
     test_it(args_in=['some-guid'], expect_exit_code=0, expect_called=True, expect_call_args={
-        'bundle_filename': None,
+        'bundle': None,
         'env': None,
         'server': None,
         'uuid': 'some-guid',
@@ -47,7 +47,7 @@ def test_resume_uploads_script(keyfile):
         'subfolders': False,
     })
     expect_call_args = {
-        'bundle_filename': '${tmpdir}/some.file',
+        'bundle': '${tmpdir}/some.file',
         'env': None,
         'server': None,
         'uuid': 'some-guid',
@@ -55,16 +55,16 @@ def test_resume_uploads_script(keyfile):
         'no_query': False,
         'subfolders': False,
     }
-    test_it(args_in=['-b', '${tmpdir}/some.file', 'some-guid'],
+    test_it(args_in=['--bundle', '${tmpdir}/some.file', 'some-guid'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=['some-guid', '-b', 'some.file'],
+    test_it(args_in=['some-guid', '--bundle', 'some.file'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': '${tmpdir}/some.file',
+        'bundle': '${tmpdir}/some.file',
         'env': 'some-env',
         'server': None,
         'uuid': 'some-guid',
@@ -72,16 +72,16 @@ def test_resume_uploads_script(keyfile):
         'no_query': False,
         'subfolders': False,
     }
-    test_it(args_in=['some-guid', '-b', 'some.file', '-e', 'some-env'],
+    test_it(args_in=['some-guid', '--bundle', 'some.file', '--env', 'some-env'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=['-b', '${tmpdir}/some.file', '-e', 'some-env', 'some-guid'],
+    test_it(args_in=['--bundle', '${tmpdir}/some.file', '--env', 'some-env', 'some-guid'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': '${tmpdir}/some.file',
+        'bundle': '${tmpdir}/some.file',
         'env': 'some-env',
         'server': 'http://some.server',
         'uuid': 'some-guid',
@@ -89,16 +89,16 @@ def test_resume_uploads_script(keyfile):
         'no_query': False,
         'subfolders': False,
     }
-    test_it(args_in=['some-guid', '-b', '${tmpdir}/some.file', '-e', 'some-env', '-s', 'http://some.server'],
+    test_it(args_in=['some-guid', '--bundle', '${tmpdir}/some.file', '--env', 'some-env', '--server', 'http://some.server'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=['-b', '${tmpdir}/some.file', '-e', 'some-env', '-s', 'http://some.server', 'some-guid'],
+    test_it(args_in=['--bundle', '${tmpdir}/some.file', '--env', 'some-env', '--server', 'http://some.server', 'some-guid'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': '${tmpdir}/some.file',
+        'bundle': '${tmpdir}/some.file',
         'env': 'some-env',
         'server': 'http://some.server',
         'uuid': 'some-guid',
@@ -106,18 +106,18 @@ def test_resume_uploads_script(keyfile):
         'no_query': False,
         'subfolders': False,
     }
-    test_it(args_in=['some-guid', '-b',
-                     '${tmpdir}/some.file', '-e', 'some-env', '-s', 'http://some.server', '-u', '${tmpdir}/a-folder'],
+    test_it(args_in=['some-guid', '--bundle',
+                     '${tmpdir}/some.file', '--env', 'some-env', '--server', 'http://some.server', '--directory', '${tmpdir}/a-folder'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=['-b', '${tmpdir}/some.file', '-e', 'some-env', '-s', 'http://some.server', 'some-guid',
-                     '--upload_folder', '${tmpdir}/a-folder'],
+    test_it(args_in=['--bundle', '${tmpdir}/some.file', '--env', 'some-env', '--server', 'http://some.server', 'some-guid',
+                     '--directory', '${tmpdir}/a-folder'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': '${tmpdir}/some.file',
+        'bundle': '${tmpdir}/some.file',
         'env': None,
         'server': 'http://some.server',
         'uuid': 'some-guid',
@@ -125,13 +125,13 @@ def test_resume_uploads_script(keyfile):
         'no_query': True,
         'subfolders': False,
     }
-    test_it(args_in=['some-guid', '-b',
-                     '${tmpdir}/some.file', '-s', 'http://some.server', '-u', '${tmpdir}/a-folder', '-nq'],
+    test_it(args_in=['some-guid', '--bundle',
+                     '${tmpdir}/some.file', '--server', 'http://some.server', '--directory', '${tmpdir}/a-folder', '--yes'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': '${tmpdir}/some.file',
+        'bundle': '${tmpdir}/some.file',
         'env': None,
         'server': 'http://some.server',
         'uuid': 'some-guid',
@@ -139,8 +139,8 @@ def test_resume_uploads_script(keyfile):
         'no_query': True,
         'subfolders': True,
     }
-    test_it(args_in=['some-guid', '-b',
-                     '${tmpdir}/some.file', '-s', 'http://some.server', '-u', '${tmpdir}/a-folder', '-nq', '-sf'],
+    test_it(args_in=['some-guid', '--bundle',
+                     '${tmpdir}/some.file', '--server', 'http://some.server', '--directory', '${tmpdir}/a-folder', '--yes'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
@@ -166,7 +166,7 @@ def test_c4_383_regression_action():
     Check that bug C4-383 is really fixed.
 
     This bug involves resume_uploads not merging the uploaded file against the current directory
-    when no bundle_filename or upload_folder is given. The present behavior is to merge against
+    when no bundle or upload_folder is given. The present behavior is to merge against
     the parent directory.
     """
     output = []
