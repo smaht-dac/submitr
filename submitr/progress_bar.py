@@ -8,6 +8,17 @@ from types import FrameType as frame
 from typing import Callable, Optional
 from contextlib import contextmanager
 
+
+class TQDM(tqdm):
+    def moveto(self, n):
+        # Hack/workaround for apparent tqdm bug where (for example) if we use this twice
+        # in a row, and we interrupt (CTRL-C) the first one and abort the task, then the
+        # output for the second usage gets a bit garble; on the wrong line and whatnot;
+        # somehow, state is stuck across usages; can't quite see how from the tqdm code.
+        # This is a bit worrying but so far no other deleterious effects observed.
+        return
+
+
 # Wrapper around tqdm command-line progress bar.
 class ProgressBar:
 
@@ -83,7 +94,7 @@ class ProgressBar:
         # Do not actually create the tqdm object unless/until we have a positive total.
         if (self._bar is None) and (self._total > 0):
             bar_format = "{l_bar}{bar}| {n_fmt}/{total_fmt} | {rate_fmt} | {elapsed}{postfix} | ETA: {remaining} "
-            self._bar = tqdm(total=self._total, desc=self._description,
+            self._bar = TQDM(total=self._total, desc=self._description,
                              dynamic_ncols=True, bar_format=bar_format, unit="", file=sys.stdout)
             if self._disabled:
                 self._bar.disable = True
