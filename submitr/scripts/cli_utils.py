@@ -65,8 +65,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
 
     def print_version(self, verbose: bool = False):
         if version := self._get_version():
-            if verbose:
-                most_recent_version_info = get_most_recent_version_info()
+            if verbose and (most_recent_version_info := get_most_recent_version_info()):
                 has_most_recent_version = (
                     (most_recent_version_info.version == version) or
                     (most_recent_version_info.beta_version == version))
@@ -87,10 +86,11 @@ class CustomArgumentParser(argparse.ArgumentParser):
                     self.COPYRIGHT,
                     "==="
                 ], right_justified_macro=("[VERSION]", self._get_version))
+                return
             else:
                 PRINT(f"{self._package or 'COMMAND'}: {version}")
-        else:
-            PRINT(f"{self._package or 'COMMAND'}: No version available")
+                return
+        PRINT(f"{self._package or 'COMMAND'}: No version available")
 
     def print_help(self):
         if "--help-raw" in sys.argv:
