@@ -35,31 +35,14 @@ class ProgressBar:
 
     @staticmethod
     @contextmanager
-    def define(total: Optional[int] = None, description: Optional[str] = None,
-               catch_interrupt: bool = True,
-               interrupt: Optional[Callable] = None,
-               interrupt_continue: Optional[Callable] = None,
-               interrupt_stop: Optional[Callable] = None,
-               interrupt_exit: bool = None,
-               interrupt_message: Optional[str] = None,
-               printf: Optional[Callable] = None,
-               tidy_output_hack: bool = True) -> None:
-
-        progress_bar = ProgressBar(
-            total=total,
-            description=description,
-            catch_interrupt=catch_interrupt,
-            interrupt=interrupt,
-            interrupt_continue=interrupt_continue,
-            interrupt_stop=interrupt_stop,
-            interrupt_exit=interrupt_exit,
-            interrupt_message=interrupt_message,
-            printf=printf,
-            tidy_output_hack=tidy_output_hack)
+    def define(*args, **kwargs):
+        progress_bar = None
         try:
+            progress_bar = ProgressBar(*args, **kwargs)
             yield progress_bar
         finally:
-            progress_bar.done()
+            if progress_bar:
+                progress_bar.done()
 
     def __init__(self, total: Optional[int] = None,
                  description: Optional[str] = None,
