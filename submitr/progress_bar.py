@@ -236,24 +236,24 @@ class ProgressBar:
         return namedtuple("interrupt_handler", ["restore"])(restore_interrupt_handler)
 
     def _define_tidy_output_hack(self) -> None:
+        # Some minor tqdm output tidying-up which for annoying anomalies; tqdm forces
+        # a colon (:) before the percentage, e.g. ":  25%|"; and while we're at it do
+        # a little ASCII progress animation, requiring a special ([progress]) sentinal
+        # string in the display string where the progress bar should actually go,
+        # which we do in _format_description. Other minor things too; see below.
         sys_stdout_write = sys.stdout.write
         def tidy_stdout_write(text: str) -> None:  # noqa
-            nonlocal self, sys_stdout_write, sentinel_internal, spin_chars, spin_index, spin_nchars
-            # Very minor tqdm output tidy-up which was bugging me; tqdm forces a
-            # colon (:) before the percentage, e.g. ":  25%|"; and while we're at
-            # it do a little ASCII progress animation, requiring a special sentinal
-            # string ("[progress]") in the display string where the progress bar
-            # should actually go, which we do in _format_description.
+            nonlocal self, sys_stdout_write, sentinel_internal, spina, spini, spinn
+            def replace_first(value: str, match: str, replacement: str) -> str:  # noqa
+                return value[:i] + replacement + value[i + len(match):] if (i := value.find(match)) >= 0 else value
             if (self._disabled or self._done) and sentinel_internal in text:
-                # And another hack to really disable output on interrupt;
-                # on interrupt we set tqdm.disable to True, but output still
-                # dribbles out, so if here the output looks like it is from
-                # tqdm and we are disabled then do not output anything.
+                # Another hack to really disable output on interrupt; in this case we set
+                # tqdm.disable to True, but output can still dribble out, so if the output
+                # looks like it is from tqdm and we are disabled/done then do no output.
                 return
             if sentinel_internal in text:
-                spin_char = spin_chars[spin_index % spin_nchars] if not ("100%|" in text) else "| ✓"
-                spin_index += 1
-                text = replace_first(text, sentinel_internal, f" {spin_char}")
+                spinc = spina[spini % spinn] if not ("100%|" in text) else "| ✓" ; spini += 1  # noqa
+                text = replace_first(text, sentinel_internal, f" {spinc}")
                 text = replace_first(text, "%|", "% ◀‖")
                 # Another oddity: for the rate sometimes tqdm intermittently prints
                 # something like "1.54s/" rather than "1.54/s"; something to do with
@@ -265,12 +265,8 @@ class ProgressBar:
             nonlocal sys_stdout_write
             if sys_stdout_write is not None:
                 sys.stdout.write = sys_stdout_write
-        def replace_first(value: str, replacing: str, replacement: str) -> str:  # noqa
-            if (index := value.find(replacing)) >= 0:
-                return value[:index] + replacement + value[index + len(replacing):]
-            return value
         sys.stdout.write = tidy_stdout_write
-        spin_chars = ["|", "/", "—", "◦", "\\"] ; spin_index = 0 ; spin_nchars = len(spin_chars)  # noqa
+        spina = ["|", "/", "—", "◦", "\\"] ; spini = 0 ; spinn = len(spina)  # noqa
         sentinel = "[progress]" ; sentinel_internal = f"{sentinel}:"  # noqa
         return namedtuple("tidy_output_hack", ["restore", "sentinel"])(restore_stdout_write, sentinel)
 
