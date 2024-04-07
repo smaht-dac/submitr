@@ -1,5 +1,6 @@
 from collections import namedtuple
 from datetime import datetime
+from functools import lru_cache
 import io
 import hashlib
 import pkg_resources
@@ -249,6 +250,8 @@ def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Cal
         macro_value = right_justified_macro[1]()
         lines_tmp = []
         for line in lines:
+            if line is None:
+                continue
             if line.endswith(macro_name):
                 line = line.replace(macro_name, right_justified_macro[1]() + " ")
             lines_tmp.append(line)
@@ -256,6 +259,8 @@ def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Cal
     else:
         length = max(len(line) for line in lines)
     for line in lines:
+        if line is None:
+            continue
         if line == "===":
             printf(f"+{'-' * (length - len(line) + 5)}+")
         elif macro_name and line.endswith(macro_name):
@@ -265,19 +270,27 @@ def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Cal
             printf(f"| {line}{' ' * (length - len(line))} |")
 
 
-def get_version(package: str = "smaht-submitr") -> str:
+@lru_cache(maxsize=1)
+def get_version(package_name: str = "smaht-submitr") -> str:
     try:
-        return pkg_resources.get_distribution(package).version
+        return pkg_resources.get_distribution(package_name).version
     except Exception:
         return ""
 
 
+@lru_cache(maxsize=2)
 def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool = True) -> object:
     pypi_url = f"https://pypi.org/pypi/{package_name}/json"
     try:
         if (response := requests.get(pypi_url)).status_code == 200 and (response := response.json()):
             latest_non_beta_version = response["info"]["version"]
+            this_version = get_version(package_name=package_name)
+            this_version = '0.7.0.1b98'
+            this_release_date = None
             releases = response["releases"]
+            if releases and isinstance(this_release_info := releases.get(this_version), list) and this_release_info:
+                if isinstance(this_release_info := this_release_info[0], dict):
+                    this_release_date = this_release_info.get("upload_time")
             latest_non_beta_release_date = datetime.fromisoformat(releases[latest_non_beta_version][0]["upload_time"])
             latest_beta_version = None
             latest_beta_release_date = None
@@ -298,9 +311,11 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
                 except Exception:
                     pass
             return (namedtuple("most_recent_pypi_package_version",
-                               ["version", "release_date", "beta_version", "beta_release_date"])
+                               ["version", "release_date",
+                                "beta_version", "beta_release_date", "this_version", "this_release_date"])
                     (latest_non_beta_version, format_datetime(latest_non_beta_release_date),
-                     latest_beta_version, format_datetime(latest_beta_release_date)))
+                     latest_beta_version, format_datetime(latest_beta_release_date),
+                     this_version, format_datetime(this_release_date)))
     except Exception:
         pass
     return None

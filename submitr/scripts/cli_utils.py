@@ -127,7 +127,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
                     "smaht-submitr [VERSION]",
                     "===",
                     f"This version: {version}"
-                        f"{' ✓' if has_most_recent_version else ' ✗ A more recent version is available ◀'}",  # noqa
+                        f"{' ✓' if has_most_recent_version else ' ▶ A more recent version is available ◀'}",  # noqa
                     f"Most recent version: {most_recent_version_info.version}"
                         f" | {most_recent_version_info.release_date}",
                     f"More recent beta version: {most_recent_version_info.beta_version}"
