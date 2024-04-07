@@ -34,6 +34,10 @@ OPTIONS:
 --env ENVIRONMENT-NAME
   To specify your environment name; from your ~/.smaht-keys.json file.
   Alternatively, set your SMAHT_ENV environment variable.
+--keys KEYS-FILE
+  To specify an alternate credentials/keys file,
+  rather than the default ~/.smaht-keys.json file.
+  Alternatively, set your SMAHT_KEYS environment variable.
 --validate
   To ONLY validate metadata WITHOUT submitting.
   Either this or --submit is required.
@@ -50,10 +54,6 @@ OPTIONS:
   To specify a directory containing the files to upload; in addition
   to the default of using the directory containing the submitted file;
   this directory will be searched recursively.
---keys KEYS-FILE
-  To specify an alternate credentials/keys file,
-  rather than the default ~/.smaht-keys.json file.
-  Alternatively, set your SMAHT_KEYS environment variable.
 --output OUTPUT-FILE
   Writes all logging output to the specified file;
   and refrains from printing lengthy content to output/stdout.

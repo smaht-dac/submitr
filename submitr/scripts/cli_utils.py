@@ -1,8 +1,9 @@
 import argparse
+from functools import lru_cache
 import io
 import sys
 import webbrowser
-from typing import List, Optional, Tuple
+from typing import List, Optional, Union
 from dcicutils.misc_utils import PRINT
 from submitr.utils import get_version, get_most_recent_version_info, print_boxed
 
@@ -88,7 +89,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
     def _check_version_options(self) -> None:
         for arg in sys.argv:
             if arg in ["version", "-version", "--version", "-v", "--v"]:
-                self._print_version(verbose="-v" not in sys.argv)
+                self._print_version(verbose=("-v" not in sys.argv) and ("--v" not in sys.argv))
                 exit(0)
 
     def print_help(self) -> None:
@@ -108,25 +109,25 @@ class CustomArgumentParser(argparse.ArgumentParser):
             lines = lines[1:]
         if lines[len(lines) - 1] == "":
             lines = lines[:len(lines) - 1]
-        _, more_recent_version_message = self._get_most_recent_version_info()
-        if more_recent_version_message:
-            lines.append(more_recent_version_message)
+        most_recent_version_info = self._get_most_recent_version_info()
+        most_recent_version_info = self._get_most_recent_version_info()
+        if isinstance(most_recent_version_info, str):
+            lines.append(most_recent_version_info)
             lines.append("===")
         print_boxed(lines, right_justified_macro=("[VERSION]", self._get_version))
 
     def _print_version(self, verbose: bool = False) -> None:
-        if version := self._get_version():
+        if version := self._get_version(with_most_recent_check_mark=False):
             if verbose and (most_recent_version_info := get_most_recent_version_info()):
                 has_most_recent_version = (
                     (most_recent_version_info.version == version) or
                     (most_recent_version_info.beta_version == version))
-                version = get_version()
                 print_boxed([
                     "===",
                     "smaht-submitr [VERSION]",
                     "===",
                     f"This version: {version}"
-                        f"{' ✓' if has_most_recent_version else ' ✗ A more recent version is available.'}",  # noqa
+                        f"{' ✓' if has_most_recent_version else ' ✗ A more recent version is available ◀'}",  # noqa
                     f"Most recent version: {most_recent_version_info.version}"
                         f" | {most_recent_version_info.release_date}",
                     f"More recent beta version: {most_recent_version_info.beta_version}"
@@ -143,12 +144,19 @@ class CustomArgumentParser(argparse.ArgumentParser):
                 return
         PRINT(f"{self._package or 'COMMAND'}: No version available")
 
-    def _get_version(self) -> str:
-        return get_version(self._package)
+    @lru_cache(maxsize=1)
+    def _get_version(self, with_most_recent_check_mark: bool = True) -> str:
+        version = get_version(self._package)
+        if with_most_recent_check_mark and (self._get_most_recent_version_info(version) is True):
+            version = f"✓ {version}"
+        return version
 
-    def _get_most_recent_version_info(self, this_version: Optional[str] = None) -> Tuple[Optional[bool], Optional[str]]:
+    @lru_cache(maxsize=1)
+    def _get_most_recent_version_info(self, this_version: Optional[str] = None) -> Union[bool, str]:
         if not this_version:
             this_version = self._get_version()
+        if this_version.startswith("✓ "):
+            this_version = this_version[2:]
         is_beta_version = ("a" in this_version or "b" in this_version)
         is_most_recent_version = False
         more_recent_version_message = None
@@ -157,16 +165,17 @@ class CustomArgumentParser(argparse.ArgumentParser):
                 (most_recent_version_info.beta_version == this_version)):  # noqa
                 is_most_recent_version = True
         more_recent_version_message = (
-            f"{self._package or 'COMMAND'}: {this_version}{' ✓' if is_most_recent_version else ''} | {self.COPYRIGHT}")
-        if not is_most_recent_version:
-            if is_beta_version and most_recent_version_info.beta_version:
-                most_recent_version = most_recent_version_info.beta_version
-            else:
-                most_recent_version = most_recent_version_info.version
-            more_recent_version_message = (
-                f"A more recent version of this{' beta' if is_beta_version else ''}"
-                f" software is available: {most_recent_version}")
-        return (is_most_recent_version, more_recent_version_message)
+            f"{self._package or 'COMMAND'}: {this_version}{' ✓' if is_most_recent_version else ''}")
+        if is_most_recent_version:
+            return True
+        if is_beta_version and most_recent_version_info.beta_version:
+            most_recent_version = most_recent_version_info.beta_version
+        else:
+            most_recent_version = most_recent_version_info.version
+        more_recent_version_message = (
+            f"A more recent version of this{' beta' if is_beta_version else ''}"
+            f" software is available: {most_recent_version}")
+        return more_recent_version_message
 
     def is_pytest(self) -> bool:
         return "pytest" in sys.modules

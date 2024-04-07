@@ -12,7 +12,7 @@ resume-uploads [VERSION]
 ===
 Tool to upload files referenced in a metadata file,
 previously submitted using submit-metadata-bundle, to SMaHT Portal.
-See: {CustomArgumentParser.HELP_URL}#resuming-uploads
+See: {CustomArgumentParser.HELP_URL}
 ===
 USAGE: resume-uploads UUID OPTIONS
 -----
@@ -23,6 +23,9 @@ OPTIONS:
 ===
 --env ENVIRONMENT-NAME
   To specify your environment name; from your ~/.smaht-keys.json file.
+--KEYS-FILE
+  To specify an alternate credentials/keys
+  file to the default ~/.smaht-keys.json file.
 --validate
   To validate metadata before submitting.
   This is the DEFAULT behavior for most (non-admin) users.
@@ -34,16 +37,13 @@ OPTIONS:
   this directory will be search, recursively.
 --directory-only
   Same as --directory but does NOT search recursively.
---KEYS-FILE
-  To specify an alternate credentials/keys
-  file to the default ~/.smaht-keys.json file.
 --help
   Prints this documentation.
 --help-advanced
   Prints this plus more advanced documentation.
 --help-web
   Opens your browser to the Web based documentation.
-  {CustomArgumentParser.HELP_URL}#resuming-uploads
+  {CustomArgumentParser.HELP_URL}
 ===
 """
 _OBSOLETE_OPTIONS = [
