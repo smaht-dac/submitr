@@ -134,12 +134,16 @@ class CustomArgumentParser(argparse.ArgumentParser):
                     f"Most recent version: {most_recent_version_info.version}"
                         f" | {most_recent_version_info.release_date}",  # noqa
                     f"Most recent beta version: {most_recent_version_info.beta_version}"
-                        f" | {most_recent_version_info.beta_release_date}",
+                        f" | {most_recent_version_info.beta_release_date}"
+                            if most_recent_version_info.beta_version else None,  # noqa
                 ]
                 if not has_most_recent_version and most_recent_version_info.this_release_date:
                     lines += [
                         "===",
-                        f"▶ A more recent version is available ◀"
+                        f"▶ A more recent version is available ▶ See update command below:",
+                        f"▶ pip install {self.PACKAGE}=={most_recent_version_info.version}",
+                        f"▶ pip install {self.PACKAGE}=={most_recent_version_info.beta_version}"
+                            if most_recent_version_info.beta_version else None,  # noqa
                     ]
                 lines += [
                     "===",
@@ -184,7 +188,8 @@ class CustomArgumentParser(argparse.ArgumentParser):
         else:
             most_recent_version = most_recent_version_info.version
         more_recent_version_message = (
-            f"A more recent version of this{' beta' if is_beta_version else ''}"
+            f"A more recent version of this"
+            f"{' beta' if is_beta_version and most_recent_version_info.beta_version else ''}"
             f" software is available: {most_recent_version}")
         return more_recent_version_message
 
