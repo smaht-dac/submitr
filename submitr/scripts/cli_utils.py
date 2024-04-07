@@ -133,7 +133,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
                     f"More recent beta version: {most_recent_version_info.beta_version}"
                         f" | {most_recent_version_info.beta_release_date}",
                     "===",
-                    "For all version please see: https://pypi.org/project/smaht-submitr",
+                    "For all versions please see: https://pypi.org/project/smaht-submitr",
                     "===",
                     self.COPYRIGHT,
                     "==="
