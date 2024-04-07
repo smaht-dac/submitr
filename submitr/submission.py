@@ -56,7 +56,7 @@ GENERIC_SCHEMA_TYPE = 'FileOther'
 # Maximum amount of time (approximately) we will wait for a response from server (seconds).
 PROGRESS_TIMEOUT = 60 * 5  # five minutes (note this is for both server validation and submission)
 # How often we actually check the server (seconds).
-PROGRESS_CHECK_SERVER_INTERVAL = 3  # xyzzy
+PROGRESS_CHECK_SERVER_INTERVAL = 3
 # How often the (tqdm) progress meter updates (seconds).
 PROGRESS_INTERVAL = 1
 # How many times the (tqdm) progress meter updates (derived from above).
@@ -463,7 +463,8 @@ def _show_section(res, section, caveat_outcome=None, portal=None):
 
 
 def _ingestion_submission_item_url(server, uuid):
-    return url_path_join(server, "ingestion-submissions", uuid) + "?format=json"
+    # Note that we use datastore=database for quicker feedback.
+    return url_path_join(server, "ingestion-submissions", uuid) + "?format=json&datastore=database"
 
 
 # TRY_OLD_PROTOCOL = True
