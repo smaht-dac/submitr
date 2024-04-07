@@ -4,6 +4,7 @@ from functools import lru_cache
 import io
 import hashlib
 import pkg_resources
+import pytz
 import re
 import requests
 import os
@@ -150,6 +151,13 @@ def format_datetime(value: datetime, verbose: bool = False) -> Optional[str]:
         return None
 
 
+def parse_datetime_string_into_utc_datetime(value: str) -> Optional[datetime]:
+    try:
+        return datetime.fromisoformat(value).replace(tzinfo=pytz.utc)
+    except Exception:
+        return None
+
+
 def format_path(path: str) -> str:
     if isinstance(path, str) and os.path.isabs(path) and path.startswith(os.path.expanduser("~")):
         path = "~/" + Path(path).relative_to(Path.home()).as_posix()
@@ -289,8 +297,9 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
             releases = response["releases"]
             if releases and isinstance(this_release_info := releases.get(this_version), list) and this_release_info:
                 if isinstance(this_release_info := this_release_info[0], dict):
-                    this_release_date = datetime.fromisoformat(this_release_info.get("upload_time"))
-            latest_non_beta_release_date = datetime.fromisoformat(releases[latest_non_beta_version][0]["upload_time"])
+                    this_release_date = parse_datetime_string_into_utc_datetime(this_release_info.get("upload_time"))
+            latest_non_beta_release_date = (
+                parse_datetime_string_into_utc_datetime(releases[latest_non_beta_version][0].get("upload_time")))
             latest_beta_version = None
             latest_beta_release_date = None
             if beta:
@@ -303,7 +312,8 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
                     if (latest_beta_version := latest_beta_info[0]) == latest_non_beta_version:
                         latest_beta_version = None
                     else:
-                        latest_beta_release_date = datetime.fromisoformat(latest_beta_info[1][0]["upload_time"])
+                        latest_beta_release_date = (
+                            parse_datetime_string_into_utc_datetime(latest_beta_info[1][0].get("upload_time")))
                         if latest_non_beta_release_date > latest_beta_release_date:
                             latest_beta_version = None
                             latest_beta_release_date = None
