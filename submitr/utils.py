@@ -285,12 +285,11 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
         if (response := requests.get(pypi_url)).status_code == 200 and (response := response.json()):
             latest_non_beta_version = response["info"]["version"]
             this_version = get_version(package_name=package_name)
-            this_version = '0.7.0.1b98'
             this_release_date = None
             releases = response["releases"]
             if releases and isinstance(this_release_info := releases.get(this_version), list) and this_release_info:
                 if isinstance(this_release_info := this_release_info[0], dict):
-                    this_release_date = this_release_info.get("upload_time")
+                    this_release_date = datetime.fromisoformat(this_release_info.get("upload_time"))
             latest_non_beta_release_date = datetime.fromisoformat(releases[latest_non_beta_version][0]["upload_time"])
             latest_beta_version = None
             latest_beta_release_date = None

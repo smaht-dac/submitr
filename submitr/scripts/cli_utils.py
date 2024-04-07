@@ -122,22 +122,33 @@ class CustomArgumentParser(argparse.ArgumentParser):
                 has_most_recent_version = (
                     (most_recent_version_info.version == version) or
                     (most_recent_version_info.beta_version == version))
-                print_boxed([
+                if most_recent_version_info.this_release_date:
+                    version_release_date = f" | {most_recent_version_info.this_release_date}"
+                else:
+                    version_release_date = ""
+                lines = [
                     "===",
                     "smaht-submitr [VERSION]",
                     "===",
-                    f"This version: {version}"
-                        f"{' ✓' if has_most_recent_version else ' ▶ A more recent version is available ◀'}",  # noqa
+                    f"This version: {version}{version_release_date}",
                     f"Most recent version: {most_recent_version_info.version}"
                         f" | {most_recent_version_info.release_date}",
                     f"More recent beta version: {most_recent_version_info.beta_version}"
                         f" | {most_recent_version_info.beta_release_date}",
+                ]
+                if not has_most_recent_version and most_recent_version_info.this_release_date:
+                    lines += [
+                        "===",
+                        f"▶ A more recent version is available ◀"
+                    ]
+                lines += [
                     "===",
                     "For all versions please see: https://pypi.org/project/smaht-submitr",
                     "===",
                     self.COPYRIGHT,
                     "==="
-                ], right_justified_macro=("[VERSION]", self._get_version))
+                ]
+                print_boxed(lines, right_justified_macro=("[VERSION]", self._get_version))
                 return
             else:
                 PRINT(f"{self._package or 'COMMAND'}: {version}")
