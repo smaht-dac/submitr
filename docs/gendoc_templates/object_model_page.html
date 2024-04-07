@@ -1,0 +1,110 @@
+============
+Object Model
+============
+
+..  Commented out (2023-03-04): Decided do not really need this as this is live on portal.
+..    Below are the object types (and data), relevant for metadata submission, supported by SMaHT Portal.
+
+.. raw:: html
+
+    Below are the object <a target="_blank" href="{smaht_url}/profiles/" style="color:black">types</a>
+    (and data) supported by SMaHT Portal which may be relevant for metadata submission;
+    types marked with <b>(A)</b> indicate <i>abstract</i> types which may not be directly created.
+    Click on the name for more details.
+    These can also be viewed within SMaHT Portal itself in a somewhat more rudimentary form <a target="_blank" href="{smaht_url}/submission-schemas/"><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:2pt;" /></a>
+
+    <p />
+
+Types
+-----
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+
+   {schema_types}
+
+.. raw:: html
+
+    <table><tr><td>
+    <ul>
+        {schema_types_left}
+    </ul>
+    </td><td style="padding-left:20pt;">
+    <ul>
+        {schema_types_middle}
+    </ul>
+    </td><td style="padding-left:24pt;">
+    <ul>
+        {schema_types_right}
+    </ul>
+    </td></tr></table>
+
+
+.. tip::
+    .. raw:: html
+
+        To view the above types as a <a href="object_model/type_hierarchy.html" style="color:black;">type hierarchy</a>
+        <a target="_blank" href="object_model/type_hierarchy.html"</a><b>here</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>
+
+.. Commented out (2023-03-04): Decided do not really need this as this is live on portal.
+.. Data
+.. ----
+
+.. .. toctree::
+..    :hidden:
+..    :maxdepth: 1
+
+..    object_model/data/consortia
+..    object_model/data/file_formats
+..    object_model/data/reference_genomes
+..    object_model/data/submission_centers
+
+.. .. raw:: html
+.. 
+..     <ul>
+..         <li> <a href="object_model/data/consortia.html">Consortia</a> </li>
+..         <li> <a href="object_model/data/file_formats.html">File Formats</a> </li>
+..         <li> <a href="object_model/data/reference_genomes.html">Reference Genomes</a> </li>
+..         <li> <a href="object_model/data/submission_centers.html">Submission Centers</a> </li>
+..     </ul>
+
+Data
+----
+
+.. raw:: html
+
+    <ul>
+            <li> <a target="_blank" href="{smaht_url}/search/?type=Consortium">Consortia<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>&nbsp;&nbsp;&nbsp;<small>(or <a href="object_model/data/consortia.html">here</a>)</small>  </li>
+            <li> <a target="_blank" href="{smaht_url}/search/?type=FileFormat">File Formats<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>&nbsp;&nbsp;&nbsp;<small>(or <a href="object_model/data/file_formats.html#all-file-formats">here</a>)</small> </li>
+            <li> <a target="_blank" href="{smaht_url}/search/?type=FileFormat&valid_item_types=AlignedReads">File Formats <small>(Aligned Reads)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a>&nbsp;&nbsp;&nbsp;<small>(or <a href="object_model/data/file_formats.html#for-alignedreads">here</a>)</small> </li>
+                            <li> <a target="_blank" href="{smaht_url}/search/?type=FileFormat&valid_item_types=UnalignedReads">File Formats <small>(Unaligned Reads)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a>&nbsp;&nbsp;&nbsp;<small>(or <a href="object_model/data/file_formats.html#for-unalignedreads">here</a>)</small> </li>
+                                            <li> <a target="_blank" href="{smaht_url}/search/?type=FileFormat&valid_item_types=VariantCalls">File Formats <small>(Variant Calls)</small><span class="fa fa-external-link" style="left:6pt;position:relative;top:2pt;" /></a>&nbsp;&nbsp;&nbsp;<small>(or <a href="object_model/data/file_formats.html#for-variantcalls">here</a>)</small> </li>
+                                                            <li> <a target="_blank" href="{smaht_url}/search/?type=ReferenceGenome">Reference Genomes<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>&nbsp;&nbsp;&nbsp;<small>(or <a href="object_model/data/reference_genomes.html">here</a>)</small> </li>
+                                                            <li> <a target="_blank" href="{smaht_url}/search/?type=SubmissionCenter">Submission Centers<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a>&nbsp;&nbsp;&nbsp;<small>(or <a href="object_model/data/submission_centers.html">here</a>)</small> </li>
+    </ul>
+
+
+See Also
+--------
+
+.. raw:: html
+
+    <ul>
+        <li> <a href="object_model/type_hierarchy.html">Type Hierarchy</a> </li>
+        <li> <a target="_blank" href="{smaht_url}/docs/additional-resources/sample-file-nomenclature">File and Sample Nomenclature<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+        <li> <a target="_blank" href="{smaht_url}/docs/user-guide/referencing-data">Referencing Existing Data<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+        <li> <a target="_blank" href="{smaht_url}/data/benchmarking">Benchmarking Data<span class="fa fa-external-link" style="left:4pt;position:relative;top:1pt;" /></a> </li>
+    </ul>
+
+.. raw:: html
+
+    <span style="color:#aaaaaa;">[ <small>Generated: {generated_datetime} | <a target='_blank' style="color:#aaaaaa" href='{smaht_url}/profiles/?format=json'>{smaht_domain}</a> {smaht_portal_version}</small> ]</span><p />
+    <p />
+
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+
+   object_model/type_hierarchy

@@ -17,8 +17,8 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'submitr'
-copyright = '2020-2023 President and Fellows of Harvard College'
+project = 'smaht-submitr'
+copyright = '2020-2024 President and Fellows of Harvard College'
 author = 'Harvard Medical School / DBMI / SMaHT DAC Team'
 master_doc = 'index'
 
@@ -28,7 +28,8 @@ master_doc = 'index'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc'
+    'sphinx.ext.autodoc',
+    'sphinx_tabs.tabs'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -46,8 +47,43 @@ exclude_patterns = []
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+html_show_sourcelink = False
+html_context = {
+  "display_github": False, # Intends to remove the "Edit on GitHub" link
+  "github_user": "", # Optional: Specify GitHub username here
+  "github_repo": "", # Optional: Specify repository name here
+  "github_version": "", # Optional: Specify branch name here
+  "conf_py_path": "" # Optional: Specify path to conf.py file here
+}
+html_theme_options = {
+  "sticky_navigation": False
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_css_files = ['styles.css', "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"]
+
+# https://sphinx-tabs.readthedocs.io/en/latest/
+sphinx_tabs_disable_tab_closing = True
+
+# Special config to:
+# - support bold highlighted text (:boldcode:)
+# - support opening a link an a different/new tab (:toplink:)
+from docutils import nodes, utils
+from sphinx.util.nodes import make_refnode, split_explicit_title
+
+def setup(app):
+    app.add_role('boldcode', boldcode_role)
+    app.add_role('toplink', toplink_role)
+
+def boldcode_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+    node = nodes.literal(rawtext, text, classes=['boldcode'])
+    return [node], []
+
+def toplink_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+    has_title, title, target = split_explicit_title(text)
+    node = nodes.reference(rawtext, utils.unescape(title if has_title else target), refuri=target, **options)
+    node['target'] = '_blank'
+    return [node], []

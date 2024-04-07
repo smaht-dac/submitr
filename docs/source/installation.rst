@@ -1,88 +1,89 @@
-========================
-Installing smaht-submitr
-========================
+============
+Installation
+============
 
+.. toctree::
+  :maxdepth: 1
+
+More experienced users who already have ``python`` (version 3.9, 3.10, or 3.11) installed,
+and a (optional) Python virtual environment setup to their satisfaction,
+may proceed directly to the essential element of the `actual installation <installation.html#id1>`_
+of ``smaht-submitr``, which is simply this::
+
+    pip install smaht-submitr
+
+Less experienced users may want to start with these `prerequisites <installation_prerequisites.html>`_,
+which will introduce some basics for installing and working
+with Python on the terminal command-line:
+
+.. toctree::
+  :maxdepth: 1
+
+  installation_prerequisites
+
+The rest of these instructions will guide you through the setup of a (optional)
+virtual Python environment, and then the actual installation of ``smaht-submitr``.
+
+.. tip::
+   You need a SMaHT account to use this software. For information an obtaining an account please see:
+   `SMaHT Portal Account Creation <account_creation.html>`_
 
 System Requirements
 ===================
 
-* Python 3.8, 3.9, 3.10, or 3.11
-* ``pip`` (>=20.0.0)
-* ``virtualenv`` (>=16.0.0)
-* ``poetry`` (>=1.4.0)
+* ``python`` 3.9, 3.10, or 3.11
+* ``bash``
 
+.. note::
+    These instructions are targeted specifically for **Mac OS X** users.
+    For **Linux** users, these should be generally applicable (with slight modifications);
+    presumed to be a bit more advanced, such users should have little difficulty.
+    For **Windows** users, very little testing has been done; not recommended; but more experienced users should be able to work through it.
 
-Setting Up a Virtual Environment (OPTIONAL)
-===========================================
+.. note::
+   The command-line shell for all of these instructions is assumed ``bash`` (i.e. not ``zsh`` or ``csh`` et cetera).
+   To invoke the ``bash`` shell from the command-line simply run ``bash``.
 
-This action is optional.
-If you do not create a virtual environment, Poetry will make one for you.
-But there are still good reasons you might want to make your own, so here
-are three ways to do it:
+Virtual Environment Setup
+=========================
 
-* If you have a ``virtualenvwrapper`` installation that knows how to use your Python version (3.7, 3.8 or 3.9)::
+This step is **optional** though recommended.
+See the `Installation Prerequisites <installation_prerequisites.html#installing-pyenv>`_ section for
+installing the ``pyenv`` command required to do this.
 
-   mkvirtualenv myenv
+Assuming you have ``pyenv`` installed (per that `section <installation_prerequisites.html#installing-pyenv>`_),
+to install a Python version (3.11.8),
+create a virtual Python environment using this Python version,
+and active this virtual environment, do::
 
-* If you have virtualenv but not virtualenvwrapper,
-  and you have, for example, ``python3.9`` in your ``PATH``::
+    pyenv install 3.11.8
+    pyenv virtualenv 3.11.8 smaht-submitr-3.11
+    pyenv activate smaht-submitr-3.11
 
-   virtualenv myenv -p python3.9
+That name ``smaht-submitr-3.11`` can be any name that you choose.
+Now you can proceed to the actual installation of ``smaht-submitr``, next.
 
-* If you are using ``pyenv`` to control what Python version you use, make sure you have set it
-  to your preferred version and then do::
+Actual Installation
+===================
 
-   pyenv exec python -m venv myenv
-
-
-Activating a Virtual Environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You should execute all actions related to this repository
-from within a virtual environment.
-
-To activate a virtual environment::
-
-   source myenv/bin/activate
-
-
-Deactivating a Virtual Environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-It's rarely necessary to deactivate a virtual environment.
-One is automatically deactivated if you enter another,
-and normally they have very little effect on other actions you might
-take. So it's normally safe to just leave them activated.
-
-However, if you want to deactivate an active environment, just do::
-
-   deactivate
-
-
-Installing in a Virtual Environment
-==========================================
-
-Installation for Developers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you are a developer, you'll be installing with Poetry.
-Once you have created a virtual environment, or have decided to just let Poetry handle that,
-go ahead with the installation. To do that, make sure your current directory is the source repository and do::
-
-   make build
-
-
-.. tip::
-
-   Poetry is the substrate that our build scripts rely on.
-   You won't be calling it directly, but ``make build`` will call it.
-
-
-Installation for End Users (non-Developers)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you're an end user,
-once you have created and activated the virtual environment,
-just do::
+Assuming ``python`` is satisfactorily installed,
+to install the ``submitr-smaht`` software package,
+run the following (note that the ``pip`` command is automatically installed with ``python``)::
 
    pip install smaht-submitr
+
+.. note::
+    Once installed, the following command-line commands will be available for use
+    (click on each of these to go to the corresponding documentation section):
+
+        - `submit-metadata-bundle <usage.html>`_
+        - `resume-uploads <uploading_files.html#resuming-uploads>`_
+        - `check-submission <usage.html#getting-submission-info>`_
+        - `list-submissions <usage.html#listing-recent-submissions>`_
+        - `view-portal-object <advanced_usage.html#viewing-portal-objects>`_
+
+For Developers
+==============
+
+If you are a software developer, and you wish to install ``smaht-submitr`` locally
+for development or other purposes, please see the `Advanced Usage <advanced_usage.html#installation-for-developers>`_ section.

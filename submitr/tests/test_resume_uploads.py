@@ -15,7 +15,7 @@ from .testing_helpers import system_exit_expected, argparse_errors_muffled
 @pytest.mark.parametrize("keyfile", [None, "foo.bar"])
 def test_resume_uploads_script(keyfile):
 
-    def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None):
+    def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None, expect_output=[]):
         output = []
         with argparse_errors_muffled():
             with temporary_directory() as tmpdir:
@@ -24,7 +24,7 @@ def test_resume_uploads_script(keyfile):
                 for i in range(len(args_in)):
                     if "${tmpdir}" in args_in[i]:
                         args_in[i] = args_in[i].replace("${tmpdir}", tmpdir)
-                with mock.patch.object(resume_uploads_module, "print") as mock_print:
+                with mock.patch.object(resume_uploads_module, "PRINT") as mock_print:
                     mock_print.side_effect = lambda *args: output.append(" ".join(args))
                     with mock.patch.object(resume_uploads_module, "resume_uploads") as mock_resume_uploads:
                         with system_exit_expected(exit_code=expect_exit_code):
@@ -33,11 +33,12 @@ def test_resume_uploads_script(keyfile):
                         assert mock_resume_uploads.call_count == (1 if expect_called else 0)
                         if expect_called:
                             assert mock_resume_uploads.called_with(**expect_call_args)
-                        assert output == []
+                        assert output == expect_output
 
-    test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args
+    test_it(args_in=[], expect_exit_code=2, expect_called=False,
+            expect_output=["Missing submission UUID or referenced file UUID or accession ID."])  # Missing args
     test_it(args_in=['some-guid'], expect_exit_code=0, expect_called=True, expect_call_args={
-        'bundle_filename': None,
+        'bundle': None,
         'env': None,
         'server': None,
         'uuid': 'some-guid',
@@ -46,7 +47,7 @@ def test_resume_uploads_script(keyfile):
         'subfolders': False,
     })
     expect_call_args = {
-        'bundle_filename': '${tmpdir}/some.file',
+        'bundle': '${tmpdir}/some.file',
         'env': None,
         'server': None,
         'uuid': 'some-guid',
@@ -54,16 +55,16 @@ def test_resume_uploads_script(keyfile):
         'no_query': False,
         'subfolders': False,
     }
-    test_it(args_in=['-b', '${tmpdir}/some.file', 'some-guid'],
+    test_it(args_in=['--bundle', '${tmpdir}/some.file', 'some-guid'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=['some-guid', '-b', 'some.file'],
+    test_it(args_in=['some-guid', '--bundle', 'some.file'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': '${tmpdir}/some.file',
+        'bundle': '${tmpdir}/some.file',
         'env': 'some-env',
         'server': None,
         'uuid': 'some-guid',
@@ -71,16 +72,16 @@ def test_resume_uploads_script(keyfile):
         'no_query': False,
         'subfolders': False,
     }
-    test_it(args_in=['some-guid', '-b', 'some.file', '-e', 'some-env'],
+    test_it(args_in=['some-guid', '--bundle', 'some.file', '--env', 'some-env'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=['-b', '${tmpdir}/some.file', '-e', 'some-env', 'some-guid'],
+    test_it(args_in=['--bundle', '${tmpdir}/some.file', '--env', 'some-env', 'some-guid'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': '${tmpdir}/some.file',
+        'bundle': '${tmpdir}/some.file',
         'env': 'some-env',
         'server': 'http://some.server',
         'uuid': 'some-guid',
@@ -88,16 +89,18 @@ def test_resume_uploads_script(keyfile):
         'no_query': False,
         'subfolders': False,
     }
-    test_it(args_in=['some-guid', '-b', '${tmpdir}/some.file', '-e', 'some-env', '-s', 'http://some.server'],
+    test_it(args_in=['some-guid', '--bundle', '${tmpdir}/some.file',
+                     '--env', 'some-env', '--server', 'http://some.server'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=['-b', '${tmpdir}/some.file', '-e', 'some-env', '-s', 'http://some.server', 'some-guid'],
+    test_it(args_in=['--bundle', '${tmpdir}/some.file', '--env',
+                     'some-env', '--server', 'http://some.server', 'some-guid'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': '${tmpdir}/some.file',
+        'bundle': '${tmpdir}/some.file',
         'env': 'some-env',
         'server': 'http://some.server',
         'uuid': 'some-guid',
@@ -105,18 +108,20 @@ def test_resume_uploads_script(keyfile):
         'no_query': False,
         'subfolders': False,
     }
-    test_it(args_in=['some-guid', '-b',
-                     '${tmpdir}/some.file', '-e', 'some-env', '-s', 'http://some.server', '-u', '${tmpdir}/a-folder'],
+    test_it(args_in=['some-guid', '--bundle',
+                     '${tmpdir}/some.file', '--env', 'some-env',
+                     '--server', 'http://some.server', '--directory', '${tmpdir}/a-folder'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
-    test_it(args_in=['-b', '${tmpdir}/some.file', '-e', 'some-env', '-s', 'http://some.server', 'some-guid',
-                     '--upload_folder', '${tmpdir}/a-folder'],
+    test_it(args_in=['--bundle', '${tmpdir}/some.file', '--env', 'some-env',
+                     '--server', 'http://some.server', 'some-guid',
+                     '--directory', '${tmpdir}/a-folder'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': '${tmpdir}/some.file',
+        'bundle': '${tmpdir}/some.file',
         'env': None,
         'server': 'http://some.server',
         'uuid': 'some-guid',
@@ -124,13 +129,14 @@ def test_resume_uploads_script(keyfile):
         'no_query': True,
         'subfolders': False,
     }
-    test_it(args_in=['some-guid', '-b',
-                     '${tmpdir}/some.file', '-s', 'http://some.server', '-u', '${tmpdir}/a-folder', '-nq'],
+    test_it(args_in=['some-guid', '--bundle',
+                     '${tmpdir}/some.file', '--server', 'http://some.server',
+                     '--directory', '${tmpdir}/a-folder', '--yes'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
     expect_call_args = {
-        'bundle_filename': '${tmpdir}/some.file',
+        'bundle': '${tmpdir}/some.file',
         'env': None,
         'server': 'http://some.server',
         'uuid': 'some-guid',
@@ -138,8 +144,9 @@ def test_resume_uploads_script(keyfile):
         'no_query': True,
         'subfolders': True,
     }
-    test_it(args_in=['some-guid', '-b',
-                     '${tmpdir}/some.file', '-s', 'http://some.server', '-u', '${tmpdir}/a-folder', '-nq', '-sf'],
+    test_it(args_in=['some-guid', '--bundle',
+                     '${tmpdir}/some.file', '--server', 'http://some.server',
+                     '--directory', '${tmpdir}/a-folder', '--yes'],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
@@ -165,7 +172,7 @@ def test_c4_383_regression_action():
     Check that bug C4-383 is really fixed.
 
     This bug involves resume_uploads not merging the uploaded file against the current directory
-    when no bundle_filename or upload_folder is given. The present behavior is to merge against
+    when no bundle or upload_folder is given. The present behavior is to merge against
     the parent directory.
     """
     output = []
@@ -174,7 +181,7 @@ def test_c4_383_regression_action():
             upload_info["filename"] = os.path.join(current_dir, upload_info["filename"])
             open(upload_info["filename"], "w")
         with override_environ(SMAHT_KEYS_FILE=None):
-            with mock.patch.object(resume_uploads_module, "print") as mock_print:
+            with mock.patch.object(resume_uploads_module, "PRINT") as mock_print:
                 mock_print.side_effect = lambda *args: output.append(" ".join(args))
                 # This is the directory we expect the uploaded file to get merged against.
                 # We want to really run the code logic to make sure it does this,
@@ -186,7 +193,7 @@ def test_c4_383_regression_action():
                                 with mock.patch(
                                         "dcicutils.portal_utils.Portal.get_metadata") as mock_requests_get_metadata:
 
-                                    def mocked_requests_get_metadata(url):
+                                    def mocked_requests_get_metadata(url, raise_exception=True):
                                         return INGESTION_FRAGMENT_WITH_UPLOAD_INFO
 
                                     def mocked_requests_get(url, raise_for_status=False, *args, **kwargs):
@@ -222,5 +229,6 @@ def test_c4_383_regression_action():
                                         # Make sure the inner upload actually uploads to the current dir.
                                         mock_upload_file_to_uuid.assert_called_with(auth=fake_keydict,
                                                                                     filename=joined_filename,
-                                                                                    uuid=SAMPLE_UPLOAD_INFO[-1]['uuid'])
+                                                                                    uuid=SAMPLE_UPLOAD_INFO[-1]['uuid'],
+                                                                                    first_time=False, portal=mock.ANY)
                                         assert output == []

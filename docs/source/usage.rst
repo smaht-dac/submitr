@@ -1,133 +1,297 @@
 ===================
-Using smaht-submitr
+Submitting Metadata
 ===================
 
-Once you have finished installing this library into your virtual environment,
-you should have access to the ``submit-metadata-bundle`` command.
-There are 2 types of submissions: accessioning (new cases) and family history (pedigrees)
-which both use the ``submit-metadata-bundle`` command.
+Once you have finished installing the ``smaht-submitr`` package (per the `Installation <installation.html>`_ section),
+and you have setup your access keys (per the `Credentials <credentials.html>`_ section),
+you should be ready to use the :boldcode:`submit-metadata-bundle` command.
+What follows are detailed instructions for how to format your metatdata submission files,
+and how to actually submit (and validate) these, and upload yours files, to SMaHT Portal using this command.
 
-Formatting Files for Submission
-===============================
+Formatting Metadata Files
+=========================
 
-For more details on what file formats are accepted and how the information should be structured,
-see our submission help pages at the
-`SMaHT Portal <https://data.smaht.org/doc/>`_.
+Most commonly, the file format recommended for metadata submission to SMaHT Portal,
+is an Excel spreadsheet file (e.g. ``your_metadata_file.xlsx``),
+comprised of one or more sheets.
+Note these important aspects of using the Excel spreadsheet format:
 
-Most commonly, the file format recommended is an Excel spreadsheet file (e.g. ``your_metadata_file.xlsx``),
-comprised of one or more sheets. Each sheet name must be the name of a SMaHT Portal entity or `object` defined within the system.
+#. The spreadsheet must have a **file suffix** of ``.xls`` or ``.xlsx``; there are no other requirements for the name of this file.
+#. Each **sheet name** must be the `exact` name of a SMaHT Portal item or `object` defined within the system (e.g. ``AlignedReads``).
+#. Each sheet must have as its **first row** a special `header` row, which enumerates in each column, the `exact` names of the Portal object **properties** as the column names; order does `not` matter.
+#. Each sheet may contain any number of **data rows** (`directly` below the header row), each representing an instance of the Portal object.
+#. The values in the cells/columns of each data row correspond to **property names** in the same column of the (first) header row.
 
-Each sheet must have as its first row, a special `header` row, which enumerates the names of the object properties as the column names;
-each column name must match exactly the name of the property for the Portal object.
-Each sheet may contain any number of rows, each representing an instance of the object.
+Note these important rules defining exactly the parts of the spreadsheet which are **relevant** for metadata submission.
 
-Note that the first row which is entirely empty marks the end of the input, and any subsequenct rows will be entirely ignored.
+#. The **first row** which is entirely **empty** marks the **end of the data**, and any subsequent rows will be entirely **ignored**; this means you can include comments in your spreadsheet in rows after (below) the first blank row indicating the end of data input.
+#. The **first column** in the header row which is **empty** marks the **end of the header**, and any subsequent columns will be entirely **ignored**.
+#. Sheets which are marked as **hidden** will be **ignored**; this provides a way of including sheets with other auxiliary information without their contents interfering with the submission tool.
+#. Sheets which have a name enclosed in parenthesis, for example ``(My Comments)``, will similarly be treated as **hidden** as described above.
 
-And similarly, the first column in the header column which is empty marks the end of the header,
-and any subsequent columns will be entirely ignored.
+Despite the rather dense chunk of text here, it is actually pretty intuitive, straightforward, and almost self-explanatory.
+Here is screenshot of a simple example Excel spreadsheet: 
 
-A column value within a (non-header) row may be empty, but this means the value would be ignored
-when creating or updating the associated object. In order to delete a property value a special
-value ``*delete*`` should be used as the the property value.
+.. image:: _static/images/excel_screenshot.png
+    :target: _static/images/excel_screenshot.png
+    :alt: Excel Spreadsheet Screenshot
+
+Notice that the first row comprises the property/column `header`, defining properties named ``submitted_id``, ``submission_centers``, ``filename``, and so on. (N.B. Though ``submission_centers`` is shown in the above screenshot,
+that particular field is not actually required to be specified, as it's automatically added by the ``smaht-submitr`` tool if needed).
+
+Notice the multiple tabs at the bottom for the different sheets within the spreadsheet,
+representing (in this example) data for the Portal objects ``CellCultureSample``, ``Analyte``, ``Library``, and so on.
+
+.. note::
+    For an actual **example**, as well as a **template**, please see the `Metadata <#id1>`_ section below.
+
+.. .. tip::
+..     As mentioned above (in case you missed it), you can include arbitrary comments or auxiliary information
+..     in your spreadsheet, without that content intefering with the parsing of the spreadsheet,
+..     by making individual sheets **hidden**. Such hidden sheets will be completely ignored.
+..     To hide a sheet in Excel right-click on the tab and choose **Hide**. To **unhide** select
+..     **Format** > **Sheet** > **Unhide...** from the menu-bar. Also mentioned above,
+..     if your sheet name is enclosed in parenthesis, for example :boldcode:`(My Comments)`, then it will also be completely ignored;
+..     again, useful for arbitrary comments, and without having to hide/unhide sheets.
+
+.. tip::
+
+    Other file formats besides Excel actually `are` supported; see the `Advanced Usage <advanced_usage.html#other-files-formats>`_ section for more information.
+
+SMaHT object `properties` have different `types`. Many of the types are simply text (or `strings`). Other types are described below.
+
+Object Reference Properties
+---------------------------
+
+Some Portal object properties are defined as being references to other Portal objects (also known as `linkTo` properties).
+The values of these in the spreadsheet should be the unique `identifying value` for that object.
+
+It is important to know that the ``smaht-submitr`` tool and SMaHT will ensure that the referenced
+objects actually exist within the SMaHT Portal, `or` are defined within the spreadsheet itself;
+if this is not the case then an error will result.
+
+.. tip::
+
+    For the database savvy, such references can be thought of as being analogous to `foreign keys`.
+
+The identifying value property for an object varies depending on the specific object in question;
+though the ``uuid`` property is always common to `all` objects; other common identifying properties
+are ``submitted_id`` and ``accession``. The identifying properties for each object type (and other
+relevant info) can be found in the `Object Model <object_model.html>`_ section.
+
+Date/Time Properties
+--------------------
+For Portal object properties which are defined as `date` values,
+the required format is ``YYYY-MM-DD``, for example ``2024-02-09``.
+
+For Portal object properties which are defined as `date-time` values,
+the required format is ``YYYY-MM-DD hh:mm:ss``, for example ``2024-02-09 08:25:10``.
+This will default to your `local` timezone; if you want to specify a timezone
+use a suffix like ``+hh:mm`` where ``hh`` and ``mm`` are the hour and minute offsets (respectively) from :toplink:`GMT <https://en.wikipedia.org/wiki/Greenwich_Mean_Time>`.
+
+Boolean Properties
+------------------
+
+For Portal object properties which are defined as `boolean` values, meaning either `true` or `false`,
+simply use these values, i.e. ``true`` or ``false`` (case-insensitive).
+
+Array Properties
+----------------
+
+Some Portal object properties are defined to be lists (or `arrays`) of values.
+To define the values for such array properties, separate the individual array values by a pipe character (``|``).
+For example if an object defines a ``molecules`` property as an array type, then to set this
+value to an array with the two elements ``DNA`` and ``RNA``, use the value ``DNA|RNA`` in the associated spreadsheet cell.
+
+Less common, but still supported, is the ability to set values for individual array elements.
+This is accomplished by the convention suffixing the property name in the column header with
+a pound sign (``#``) followed by an integer representing the zero-indexed array element.
+For example to set the first element of the ``molecules`` property (using the example above), use column header value ``molecule#0``.
+
+Nested Properties
+-----------------
+
+Some Portal object properties defined to contain other `nested` objects.
+Since a (Excel spreadsheet) inherently defines a "flat" structure,
+rather than the more hierarchical structure supported by
+Portal objects (which are actually :toplink:`JSON <https://en.wikipedia.org/wiki/JSON>` objects),
+in which such nested objects can be defined,
+a special syntactic convention is needed to be able to reference the properties of these nested objects.
+
+For this we will use a `dot-notation` whereby dots (``.``) are used to separate a parent property from its child property.
+For example, if an object (e.g. `ReferenceFile <object_model/types/reference_file.html>`_) defines an ``extra_files`` property which itself
+refers to an object containing a ``file_format`` property,
+then to reference that nested ``file_format`` property, the spreadsheet column header would need to be ``extra_files.file_format``.
+
+Implicit Properties
+-------------------
+
+Some Portal objects require (or support) the specific ``submission_centers`` property.
+If you do not specify this though, ``smaht-submitr`` will `automatically` supply this particular property;
+it will `implicitly` be set to the submission center to which you belong. 
+
+Property Deletions
+------------------
+
+A column value within a (non-header) data row may be empty, but this only means that the value for the corresponding property will be ignored
+when creating or updating the associated object. In order to actually `delete` a property value from an object,
+a special value - ``*delete*`` - should be used as the the property value.
+
+Metadata
+========
+A thorough discussion of the metadata semantics is beyond the scope of this document,
+but there is a reference guide to the metadata objects supported by SMaHT Portal, provided at the link below.
+You can quickly view important aspects of each of the object types,
+such as the `required` and `reference` properties for each type, as well as each property `type`, and more.
+
+.. raw:: html
+
+    <ul style="margin-left:18pt;"><li><a target="_blank" href="object_model.html"><b>Metadata Object Model</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1.5pt;" /></a></li></ul>
+
+.. tip::
+   More savvy command-line oriented users `may` find the :boldcode:`view-portal-object` command useful.
+   This is described in the `Advanced Usage <advanced_usage.html#viewing-portal-schemas>`_ section.
+
+There is also a metadata submission **template**  which you may find useful, from which to start your spreadsheet,
+as well as an **example** spreadsheet:
+
+.. raw:: html
+
+    <div style="padding-left:22pt;">•&nbsp;&nbsp;<a target="_blank" href="https://docs.google.com/spreadsheets/d/1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4/edit#gid=1645623888"><b>Metadata Submission Template</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1.5pt;" /></a></div>
+    <div style="padding-left:22pt;" >•&nbsp;&nbsp;<a target="_blank" href="https://docs.google.com/spreadsheets/d/1b5W-8iBEvWfnJQFkcrO9_rG-K7oJEIJlaLr6ZH5qjjA/edit#gid=1589547329"><b>Metadata Submission Example</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1.5pt;" /></a></div>
+    <p />
 
 Submission
 ==========
 
 The type of submission supported is called a "metadata bundles", or `accessioning`.
-And the name of the command-line tool to initiate a submission is ``submit-metadata-bundle``.
-A brief tour of this command, its arguments, and function is given below.
+And the name of the command-line tool to initiate a submission is :boldcode:`submit-metadata-bundle`.
+A brief tour of this command, its arguments, and function is described below.
 To get help about the command, do::
 
    submit-metadata-bundle --help
 
-For many cases it will suffice simply to specify the metadata bundle file you want to upload,
-and the SMaHT environment name (such as ``data`` or ``staging``) from your ``~/.smaht-keys.json`` keys file).
+To submit your metadata run ``submit-metadata-bundle``  with your metadata file,
+and the SMaHT environment name (e.g. ``data``) from your keys file (as described in the `Credentials <credentials.html>`_ section)
+as an argument to the ``--env`` option, and the :boldcode:`--submit` option.
 For example::
 
-   submit-metadata-bundle your_metadata_file.xlsx --env data
+   submit-metadata-bundle your_metadata_file.xlsx --env data --submit
 
-You can omit the ``--env`` option entirely if your ``~/.smaht-keys.json`` file has only one entry.
+This will first validate your metadata, and if no errors were encountered,
+it will do the actual metadata submmision;
+you `will` be prompted for confirmation before the submission is started.
+If errors were encountered, the submission will `not` commence;
+you will `not` be able to submit until you fix the errors.
 
-This command should do everything, including uploading referenced file; it will prompt first for confirmation;
-see the `Uploading Referenced Files` section just below for more on this.
+.. tip::
+    You can omit the ``--env`` option entirely if your keys file has only `one` single entry,
+    or if you have your ``SMAHT_ENV`` environment variable setup (see the `Credentials <credentials.html#storing-access-keys>`_ section).
+
+.. note::
+    If you opted to use a file other than ``~/.smaht-keys.json`` to store
+    your credentials, you will need to use the ``--keys``
+    option with the path name to your alternate file as an argument;
+    or have your ``SMAHT_KEYS`` environment variable setup (see the `Credentials <credentials.html#storing-access-keys>`_ section).
+
+This command should do everything, `including` uploading any referenced files,
+prompting first for confirmation;
+see the `Uploading Files <uploading_files.html>`_ section for more on this.
 
 If you belong to
 multiple consortia and/or submission centers, you can also add the ``--consortium <consortium>``
-and ``--submission-center <submission-center>`` options; if you belong to only one of either,
+and ``--submission-center <submission-center>`` options; if you belong to only one,
 the command will automatically detect (based on your user profile) and use those.
 
-**Uploading Referenced Files**
+.. tip::
+    You may wonder: Is it okay to submit the same metadata file more that once?
+    The answer is: Yes. And, if you had made any changes to the file, updates
+    will be applied as expected.
 
-As mentioned above, after ``submit-metadata-bundle`` processes the main submission file, it will (after prompting) upload files referenced within the submission file. These files should reside
-in the same directory as the submission file.
-Or, if they do not, then yo must specify the directory where these files can be found, like this::
+Validation
+==========
 
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files>
+As mentioned in the `previous section <usage.html#submission>`_, using the ``--submit`` option `will` perform
+validation of your metadata before submitting it (after prompting you to do so).
+But if you want to `only` run validation `without` the possibility of submitting the metadata to SMaHT Portal,
+then invoke ``submit-metadata-bundle`` with the :boldcode:`--validate` option like::
 
-The above commands will only look for the files to upload only directly within the specified directory
-(and not any sub-directories therein). To look within subdirectories, do::
+   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --validate
 
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files> --subdirectories
+.. tip::
+    This feature basically constitutes a sort of "**dry run**" facility.
 
-**Valdation Only**
+To be more specific about the the validation checks, they include the following:
 
-To invoke the submission for validation only, without having SMaHT actually ingest anything into its data store, do::
+#. Ensures the basic integrity of the format of the metadata submission file.
+#. Validates that objects defined within the metadata submission file conform to the corresponding Portal schemas for these objects.
+#. Confirms that any objects referenced within the submission file can be resolved; i.e. either they already exist within the Portal, or are defined within the metadata submission file itself.
+#. Verifies that referenced files (to be subsequently uploaded) actually exist on the file system.
 
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --validate-only
+.. note::
+    If you get validation errors, and then you fix them, and then you try again,
+    it is `possible` that you will get new, additional errors. I.e. it is not necessarily
+    the case that `all` validation errors will be comprehensively reported all at once.
+    This is because there are two kinds (or phases) of validation: local `client-side` and remote `server-side`.
+    You can learn more about the details of ths validation process
+    in the `Advanced Usage <advanced_usage.html#more-on-validation>`_ section.
 
-To be clear, this `will` submit the file to SMaHT for processing, but no data ingestion will take place, and any problems
-will be reported back to you from the SMaHT server. To sanity check the file you are submitting  `before` actually
-submitting it to SMaHT, you should use the ``--check`` option described now below.
-
-**Sanity Checking**
-
-To invoke the submission for with `local` sanity checking, where "local" means - `before` actually submitting to SMaHT, do::
-
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --check
-
-And to invoke the submission for with `only` local sanity checking, without actually submitting to SMaHT at all, do::
-
-   submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --check-only
-
-These ``--check`` and ``--check-only`` options can be very useful and their use is encouraged.
-They ensure that everything is in order before sending the submission off to SMaHT for processing.
-In fact this (``--check`` ) is actually the `default` behavior unless your user profile indicates that you are an `admin` user.
-To be more specific, these sanity checks include the following:
-
-#. Ensures the basic integrity of the format of the submission file.
-#. Validates the objects defined within the submission file against the corresponding Portal schemas for these objects.
-#. Confirms that any objects referenced within the submission file can be resolved; i.e. either they already exist within the Portal, or are defined within the submission file itself.
-#. Checks that referenced files (to be subsequently uploaded) actually exist on the file system.
-
-Resuming Uploads
-================
-When using ``submit-metadata-bundle`` you can choose `not` to upload any referenced files when prompted.
-In this case, you will probably want to manually upload them subsequently using the ``resume-uploads`` command.
-
-You can resume execution with the upload part by doing::
-
-   resume-uploads --env <environment-name> <uuid>
-
-where the ``uuid`` argument is the UUID for the submission which should have been displayed in the output of the ``submit-metadata-bundle`` command.
-
-You can upload individual files referenced in the original submission separately by doing::
-
-   resume-uploads --env <environment-name> <referenced-file-uuid-or-accesssion-id> --uuid <item-uuid>
-
-where the ``<referenced-file-uuid-or-accesssion-id>`` is the uuid (or the accession ID or accession based file name) of the 
-individual file referenced (`not` the submission or metadata bundle UUID) which you wish to upload;
-this uuid (or accession ID or accession based file name) is included in the output of ``submit-metadata-bundle``. 
-
-For both of these commands above, you will be asked to confirm if you would like to continue with the stated action.
-If you would like to skip these prompts so the commands can be run by a
-scheduler or in the background, you can pass the ``--no_query`` or ``-nq`` argument, such as::
-
-    submit-metadata-bundle your_metadata_file.xlsx --no_query
+If you're getting a ton of validation errors dumped to your terminal screen,
+you many want to use the ``--output FILE`` object which will cause all output
+to be saved to the specified file; and this will also refrain writing lengthy content to the terminal.
 
 Getting Submission Info
 =======================
-To view relevant information about a submission using, do::
+To view relevant information about a submission use the :boldcode:`check-submission` command like this::
 
    check-submission --env <environment-name> <uuid>
 
-where the ``uuid`` argument is the UUID for the submission which should have been displayed in the output of the ``submit-metadata-bundle`` command.
+where the ``<uuid>`` argument is the UUID for the submission which should have been displayed
+in the output of the ``submit-metadata-bundle`` command (e.g. see `screenshot <usage.html#example-screenshots>`_).
+
+Listing Recent Submissions
+--------------------------
+To view a list of recent submissions (with submission UUID and submission date/time),
+in order of most recent first, use the :boldcode:`list-submissions` command like this::
+
+   list-submissions --env <environment-name>
+
+Use the ``--verbose`` option to list more information for each of the recent submissions shown.
+You can control the maximum number of results output using the ``--count`` option with an integer count argument.
+Use the ``--mine`` option to see only your submissions; and use the ``--user EMAIL`` to see only submissions from the named user (by email).
+
+Screenshots
+===========
+
+Here is a visual of a spreasheet snippet featuriing reference properties:
+
+.. image:: _static/images/submitr_spreadsheet_ref.png
+    :target: _static/images/submitr_spreadsheet_ref.png
+    :alt: Spreadsheet Reference Screenshot
+
+Here is a visual of a spreasheet snippet featuriing date/time and array properties:
+
+.. image:: _static/images/submitr_spreadsheet_date_time_and_array.png
+    :target: _static/images/submitr_spreadsheet_date_time_and_array.png
+    :alt: Spreadsheet Reference Screenshot
+
+The output of a successful ``submit-metadata-bundle --submit`` will look something like this:
+
+.. image:: _static/images/submit_output.png
+    :target: _static/images/submit_output.png
+    :alt: Submission Output Screenshot
+
+Notice the **Submission tracking ID** value in section as well as **Upload File ID** values;
+these may be used in a subsequent ``resume-uploads`` invocation; see the `Uploading Files <uploading_files.html>`_ section for more on this.
+
+When instead specifying the ``--validate`` option the output will look something like this:
+
+.. image:: _static/images/validate_output.png
+    :target: _static/images/validate_output.png
+    :alt: Validation Output Screenshot
+
+And if you additionally specify the ``--verbose`` option the output will look something like this:
+
+.. image:: _static/images/validate_verbose_output.png
+    :target: _static/images/validate_verbose_output.png
+    :alt: Validation Verbose Output Screenshot

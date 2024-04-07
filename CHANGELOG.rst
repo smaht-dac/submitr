@@ -7,6 +7,27 @@ Change Log
 ----------
 
 
+0.8.0
+=====
+
+* FYI the 'draft' branch is made from branch dmichaels-20240205 (on 2024-02-23) was
+  made with the sole purpose of having a readthedocs version is the name "draft".
+* Documentation updates.
+* Lots of reworking of validation options (from discussion with Elizabeth).
+  Require --validate or --submit; do remote/server validation silently; etc.
+* Changed "Author" name/email in PyPi to SMaHT DAC / smhelp@hms-dbmi.atlassian.net;
+  controlled by pyproject.toml.
+* Changes to view-portal-object script (need to update this in dcicutils).
+* Support for submits_for to get submission center.
+* Got rid of "old style" protocol support (to simplify).
+
+
+0.5.4
+=====
+
+* Test release from (non-master) branch to change "Author" name/email at pypi.
+
+
 0.5.3
 =====
 

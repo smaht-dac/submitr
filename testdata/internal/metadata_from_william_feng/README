@@ -1,0 +1,29 @@
+o washu_formatted_colo829blt50_illumina_bulkWgs_bulkRNA
+  From William Feng in Slack: 2024-03-13
+  https://hms-dbmi.slack.com/archives/D05LSGRQYV7/p1710355011425589
+
+o mayo_formatted_ipsc_20240314.xlsx
+  From William Feng in Slack: 2024-03-14
+  https://hms-dbmi.slack.com/archives/D05LSGRQYV7/p1710449902535249
+  To be run against staging.
+
+o mayo_formatted_ipsc_20240314.xlsx
+  From William Feng in Slack: 2024-03-15 (with some fixes to 2024-03-14 version)
+  https://hms-dbmi.slack.com/archives/D05LSGRQYV7/p1710449902535249
+  To be run against staging.
+
+o cwru_ttd_formatted_submission.xlsx
+  From William Feng in Slack: 2024-03-15
+  https://hms-dbmi.slack.com/archives/C06PL8Y495E/p1710169465092019
+
+o cwru_ttd_formatted_scdipc_pancreas_illumina_submission.xlsx
+  From William Feng in Slack: 2024-03-15
+  https://hms-dbmi.slack.com/archives/D05LSGRQYV7/p1710535841495839
+  From William Feng in Slack: 2024-03-29
+  https://hms-dbmi.slack.com/archives/D05LSGRQYV7/p1711735795909289
+  - dependencies:
+    dependencies/cwru_ttd_formatted_scdipc_pancreas_illumina_submission/create_dependencies.py
+
+o bcm_formatted_ont_colo829blt50_hapmap_ipsc.xlsx
+  From William Feng in Slack: 2024-03-28
+  https://hms-dbmi.slack.com/archives/D05LSGRQYV7/p1711656005188079
