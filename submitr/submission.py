@@ -1874,6 +1874,9 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     if submission_parameters := response.get("parameters", {}):
         if tobool(submission_parameters.get("validate_only")):
             PRINT(f"This submission ID ({uuid}) is for a validation not an actual submission.")
+            if submission_uuid := submission_parameters.get("submission_uuid"):
+                PRINT(f"▶ Perhaps you meant to use the submission ID"
+                      f" associated with this: {submission_uuid}")  # noqa
             exit(1)
 
     do_any_uploads(response,
