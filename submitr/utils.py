@@ -151,7 +151,7 @@ def format_datetime(value: datetime, verbose: bool = False) -> Optional[str]:
         return None
 
 
-def parse_datetime_string_into_utc_datetime(value: str) -> Optional[datetime]:
+def parse_datetime_iso_string_into_utc_datetime(value: str) -> Optional[datetime]:
     try:
         return datetime.fromisoformat(value).replace(tzinfo=pytz.utc)
     except Exception:
@@ -297,9 +297,10 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
             releases = response["releases"]
             if releases and isinstance(this_release_info := releases.get(this_version), list) and this_release_info:
                 if isinstance(this_release_info := this_release_info[0], dict):
-                    this_release_date = parse_datetime_string_into_utc_datetime(this_release_info.get("upload_time"))
+                    this_release_date = (
+                        parse_datetime_iso_string_into_utc_datetime(this_release_info.get("upload_time")))
             latest_non_beta_release_date = (
-                parse_datetime_string_into_utc_datetime(releases[latest_non_beta_version][0].get("upload_time")))
+                parse_datetime_iso_string_into_utc_datetime(releases[latest_non_beta_version][0].get("upload_time")))
             latest_beta_version = None
             latest_beta_release_date = None
             if beta:
@@ -313,7 +314,7 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
                         latest_beta_version = None
                     else:
                         latest_beta_release_date = (
-                            parse_datetime_string_into_utc_datetime(latest_beta_info[1][0].get("upload_time")))
+                            parse_datetime_iso_string_into_utc_datetime(latest_beta_info[1][0].get("upload_time")))
                         if latest_non_beta_release_date > latest_beta_release_date:
                             latest_beta_version = None
                             latest_beta_release_date = None
