@@ -100,7 +100,7 @@ def main(simulated_args_for_testing=None):
         return _monitor_ingestion_process(
                 args.submission_uuid,
                 env=args.env,
-                keys_file=args.keys or os.environ.get("SMAHT_KEYS"),
+                keys_file=args.keys,
                 server=args.server,
                 env_from_env=env_from_env,
                 show_details=(args.verbose or args.details),

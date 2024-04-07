@@ -2892,6 +2892,29 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         nonlocal app
         return os.path.expanduser(os.path.join(Portal.KEYS_FILE_DIRECTORY, f".{app.lower()}-keys.json"))
 
+    def sanity_check_keys_file(keys_file: Optional[str] = None) -> Optional[str]:
+        keys_file_from_env = False
+        if not keys_file:
+            keys_file = os.environ.get("SMAHT_KEYS")
+            keys_file_from_env = os.environ.get("SMAHT_KEYS")
+        if keys_file:
+            if not keys_file.endswith(".json"):
+                PRINT(f"ERROR: The specified keys file{' (from SMAHT_KEYS)' if keys_file_from_env else ''}"
+                      f" is not a .json file: {keys_file}")
+                exit(1)
+            if not keys_file.endswith(".json") or not os.path.exists(keys_file):
+                PRINT(f"ERROR: The specified keys file{' (from SMAHT_KEYS)' if keys_file_from_env else ''}"
+                      f" must be the name of an existing .json file: {keys_file}")
+                exit(1)
+            try:
+                with open(keys_file, "r") as f:
+                    json.load(f)
+            except Exception:
+                PRINT(f"ERROR: The specified keys file{' (from SMAHT_KEYS)' if keys_file_from_env else ''}"
+                      f" cannot be loaded as JSON: {keys_file}")
+                exit(1)
+        return keys_file
+
     if not env and not env_from_env:
         env_from_env = os.environ.get("SMAHT_ENV")
 
@@ -2902,12 +2925,20 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
     else:
         app_default = False
     portal = None
+    keys_file = sanity_check_keys_file(keys_file)
     try:
         # TODO: raise_exception does not totally work here (see portal_utils.py).
         portal = Portal(key or keys_file, env=env, server=server, app=app, raise_exception=True)
     except Exception as e:
         if "not found in keys-file" in str(e):
-            PRINT(f"ERROR: Environment ({env}) not found in keys file: {keys_file or get_default_keys_file()}")
+            if not env:
+                PRINT(f"ERROR: No environment specified from keys file: {keys_file or get_default_keys_file()}")
+                PRINT(f"Use the --env option with a name from that file; or set your SMAHT_ENV environment variable.")
+            else:
+                PRINT(f"ERROR: Environment ({env}) not found in keys file: {keys_file or get_default_keys_file()}")
+            exit(1)
+        else:
+            PRINT(e)
             exit(1)
     if not portal or not portal.key:
         try:

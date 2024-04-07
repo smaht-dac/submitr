@@ -96,11 +96,11 @@ def main(simulated_args_for_testing=None):
         PRINT("Missing submission UUID or referenced file UUID or accession ID.")
         exit(2)
 
-    keys_file = args.keys or os.environ.get("SMAHT_KEYS")
-    if keys_file:
-        if not keys_file.endswith(".json") or not os.path.exists(keys_file):
-            PRINT(f"The --keys argument ({keys_file}) must be the name of an existing .json file.")
-            exit(1)
+#   keys_file = args.keys or os.environ.get("SMAHT_KEYS")
+#   if keys_file:
+#       if not keys_file.endswith(".json") or not os.path.exists(keys_file):
+#           PRINT(f"The --keys argument ({keys_file}) must be the name of an existing .json file.")
+#           exit(1)
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
         PRINT(f"Directory does not exist: {args.upload_folder}")
@@ -127,7 +127,7 @@ def main(simulated_args_for_testing=None):
         resume_uploads(uuid=args.uuid,
                        env=args.env,
                        env_from_env=env_from_env,
-                       keys_file=keys_file,
+                       keys_file=args.keys,
                        bundle_filename=args.bundle,
                        server=args.server,
                        upload_folder=args.upload_folder,
