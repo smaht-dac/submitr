@@ -1175,7 +1175,6 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     else:
         SHOW(f"Waiting{' (up to about {PROGRESS_TIMEOUT}s)' if verbose else ''}"
              f" for submission results{f': {uuid}' if check_submission_script else '.'}")
-        # SHOW(f"Checking {action} for submission ID: %s ..." % uuid)
 
     started = time.time()
     progress = define_progress_callback(PROGRESS_MAX_CHECKS,
@@ -1235,7 +1234,6 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         # out previously. And this which server validation is now complete. We now want
         # to give the user the opportunity to continue with the submission process,
         # ala submit_any_ingestion; see around line 830 of that function.
-        # PRINT(f"This ID is for a server validation that had not yet completed but now is.")
         PRINT(f"Details for this server validation ({uuid}) below:")
         _print_submission_summary(portal, check_response, nofiles=nofiles,
                                   check_submission_script=True, include_errors=True,
