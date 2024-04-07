@@ -132,7 +132,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
                     "===",
                     f"This version: {version}{version_release_date}",
                     f"Most recent version: {most_recent_version_info.version}"
-                        f" | {most_recent_version_info.release_date}",
+                        f" | {most_recent_version_info.release_date}",  # noqa
                     f"More recent beta version: {most_recent_version_info.beta_version}"
                         f" | {most_recent_version_info.beta_release_date}",
                 ]
