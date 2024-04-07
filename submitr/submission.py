@@ -1170,10 +1170,10 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
 
     action = "validation" if validation else "ingestion"
     if validation:
-        SHOW(f"Waiting{' (up to about {PROGRESS_TIMEOUT}s)' if verbose else ''}"
+        SHOW(f"Waiting{f' (up to about {PROGRESS_TIMEOUT}s)' if verbose else ''}"
              f" for server validation results{f': {uuid}' if check_submission_script else '.'}")
     else:
-        SHOW(f"Waiting{' (up to about {PROGRESS_TIMEOUT}s)' if verbose else ''}"
+        SHOW(f"Waiting{f' (up to about {PROGRESS_TIMEOUT}s)' if verbose else ''}"
              f" for submission results{f': {uuid}' if check_submission_script else '.'}")
 
     started = time.time()
