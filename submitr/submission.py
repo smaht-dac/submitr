@@ -2465,13 +2465,13 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             _print_structured_data_status(portal, structured_data, validation=validation,
                                           report_updates_only=True, noprogress=noprogress, verbose=verbose, debug=debug)
         else:
-            PRINT("Skipping analysis of metadata wrt creates/updates to be done (via --noanalyze).")
+            PRINT("Skipping analysis of metadata wrt creates/updates to be done (per --noanalyze).")
     if not validation_okay:
         if not yes_or_no(f"There are some preliminary errors outlined above;"
                          f" do you want to continue with {'validation' if validation else 'submission'}?"):
             exit(1)
     if validate_local_only:
-        PRINT("Terminating as requested (via --validate-local-only).")
+        PRINT("Terminating as requested (per --validate-local-only).")
         exit(0 if validation_okay else 1)
 
     return structured_data
@@ -2711,7 +2711,7 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
                                       validation=validation,
                                       report_updates_only=True, noprogress=noprogress, verbose=verbose)
     else:
-        PRINT("Skipping analysis of metadata wrt creates/updates to be done (via --noanalyze).")
+        PRINT("Skipping analysis of metadata wrt creates/updates to be done (per --noanalyze).")
 
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet,
