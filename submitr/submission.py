@@ -58,7 +58,7 @@ PROGRESS_TIMEOUT = 60 * 5  # five minutes (note this is for both server validati
 # How often we actually check the server (seconds).
 PROGRESS_CHECK_SERVER_INTERVAL = 3  # xyzzy
 # How often the (tqdm) progress meter updates (seconds).
-PROGRESS_INTERVAL = 1  # xyzzy
+PROGRESS_INTERVAL = 1
 # How many times the (tqdm) progress meter updates (derived from above).
 PROGRESS_MAX_CHECKS = round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL)
 
@@ -1054,6 +1054,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             # loadxl_started; the former is when the ingester listener is first hit.
             ingester_initiated = status.get(PROGRESS_INGESTER.INITIATE, None)
             ingester_parse_started = status.get(PROGRESS_INGESTER.PARSE_LOAD_INITIATE, None)
+            ingester_parse_nrows = status.get(PROGRESS_PARSE.LOAD_COUNT_ROWS, 0)
+            ingester_parse_nitems = status.get(PROGRESS_PARSE.LOAD_ITEM, 0)
             ingester_validate_started = status.get(PROGRESS_INGESTER.VALIDATE_LOAD_INITIATE, None)
             ingester_queued = status.get(PROGRESS_INGESTER.QUEUED, None)
             ingester_cleanup = status.get(PROGRESS_INGESTER.CLEANUP, None)
@@ -1094,6 +1096,9 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                     message += f" | Initializing"
                 elif ingester_parse_started is not None:
                     message += f" | Parsing"
+                    if ingester_parse_nrows > 0:
+                        bar.set_total(ingester_parse_nrows)
+                        bar.set_progress(ingester_parse_nitems)
                 elif ingester_validate_started is not None:
                     message += f" | Validating"
                 elif ingester_initiated is not None:
