@@ -1311,7 +1311,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                             printed_newline = True
                         PRINT_OUTPUT(f"- Data errors: {len(validation_errors)}")
                         for validation_error in validation_errors:
-                            PRINT_OUTPUT(f"    - {_format_issue(validation_error)}")
+                            PRINT_OUTPUT(f"  - {_format_issue(validation_error)}")
                     if debug:
                         ref_errors = validation_info.get("ref")
                     elif not (ref_errors := validation_info.get("ref_grouped")):
@@ -1637,7 +1637,10 @@ def _print_submission_summary(portal: Portal, result: dict,
         print_boxed(lines, right_justified_macro=("[UUID]", lambda: submission_uuid), printf=PRINT)
         if errors and include_errors:
             for error in errors:
-                PRINT(f"- {_format_server_error(error, indent=2, debug=debug)}")
+                if check_submission_script:
+                    PRINT(f"{_format_server_error(error, indent=2, debug=debug)}")
+                else:
+                    PRINT(f"- {_format_server_error(error, indent=2, debug=debug)}")
 
 
 def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
