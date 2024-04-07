@@ -1131,9 +1131,12 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP,
                             env_from_env=env_from_env, report=report, note=note)
 
-    if not (uuid_metadata := portal.get_metadata(uuid)):
+    if not (uuid_metadata := portal.get_metadata(uuid, raise_exception=False)):
         message = f"Submission ID not found: {uuid}" if uuid != "dummy" else "No submission ID specified."
-        if _print_recent_submissions(portal, message=message):
+        message += "\nSome recent submission IDs below. Use list-submissions to view more."
+        if _print_recent_submissions(portal, message=message, count=4):
+            if check_submission_script:
+                exit(1)
             return
         raise Exception(f"Cannot find object given uuid: {uuid}")
     if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
@@ -2932,10 +2935,10 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
     except Exception as e:
         if "not found in keys-file" in str(e):
             if not env:
-                PRINT(f"ERROR: No environment specified from keys file: {keys_file or get_default_keys_file()}")
+                PRINT(f"No environment specified from keys file: {keys_file or get_default_keys_file()}")
                 PRINT(f"Use the --env option with a name from that file; or set your SMAHT_ENV environment variable.")
             else:
-                PRINT(f"ERROR: Environment ({env}) not found in keys file: {keys_file or get_default_keys_file()}")
+                PRINT(f"Environment ({env}) not found in keys file: {keys_file or get_default_keys_file()}")
             exit(1)
         else:
             PRINT(e)
@@ -2943,12 +2946,12 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
     if not portal or not portal.key:
         try:
             if keys_file and not os.path.exists(keys_file):
-                PRINT(f"ERROR: No keys file found: {keys_file or get_default_keys_file()}")
+                PRINT(f"No keys file found: {keys_file or get_default_keys_file()}")
                 exit(1)
             else:
                 default_keys_file = get_default_keys_file()
                 if not os.path.exists(default_keys_file):
-                    PRINT(f"ERROR: No default keys file found: {default_keys_file}")
+                    PRINT(f"No default keys file found: {default_keys_file}")
                     exit(1)
         except Exception:
             pass
@@ -2962,6 +2965,16 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         PRINT(message)
         if verbose:
             PRINT(f"Portal app name is{' (default)' if app_default else ''}: {app}")
+        if not env and server and not portal.env:
+            # TODO: Handle portal_utils bug where not setting corresponding portal.env if server specified.
+            if portal.keys_file:
+                try:
+                    with io.open(portal.keys_file) as f:
+                        keys = json.load(f)
+                        if env := [k for k in keys if Portal._normalize_server(keys[k].get("server")) == server]:
+                            portal._env = env[0]
+                except Exception:
+                    pass
         PRINT(f"Portal environment (in keys file) is: {portal.env}{' (from SMAHT_ENV)' if env_from_env else ''}")
         PRINT(f"Portal keys file is: {format_path(portal.keys_file)}")
         PRINT(f"Portal server is: {portal.server}")

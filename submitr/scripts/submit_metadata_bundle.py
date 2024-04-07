@@ -235,7 +235,8 @@ def main(simulated_args_for_testing=None):
     env_from_env = False
     if not args.env:
         args.env = os.environ.get("SMAHT_ENV")
-        env_from_env = True
+        if args.env:
+            env_from_env = True
 
     if args.ping or (args.bundle_filename and args.bundle_filename.lower() == "ping"):
         ping_okay = _ping(
