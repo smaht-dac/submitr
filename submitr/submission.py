@@ -1060,6 +1060,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             ingester_queued = status.get(PROGRESS_INGESTER.QUEUED, None)
             ingester_cleanup = status.get(PROGRESS_INGESTER.CLEANUP, None)
             ingester_queue_cleanup = status.get(PROGRESS_INGESTER.QUEUE_CLEANUP, None)
+            ingester_done = status.get(PROGRESS_INGESTER.DONE, None)
             loadxl_initiated = status.get(PROGRESS_INGESTER.LOADXL_INITIATE, None)
             loadxl_total = status.get(PROGRESS_LOADXL.TOTAL, 0)
             loadxl_started = status.get(PROGRESS_LOADXL.START, None)
@@ -1075,7 +1076,12 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             # Phases: 0 means waiting for server response; 1 means loadxl round one; 2 means loadxl round two.
             loadxl_phase = 2 if loadxl_started_second_round is not None else (1 if loadxl_started is not None else 0)
             done = False
-            if status.get("finish") or nchecks >= max_checks:
+            message = f"▶ Pings: {nchecks_server}"
+            if ingester_done is not None:
+                message += " | Done"
+                bar.set_progress(bar.total)
+                done = True
+            elif status.get("finish") or (nchecks >= max_checks):
                 check_status = status.get("status")
                 if loadxl_phase == 0:
                     bar.increment_progress(max_checks - nchecks)
@@ -1089,9 +1095,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 nchecks += 1
                 if loadxl_phase == 0:
                     bar.increment_progress(1)
-            # message = f"▶ {title} Pings: {nchecks_server}"
-            message = f"▶ Pings: {nchecks_server}"
-            if loadxl_started is None:
+            if (loadxl_started is None) and (ingester_done is None):
                 if loadxl_initiated is not None:
                     message += f" | Initializing"
                 elif ingester_parse_started is not None:
@@ -1107,7 +1111,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                     message += f" | Queued"
                 else:
                     message += f" | Waiting on server"
-            else:
+            elif ingester_done is None:
                 if loadxl_done is not None:
                     bar.set_total(loadxl_total)
                     bar.set_progress(loadxl_total)
