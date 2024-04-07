@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "smaht-submitr"
-version = "0.8.0.1b1"  # TODO: To become 0.8.1
+version = "0.8.0.1b2"  # TODO: To become 0.8.1
 description = "Support for uploading file submissions to SMAHT."
 # TODO: Update this email address when a more specific one is available for SMaHT.
 authors = ["SMaHT DAC <smhelp@hms-dbmi.atlassian.net >"]
