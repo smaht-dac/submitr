@@ -9,7 +9,7 @@ import os
 import re
 import sys
 import time
-from typing import Any, BinaryIO, Dict, List, Optional, Tuple
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple
 import yaml
 
 # get_env_real_url would rely on env_utils
@@ -36,7 +36,7 @@ from submitr.progress_bar import ProgressBar
 from submitr.scripts.cli_utils import get_version
 from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import (
-    format_datetime, format_size, format_path,
+    format_datetime, format_duration, format_size, format_path,
     get_file_checksum, get_file_md5, get_file_md5_like_aws_s3_etag,
     get_file_modified_datetime, get_file_size, get_s3_bucket_and_key_from_s3_uri,
     print_boxed, keyword_as_title, tobool
@@ -54,7 +54,7 @@ GENERIC_SCHEMA_TYPE = 'FileOther'
 
 
 # Maximum amount of time (approximately) we will wait for a response from server (seconds).
-PROGRESS_TIMEOUT = 60 * 5  # five minutes (note this is for both server validation and submission)
+PROGRESS_TIMEOUT = 60 * 10  # ten minutes (note this is for both server validation and submission)
 # How often we actually check the server (seconds).
 PROGRESS_CHECK_SERVER_INTERVAL = 3
 # How often the (tqdm) progress meter updates (seconds).
@@ -1031,10 +1031,13 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         PROGRESS_TIMEOUT = timeout
         PROGRESS_MAX_CHECKS = max(round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL), 1)
 
-    def define_progress_callback(max_checks: int, title: str, include_status: bool = False) -> None:
+    def define_progress_callback(max_checks: int, title: str,
+                                 interrupt_exit_message: Optional[Callable] = None,
+                                 include_status: bool = False) -> None:
         nonlocal validation
         bar = ProgressBar(max_checks, "Calculating",
                           interrupt_exit=True,
+                          interrupt_exit_message=interrupt_exit_message,
                           interrupt_message=f"{'validation' if validation else 'submission'} waiting process")
         nchecks = 0
         nchecks_server = 0
@@ -1141,6 +1144,12 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP,
                             env_from_env=env_from_env, report=report, note=note)
 
+    def interrupt_exit_message(bar: ProgressBar):
+        nonlocal uuid, server, env, validation, portal
+        command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
+        SHOW(f"Your {'validation' if validation else 'submission'} is still running on the server: {uuid}")
+        SHOW(f"Use this command to check its status: {command_summary}")
+
     if not (uuid_metadata := portal.get_metadata(uuid, raise_exception=False)):
         message = f"Submission ID not found: {uuid}" if uuid != "dummy" else "No submission ID specified."
         message += "\nSome recent submission IDs below. Use list-submissions to view more."
@@ -1156,19 +1165,24 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
     if tobool(uuid_metadata.get("parameters", {}).get("validate_only")):
         validation = True
 
+    if check_submission_script and validation:
+        PRINT(f"This ID is for a server validation that had not yet completed.")
+
     action = "validation" if validation else "ingestion"
     if validation:
-        SHOW(f"Waiting (up to about {PROGRESS_TIMEOUT}s) for server validation results.")
+        SHOW(f"Waiting{' (up to about {PROGRESS_TIMEOUT}s)' if verbose else ''}"
+             f" for server validation results{f': {uuid}' if check_submission_script else '.'}")
     else:
-        SHOW(f"Waiting (up to about {PROGRESS_TIMEOUT}s) for submission results.")
+        SHOW(f"Waiting{' (up to about {PROGRESS_TIMEOUT}s)' if verbose else ''}"
+             f" for submission results{f': {uuid}' if check_submission_script else '.'}")
         # SHOW(f"Checking {action} for submission ID: %s ..." % uuid)
 
     started = time.time()
     progress = define_progress_callback(PROGRESS_MAX_CHECKS,
                                         title="Validation" if validation else "Submission",
-                                        include_status=False)  # include_status=not validation
+                                        interrupt_exit_message=interrupt_exit_message,
+                                        include_status=False)
     most_recent_server_check_time = None
-    check_submission_script_initial_check_ran = False
     check_done = False
     check_status = None
     check_response = None
@@ -1194,13 +1208,6 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server))
             if check_done:
                 break
-            if check_submission_script:
-                if not check_submission_script_initial_check_ran:
-                    check_submission_script_initial_check_ran = True
-                    PRINT(f"This ID is for a server validation that had not yet completed; waiting for completion.")
-                    PRINT(f"Details for this server validation ({uuid}) below:")
-                    _print_submission_summary(portal, check_response, nofiles=nofiles,
-                                              check_submission_script=True, verbose=verbose, debug=debug)
             most_recent_server_check_time = time.time()
         progress({"check": True,
                   "next": PROGRESS_CHECK_SERVER_INTERVAL - (time.time() - most_recent_server_check_time),
@@ -1214,8 +1221,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
 
     if not check_done:
         command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
-        SHOW(f"Timed out (after {round(time.time() - started)}s) WAITING for {action}.")
-        SHOW(f"Your {'validation' if validation else 'submission'} is still running on the server.")
+        SHOW(f"Timed out (after {format_duration(round(time.time() - started))}) WAITING for {action}.")
+        SHOW(f"Your {'validation' if validation else 'submission'} is still running on the server: {uuid}")
         SHOW(f"Use this command to check its status: {command_summary}")
         exit(1)
 
@@ -1228,13 +1235,11 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         # out previously. And this which server validation is now complete. We now want
         # to give the user the opportunity to continue with the submission process,
         # ala submit_any_ingestion; see around line 830 of that function.
-        if not check_submission_script_initial_check_ran:
-            check_submission_script_initial_check_ran = True
-            PRINT(f"This ID is for a server validation that had not yet completed but now is.")
-            PRINT(f"Details for this server validation ({uuid}) below:")
-            _print_submission_summary(portal, check_response, nofiles=nofiles,
-                                      check_submission_script=True, include_errors=True,
-                                      verbose=verbose, debug=debug)
+        # PRINT(f"This ID is for a server validation that had not yet completed but now is.")
+        PRINT(f"Details for this server validation ({uuid}) below:")
+        _print_submission_summary(portal, check_response, nofiles=nofiles,
+                                  check_submission_script=True, include_errors=True,
+                                  verbose=verbose, debug=debug)
         validation_info = check_response.get("additional_data", {}).get("validation_output")
         # TODO: Cleanup/unify error structure from client and server!
         if isinstance(validation_info, list):
@@ -1295,6 +1300,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         return
 
     if check_submission_script or verbose or debug:  # or not validation
+        PRINT(f"Details for this server {'validation' if validation else 'submission'} ({uuid}) below:")
         _print_submission_summary(portal, check_response,
                                   nofiles=nofiles, check_submission_script=check_submission_script,
                                   verbose=verbose, debug=debug)

@@ -7,6 +7,13 @@ Change Log
 ----------
 
 
+0.8.1
+=====
+
+* Better message on exit when interrupting server-side validation/submission.
+* Cleaned up messaging for check-submission.
+
+
 0.8.0
 =====
 

@@ -5,7 +5,7 @@ import threading
 import time
 from tqdm import tqdm
 from types import FrameType as frame
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 from contextlib import contextmanager
 
 
@@ -51,6 +51,7 @@ class ProgressBar:
                  interrupt_continue: Optional[Callable] = None,
                  interrupt_stop: Optional[Callable] = None,
                  interrupt_exit: bool = False,
+                 interrupt_exit_message: Optional[Union[Callable, str]] = None,
                  interrupt_message: Optional[str] = None,
                  printf: Optional[Callable] = None,
                  tidy_output_hack: bool = True) -> None:
@@ -75,6 +76,12 @@ class ProgressBar:
         else:
             self._interrupt_exit = None
         self._interrupt_message = interrupt_message if isinstance(interrupt_message, str) else None
+        if isinstance(interrupt_exit_message, str):
+            self._interrupt_exit_message = lambda bar: interrupt_exit_message
+        elif isinstance(interrupt_exit_message, Callable):
+            self._interrupt_exit_message = interrupt_exit_message
+        else:
+            self._interrupt_exit_message = None
         self._interrupt_handler = None
         if self._catch_interrupt:
             self._interrupt_handler = self._define_interrupt_handler()
@@ -196,6 +203,9 @@ class ProgressBar:
                     if (interrupt_stop is True) or ((interrupt_stop is None) and (self._interrupt_exit is True)):
                         self.done()
                         restore_interrupt_handler()
+                        if self._interrupt_exit_message:
+                            if isinstance(interrupt_exit_message := self._interrupt_exit_message(self), str):
+                                self._printf(interrupt_exit_message)
                         exit(1)
                     elif interrupt_stop is False or ((interrupt_stop is None) and (self._interrupt_exit is False)):
                         set_interrupt_handler(handle_interrupt)
