@@ -346,7 +346,7 @@ def test_ingestion_submission_item_url():
     assert _ingestion_submission_item_url(
         server='http://foo.com',
         uuid='123-4567-890'
-    ) == 'http://foo.com/ingestion-submissions/123-4567-890?format=json'
+    ) == 'http://foo.com/ingestion-submissions/123-4567-890?format=json&datastore=database'
 
 
 def test_show_upload_info():
@@ -356,7 +356,7 @@ def test_show_upload_info():
     index = 0
 
     URLS = [
-        f"{SOME_SERVER}/ingestion-submissions/{SOME_UUID}?format=json",
+        f"{SOME_SERVER}/ingestion-submissions/{SOME_UUID}?format=json&datastore=database",
         f"{SOME_SERVER}/health",
         f"{SOME_SERVER}/{SOME_UPLOAD_INFO[0]['uuid']}",
         f"{SOME_SERVER}/{SOME_UPLOAD_INFO[1]['uuid']}"
@@ -2013,7 +2013,7 @@ def _todo_fix_test_submit_any_ingestion_new_protocol(mock_get_health_page):
                     # ]
                 ))
             else:
-                assert url.endswith('/ingestion-submissions/' + SOME_UUID + "?format=json")
+                assert url.endswith('/ingestion-submissions/' + SOME_UUID + "?format=json&datastore=database")
                 return FakeResponse(200, json=response_maker())
         return mocked_get
 
