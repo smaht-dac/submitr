@@ -8,6 +8,7 @@ from types import FrameType as frame
 from typing import Callable, Optional, Union
 from contextlib import contextmanager
 
+
 class TQDM(tqdm):
 
     """
