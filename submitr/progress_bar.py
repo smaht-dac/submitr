@@ -89,7 +89,7 @@ class ProgressBar:
             self._tidy_output_hack = self._define_tidy_output_hack()
         self._total = total if isinstance(total, int) and total >= 0 else 0
         self._description = self._format_description(description)
-        self._initialize()
+        # self._initialize()
 
     def _initialize(self) -> bool:
         # Do not actually create the tqdm object unless/until we have a positive total.

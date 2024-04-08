@@ -1,9 +1,11 @@
 import argparse
 from functools import lru_cache
 import io
+import subprocess
 import sys
 import webbrowser
 from typing import List, Optional, Union
+from dcicutils.command_utils import yes_or_no
 from dcicutils.misc_utils import PRINT
 from submitr.utils import get_version, get_most_recent_version_info, print_boxed
 
@@ -153,6 +155,15 @@ class CustomArgumentParser(argparse.ArgumentParser):
                     "==="
                 ]
                 print_boxed(lines, right_justified_macro=("[VERSION]", self._get_version))
+                if not has_most_recent_version and most_recent_version_info.this_release_date:
+                    is_beta_version = ("a" in most_recent_version_info.this_version or
+                                       "b" in most_recent_version_info.this_version)
+                    if is_beta_version and most_recent_version_info.beta_version:
+                        version_to_update_to = most_recent_version_info.beta_version
+                    else:
+                        version_to_update_to = most_recent_version_info.version
+                    if yes_or_no(f"Do you want to install the newer version ({version_to_update_to})?"):
+                        subprocess.run(["pip", "install", f"{self._package}=={version_to_update_to}"])
                 return
             else:
                 PRINT(f"{self._package or 'COMMAND'}: {version}")
