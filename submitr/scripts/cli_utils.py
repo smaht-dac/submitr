@@ -118,7 +118,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
             lines.append("===")
         print_boxed(lines, right_justified_macro=("[VERSION]", self._get_version))
 
-    def _print_version(self, verbose: bool = False) -> None:
+    def _print_version(self, verbose: bool = False, noupdate: bool = False) -> None:
         if version := self._get_version(with_most_recent_check_mark=False):
             if verbose and (most_recent_version_info := get_most_recent_version_info()):
                 has_most_recent_version = (
@@ -155,7 +155,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
                     "==="
                 ]
                 print_boxed(lines, right_justified_macro=("[VERSION]", self._get_version))
-                if not has_most_recent_version and most_recent_version_info.this_release_date:
+                if not noupdate and not has_most_recent_version and most_recent_version_info.this_release_date:
                     is_beta_version = ("a" in most_recent_version_info.this_version or
                                        "b" in most_recent_version_info.this_version)
                     if is_beta_version and most_recent_version_info.beta_version:
@@ -164,6 +164,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
                         version_to_update_to = most_recent_version_info.version
                     if yes_or_no(f"Do you want to install the newer version ({version_to_update_to})?"):
                         subprocess.run(["pip", "install", f"{self._package}=={version_to_update_to}"])
+                        self._print_version(noupdate=True)
                 return
             else:
                 PRINT(f"{self._package or 'COMMAND'}: {version}")
