@@ -150,7 +150,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
                     ]
                 lines += [
                     "===",
-                    "For all versions please see: https://pypi.org/project/smaht-submitr",
+                    "For all versions see: https://pypi.org/project/smaht-submitr",
                     "===",
                     self.COPYRIGHT,
                     "==="
@@ -165,6 +165,8 @@ class CustomArgumentParser(argparse.ArgumentParser):
                         version_to_update_to = most_recent_version_info.version
                     if yes_or_no(f"Do you want to install the newer version ({version_to_update_to})?"):
                         subprocess.run(["pip", "install", f"{self._package}=={version_to_update_to}"])
+                        time.sleep(2)
+                        subprocess.run(["submit-metadata-bundle", "version"])
                 return
             else:
                 PRINT(f"{self._package or 'COMMAND'}: {version}")

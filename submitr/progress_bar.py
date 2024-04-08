@@ -8,7 +8,6 @@ from types import FrameType as frame
 from typing import Callable, Optional, Union
 from contextlib import contextmanager
 
-
 class TQDM(tqdm):
 
     """
@@ -103,9 +102,15 @@ class ProgressBar:
         return False
 
     def set_total(self, value: int) -> None:
+        if value == self._total:
+            # If the total has not changed since last set then do nothing.
+            return
         if isinstance(value, int) and value > 0:
             self._total = value
             if self._bar is not None:
+                # This reset is needed to get the ETA to reset properly when we reset
+                # the total during the course of a single ProgressBar instance.
+                self._bar.reset()
                 self._bar.total = value
 
     def set_progress(self, value: int) -> None:

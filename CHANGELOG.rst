@@ -11,6 +11,7 @@ Change Log
 =====
 
 * Better message on exit when interrupting server-side validation/submission.
+* Fixed ETA for server-side validation/submission progress bar.
 * Cleaned up messaging for check-submission.
 * Added option to --version to automatically (after prompting) update version to latest.
 
