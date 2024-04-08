@@ -3,6 +3,7 @@ from functools import lru_cache
 import io
 import subprocess
 import sys
+import time
 import webbrowser
 from typing import List, Optional, Union
 from dcicutils.command_utils import yes_or_no
@@ -164,7 +165,6 @@ class CustomArgumentParser(argparse.ArgumentParser):
                         version_to_update_to = most_recent_version_info.version
                     if yes_or_no(f"Do you want to install the newer version ({version_to_update_to})?"):
                         subprocess.run(["pip", "install", f"{self._package}=={version_to_update_to}"])
-                        self._print_version(verbose=True, noupdate=True)
                 return
             else:
                 PRINT(f"{self._package or 'COMMAND'}: {version}")
