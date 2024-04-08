@@ -12,6 +12,7 @@ Change Log
 
 * Better message on exit when interrupting server-side validation/submission.
 * Cleaned up messaging for check-submission.
+* Added option to --version to automatically (after prompting) update version to latest.
 
 
 0.8.0
