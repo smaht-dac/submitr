@@ -54,7 +54,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--server', help="An http or https address of the server to use.", default=None)
     parser.add_argument("--env", help="Portal environment name for server/credentials (e.g. in ~/.smaht-keys.json).")
     parser.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=None)
-    parser.add_argument('--directory', '-d', help="Directory of the upload files (if resuming submission).")
+    parser.add_argument('--directory', help="Directory of the upload files (if resuming submission).")
     parser.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
     parser.add_argument('--output', help="Output file for results.", default=False)
     parser.add_argument('--details', action="store_true", help="More detailed output.", default=False)

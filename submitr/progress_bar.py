@@ -7,6 +7,7 @@ from tqdm import tqdm
 from types import FrameType as frame
 from typing import Callable, Optional, Union
 from contextlib import contextmanager
+from dcicutils.command_utils import yes_or_no
 
 
 class TQDM(tqdm):
@@ -102,9 +103,11 @@ class ProgressBar:
             return True
         return False
 
-    def set_total(self, value: int) -> None:
+    def set_total(self, value: int, reset_eta: bool = False) -> None:
         if value == self._total:
             # If the total has not changed since last set then do nothing.
+            if reset_eta and self._bar is not None:
+                self._bar.reset()
             return
         if isinstance(value, int) and value > 0:
             self._total = value
@@ -113,6 +116,12 @@ class ProgressBar:
                 # the total during the course of a single ProgressBar instance.
                 self._bar.reset()
                 self._bar.total = value
+
+    def reset_eta(self) -> None:
+        # Since set_total does nothing if total is the same, provide
+        # a way to reset the ETA if starting over with the same total.
+        if self._bar is not None:
+            self._bar.reset()
 
     def set_progress(self, value: int) -> None:
         if isinstance(value, int) and value >= 0:
@@ -136,10 +145,11 @@ class ProgressBar:
             return
         self._ended = time.time()
         self._done = True
+        self.set_progress(self.total)  # xyzzy
         self._bar.set_description(self._description)
         self._bar.refresh()
         # FYI: Do NOT do a bar.disable = True before a bar.close() or it messes up output
-        # on multiple calls; found out the hard way; a couple hour will never get back :-/
+        # on multiple calls; found out the hard way; a couple hours will never get back :-/
         self._bar.close()
         if self._tidy_output_hack:
             self._tidy_output_hack.restore()
@@ -198,8 +208,8 @@ class ProgressBar:
             self.disable()
             self._interrupt(self) if self._interrupt else None
             set_interrupt_handler(handle_secondary_interrupt)
-            if self._confirmation(f"\nALERT! You have interrupted this {self._interrupt_message or 'process'}."
-                                  f" Do you want to stop{' (exit)' if self._interrupt_exit else ''}?"):
+            if yes_or_no(f"\nALERT! You have interrupted this {self._interrupt_message or 'process'}."
+                         f" Do you want to stop{' (exit)' if self._interrupt_exit else ''}?"):
                 # Here there was an interrupt (CTRL-C) and the user confirmed (yes)
                 # that they want to stop the process; if the interrupt_stop handler
                 # is defined and returns True, then we exit the entire process here,
@@ -254,7 +264,6 @@ class ProgressBar:
             if sentinel_internal in text:
                 spinc = spina[spini % spinn] if not ("100%|" in text) else "| ✓" ; spini += 1  # noqa
                 text = replace_first(text, sentinel_internal, f" {spinc}")
-                # text = replace_first(text, "%|", "% ◀‖")
                 text = replace_first(text, "%|", "% ◀|")
                 # Another oddity: for the rate sometimes tqdm intermittently prints
                 # something like "1.54s/" rather than "1.54/s"; something to do with
@@ -270,21 +279,3 @@ class ProgressBar:
         spina = ["|", "/", "—", "◦", "\\"] ; spini = 0 ; spinn = len(spina)  # noqa
         sentinel = "[progress]" ; sentinel_internal = f"{sentinel}:"  # noqa
         return namedtuple("tidy_output_hack", ["restore", "sentinel"])(restore_stdout_write, sentinel)
-
-    def _confirmation(self, message: Optional[str] = None) -> bool:
-        # Effectively the same as dcicutils.command_utils.yes_or_no but with stdout flush.
-        while True:
-            if message:
-                if not message.endswith(" "):
-                    message += " "
-                self._printf(message, end="")
-                sys.stdout.flush()
-            response = input()
-            if not isinstance(response, str):
-                return False
-            if (response := response.strip().lower()) in ["yes", "y"]:
-                return True
-            if response in ["no", "n"]:
-                return False
-            self._printf("Please answer 'yes' or 'no'.")
-            sys.stdout.flush()

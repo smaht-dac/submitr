@@ -1047,6 +1047,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         loadxl_total = 0
         loadxl_started = None
         loadxl_started_second_round = None
+        phases_seen = []
         def progress_report(status: dict) -> None:  # noqa
             nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status, noprogress, validation
             nonlocal loadxl_total, loadxl_started, loadxl_started_second_round, verbose
@@ -1079,6 +1080,34 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                                  if verbose else status.get("loadxl_message", ""))
             # Phases: 0 means waiting for server response; 1 means loadxl round one; 2 means loadxl round two.
             loadxl_phase = 2 if loadxl_started_second_round is not None else (1 if loadxl_started is not None else 0)
+            # FYI this is a normal ordering of phases in practice ...
+            # ingester_queued              PROGRESS_INGESTER.QUEUED
+            # ingester_initiate            PROGRESS_INGESTER.INITIATE
+            # ingester_parse_initiate      PROGRESS_INGESTER.PARSE_LOAD_INITIATE
+            # parse_start                  PROGRESS_PARSE.LOAD_START
+            # parse_done                   PROGRESS_PARSE.LOAD_DONE
+            # ingester_parse_done          PROGRESS_INGESTER.PARSE_LOAD_DONE
+            # ingester_validate_initiate   PROGRESS_INGESTER.VALIDATE_LOAD_INITIATE
+            # ingester_validate_done       PROGRESS_INGESTER.VALIDATE_LOAD_DONE
+            # ingester_loadxl_initiate     PROGRESS_INGESTER.LOADXL_INITIATE
+            # loadxl_start                 PROGRESS_LOADXL.START
+            # loadxl_start_second_round    PROGRESS_LOADXL.START_SECOND_ROUND
+            # loadxl_done                  PROGRESS_LOADXL.DONE
+            # ingester_loadxl_done         PROGRESS_INGESTER.LOADXL_DONE
+            # ingester_cleanup             PROGRESS_INGESTER.CLEANUP
+            # ingester_done                PROGRESS_INGESTER.DONE
+            # ingester_queue_cleanup       PROGRESS_INGESTER.QUEUE_CLEANUP
+            def reset_eta_if_necessary():
+                nonlocal loadxl_started, loadxl_started_second_round, loadxl_done, phases_seen
+                if loadxl_started is not None:
+                    if (phase := PROGRESS_LOADXL.START) not in phases_seen:
+                        phases_seen.append(phase)
+                        bar.reset_eta()
+                if loadxl_started_second_round is not None:
+                    if (phase := PROGRESS_LOADXL.START_SECOND_ROUND) not in phases_seen:
+                        phases_seen.append(phase)
+                        if loadxl_done is None:
+                            bar.reset_eta()
             done = False
             message = f"▶ Pings: {nchecks_server}"
             if ingester_done is not None:
@@ -1134,8 +1163,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 if ingestion_message:
                     message += " | " + ingestion_message
             if include_status:
-                message += f" | Status: {check_status}"
-            # message += f" | Next: {'Now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
+                message += f" | Status: {check_status}"  # Next: {'Now' if next_check == 0 else str(next_check) + 's'}
+            reset_eta_if_necessary()
             bar.set_description(message)
             if done:
                 bar.done()

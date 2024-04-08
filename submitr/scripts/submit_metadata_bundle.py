@@ -126,9 +126,9 @@ ADVANCED OPTIONS:
 ===
 """
 _OBSOLETE_OPTIONS = [
-    {"option": "-e", "message": "Use --env."},
-    {"option": "-s", "message": "Use --server."},
-    {"option": "-v", "message": "Use --validate."},
+    {"option": "-e", "message": "Use --env"},
+    {"option": "-s", "message": "Use --server"},
+    {"option": "-v", "message": "Use --validate"},
     {"option": "-u", "message": "Use --directory-only; or --directory which searches recusively."},
     {"option": "-d", "message": "Use --directory-only; or --directory which searches recusively."},
     {"option": "-sd", "message": "Use --directory which defaults to searching recusively."},
