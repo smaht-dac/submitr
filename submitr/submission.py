@@ -1097,7 +1097,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             # ingester_cleanup             PROGRESS_INGESTER.CLEANUP
             # ingester_done                PROGRESS_INGESTER.DONE
             # ingester_queue_cleanup       PROGRESS_INGESTER.QUEUE_CLEANUP
-            def reset_eta_if_necessary():
+            def reset_eta_if_necessary():  # noqa
                 nonlocal loadxl_started, loadxl_started_second_round, loadxl_done, phases_seen
                 if loadxl_started is not None:
                     if (phase := PROGRESS_LOADXL.START) not in phases_seen:
