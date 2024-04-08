@@ -164,7 +164,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
                         version_to_update_to = most_recent_version_info.version
                     if yes_or_no(f"Do you want to install the newer version ({version_to_update_to})?"):
                         subprocess.run(["pip", "install", f"{self._package}=={version_to_update_to}"])
-                        self._print_version(noupdate=True)
+                        self._print_version(verbose=True, noupdate=True)
                 return
             else:
                 PRINT(f"{self._package or 'COMMAND'}: {version}")
