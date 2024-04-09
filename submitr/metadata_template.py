@@ -27,7 +27,7 @@ HMS_METADATA_TEMPLATE_ID = "1KeggqUjLvodYmmy52tYLYOP0g7Z3wey02zXbsP0elEY"  # my 
 # This Google API key (which was created on 2024-04-09 by dmichaels) is RESTRICTED
 # to Google Sheets usage ONLY, and is ONLY able to be used to documents which are
 # PUBLIC documents anyways. It is therefore safe to check this into GitHub.
-GOOGLE_SHEETS_API_KEY = "AIzaSyCt7X8apXScfnfFVmKLdTvqerhWMCm_e7w"
+GOOGLE_SHEETS_API_KEY = "REDACTED"  # TODO: Redacted only until review - should be safe to checkin.
 
 # This URL is used for exporting and downloading the Google Sheets spreadsheet.
 # as opposed the the Google API key which is used to access the Google Sheets
