@@ -14,7 +14,7 @@ from submitr.utils import get_version, get_most_recent_version_info, print_boxed
 class CustomArgumentParser(argparse.ArgumentParser):
 
     PACKAGE = "smaht-submitr"
-    HELP_URL_VERSION = "draft"
+    HELP_URL_VERSION = "latest"
     HELP_URL = f"https://submitr.readthedocs.io/en/{HELP_URL_VERSION}"
     COPYRIGHT = "© Copyright 2020-2024 President and Fellows of Harvard College"
 
