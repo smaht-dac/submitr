@@ -2768,7 +2768,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 nobjects = status.get(PROGRESS_PARSE.ANALYZE_COUNT_ITEMS)
                 bar.set_total(nobjects)
                 PRINT(f"Analyzing submission file which has {ntypes} type{'s' if ntypes != 1 else ''}"
-                      f" and a total of {nobjects} object{'s' if nobjects != 1 else ''}.")
+                      f" and a total of {nobjects} item{'s' if nobjects != 1 else ''}.")
                 return
             elif status.get(PROGRESS_PARSE.ANALYZE_DONE):
                 bar.done()
