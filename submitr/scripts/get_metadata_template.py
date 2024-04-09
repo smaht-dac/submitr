@@ -1,7 +1,7 @@
 import requests
 from typing import Optional
 from dcicutils.data_readers import Excel
-from submitr.metadata_template import download_metadata_template
+from submitr.metadata_template import download_metadata_template  # noqa TODO use this
 from submitr.scripts.cli_utils import CustomArgumentParser
 
 _HELP = f"""
