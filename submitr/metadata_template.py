@@ -27,7 +27,7 @@ HMS_METADATA_TEMPLATE_ID = "1KeggqUjLvodYmmy52tYLYOP0g7Z3wey02zXbsP0elEY"  # my 
 # This Google API key (which was created on 2024-04-09 by dmichaels) is RESTRICTED
 # to Google Sheets usage ONLY, and is ONLY able to be used to documents which are
 # PUBLIC documents anyways. It is therefore safe to check this into GitHub.
-GOOGLE_SHEETS_API_KEY = "REDACTED"  # TODO: Redacted only until review - should be safe to checkin.
+GOOGLE_SHEETS_API_KEY = "AIzaSyCt7X8apXScfnfFVmKLdTvqerhWMCm_e7w"
 
 # This URL is used for exporting and downloading the Google Sheets spreadsheet.
 # as opposed the the Google API key which is used to access the Google Sheets
@@ -164,7 +164,8 @@ def get_version_from_hms_metadata_template_based_file(excel_file: Optional[str] 
 
 
 def get_hms_metadata_template_version_from_google_sheets(google_api_key: Optional[str] = None,
-                                                         raise_exception: bool = False) -> Optional[str]:
+                                                         raise_exception: bool = False,
+                                                         _metadata_template: Optional[str] = None) -> Optional[str]:
     """
     Returns the version of the latest HMS DBMI smaht-submitr metadata template spreadsheet
     directly from Google Sheets (using the Google Sheets API). If any error is encountered
@@ -174,10 +175,12 @@ def get_hms_metadata_template_version_from_google_sheets(google_api_key: Optiona
         google_api_key = GOOGLE_SHEETS_API_KEY
     try:
         service = google_sheets_build("sheets", "v4", developerKey=google_api_key)
-        command = service.spreadsheets().values().get(spreadsheetId=HMS_METADATA_TEMPLATE_ID,
+        command = service.spreadsheets().values().get(spreadsheetId=_metadata_template or HMS_METADATA_TEMPLATE_ID,
                                                       range=HMS_METADATA_TEMPLATE_MAIN_SHEET_VERSION_LOCATION)
         response = command.execute()
-        return response.get("values", [])[0][0]
+        if version := response.get("values", [])[0][0]:
+            if version.strip().lower().startswith("version:"):
+                return version.replace("version:", "").strip()
     except Exception as e:
         message = f"Cannot get metadata template version\n{get_error_message(e)}"
         if raise_exception:
