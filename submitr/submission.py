@@ -1649,8 +1649,12 @@ def _print_submission_summary(portal: Portal, result: dict,
                 s3_data_bucket = s3_data_file[5:rindex] if s3_data_file.startswith("s3://") else ""
                 s3_data_file = s3_data_file[rindex + 1:]
                 if s3_data_bucket:
-                    summary_lines.append(f"S3: {s3_data_bucket}")
-                summary_lines.append(f"S3 Data: {s3_data_file}")
+                    if len(s3_data_bucket_parts := s3_data_bucket.split("/")) == 2:
+                        summary_lines.append(f"AWS S3 Bucket: {s3_data_bucket_parts[0]}")
+                        summary_lines.append(f"AWS S3 Key: {s3_data_bucket_parts[1]}")
+                    else:
+                        summary_lines.append(f"AWS S3: {s3_data_bucket}")
+                summary_lines.append(f"AWS S3 File: {s3_data_file}")
         if s3_details_file := [info for info in validation_info if info.lower().startswith("details: ")]:
             s3_details_file = s3_details_file[0][9:]
             if (rindex := s3_details_file.rfind("/")) > 0:
@@ -1658,7 +1662,7 @@ def _print_submission_summary(portal: Portal, result: dict,
                 s3_details_file = s3_details_file[rindex + 1:]
                 if s3_details_bucket != s3_data_bucket:
                     summary_lines.append(f"S3 Bucket: {s3_details_bucket}")
-                summary_lines.append(f"S3 Details: {s3_details_file}")
+                summary_lines.append(f"AWS S3 Details: {s3_details_file}")
         if summary_lines:
             lines.append("===")
             lines += summary_lines
