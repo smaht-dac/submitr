@@ -22,6 +22,7 @@ from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
     environ_bool, is_uuid, url_path_join, ignorable, normalize_spaces, remove_prefix
 )
+from dcicutils.progress_bar import ProgressBar
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
 from dcicutils.structured_data import Portal, StructuredDataSet
@@ -36,7 +37,6 @@ from submitr.metadata_template import (
     get_version_from_hms_metadata_template_based_file
 )
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
-from submitr.progress_bar import ProgressBar
 from submitr.scripts.cli_utils import get_version
 from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import (
