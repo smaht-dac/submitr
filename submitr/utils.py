@@ -124,6 +124,10 @@ def format_duration(seconds: Union[int, float]):
 
 
 def format_size(nbytes: Union[int, float], precision: int = 2) -> str:
+    if isinstance(nbytes, str) and nbytes.isdigit():
+        nbytes = int(nbytes)
+    elif not isinstance(nbytes, (int, float)):
+        return ""
     UNITS = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
     MAX_UNITS_INDEX = len(UNITS) - 1
     ONE_K = 1024
@@ -141,6 +145,11 @@ def format_size(nbytes: Union[int, float], precision: int = 2) -> str:
 
 
 def format_datetime(value: datetime, verbose: bool = False) -> Optional[str]:
+    if isinstance(value, str):
+        if not (value := parse_datetime_iso_string_into_utc_datetime(value)):
+            return None
+    elif not isinstance(value, datetime):
+        return None
     try:
         tzlocal = datetime.now().astimezone().tzinfo
         if verbose:
@@ -260,6 +269,8 @@ def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Cal
         for line in lines:
             if line is None:
                 continue
+            elif not isinstance(line, str):
+                line = str(line)
             if line.endswith(macro_name):
                 line = line.replace(macro_name, right_justified_macro[1]() + " ")
             lines_tmp.append(line)
@@ -269,6 +280,8 @@ def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Cal
     for line in lines:
         if line is None:
             continue
+        elif not isinstance(line, str):
+            line = str(line)
         if line == "===":
             printf(f"+{'-' * (length - len(line) + 5)}+")
         elif macro_name and line.endswith(macro_name):

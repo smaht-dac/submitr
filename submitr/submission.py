@@ -73,7 +73,6 @@ SUBMISSION_PROTOCOLS = [SubmissionProtocol.S3, SubmissionProtocol.UPLOAD]
 DEFAULT_SUBMISSION_PROTOCOL = SubmissionProtocol.UPLOAD
 STANDARD_HTTP_HEADERS = {"Content-type": "application/json"}
 INGESTION_SUBMISSION_TYPE_NAME = "IngestionSubmission"
-FILE_TYPE_NAME = "File"
 
 
 # TODO: Will asks whether some of the errors in this file that are called "SyntaxError" really should be something else.
@@ -1193,6 +1192,10 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             return
         raise Exception(f"Cannot find object given uuid: {uuid}")
     if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
+        if portal.is_schema_file_type(uuid_metadata):
+            _print_upload_file_summary(portal, uuid_metadata)
+            # TODO: This is for special case of check-submission UPLOAD-FILE-UUID
+            return
         undesired_type = portal.get_schema_type(uuid_metadata)
         raise Exception(f"Given ID is not for a submission or validation: {uuid} ({undesired_type})"
                         f" | Accession: {uuid_metadata.get('accession')}")
@@ -1675,7 +1678,7 @@ def _print_submission_summary(portal: Portal, result: dict,
                 lines.append(f"Upload File: {upload_file_name}")
                 lines.append(f"Upload File ID: {upload_file_uuid}")
                 if upload_file_accession_name:
-                    lines.append(f"Upload File Accession Name: {upload_file_accession_name}")
+                    lines.append(f"Upload File Accession ID: {upload_file_accession_name}")
                 if upload_file_type:
                     lines.append(f"Upload File Type: {upload_file_type}")
     if lines:
@@ -1689,6 +1692,61 @@ def _print_submission_summary(portal: Portal, result: dict,
                     PRINT(f"{_format_server_error(error, indent=2, debug=debug)}")
                 else:
                     PRINT(f"- {_format_server_error(error, indent=2, debug=debug)}")
+
+
+def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
+    file_uuid = file_object.get("uuid") or ""
+    file_type = portal.get_schema_type(file_object) or ""
+    file_format = file_object.get("file_format", {}).get("display_title") or ""
+    file_title = file_object.get("display_title") or ""
+    file_accession = file_object.get("accession") or ""
+    file_size = file_object.get("file_size") or ""
+    file_size_formatted = format_size(file_size) or ""
+    file_status = file_object.get("status") or ""
+    file_md5 = file_object.get("md5sum") or ""
+    file_md5_content = file_object.get("content_md5sum") or ""
+    file_md5_submitted = file_object.get("submitted_md5sum") or ""
+    file_submitted_by = file_object.get("submitted_by", {}).get("display_title") or ""
+    file_created = format_datetime(file_object.get("date_created")) or ""
+    file_modified = format_datetime(file_object.get("last_modified", {}).get("date_modified")) or ""
+    file_modified_by = file_object.get("last_modified", {}).get("modified_by", {}).get("display_title") or ""
+    submission_centers = _format_submission_centers(file_object.get("submission_centers")) or ""
+    if file_md5_content == file_md5:
+        file_md5_content = None
+    if file_md5_submitted == file_md5:
+        file_md5_submitted = None
+    lines = [
+        "===",
+        "SMaHT Uploaded File [UUID]",
+        "===",
+        f"File: {file_title}" if file_title else None,
+        f"File Type: {file_type}" if file_type else None,
+        f"File Format: {file_format}" if file_format else None,
+        f"File Accession: {file_accession}" if file_accession else None,
+        f"===",
+        f"File Size: {file_size_formatted} ({file_size} bytes)" if file_size else None,
+        f"File Status: {file_status.title()}" if file_status else None,
+        f"File Checksum: {file_md5}" if file_md5 else None,
+        f"Content Checksum: {file_md5_content}" if file_md5_content else None,
+        f"Submitted Checksum: {file_md5_submitted}" if file_md5_submitted else None,
+        f"===",
+        f"Submitted: {file_created} | {file_submitted_by}" if file_created and file_submitted_by else None,
+        f"Modified: {file_modified} | {file_modified_by}" if file_modified and file_modified_by else None,
+        f"Submission Centers: {submission_centers}" if submission_centers else None,
+        "==="
+    ]
+    print_boxed(lines, right_justified_macro=("[UUID]", lambda: file_uuid))
+
+
+def _format_submission_centers(submission_centers: Optional[List[dict]]) -> Optional[str]:
+    if (not isinstance(submission_centers, List)) or (not submission_centers):
+        return None
+    result = ""
+    for submission_center in submission_centers:
+        if result:
+            result += " | "
+        result += submission_center.get("display_title")
+    return result
 
 
 def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
@@ -1916,7 +1974,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     if not portal.is_schema_type(response, INGESTION_SUBMISSION_TYPE_NAME):
 
         # Subsume function of upload-item-data into resume-uploads for convenience.
-        if portal.is_schema_type(response, FILE_TYPE_NAME):
+        if portal.is_schema_file_type(response):
             _upload_item_data(item_filename=uuid, uuid=None, server=portal.server,
                               env=portal.env, directory=upload_folder, recursive=subfolders,
                               no_query=no_query, app=app, report=False)
@@ -2279,7 +2337,7 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
     if not (uuid_metadata := portal.get_metadata(uuid)):
         raise Exception(f"Cannot find object given uuid: {uuid}")
 
-    if not portal.is_schema_type(uuid_metadata, FILE_TYPE_NAME):
+    if not portal.is_schema_file_type(uuid_metadata):
         undesired_type = portal.get_schema_type(uuid_metadata)
         raise Exception(f"Given uuid is not a file type: {uuid} ({undesired_type})")
 
