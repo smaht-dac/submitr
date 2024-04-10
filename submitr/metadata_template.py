@@ -185,26 +185,38 @@ def get_hms_metadata_template_url():
     return HMS_METADATA_TEMPLATE_URL
 
 
-def check_metadata_version(file: str, printf: Optional[Callable] = None) -> None:
+def check_metadata_version(file: str, printf: Optional[Callable] = None,
+                           quiet: bool = False) -> Tuple[Optional[str], Optional[str]]:
     printf = printf if callable(printf) else PRINT
     if is_excel_file_name(file) and (version := get_version_from_hms_metadata_template_based_file(file)):
         # Here it looks like the specified metadata Excel file is based on the HMS metadata template.
         if hms_metadata_template_version := get_hms_metadata_template_version_from_google_sheets():
             if version != hms_metadata_template_version:
-                print_boxed([
-                    f"===",
-                    f"WARNING: The version ({version}) of the HMS metadata template that your",
-                    f"metadata file is based on is out of date with the latest version.",
-                    f"You may want to update to the latest version: {hms_metadata_template_version}",
-                    f"===",
-                    f"Use the get-metadata-template command to get the latest.",
-                    f"==="
-                ])
-                if not yes_or_no("Do you want to continue with your metadata file?"):
-                    exit(0)
-            else:
+                if not quiet:
+                    print_metadata_version_warning(version, hms_metadata_template_version, printf=printf)
+                    if not yes_or_no("Do you want to continue with your metadata file?"):
+                        exit(0)
+            elif not quiet:
                 PRINT(f"Your metadata file is based on the latest HMS metadata template:"
                       f" {hms_metadata_template_version} ✓")
+            return version, hms_metadata_template_version
+    return None, None
+
+
+def print_metadata_version_warning(this_metadata_template_version: str,
+                                   hms_metadata_template_version: str,
+                                   printf: Optional[Callable] = None) -> None:
+    printf = printf if callable(printf) else PRINT
+    if this_metadata_template_version != hms_metadata_template_version:
+        print_boxed([
+            f"===",
+            f"WARNING: The version ({this_metadata_template_version}) of the HMS metadata template that your",
+            f"metadata file is based on is out of date with the latest version.",
+            f"You may want to update to the latest version: {hms_metadata_template_version}",
+            f"===",
+            f"Use the get-metadata-template command to get the latest.",
+            f"==="
+        ])
 
 
 @contextmanager
