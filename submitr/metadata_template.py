@@ -22,7 +22,6 @@ from dcicutils.tmpfile_utils import temporary_file
 
 # This is the Google Sheets ID for our HMS metadata template spreadsheet.
 HMS_METADATA_TEMPLATE_ID = "1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4"  # original
-HMS_METADATA_TEMPLATE_ID = "1KeggqUjLvodYmmy52tYLYOP0g7Z3wey02zXbsP0elEY"  # my (dmichaels) copy for testing
 
 # This Google API key (which was created on 2024-04-09 by dmichaels) is RESTRICTED
 # to Google Sheets usage ONLY, and is ONLY able to be used to documents which are

@@ -28,7 +28,7 @@ OPTIONS:
 def main():
 
     parser = CustomArgumentParser(help=_HELP, help_url=CustomArgumentParser.HELP_URL)
-    parser.add_argument("output_excel_file", help="Output Excel file.", default=None)
+    parser.add_argument("output_excel_file", nargs="?", help="Output Excel file.", default=None)
     parser.add_argument("--revision", action="store_true",
                         help="Get just the version of the latest metadata template.", default=False)
     parser.add_argument("--metadata", help="Metadata template ID or URL (internal use only).")
@@ -36,7 +36,7 @@ def main():
 
     if args.revision:
         print(get_hms_metadata_template_version_from_google_sheets())
-    else:
+    elif args.output_excel_file:
         output_excel_file, version = download_hms_metadata_template(args.output_excel_file,
                                                                     _metadata_template=args.metadata,
                                                                     verbose=True)
