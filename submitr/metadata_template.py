@@ -3,9 +3,12 @@ import requests
 from contextlib import contextmanager
 from googleapiclient.discovery import build as google_sheets_build
 from typing import Callable, Optional, Tuple
+from dcicutils.command_utils import yes_or_no
 from dcicutils.data_readers import Excel
 from dcicutils.misc_utils import get_error_message, PRINT
 from dcicutils.tmpfile_utils import temporary_file
+from submitr.utils import is_excel_file_name, print_boxed
+
 
 # This module provides functions to get the version of our (HMS DBMI) smaht-submitr
 # metadata template file which resides in Google Sheets; as well as to export and
@@ -122,17 +125,6 @@ def download_hms_metadata_template(output_excel_file: Optional[str],
     return output_excel_file, version
 
 
-@contextmanager
-def _download_hms_metadata_template_to_tmpfile(raise_exception: bool = False) -> Optional[str]:
-    """
-    Same as download_hms_metadata_template but downloads to a local temporary Excel file,
-    as a context, so that the file is automatically deleted after usage (within the with).
-    """
-    with temporary_file(suffix=".xlsx") as filename:
-        if download_hms_metadata_template(filename):
-            yield filename
-
-
 def get_version_from_hms_metadata_template_based_file(excel_file: Optional[str] = None,
                                                       raise_exception: bool = False) -> Optional[str]:
     """
@@ -191,6 +183,39 @@ def get_hms_metadata_template_version_from_google_sheets(google_api_key: Optiona
 
 def get_hms_metadata_template_url():
     return HMS_METADATA_TEMPLATE_URL
+
+
+def check_metadata_version(file: str, printf: Optional[Callable] = None) -> None:
+    printf = printf if callable(printf) else PRINT
+    if is_excel_file_name(file) and (version := get_version_from_hms_metadata_template_based_file(file)):
+        # Here it looks like the specified metadata Excel file is based on the HMS metadata template.
+        if hms_metadata_template_version := get_hms_metadata_template_version_from_google_sheets():
+            if version != hms_metadata_template_version:
+                print_boxed([
+                    f"===",
+                    f"WARNING: The version ({version}) of the HMS metadata template that your",
+                    f"metadata file is based on is out of date with the latest version.",
+                    f"You may want to update to the latest version: {hms_metadata_template_version}",
+                    f"===",
+                    f"Use the get-metadata-template command to get the latest.",
+                    f"==="
+                ])
+                if not yes_or_no("Do you want to continue with your metadata file?"):
+                    exit(0)
+            else:
+                PRINT(f"Your metadata file is based on the latest HMS metadata template:"
+                      f" {hms_metadata_template_version} ✓")
+
+
+@contextmanager
+def _download_hms_metadata_template_to_tmpfile(raise_exception: bool = False) -> Optional[str]:
+    """
+    Same as download_hms_metadata_template but downloads to a local temporary Excel file,
+    as a context, so that the file is automatically deleted after usage (within the with).
+    """
+    with temporary_file(suffix=".xlsx") as filename:
+        if download_hms_metadata_template(filename):
+            yield filename
 
 
 def _parse_hms_metadata_template_version(value: str) -> Optional[str]:

@@ -13,6 +13,7 @@ Change Log
 * Better message on exit when interrupting server-side validation/submission.
 * Fixed ETA for server-side validation/submission progress bar.
 * Cleaned up messaging for check-submission.
+* Fix for usage of --keys (was not being used for server validation/submission).
 * Added option to --version to automatically (after prompting) update version to latest.
 * Added metadata_template.py module with goal of checking the user's metadata
   file with the latest HMS DBMI metadata template and giving a warning if the

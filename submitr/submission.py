@@ -32,10 +32,7 @@ from typing_extensions import Literal
 from urllib.parse import urlparse
 from submitr.base import DEFAULT_APP
 from submitr.exceptions import PortalPermissionError
-from submitr.metadata_template import (
-    get_hms_metadata_template_version_from_google_sheets,
-    get_version_from_hms_metadata_template_based_file
-)
+from submitr.metadata_template import check_metadata_version
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 from submitr.scripts.cli_utils import get_version
 from submitr.s3_utils import upload_file_to_aws_s3
@@ -130,8 +127,8 @@ def _get_user_record(server, auth, quiet=False):
     user_record_response.raise_for_status()
     user_record = user_record_response.json()
     if not quiet:
-        SHOW(f"Portal server recognizes you as{' (admin)' if _is_admin_user(user_record) else ''}:"
-             f" {user_record['title']} ({user_record['contact_email']})")
+        SHOW(f"Portal recognizes you as{' (admin)' if _is_admin_user(user_record) else ''}:"
+             f" {user_record['title']} ({user_record['contact_email']}) ✓")
     return user_record
 
 
@@ -812,25 +809,8 @@ def submit_any_ingestion(ingestion_filename, *,
     if verbose:
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
 
-    if is_excel_file_name(ingestion_filename) and not noversion:
-        if version := get_version_from_hms_metadata_template_based_file(ingestion_filename):
-            # Here it looks like the specified metadata file is base on the HMS metadata template.
-            if hms_metadata_template_version := get_hms_metadata_template_version_from_google_sheets():
-                if version != hms_metadata_template_version:
-                    print_boxed([
-                        f"===",
-                        f"WARNING: The version ({version}) of the HMS metadata template that your",
-                        f"metadata file is based on is out of date with the latest version.",
-                        f"You may want to update to the latest version: {hms_metadata_template_version}",
-                        f"===",
-                        f"Use the get-metadata-template command to get the latest.",
-                        f"==="
-                    ])
-                    if not yes_or_no("Do you want to continue with your metadata file?"):
-                        exit(0)
-                else:
-                    PRINT(f"Your metadata file is based on the latest HMS metadata template:"
-                          f" {hms_metadata_template_version}")
+    if not noversion:
+        check_metadata_version(ingestion_filename)
 
     if not validate_remote_only and not validate_local_skip:
         structured_data = _validate_locally(ingestion_filename, portal,
@@ -1195,7 +1175,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 bar.done()
         return progress_report
 
-    portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP,
+    portal = _define_portal(env=env, server=server, keys_file=keys_file, app=app or DEFAULT_APP,
                             env_from_env=env_from_env, report=report, note=note)
 
     def interrupt_exit_message(bar: ProgressBar):
