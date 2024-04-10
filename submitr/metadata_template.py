@@ -19,20 +19,24 @@ from dcicutils.tmpfile_utils import temporary_file
 # on (if in fact it they have based their metadata on our HMS template) is the
 # latest version. A common model for many users being to manually export and
 # download the HMS metadata template from Google Sheets, and modify if it.
+#
+# Another use, just as a convenience, to be able to download HMS metadata
+# template to a local Excel file (see the get-metadata-template command).
 
 # This is the Google Sheets ID for our HMS metadata template spreadsheet.
-HMS_METADATA_TEMPLATE_ID = "1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4"  # original
+HMS_METADATA_TEMPLATE_ID = "1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4"
+HMS_METADATA_TEMPLATE_URL = f"https://docs.google.com/spreadsheets/d/{HMS_METADATA_TEMPLATE_ID}"
 
-# This Google API key (which was created on 2024-04-09 by dmichaels) is RESTRICTED
-# to Google Sheets usage ONLY, and is ONLY able to be used to documents which are
-# PUBLIC documents anyways. It is therefore safe to check this into GitHub.
+# This Google API key (created on 2024-04-09 by david_michaels@hms.harvard.edu)
+# is RESTRICTED to Google Sheets usage ONLY, and is ONLY able to be used to access
+# documents which are PUBLIC documents. It is therefore SAFE to check this into GitHub.
 GOOGLE_SHEETS_API_KEY = "AIzaSyCt7X8apXScfnfFVmKLdTvqerhWMCm_e7w"
 
 # This URL is used for exporting and downloading the Google Sheets spreadsheet.
 # as opposed the the Google API key which is used to access the Google Sheets
 # spreadsheet directlry for the Google Sheets API in order to get the spreadsheet version.
 GOOGLE_SHEETS_EXPORT_URL = "https://spreadsheets.google.com/feeds/download/spreadsheets/Export?exportFormat=xlsx"
-HMS_METADATA_TEMPLATE_URL = f"{GOOGLE_SHEETS_EXPORT_URL}&key={HMS_METADATA_TEMPLATE_ID}"
+HMS_METADATA_TEMPLATE_EXPORT_URL = f"{GOOGLE_SHEETS_EXPORT_URL}&key={HMS_METADATA_TEMPLATE_ID}"
 
 # This is the name of the main tab/sheet in our HMS metadata template;
 # this contains the version info (see below).
@@ -67,15 +71,15 @@ def download_hms_metadata_template(output_excel_file: Optional[str],
 
     The Google Sheets ID of our HMS DBMI metadata template in defined by
     the HMS_METADATA_TEMPLATE_ID constant (defined above); and its export
-    URL is defined by the HMS_METADATA_TEMPLATE_URL constant (defined above).
+    URL is defined by the HMS_METADATA_TEMPLATE_EXPORT_URL constant (defined above).
     """
     printf = printf if callable(printf) else PRINT
     if not _metadata_template:
-        hms_metadata_template_url = HMS_METADATA_TEMPLATE_URL
+        hms_metadata_template_export_url = HMS_METADATA_TEMPLATE_EXPORT_URL
     elif _metadata_template.lower().startswith("https://") or _metadata_template.lower().startswith("http://"):
-        hms_metadata_template_url = _metadata_template
+        hms_metadata_template_export_url = _metadata_template
     else:
-        hms_metadata_template_url = f"{GOOGLE_SHEETS_EXPORT_URL}&key={_metadata_template}"
+        hms_metadata_template_export_url = f"{GOOGLE_SHEETS_EXPORT_URL}&key={_metadata_template}"
     if not (output_excel_file.endswith(".xlsx") or output_excel_file.endswith(".xls")):
         message = "Output file name for metatdata template must have a .xlsx or .xls suffix."
         if raise_exception:
@@ -84,17 +88,17 @@ def download_hms_metadata_template(output_excel_file: Optional[str],
             printf(message)
         return (None, None)
     if verbose:
-        printf(f"Fetching metadata template from: {hms_metadata_template_url}")
+        printf(f"Fetching metadata template from: {hms_metadata_template_export_url}")
     try:
-        if (response := requests.get(hms_metadata_template_url)).status_code != 200:
-            message = f"Cannot find metadata template: {hms_metadata_template_url}"
+        if (response := requests.get(hms_metadata_template_export_url)).status_code != 200:
+            message = f"Cannot find metadata template: {hms_metadata_template_export_url}"
             if raise_exception:
                 raise Exception(message)
             if verbose:
                 printf(message)
             return (None, None)
     except Exception as e:
-        message = f"Cannot fetch metadata template: {hms_metadata_template_url}\n{get_error_message(e)}"
+        message = f"Cannot fetch metadata template: {hms_metadata_template_export_url}\n{get_error_message(e)}"
         if raise_exception:
             raise Exception(message)
         if verbose:
@@ -157,8 +161,7 @@ def get_version_from_hms_metadata_template_based_file(excel_file: Optional[str] 
             if header := sheet_reader.header:
                 if HMS_METADATA_TEMPLATE_MAIN_SHEET_VERSION_HEADER_COLUMN_INDEX < len(header):
                     if version := header[HMS_METADATA_TEMPLATE_MAIN_SHEET_VERSION_HEADER_COLUMN_INDEX]:
-                        if version.strip().lower().startswith("version:"):
-                            return version.replace("version:", "").strip()
+                        return _parse_hms_metadata_template_version(version)
     return None
 
 
@@ -178,10 +181,19 @@ def get_hms_metadata_template_version_from_google_sheets(google_api_key: Optiona
                                                       range=HMS_METADATA_TEMPLATE_MAIN_SHEET_VERSION_LOCATION)
         response = command.execute()
         if version := response.get("values", [])[0][0]:
-            if version.strip().lower().startswith("version:"):
-                return version.replace("version:", "").strip()
+            return _parse_hms_metadata_template_version(version)
     except Exception as e:
         message = f"Cannot get metadata template version\n{get_error_message(e)}"
         if raise_exception:
             raise Exception(message)
+    return None
+
+
+def get_hms_metadata_template_url():
+    return HMS_METADATA_TEMPLATE_URL
+
+
+def _parse_hms_metadata_template_version(value: str) -> Optional[str]:
+    if value.strip().lower().startswith("version:"):
+        return value.replace("version:", "").strip()
     return None
