@@ -492,13 +492,13 @@ test-randomorder = ["pytest-randomly"]
 
 [[package]]
 name = "dcicutils"
-version = "8.8.2.1b4"
+version = "8.8.2.1b5"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 optional = false
 python-versions = "<3.12,>=3.8"
 files = [
-    {file = "dcicutils-8.8.2.1b4-py3-none-any.whl", hash = "sha256:8126647d42edaf8da93832f08769803fd3c5363667b414e360c947ca93ea56bc"},
-    {file = "dcicutils-8.8.2.1b4.tar.gz", hash = "sha256:393baa2ef489ae86984af614b8ec9a9d5960863fa9fe2fc80fb154d4cc5f908d"},
+    {file = "dcicutils-8.8.2.1b5-py3-none-any.whl", hash = "sha256:f23f76d43014cd705110974a793202a597ce6174a5c1aa2fc2499529aa6d5272"},
+    {file = "dcicutils-8.8.2.1b5.tar.gz", hash = "sha256:433b2e73fc876eac6098979f6c93443d2c3b4cf62e9e5f52f96f9aaf01229c32"},
 ]
 
 [package.dependencies]
@@ -524,7 +524,7 @@ requests = ">=2.21.0,<3.0.0"
 rfc3986 = ">=1.4.0,<2.0.0"
 structlog = ">=19.2.0,<20.0.0"
 toml = ">=0.10.1,<1"
-tqdm = ">=4.65.0,<5.0.0"
+tqdm = ">=4.66.2,<5.0.0"
 typing-extensions = ">=3.8"
 urllib3 = ">=1.26.6,<2.0.0"
 webtest = ">=2.0.34,<3.0.0"
@@ -2389,4 +2389,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0,<3.12"
-content-hash = "329f7cdaca14e64313569cb7837fa5b8377ab33abed37d00c9f51dba98078d0a"
+content-hash = "f1ffa4927734889bb3ee9e27a20fba25dc962d8474e41454cc905a24d93704b0"
