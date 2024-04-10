@@ -31,6 +31,10 @@ from typing_extensions import Literal
 from urllib.parse import urlparse
 from submitr.base import DEFAULT_APP
 from submitr.exceptions import PortalPermissionError
+from submitr.metadata_template import (
+    get_hms_metadata_template_version_from_google_sheets,
+    get_version_from_hms_metadata_template_based_file
+)
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 from submitr.progress_bar import ProgressBar
 from submitr.scripts.cli_utils import get_version
@@ -39,7 +43,7 @@ from submitr.utils import (
     format_datetime, format_duration, format_size, format_path,
     get_file_checksum, get_file_md5, get_file_md5_like_aws_s3_etag,
     get_file_modified_datetime, get_file_size, get_s3_bucket_and_key_from_s3_uri,
-    print_boxed, keyword_as_title, tobool
+    is_excel_file_name, print_boxed, keyword_as_title, tobool
 )
 
 
@@ -806,6 +810,16 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if verbose:
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
+
+    if is_excel_file_name(ingestion_filename):
+        if version := get_version_from_hms_metadata_template_based_file(ingestion_filename):
+            if hms_metadata_template_version := get_hms_metadata_template_version_from_google_sheets():
+                if version != hms_metadata_template_version:
+                    PRINT(f"WARNING: The version ({version}) of HMS metadata template that your"
+                          f" metadata file is based on is out of date: {hms_metadata_template_version}")
+                else:
+                    PRINT(f"The version of HMS metadata template that your"
+                          f" metadata file is based on is up to date: {hms_metadata_template_version}")
 
     if not validate_remote_only and not validate_local_skip:
         structured_data = _validate_locally(ingestion_filename, portal,
@@ -3085,7 +3099,7 @@ def _print_metadata_file_info(file: str, env: str, refs: bool = False, output_fi
     if etag := get_file_md5_like_aws_s3_etag(file):
         PRINT(f"S3 ETag: {etag}{' | Same as MD5' if md5 == etag else ''}")
     sheet_lines = []
-    if file.endswith(".xlsx") or file.endswith(".xls"):
+    if is_excel_file_name(file):
         from dcicutils.data_readers import Excel
         excel = Excel(file)
         nrows_total = 0

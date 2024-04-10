@@ -278,6 +278,10 @@ def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Cal
             printf(f"| {line}{' ' * (length - len(line))} |")
 
 
+def is_excel_file_name(file_name: str) -> bool:
+    return file_name.endswith(".xlsx") or file_name.endswith(".xls")
+
+
 @lru_cache(maxsize=1)
 def get_version(package_name: str = "smaht-submitr") -> str:
     try:
