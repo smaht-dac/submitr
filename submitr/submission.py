@@ -700,6 +700,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          output_file=None,
                          env_from_env=False,
                          timeout=None,
+                         noversion=False,
                          debug=False,
                          debug_sleep=None):
 
@@ -811,15 +812,25 @@ def submit_any_ingestion(ingestion_filename, *,
     if verbose:
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
 
-    if is_excel_file_name(ingestion_filename):
+    if is_excel_file_name(ingestion_filename) and not noversion:
         if version := get_version_from_hms_metadata_template_based_file(ingestion_filename):
+            # Here it looks like the specified metadata file is base on the HMS metadata template.
             if hms_metadata_template_version := get_hms_metadata_template_version_from_google_sheets():
                 if version != hms_metadata_template_version:
-                    PRINT(f"WARNING: The version ({version}) of HMS metadata template that your"
-                          f" metadata file is based on is out of date: {hms_metadata_template_version}")
+                    print_boxed([
+                        f"===",
+                        f"WARNING: The version ({version}) of the HMS metadata template that your",
+                        f"metadata file is based on is out of date with the latest version.",
+                        f"You may want to update to the latest version: {hms_metadata_template_version}",
+                        f"===",
+                        f"Use the get-metadata-template command to get the latest.",
+                        f"==="
+                    ])
+                    if not yes_or_no("Do you want to continue with your metadata file?"):
+                        exit(0)
                 else:
-                    PRINT(f"The version of HMS metadata template that your"
-                          f" metadata file is based on is up to date: {hms_metadata_template_version}")
+                    PRINT(f"Your metadata file is based on the latest HMS metadata template:"
+                          f" {hms_metadata_template_version}")
 
     if not validate_remote_only and not validate_local_skip:
         structured_data = _validate_locally(ingestion_filename, portal,

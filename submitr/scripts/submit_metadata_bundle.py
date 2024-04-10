@@ -177,6 +177,8 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--ingestion_type', '--ingestion-type',
                         help=f"The ingestion type (default: {DEFAULT_INGESTION_TYPE}).",
                         default=DEFAULT_INGESTION_TYPE)
+    parser.add_argument('--noversion', action="store_true",
+                        help="Do not check metadata template version.", default=False)
     parser.add_argument('--yes', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
     parser.add_argument('--no_query', '--no-query', '-nq', action="store_true",
@@ -338,6 +340,7 @@ def main(simulated_args_for_testing=None):
                              ref_nocache=args.ref_nocache,
                              verbose_json=args.json,
                              verbose=args.verbose,
+                             noversion=args.noversion,
                              noprogress=args.noprogress,
                              output_file=args.output,
                              timeout=args.timeout,

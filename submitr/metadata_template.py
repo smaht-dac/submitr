@@ -20,7 +20,7 @@ from dcicutils.tmpfile_utils import temporary_file
 # latest version. A common model for many users being to manually export and
 # download the HMS metadata template from Google Sheets, and modify if it.
 #
-# Another use, just as a convenience, to be able to download HMS metadata
+# Another use, just as a convenience, is to be able to download HMS metadata
 # template to a local Excel file (see the get-metadata-template command).
 
 # This is the Google Sheets ID for our HMS metadata template spreadsheet.
