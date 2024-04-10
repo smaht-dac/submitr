@@ -1131,7 +1131,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 if loadxl_started_second_round is not None:
                     if (phase := PROGRESS_LOADXL.START_SECOND_ROUND) not in phases_seen:
                         phases_seen.append(phase)
-                        if loadxl_done is None:
+                        if loadxl_done is None and not ingester_done:
                             bar.reset_eta()
             done = False
             message = f"▶ Pings: {nchecks_server}"
