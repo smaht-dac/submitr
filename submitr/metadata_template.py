@@ -34,7 +34,7 @@ GOOGLE_SHEETS_API_KEY = "AIzaSyCt7X8apXScfnfFVmKLdTvqerhWMCm_e7w"
 
 # This URL is used for exporting and downloading the Google Sheets spreadsheet.
 # as opposed the the Google API key which is used to access the Google Sheets
-# spreadsheet directlry for the Google Sheets API in order to get the spreadsheet version.
+# spreadsheet directly for the Google Sheets API in order to get the spreadsheet version.
 GOOGLE_SHEETS_EXPORT_URL = "https://spreadsheets.google.com/feeds/download/spreadsheets/Export?exportFormat=xlsx"
 HMS_METADATA_TEMPLATE_EXPORT_URL = f"{GOOGLE_SHEETS_EXPORT_URL}&key={HMS_METADATA_TEMPLATE_ID}"
 
@@ -194,6 +194,9 @@ def get_hms_metadata_template_url():
 
 
 def _parse_hms_metadata_template_version(value: str) -> Optional[str]:
+    """
+    Parses and returns the version from a string like "version: 1.2.3".
+    """
     if value.strip().lower().startswith("version:"):
         return value.replace("version:", "").strip()
     return None
