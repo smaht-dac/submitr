@@ -825,6 +825,7 @@ def submit_any_ingestion(ingestion_filename, *,
             # This return is just emphasize that fact.
             return
     else:
+        structured_data = None
         PRINT(f"Skipping local (client) validation (as requested via"
               f" {'--validate-remote-only' if validate_remote_only else '--validate-local-skip'}).")
 
@@ -920,8 +921,9 @@ def submit_any_ingestion(ingestion_filename, *,
 
     # Now that submission has successfully complete, review the files to upload and then do it.
 
-    _review_upload_files(structured_data, ingestion_filename,
-                         validation=validation, directory=upload_folder, recursive=subfolders)
+    if structured_data:
+        _review_upload_files(structured_data, ingestion_filename,
+                             validation=validation, directory=upload_folder, recursive=subfolders)
 
     do_any_uploads(submission_response, keydict=portal.key, ingestion_filename=ingestion_filename,
                    upload_folder=upload_folder, no_query=no_query,
