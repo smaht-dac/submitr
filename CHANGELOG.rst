@@ -12,7 +12,8 @@ Change Log
 
 * Added metadata_template.py module with goal of checking the user's metadata
   file with the latest HMS DBMI metadata template and giving a warning if the
-  version appears to be out of date.
+  version appears to be out of date. Also new convenience command to export and
+  download the HMS metadata template file to Excel file (get-metadata-template).
 * Added option to --version to automatically (after prompting) update version to latest.
 * Added ability to print upload file info for check-submissionn.
 * Fixed ETA for server-side validation/submission progress bar.

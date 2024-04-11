@@ -187,6 +187,11 @@ def get_hms_metadata_template_url():
 
 def check_metadata_version(file: str, printf: Optional[Callable] = None,
                            quiet: bool = False) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Higher level function, to be called from command(s), e.g. submit-metadata-bundle, to check
+    metadata latest HMS DBMI smaht-submitr metadata template against the user's metadata file;
+    printing a warning if out of date; with option to quit/exit if so.
+    """
     printf = printf if callable(printf) else PRINT
     if is_excel_file_name(file) and (version := get_version_from_hms_metadata_template_based_file(file)):
         # Here it looks like the specified metadata Excel file is based on the HMS metadata template.
