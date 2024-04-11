@@ -2,6 +2,7 @@ import io
 import requests
 from contextlib import contextmanager
 from functools import lru_cache
+from itertools import islice
 from typing import Callable, Optional, Tuple
 from dcicutils.command_utils import yes_or_no
 from dcicutils.data_readers import Excel
@@ -31,10 +32,6 @@ from submitr.utils import is_excel_file_name, print_boxed
 # as opposed the the Google API key which is used to access the Google Sheets
 # spreadsheet directly for the Google Sheets API in order to get the spreadsheet version.
 GOOGLE_SHEETS_EXPORT_BASE_URL = "https://spreadsheets.google.com/feeds/download/spreadsheets/Export?exportFormat=xlsx"
-
-# This is the name of the main tab/sheet in our HMS metadata template;
-# this contains the version info (see below).
-HMS_METADATA_TEMPLATE_MAIN_SHEET_NAME = "(Overview/Guidelines)"
 
 # These define the location of the version info within our HMS metadata template.
 # By convention we put this in a string like "version: 1.2.3." in the first row
@@ -131,15 +128,23 @@ def get_version_from_hms_metadata_template_based_file(portal: Portal,
         if raise_exception:
             raise Exception(f"Cannot load Excel file: {excel_file}\n{get_error_message(e)}")
         return None
-    metadata_template_main_sheet_name = get_hms_metadata_template_version_sheet_from_portal(portal)
+    metadata_template_version_sheet = get_hms_metadata_template_version_sheet_from_portal(portal)
     # Slash (and who know what else) is removed from tab name on download.
-    metadata_template_main_sheet_name = metadata_template_main_sheet_name.replace("/", "")
-    if excel and (metadata_template_main_sheet_name in excel.sheet_names):
-        if sheet_reader := excel.sheet_reader(metadata_template_main_sheet_name):
-            if header := sheet_reader.header:
-                if HMS_METADATA_TEMPLATE_MAIN_SHEET_VERSION_HEADER_COLUMN_INDEX < len(header):
-                    if version := header[HMS_METADATA_TEMPLATE_MAIN_SHEET_VERSION_HEADER_COLUMN_INDEX]:
-                        return _parse_hms_metadata_template_version(version)
+    metadata_template_version_sheet = metadata_template_version_sheet.replace("/", "")
+    metadata_template_version_cell = get_hms_metadata_template_version_cell_from_portal(portal)
+    if excel and (metadata_template_version_sheet in excel.sheet_names):
+        if sheet_reader := excel.sheet_reader(metadata_template_version_sheet):
+            row_index, column_index = _get_sheet_row_column_from_cell(metadata_template_version_cell)
+            if row_index == 0:
+                if header := sheet_reader.header:
+                    if column_index < len(header):
+                        if version := header[column_index]:
+                            return _parse_hms_metadata_template_version(version)
+            elif row_index > 0:
+                if row := next(islice(sheet_reader, row_index - 1, None)):
+                    if (row_column_values := list(row.values())) and (column_index < len(row_column_values)):
+                        if version := row_column_values[column_index]:
+                            return _parse_hms_metadata_template_version(version)
     return None
 
 
@@ -231,6 +236,10 @@ def print_metadata_version_warning(this_metadata_template_version: str,
             f"Or you can use export/download using the get-metadata-template command.",
             f"==="
         ])
+
+
+def _get_sheet_row_column_from_cell(cell: str) -> Tuple[int, int]:
+    return 0, 1  # TODO: Mapping B1:B1 to 0, 1
 
 
 @contextmanager
