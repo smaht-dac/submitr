@@ -6,6 +6,7 @@ from typing import Callable, Optional, Tuple
 from dcicutils.command_utils import yes_or_no
 from dcicutils.data_readers import Excel
 from dcicutils.misc_utils import get_error_message, PRINT
+from dcicutils.portal_utils import Portal
 from dcicutils.tmpfile_utils import temporary_file
 from submitr.utils import is_excel_file_name, print_boxed
 
@@ -181,11 +182,25 @@ def get_hms_metadata_template_version_from_google_sheets(google_api_key: Optiona
     return None
 
 
+def get_hms_metadata_template_version_from_portal(portal: Portal, raise_exception: bool = False) -> Optional[str]:
+    try:
+        if ((metadata_template_info := portal.get("/submitr-metadata-template/version")) and
+            (metadata_template_info.status_code == 200) and
+            (metadata_template_info := metadata_template_info.json())):  # noqa
+            return metadata_template_info.get("version")
+    except Exception as e:
+        if raise_exception:
+            raise Exception(f"Cannot get HMS metadata template info from portal.\n{get_error_message(e)}")
+        pass
+    return None
+
+
 def get_hms_metadata_template_url():
     return HMS_METADATA_TEMPLATE_URL
 
 
-def check_metadata_version(file: str, printf: Optional[Callable] = None,
+def check_metadata_version(file: str, portal: Portal,
+                           printf: Optional[Callable] = None,
                            quiet: bool = False) -> Tuple[Optional[str], Optional[str]]:
     """
     Higher level function, to be called from command(s), e.g. submit-metadata-bundle, to check
@@ -195,7 +210,8 @@ def check_metadata_version(file: str, printf: Optional[Callable] = None,
     printf = printf if callable(printf) else PRINT
     if is_excel_file_name(file) and (version := get_version_from_hms_metadata_template_based_file(file)):
         # Here it looks like the specified metadata Excel file is based on the HMS metadata template.
-        if hms_metadata_template_version := get_hms_metadata_template_version_from_google_sheets():
+        # if hms_metadata_template_version := get_hms_metadata_template_version_from_google_sheets():
+        if hms_metadata_template_version := get_hms_metadata_template_version_from_portal(portal):
             if version != hms_metadata_template_version:
                 if not quiet:
                     print_metadata_version_warning(version, hms_metadata_template_version, printf=printf)

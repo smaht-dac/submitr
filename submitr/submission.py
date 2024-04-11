@@ -809,7 +809,7 @@ def submit_any_ingestion(ingestion_filename, *,
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
 
     if not noversion:
-        check_metadata_version(ingestion_filename)
+        check_metadata_version(ingestion_filename, portal=portal)
 
     if not validate_remote_only and not validate_local_skip:
         structured_data = _validate_locally(ingestion_filename, portal,
