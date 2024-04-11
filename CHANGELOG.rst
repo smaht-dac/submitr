@@ -10,15 +10,16 @@ Change Log
 0.8.1
 =====
 
-* Better message on exit when interrupting server-side validation/submission.
-* Fixed ETA for server-side validation/submission progress bar.
-* Cleaned up messaging for check-submission.
-* Fix for usage of --keys (was not being used for server validation/submission).
-* Added option to --version to automatically (after prompting) update version to latest.
 * Added metadata_template.py module with goal of checking the user's metadata
   file with the latest HMS DBMI metadata template and giving a warning if the
   version appears to be out of date.
+* Added option to --version to automatically (after prompting) update version to latest.
 * Added ability to print upload file info for check-submissionn.
+* Fixed ETA for server-side validation/submission progress bar.
+* Improved messaging on exit when interrupting server-side validation/submission.
+* Improved messaging for check-submission.
+* Fix for usage of --keys (was not being used for server validation/submission).
+* Minor fix for --validate-local-skip option (undefined structured_data variable).
 
 
 0.8.0
