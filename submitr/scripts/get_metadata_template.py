@@ -35,20 +35,17 @@ def main():
                         help="Get just the version of the latest metadata template.", default=False)
     parser.add_argument('--env',
                         help="Portal environment name for server/credentials (e.g. in ~/.smaht-keys.json).")
-    parser.add_argument("--metadata", help="Metadata template ID or URL (internal use only).")
     args = parser.parse_args(None)
 
+    portal = Portal(args.env)
     if args.info:
-        portal = Portal(args.env)
         print(f"HMS Metadata Template URL: {get_hms_metadata_template_url_from_portal(portal)}")
         print(f"HMS Metadata Template Version: {get_hms_metadata_template_version_from_portal(portal)}")
     elif not args.output_excel_file:
         print("Must specify the name of an Excel file to write to.")
         exit(1)
     elif args.output_excel_file:
-        output_excel_file, version = download_hms_metadata_template(args.output_excel_file,
-                                                                    _metadata_template=args.metadata,
-                                                                    verbose=True)
+        output_excel_file, version = download_hms_metadata_template(portal, args.output_excel_file, verbose=True)
 
 
 if __name__ == "__main__":
