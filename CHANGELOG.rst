@@ -16,6 +16,8 @@ Change Log
 * Added option to --version to automatically (after prompting) update version to latest.
 * Added ability to print upload file info for check-submissionn.
 * Fixed ETA for server-side validation/submission progress bar.
+* Removed shortened forms of command options to remove ambiguity (e.g. -sd / --server d).
+* Added warning for use of obsolete command options.
 * Improved messaging on exit when interrupting server-side validation/submission.
 * Improved messaging for check-submission.
 * Fix for usage of --keys (was not being used for server validation/submission).
