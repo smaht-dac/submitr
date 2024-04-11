@@ -31,11 +31,6 @@ from submitr.utils import is_excel_file_name, print_boxed
 HMS_METADATA_TEMPLATE_ID = "1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4"
 HMS_METADATA_TEMPLATE_URL = f"https://docs.google.com/spreadsheets/d/{HMS_METADATA_TEMPLATE_ID}"
 
-# This Google API key (created on 2024-04-09 by david_michaels@hms.harvard.edu)
-# is RESTRICTED to Google Sheets usage ONLY, and is ONLY able to be used to access
-# documents which are PUBLIC documents. It is therefore SAFE to check this into GitHub.
-GOOGLE_SHEETS_API_KEY = "REDACTED"
-
 # This URL is used for exporting and downloading the Google Sheets spreadsheet.
 # as opposed the the Google API key which is used to access the Google Sheets
 # spreadsheet directly for the Google Sheets API in order to get the spreadsheet version.
@@ -155,30 +150,6 @@ def get_version_from_hms_metadata_template_based_file(excel_file: Optional[str] 
                 if HMS_METADATA_TEMPLATE_MAIN_SHEET_VERSION_HEADER_COLUMN_INDEX < len(header):
                     if version := header[HMS_METADATA_TEMPLATE_MAIN_SHEET_VERSION_HEADER_COLUMN_INDEX]:
                         return _parse_hms_metadata_template_version(version)
-    return None
-
-
-def get_hms_metadata_template_version_from_google_sheets(google_api_key: Optional[str] = None,
-                                                         raise_exception: bool = False,
-                                                         _metadata_template: Optional[str] = None) -> Optional[str]:
-    """
-    Returns the version of the latest HMS DBMI smaht-submitr metadata template spreadsheet
-    directly from Google Sheets (using the Google Sheets API). If any error is encountered
-    then returns None, or if the raise_exception arg is True then raises and exception.
-    """
-    if not google_api_key:
-        google_api_key = GOOGLE_SHEETS_API_KEY
-    try:
-        service = google_sheets_build("sheets", "v4", developerKey=google_api_key)
-        command = service.spreadsheets().values().get(spreadsheetId=_metadata_template or HMS_METADATA_TEMPLATE_ID,
-                                                      range=HMS_METADATA_TEMPLATE_MAIN_SHEET_VERSION_LOCATION)
-        response = command.execute()
-        if version := response.get("values", [])[0][0]:
-            return _parse_hms_metadata_template_version(version)
-    except Exception as e:
-        message = f"Cannot get metadata template version\n{get_error_message(e)}"
-        if raise_exception:
-            raise Exception(message)
     return None
 
 
