@@ -1,7 +1,7 @@
 import io
 import requests
 from contextlib import contextmanager
-from googleapiclient.discovery import build as google_sheets_build
+from functools import lru_cache
 from typing import Callable, Optional, Tuple
 from dcicutils.command_utils import yes_or_no
 from dcicutils.data_readers import Excel
@@ -153,21 +153,30 @@ def get_version_from_hms_metadata_template_based_file(excel_file: Optional[str] 
     return None
 
 
-def get_hms_metadata_template_version_from_portal(portal: Portal, raise_exception: bool = False) -> Optional[str]:
+@lru_cache(maxsize=1)
+def get_hms_metadata_template_info_from_portal(portal: Portal,
+                                               raise_exception: bool = False) -> Tuple[Optional[str], Optional[str]]:
     try:
         if ((metadata_template_info := portal.get("/submitr-metadata-template/version")) and
             (metadata_template_info.status_code == 200) and
             (metadata_template_info := metadata_template_info.json())):  # noqa
-            return metadata_template_info.get("version")
+            return metadata_template_info.get("url"), metadata_template_info.get("version")
     except Exception as e:
         if raise_exception:
             raise Exception(f"Cannot get HMS metadata template info from portal.\n{get_error_message(e)}")
         pass
-    return None
+    return None, None
 
 
-def get_hms_metadata_template_url():
-    return HMS_METADATA_TEMPLATE_URL
+def get_hms_metadata_template_version_from_portal(portal: Portal,
+                                                  raise_exception: bool = False) -> Optional[str]:
+    _, metadata_template_version = get_hms_metadata_template_info_from_portal(portal, raise_exception=raise_exception)
+    return metadata_template_version
+
+
+def get_hms_metadata_template_url_from_portal(portal: Portal, raise_exception: bool = False) -> Optional[str]:
+    metadata_template_url, _ = get_hms_metadata_template_info_from_portal(portal, raise_exception=raise_exception)
+    return metadata_template_url
 
 
 def check_metadata_version(file: str, portal: Portal,
@@ -182,10 +191,13 @@ def check_metadata_version(file: str, portal: Portal,
     if is_excel_file_name(file) and (version := get_version_from_hms_metadata_template_based_file(file)):
         # Here it looks like the specified metadata Excel file is based on the HMS metadata template.
         # if hms_metadata_template_version := get_hms_metadata_template_version_from_google_sheets():
-        if hms_metadata_template_version := get_hms_metadata_template_version_from_portal(portal):
+        hms_metadata_template_url, hms_metadata_template_version = get_hms_metadata_template_info_from_portal(portal)
+        if hms_metadata_template_version:
             if version != hms_metadata_template_version:
                 if not quiet:
-                    print_metadata_version_warning(version, hms_metadata_template_version, printf=printf)
+                    print_metadata_version_warning(version,
+                                                   hms_metadata_template_version,
+                                                   hms_metadata_template_url, printf=printf)
                     if not yes_or_no("Do you want to continue with your metadata file?"):
                         exit(0)
             elif not quiet:
@@ -197,6 +209,7 @@ def check_metadata_version(file: str, portal: Portal,
 
 def print_metadata_version_warning(this_metadata_template_version: str,
                                    hms_metadata_template_version: str,
+                                   hms_metadata_template_url: str,
                                    printf: Optional[Callable] = None) -> None:
     printf = printf if callable(printf) else PRINT
     if this_metadata_template_version != hms_metadata_template_version:
@@ -206,7 +219,10 @@ def print_metadata_version_warning(this_metadata_template_version: str,
             f"metadata file is based on is out of date with the latest version.",
             f"You may want to update to the latest version: {hms_metadata_template_version}",
             f"===",
-            f"Use the get-metadata-template command to get the latest.",
+            f"You can export/download the latest version from this URL:",
+            hms_metadata_template_url,
+            f"===",
+            f"Or you can use export/download using the get-metadata-template command.",
             f"==="
         ])
 
