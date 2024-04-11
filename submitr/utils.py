@@ -354,7 +354,7 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
 def catch_interrupt(on_interrupt: Optional[Callable] = None):
     if not callable(on_interrupt):
         on_interrupt = None
-    def interrupt_handler(signum, frame):
+    def interrupt_handler(signum, frame):  # noqa
         if on_interrupt:
             if on_interrupt() is False:
                 exit(1)
