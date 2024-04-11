@@ -33,7 +33,7 @@ HMS_METADATA_TEMPLATE_URL = f"https://docs.google.com/spreadsheets/d/{HMS_METADA
 # This Google API key (created on 2024-04-09 by david_michaels@hms.harvard.edu)
 # is RESTRICTED to Google Sheets usage ONLY, and is ONLY able to be used to access
 # documents which are PUBLIC documents. It is therefore SAFE to check this into GitHub.
-GOOGLE_SHEETS_API_KEY = "AIzaSyCt7X8apXScfnfFVmKLdTvqerhWMCm_e7w"
+GOOGLE_SHEETS_API_KEY = "REDACTED"
 
 # This URL is used for exporting and downloading the Google Sheets spreadsheet.
 # as opposed the the Google API key which is used to access the Google Sheets

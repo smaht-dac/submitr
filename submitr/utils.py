@@ -1,17 +1,19 @@
 from collections import namedtuple
+from contextlib import contextmanager
 from datetime import datetime
 from functools import lru_cache
 import io
+from json import dumps as json_dumps, loads as json_loads
 import hashlib
+import os
+from pathlib import Path
 import pkg_resources
 import pytz
 import re
 import requests
-import os
-from pathlib import Path
+from signal import signal, SIGINT
 from typing import Any, Callable, List, Optional, Tuple, Union
 from dcicutils.misc_utils import PRINT, str_to_bool
-from json import dumps as json_dumps, loads as json_loads
 
 
 ERASE_LINE = "\033[K"
@@ -346,3 +348,18 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
     except Exception:
         pass
     return None
+
+
+@contextmanager
+def catch_interrupt(on_interrupt: Optional[Callable] = None):
+    if not callable(on_interrupt):
+        on_interrupt = None
+    def interrupt_handler(signum, frame):
+        if on_interrupt:
+            if on_interrupt() is False:
+                exit(1)
+    try:
+        previous_interrupt_handler = signal(SIGINT, interrupt_handler)
+        yield
+    finally:
+        signal(SIGINT, previous_interrupt_handler)
