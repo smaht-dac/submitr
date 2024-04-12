@@ -23,6 +23,7 @@ Change Log
 * Improved messaging for check-submission.
 * Fix for usage of --keys (was not being used for server validation/submission).
 * Minor fix for --validate-local-skip option (undefined structured_data variable).
+* Added --files for use with --info to submit-metadata-bundle.
 
 
 0.8.0

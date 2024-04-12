@@ -3146,7 +3146,8 @@ def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optiona
     return format_datetime(datetime.fromisoformat(value))
 
 
-def _print_metadata_file_info(file: str, env: str, refs: bool = False, output_file: Optional[str] = None) -> None:
+def _print_metadata_file_info(file: str, env: str,
+                              refs: bool = False, files: bool = False, output_file: Optional[str] = None) -> None:
     if output_file:
         set_output_file(output_file)
     PRINT(f"Metadata File: {os.path.basename(file)}")
@@ -3174,18 +3175,29 @@ def _print_metadata_file_info(file: str, env: str, refs: bool = False, output_fi
         sheet_lines = "\n" + "\n".join(sheet_lines)
         PRINT(f"Sheets: {nsheets} | Rows: {nrows_total}{sheet_lines}")
     portal = None
-    if refs is True:
+    if (refs is True) or (files is True):
         portal = _define_portal(env=env, ping=True)
         structured_data = StructuredDataSet(file, portal, norefs=True)
-        refs = structured_data.resolved_refs
-        PRINT(f"References: {len(refs) or 'None'}")
-        if output_file and len(refs) > 7:
-            PRINT_STDOUT(f"- See your output file: {output_file}")
-            for ref in sorted(refs):
-                PRINT_OUTPUT(f"- {ref}")
-        else:
-            for ref in sorted(refs):
-                PRINT(f"- {ref}")
+        if refs is True:
+            refs = structured_data.resolved_refs
+            PRINT(f"References: {len(refs) or 'None'}")
+            if output_file and len(refs) > 10:
+                PRINT_STDOUT(f"- See your output file: {output_file}")
+                for ref in sorted(refs):
+                    PRINT_OUTPUT(f"- {ref}")
+            else:
+                for ref in sorted(refs):
+                    PRINT(f"- {ref}")
+        if files is True:
+            upload_files = structured_data.upload_files
+            PRINT(f"Files: {len(upload_files) or 'None'}")
+            if output_file and len(upload_files) > 10:
+                PRINT_STDOUT(f"- See your output file: {output_file}")
+                for upload_file in sorted(upload_files, key=lambda item: item.get("file")):
+                    PRINT_OUTPUT(f"- {upload_file}")
+            else:
+                for upload_file in sorted(upload_files, key=lambda item: item.get("file")):
+                    PRINT(f"- {upload_file.get('file')} ({upload_file.get('type')})")
     if not portal:
         portal = _define_portal(env=env, ping=True)
     this_metadata_template_version, current_metadata_template_version = (
