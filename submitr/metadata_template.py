@@ -126,7 +126,7 @@ def get_version_from_metadata_template_based_file(portal: Portal, excel_file: Op
 
 
 @lru_cache(maxsize=1)
-def get_metadata_template_info_from_portal(portal: Portal) -> Optional[dict]:
+def get_metadata_template_info_from_portal(portal: Portal) -> dict:
     try:
         if ((metadata_template_info := portal.get("/submitr-metadata-template/version")) and
             (metadata_template_info.status_code == 200) and
@@ -134,32 +134,27 @@ def get_metadata_template_info_from_portal(portal: Portal) -> Optional[dict]:
             return metadata_template_info
     except Exception:
         pass
-    return None
+    return {}
 
 
 def get_metadata_template_version_from_portal(portal: Portal) -> Optional[str]:
-    metadata_template_info = get_metadata_template_info_from_portal(portal)
-    return metadata_template_info.get("version") if metadata_template_info else None
+    return get_metadata_template_info_from_portal(portal).get("version")
 
 
 def get_metadata_template_url_from_portal(portal: Portal) -> Optional[str]:
-    metadata_template_info = get_metadata_template_info_from_portal(portal)
-    return metadata_template_info.get("url") if metadata_template_info else None
+    return get_metadata_template_info_from_portal(portal).get("url")
 
 
 def get_metadata_template_sheet_id_from_portal(portal: Portal) -> Optional[str]:
-    metadata_template_info = get_metadata_template_info_from_portal(portal)
-    return metadata_template_info.get("sheet_id") if metadata_template_info else None
+    return get_metadata_template_info_from_portal(portal).get("sheet_id")
 
 
 def get_metadata_template_version_sheet_from_portal(portal: Portal) -> Optional[str]:
-    metadata_template_info = get_metadata_template_info_from_portal(portal)
-    return metadata_template_info.get("version_sheet") if metadata_template_info else None
+    return get_metadata_template_info_from_portal(portal).get("version_sheet")
 
 
 def get_metadata_template_version_cell_from_portal(portal: Portal) -> Optional[str]:
-    metadata_template_info = get_metadata_template_info_from_portal(portal)
-    return metadata_template_info.get("version_cell") if metadata_template_info else None
+    return get_metadata_template_info_from_portal(portal).get("version_cell")
 
 
 def check_metadata_version(file: str, portal: Portal,
