@@ -3168,6 +3168,7 @@ def _print_metadata_file_info(file: str, env: str, refs: bool = False, output_fi
             nrows_total += nrows
         sheet_lines = "\n" + "\n".join(sheet_lines)
         PRINT(f"Sheets: {nsheets} | Rows: {nrows_total}{sheet_lines}")
+    portal = None
     if refs is True:
         portal = _define_portal(env=env)
         structured_data = StructuredDataSet(file, portal, norefs=True)
@@ -3180,7 +3181,10 @@ def _print_metadata_file_info(file: str, env: str, refs: bool = False, output_fi
         else:
             for ref in sorted(refs):
                 PRINT(f"- {ref}")
-    this_metadata_template_version, current_metadata_template_version = check_metadata_version(file, quiet=True)
+    if not portal:
+        portal = _define_portal(env=env)
+    this_metadata_template_version, current_metadata_template_version = (
+        check_metadata_version(file, portal=portal, quiet=True))
     if this_metadata_template_version:
         if this_metadata_template_version == current_metadata_template_version:
             PRINT(f"Based on the latest HMS metadata template: {current_metadata_template_version} ✓")

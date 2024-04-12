@@ -96,7 +96,7 @@ def get_metadata_template_version_cell_from_portal(portal: Portal) -> Optional[s
 
 def print_metadata_version_warning(this_metadata_template_version: str,
                                    metadata_template_version: str,
-                                   metadata_template_url: str,
+                                   metadata_template_url: Optional[str] = None,
                                    printf: Optional[Callable] = None) -> None:
     printf = printf if callable(printf) else PRINT
     if this_metadata_template_version != metadata_template_version:
@@ -107,8 +107,8 @@ def print_metadata_version_warning(this_metadata_template_version: str,
             f"You may want to update to the latest version: {metadata_template_version}",
             f"===",
             f"You can export/download the latest version from this URL:",
-            metadata_template_url,
-            f"===",
+            metadata_template_url if metadata_template_url else None,
+            f"===" if metadata_template_url else None,
             f"Or you can use export/download using the get-metadata-template command.",
             f"==="
         ])

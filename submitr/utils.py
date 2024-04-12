@@ -278,7 +278,7 @@ def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Cal
             lines_tmp.append(line)
         length = max(len(line) for line in lines_tmp)
     else:
-        length = max(len(line) for line in lines)
+        length = max(len(line) for line in lines if line)
     for line in lines:
         if line is None:
             continue
