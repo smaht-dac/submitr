@@ -50,9 +50,8 @@ def check_metadata_version(file: str, portal: Portal,
         if metadata_template_version:
             if version != metadata_template_version:
                 if not quiet:
-                    print_metadata_version_warning(version,
-                                                   metadata_template_version,
-                                                   metadata_template_url, printf=printf)
+                    print_metadata_version_warning(
+                        version, metadata_template_version, metadata_template_url, printf=printf)
                     if not yes_or_no("Do you want to continue with your metadata file?"):
                         exit(0)
             elif not quiet:
