@@ -3035,7 +3035,8 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         return keys_file
 
     if not env and not env_from_env:
-        env_from_env = os.environ.get("SMAHT_ENV")
+        if env_from_env := os.environ.get("SMAHT_ENV"):
+            env = env_from_env
 
     raise_exception = True
     if not app:

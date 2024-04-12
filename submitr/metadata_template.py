@@ -3,7 +3,7 @@ import requests
 from contextlib import contextmanager
 from functools import lru_cache
 from itertools import islice
-from typing import Callable, Optional, Tuple
+from typing import Optional, Tuple
 from dcicutils.command_utils import yes_or_no
 from dcicutils.data_readers import Excel
 from dcicutils.misc_utils import get_error_message, PRINT
@@ -31,14 +31,12 @@ GOOGLE_SHEETS_EXPORT_BASE_URL = "https://spreadsheets.google.com/feeds/download/
 
 
 def check_metadata_version(file: str, portal: Portal,
-                           printf: Optional[Callable] = None,
                            quiet: bool = False) -> Tuple[Optional[str], Optional[str]]:
     """
     Higher level function, to be called from command(s), e.g. submit-metadata-bundle, to check
     metadata latest HMS DBMI smaht-submitr metadata template against the user's metadata file;
     printing a warning if out of date; with option to quit/exit if so.
     """
-    printf = printf if callable(printf) else PRINT
     if is_excel_file_name(file) and (version := _get_version_from_metadata_template_based_file(portal, file)):
         # Here it looks like the specified metadata Excel file is based on the HMS metadata template.
         metadata_template_url = get_metadata_template_url_from_portal(portal)
@@ -47,7 +45,7 @@ def check_metadata_version(file: str, portal: Portal,
             if version != metadata_template_version:
                 if not quiet:
                     print_metadata_version_warning(
-                        version, metadata_template_version, metadata_template_url, printf=printf)
+                        version, metadata_template_version, metadata_template_url)
                     if not yes_or_no("Do you want to continue with your metadata file?"):
                         exit(0)
             elif not quiet:
@@ -91,9 +89,7 @@ def get_metadata_template_version_cell_from_portal(portal: Portal) -> Optional[s
 
 def print_metadata_version_warning(this_metadata_template_version: str,
                                    metadata_template_version: str,
-                                   metadata_template_url: Optional[str] = None,
-                                   printf: Optional[Callable] = None) -> None:
-    printf = printf if callable(printf) else PRINT
+                                   metadata_template_url: Optional[str] = None) -> None:
     if this_metadata_template_version != metadata_template_version:
         print_boxed([
             f"===",
@@ -164,46 +160,43 @@ def _get_version_from_metadata_template_based_file(portal: Portal, excel_file: s
 
 def download_metadata_template(portal: Portal,
                                output_excel_file: Optional[str],
-                               verbose: bool = False,
-                               printf: Optional[Callable] = None) -> Tuple[Optional[str], Optional[str]]:
+                               verbose: bool = False) -> Tuple[Optional[str], Optional[str]]:
     """
     Downloads (exports) the latest HMS DBMI smaht-submitr metadata template spreadsheet
     from Google Sheets to the given output Excel file name, and returns that given file
     name if successful. If it can not be downloaded, for whatever reason, then returns
     None. If the verbose option is given verbose argument is True then prints what is
-    going on, e.g. for use by CLI; uses the given print function (printf) to do this or
-    just the print builtin if None is specified. The given file must have a .xlsx suffix.
+    going on, e.g. for use by CLI. The given file must have a .xlsx suffix.
     """
-    printf = printf if callable(printf) else PRINT
     metadata_template_sheet_id = get_metadata_template_sheet_id_from_portal(portal)
     metadata_template_export_url = f"{GOOGLE_SHEETS_EXPORT_BASE_URL}&key={metadata_template_sheet_id}"
     if not (output_excel_file.endswith(".xlsx")):
         if verbose:
-            printf("Output file name for metatdata template must have a .xlsx suffix.")
+            PRINT("Output file name for metatdata template must have a .xlsx suffix.")
         return None, None
     if verbose:
-        printf(f"Fetching metadata template from: {metadata_template_export_url}")
+        PRINT(f"Fetching metadata template from: {metadata_template_export_url}")
     try:
         if (response := requests.get(metadata_template_export_url)).status_code != 200:
             if verbose:
-                printf(f"Cannot find metadata template: {metadata_template_export_url}")
+                PRINT(f"Cannot find metadata template: {metadata_template_export_url}")
             return None, None
     except Exception as e:
         if verbose:
-            printf(f"Cannot fetch metadata template: {metadata_template_export_url}\n{get_error_message(e)}")
+            PRINT(f"Cannot fetch metadata template: {metadata_template_export_url}\n{get_error_message(e)}")
         return None, None
     if verbose:
-        printf(f"Writing metadata template to: {output_excel_file}")
+        PRINT(f"Writing metadata template to: {output_excel_file}")
     try:
         with io.open(output_excel_file, "wb") as f:
             f.write(response.content)
     except Exception as e:
         if verbose:
-            printf(f"Cannot save metadata template: {output_excel_file}\n{get_error_message(e)}")
+            PRINT(f"Cannot save metadata template: {output_excel_file}\n{get_error_message(e)}")
         return None, None
     version = _get_version_from_metadata_template_based_file(portal, output_excel_file)
     if verbose:
-        printf(f"Metadata template file: {output_excel_file}{f' | Version: {version}' if version else ''}")
+        PRINT(f"Metadata template file: {output_excel_file}{f' | Version: {version}' if version else ''}")
     return output_excel_file, version
 
 

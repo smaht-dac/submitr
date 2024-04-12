@@ -49,8 +49,9 @@ def main() -> None:
 
     def define_portal() -> None:
         nonlocal args
-        return _define_portal(env=args.env, keys_file=args.keys,
-                              report=args.verbose, ping=True, note="Metadata Template")
+        portal = _define_portal(env=args.env, keys_file=args.keys,
+                                report=args.verbose, ping=True, note="Metadata Template")
+        return portal
 
     def print_metadata_template_info() -> None:
         portal = define_portal()
