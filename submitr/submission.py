@@ -3157,8 +3157,8 @@ def _print_metadata_file_info(file: str, env: str,
         PRINT(f"Modified: {modified}")
     if md5 := get_file_md5(file):
         PRINT(f"MD5: {md5}")
-    if etag := get_file_md5_like_aws_s3_etag(file):
-        PRINT(f"S3 ETag: {etag}{' | Same as MD5' if md5 == etag else ''}")
+    if (etag := get_file_md5_like_aws_s3_etag(file)) and etag != md5:
+        PRINT(f"S3 ETag: {etag}")
     sheet_lines = []
     if is_excel_file_name(file):
         from dcicutils.data_readers import Excel
