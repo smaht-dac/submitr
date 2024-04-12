@@ -43,7 +43,7 @@ def check_metadata_version(file: str, portal: Portal,
     printing a warning if out of date; with option to quit/exit if so.
     """
     printf = printf if callable(printf) else PRINT
-    if is_excel_file_name(file) and (version := get_version_from_metadata_template_based_file(portal, file)):
+    if is_excel_file_name(file) and (version := _get_version_from_metadata_template_based_file(portal, file)):
         # Here it looks like the specified metadata Excel file is based on the HMS metadata template.
         metadata_template_url = get_metadata_template_url_from_portal(portal)
         metadata_template_version = get_metadata_template_version_from_portal(portal)
@@ -114,7 +114,7 @@ def print_metadata_version_warning(this_metadata_template_version: str,
         ])
 
 
-def get_version_from_metadata_template_based_file(portal: Portal, excel_file: Optional[str] = None) -> Optional[str]:
+def _get_version_from_metadata_template_based_file(portal: Portal, excel_file: str) -> Optional[str]:
     """
     Returns the version of the given metadata Excel spreadsheet specified by the given Excel
     file name, that is, if this spreadsheet looks like it is based on our HMS DBMI metadata
@@ -126,7 +126,13 @@ def get_version_from_metadata_template_based_file(portal: Portal, excel_file: Op
     """
     def get_cell_value_from_excel(excel: Excel, sheet_name: str, cell: str) -> Optional[str]:  # noqa
         def get_sheet_row_column_from_cell(cell: str) -> Tuple[int, int]:  # noqa
-            return 0, 1  # TODO: Mapping for example (in fact in our case) B1:B1 to 0, 1
+            # TODO: Mapping for example (in fact in our case) B1:B1 to 0, 1 ...
+            return 0, 1
+        def parse_metadata_template_version(value: str) -> Optional[str]:  # noqa
+            # Parses and returns the version from a string like "version: 1.2.3".
+            if value.strip().lower().startswith("version:"):
+                return value.replace("version:", "").strip()
+            return None
         try:
             if sheet_name not in excel.sheet_names:
                 return None
@@ -134,16 +140,13 @@ def get_version_from_metadata_template_based_file(portal: Portal, excel_file: Op
                 row_index, column_index = get_sheet_row_column_from_cell(cell)
                 if (row_index == 0) and (header := sheet_reader.header):
                     if (column_index < len(header)) and (version := header[column_index]):
-                        return _parse_metadata_template_version(version)
+                        return parse_metadata_template_version(version)
                 elif (row_index > 0) and (row := next(islice(sheet_reader, row_index - 1, None))):
                     if (row_column_values := list(row.values())) and (column_index < len(row_column_values)):
                         if version := row_column_values[column_index]:
-                            return _parse_metadata_template_version(version)
+                            return parse_metadata_template_version(version)
         except Exception:
             return None
-    if not excel_file:
-        with _download_metadata_template_to_tmpfile(portal) as excel_file:
-            return get_version_from_metadata_template_based_file(portal, excel_file) if excel_file else None
     try:
         if not (excel := Excel(excel_file, include_hidden_sheets=True)):
             return None
@@ -199,7 +202,7 @@ def download_metadata_template(portal: Portal,
         if verbose:
             printf(message)
         return (None, None)
-    version = get_version_from_metadata_template_based_file(portal, output_excel_file)
+    version = _get_version_from_metadata_template_based_file(portal, output_excel_file)
     if verbose:
         printf(f"Metadata template file: {output_excel_file}{f' | Version: {version}' if version else ''}")
     return output_excel_file, version
@@ -214,12 +217,3 @@ def _download_metadata_template_to_tmpfile(portal: Portal) -> Optional[str]:
     with temporary_file(suffix=".xlsx") as filename:
         if download_metadata_template(portal, filename):
             yield filename
-
-
-def _parse_metadata_template_version(value: str) -> Optional[str]:
-    """
-    Parses and returns the version from a string like "version: 1.2.3".
-    """
-    if value.strip().lower().startswith("version:"):
-        return value.replace("version:", "").strip()
-    return None
