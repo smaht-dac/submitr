@@ -57,6 +57,8 @@ OPTIONS:
 --output OUTPUT-FILE
   Writes all logging output to the specified file;
   and refrains from printing lengthy content to output/stdout.
+--info
+  Displays ONLY info about the specified metadata file; nothing else.
 --verbose
   Displays more verbose output.
 --help
@@ -104,11 +106,9 @@ ADVANCED OPTIONS:
 --json
   Displays the submitted metadata as formatted JSON.
 --json-only
-  Displays ONLY the submitted metadata as formatted JSON; nothing else.
+  Displays ONLY the specified metadata as formatted JSON; nothing else.
 --info
-  Displays ONLY info about the submitted metadata; nothing else.
---info
-  Displays ONLY info about the submitted metadata; nothing else.
+  Displays ONLY info about the specified metadata file; nothing else.
 --details
   Displays slightly more detailed output.
 --noprogress
