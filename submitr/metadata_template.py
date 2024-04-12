@@ -9,28 +9,24 @@ from dcicutils.data_readers import Excel
 from dcicutils.misc_utils import get_error_message, PRINT
 from dcicutils.portal_utils import Portal
 from dcicutils.tmpfile_utils import temporary_file
-from submitr.utils import is_excel_file_name, print_boxed
+from submitr.utils import is_excel_file_name, print_boxed, remove_punctuation_and_space
 
 
-# This module provides functions to get the version of our (HMS DBMI) smaht-submitr
-# metadata template file which resides in Google Sheets; as well as to export and
-# download this template to a local Excel file; and to get the version from a
-# given metadata Excel file. This version of which we speak is simply a convention
-# we use of putting a string like "version: 1.2.3" in the first row of the second
-# column of the (main Overview/Guidelines sheet of the) spreadsheet.
+# This module provides functions to get the version of our (HMS DBMI) smaht-submitr metadata
+# template file which resides in Google Sheets; as well as to export and download this template
+# to a local Excel file; and to get the version from a given metadata Excel file. This version
+# of which we speak is simply a convention we use of putting a string like "version: 1.2.3" in
+# the first row of the second column of the (main Overview/Guidelines sheet of the) spreadsheet.
 #
-# The main use of all this is to tell the smaht-submitr submit-metadata-bundle
-# command user whether or not the template they have based their metadata file
-# on (if in fact it they have based their metadata on our HMS template) is the
-# latest version. A common model for many users being to manually export and
-# download the HMS metadata template from Google Sheets, and modify if it.
+# The main use of all this is to tell the smaht-submitr submit-metadata-bundle command user
+# whether or not the template they have based their metadata file on, if in fact they have based
+# their metadata on our HMS template, is the latest version. A common model for many users being
+# to manually export and download the HMS metadata template from Google Sheets, and modify it.
 #
 # Another use, just as a convenience, is to be able to download HMS metadata
 # template to a local Excel file (see the get-metadata-template command).
-#
-# This URL is used for exporting and downloading the Google Sheets spreadsheet.
-# as opposed the the Google API key which is used to access the Google Sheets
-# spreadsheet directly for the Google Sheets API in order to get the spreadsheet version.
+
+# This URL is used for exporting/downloading the Google Sheets spreadsheet.
 GOOGLE_SHEETS_EXPORT_BASE_URL = "https://spreadsheets.google.com/feeds/download/spreadsheets/Export?exportFormat=xlsx"
 
 
@@ -134,8 +130,14 @@ def _get_version_from_metadata_template_based_file(portal: Portal, excel_file: s
             if value.strip().lower().startswith("version:"):
                 return value.replace("version:", "").strip()
             return None
+        def find_excel_sheet() -> Optional[str]:  # noqa
+            nonlocal excel, sheet_name
+            normalized_sheet_name = remove_punctuation_and_space(sheet_name)
+            for excel_sheet_name in excel.sheet_names:
+                if remove_punctuation_and_space(excel_sheet_name) == normalized_sheet_name:
+                    return excel_sheet_name
         try:
-            if sheet_name not in excel.sheet_names:
+            if not (sheet_name := find_excel_sheet()):
                 return None
             if sheet_reader := excel.sheet_reader(sheet_name):
                 row_index, column_index = get_sheet_row_column_from_cell(cell)

@@ -12,6 +12,7 @@ import pytz
 import re
 import requests
 from signal import signal, SIGINT
+import string
 from typing import Any, Callable, List, Optional, Tuple, Union
 from dcicutils.misc_utils import PRINT, str_to_bool
 
@@ -348,6 +349,10 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
     except Exception:
         pass
     return None
+
+
+def remove_punctuation_and_space(value: str) -> str:
+    return "".join(c for c in value if c not in string.punctuation + " ") if isinstance(value, str) else ""
 
 
 @contextmanager
