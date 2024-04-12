@@ -174,33 +174,29 @@ def download_metadata_template(portal: Portal,
     metadata_template_sheet_id = get_metadata_template_sheet_id_from_portal(portal)
     metadata_template_export_url = f"{GOOGLE_SHEETS_EXPORT_BASE_URL}&key={metadata_template_sheet_id}"
     if not (output_excel_file.endswith(".xlsx") or output_excel_file.endswith(".xls")):
-        message = "Output file name for metatdata template must have a .xlsx or .xls suffix."
         if verbose:
-            printf(message)
-        return (None, None)
+            printf("Output file name for metatdata template must have a .xlsx or .xls suffix.")
+        return None, None
     if verbose:
         printf(f"Fetching metadata template from: {metadata_template_export_url}")
     try:
         if (response := requests.get(metadata_template_export_url)).status_code != 200:
-            message = f"Cannot find metadata template: {metadata_template_export_url}"
             if verbose:
-                printf(message)
-            return (None, None)
+                printf(f"Cannot find metadata template: {metadata_template_export_url}")
+            return None, None
     except Exception as e:
-        message = f"Cannot fetch metadata template: {metadata_template_export_url}\n{get_error_message(e)}"
         if verbose:
-            printf(message)
-        return (None, None)
+            printf(f"Cannot fetch metadata template: {metadata_template_export_url}\n{get_error_message(e)}")
+        return None, None
     if verbose:
         printf(f"Writing metadata template to: {output_excel_file}")
     try:
         with io.open(output_excel_file, "wb") as f:
             f.write(response.content)
     except Exception as e:
-        message = f"Cannot save metadata template: {output_excel_file}\n{get_error_message(e)}"
         if verbose:
-            printf(message)
-        return (None, None)
+            printf(f"Cannot save metadata template: {output_excel_file}\n{get_error_message(e)}")
+        return None, None
     version = _get_version_from_metadata_template_based_file(portal, output_excel_file)
     if verbose:
         printf(f"Metadata template file: {output_excel_file}{f' | Version: {version}' if version else ''}")
