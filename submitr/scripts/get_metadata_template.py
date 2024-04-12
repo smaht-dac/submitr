@@ -1,5 +1,3 @@
-import os
-from dcicutils.portal_utils import Portal
 from submitr.metadata_template import (
     download_metadata_template,
     get_metadata_template_url_from_portal,
