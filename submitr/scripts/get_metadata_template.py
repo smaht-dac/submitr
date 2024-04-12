@@ -1,8 +1,8 @@
 from dcicutils.portal_utils import Portal
 from submitr.metadata_template import (
-    download_hms_metadata_template,
-    get_hms_metadata_template_url_from_portal,
-    get_hms_metadata_template_version_from_portal
+    download_metadata_template,
+    get_metadata_template_url_from_portal,
+    get_metadata_template_version_from_portal
 )
 from submitr.scripts.cli_utils import CustomArgumentParser
 
@@ -39,13 +39,13 @@ def main():
 
     portal = Portal(args.env)
     if args.info:
-        print(f"HMS Metadata Template URL: {get_hms_metadata_template_url_from_portal(portal)}")
-        print(f"HMS Metadata Template Version: {get_hms_metadata_template_version_from_portal(portal)}")
+        print(f"HMS Metadata Template URL: {get_metadata_template_url_from_portal(portal)}")
+        print(f"HMS Metadata Template Version: {get_metadata_template_version_from_portal(portal)}")
     elif not args.output_excel_file:
         print("Must specify the name of an Excel file to write to.")
         exit(1)
     elif args.output_excel_file:
-        output_excel_file, version = download_hms_metadata_template(portal, args.output_excel_file, verbose=True)
+        output_excel_file, version = download_metadata_template(portal, args.output_excel_file, verbose=True)
 
 
 if __name__ == "__main__":

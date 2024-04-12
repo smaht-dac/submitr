@@ -3180,12 +3180,13 @@ def _print_metadata_file_info(file: str, env: str, refs: bool = False, output_fi
         else:
             for ref in sorted(refs):
                 PRINT(f"- {ref}")
-    this_metadata_template_version, hms_metadata_template_version = check_metadata_version(file, quiet=True)
+    this_metadata_template_version, current_metadata_template_version = check_metadata_version(file, quiet=True)
     if this_metadata_template_version:
-        if this_metadata_template_version == hms_metadata_template_version:
-            PRINT(f"Based on the latest HMS metadata template: {hms_metadata_template_version} ✓")
+        if this_metadata_template_version == current_metadata_template_version:
+            PRINT(f"Based on the latest HMS metadata template: {current_metadata_template_version} ✓")
         else:
-            print_metadata_version_warning(this_metadata_template_version, hms_metadata_template_version, printf=PRINT)
+            print_metadata_version_warning(this_metadata_template_version,
+                                           current_metadata_template_version, printf=PRINT)
 
 
 def _ping(app: str, env: str, server: str, keys_file: str,

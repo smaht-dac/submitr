@@ -33,41 +33,24 @@ from submitr.utils import is_excel_file_name, print_boxed
 # spreadsheet directly for the Google Sheets API in order to get the spreadsheet version.
 GOOGLE_SHEETS_EXPORT_BASE_URL = "https://spreadsheets.google.com/feeds/download/spreadsheets/Export?exportFormat=xlsx"
 
-# These define the location of the version info within our HMS metadata template.
-# By convention we put this in a string like "version: 1.2.3." in the first row
-# of the second column of the (main Overview/Guidelines sheet of the) spreadsheet;
-# this is what is normally considered the "header" row. For an exported/downloaded
-# Excel version of the spreadsheet we need the header index column; for reading
-# the version directly from Google Sheets using the Google Sheets API we need
-# the cell identifer or "range" which is B1:B1.
-HMS_METADATA_TEMPLATE_MAIN_SHEET_VERSION_HEADER_COLUMN_INDEX = 1
 
-
-def download_hms_metadata_template(portal: Portal,
-                                   output_excel_file: Optional[str],
-                                   raise_exception: bool = False,
-                                   verbose: bool = False,
-                                   printf: Optional[Callable] = None) -> Tuple[Optional[str], Optional[str]]:
+def download_metadata_template(portal: Portal,
+                               output_excel_file: Optional[str],
+                               verbose: bool = False,
+                               printf: Optional[Callable] = None) -> Tuple[Optional[str], Optional[str]]:
     """
     Downloads (exports) the latest HMS DBMI smaht-submitr metadata template spreadsheet
     from Google Sheets to the given output Excel file name, and returns that given file
     name if successful. If it can not be downloaded, for whatever reason, then returns
-    None (or raises an exception if the raise_exception arg is True). If the verbose
-    option is given verbose argument is True then prints what is going on, e.g. for
-    use by CLI; uses the given print function (printf) to do this or just the print
-    builtin if None is specified. The given file must have a .xlsx suffix.
-
-    The Google Sheets ID of our HMS DBMI metadata template in defined by
-    the HMS_METADATA_TEMPLATE_ID constant (defined above); and its export
-    URL is defined by the HMS_METADATA_TEMPLATE_EXPORT_URL constant (defined above).
+    None. If the verbose option is given verbose argument is True then prints what is
+    going on, e.g. for use by CLI; uses the given print function (printf) to do this or
+    just the print builtin if None is specified. The given file must have a .xlsx suffix.
     """
     printf = printf if callable(printf) else PRINT
-    metadata_template_sheet_id = get_hms_metadata_template_sheet_id_from_portal(portal)
+    metadata_template_sheet_id = get_metadata_template_sheet_id_from_portal(portal)
     metadata_template_export_url = f"{GOOGLE_SHEETS_EXPORT_BASE_URL}&key={metadata_template_sheet_id}"
     if not (output_excel_file.endswith(".xlsx") or output_excel_file.endswith(".xls")):
         message = "Output file name for metatdata template must have a .xlsx or .xls suffix."
-        if raise_exception:
-            raise Exception(message)
         if verbose:
             printf(message)
         return (None, None)
@@ -76,15 +59,11 @@ def download_hms_metadata_template(portal: Portal,
     try:
         if (response := requests.get(metadata_template_export_url)).status_code != 200:
             message = f"Cannot find metadata template: {metadata_template_export_url}"
-            if raise_exception:
-                raise Exception(message)
             if verbose:
                 printf(message)
             return (None, None)
     except Exception as e:
         message = f"Cannot fetch metadata template: {metadata_template_export_url}\n{get_error_message(e)}"
-        if raise_exception:
-            raise Exception(message)
         if verbose:
             printf(message)
         return (None, None)
@@ -95,97 +74,91 @@ def download_hms_metadata_template(portal: Portal,
             f.write(response.content)
     except Exception as e:
         message = f"Cannot save metadata template: {output_excel_file}\n{get_error_message(e)}"
-        if raise_exception:
-            raise Exception(message)
         if verbose:
             printf(message)
         return (None, None)
-    version = get_version_from_hms_metadata_template_based_file(portal, output_excel_file)
+    version = get_version_from_metadata_template_based_file(portal, output_excel_file)
     if verbose:
         printf(f"Metadata template file: {output_excel_file}{f' | Version: {version}' if version else ''}")
     return output_excel_file, version
 
 
-def get_version_from_hms_metadata_template_based_file(portal: Portal,
-                                                      excel_file: Optional[str] = None,
-                                                      raise_exception: bool = False) -> Optional[str]:
+def get_version_from_metadata_template_based_file(portal: Portal, excel_file: Optional[str] = None) -> Optional[str]:
     """
     Returns the version of the given metadata Excel spreadsheet specified by the given Excel
     file name, that is, if this spreadsheet looks like it is based on our HMS DBMI metadata
     template (in Google Sheets). If no file name is given then downloads the latest HMS DBMI
     metadata template from Google Sheets (to a temporary file) and gets/returns its version.
     If the spreadsheet does not look like it is based on the HMS DBMI metadata template,
-    then returns None. If the raise_exception arg is True then raises an exception on error;
-    but note that not finding a version is NOT considered an error, but not being able to
-    load the spreadsheet IS considered an error.
+    then returns None. Note that not finding a version is NOT considered an error,
+    but not being able to load the spreadsheet IS considered an error.
     """
-    if not excel_file:
-        with _download_hms_metadata_template_to_tmpfile(portal) as excel_file:
-            return get_version_from_hms_metadata_template_based_file(portal, excel_file) if excel_file else None
-    try:
-        excel = Excel(excel_file, include_hidden_sheets=True)
-    except Exception as e:
-        if raise_exception:
-            raise Exception(f"Cannot load Excel file: {excel_file}\n{get_error_message(e)}")
-        return None
-    metadata_template_version_sheet = get_hms_metadata_template_version_sheet_from_portal(portal)
-    # Slash (and who know what else) is removed from tab name on download.
-    metadata_template_version_sheet = metadata_template_version_sheet.replace("/", "")
-    metadata_template_version_cell = get_hms_metadata_template_version_cell_from_portal(portal)
-    if excel and (metadata_template_version_sheet in excel.sheet_names):
-        if sheet_reader := excel.sheet_reader(metadata_template_version_sheet):
-            row_index, column_index = _get_sheet_row_column_from_cell(metadata_template_version_cell)
-            if row_index == 0:
-                if header := sheet_reader.header:
-                    if column_index < len(header):
-                        if version := header[column_index]:
-                            return _parse_hms_metadata_template_version(version)
-            elif row_index > 0:
-                if row := next(islice(sheet_reader, row_index - 1, None)):
+    def get_cell_value_from_excel(excel: Excel, sheet_name: str, cell: str) -> Optional[str]:  # noqa
+        def get_sheet_row_column_from_cell(cell: str) -> Tuple[int, int]:  # noqa
+            return 0, 1  # TODO: Mapping for example (in fact in our case) B1:B1 to 0, 1
+        try:
+            if sheet_name not in excel.sheet_names:
+                return None
+            if sheet_reader := excel.sheet_reader(sheet_name):
+                row_index, column_index = get_sheet_row_column_from_cell(cell)
+                if (row_index == 0) and (header := sheet_reader.header):
+                    if (column_index < len(header)) and (version := header[column_index]):
+                        return _parse_metadata_template_version(version)
+                elif (row_index > 0) and (row := next(islice(sheet_reader, row_index - 1, None))):
                     if (row_column_values := list(row.values())) and (column_index < len(row_column_values)):
                         if version := row_column_values[column_index]:
-                            return _parse_hms_metadata_template_version(version)
-    return None
+                            return _parse_metadata_template_version(version)
+        except Exception:
+            return None
+    if not excel_file:
+        with _download_metadata_template_to_tmpfile(portal) as excel_file:
+            return get_version_from_metadata_template_based_file(portal, excel_file) if excel_file else None
+    try:
+        if not (excel := Excel(excel_file, include_hidden_sheets=True)):
+            return None
+    except Exception as e:
+        return None
+    # Slash (and who know what else) is removed from tab name on download.
+    metadata_template_version_sheet = get_metadata_template_version_sheet_from_portal(portal)
+    metadata_template_version_sheet = metadata_template_version_sheet.replace("/", "")
+    metadata_template_version_cell = get_metadata_template_version_cell_from_portal(portal)
+    return get_cell_value_from_excel(excel, metadata_template_version_sheet, metadata_template_version_cell)
 
 
 @lru_cache(maxsize=1)
-def get_hms_metadata_template_info_from_portal(portal: Portal,
-                                               raise_exception: bool = False) -> Optional[dict]:
+def get_metadata_template_info_from_portal(portal: Portal) -> Optional[dict]:
     try:
         if ((metadata_template_info := portal.get("/submitr-metadata-template/version")) and
             (metadata_template_info.status_code == 200) and
             (metadata_template_info := metadata_template_info.json())):  # noqa
             return metadata_template_info
     except Exception as e:
-        if raise_exception:
-            raise Exception(f"Cannot get HMS metadata template info from portal.\n{get_error_message(e)}")
         pass
     return None
 
 
-def get_hms_metadata_template_version_from_portal(portal: Portal,
-                                                  raise_exception: bool = False) -> Optional[str]:
-    metadata_template_info = get_hms_metadata_template_info_from_portal(portal, raise_exception=raise_exception)
+def get_metadata_template_version_from_portal(portal: Portal) -> Optional[str]:
+    metadata_template_info = get_metadata_template_info_from_portal(portal)
     return metadata_template_info.get("version") if metadata_template_info else None
 
 
-def get_hms_metadata_template_url_from_portal(portal: Portal, raise_exception: bool = False) -> Optional[str]:
-    metadata_template_info = get_hms_metadata_template_info_from_portal(portal, raise_exception=raise_exception)
+def get_metadata_template_url_from_portal(portal: Portal) -> Optional[str]:
+    metadata_template_info = get_metadata_template_info_from_portal(portal)
     return metadata_template_info.get("url") if metadata_template_info else None
 
 
-def get_hms_metadata_template_sheet_id_from_portal(portal: Portal, raise_exception: bool = False) -> Optional[str]:
-    metadata_template_info = get_hms_metadata_template_info_from_portal(portal, raise_exception=raise_exception)
+def get_metadata_template_sheet_id_from_portal(portal: Portal) -> Optional[str]:
+    metadata_template_info = get_metadata_template_info_from_portal(portal)
     return metadata_template_info.get("sheet_id") if metadata_template_info else None
 
 
-def get_hms_metadata_template_version_sheet_from_portal(portal: Portal, raise_exception: bool = False) -> Optional[str]:
-    metadata_template_info = get_hms_metadata_template_info_from_portal(portal, raise_exception=raise_exception)
+def get_metadata_template_version_sheet_from_portal(portal: Portal) -> Optional[str]:
+    metadata_template_info = get_metadata_template_info_from_portal(portal)
     return metadata_template_info.get("version_sheet") if metadata_template_info else None
 
 
-def get_hms_metadata_template_version_cell_from_portal(portal: Portal, raise_exception: bool = False) -> Optional[str]:
-    metadata_template_info = get_hms_metadata_template_info_from_portal(portal, raise_exception=raise_exception)
+def get_metadata_template_version_cell_from_portal(portal: Portal) -> Optional[str]:
+    metadata_template_info = get_metadata_template_info_from_portal(portal)
     return metadata_template_info.get("version_cell") if metadata_template_info else None
 
 
@@ -198,11 +171,10 @@ def check_metadata_version(file: str, portal: Portal,
     printing a warning if out of date; with option to quit/exit if so.
     """
     printf = printf if callable(printf) else PRINT
-    if is_excel_file_name(file) and (version := get_version_from_hms_metadata_template_based_file(portal, file)):
+    if is_excel_file_name(file) and (version := get_version_from_metadata_template_based_file(portal, file)):
         # Here it looks like the specified metadata Excel file is based on the HMS metadata template.
-        # if metadata_template_version := get_hms_metadata_template_version_from_google_sheets():
-        metadata_template_url = get_hms_metadata_template_url_from_portal(portal)
-        metadata_template_version = get_hms_metadata_template_version_from_portal(portal)
+        metadata_template_url = get_metadata_template_url_from_portal(portal)
+        metadata_template_version = get_metadata_template_version_from_portal(portal)
         if metadata_template_version:
             if version != metadata_template_version:
                 if not quiet:
@@ -238,22 +210,18 @@ def print_metadata_version_warning(this_metadata_template_version: str,
         ])
 
 
-def _get_sheet_row_column_from_cell(cell: str) -> Tuple[int, int]:
-    return 0, 1  # TODO: Mapping B1:B1 to 0, 1
-
-
 @contextmanager
-def _download_hms_metadata_template_to_tmpfile(portal: Portal, raise_exception: bool = False) -> Optional[str]:
+def _download_metadata_template_to_tmpfile(portal: Portal) -> Optional[str]:
     """
-    Same as download_hms_metadata_template but downloads to a local temporary Excel file,
+    Same as download_metadata_template but downloads to a local temporary Excel file,
     as a context, so that the file is automatically deleted after usage (within the with).
     """
     with temporary_file(suffix=".xlsx") as filename:
-        if download_hms_metadata_template(portal, filename):
+        if download_metadata_template(portal, filename):
             yield filename
 
 
-def _parse_hms_metadata_template_version(value: str) -> Optional[str]:
+def _parse_metadata_template_version(value: str) -> Optional[str]:
     """
     Parses and returns the version from a string like "version: 1.2.3".
     """
