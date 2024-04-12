@@ -3004,7 +3004,8 @@ def _format_src(issue: dict) -> str:
 
 def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server: Optional[str] = None,
                    app: Optional[str] = None, keys_file: Optional[str] = None, env_from_env: bool = False,
-                   report: bool = False, verbose: bool = False, note: Optional[str] = None) -> Portal:
+                   report: bool = False, verbose: bool = False,
+                   note: Optional[str] = None, ping: bool = False) -> Portal:
 
     def get_default_keys_file():
         nonlocal app
@@ -3095,6 +3096,9 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         PRINT(f"Portal server is: {portal.server}")
         if portal.key_id and len(portal.key_id) > 2:
             PRINT(f"Portal key prefix is: {portal.key_id[:2]}******")
+    if ping and not portal.ping():
+        PRINT(f"Cannot ping Portal!")
+        exit(1)
     return portal
 
 
@@ -3170,7 +3174,7 @@ def _print_metadata_file_info(file: str, env: str, refs: bool = False, output_fi
         PRINT(f"Sheets: {nsheets} | Rows: {nrows_total}{sheet_lines}")
     portal = None
     if refs is True:
-        portal = _define_portal(env=env)
+        portal = _define_portal(env=env, ping=True)
         structured_data = StructuredDataSet(file, portal, norefs=True)
         refs = structured_data.resolved_refs
         PRINT(f"References: {len(refs) or 'None'}")
@@ -3182,7 +3186,7 @@ def _print_metadata_file_info(file: str, env: str, refs: bool = False, output_fi
             for ref in sorted(refs):
                 PRINT(f"- {ref}")
     if not portal:
-        portal = _define_portal(env=env)
+        portal = _define_portal(env=env, ping=True)
     this_metadata_template_version, current_metadata_template_version = (
         check_metadata_version(file, portal=portal, quiet=True))
     if this_metadata_template_version:
