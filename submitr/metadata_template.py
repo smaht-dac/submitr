@@ -175,9 +175,9 @@ def download_metadata_template(portal: Portal,
     printf = printf if callable(printf) else PRINT
     metadata_template_sheet_id = get_metadata_template_sheet_id_from_portal(portal)
     metadata_template_export_url = f"{GOOGLE_SHEETS_EXPORT_BASE_URL}&key={metadata_template_sheet_id}"
-    if not (output_excel_file.endswith(".xlsx") or output_excel_file.endswith(".xls")):
+    if not (output_excel_file.endswith(".xlsx")):
         if verbose:
-            printf("Output file name for metatdata template must have a .xlsx or .xls suffix.")
+            printf("Output file name for metatdata template must have a .xlsx suffix.")
         return None, None
     if verbose:
         printf(f"Fetching metadata template from: {metadata_template_export_url}")
