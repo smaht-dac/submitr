@@ -116,7 +116,7 @@ def get_version_from_metadata_template_based_file(portal: Portal, excel_file: Op
     try:
         if not (excel := Excel(excel_file, include_hidden_sheets=True)):
             return None
-    except Exception as e:
+    except Exception:
         return None
     # Slash (and who know what else) is removed from tab name on download.
     metadata_template_version_sheet = get_metadata_template_version_sheet_from_portal(portal)
@@ -132,7 +132,7 @@ def get_metadata_template_info_from_portal(portal: Portal) -> Optional[dict]:
             (metadata_template_info.status_code == 200) and
             (metadata_template_info := metadata_template_info.json())):  # noqa
             return metadata_template_info
-    except Exception as e:
+    except Exception:
         pass
     return None
 
