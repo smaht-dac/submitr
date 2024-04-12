@@ -38,7 +38,7 @@ def main():
     args = parser.parse_args(None)
 
     portal = Portal(args.env)
-    if args.info:
+    if args.info or args.output_excel_file.strip().lower() == "info":
         print(f"HMS Metadata Template URL: {get_metadata_template_url_from_portal(portal)}")
         print(f"HMS Metadata Template Version: {get_metadata_template_version_from_portal(portal)}")
     elif not args.output_excel_file:

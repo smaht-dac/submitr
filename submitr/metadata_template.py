@@ -125,8 +125,10 @@ def _get_version_from_metadata_template_based_file(portal: Portal, excel_file: s
     """
     def get_cell_value_from_excel(excel: Excel, sheet_name: str, cell: str) -> Optional[str]:  # noqa
         def get_sheet_row_column_from_cell(cell: str) -> Tuple[int, int]:  # noqa
-            # TODO: Mapping for example (in fact in our case) B1:B1 to 0, 1 ...
-            return 0, 1
+            row_column_names = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            if (len(cell) == 2) and ((c := row_column_names.find(cell[0])) >= 0) and cell[1].isdigit():
+                return int(cell[1]) - 1, c
+            return -1, -1
         def parse_metadata_template_version(value: str) -> Optional[str]:  # noqa
             # Parses and returns the version from a string like "version: 1.2.3".
             if value.strip().lower().startswith("version:"):
