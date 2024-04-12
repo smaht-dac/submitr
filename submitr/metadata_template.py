@@ -128,6 +128,7 @@ def _get_version_from_metadata_template_based_file(portal: Portal, excel_file: s
             return None
         def find_excel_sheet() -> Optional[str]:  # noqa
             nonlocal excel, sheet_name
+            # Slash (and who know what else) is removed from tab name on download.
             normalized_sheet_name = remove_punctuation_and_space(sheet_name)
             for excel_sheet_name in excel.sheet_names:
                 if remove_punctuation_and_space(excel_sheet_name) == normalized_sheet_name:
@@ -151,9 +152,7 @@ def _get_version_from_metadata_template_based_file(portal: Portal, excel_file: s
             return None
     except Exception:
         return None
-    # Slash (and who know what else) is removed from tab name on download.
     metadata_template_version_sheet = get_metadata_template_version_sheet_from_portal(portal)
-    metadata_template_version_sheet = metadata_template_version_sheet.replace("/", "")
     metadata_template_version_cell = get_metadata_template_version_cell_from_portal(portal)
     return get_cell_value_from_excel(excel, metadata_template_version_sheet, metadata_template_version_cell)
 
