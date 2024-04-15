@@ -310,7 +310,7 @@ def main(simulated_args_for_testing=None):
             PRINT(f"File does not exist: {args.bundle_filename}")
             exit(1)
         _print_metadata_file_info(args.bundle_filename, env=args.env,
-                                  refs=args.refs, files=args.files, output_file=args.output)
+                                  refs=args.refs, files=args.files, output_file=args.output, verbose=args.verbose)
         exit(0)
 
     with script_catch_errors():

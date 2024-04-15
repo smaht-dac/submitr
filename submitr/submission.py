@@ -1703,6 +1703,7 @@ def _print_submission_summary(portal: Portal, result: dict,
 def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
     file_uuid = file_object.get("uuid") or ""
     file_type = portal.get_schema_type(file_object) or ""
+    file_name = file_object.get("filename") or ""
     file_format = file_object.get("file_format", {}).get("display_title") or ""
     file_title = file_object.get("display_title") or ""
     file_accession = file_object.get("accession") or ""
@@ -1726,6 +1727,7 @@ def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
         "SMaHT Uploaded File [UUID]",
         "===",
         f"File: {file_title}" if file_title else None,
+        f"File Name: {file_name}" if file_name else None,
         f"File Type: {file_type}" if file_type else None,
         f"File Format: {file_format}" if file_format else None,
         f"File Accession: {file_accession}" if file_accession else None,
@@ -3147,7 +3149,9 @@ def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optiona
 
 
 def _print_metadata_file_info(file: str, env: str,
-                              refs: bool = False, files: bool = False, output_file: Optional[str] = None) -> None:
+                              refs: bool = False, files: bool = False,
+                              output_file: Optional[str] = None,
+                              verbose: bool = False) -> None:
     if output_file:
         set_output_file(output_file)
     PRINT(f"Metadata File: {os.path.basename(file)}")
@@ -3176,28 +3180,51 @@ def _print_metadata_file_info(file: str, env: str,
         PRINT(f"Sheets: {nsheets} | Rows: {nrows_total}{sheet_lines}")
     portal = None
     if (refs is True) or (files is True):
+        max_output = 10
         portal = _define_portal(env=env, ping=True)
         structured_data = StructuredDataSet(file, portal, norefs=True)
         if refs is True:
-            refs = structured_data.resolved_refs
-            PRINT(f"References: {len(refs) or 'None'}")
-            if output_file and len(refs) > 10:
-                PRINT_STDOUT(f"- See your output file: {output_file}")
-                for ref in sorted(refs):
-                    PRINT_OUTPUT(f"- {ref}")
-            else:
-                for ref in sorted(refs):
-                    PRINT(f"- {ref}")
+            def print_refs(refs: List[dict], max_output: int, output_file: str, verbose: bool = False) -> None:
+                def note_output():
+                    nonlocal max_output, output_file, noutput, printf, truncated
+                    noutput += 1
+                    if noutput >= max_output and output_file and not truncated:
+                        PRINT_STDOUT(f"+ Truncated results | See your output file for full listing: {output_file}")
+                        printf = PRINT_OUTPUT
+                        truncated = True
+                printf = PRINT
+                noutput = 0
+                truncated = False
+                for ref in sorted(refs, key=lambda ref: ref["path"]):
+                    printf(f"- {ref['path']} (references: {len(ref['srcs'])})")
+                    note_output()
+                    if verbose:
+                        srcs = sorted(ref["srcs"], key=lambda src: f"{src['type']}|{src['column']}|"
+                                                                   f"{str(src['row']).rjust(8)}")
+                        for src in srcs:
+                            printf(f"  - {_format_src(src)}")
+                            note_output()
+            unchecked_refs = structured_data.unchecked_refs
+            PRINT(f"References: {len(unchecked_refs)}")
+            print_refs(unchecked_refs, max_output=max_output, output_file=output_file, verbose=verbose)
         if files is True:
+            def print_files(files: List[dict], max_output: int, output_file: str, verbose: bool = False) -> None:
+                def note_output():
+                    nonlocal max_output, output_file, noutput, printf, truncated
+                    noutput += 1
+                    if noutput >= max_output and output_file and not truncated:
+                        PRINT_STDOUT(f"+ Truncated results | See your output file for full listing: {output_file}")
+                        printf = PRINT_OUTPUT
+                        truncated = True
+                printf = PRINT
+                noutput = 0
+                truncated = False
+                for file in sorted(files, key=lambda file: file["file"]):
+                    printf(f"- {file['file']} ({file['type']})")
+                    note_output()
             upload_files = structured_data.upload_files
-            PRINT(f"Files: {len(upload_files) or 'None'}")
-            if output_file and len(upload_files) > 10:
-                PRINT_STDOUT(f"- See your output file: {output_file}")
-                for upload_file in sorted(upload_files, key=lambda item: item.get("file")):
-                    PRINT_OUTPUT(f"- {upload_file}")
-            else:
-                for upload_file in sorted(upload_files, key=lambda item: item.get("file")):
-                    PRINT(f"- {upload_file.get('file')} ({upload_file.get('type')})")
+            PRINT(f"Files: {len(upload_files)}")
+            print_files(upload_files, max_output=max_output, output_file=output_file, verbose=verbose)
     if not portal:
         portal = _define_portal(env=env, ping=True)
     this_metadata_template_version, current_metadata_template_version = (
