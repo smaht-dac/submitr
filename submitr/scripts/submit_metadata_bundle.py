@@ -59,6 +59,7 @@ OPTIONS:
   and refrains from printing lengthy content to output/stdout.
 --info
   Displays ONLY info about the specified metadata file; nothing else.
+  Add --refs or --files to see (linkTo) references or (upload) files.
 --verbose
   Displays more verbose output.
 --help
