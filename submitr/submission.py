@@ -20,7 +20,8 @@ from dcicutils.file_utils import search_for_file
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
-    environ_bool, is_uuid, url_path_join, ignorable, normalize_spaces, remove_prefix
+    environ_bool, format_duration, format_size,
+    is_uuid, url_path_join, ignorable, normalize_spaces, remove_prefix
 )
 from dcicutils.progress_bar import ProgressBar
 from dcicutils.s3_utils import HealthPageKey
@@ -37,7 +38,7 @@ from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_f
 from submitr.scripts.cli_utils import get_version
 from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import (
-    format_datetime, format_duration, format_size, format_path,
+    format_datetime, format_path,
     get_file_checksum, get_file_md5, get_file_md5_like_aws_s3_etag,
     get_file_modified_datetime, get_file_size, get_s3_bucket_and_key_from_s3_uri,
     is_excel_file_name, print_boxed, keyword_as_title, tobool

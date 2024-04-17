@@ -106,47 +106,6 @@ def tobool(value: Any, fallback: bool = False) -> bool:
         return fallback
 
 
-def format_duration(seconds: Union[int, float]):
-    seconds_actual = seconds
-    seconds = round(max(seconds, 0))
-    durations = [("year", 31536000), ("day", 86400), ("hour", 3600), ("minute", 60), ("second", 1)]
-    parts = []
-    for name, duration in durations:
-        if seconds >= duration:
-            count = seconds // duration
-            seconds %= duration
-            if count != 1:
-                name += "s"
-            parts.append(f"{count} {name}")
-    if len(parts) == 0:
-        return f"{seconds_actual:.1f} seconds"
-    elif len(parts) == 1:
-        return f"{seconds_actual:.1f} seconds"
-    else:
-        return " ".join(parts[:-1]) + " " + parts[-1]
-
-
-def format_size(nbytes: Union[int, float], precision: int = 2) -> str:
-    if isinstance(nbytes, str) and nbytes.isdigit():
-        nbytes = int(nbytes)
-    elif not isinstance(nbytes, (int, float)):
-        return ""
-    UNITS = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-    MAX_UNITS_INDEX = len(UNITS) - 1
-    ONE_K = 1024
-    index = 0
-    if (precision := max(precision, 0)) and (nbytes <= ONE_K):
-        precision -= 1
-    while abs(nbytes) >= ONE_K and index < MAX_UNITS_INDEX:
-        nbytes /= ONE_K
-        index += 1
-    if index == 0:
-        nbytes = int(nbytes)
-        return f"{nbytes} byte{'s' if nbytes != 1 else ''}"
-    unit = UNITS[index]
-    return f"{nbytes:.{precision}f} {unit}"
-
-
 def format_datetime(value: datetime, verbose: bool = False) -> Optional[str]:
     if isinstance(value, str):
         if not (value := parse_datetime_iso_string_into_utc_datetime(value)):
