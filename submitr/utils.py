@@ -13,7 +13,7 @@ import re
 import requests
 from signal import signal, SIGINT
 import string
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple
 from dcicutils.misc_utils import PRINT, str_to_bool
 
 
