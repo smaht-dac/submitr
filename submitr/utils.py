@@ -8,13 +8,13 @@ import hashlib
 import os
 from pathlib import Path
 import pkg_resources
-import pytz
 import re
 import requests
 from signal import signal, SIGINT
 import string
 from typing import Any, Callable, List, Optional, Tuple
 from dcicutils.misc_utils import PRINT, str_to_bool
+from dcicutils.datetime_utils import format_datetime, parse_datetime
 
 
 ERASE_LINE = "\033[K"
@@ -104,29 +104,6 @@ def tobool(value: Any, fallback: bool = False) -> bool:
             return fallback
     else:
         return fallback
-
-
-def format_datetime(value: datetime, verbose: bool = False) -> Optional[str]:
-    if isinstance(value, str):
-        if not (value := parse_datetime_iso_string_into_utc_datetime(value)):
-            return None
-    elif not isinstance(value, datetime):
-        return None
-    try:
-        tzlocal = datetime.now().astimezone().tzinfo
-        if verbose:
-            return value.astimezone(tzlocal).strftime(f"%A, %B %-d, %Y | %-I:%M %p %Z")
-        else:
-            return value.astimezone(tzlocal).strftime(f"%Y-%m-%d %H:%M:%S %Z")
-    except Exception:
-        return None
-
-
-def parse_datetime_iso_string_into_utc_datetime(value: str) -> Optional[datetime]:
-    try:
-        return datetime.fromisoformat(value).replace(tzinfo=pytz.utc)
-    except Exception:
-        return None
 
 
 def format_path(path: str) -> str:
@@ -277,9 +254,9 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
             if releases and isinstance(this_release_info := releases.get(this_version), list) and this_release_info:
                 if isinstance(this_release_info := this_release_info[0], dict):
                     this_release_date = (
-                        parse_datetime_iso_string_into_utc_datetime(this_release_info.get("upload_time")))
+                        parse_datetime(this_release_info.get("upload_time")))
             latest_non_beta_release_date = (
-                parse_datetime_iso_string_into_utc_datetime(releases[latest_non_beta_version][0].get("upload_time")))
+                parse_datetime(releases[latest_non_beta_version][0].get("upload_time")))
             latest_beta_version = None
             latest_beta_release_date = None
             if beta:
@@ -293,7 +270,7 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
                         latest_beta_version = None
                     else:
                         latest_beta_release_date = (
-                            parse_datetime_iso_string_into_utc_datetime(latest_beta_info[1][0].get("upload_time")))
+                            parse_datetime(latest_beta_info[1][0].get("upload_time")))
                         if latest_non_beta_release_date > latest_beta_release_date:
                             latest_beta_version = None
                             latest_beta_release_date = None

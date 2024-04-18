@@ -1,7 +1,6 @@
 import ast
 import boto3
 from botocore.exceptions import NoCredentialsError as BotoNoCredentialsError
-from datetime import datetime
 from functools import lru_cache
 import io
 import json
@@ -16,6 +15,8 @@ import yaml
 # from dcicutils.env_utils import get_env_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
+from dcicutils.data_readers import Excel
+from dcicutils.datetime_utils import format_datetime
 from dcicutils.file_utils import search_for_file
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
@@ -38,7 +39,7 @@ from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_f
 from submitr.scripts.cli_utils import get_version
 from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import (
-    format_datetime, format_path,
+    format_path,
     get_file_checksum, get_file_md5, get_file_md5_like_aws_s3_etag,
     get_file_modified_datetime, get_file_size, get_s3_bucket_and_key_from_s3_uri,
     is_excel_file_name, print_boxed, keyword_as_title, tobool
@@ -513,6 +514,7 @@ def _initiate_server_ingestion_process(
         "ingestion_directory": os.path.dirname(ingestion_filename) if ingestion_filename else None,
         "datafile_size": datafile_size or get_file_size(ingestion_filename),
         "datafile_checksum": datafile_checksum or get_file_checksum(ingestion_filename),
+        "submitr_version": get_version(),
         "user": json.dumps(user) if user else None
     }
 
@@ -981,13 +983,15 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
                 continue
             submission_uuid = submission.get("uuid")
             submission_created = submission.get("date_created")
-            line = f"{submission_uuid}: {_format_portal_object_datetime(submission_created)}"
+            line = f"{submission_uuid}: {format_datetime(submission_created)}"
             if tobool(submission.get("parameters", {}).get("validate_only")):
-                line += f" (V)"
+                line += f" [V]"
             else:
-                line += f" (S)"
+                line += f" [S]"
             if submission.get("processing_status", {}).get("outcome") == "success":
-                line += f" ▶ OK"
+                line += f" ✓"
+            else:
+                line += f" ✗"
             lines.append(line)
             if details:
                 line_detail = ""
@@ -1090,7 +1094,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             # FYI this is a normal ordering of phases in practice ...
             # ingester_queued              PROGRESS_INGESTER.QUEUED
             # ingester_initiate            PROGRESS_INGESTER.INITIATE
-            # ingester_parse_initiate      PROGRESS_INGESTER.PARSE_LOAD_INITIATE
+            # # ingester_parse_initiate      PROGRESS_INGESTER.PARSE_LOAD_INITIATE
             # parse_start                  PROGRESS_PARSE.LOAD_START
             # parse_done                   PROGRESS_PARSE.LOAD_DONE
             # ingester_parse_done          PROGRESS_INGESTER.PARSE_LOAD_DONE
@@ -1291,6 +1295,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 PRINT("\nServer validation errors were encountered for this metadata.")
                 PRINT("You will need to correct any errors and resubmit via submit-metadata-bundle.")
                 exit(1)
+        if check_status != "success":
+            exit(1)
         PRINT("Validation results (server): OK")
         if not yes_or_no("Do you want to now continue with the submission for this metadata?"):
             PRINT("Exiting with no action.")
@@ -1534,6 +1540,7 @@ def _print_submission_summary(portal: Portal, result: dict,
     submission_type = "Submission"
     validation = None
     was_server_validation_timeout = False
+    submitr_version = None
     if submission_parameters := result.get("parameters", {}):
         if validation := tobool(submission_parameters.get("validate_only")):
             submission_type = "Validation"
@@ -1548,7 +1555,7 @@ def _print_submission_summary(portal: Portal, result: dict,
             lines.append(f"Submission File: {submission_file}")
     if submission_uuid := result.get("uuid"):
         lines.append(f"{submission_type} ID: {submission_uuid}")
-    if date_created := _format_portal_object_datetime(result.get("date_created"), True):
+    if date_created := format_datetime(result.get("date_created"), verbose=True):
         lines.append(f"{submission_type} Time: {date_created}")
     if submission_parameters:
         extra_file_info = ""
@@ -1563,6 +1570,7 @@ def _print_submission_summary(portal: Portal, result: dict,
             extra_file_info += f"Checksum: {datafile_checksum}"
         if extra_file_info:
             lines.append(f"Submission File Info: {extra_file_info}")
+        submitr_version = submission_parameters.get("submitr_version")
     if validation:
         lines.append(f"Validation Only: Yes ◀ ◀ ◀")
         if submission_parameters and (associated_submission_uuid := submission_parameters.get("submission_uuid")):
@@ -1688,17 +1696,17 @@ def _print_submission_summary(portal: Portal, result: dict,
                     lines.append(f"Upload File Accession ID: {upload_file_accession_name}")
                 if upload_file_type:
                     lines.append(f"Upload File Type: {upload_file_type}")
+    if isinstance(toplevel_errors := result.get("errors"), list):
+        errors.extend(toplevel_errors)
     if lines:
-        lines = ["===", f"SMaHT {'Validation' if validation else 'Submission'} Summary [UUID]", "==="] + lines + ["==="]
+        lines = ["===", f"SMaHT {'Validation' if validation else 'Submission'} Summary"
+                        f"{f' ({submitr_version})' if submitr_version else ''} [UUID]", "==="] + lines + ["==="]
         if errors and include_errors:
             lines += ["ERRORS ITEMIZED BELOW ...", "==="]
         print_boxed(lines, right_justified_macro=("[UUID]", lambda: submission_uuid), printf=PRINT)
         if errors and include_errors:
             for error in errors:
-                if check_submission_script:
-                    PRINT(f"{_format_server_error(error, indent=2, debug=debug)}")
-                else:
-                    PRINT(f"- {_format_server_error(error, indent=2, debug=debug)}")
+                PRINT(f"- {_format_server_error(error, indent=2, debug=debug)}")
 
 
 def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
@@ -2864,9 +2872,6 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
             message = (
                 f"▶ Items: {nobjects} | Checked: {ncreates + nupdates}"
                 f" ‖ Creates: {ncreates} | Updates: {nupdates} | Lookups: {nlookups}")
-            # if debug:
-            #    message += f" | Rate: {rate:.1f}%"
-            # message += " | Progress" # xyzzy
             bar.set_description(message)
         return progress_report
 
@@ -3145,10 +3150,6 @@ def _extract_accession_id(value: str) -> Optional[str]:
             return value
 
 
-def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optional[str]:  # noqa
-    return format_datetime(datetime.fromisoformat(value))
-
-
 def _print_metadata_file_info(file: str, env: str,
                               refs: bool = False, files: bool = False,
                               output_file: Optional[str] = None,
@@ -3166,19 +3167,14 @@ def _print_metadata_file_info(file: str, env: str,
         PRINT(f"S3 ETag: {etag}")
     sheet_lines = []
     if is_excel_file_name(file):
-        from dcicutils.data_readers import Excel
         excel = Excel(file)
         nrows_total = 0
-        nsheets = 0
         for sheet_name in sorted(excel.sheet_names):
-            nsheets += 1
-            nrows = 0
-            for row in excel.sheet_reader(sheet_name):
-                nrows += 1
+            nrows = excel.sheet_reader(sheet_name).nrows
             sheet_lines.append(f"- Sheet: {sheet_name} ▶ Rows: {nrows}")
             nrows_total += nrows
         sheet_lines = "\n" + "\n".join(sheet_lines)
-        PRINT(f"Sheets: {nsheets} | Rows: {nrows_total}{sheet_lines}")
+        PRINT(f"Sheets: {excel.nsheets} | Rows: {nrows_total}{sheet_lines}")
     portal = None
     if (refs is True) or (files is True):
         max_output = 10
