@@ -63,7 +63,7 @@ PROGRESS_GET_INGESTION_SUBMISSION_INTERVAL = 3
 # How often we actually get the IngestionSubmission object from the server (seconds).
 PROGRESS_GET_INGESTION_STATUS_INTERVAL = 1
 # How often the (tqdm) progress meter updates (seconds).
-PROGRESS_INTERVAL = 0.2
+PROGRESS_INTERVAL = 0.15
 # How many times the (tqdm) progress meter updates (derived from above).
 PROGRESS_MAX_CHECKS = round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL)
 
@@ -1315,6 +1315,11 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             consortia = [consortium]
         if submission_center := check_parameters.get("submission_center"):
             submission_centers = [submission_center]
+        if isinstance(autoadd := check_parameters.get("autoadd"), str):
+            try:
+                autoadd = json.loads(autoadd)
+            except Exception:
+                autoadd = None
         if isinstance(user := check_parameters.get("user"), str):
             try:
                 user = json.loads(user)
@@ -1330,7 +1335,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             validation_ingestion_submission_object=check_response,
             consortia=consortia,
             submission_centers=submission_centers,
-            autoadd=check_parameters.get("autoadd"),
+            autoadd=autoadd,
             datafile_size=check_parameters.get("datafile_size"),
             datafile_checksum=check_parameters.get("datafile_checksum"),
             user=user,
