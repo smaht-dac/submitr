@@ -985,7 +985,7 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
                 continue
             submission_uuid = submission.get("uuid")
             submission_created = submission.get("date_created")
-            line = f"{submission_uuid}: {format_datetime(submission_created)}"
+            line = f"{submission_uuid}: {format_datetime(submission_created, notz=True)}"
             if tobool(submission.get("parameters", {}).get("validate_only")):
                 line += f" [V]"
             else:
@@ -1730,6 +1730,7 @@ def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
     file_md5_content = file_object.get("content_md5sum") or ""
     file_md5_submitted = file_object.get("submitted_md5sum") or ""
     file_submitted_by = file_object.get("submitted_by", {}).get("display_title") or ""
+    file_submitted_id = file_object.get("submitted_id") or ""
     file_created = format_datetime(file_object.get("date_created")) or ""
     file_modified = format_datetime(file_object.get("last_modified", {}).get("date_modified")) or ""
     file_modified_by = file_object.get("last_modified", {}).get("modified_by", {}).get("display_title") or ""
@@ -1741,6 +1742,8 @@ def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
     lines = [
         "===",
         "SMaHT Uploaded File [UUID]",
+        f"===",
+        f"{file_submitted_id}" if file_submitted_id else None,
         "===",
         f"File: {file_title}" if file_title else None,
         f"File Name: {file_name}" if file_name else None,
@@ -1748,9 +1751,9 @@ def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
         f"File Format: {file_format}" if file_format else None,
         f"File Accession: {file_accession}" if file_accession else None,
         f"===",
-        f"File Status: {file_status.title()}" if file_status else None,
-        f"File Size: {file_size_formatted} ({file_size} bytes)" if file_size else None,
-        f"File Checksum: {file_md5}" if file_md5 else None,
+        f"Status: {file_status.title()}" if file_status else None,
+        f"Size: {file_size_formatted} ({file_size} bytes)" if file_size else None,
+        f"Checksum: {file_md5}" if file_md5 else None,
         f"Content Checksum: {file_md5_content}" if file_md5_content else None,
         f"Submitted Checksum: {file_md5_submitted}" if file_md5_submitted else None,
         f"===",
