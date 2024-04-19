@@ -58,10 +58,12 @@ GENERIC_SCHEMA_TYPE = 'FileOther'
 
 # Maximum amount of time (approximately) we will wait for a response from server (seconds).
 PROGRESS_TIMEOUT = 60 * 10  # ten minutes (note this is for both server validation and submission)
-# How often we actually check the server (seconds).
-PROGRESS_CHECK_SERVER_INTERVAL = 3
+# How often we actually get the IngestionSubmission object from the server (seconds).
+PROGRESS_GET_INGESTION_SUBMISSION_INTERVAL = 3
+# How often we actually get the IngestionSubmission object from the server (seconds).
+PROGRESS_GET_INGESTION_STATUS_INTERVAL = 1
 # How often the (tqdm) progress meter updates (seconds).
-PROGRESS_INTERVAL = 1
+PROGRESS_INTERVAL = 0.2
 # How many times the (tqdm) progress meter updates (derived from above).
 PROGRESS_MAX_CHECKS = round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL)
 
@@ -1225,7 +1227,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                                         title="Validation" if validation else "Submission",
                                         interrupt_exit_message=interrupt_exit_message,
                                         include_status=False)
-    most_recent_server_check_time = None
+    most_recent_get_ingestion_submission_time = None
+    most_recent_get_ingestion_status_time = None
     check_done = False
     check_status = None
     check_response = None
@@ -1234,15 +1237,18 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         # Do the (new/2024-03-25) portal ingestion-status check here which reads
         # from Redis where the ingester is (now/2024-03-25) writing.
         # This is a very cheap call so do it on every progress iteration.
-        ingestion_status = portal.get(f"/ingestion-status/{uuid}")
-        if (ingestion_status.status_code == 200) and (ingestion_status := ingestion_status.json()):
-            loadxl_done = (ingestion_status.get(PROGRESS_LOADXL.DONE, None) is not None)
-        else:
-            ingestion_status = {}
-            loadxl_done = False
-        if (loadxl_done or (most_recent_server_check_time is None) or
-            ((time.time() - most_recent_server_check_time) >= PROGRESS_CHECK_SERVER_INTERVAL)):  # noqa
-            if most_recent_server_check_time is None:
+        if ((most_recent_get_ingestion_status_time is None) or
+            ((time.time() - most_recent_get_ingestion_status_time) >= PROGRESS_GET_INGESTION_STATUS_INTERVAL)):  # noqa
+            ingestion_status = portal.get(f"/ingestion-status/{uuid}")
+            if (ingestion_status.status_code == 200) and (ingestion_status := ingestion_status.json()):
+                loadxl_done = (ingestion_status.get(PROGRESS_LOADXL.DONE, None) is not None)
+            else:
+                ingestion_status = {}
+                loadxl_done = False
+            most_recent_get_ingestion_status_time = time.time()
+        if (loadxl_done or (most_recent_get_ingestion_submission_time is None) or
+            ((time.time() - most_recent_get_ingestion_submission_time) >= PROGRESS_GET_INGESTION_SUBMISSION_INTERVAL)):  # noqa
+            if most_recent_get_ingestion_submission_time is None:
                 progress(ingestion_status)
             else:
                 progress({"check_server": True, "status": (check_status or "unknown").title(), **ingestion_status})
@@ -1251,9 +1257,10 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server))
             if check_done:
                 break
-            most_recent_server_check_time = time.time()
+            most_recent_get_ingestion_submission_time = time.time()
         progress({"check": True,
-                  "next": PROGRESS_CHECK_SERVER_INTERVAL - (time.time() - most_recent_server_check_time),
+                  "next": PROGRESS_GET_INGESTION_SUBMISSION_INTERVAL -
+                          (time.time() - most_recent_get_ingestion_submission_time),  # noqa
                   **ingestion_status})
         time.sleep(PROGRESS_INTERVAL)
     if check_done:
