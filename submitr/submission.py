@@ -63,7 +63,7 @@ PROGRESS_GET_INGESTION_SUBMISSION_INTERVAL = 3
 # How often we actually get the IngestionSubmission object from the server (seconds).
 PROGRESS_GET_INGESTION_STATUS_INTERVAL = 1
 # How often the (tqdm) progress meter updates (seconds).
-PROGRESS_INTERVAL = 0.15
+PROGRESS_INTERVAL = 0.1
 # How many times the (tqdm) progress meter updates (derived from above).
 PROGRESS_MAX_CHECKS = round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL)
 
