@@ -14,7 +14,7 @@ SampleSource
     <a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json" style="color:black"><b><u>SampleSource</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/SampleSource.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
     Its <b><a href='../type_hierarchy.html' style='color:black;'>derived</a></b> types are: <a href='cell_culture.html'><u>CellCulture</u></a>, <a href='tissue.html'><u>Tissue</u></a>.
-    Types <b>referencing</b> this type are: <a href='cell_sample.html'><u>CellSample</u></a>, <a href='sample.html'><u>Sample</u></a>.
+    Types <b>referencing</b> this type are: <a href='cell_culture_sample.html'><u>CellCultureSample</u></a>, <a href='cell_sample.html'><u>CellSample</u></a>, <a href='sample.html'><u>Sample</u></a>, <a href='tissue_sample.html'><u>TissueSample</u></a>.
     Property names in <span style='color:red'><b>red</b></span> are
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;
     those in <span style='color:blue'><b>blue</b></span> are

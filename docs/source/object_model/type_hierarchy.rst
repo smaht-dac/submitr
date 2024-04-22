@@ -18,6 +18,7 @@ Items suffixed with **(A)** are abstract types which may not be directly created
            ├── <a href='types/document.html'>Document</a>
            ├── <a href='types/donor.html'>Donor</a>
            ├── <a href='types/exposure.html'>Exposure</a>
+           ├── <a href='types/family_history.html'>FamilyHistory</a>
            ├── <a href='types/file.html'>File</a> <small><b>(A)</b></small>
            │   ├── <a href='types/output_file.html'>OutputFile</a>
            │   ├── <a href='types/reference_file.html'>ReferenceFile</a>
@@ -32,7 +33,7 @@ Items suffixed with **(A)** are abstract types which may not be directly created
            ├── <a href='types/image.html'>Image</a>
            ├── <a href='types/library.html'>Library</a>
            ├── <a href='types/medical_history.html'>MedicalHistory</a>
-           ├── <a href='types/molecular_test.html'>MolecularTest</a>
+           ├── <a href='types/medical_treatment.html'>MedicalTreatment</a>
            ├── <a href='types/ontology_term.html'>OntologyTerm</a>
            ├── <a href='types/preparation.html'>Preparation</a> <small><b>(A)</b></small>
            │   ├── <a href='types/analyte_preparation.html'>AnalytePreparation</a>
@@ -54,7 +55,6 @@ Items suffixed with **(A)** are abstract types which may not be directly created
            ├── <a href='types/sequencing.html'>Sequencing</a>
            ├── <a href='types/software.html'>Software</a>
            ├── <a href='types/submission_center.html'>SubmissionCenter</a>
-           ├── <a href='types/therapeutic.html'>Therapeutic</a>
            ├── <a href='types/tissue_collection.html'>TissueCollection</a>
            ├── <a href='types/treatment.html'>Treatment</a>
            └── <a href='types/user.html'>User</a>

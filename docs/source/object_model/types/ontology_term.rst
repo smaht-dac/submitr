@@ -14,7 +14,7 @@ OntologyTerm
     <a target="_blank" href="https://data.smaht.org/profiles/OntologyTerm.json" style="color:black"><b><u>OntologyTerm</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/OntologyTerm.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
     
-    Types <b>referencing</b> this type are: <a href='diagnosis.html'><u>Diagnosis</u></a>, <a href='exposure.html'><u>Exposure</u></a>, <a href='therapeutic.html'><u>Therapeutic</u></a>, <a href='treatment.html'><u>Treatment</u></a>.
+    Types <b>referencing</b> this type are: <a href='treatment.html'><u>Treatment</u></a>.
     Property names in <span style='color:red'><b>red</b></span> are
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;
     those in <span style='color:blue'><b>blue</b></span> are

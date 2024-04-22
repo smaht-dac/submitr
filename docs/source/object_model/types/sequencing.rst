@@ -14,7 +14,7 @@ Sequencing
     <a target="_blank" href="https://data.smaht.org/profiles/Sequencing.json" style="color:black"><b><u>Sequencing</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/Sequencing.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
     
-    Types <b>referencing</b> this type are: <a href='file_set.html'><u>FileSet</u></a>.
+    Types <b>referencing</b> this type are: <a href='aligned_reads.html'><u>AlignedReads</u></a>, <a href='file.html'><u>File</u></a>, <a href='file_set.html'><u>FileSet</u></a>, <a href='output_file.html'><u>OutputFile</u></a>, <a href='reference_file.html'><u>ReferenceFile</u></a>, <a href='submitted_file.html'><u>SubmittedFile</u></a>, <a href='unaligned_reads.html'><u>UnalignedReads</u></a>, <a href='variant_calls.html'><u>VariantCalls</u></a>.
     Property names in <span style='color:red'><b>red</b></span> are
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;
     those in <span style='color:blue'><b>blue</b></span> are
