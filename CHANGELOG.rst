@@ -7,6 +7,11 @@ Change Log
 ----------
 
 
+0.8.2
+=====
+* Working on rclone support.
+
+
 0.8.1
 =====
 
