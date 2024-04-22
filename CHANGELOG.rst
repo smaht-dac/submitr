@@ -7,6 +7,26 @@ Change Log
 ----------
 
 
+0.8.1
+=====
+
+* Added metadata_template.py module with goal of checking the user's metadata
+  file with the latest HMS DBMI metadata template and giving a warning if the
+  version appears to be out of date. Also new convenience command to export and
+  download the HMS metadata template file to Excel file (get-metadata-template).
+* Added option to --version to automatically (after prompting) update version to latest.
+* Added ability to print upload file info for check-submissionn.
+* Fixed ETA for server-side validation/submission progress bar.
+* Other progress bar improvements.
+* Removed shortened forms of command options to remove ambiguity (e.g. -sd / --server d).
+* Added warning for use of obsolete command options.
+* Improved messaging on exit when interrupting server-side validation/submission.
+* Improved messaging for check-submission.
+* Fix for usage of --keys (was not being used for server validation/submission).
+* Minor fix for --validate-local-skip option (undefined structured_data variable).
+* Added --files for use with --info to submit-metadata-bundle.
+
+
 0.8.0
 =====
 

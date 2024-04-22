@@ -1,17 +1,20 @@
 from collections import namedtuple
+from contextlib import contextmanager
 from datetime import datetime
 from functools import lru_cache
 import io
+from json import dumps as json_dumps, loads as json_loads
 import hashlib
-import pkg_resources
-import pytz
-import re
-import requests
 import os
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple, Union
+import pkg_resources
+import re
+import requests
+from signal import signal, SIGINT
+import string
+from typing import Any, Callable, List, Optional, Tuple
 from dcicutils.misc_utils import PRINT, str_to_bool
-from json import dumps as json_dumps, loads as json_loads
+from dcicutils.datetime_utils import format_datetime, parse_datetime
 
 
 ERASE_LINE = "\033[K"
@@ -101,61 +104,6 @@ def tobool(value: Any, fallback: bool = False) -> bool:
             return fallback
     else:
         return fallback
-
-
-def format_duration(seconds: Union[int, float]):
-    seconds_actual = seconds
-    seconds = round(max(seconds, 0))
-    durations = [("year", 31536000), ("day", 86400), ("hour", 3600), ("minute", 60), ("second", 1)]
-    parts = []
-    for name, duration in durations:
-        if seconds >= duration:
-            count = seconds // duration
-            seconds %= duration
-            if count != 1:
-                name += "s"
-            parts.append(f"{count} {name}")
-    if len(parts) == 0:
-        return f"{seconds_actual:.1f} seconds"
-    elif len(parts) == 1:
-        return f"{seconds_actual:.1f} seconds"
-    else:
-        return " ".join(parts[:-1]) + " " + parts[-1]
-
-
-def format_size(nbytes: Union[int, float], precision: int = 2) -> str:
-    UNITS = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-    MAX_UNITS_INDEX = len(UNITS) - 1
-    ONE_K = 1024
-    index = 0
-    if (precision := max(precision, 0)) and (nbytes <= ONE_K):
-        precision -= 1
-    while abs(nbytes) >= ONE_K and index < MAX_UNITS_INDEX:
-        nbytes /= ONE_K
-        index += 1
-    if index == 0:
-        nbytes = int(nbytes)
-        return f"{nbytes} byte{'s' if nbytes != 1 else ''}"
-    unit = UNITS[index]
-    return f"{nbytes:.{precision}f} {unit}"
-
-
-def format_datetime(value: datetime, verbose: bool = False) -> Optional[str]:
-    try:
-        tzlocal = datetime.now().astimezone().tzinfo
-        if verbose:
-            return value.astimezone(tzlocal).strftime(f"%A, %B %-d, %Y | %-I:%M %p %Z")
-        else:
-            return value.astimezone(tzlocal).strftime(f"%Y-%m-%d %H:%M:%S %Z")
-    except Exception:
-        return None
-
-
-def parse_datetime_iso_string_into_utc_datetime(value: str) -> Optional[datetime]:
-    try:
-        return datetime.fromisoformat(value).replace(tzinfo=pytz.utc)
-    except Exception:
-        return None
 
 
 def format_path(path: str) -> str:
@@ -260,15 +208,19 @@ def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Cal
         for line in lines:
             if line is None:
                 continue
+            elif not isinstance(line, str):
+                line = str(line)
             if line.endswith(macro_name):
                 line = line.replace(macro_name, right_justified_macro[1]() + " ")
             lines_tmp.append(line)
         length = max(len(line) for line in lines_tmp)
     else:
-        length = max(len(line) for line in lines)
+        length = max(len(line) for line in lines if line)
     for line in lines:
         if line is None:
             continue
+        elif not isinstance(line, str):
+            line = str(line)
         if line == "===":
             printf(f"+{'-' * (length - len(line) + 5)}+")
         elif macro_name and line.endswith(macro_name):
@@ -276,6 +228,10 @@ def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Cal
             printf(f"| {line}{' ' * (length - len(line) - len(macro_value) - 1)} {macro_value} |")
         else:
             printf(f"| {line}{' ' * (length - len(line))} |")
+
+
+def is_excel_file_name(file_name: str) -> bool:
+    return file_name.endswith(".xlsx") or file_name.endswith(".xls")
 
 
 @lru_cache(maxsize=1)
@@ -298,9 +254,9 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
             if releases and isinstance(this_release_info := releases.get(this_version), list) and this_release_info:
                 if isinstance(this_release_info := this_release_info[0], dict):
                     this_release_date = (
-                        parse_datetime_iso_string_into_utc_datetime(this_release_info.get("upload_time")))
+                        parse_datetime(this_release_info.get("upload_time")))
             latest_non_beta_release_date = (
-                parse_datetime_iso_string_into_utc_datetime(releases[latest_non_beta_version][0].get("upload_time")))
+                parse_datetime(releases[latest_non_beta_version][0].get("upload_time")))
             latest_beta_version = None
             latest_beta_release_date = None
             if beta:
@@ -314,7 +270,7 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
                         latest_beta_version = None
                     else:
                         latest_beta_release_date = (
-                            parse_datetime_iso_string_into_utc_datetime(latest_beta_info[1][0].get("upload_time")))
+                            parse_datetime(latest_beta_info[1][0].get("upload_time")))
                         if latest_non_beta_release_date > latest_beta_release_date:
                             latest_beta_version = None
                             latest_beta_release_date = None
@@ -329,3 +285,22 @@ def get_most_recent_version_info(package_name: str = "smaht-submitr", beta: bool
     except Exception:
         pass
     return None
+
+
+def remove_punctuation_and_space(value: str) -> str:
+    return "".join(c for c in value if c not in string.punctuation + " ") if isinstance(value, str) else ""
+
+
+@contextmanager
+def catch_interrupt(on_interrupt: Optional[Callable] = None):
+    if not callable(on_interrupt):
+        on_interrupt = None
+    def interrupt_handler(signum, frame):  # noqa
+        if on_interrupt:
+            if on_interrupt() is False:
+                exit(1)
+    try:
+        previous_interrupt_handler = signal(SIGINT, interrupt_handler)
+        yield
+    finally:
+        signal(SIGINT, previous_interrupt_handler)

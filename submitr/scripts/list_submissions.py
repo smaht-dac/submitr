@@ -9,7 +9,7 @@ def main(simulated_args_for_testing=None):
     args = argparse.ArgumentParser(
         description="List recently submitted submissions.",
     )
-    args.add_argument("--env", "-e",
+    args.add_argument("--env",
                       help="Portal environment name for server/credentials (e.g. in ~/.smaht-keys.json).")
     args.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=None)
     args.add_argument("--count", type=int, help="Maximum number of items to show.", default=30)

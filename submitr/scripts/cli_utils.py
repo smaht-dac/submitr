@@ -1,9 +1,12 @@
 import argparse
 from functools import lru_cache
 import io
+import subprocess
 import sys
+import time
 import webbrowser
 from typing import List, Optional, Union
+from dcicutils.command_utils import yes_or_no
 from dcicutils.misc_utils import PRINT
 from submitr.utils import get_version, get_most_recent_version_info, print_boxed
 
@@ -11,7 +14,7 @@ from submitr.utils import get_version, get_most_recent_version_info, print_boxed
 class CustomArgumentParser(argparse.ArgumentParser):
 
     PACKAGE = "smaht-submitr"
-    HELP_URL_VERSION = "draft"
+    HELP_URL_VERSION = "latest"
     HELP_URL = f"https://submitr.readthedocs.io/en/{HELP_URL_VERSION}"
     COPYRIGHT = "© Copyright 2020-2024 President and Fellows of Harvard College"
 
@@ -116,7 +119,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
             lines.append("===")
         print_boxed(lines, right_justified_macro=("[VERSION]", self._get_version))
 
-    def _print_version(self, verbose: bool = False) -> None:
+    def _print_version(self, verbose: bool = False, noupdate: bool = False) -> None:
         if version := self._get_version(with_most_recent_check_mark=False):
             if verbose and (most_recent_version_info := get_most_recent_version_info()):
                 has_most_recent_version = (
@@ -147,12 +150,23 @@ class CustomArgumentParser(argparse.ArgumentParser):
                     ]
                 lines += [
                     "===",
-                    "For all versions please see: https://pypi.org/project/smaht-submitr",
+                    "For all versions see: https://pypi.org/project/smaht-submitr",
                     "===",
                     self.COPYRIGHT,
                     "==="
                 ]
                 print_boxed(lines, right_justified_macro=("[VERSION]", self._get_version))
+                if not noupdate and not has_most_recent_version and most_recent_version_info.this_release_date:
+                    is_beta_version = ("a" in most_recent_version_info.this_version or
+                                       "b" in most_recent_version_info.this_version)
+                    if is_beta_version and most_recent_version_info.beta_version:
+                        version_to_update_to = most_recent_version_info.beta_version
+                    else:
+                        version_to_update_to = most_recent_version_info.version
+                    if yes_or_no(f"Do you want to install the newer version ({version_to_update_to})?"):
+                        subprocess.run(["pip", "install", f"{self._package}=={version_to_update_to}"])
+                        time.sleep(2)
+                        subprocess.run(["submit-metadata-bundle", "version"])
                 return
             else:
                 PRINT(f"{self._package or 'COMMAND'}: {version}")

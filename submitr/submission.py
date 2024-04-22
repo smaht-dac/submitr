@@ -1,7 +1,6 @@
 import ast
 import boto3
 from botocore.exceptions import NoCredentialsError as BotoNoCredentialsError
-from datetime import datetime
 from functools import lru_cache
 import io
 import json
@@ -9,19 +8,23 @@ import os
 import re
 import sys
 import time
-from typing import Any, BinaryIO, Dict, List, Optional, Tuple
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple
 import yaml
 
 # get_env_real_url would rely on env_utils
 # from dcicutils.env_utils import get_env_real_url
 from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
+from dcicutils.data_readers import Excel
+from dcicutils.datetime_utils import format_datetime
 from dcicutils.file_utils import search_for_file
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
-    environ_bool, is_uuid, url_path_join, ignorable, normalize_spaces, remove_prefix
+    environ_bool, format_duration, format_size,
+    is_uuid, url_path_join, ignorable, normalize_spaces, remove_prefix
 )
+from dcicutils.progress_bar import ProgressBar
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
 from dcicutils.structured_data import Portal, StructuredDataSet
@@ -31,15 +34,15 @@ from typing_extensions import Literal
 from urllib.parse import urlparse
 from submitr.base import DEFAULT_APP
 from submitr.exceptions import PortalPermissionError
+from submitr.metadata_template import check_metadata_version, print_metadata_version_warning
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
-from submitr.progress_bar import ProgressBar
 from submitr.scripts.cli_utils import get_version
 from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import (
-    format_datetime, format_size, format_path,
+    format_path,
     get_file_checksum, get_file_md5, get_file_md5_like_aws_s3_etag,
     get_file_modified_datetime, get_file_size, get_s3_bucket_and_key_from_s3_uri,
-    print_boxed, keyword_as_title, tobool
+    is_excel_file_name, print_boxed, keyword_as_title, tobool
 )
 
 
@@ -54,11 +57,13 @@ GENERIC_SCHEMA_TYPE = 'FileOther'
 
 
 # Maximum amount of time (approximately) we will wait for a response from server (seconds).
-PROGRESS_TIMEOUT = 60 * 5  # five minutes (note this is for both server validation and submission)
-# How often we actually check the server (seconds).
-PROGRESS_CHECK_SERVER_INTERVAL = 3
+PROGRESS_TIMEOUT = 60 * 10  # ten minutes (note this is for both server validation and submission)
+# How often we actually get the IngestionSubmission object from the server (seconds).
+PROGRESS_GET_INGESTION_SUBMISSION_INTERVAL = 3
+# How often we actually get the IngestionSubmission object from the server (seconds).
+PROGRESS_GET_INGESTION_STATUS_INTERVAL = 1
 # How often the (tqdm) progress meter updates (seconds).
-PROGRESS_INTERVAL = 1
+PROGRESS_INTERVAL = 0.1
 # How many times the (tqdm) progress meter updates (derived from above).
 PROGRESS_MAX_CHECKS = round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL)
 
@@ -72,7 +77,6 @@ SUBMISSION_PROTOCOLS = [SubmissionProtocol.S3, SubmissionProtocol.UPLOAD]
 DEFAULT_SUBMISSION_PROTOCOL = SubmissionProtocol.UPLOAD
 STANDARD_HTTP_HEADERS = {"Content-type": "application/json"}
 INGESTION_SUBMISSION_TYPE_NAME = "IngestionSubmission"
-FILE_TYPE_NAME = "File"
 
 
 # TODO: Will asks whether some of the errors in this file that are called "SyntaxError" really should be something else.
@@ -126,8 +130,8 @@ def _get_user_record(server, auth, quiet=False):
     user_record_response.raise_for_status()
     user_record = user_record_response.json()
     if not quiet:
-        SHOW(f"Portal server recognizes you as{' (admin)' if _is_admin_user(user_record) else ''}:"
-             f" {user_record['title']} ({user_record['contact_email']})")
+        SHOW(f"Portal recognizes you as{' (admin)' if _is_admin_user(user_record) else ''}:"
+             f" {user_record['title']} ({user_record['contact_email']}) ✓")
     return user_record
 
 
@@ -512,6 +516,7 @@ def _initiate_server_ingestion_process(
         "ingestion_directory": os.path.dirname(ingestion_filename) if ingestion_filename else None,
         "datafile_size": datafile_size or get_file_size(ingestion_filename),
         "datafile_checksum": datafile_checksum or get_file_checksum(ingestion_filename),
+        "submitr_version": get_version(),
         "user": json.dumps(user) if user else None
     }
 
@@ -696,6 +701,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          output_file=None,
                          env_from_env=False,
                          timeout=None,
+                         noversion=False,
                          debug=False,
                          debug_sleep=None):
 
@@ -807,6 +813,9 @@ def submit_any_ingestion(ingestion_filename, *,
     if verbose:
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
 
+    if not noversion:
+        check_metadata_version(ingestion_filename, portal=portal)
+
     if not validate_remote_only and not validate_local_skip:
         structured_data = _validate_locally(ingestion_filename, portal,
                                             validation=validation,
@@ -821,6 +830,7 @@ def submit_any_ingestion(ingestion_filename, *,
             # This return is just emphasize that fact.
             return
     else:
+        structured_data = None
         PRINT(f"Skipping local (client) validation (as requested via"
               f" {'--validate-remote-only' if validate_remote_only else '--validate-local-skip'}).")
 
@@ -916,8 +926,9 @@ def submit_any_ingestion(ingestion_filename, *,
 
     # Now that submission has successfully complete, review the files to upload and then do it.
 
-    _review_upload_files(structured_data, ingestion_filename,
-                         validation=validation, directory=upload_folder, recursive=subfolders)
+    if structured_data:
+        _review_upload_files(structured_data, ingestion_filename,
+                             validation=validation, directory=upload_folder, recursive=subfolders)
 
     do_any_uploads(submission_response, keydict=portal.key, ingestion_filename=ingestion_filename,
                    upload_folder=upload_folder, no_query=no_query,
@@ -974,13 +985,15 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
                 continue
             submission_uuid = submission.get("uuid")
             submission_created = submission.get("date_created")
-            line = f"{submission_uuid}: {_format_portal_object_datetime(submission_created)}"
+            line = f"{submission_uuid}: {format_datetime(submission_created, notz=True)}"
             if tobool(submission.get("parameters", {}).get("validate_only")):
-                line += f" (V)"
+                line += f" [V]"
             else:
-                line += f" (S)"
+                line += f" [S]"
             if submission.get("processing_status", {}).get("outcome") == "success":
-                line += f" ▶ OK"
+                line += f" ✓"
+            else:
+                line += f" ✗"
             lines.append(line)
             if details:
                 line_detail = ""
@@ -1031,10 +1044,13 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         PROGRESS_TIMEOUT = timeout
         PROGRESS_MAX_CHECKS = max(round(PROGRESS_TIMEOUT / PROGRESS_INTERVAL), 1)
 
-    def define_progress_callback(max_checks: int, title: str, include_status: bool = False) -> None:
+    def define_progress_callback(max_checks: int, title: str,
+                                 interrupt_exit_message: Optional[Callable] = None,
+                                 include_status: bool = False) -> None:
         nonlocal validation
         bar = ProgressBar(max_checks, "Calculating",
                           interrupt_exit=True,
+                          interrupt_exit_message=interrupt_exit_message,
                           interrupt_message=f"{'validation' if validation else 'submission'} waiting process")
         nchecks = 0
         nchecks_server = 0
@@ -1044,6 +1060,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         loadxl_total = 0
         loadxl_started = None
         loadxl_started_second_round = None
+        phases_seen = []
         def progress_report(status: dict) -> None:  # noqa
             nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status, noprogress, validation
             nonlocal loadxl_total, loadxl_started, loadxl_started_second_round, verbose
@@ -1076,6 +1093,34 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                                  if verbose else status.get("loadxl_message", ""))
             # Phases: 0 means waiting for server response; 1 means loadxl round one; 2 means loadxl round two.
             loadxl_phase = 2 if loadxl_started_second_round is not None else (1 if loadxl_started is not None else 0)
+            # FYI this is a normal ordering of phases in practice ...
+            # ingester_queued              PROGRESS_INGESTER.QUEUED
+            # ingester_initiate            PROGRESS_INGESTER.INITIATE
+            # # ingester_parse_initiate      PROGRESS_INGESTER.PARSE_LOAD_INITIATE
+            # parse_start                  PROGRESS_PARSE.LOAD_START
+            # parse_done                   PROGRESS_PARSE.LOAD_DONE
+            # ingester_parse_done          PROGRESS_INGESTER.PARSE_LOAD_DONE
+            # ingester_validate_initiate   PROGRESS_INGESTER.VALIDATE_LOAD_INITIATE
+            # ingester_validate_done       PROGRESS_INGESTER.VALIDATE_LOAD_DONE
+            # ingester_loadxl_initiate     PROGRESS_INGESTER.LOADXL_INITIATE
+            # loadxl_start                 PROGRESS_LOADXL.START
+            # loadxl_start_second_round    PROGRESS_LOADXL.START_SECOND_ROUND
+            # loadxl_done                  PROGRESS_LOADXL.DONE
+            # ingester_loadxl_done         PROGRESS_INGESTER.LOADXL_DONE
+            # ingester_cleanup             PROGRESS_INGESTER.CLEANUP
+            # ingester_done                PROGRESS_INGESTER.DONE
+            # ingester_queue_cleanup       PROGRESS_INGESTER.QUEUE_CLEANUP
+            def reset_eta_if_necessary():  # noqa
+                nonlocal loadxl_started, loadxl_started_second_round, loadxl_done, phases_seen
+                if loadxl_started is not None:
+                    if (phase := PROGRESS_LOADXL.START) not in phases_seen:
+                        phases_seen.append(phase)
+                        bar.reset_eta()
+                if loadxl_started_second_round is not None:
+                    if (phase := PROGRESS_LOADXL.START_SECOND_ROUND) not in phases_seen:
+                        phases_seen.append(phase)
+                        if loadxl_done is None and not ingester_done:
+                            bar.reset_eta()
             done = False
             message = f"▶ Pings: {nchecks_server}"
             if ingester_done is not None:
@@ -1131,15 +1176,21 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 if ingestion_message:
                     message += " | " + ingestion_message
             if include_status:
-                message += f" | Status: {check_status}"
-            # message += f" | Next: {'Now' if next_check == 0 else str(next_check) + 's'} ‖ Progress"
+                message += f" | Status: {check_status}"  # Next: {'Now' if next_check == 0 else str(next_check) + 's'}
+            reset_eta_if_necessary()
             bar.set_description(message)
             if done:
                 bar.done()
         return progress_report
 
-    portal = _define_portal(env=env, server=server, app=app or DEFAULT_APP,
+    portal = _define_portal(env=env, server=server, keys_file=keys_file, app=app or DEFAULT_APP,
                             env_from_env=env_from_env, report=report, note=note)
+
+    def interrupt_exit_message(bar: ProgressBar):
+        nonlocal uuid, server, env, validation, portal
+        command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
+        SHOW(f"Your {'validation' if validation else 'submission'} is still running on the server: {uuid}")
+        SHOW(f"Use this command to check its status: {command_summary}")
 
     if not (uuid_metadata := portal.get_metadata(uuid, raise_exception=False)):
         message = f"Submission ID not found: {uuid}" if uuid != "dummy" else "No submission ID specified."
@@ -1150,25 +1201,34 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             return
         raise Exception(f"Cannot find object given uuid: {uuid}")
     if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
+        if portal.is_schema_file_type(uuid_metadata):
+            _print_upload_file_summary(portal, uuid_metadata)
+            # TODO: This is for special case of check-submission UPLOAD-FILE-UUID
+            return
         undesired_type = portal.get_schema_type(uuid_metadata)
         raise Exception(f"Given ID is not for a submission or validation: {uuid} ({undesired_type})"
                         f" | Accession: {uuid_metadata.get('accession')}")
     if tobool(uuid_metadata.get("parameters", {}).get("validate_only")):
         validation = True
 
+    if check_submission_script and validation:
+        PRINT(f"This ID is for a server validation that had not yet completed.")
+
     action = "validation" if validation else "ingestion"
     if validation:
-        SHOW(f"Waiting (up to about {PROGRESS_TIMEOUT}s) for server validation results.")
+        SHOW(f"Waiting{f' (up to about {PROGRESS_TIMEOUT}s)' if verbose else ''}"
+             f" for server validation results{f': {uuid}' if check_submission_script else '.'}")
     else:
-        SHOW(f"Waiting (up to about {PROGRESS_TIMEOUT}s) for submission results.")
-        # SHOW(f"Checking {action} for submission ID: %s ..." % uuid)
+        SHOW(f"Waiting{f' (up to about {PROGRESS_TIMEOUT}s)' if verbose else ''}"
+             f" for submission results{f': {uuid}' if check_submission_script else '.'}")
 
     started = time.time()
     progress = define_progress_callback(PROGRESS_MAX_CHECKS,
                                         title="Validation" if validation else "Submission",
-                                        include_status=False)  # include_status=not validation
-    most_recent_server_check_time = None
-    check_submission_script_initial_check_ran = False
+                                        interrupt_exit_message=interrupt_exit_message,
+                                        include_status=False)
+    most_recent_get_ingestion_submission_time = None
+    most_recent_get_ingestion_status_time = None
     check_done = False
     check_status = None
     check_response = None
@@ -1177,15 +1237,18 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         # Do the (new/2024-03-25) portal ingestion-status check here which reads
         # from Redis where the ingester is (now/2024-03-25) writing.
         # This is a very cheap call so do it on every progress iteration.
-        ingestion_status = portal.get(f"/ingestion-status/{uuid}")
-        if (ingestion_status.status_code == 200) and (ingestion_status := ingestion_status.json()):
-            loadxl_done = (ingestion_status.get(PROGRESS_LOADXL.DONE, None) is not None)
-        else:
-            ingestion_status = {}
-            loadxl_done = False
-        if (loadxl_done or (most_recent_server_check_time is None) or
-            ((time.time() - most_recent_server_check_time) >= PROGRESS_CHECK_SERVER_INTERVAL)):  # noqa
-            if most_recent_server_check_time is None:
+        if ((most_recent_get_ingestion_status_time is None) or
+            ((time.time() - most_recent_get_ingestion_status_time) >= PROGRESS_GET_INGESTION_STATUS_INTERVAL)):  # noqa
+            ingestion_status = portal.get(f"/ingestion-status/{uuid}")
+            if (ingestion_status.status_code == 200) and (ingestion_status := ingestion_status.json()):
+                loadxl_done = (ingestion_status.get(PROGRESS_LOADXL.DONE, None) is not None)
+            else:
+                ingestion_status = {}
+                loadxl_done = False
+            most_recent_get_ingestion_status_time = time.time()
+        if (loadxl_done or (most_recent_get_ingestion_submission_time is None) or
+            ((time.time() - most_recent_get_ingestion_submission_time) >= PROGRESS_GET_INGESTION_SUBMISSION_INTERVAL)):  # noqa
+            if most_recent_get_ingestion_submission_time is None:
                 progress(ingestion_status)
             else:
                 progress({"check_server": True, "status": (check_status or "unknown").title(), **ingestion_status})
@@ -1194,16 +1257,10 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 _check_ingestion_progress(uuid, keypair=portal.key_pair, server=portal.server))
             if check_done:
                 break
-            if check_submission_script:
-                if not check_submission_script_initial_check_ran:
-                    check_submission_script_initial_check_ran = True
-                    PRINT(f"This ID is for a server validation that had not yet completed; waiting for completion.")
-                    PRINT(f"Details for this server validation ({uuid}) below:")
-                    _print_submission_summary(portal, check_response, nofiles=nofiles,
-                                              check_submission_script=True, verbose=verbose, debug=debug)
-            most_recent_server_check_time = time.time()
+            most_recent_get_ingestion_submission_time = time.time()
         progress({"check": True,
-                  "next": PROGRESS_CHECK_SERVER_INTERVAL - (time.time() - most_recent_server_check_time),
+                  "next": PROGRESS_GET_INGESTION_SUBMISSION_INTERVAL -
+                          (time.time() - most_recent_get_ingestion_submission_time),  # noqa
                   **ingestion_status})
         time.sleep(PROGRESS_INTERVAL)
     if check_done:
@@ -1214,8 +1271,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
 
     if not check_done:
         command_summary = _summarize_submission(uuid=uuid, server=server, env=env, app=portal.app)
-        SHOW(f"Timed out (after {round(time.time() - started)}s) WAITING for {action}.")
-        SHOW(f"Your {'validation' if validation else 'submission'} is still running on the server.")
+        SHOW(f"Timed out (after {format_duration(round(time.time() - started))}) WAITING for {action}.")
+        SHOW(f"Your {'validation' if validation else 'submission'} is still running on the server: {uuid}")
         SHOW(f"Use this command to check its status: {command_summary}")
         exit(1)
 
@@ -1228,13 +1285,10 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         # out previously. And this which server validation is now complete. We now want
         # to give the user the opportunity to continue with the submission process,
         # ala submit_any_ingestion; see around line 830 of that function.
-        if not check_submission_script_initial_check_ran:
-            check_submission_script_initial_check_ran = True
-            PRINT(f"This ID is for a server validation that had not yet completed but now is.")
-            PRINT(f"Details for this server validation ({uuid}) below:")
-            _print_submission_summary(portal, check_response, nofiles=nofiles,
-                                      check_submission_script=True, include_errors=True,
-                                      verbose=verbose, debug=debug)
+        PRINT(f"Details for this server validation ({uuid}) below:")
+        _print_submission_summary(portal, check_response, nofiles=nofiles,
+                                  check_submission_script=True, include_errors=True,
+                                  verbose=verbose, debug=debug)
         validation_info = check_response.get("additional_data", {}).get("validation_output")
         # TODO: Cleanup/unify error structure from client and server!
         if isinstance(validation_info, list):
@@ -1248,6 +1302,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 PRINT("\nServer validation errors were encountered for this metadata.")
                 PRINT("You will need to correct any errors and resubmit via submit-metadata-bundle.")
                 exit(1)
+        if check_status != "success":
+            exit(1)
         PRINT("Validation results (server): OK")
         if not yes_or_no("Do you want to now continue with the submission for this metadata?"):
             PRINT("Exiting with no action.")
@@ -1259,6 +1315,11 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             consortia = [consortium]
         if submission_center := check_parameters.get("submission_center"):
             submission_centers = [submission_center]
+        if isinstance(autoadd := check_parameters.get("autoadd"), str):
+            try:
+                autoadd = json.loads(autoadd)
+            except Exception:
+                autoadd = None
         if isinstance(user := check_parameters.get("user"), str):
             try:
                 user = json.loads(user)
@@ -1274,7 +1335,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             validation_ingestion_submission_object=check_response,
             consortia=consortia,
             submission_centers=submission_centers,
-            autoadd=check_parameters.get("autoadd"),
+            autoadd=autoadd,
             datafile_size=check_parameters.get("datafile_size"),
             datafile_checksum=check_parameters.get("datafile_checksum"),
             user=user,
@@ -1295,6 +1356,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         return
 
     if check_submission_script or verbose or debug:  # or not validation
+        PRINT(f"Details for this server {'validation' if validation else 'submission'} ({uuid}) below:")
         _print_submission_summary(portal, check_response,
                                   nofiles=nofiles, check_submission_script=check_submission_script,
                                   verbose=verbose, debug=debug)
@@ -1490,6 +1552,7 @@ def _print_submission_summary(portal: Portal, result: dict,
     submission_type = "Submission"
     validation = None
     was_server_validation_timeout = False
+    submitr_version = None
     if submission_parameters := result.get("parameters", {}):
         if validation := tobool(submission_parameters.get("validate_only")):
             submission_type = "Validation"
@@ -1504,7 +1567,7 @@ def _print_submission_summary(portal: Portal, result: dict,
             lines.append(f"Submission File: {submission_file}")
     if submission_uuid := result.get("uuid"):
         lines.append(f"{submission_type} ID: {submission_uuid}")
-    if date_created := _format_portal_object_datetime(result.get("date_created"), True):
+    if date_created := format_datetime(result.get("date_created"), verbose=True):
         lines.append(f"{submission_type} Time: {date_created}")
     if submission_parameters:
         extra_file_info = ""
@@ -1519,6 +1582,7 @@ def _print_submission_summary(portal: Portal, result: dict,
             extra_file_info += f"Checksum: {datafile_checksum}"
         if extra_file_info:
             lines.append(f"Submission File Info: {extra_file_info}")
+        submitr_version = submission_parameters.get("submitr_version")
     if validation:
         lines.append(f"Validation Only: Yes ◀ ◀ ◀")
         if submission_parameters and (associated_submission_uuid := submission_parameters.get("submission_uuid")):
@@ -1608,8 +1672,12 @@ def _print_submission_summary(portal: Portal, result: dict,
                 s3_data_bucket = s3_data_file[5:rindex] if s3_data_file.startswith("s3://") else ""
                 s3_data_file = s3_data_file[rindex + 1:]
                 if s3_data_bucket:
-                    summary_lines.append(f"S3: {s3_data_bucket}")
-                summary_lines.append(f"S3 Data: {s3_data_file}")
+                    if len(s3_data_bucket_parts := s3_data_bucket.split("/")) == 2:
+                        summary_lines.append(f"AWS S3 Bucket: {s3_data_bucket_parts[0]}")
+                        summary_lines.append(f"AWS S3 Key: {s3_data_bucket_parts[1]}")
+                    else:
+                        summary_lines.append(f"AWS S3: {s3_data_bucket}")
+                summary_lines.append(f"AWS S3 File: {s3_data_file}")
         if s3_details_file := [info for info in validation_info if info.lower().startswith("details: ")]:
             s3_details_file = s3_details_file[0][9:]
             if (rindex := s3_details_file.rfind("/")) > 0:
@@ -1617,7 +1685,7 @@ def _print_submission_summary(portal: Portal, result: dict,
                 s3_details_file = s3_details_file[rindex + 1:]
                 if s3_details_bucket != s3_data_bucket:
                     summary_lines.append(f"S3 Bucket: {s3_details_bucket}")
-                summary_lines.append(f"S3 Details: {s3_details_file}")
+                summary_lines.append(f"AWS S3 Details: {s3_details_file}")
         if summary_lines:
             lines.append("===")
             lines += summary_lines
@@ -1637,20 +1705,80 @@ def _print_submission_summary(portal: Portal, result: dict,
                 lines.append(f"Upload File: {upload_file_name}")
                 lines.append(f"Upload File ID: {upload_file_uuid}")
                 if upload_file_accession_name:
-                    lines.append(f"Upload File Accession Name: {upload_file_accession_name}")
+                    lines.append(f"Upload File Accession ID: {upload_file_accession_name}")
                 if upload_file_type:
                     lines.append(f"Upload File Type: {upload_file_type}")
+    if isinstance(toplevel_errors := result.get("errors"), list):
+        errors.extend(toplevel_errors)
     if lines:
-        lines = ["===", f"SMaHT {'Validation' if validation else 'Submission'} Summary [UUID]", "==="] + lines + ["==="]
+        lines = ["===", f"SMaHT {'Validation' if validation else 'Submission'} Summary"
+                        f"{f' ({submitr_version})' if submitr_version else ''} [UUID]", "==="] + lines + ["==="]
         if errors and include_errors:
             lines += ["ERRORS ITEMIZED BELOW ...", "==="]
         print_boxed(lines, right_justified_macro=("[UUID]", lambda: submission_uuid), printf=PRINT)
         if errors and include_errors:
             for error in errors:
-                if check_submission_script:
-                    PRINT(f"{_format_server_error(error, indent=2, debug=debug)}")
-                else:
-                    PRINT(f"- {_format_server_error(error, indent=2, debug=debug)}")
+                PRINT(f"- {_format_server_error(error, indent=2, debug=debug)}")
+
+
+def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
+    file_uuid = file_object.get("uuid") or ""
+    file_type = portal.get_schema_type(file_object) or ""
+    file_name = file_object.get("filename") or ""
+    file_format = file_object.get("file_format", {}).get("display_title") or ""
+    file_title = file_object.get("display_title") or ""
+    file_accession = file_object.get("accession") or ""
+    file_size = file_object.get("file_size") or ""
+    file_size_formatted = format_size(file_size) or ""
+    file_status = file_object.get("status") or ""
+    file_md5 = file_object.get("md5sum") or ""
+    file_md5_content = file_object.get("content_md5sum") or ""
+    file_md5_submitted = file_object.get("submitted_md5sum") or ""
+    file_submitted_by = file_object.get("submitted_by", {}).get("display_title") or ""
+    file_submitted_id = file_object.get("submitted_id") or ""
+    file_created = format_datetime(file_object.get("date_created")) or ""
+    file_modified = format_datetime(file_object.get("last_modified", {}).get("date_modified")) or ""
+    file_modified_by = file_object.get("last_modified", {}).get("modified_by", {}).get("display_title") or ""
+    submission_centers = _format_submission_centers(file_object.get("submission_centers")) or ""
+    if file_md5_content == file_md5:
+        file_md5_content = None
+    if file_md5_submitted == file_md5:
+        file_md5_submitted = None
+    lines = [
+        "===",
+        "SMaHT Uploaded File [UUID]",
+        f"===" if file_submitted_id else None,
+        f"{file_submitted_id}" if file_submitted_id else None,
+        "===",
+        f"File: {file_title}" if file_title else None,
+        f"File Name: {file_name}" if file_name else None,
+        f"File Type: {file_type}" if file_type else None,
+        f"File Format: {file_format}" if file_format else None,
+        f"File Accession: {file_accession}" if file_accession else None,
+        f"===",
+        f"Status: {file_status.title()}" if file_status else None,
+        f"Size: {file_size_formatted} ({file_size} bytes)" if file_size else None,
+        f"Checksum: {file_md5}" if file_md5 else None,
+        f"Content Checksum: {file_md5_content}" if file_md5_content else None,
+        f"Submitted Checksum: {file_md5_submitted}" if file_md5_submitted else None,
+        f"===",
+        f"Submitted: {file_created} | {file_submitted_by}" if file_created and file_submitted_by else None,
+        f"Modified: {file_modified} | {file_modified_by}" if file_modified and file_modified_by else None,
+        f"Submission Centers: {submission_centers}" if submission_centers else None,
+        "==="
+    ]
+    print_boxed(lines, right_justified_macro=("[UUID]", lambda: file_uuid))
+
+
+def _format_submission_centers(submission_centers: Optional[List[dict]]) -> Optional[str]:
+    if (not isinstance(submission_centers, List)) or (not submission_centers):
+        return None
+    result = ""
+    for submission_center in submission_centers:
+        if result:
+            result += " | "
+        result += submission_center.get("display_title")
+    return result
 
 
 def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
@@ -1878,7 +2006,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     if not portal.is_schema_type(response, INGESTION_SUBMISSION_TYPE_NAME):
 
         # Subsume function of upload-item-data into resume-uploads for convenience.
-        if portal.is_schema_type(response, FILE_TYPE_NAME):
+        if portal.is_schema_file_type(response):
             _upload_item_data(item_filename=uuid, uuid=None, server=portal.server,
                               env=portal.env, directory=upload_folder, recursive=subfolders,
                               no_query=no_query, app=app, report=False)
@@ -2241,7 +2369,7 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
     if not (uuid_metadata := portal.get_metadata(uuid)):
         raise Exception(f"Cannot find object given uuid: {uuid}")
 
-    if not portal.is_schema_type(uuid_metadata, FILE_TYPE_NAME):
+    if not portal.is_schema_file_type(uuid_metadata):
         undesired_type = portal.get_schema_type(uuid_metadata)
         raise Exception(f"Given uuid is not a file type: {uuid} ({undesired_type})")
 
@@ -2461,13 +2589,13 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             _print_structured_data_status(portal, structured_data, validation=validation,
                                           report_updates_only=True, noprogress=noprogress, verbose=verbose, debug=debug)
         else:
-            PRINT("Skipping analysis of metadata wrt creates/updates to be done (via --noanalyze).")
+            PRINT("Skipping analysis of metadata wrt creates/updates to be done (per --noanalyze).")
     if not validation_okay:
         if not yes_or_no(f"There are some preliminary errors outlined above;"
                          f" do you want to continue with {'validation' if validation else 'submission'}?"):
             exit(1)
     if validate_local_only:
-        PRINT("Terminating as requested (via --validate-local-only).")
+        PRINT("Terminating as requested (per --validate-local-only).")
         exit(0 if validation_okay else 1)
 
     return structured_data
@@ -2707,7 +2835,7 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
                                       validation=validation,
                                       report_updates_only=True, noprogress=noprogress, verbose=verbose)
     else:
-        PRINT("Skipping analysis of metadata wrt creates/updates to be done (via --noanalyze).")
+        PRINT("Skipping analysis of metadata wrt creates/updates to be done (per --noanalyze).")
 
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet,
@@ -2735,7 +2863,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 nobjects = status.get(PROGRESS_PARSE.ANALYZE_COUNT_ITEMS)
                 bar.set_total(nobjects)
                 PRINT(f"Analyzing submission file which has {ntypes} type{'s' if ntypes != 1 else ''}"
-                      f" and a total of {nobjects} object{'s' if nobjects != 1 else ''}.")
+                      f" and a total of {nobjects} item{'s' if nobjects != 1 else ''}.")
                 return
             elif status.get(PROGRESS_PARSE.ANALYZE_DONE):
                 bar.done()
@@ -2759,9 +2887,6 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
             message = (
                 f"▶ Items: {nobjects} | Checked: {ncreates + nupdates}"
                 f" ‖ Creates: {ncreates} | Updates: {nupdates} | Lookups: {nlookups}")
-            # if debug:
-            #    message += f" | Rate: {rate:.1f}%"
-            # message += " | Progress" # xyzzy
             bar.set_description(message)
         return progress_report
 
@@ -2902,7 +3027,8 @@ def _format_src(issue: dict) -> str:
 
 def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server: Optional[str] = None,
                    app: Optional[str] = None, keys_file: Optional[str] = None, env_from_env: bool = False,
-                   report: bool = False, verbose: bool = False, note: Optional[str] = None) -> Portal:
+                   report: bool = False, verbose: bool = False,
+                   note: Optional[str] = None, ping: bool = False) -> Portal:
 
     def get_default_keys_file():
         nonlocal app
@@ -2932,7 +3058,8 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         return keys_file
 
     if not env and not env_from_env:
-        env_from_env = os.environ.get("SMAHT_ENV")
+        if env_from_env := os.environ.get("SMAHT_ENV"):
+            env = env_from_env
 
     raise_exception = True
     if not app:
@@ -2993,6 +3120,9 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
         PRINT(f"Portal server is: {portal.server}")
         if portal.key_id and len(portal.key_id) > 2:
             PRINT(f"Portal key prefix is: {portal.key_id[:2]}******")
+    if ping and not portal.ping():
+        PRINT(f"Cannot ping Portal!")
+        exit(1)
     return portal
 
 
@@ -3035,11 +3165,10 @@ def _extract_accession_id(value: str) -> Optional[str]:
             return value
 
 
-def _format_portal_object_datetime(value: str, verbose: bool = False) -> Optional[str]:  # noqa
-    return format_datetime(datetime.fromisoformat(value))
-
-
-def _print_metadata_file_info(file: str, env: str, refs: bool = False, output_file: Optional[str] = None) -> None:
+def _print_metadata_file_info(file: str, env: str,
+                              refs: bool = False, files: bool = False,
+                              output_file: Optional[str] = None,
+                              verbose: bool = False) -> None:
     if output_file:
         set_output_file(output_file)
     PRINT(f"Metadata File: {os.path.basename(file)}")
@@ -3049,35 +3178,81 @@ def _print_metadata_file_info(file: str, env: str, refs: bool = False, output_fi
         PRINT(f"Modified: {modified}")
     if md5 := get_file_md5(file):
         PRINT(f"MD5: {md5}")
-    if etag := get_file_md5_like_aws_s3_etag(file):
-        PRINT(f"S3 ETag: {etag}{' | Same as MD5' if md5 == etag else ''}")
+    if (etag := get_file_md5_like_aws_s3_etag(file)) and etag != md5:
+        PRINT(f"S3 ETag: {etag}")
     sheet_lines = []
-    if file.endswith(".xlsx") or file.endswith(".xls"):
-        from dcicutils.data_readers import Excel
+    if is_excel_file_name(file):
         excel = Excel(file)
         nrows_total = 0
-        nsheets = 0
         for sheet_name in sorted(excel.sheet_names):
-            nsheets += 1
-            nrows = 0
-            for row in excel.sheet_reader(sheet_name):
-                nrows += 1
+            nrows = excel.sheet_reader(sheet_name).nrows
             sheet_lines.append(f"- Sheet: {sheet_name} ▶ Rows: {nrows}")
             nrows_total += nrows
         sheet_lines = "\n" + "\n".join(sheet_lines)
-        PRINT(f"Sheets: {nsheets} | Rows: {nrows_total}{sheet_lines}")
-    if refs is True:
-        portal = _define_portal(env=env)
+        PRINT(f"Sheets: {excel.nsheets} | Rows: {nrows_total}{sheet_lines}")
+    portal = None
+    if (refs is True) or (files is True):
+        max_output = 10
+        portal = _define_portal(env=env, ping=True)
         structured_data = StructuredDataSet(file, portal, norefs=True)
-        refs = structured_data.resolved_refs
-        PRINT(f"References: {len(refs) or 'None'}")
-        if output_file and len(refs) > 7:
-            PRINT_STDOUT(f"- See your output file: {output_file}")
-            for ref in sorted(refs):
-                PRINT_OUTPUT(f"- {ref}")
+        if refs is True:
+            def print_refs(refs: List[dict], max_output: int, output_file: str, verbose: bool = False) -> None:
+                def note_output():
+                    nonlocal max_output, output_file, noutput, printf, truncated
+                    noutput += 1
+                    if noutput >= max_output and output_file and not truncated:
+                        PRINT_STDOUT(f"+ Truncated results | See your output file for full listing: {output_file}")
+                        printf = PRINT_OUTPUT
+                        truncated = True
+                printf = PRINT
+                noutput = 0
+                truncated = False
+                for ref in sorted(refs, key=lambda ref: ref["path"]):
+                    printf(f"- {ref['path']} (references: {len(ref['srcs'])})")
+                    note_output()
+                    if verbose:
+                        srcs = sorted(ref["srcs"], key=lambda src: f"{src['type']}|{src['column']}|"
+                                                                   f"{str(src['row']).rjust(8)}")
+                        for src in srcs:
+                            printf(f"  - {_format_src(src)}")
+                            note_output()
+            unchecked_refs = structured_data.unchecked_refs
+            PRINT(f"References: {len(unchecked_refs)}")
+            print_refs(unchecked_refs, max_output=max_output, output_file=output_file, verbose=verbose)
+        if files is True:
+            def print_files(files: List[dict], max_output: int, output_file: str, verbose: bool = False) -> None:
+                def note_output():
+                    nonlocal max_output, output_file, noutput, printf, truncated
+                    noutput += 1
+                    if noutput >= max_output and output_file and not truncated:
+                        PRINT_STDOUT(f"+ Truncated results | See your output file for full listing: {output_file}")
+                        printf = PRINT_OUTPUT
+                        truncated = True
+                printf = PRINT
+                noutput = 0
+                truncated = False
+                for file in sorted(files, key=lambda file: file["file"]):
+                    printf(f"- {file['file']} ({file['type']})")
+                    note_output()
+            upload_files = structured_data.upload_files
+            PRINT(f"Files: {len(upload_files)}")
+            print_files(upload_files, max_output=max_output, output_file=output_file, verbose=verbose)
+    if not (refs is True):
+        if not (files is True):
+            PRINT("Note: Use --refs to view references; and --files to view files for upload.")
         else:
-            for ref in sorted(refs):
-                PRINT(f"- {ref}")
+            PRINT("Note: Use --refs to view references (linkTo) paths.")
+    elif not (files is True):
+        PRINT("Note: Use --files to view files for upload.")
+    if not portal:
+        portal = _define_portal(env=env, ping=True)
+    this_metadata_template_version, current_metadata_template_version = (
+        check_metadata_version(file, portal=portal, quiet=True))
+    if this_metadata_template_version:
+        if this_metadata_template_version == current_metadata_template_version:
+            PRINT(f"Based on the latest HMS metadata template: {current_metadata_template_version} ✓")
+        else:
+            print_metadata_version_warning(this_metadata_template_version, current_metadata_template_version)
 
 
 def _ping(app: str, env: str, server: str, keys_file: str,

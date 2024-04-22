@@ -47,10 +47,10 @@ OPTIONS:
 ===
 """
 _OBSOLETE_OPTIONS = [
-    {"option": "-e", "message": "Use --env."},
-    {"option": "-s", "message": "Use --server."},
-    {"option": "-b", "message": "Use --bundle."},
-    {"option": "--bundle_filename", "message": "Use --bundle."},
+    {"option": "-e", "message": "Use --env"},
+    {"option": "-s", "message": "Use --server"},
+    {"option": "-b", "message": "Use --bundle"},
+    {"option": "--bundle_filename", "message": "Use --bundle"},
     {"option": "-u", "message": "Use --directory-only; or --directory which searches recusively."},
     {"option": "-d", "message": "Use --directory-only; or --directory which searches recusively."},
     {"option": "-nq", "message": "Use --no_query"},

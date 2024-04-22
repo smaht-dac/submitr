@@ -5,10 +5,10 @@ import threading
 import time
 from typing import Callable, Optional
 from dcicutils.command_utils import yes_or_no
-from submitr.progress_bar import ProgressBar
+from dcicutils.misc_utils import format_duration, format_size
+from dcicutils.progress_bar import ProgressBar
 from submitr.utils import (
-    get_file_md5_like_aws_s3_etag, get_s3_bucket_and_key_from_s3_uri,
-    format_datetime, format_duration, format_size
+    get_file_md5_like_aws_s3_etag, get_s3_bucket_and_key_from_s3_uri, format_datetime
 )
 
 
@@ -114,6 +114,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             return False
 
         bar = ProgressBar(file_size, "▶ Upload progress",
+                          use_byte_size_for_rate=True,
                           catch_interrupt=catch_interrupt,
                           interrupt_stop=abort_upload,
                           interrupt_continue=lambda _: False,

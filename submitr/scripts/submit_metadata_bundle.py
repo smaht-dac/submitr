@@ -57,6 +57,9 @@ OPTIONS:
 --output OUTPUT-FILE
   Writes all logging output to the specified file;
   and refrains from printing lengthy content to output/stdout.
+--info
+  Displays ONLY info about the specified metadata file; nothing else.
+  Add --refs or --files to see (linkTo) references or (upload) files.
 --verbose
   Displays more verbose output.
 --help
@@ -104,11 +107,9 @@ ADVANCED OPTIONS:
 --json
   Displays the submitted metadata as formatted JSON.
 --json-only
-  Displays ONLY the submitted metadata as formatted JSON; nothing else.
+  Displays ONLY the specified metadata as formatted JSON; nothing else.
 --info
-  Displays ONLY info about the submitted metadata; nothing else.
---info
-  Displays ONLY info about the submitted metadata; nothing else.
+  Displays ONLY info about the specified metadata file; nothing else.
 --details
   Displays slightly more detailed output.
 --noprogress
@@ -126,9 +127,9 @@ ADVANCED OPTIONS:
 ===
 """
 _OBSOLETE_OPTIONS = [
-    {"option": "-e", "message": "Use --env."},
-    {"option": "-s", "message": "Use --server."},
-    {"option": "-v", "message": "Use --validate."},
+    {"option": "-e", "message": "Use --env"},
+    {"option": "-s", "message": "Use --server"},
+    {"option": "-v", "message": "Use --validate"},
     {"option": "-u", "message": "Use --directory-only; or --directory which searches recusively."},
     {"option": "-d", "message": "Use --directory-only; or --directory which searches recusively."},
     {"option": "-sd", "message": "Use --directory which defaults to searching recusively."},
@@ -177,6 +178,8 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--ingestion_type', '--ingestion-type',
                         help=f"The ingestion type (default: {DEFAULT_INGESTION_TYPE}).",
                         default=DEFAULT_INGESTION_TYPE)
+    parser.add_argument('--noversion', action="store_true",
+                        help="Do not check metadata template version.", default=False)
     parser.add_argument('--yes', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
     parser.add_argument('--no_query', '--no-query', '-nq', action="store_true",
@@ -207,6 +210,8 @@ def main(simulated_args_for_testing=None):
                         help="Output information about the given metadata file.", default=False)
     parser.add_argument('--refs', action="store_true",
                         help="Outputs list of references from the metadata file; only with --info.", default=False)
+    parser.add_argument('--files', action="store_true",
+                        help="Outputs list of files from the metadata file; only with --info.", default=False)
     parser.add_argument('--output', help="Output file for results.", default=False)
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--timeout', help="Wait timeout for server validation/submission.")
@@ -305,7 +310,8 @@ def main(simulated_args_for_testing=None):
         if not os.path.exists(args.bundle_filename):
             PRINT(f"File does not exist: {args.bundle_filename}")
             exit(1)
-        _print_metadata_file_info(args.bundle_filename, env=args.env, refs=args.refs, output_file=args.output)
+        _print_metadata_file_info(args.bundle_filename, env=args.env,
+                                  refs=args.refs, files=args.files, output_file=args.output, verbose=args.verbose)
         exit(0)
 
     with script_catch_errors():
@@ -338,6 +344,7 @@ def main(simulated_args_for_testing=None):
                              ref_nocache=args.ref_nocache,
                              verbose_json=args.json,
                              verbose=args.verbose,
+                             noversion=args.noversion,
                              noprogress=args.noprogress,
                              output_file=args.output,
                              timeout=args.timeout,
