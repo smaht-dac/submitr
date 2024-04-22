@@ -15,17 +15,16 @@ RCLONE_COMMAND_NAME = "rclone"
 def download_rclone_executable(version: Optional[str] = None, destination_file: Optional[str] = None,
                                raise_exception: bool = False) -> Optional[str]:
     """
-    Downloads the rclone executable from the Web into the standard application
-    specific directory for smaht-submitr.
+    Downloads the rclone executable from the Web into the application specific directory for smaht-submitr.
     - On MacOS this directory: is: ~/Library/Application Support/edu.harvard.hms/smaht-submitr
     - On Linux this directory is: ~/.local/share/edu.harvard.hms/smaht-submitr
-    - On Windows this directory is: %USERPROFILE%\AppData\Local\edu.harvard.hms\smaht-submitr
+    - On Windows this directory is: %USERPROFILE%\AppData\Local\edu.harvard.hms\smaht-submitr  # noqa
+    Returns a the path to the downloaded executatble file.
     """
     try:
         rclone_version = version or RCLONE_DEFAULT_VERSION
         if not destination_file:
-            destination_directory = _get_smaht_submitr_app_directory()
-            destination_file = os.path.join(destination_directory, RCLONE_COMMAND_NAME)
+            destination_file = get_rclone_executable_path()
         os_name = _get_os_name()
         os_architecture_name = _get_os_architecture_name()
         rclone_version_name = f"v{rclone_version}"
@@ -43,6 +42,10 @@ def download_rclone_executable(version: Optional[str] = None, destination_file: 
         if raise_exception:
             raise e
     return None
+
+
+def get_rclone_executable_path():
+    return f"{_get_smaht_submitr_app_directory()}/{RCLONE_COMMAND_NAME}"
 
 
 def _download_url_to_file(url: str, file: Optional[str] = None, raise_exception: bool = False) -> Optional[str]:
@@ -90,12 +93,24 @@ def _get_temporary_file_name():
     return tmpfile_path
 
 
-def _get_app_specific_data_directory() -> str:
+def _get_app_specific_directory() -> str:
+    """
+    Returns the standard system application specific directory:
+    - On MacOS this directory: is: ~/Library/Application Support
+    - On Linux this directory is: ~/.local/share
+    - On Windows this directory is: %USERPROFILE%\AppData\Local  # noqa
+    """
     return appdirs.user_data_dir()
 
 
 def _get_smaht_submitr_app_directory() -> str:
-    return os.path.join(_get_app_specific_data_directory(), "edu.harvard.hms", "smaht-submitr")
+    """
+    Returns the application specific directory for smaht-submitr:
+    - On MacOS this directory: is: ~/Library/Application Support/edu.harvard.hms/smaht-submitr
+    - On Linux this directory is: ~/.local/share/edu.harvard.hms/smaht-submitr
+    - On Windows this directory is: %USERPROFILE%\AppData\Local\edu.harvard.hms\smaht-submitr  # noqa
+    """
+    return os.path.join(_get_app_specific_directory(), "edu.harvard.hms", "smaht-submitr")
 
 
 def _get_os_name() -> str:
@@ -103,11 +118,14 @@ def _get_os_name() -> str:
         if os_name == "Darwin": return "osx"  # noqa
         elif os_name == "Linux": return "linux"  # noqa
         elif os_name == "Windows": return "windows"  # noqa
-    return "s"
+    return ""
 
 
 def _get_os_architecture_name() -> str:
-    return platform.machine() or ""
+    if os_architecture_name := platform.machine():
+        if os_architecture_name == "x86_64": return "amd64"  # noqa
+        return os_architecture_name
+    return ""
 
 
 downloaded_rclone = download_rclone_executable()
