@@ -1747,7 +1747,7 @@ def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
     lines = [
         "===",
         "SMaHT Uploaded File [UUID]",
-        f"===",
+        f"===" if file_submitted_id else None,
         f"{file_submitted_id}" if file_submitted_id else None,
         "===",
         f"File: {file_title}" if file_title else None,
