@@ -3237,6 +3237,13 @@ def _print_metadata_file_info(file: str, env: str,
             upload_files = structured_data.upload_files
             PRINT(f"Files: {len(upload_files)}")
             print_files(upload_files, max_output=max_output, output_file=output_file, verbose=verbose)
+    if not (refs is True):
+        if not (files is True):
+            PRINT("Note: Use --refs to view references; and --files to view files for upload.")
+        else:
+            PRINT("Note: Use --refs to view references (linkTo) paths.")
+    elif not (files is True):
+        PRINT("Note: Use --files to view files for upload.")
     if not portal:
         portal = _define_portal(env=env, ping=True)
     this_metadata_template_version, current_metadata_template_version = (
