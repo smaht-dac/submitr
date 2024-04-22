@@ -6,7 +6,7 @@ import requests
 import shutil
 import tempfile
 import zipfile
-from dcicutils.tmpfile_utils import temporary_directory, remove_temporary_directory
+from dcicutils.tmpfile_utils import temporary_directory
 
 RCLONE_DEFAULT_VERSION = "1.66.0"
 RCLONE_COMMAND_NAME = "rclone"
@@ -33,10 +33,9 @@ def download_rclone_executable(version: Optional[str] = None, destination_file: 
         rclone_download_base_url = f"https://downloads.rclone.org/"
         rclone_download_url = f"{rclone_download_base_url}/{rclone_version_name}/{rclone_package_file_name}"
         downloaded_rclone_package_file_name = _download_url_to_file(rclone_download_url)
-        _extract_from_zip_file(downloaded_rclone_package_file_name,
-                               f"{rclone_package_name}/{RCLONE_COMMAND_NAME}",
+        _extract_from_zip_file(downloaded_rclone_package_file_name, f"{rclone_package_name}/{RCLONE_COMMAND_NAME}",
                                destination_file, executable=True)
-        remove_temporary_directory(downloaded_rclone_package_file_name)
+        os.remove(downloaded_rclone_package_file_name)
         return destination_file
     except Exception as e:
         if raise_exception:
