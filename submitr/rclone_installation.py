@@ -107,6 +107,7 @@ def _get_smaht_submitr_app_directory() -> str:
     - On MacOS this directory: is: ~/Library/Application Support/edu.harvard.hms/smaht-submitr
     - On Linux this directory is: ~/.local/share/edu.harvard.hms/smaht-submitr
     - On Windows this directory is: %USERPROFILE%\AppData\Local\edu.harvard.hms\smaht-submitr  # noqa
+    N.B. This is has been test on MacOS and Linux but not on Windows.
     """
     return os.path.join(_get_app_specific_directory(), "edu.harvard.hms", "smaht-submitr")
 
