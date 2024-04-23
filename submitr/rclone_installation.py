@@ -9,17 +9,26 @@ import zipfile
 
 RCLONE_DEFAULT_VERSION = "1.66.0"
 RCLONE_COMMAND_NAME = "rclone"
-RCLONE_DOWNLOAD_BASE_URL = "https://downloads.rclone.org/"
+RCLONE_DOWNLOAD_BASE_URL = "https://downloads.rclone.org"
 
 
-def download_rclone_executable(version: Optional[str] = None, destination_file: Optional[str] = None,
-                               raise_exception: bool = False) -> Optional[str]:
+def install_rclone_executable(version: Optional[str] = None, destination_file: Optional[str] = None,
+                              raise_exception: bool = False) -> Optional[str]:
     """
     Downloads the rclone executable from the Web into the application specific directory for smaht-submitr.
     - On MacOS this directory: is: ~/Library/Application Support/edu.harvard.hms/smaht-submitr
     - On Linux this directory is: ~/.local/share/edu.harvard.hms/smaht-submitr
     - On Windows this directory is: %USERPROFILE%\AppData\Local\edu.harvard.hms\smaht-submitr  # noqa
-    Returns a the path to the downloaded executatble file.
+    Returns a the path to the downloaded executable file. FYI see: https://rclone.org/downloads
+
+    For example (on MacOS) we basically do the equivalent of something like this:
+    - TMPDIR=/tmp/some-temporary-directory ; rm -rf $TMPDIR ; mkdir -p $TMPDIR
+    - curl -o $TMPDIR/rclone-v1.66.0-osx-arm64.zip https://downloads.rclone.org/v1.66.0/rclone-v1.66.0-osx-arm64.zip
+    - unzip $TMPDIR/rclone-v1.66.0-osx-arm64.zip rclone-v1.66.0-osx-arm64/rclone -d $TMPDIR
+    - mkdir -p ~/Library/Application Support/edu.harvard.hms/smaht-submitr
+    - mv $TMPDIR/rclone ~/Library/Application Support/edu.harvard.hms/smaht-submitr
+    - chmod a+x ~/Library/Application Support/edu.harvard.hms/smaht-submitr/rclone
+    - rm $TMPDIR/rclone-v1.66.0-osx-arm64.zip
     """
     try:
         rclone_version = version or RCLONE_DEFAULT_VERSION
@@ -29,7 +38,7 @@ def download_rclone_executable(version: Optional[str] = None, destination_file: 
         rclone_package_name = f"rclone-{rclone_version_name}-{_get_os_name()}-{_get_os_architecture_name()}"
         rclone_package_file_name = f"{rclone_package_name}.zip"
         rclone_download_url = f"{RCLONE_DOWNLOAD_BASE_URL}/{rclone_version_name}/{rclone_package_file_name}"
-        downloaded_rclone_package = _download_to_file(rclone_download_url)
+        downloaded_rclone_package = _download_to_file(rclone_download_url, suffix=".zip")
         _extract_from_zip_file(downloaded_rclone_package, f"{rclone_package_name}/{RCLONE_COMMAND_NAME}",
                                destination_file)
         os.remove(downloaded_rclone_package)
@@ -49,10 +58,11 @@ def rclone_executable_exists():
     return os.path.isfile(get_rclone_executable_path())
 
 
-def _download_to_file(url: str, file: Optional[str] = None, raise_exception: bool = False) -> Optional[str]:
+def _download_to_file(url: str, file: Optional[str] = None, suffix: Optional[str] = None,
+                      raise_exception: bool = False) -> Optional[str]:
     try:
         if not file:
-            file = _get_temporary_file_name()
+            file = _get_temporary_file_name(suffix=suffix)
         response = requests.get(url, stream=True)
         with open(file, "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
@@ -85,8 +95,8 @@ def _extract_from_zip_file(zip_file: str, file_to_extract: str,
     return False
 
 
-def _get_temporary_file_name():
-    tmpfile_descriptor, tmpfile_path = tempfile.mkstemp()
+def _get_temporary_file_name(suffix: Optional[str] = None):
+    tmpfile_descriptor, tmpfile_path = tempfile.mkstemp(suffix=suffix)
     os.close(tmpfile_descriptor)
     return tmpfile_path
 
