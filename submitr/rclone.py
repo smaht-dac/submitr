@@ -47,15 +47,17 @@ class RCloneConfig:
         GOOGLE_CLOUD_STORAGE = "google cloud storage"
 
     def __init__(self) -> None:
+        self._name = ""
         self._config = {}
         pass
 
+    @property
+    def name(self) -> str:
+        return self._name
+
     def set_name(self, value: Optional[str]) -> RCloneConfig:
         if (value := self._normalize_string_value(value)) is not None:
-            if not value:
-                self._config.pop("name", None)
-            else:
-                self._config["name"] = value
+            self._name = value
         return self
 
     def set_type(self, value: Optional[RCloneConfig.Type]) -> RCloneConfig:
