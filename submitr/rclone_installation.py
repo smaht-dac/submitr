@@ -1,13 +1,9 @@
-import appdirs
-from contextlib import contextmanager
 import os
 import platform
-import requests
-import shutil
-import tempfile
 from typing import Optional
-import zipfile
-from dcicutils.tmpfile_utils import temporary_file
+from dcicutils.http_utils import download
+from dcicutils.misc_utils import get_app_specific_directory
+from dcicutils.zip_utils import extract_file_from_zip
 
 RCLONE_DEFAULT_VERSION = "1.66.0"
 RCLONE_COMMAND_NAME = "rclone"
@@ -40,10 +36,10 @@ def install_rclone_executable(version: Optional[str] = None, destination_file: O
         rclone_package_name = f"rclone-{rclone_version_name}-{_get_os_name()}-{_get_os_architecture_name()}"
         rclone_package_file_name = f"{rclone_package_name}.zip"
         rclone_download_url = f"{RCLONE_DOWNLOAD_BASE_URL}/{rclone_version_name}/{rclone_package_file_name}"
-        with _download(rclone_download_url, suffix=".zip") as downloaded_rclone_package:
-            _extract_from_zip(downloaded_rclone_package,
-                              f"{rclone_package_name}/{RCLONE_COMMAND_NAME}",
-                              destination_file, raise_exception=raise_exception)
+        with download(rclone_download_url, suffix=".zip") as downloaded_rclone_package:
+            extract_file_from_zip(downloaded_rclone_package,
+                                  f"{rclone_package_name}/{RCLONE_COMMAND_NAME}",
+                                  destination_file, raise_exception=raise_exception)
             os.chmod(destination_file, 0o755)
         return destination_file
     except Exception as e:
@@ -60,53 +56,6 @@ def rclone_executable_exists():
     return os.path.isfile(get_rclone_executable_path())
 
 
-@contextmanager
-def _download(url: str, suffix: Optional[str] = None) -> Optional[str]:
-    with temporary_file(suffix=suffix) as file:
-        response = requests.get(url, stream=True)
-        with open(file, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-        yield file
-
-
-def _extract_from_zip(zip_file: str, file_to_extract: str, destination_file: str, raise_exception: bool = True) -> bool:
-    try:
-        if not (destination_directory := os.path.dirname(destination_file)):
-            destination_directory = os.getcwd()
-            destination_file = os.path.join(destination_directory, destination_file)
-        with tempfile.TemporaryDirectory() as tmp_directory_name:
-            with zipfile.ZipFile(zip_file, "r") as zipf:
-                if file_to_extract not in zipf.namelist():
-                    return False
-                zipf.extract(file_to_extract, path=tmp_directory_name)
-                os.makedirs(destination_directory, exist_ok=True)
-                shutil.move(os.path.join(tmp_directory_name, file_to_extract), destination_file)
-            return True
-    except Exception as e:
-        if raise_exception:
-            raise e
-    return False
-
-
-def _get_temporary_file_name(suffix: Optional[str] = None):
-    tmpfile_descriptor, tmpfile_path = tempfile.mkstemp(suffix=suffix)
-    os.close(tmpfile_descriptor)
-    return tmpfile_path
-
-
-def _get_app_specific_directory() -> str:
-    """
-    Returns the standard system application specific directory:
-    - On MacOS this directory: is: ~/Library/Application Support
-    - On Linux this directory is: ~/.local/share
-    - On Windows this directory is: %USERPROFILE%\AppData\Local  # noqa
-    N.B. This is has been tested on MacOS and Linux but not on Windows.
-    """
-    return appdirs.user_data_dir()
-
-
 def _get_smaht_submitr_app_directory() -> str:
     """
     Returns the application specific directory for smaht-submitr:
@@ -114,7 +63,7 @@ def _get_smaht_submitr_app_directory() -> str:
     - On Linux this directory is: ~/.local/share/edu.harvard.hms/smaht-submitr
     - On Windows this directory is: %USERPROFILE%\AppData\Local\edu.harvard.hms\smaht-submitr  # noqa
     """
-    return os.path.join(_get_app_specific_directory(), "edu.harvard.hms", "smaht-submitr")
+    return os.path.join(get_app_specific_directory(), "edu.harvard.hms", "smaht-submitr")
 
 
 def _get_os_name() -> str:
