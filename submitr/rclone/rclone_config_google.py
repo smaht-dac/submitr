@@ -9,6 +9,7 @@ class RCloneConfigGoogle(RCloneConfig):
         super().__init__(*args, **kwargs)
         self._location = None
         self._service_account_file = None
+        self._bucket = None
 
     @property
     def location(self) -> Optional[str]:
@@ -27,6 +28,15 @@ class RCloneConfigGoogle(RCloneConfig):
     def service_account_file(self, value: str) -> RCloneConfig:
         if (value := self._normalize_string_value(value)) is not None:
             self._service_account_file = value or None
+
+    @property
+    def bucket(self) -> Optional[str]:
+        return self._bucket
+
+    @bucket.setter
+    def bucket(self, value: str) -> None:
+        if (value := self._normalize_string_value(value)) is not None:
+            self._bucket = value or None
 
     @property
     def config(self) -> dict:
