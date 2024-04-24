@@ -4,9 +4,7 @@ from typing import List, Optional
 from dcicutils.tmpfile_utils import temporary_file
 from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_installation import (
-    rclone_executable_install,
-    rclone_executable_exists,
-    rclone_executable_path
+    rclone_executable_install, rclone_executable_exists, rclone_executable_path
 )
 
 
