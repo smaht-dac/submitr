@@ -503,20 +503,20 @@ test-randomorder = ["pytest-randomly"]
 
 [[package]]
 name = "dcicutils"
-version = "8.8.4.1b2"
+version = "8.8.4.1b5"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 optional = false
-python-versions = "<3.12,>=3.8"
+python-versions = "<3.13,>=3.8"
 files = [
-    {file = "dcicutils-8.8.4.1b2-py3-none-any.whl", hash = "sha256:6878c59565175c01b8628a7fde67f2ef45c5328796e644ac0a11d46bde24df19"},
-    {file = "dcicutils-8.8.4.1b2.tar.gz", hash = "sha256:ee5f10b5936a73540bef2dc1ae69bdf055b8389c176184344738dc527360bcda"},
+    {file = "dcicutils-8.8.4.1b5-py3-none-any.whl", hash = "sha256:d69060b9cd0c9f0e52c1945b7fe9c0e06e6ae502a7e648c46682de847f7a3bcd"},
+    {file = "dcicutils-8.8.4.1b5.tar.gz", hash = "sha256:a45f22dcd9eee60addcb74f2dd69a06178a627b4a58bba7f2c2f9d26063d64f5"},
 ]
 
 [package.dependencies]
 appdirs = ">=1.4.4,<2.0.0"
 aws-requests-auth = ">=0.4.2,<1"
-boto3 = ">=1.28.57,<2.0.0"
-botocore = ">=1.31.57,<2.0.0"
+boto3 = ">=1.34.90,<2.0.0"
+botocore = ">=1.34.90,<2.0.0"
 chardet = ">=5.2.0,<6.0.0"
 docker = ">=4.4.4,<5.0.0"
 elasticsearch = "7.13.4"
@@ -2401,4 +2401,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0,<3.12"
-content-hash = "13e3b5fb60740e14566d774938e31d37c20210e3883f48fa283c4d02c66861cf"
+content-hash = "03dd12f26fa2c33f8606b77d63bf85d4a8faa8e5ac3bf37bfd2fe9ef48cfcbf8"
