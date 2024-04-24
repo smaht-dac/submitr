@@ -37,12 +37,14 @@ class RClone:
     @property
     def config_lines(self) -> List[str]:
         lines = []
-        if isinstance(source_config := self.source_config, RCloneConfig):
-            if isinstance(source_config_lines := source_config.config_lines, list):
-                lines.extend(source_config_lines)
-        if isinstance(destination_config := self.destination_config, RCloneConfig):
-            if isinstance(destination_config_lines := destination_config.config_lines, list):
-                lines.extend(destination_config_lines)
+        if (isinstance(source_config := self.source_config, RCloneConfig) and
+            isinstance(source_config_lines := source_config.config_lines, list)):  # noqa
+            lines.extend(source_config_lines)
+        if (isinstance(destination_config := self.destination_config, RCloneConfig) and
+            isinstance(destination_config_lines := destination_config.config_lines, list)):  # noqa
+            if lines:
+                lines.append("")  # not necessary but sporting
+            lines.extend(destination_config_lines)
         return lines
 
     @contextmanager
@@ -54,7 +56,14 @@ class RClone:
     def write_config_file(self, file: str) -> None:
         RCloneConfig._write_config_file_lines(file, self.config_lines)
 
-    def copy(self, source_file: str, destination: Optional[str] = None, raise_exception: bool = False) -> bool:
+    def copy(self, source_file: str, destination: Optional[str] = None, raise_exception: bool = False) -> object:
+        """
+        Uses rclone to copy the given source file to the given destination. All manner of variation is
+        encapsulated within this simple statement. Depends on whether or not a source and/or destination
+        configuration (RCloneConfig) has been specified and whether or not a bucket is specified in the
+        that configuration et cetera. If no configuration is specified then we assume the local file
+        system is the source and/or destination. TODO: Expand on these notes.
+        """
         # TODO
         # Use copyto instead of copy to copy to specified file name.
         # rclone --config /tmp/rclone.conf copy hello.txt test-src-smaht-wolf:smaht-unit-testing-files
@@ -64,8 +73,12 @@ class RClone:
         if isinstance(destination_config, RCloneConfig):
             if isinstance(source_config, RCloneConfig):
                 # TODO
-                # Here both a source and destination config was specified.
+                # Here both a source and destination config have been specified.
+                with self.config_file() as config_file:  # noqa
+                    # TODO
+                    pass
                 return None
+            # Here only a destination config has been specified.
             with destination_config.config_file() as destination_config_file:
                 if isinstance(destination, str) and destination and (destination != ".") and (destination != "/"):
                     # Here the given destination appears to be a file; so we use rclone copyto rather than copy.
@@ -87,9 +100,12 @@ class RClone:
                 result = subprocess.run(command, capture_output=True, text=True, check=True)
                 return result
         elif isinstance(source_config, RCloneConfig):
+            # Here only a source config has been specified.
             # TODO
-            pass
-        return False
+            with source_config.config_file() as source_config_file:  # noqa
+                # TODO
+                pass
+        return None
 
     @staticmethod
     def install(force_update: bool = True) -> Optional[str]:
