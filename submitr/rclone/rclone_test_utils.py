@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional
 import boto3
 import os
@@ -7,55 +8,89 @@ from botocore.client import BaseClient as BotoClient
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 
 
-def create_s3_client(aws_region: str,
-                     aws_access_key_id: str,
-                     aws_secret_access_key: str,
-                     aws_session_token: Optional[str] = None,
-                     aws_kms_key_id: Optional[str] = None) -> BotoClient:
-    s3_session = boto3.Session(
-        region_name=aws_region,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
-        aws_session_token=aws_session_token)
-    return s3_session.client("s3")
+class S3:
+
+    @staticmethod
+    def create(aws_region: str,
+               aws_access_key_id: str,
+               aws_secret_access_key: str,
+               aws_session_token: Optional[str] = None,
+               aws_kms_key_id: Optional[str] = None) -> S3:
+        return S3(
+            aws_region=aws_region,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
+            aws_kms_key_id=aws_kms_key_id)
+
+    def __init__(self,
+                 aws_region: str,
+                 aws_access_key_id: str,
+                 aws_secret_access_key: str,
+                 aws_session_token: Optional[str] = None,
+                 aws_kms_key_id: Optional[str] = None) -> None:
+        self._client = boto3.client(
+            "s3",
+            region_name=aws_region,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token)
+        self._kms_key_id = aws_kms_key_id
+
+    @property
+    def client(self) -> BotoClient:
+        return self._client
+
+    @property
+    def kms_key_id(self) -> Optional[str]:
+        return self._kms_key_id
+
+    @property
+    def extra_args(self) -> Optional[dict]:
+        if self.kms_key_id:
+            return {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": self.kms_key_id}
+        return None
 
 
-def aws_file_exists(s3: BotoClient, bucket: str, key: str) -> bool:
-    try:
-        s3.head_object(Bucket=bucket, Key=key)
-        return True
-    except Exception as e:
-        if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
-            return False
-        raise e
-
-
-def aws_download_file(s3: BotoClient, bucket: str, key: str, file: str) -> bool:
-    try:
-        s3.download_file(bucket, key, file)
-        return True
-    except Exception as e:
-        if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
-            return False
-        raise e
-
-
-def aws_upload_file(s3: BotoClient, file: str, bucket: str, key: Optional[str] = None) -> bool:
+def aws_upload_file(s3: S3, file: str, bucket: str, key: Optional[str] = None) -> bool:
     try:
         if not key:
             key = os.path.basename(file)
-        s3.upload_file(file, bucket, key)
+            s3.client.upload_file(file, bucket, key, ExtraArgs=s3.extra_args)
         return True
     except Exception as e:
         raise e
 
 
-def aws_delete_file(s3: BotoClient, bucket: str, key: str) -> bool:
-    # TODO
-    pass
+def aws_download_file(s3: S3, bucket: str, key: str, file: str) -> bool:
+    try:
+        s3.client.download_file(bucket, key, file)
+        return True
+    except Exception as e:
+        if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
+            return False
+        raise e
 
 
-def aws_file_equals(s3: BotoClient, bucket: str, key: str, file: str) -> bool:
+def aws_delete_file(s3: S3, bucket: str, key: str) -> bool:
+    try:
+        s3.client.delete_object(Bucket=bucket, Key=key)
+        return True
+    except Exception:
+        return False
+
+
+def aws_file_exists(s3: S3, bucket: str, key: str) -> bool:
+    try:
+        s3.client.head_object(Bucket=bucket, Key=key)
+        return True
+    except Exception as e:
+        if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
+            return False
+        raise e
+
+
+def aws_file_equals(s3: S3, bucket: str, key: str, file: str) -> bool:
     try:
         with temporary_file() as temporary_downloaded_file_name:
             if aws_download_file(s3, bucket, key, temporary_downloaded_file_name):
@@ -69,8 +104,8 @@ def aws_file_equals(s3: BotoClient, bucket: str, key: str, file: str) -> bool:
 
 def are_files_equal(filea: str, fileb: str) -> bool:
     try:
-        with open(filea, "r") as fa:
-            with open(fileb, "r") as fb:
+        with open(filea, "rb") as fa:
+            with open(fileb, "rb") as fb:
                 chunk_size = 4096
                 while True:
                     chunka = fa.read(chunk_size)
