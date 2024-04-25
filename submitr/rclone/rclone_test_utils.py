@@ -10,6 +10,9 @@ from dcicutils.misc_utils import create_dict
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 
 
+# Module with class/functions to aid in
+# integration testing of smaht-submitr rclone support.
+
 class S3:
 
     @staticmethod
