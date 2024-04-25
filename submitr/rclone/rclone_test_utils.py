@@ -28,19 +28,10 @@ class S3:
                  env: Optional[str] = None) -> None:
         if aws_credentials_file:
             aws_credentials = S3.get_credentials_from_file(aws_credentials_file, aws_credentials_file_section)
-            self._default_region = (aws_default_region or
-                                    aws_credentials.get("region", None) or
-                                    aws_credentials.get("region_name", None) or
-                                    aws_credentials.get("aws_default_region", None))
-            self._access_key_id = (aws_access_key_id or
-                                   aws_credentials.get("aws_access_key_id", None) or
-                                   aws_credentials.get("access_key_id", None))
-            self._secret_access_key = (aws_secret_access_key or
-                                       aws_credentials.get("aws_secret_access_key", None) or
-                                       aws_credentials.get("secret_access_key", None))
-            self._session_token = (aws_session_token or
-                                   aws_credentials.get("aws_session_token", None) or
-                                   aws_credentials.get("session_token", None))
+            self._default_region = aws_default_region or aws_credentials.get("aws_default_region", None)
+            self._access_key_id = aws_access_key_id or aws_credentials.get("aws_access_key_id", None)
+            self._secret_access_key = aws_secret_access_key or aws_credentials.get("aws_secret_access_key", None)
+            self._session_token = aws_session_token or aws_credentials.get("aws_session_token", None)
         else:
             self._default_region = aws_default_region
             self._access_key_id = aws_access_key_id
@@ -70,12 +61,21 @@ class S3:
                     credentials_file = os.path.join(f"~/.aws_test.{credentials_file}/credentials")
             config = configparser.ConfigParser()
             config.read(os.path.expanduser(credentials_file))
-            config = config[section_name]
+            credentials = config[section_name]
+            default_region = (credentials.get("region", None) or
+                              credentials.get("region_name", None) or
+                              credentials.get("aws_default_region", None))
+            access_key_id = (credentials.get("aws_access_key_id", None) or
+                             credentials.get("access_key_id", None))
+            secret_access_key = (credentials.get("aws_secret_access_key", None) or
+                                 credentials.get("secret_access_key", None))
+            session_token = (credentials.get("aws_session_token", None) or
+                             credentials.get("session_token", None))
             return create_dict(
-                aws_default_region=config.get("aws_default_region"),
-                aws_access_key_id=config.get("aws_access_key_id", None),
-                aws_secret_access_key=config.get("aws_secret_access_key", None),
-                aws_session_token=config.get("aws_session_token", None))
+                aws_default_region=default_region,
+                aws_access_key_id=access_key_id,
+                aws_secret_access_key=secret_access_key,
+                aws_session_token=session_token)
         except Exception:
             pass
         return result
