@@ -4,6 +4,7 @@ from botocore.client import BaseClient as BotoClient
 import configparser
 import os
 from typing import Optional, Tuple
+from uuid import uuid4 as create_uuid
 from dcicutils.file_utils import are_files_equal, create_random_file, normalize_file_path
 from dcicutils.misc_utils import create_dict
 from dcicutils.tmpfile_utils import temporary_file
@@ -135,6 +136,35 @@ class AwsCredentials:
         os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
         os.environ.pop("AWS_SESSION_TOKEN", None)
 
+    def generate_session_credentials(self, role: Optional[str] = None,
+                                     raise_exception: bool = True) -> Optional[AwsCredentials]:
+        # This is so we can create a AWS session token programmatically for integration testing.
+        # Created this role (integration-testing-s3-related-role) in smaht-wolf on 2024-04-25
+        # especially for this purpose; it has full S3 access (AmazonS3FullAccess) and allows
+        # only the user david.michaels to assume role.
+        DEFAULT_TESTING_ROLE = "arn:aws:iam::537626822796:role/integration-testing-s3-related-role"
+        if not isinstance(role, str) or not role:
+            role = DEFAULT_TESTING_ROLE
+        try:
+            sts = boto3.client("sts",
+                               aws_access_key_id=self.access_key_id,
+                               aws_secret_access_key=self.secret_access_key)
+            name = f"smaht-submitr-test-session-{create_uuid()}"
+            if isinstance(response := sts.assume_role(RoleArn=role, RoleSessionName=name), dict):
+                if isinstance(response_credentials := response.get("Credentials"), dict):
+                    access_key_id = response_credentials.get("AccessKeyId", None)
+                    secret_access_key = response_credentials.get("SecretAccessKey", None)
+                    session_token = response_credentials.get("SessionToken", None)
+                    if access_key_id and secret_access_key and session_token:
+                        return AwsCredentials(
+                            access_key_id=access_key_id,
+                            secret_access_key=secret_access_key,
+                            session_token=session_token)
+        except Exception as e:
+            if raise_exception:
+                raise e
+        return None
+
 
 class AwsS3:
 
@@ -174,6 +204,11 @@ class AwsS3:
     @property
     def credentials(self) -> AwsCredentials:
         return self._credentials
+
+    @credentials.setter
+    def credentials(self, value: AwsCredentials) -> None:
+        if isinstance(value, AwsCredentials):
+            self._credentials = value
 
     @property
     def client(self) -> BotoClient:

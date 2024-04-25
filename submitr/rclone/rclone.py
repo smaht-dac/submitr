@@ -96,6 +96,9 @@ class RClone:
                         if len(destination_components := destination.split(os.sep)) >= 2:
                             destination_bucket = destination_components[0]
                             destination = "/".join(destination_components[1:])
+                        else:
+                            raise Exception(f"No bucket in given destination for rclone copyto"
+                                            f" and no bucket specified in destination config.")
                     command = [self.executable_path(),
                                "copyto", "--config", destination_config_file,
                                source_file,
@@ -105,7 +108,7 @@ class RClone:
                     # meaning copy the source to the bucket which must have been specified
                     # in the destination_config; so we use rclone copy rather than copyto.
                     if not destination_config.bucket:
-                        raise Exception(f"No destination specified for copy and"
+                        raise Exception(f"No destination given for rclone copy and"
                                         f" no bucket specified in destination config.")
                     command = [self.executable_path(),
                                "copy", "--config", destination_config_file,
