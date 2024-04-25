@@ -3,12 +3,10 @@ import boto3
 from botocore.client import BaseClient as BotoClient
 import configparser
 import os
-import random
-import string
 from typing import Optional, Tuple
 from dcicutils.file_utils import are_files_equal, create_random_file, normalize_file_path
 from dcicutils.misc_utils import create_dict
-from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
+from dcicutils.tmpfile_utils import temporary_file
 
 
 # Module with class/functions to aid in
@@ -195,7 +193,7 @@ class AwsS3:
             return {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": self.credentials.kms_key_id}
         return None
 
-    def upload_file(self, file: str, bucket: str, key: Optional[str] = None, raise_exception: bool = False) -> bool:
+    def upload_file(self, file: str, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> bool:
         try:
             if not key:
                 key = os.path.basename(file)
@@ -206,7 +204,7 @@ class AwsS3:
                 raise e
         return False
 
-    def download_file(self, bucket: str, key: str, file: str, raise_exception: bool = False) -> bool:
+    def download_file(self, bucket: str, key: str, file: str, raise_exception: bool = True) -> bool:
         try:
             self.client.download_file(bucket, key, file)
             return True
@@ -217,17 +215,17 @@ class AwsS3:
                 raise e
         return False
 
-    def delete_file(self, bucket: str, key: str, check: bool = False, raise_exception: bool = False) -> bool:
+    def delete_file(self, bucket: str, key: str, check: bool = False, raise_exception: bool = True) -> bool:
         try:
             if not (check is True) or self.file_exists(bucket, key):
                 self.client.delete_object(Bucket=bucket, Key=key)
                 return True
-        except Exception:
+        except Exception as e:
             if raise_exception is True:
                 raise e
         return False
 
-    def file_exists(self, bucket: str, key: str) -> bool:
+    def file_exists(self, bucket: str, key: str, raise_exception: bool = True) -> bool:
         try:
             self.client.head_object(Bucket=bucket, Key=key)
             return True
@@ -238,7 +236,7 @@ class AwsS3:
                 raise e
         return False
 
-    def file_equals(self, bucket: str, key: str, file: str, raise_exception: bool = False) -> bool:
+    def file_equals(self, bucket: str, key: str, file: str, raise_exception: bool = True) -> bool:
         try:
             with temporary_file() as temporary_downloaded_file_name:
                 if self.download_file(bucket, key, temporary_downloaded_file_name):
