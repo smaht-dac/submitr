@@ -6,7 +6,7 @@ import os
 import random
 import string
 from typing import Optional, Tuple
-from dcicutils.file_utils import are_files_equal, normalize_file_path
+from dcicutils.file_utils import are_files_equal, create_random_file, normalize_file_path
 from dcicutils.misc_utils import create_dict
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 
@@ -17,7 +17,7 @@ from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 class AwsCredentials:
 
     @staticmethod
-    def create(*args, **kwargs) -> S3:
+    def create(*args, **kwargs) -> AwsCredentials:
         return AwsCredentials(*args, **kwargs)
 
     def __init__(self,
@@ -138,13 +138,14 @@ class AwsCredentials:
         os.environ.pop("AWS_SESSION_TOKEN", None)
 
 
-class S3:
+class AwsS3:
 
     @staticmethod
-    def create(*args, **kwargs) -> S3:
-        return S3(*args, **kwargs)
+    def create(*args, **kwargs) -> AwsS3:
+        return AwsS3(*args, **kwargs)
 
     def __init__(self,
+                 credentials: Optional[AwsCredentials] = None,
                  credentials_file: Optional[str] = None,
                  credentials_file_section: Optional[str] = None,
                  default_region: Optional[str] = None,
@@ -152,147 +153,79 @@ class S3:
                  secret_access_key: Optional[str] = None,
                  session_token: Optional[str] = None,
                  kms_key_id: Optional[str] = None,
-                 default_bucket: Optional[str] = None,
-                 env: Optional[str] = None) -> None:
-        credentials = AwsCredentials(
-             credentials_file=credentials_file,
-             credentials_file_section=credentials_file_section,
-             default_region=default_region,
-             access_key_id=access_key_id,
-             secret_access_key=secret_access_key,
-             session_token=session_token,
-             kms_key_id=kms_key_id)
-        if credentials_file:
-            credentials = S3.get_credentials_from_file(credentials_file, credentials_file_section)
-            self._default_region = default_region or credentials.get("aws_default_region", None)
-            self._access_key_id = access_key_id or credentials.get("aws_access_key_id", None)
-            self._secret_access_key = secret_access_key or credentials.get("aws_secret_access_key", None)
-            self._session_token = session_token or credentials.get("aws_session_token", None)
+                 default_bucket: Optional[str] = None) -> None:
+        if isinstance(credentials, AwsCredentials):
+            self._credentials = credentials
         else:
-            self._default_region = default_region
-            self._access_key_id = access_key_id
-            self._secret_access_key = secret_access_key
-            self._session_token = session_token
-        self._kms_key_id = kms_key_id
+            self._credentials = AwsCredentials(
+                credentials_file=credentials_file,
+                credentials_file_section=credentials_file_section,
+                default_region=default_region,
+                access_key_id=access_key_id,
+                secret_access_key=secret_access_key,
+                session_token=session_token,
+                kms_key_id=kms_key_id)
         self._default_bucket = default_bucket
-        self._env = env
         self._client = boto3.client(
             "s3",
-            region_name=self._default_region,
-            aws_access_key_id=self._access_key_id,
-            aws_secret_access_key=self._secret_access_key,
-            aws_session_token=self._session_token)
+            region_name=self._credentials.default_region,
+            aws_access_key_id=self._credentials.access_key_id,
+            aws_secret_access_key=self._credentials.secret_access_key,
+            aws_session_token=self._credentials.session_token)
 
-    @staticmethod
-    def get_credentials_from_file(credentials_file: str, section_name: str = None) -> dict:
-        if not section_name:
-            section_name = "default"
-        try:
-            credentials_file = os.path.expanduser(credentials_file)
-            if not os.path.isfile(credentials_file):
-                if os.path.isdir(credentials_file):
-                    credentials_file = os.path.join(credentials_file, "credentials")
-                else:
-                    credentials_file = os.path.join(f"~/.aws_test.{credentials_file}/credentials")
-            config = configparser.ConfigParser()
-            config.read(os.path.expanduser(credentials_file))
-            credentials = config[section_name]
-            default_region = (credentials.get("region", None) or
-                              credentials.get("region_name", None) or
-                              credentials.get("aws_default_region", None))
-            access_key_id = (credentials.get("aws_access_key_id", None) or
-                             credentials.get("access_key_id", None))
-            secret_access_key = (credentials.get("aws_secret_access_key", None) or
-                                 credentials.get("secret_access_key", None))
-            session_token = (credentials.get("aws_session_token", None) or
-                             credentials.get("session_token", None))
-            return create_dict(
-                aws_default_region=default_region,
-                aws_access_key_id=access_key_id,
-                aws_secret_access_key=secret_access_key,
-                aws_session_token=session_token)
-        except Exception:
-            pass
-        return {}
-
-    @staticmethod
-    def get_credentials_from_environment_variables() -> dict:
-        return create_dict(
-            aws_default_region=os.environ.get("AWS_DEFAULT_REGION", None),
-            aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", None),
-            aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", None),
-            aws_session_token=os.environ.get("AWS_SESSION_TOKEN", None))
-
-    @staticmethod
-    def clear_credentials_from_environment_variables() -> None:
-        os.environ.pop("AWS_DEFAULT_REGION", None)
-        os.environ.pop("AWS_ACCESS_KEY_ID", None)
-        os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
-        os.environ.pop("AWS_SESSION_TOKEN", None)
+    @property
+    def credentials(self) -> AwsCredentials:
+        return self._credentials
 
     @property
     def client(self) -> BotoClient:
         return self._client
 
     @property
-    def default_region(self) -> Optional[str]:
-        return self._default_region
-
-    @property
-    def access_key_id(self) -> Optional[str]:
-        return self._access_key_id
-
-    @property
-    def secret_access_key(self) -> Optional[str]:
-        return self._secret_access_key
-
-    @property
-    def session_token(self) -> Optional[str]:
-        return self._session_token
-
-    @property
-    def kms_key_id(self) -> Optional[str]:
-        return self._kms_key_id
-
-    @property
     def default_bucket(self) -> Optional[str]:
         return self._default_bucket
 
-    @property
-    def env(self) -> Optional[str]:
-        return self._env
+    @default_bucket.setter
+    def default_bucket(self, value: str) -> Optional[str]:
+        self._default_bucket = value
 
     @property
     def extra_args(self) -> Optional[dict]:
-        if self.kms_key_id:
-            return {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": self.kms_key_id}
+        if self.credentials.kms_key_id:
+            return {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": self.credentials.kms_key_id}
         return None
 
-    def upload_file(self, file: str, bucket: str, key: Optional[str] = None) -> bool:
+    def upload_file(self, file: str, bucket: str, key: Optional[str] = None, raise_exception: bool = False) -> bool:
         try:
             if not key:
                 key = os.path.basename(file)
             self.client.upload_file(file, bucket, key, ExtraArgs=self.extra_args)
             return True
         except Exception as e:
-            raise e
+            if raise_exception is True:
+                raise e
+        return False
 
-    def download_file(self, bucket: str, key: str, file: str) -> bool:
+    def download_file(self, bucket: str, key: str, file: str, raise_exception: bool = False) -> bool:
         try:
             self.client.download_file(bucket, key, file)
             return True
         except Exception as e:
             if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
                 return False
-            raise e
+            if raise_exception is True:
+                raise e
+        return False
 
-    def delete_file(self, bucket: str, key: str, check: bool = False) -> bool:
+    def delete_file(self, bucket: str, key: str, check: bool = False, raise_exception: bool = False) -> bool:
         try:
-            if not check or self.file_exists(bucket, key):
+            if not (check is True) or self.file_exists(bucket, key):
                 self.client.delete_object(Bucket=bucket, Key=key)
-            return True
+                return True
         except Exception:
-            return False
+            if raise_exception is True:
+                raise e
+        return False
 
     def file_exists(self, bucket: str, key: str) -> bool:
         try:
@@ -301,18 +234,21 @@ class S3:
         except Exception as e:
             if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
                 return False
-            raise e
+            if raise_exception is True:
+                raise e
+        return False
 
-    def file_equals(self, bucket: str, key: str, file: str) -> bool:
+    def file_equals(self, bucket: str, key: str, file: str, raise_exception: bool = False) -> bool:
         try:
             with temporary_file() as temporary_downloaded_file_name:
                 if self.download_file(bucket, key, temporary_downloaded_file_name):
                     return self.are_files_equal(file, temporary_downloaded_file_name)
-            return True
         except Exception as e:
             if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
                 return False
-            raise e
+            if raise_exception is True:
+                raise e
+        return False
 
     @staticmethod
     def are_files_equal(filea: str, fileb: str) -> bool:
@@ -322,11 +258,4 @@ class S3:
     def create_random_file(file: Optional[str] = None,
                            prefix: Optional[str] = None, suffix: Optional[str] = None,
                            nbytes: int = 1024, binary: bool = False) -> str:
-        if not file:
-            file = create_temporary_file_name(prefix=prefix, suffix=suffix)
-        with open(file, "wb" if binary is True else "w") as f:
-            if binary is True:
-                f.write(os.urandom(nbytes))
-            else:
-                f.write(''.join(random.choices(string.ascii_letters + string.digits, k=nbytes)))
-        return file
+        return create_random_file(file=file, prefix=prefix, suffix=suffix, nbytes=nbytes, binary=binary)
