@@ -96,7 +96,7 @@ class RClone:
                         if len(destination_components := destination.split(os.sep)) >= 2:
                             destination_bucket = destination_components[0]
                             destination = "/".join(destination_components[1:])
-                    command = [f"\"{self.executable_path()}\"",
+                    command = [self.executable_path(),
                                "copyto", "--config", destination_config_file,
                                source_file,
                                f"{destination_config.name}:{destination_bucket}/{destination}"]
@@ -107,13 +107,14 @@ class RClone:
                     if not destination_config.bucket:
                         raise Exception(f"No destination specified for copy and"
                                         f" no bucket specified in destination config.")
-                    command = [f"\"{self.executable_path()}\"",
+                    command = [self.executable_path(),
                                "copy", "--config", destination_config_file,
                                source_file,
                                f"{destination_config.name}:{destination_config.bucket}"]
                 try:
                     if dryrun is True:
-                        destination_config_file
+                        if " " in command[0]:
+                            command[0] = f"\"{command[0]}\""
                         return " ".join(command)
                     result = subprocess.run(command, capture_output=True, text=True, check=True)
                     return result
