@@ -6,6 +6,7 @@ import os
 import random
 import string
 from typing import Optional
+from dcicutils.file_utils import are_files_equal
 from dcicutils.misc_utils import create_dict
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 
@@ -184,20 +185,7 @@ class S3:
 
     @staticmethod
     def are_files_equal(filea: str, fileb: str) -> bool:
-        try:
-            with open(filea, "rb") as fa:
-                with open(fileb, "rb") as fb:
-                    chunk_size = 4096
-                    while True:
-                        chunka = fa.read(chunk_size)
-                        chunkb = fb.read(chunk_size)
-                        if chunka != chunkb:
-                            return False
-                        if not chunka:
-                            break
-            return True
-        except Exception:
-            return False
+        return are_files_equal(filea, fileb)
 
     @staticmethod
     def create_random_file(file: Optional[str] = None,
