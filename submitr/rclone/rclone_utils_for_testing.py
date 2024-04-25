@@ -5,14 +5,138 @@ import configparser
 import os
 import random
 import string
-from typing import Optional
-from dcicutils.file_utils import are_files_equal
+from typing import Optional, Tuple
+from dcicutils.file_utils import are_files_equal, normalize_file_path
 from dcicutils.misc_utils import create_dict
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 
 
 # Module with class/functions to aid in
 # integration testing of smaht-submitr rclone support.
+
+class AwsCredentials:
+
+    @staticmethod
+    def create(*args, **kwargs) -> S3:
+        return AwsCredentials(*args, **kwargs)
+
+    def __init__(self,
+                 credentials_file: Optional[str] = None,
+                 credentials_file_section: Optional[str] = None,
+                 default_region: Optional[str] = None,
+                 access_key_id: Optional[str] = None,
+                 secret_access_key: Optional[str] = None,
+                 session_token: Optional[str] = None,
+                 kms_key_id: Optional[str] = None) -> None:
+        self._kms_key_id = kms_key_id
+        if credentials_file:
+            credentials, credentials_file = AwsCredentials.get_credentials_from_file(
+                credentials_file, credentials_file_section)
+            if credentials:
+                self._default_region = default_region or credentials.get("aws_default_region", None)
+                self._access_key_id = access_key_id or credentials.get("aws_access_key_id", None)
+                self._secret_access_key = secret_access_key or credentials.get("aws_secret_access_key", None)
+                self._session_token = session_token or credentials.get("aws_session_token", None)
+                self._credentials_file = normalize_file_path(credentials_file)
+                return
+        self._default_region = default_region
+        self._access_key_id = access_key_id
+        self._secret_access_key = secret_access_key
+        self._session_token = session_token
+        self._credentials_file = None
+
+    @property
+    def credentials_file(self) -> Optional[str]:
+        return self._credentials_file
+
+    @property
+    def default_region(self) -> Optional[str]:
+        return self._default_region
+
+    @default_region.setter
+    def default_region(self, value: str) -> None:
+        self._default_region = value
+
+    @property
+    def access_key_id(self) -> Optional[str]:
+        return self._access_key_id
+
+    @access_key_id.setter
+    def access_key_id(self, value: str) -> Optional[str]:
+        self._access_key_id = value
+
+    @property
+    def secret_access_key(self) -> Optional[str]:
+        return self._secret_access_key
+
+    @secret_access_key.setter
+    def secret_access_key(self, value: str) -> Optional[str]:
+        self._secret_access_key = value
+
+    @property
+    def session_token(self) -> Optional[str]:
+        return self._session_token
+
+    @session_token.setter
+    def session_token(self, value: str) -> Optional[str]:
+        self._session_token = value
+
+    @property
+    def kms_key_id(self) -> Optional[str]:
+        return self._kms_key_id
+
+    @kms_key_id.setter
+    def kms_key_id(self, value: str) -> Optional[str]:
+        self._kms_key_id = value
+
+    @staticmethod
+    def get_credentials_from_file(credentials_file: str,
+                                  section_name: str = None) -> Tuple[Optional[dict], Optional[str]]:
+        if not section_name:
+            section_name = "default"
+        try:
+            credentials_file = os.path.expanduser(credentials_file)
+            if not os.path.isfile(credentials_file):
+                if os.path.isdir(credentials_file):
+                    credentials_file = os.path.join(credentials_file, "credentials")
+                else:
+                    credentials_file = os.path.join(f"~/.aws_test.{credentials_file}/credentials")
+            config = configparser.ConfigParser()
+            config.read(os.path.expanduser(credentials_file))
+            credentials = config[section_name]
+            default_region = (credentials.get("region", None) or
+                              credentials.get("region_name", None) or
+                              credentials.get("aws_default_region", None))
+            access_key_id = (credentials.get("aws_access_key_id", None) or
+                             credentials.get("access_key_id", None))
+            secret_access_key = (credentials.get("aws_secret_access_key", None) or
+                                 credentials.get("secret_access_key", None))
+            session_token = (credentials.get("aws_session_token", None) or
+                             credentials.get("session_token", None))
+            return create_dict(
+                aws_default_region=default_region,
+                aws_access_key_id=access_key_id,
+                aws_secret_access_key=secret_access_key,
+                aws_session_token=session_token), credentials_file
+        except Exception:
+            pass
+        return None, None
+
+    @staticmethod
+    def get_credentials_from_environment_variables() -> dict:
+        return create_dict(
+            aws_default_region=os.environ.get("AWS_DEFAULT_REGION", None),
+            aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", None),
+            aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", None),
+            aws_session_token=os.environ.get("AWS_SESSION_TOKEN", None))
+
+    @staticmethod
+    def clear_credentials_from_environment_variables() -> None:
+        os.environ.pop("AWS_DEFAULT_REGION", None)
+        os.environ.pop("AWS_ACCESS_KEY_ID", None)
+        os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
+        os.environ.pop("AWS_SESSION_TOKEN", None)
+
 
 class S3:
 
@@ -30,6 +154,14 @@ class S3:
                  kms_key_id: Optional[str] = None,
                  default_bucket: Optional[str] = None,
                  env: Optional[str] = None) -> None:
+        credentials = AwsCredentials(
+             credentials_file=credentials_file,
+             credentials_file_section=credentials_file_section,
+             default_region=default_region,
+             access_key_id=access_key_id,
+             secret_access_key=secret_access_key,
+             session_token=session_token,
+             kms_key_id=kms_key_id)
         if credentials_file:
             credentials = S3.get_credentials_from_file(credentials_file, credentials_file_section)
             self._default_region = default_region or credentials.get("aws_default_region", None)
@@ -53,7 +185,6 @@ class S3:
 
     @staticmethod
     def get_credentials_from_file(credentials_file: str, section_name: str = None) -> dict:
-        result = {}
         if not section_name:
             section_name = "default"
         try:
@@ -82,7 +213,7 @@ class S3:
                 aws_session_token=session_token)
         except Exception:
             pass
-        return result
+        return {}
 
     @staticmethod
     def get_credentials_from_environment_variables() -> dict:
