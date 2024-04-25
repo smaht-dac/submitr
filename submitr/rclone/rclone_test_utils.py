@@ -17,27 +17,27 @@ class S3:
         return S3(*args, **kwargs)
 
     def __init__(self,
-                 aws_credentials_file: Optional[str] = None,
-                 aws_credentials_file_section: Optional[str] = None,
-                 aws_default_region: Optional[str] = None,
-                 aws_access_key_id: Optional[str] = None,
-                 aws_secret_access_key: Optional[str] = None,
-                 aws_session_token: Optional[str] = None,
-                 aws_kms_key_id: Optional[str] = None,
+                 credentials_file: Optional[str] = None,
+                 credentials_file_section: Optional[str] = None,
+                 default_region: Optional[str] = None,
+                 access_key_id: Optional[str] = None,
+                 secret_access_key: Optional[str] = None,
+                 session_token: Optional[str] = None,
+                 kms_key_id: Optional[str] = None,
                  default_bucket: Optional[str] = None,
                  env: Optional[str] = None) -> None:
-        if aws_credentials_file:
-            aws_credentials = S3.get_credentials_from_file(aws_credentials_file, aws_credentials_file_section)
-            self._default_region = aws_default_region or aws_credentials.get("aws_default_region", None)
-            self._access_key_id = aws_access_key_id or aws_credentials.get("aws_access_key_id", None)
-            self._secret_access_key = aws_secret_access_key or aws_credentials.get("aws_secret_access_key", None)
-            self._session_token = aws_session_token or aws_credentials.get("aws_session_token", None)
+        if credentials_file:
+            credentials = S3.get_credentials_from_file(credentials_file, credentials_file_section)
+            self._default_region = default_region or credentials.get("aws_default_region", None)
+            self._access_key_id = access_key_id or credentials.get("aws_access_key_id", None)
+            self._secret_access_key = secret_access_key or credentials.get("aws_secret_access_key", None)
+            self._session_token = session_token or credentials.get("aws_session_token", None)
         else:
-            self._default_region = aws_default_region
-            self._access_key_id = aws_access_key_id
-            self._secret_access_key = aws_secret_access_key
-            self._session_token = aws_session_token
-        self._kms_key_id = aws_kms_key_id
+            self._default_region = default_region
+            self._access_key_id = access_key_id
+            self._secret_access_key = secret_access_key
+            self._session_token = session_token
+        self._kms_key_id = kms_key_id
         self._default_bucket = default_bucket
         self._env = env
         self._client = boto3.client(
@@ -114,6 +114,10 @@ class S3:
     @property
     def session_token(self) -> Optional[str]:
         return self._session_token
+
+    @property
+    def kms_key_id(self) -> Optional[str]:
+        return self._kms_key_id
 
     @property
     def default_bucket(self) -> Optional[str]:
