@@ -37,15 +37,15 @@ class S3:
             self._access_key_id = aws_access_key_id
             self._secret_access_key = aws_secret_access_key
             self._session_token = aws_session_token
+        self._kms_key_id = aws_kms_key_id
         self._default_bucket = default_bucket
         self._env = env
         self._client = boto3.client(
             "s3",
-            region_name=aws_default_region,
-            aws_access_key_id=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key,
-            aws_session_token=aws_session_token)
-        self._kms_key_id = aws_kms_key_id
+            region_name=self._default_region,
+            aws_access_key_id=self._access_key_id,
+            aws_secret_access_key=self._secret_access_key,
+            aws_session_token=self._session_token)
 
     @staticmethod
     def get_credentials_from_file(credentials_file: str, section_name: str = None) -> dict:
