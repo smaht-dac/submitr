@@ -30,12 +30,14 @@ class AwsCredentials(AmazonCredentials):
                  session_token: Optional[str] = None,
                  kms_key_id: Optional[str] = None) -> None:
 
+        import pdb ; pdb.set_trace()
+        pass
         if isinstance(credentials, AmazonCredentials):
             super().__init__(credentials)
             self._credentials_file = None
         elif (isinstance(credentials, str) and
               (credentials := AwsCredentials.get_credentials_from_file(credentials, credentials_section))):
-            super().__init__(region=credentials.get("default_region"),
+            super().__init__(region=credentials.get("region"),
                              access_key_id=credentials.get("access_key_id"),
                              secret_access_key=credentials.get("secret_access_key"),
                              session_token=credentials.get("session_token"))
@@ -116,27 +118,8 @@ class AwsS3:
     def create(*args, **kwargs) -> AwsS3:
         return AwsS3(*args, **kwargs)
 
-    def __init__(self,
-                 credentials: Optional[AwsCredentials] = None,
-                 credentials_file: Optional[str] = None,
-                 credentials_section: Optional[str] = None,
-                 region: Optional[str] = None,
-                 access_key_id: Optional[str] = None,
-                 secret_access_key: Optional[str] = None,
-                 session_token: Optional[str] = None,
-                 kms_key_id: Optional[str] = None,
-                 default_bucket: Optional[str] = None) -> None:
-        if isinstance(credentials, AwsCredentials):
-            self._credentials = credentials
-        else:
-            self._credentials = AwsCredentials(
-                credentials_file=credentials_file,
-                credentials_section=credentials_section,
-                region=region,
-                access_key_id=access_key_id,
-                secret_access_key=secret_access_key,
-                session_token=session_token,
-                kms_key_id=kms_key_id)
+    def __init__(self, credentials: AmazonCredentials, default_bucket: Optional[str] = None) -> None:
+        self._credentials = AwsCredentials(credentials)
         self._default_bucket = default_bucket
         self._client = boto3.client(
             "s3",
