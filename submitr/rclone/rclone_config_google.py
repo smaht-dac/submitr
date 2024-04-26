@@ -17,6 +17,15 @@ class RCloneConfigGoogle(RCloneConfig):
                                               service_account_file=service_account_file)
 
     @property
+    def credentials(self) -> Optional[GoogleCredentials]:
+        return self._credentials
+
+    @credentials.setter
+    def credentials(self, value: GoogleCredentials) -> None:
+        if isinstance(value, GoogleCredentials):
+            self._credentials = value
+
+    @property
     def location(self) -> Optional[str]:
         return self._credentials.location
 
