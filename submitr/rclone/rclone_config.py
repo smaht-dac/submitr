@@ -1,4 +1,3 @@
-from __future__ import annotations
 from abc import ABC as AbstractBaseClass, abstractproperty
 from contextlib import contextmanager
 from typing import List, Optional
@@ -8,8 +7,9 @@ from dcicutils.tmpfile_utils import temporary_file
 
 class RCloneConfig(AbstractBaseClass):
 
-    def __init__(self, name: Optional[str] = None) -> None:
-        self.name = name
+    def __init__(self, name: Optional[str] = None, bucket: Optional[str] = None) -> None:
+        self._name = self._normalize_string_value(name) or create_uuid()
+        self._bucket = self._normalize_string_value(bucket) or None
 
     @property
     def name(self) -> str:
@@ -24,6 +24,15 @@ class RCloneConfig(AbstractBaseClass):
                 self._name = create_uuid()
             else:
                 self._name = value
+
+    @property
+    def bucket(self) -> Optional[str]:
+        return self._bucket
+
+    @bucket.setter
+    def bucket(self, value: str) -> None:
+        if (value := self._normalize_string_value(value)) is not None:
+            self._bucket = value or None
 
     @abstractproperty
     def config(self) -> dict:

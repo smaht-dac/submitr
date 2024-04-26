@@ -259,9 +259,18 @@ class AwsS3:
                            nbytes: int = 1024, binary: bool = False) -> str:
         return create_random_file(file=file, prefix=prefix, suffix=suffix, nbytes=nbytes, binary=binary)
 
-    def generate_temporary_credentials(self, duration: Optional[Union[int, timedelta]] = None,
+    def generate_temporary_credentials(self,
+                                       duration: Optional[Union[int, timedelta]] = None,
                                        bucket: Optional[str] = None, key: Optional[str] = None,
                                        readonly: bool = False) -> AwsCredentials:
+        """
+        Generates and returns temporary AWS credentials. The default duration of validity
+        for the generated credential is one hour; this can be overridden by specifying
+        the duration argument (which is in seconds). By default the generated credentials
+        will have full S3 access; but if the readonly argument is True then this will be
+        limited to readonly S3 access. Passing in a bucket or a bucket and key argument(s)
+        will further limit access to just the specified bucket or bucket and key.
+        """
         policy_resources = ["*"]
         policy_include_deny = False
         if isinstance(bucket, str) and bucket:

@@ -10,68 +10,70 @@ from submitr.rclone.rclone_config import RCloneConfig
 
 class RCloneConfigAmazon(RCloneConfig):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._region = None
-        self._access_key_id = None
-        self._secret_access_key = None
-        self._session_token = None
-        self._kms_key_id = None
-        self._bucket = None
+    def __init__(self,
+                 credentials: Optional[AmazonCredentials] = None,
+                 region: Optional[str] = None,
+                 access_key_id: Optional[str] = None,
+                 secret_access_key: Optional[str] = None,
+                 session_token: Optional[str] = None,
+                 kms_key_id: Optional[str] = None,
+                 name: Optional[str] = None, bucket: Optional[str] = None) -> None:
+        super().__init__(name=name, bucket=bucket)
+        self._credentials = AmazonCredentials(credentials=credentials,
+                                              region=region,
+                                              access_key_id=access_key_id,
+                                              secret_access_key=secret_access_key,
+                                              session_token=session_token,
+                                              kms_key_id=kms_key_id)
+
+    @property
+    def credentials(self) -> Optional[AmazonCredentials]:
+        return self._credentials
+
+    @credentials.setter
+    def credentials(self, value: AmazonCredentials) -> None:
+        if isinstance(value, AmazonCredentials):
+            self._credentials = value
 
     @property
     def region(self) -> Optional[str]:
-        return self._region
+        return self._credentials.region
 
     @region.setter
     def region(self, value: str) -> None:
-        if (value := self._normalize_string_value(value)) is not None:
-            self._region = value or None
+        self._credentials.region = value
 
     @property
     def access_key_id(self) -> Optional[str]:
-        return self._access_key_id
+        return self._credentials.access_key_id
 
     @access_key_id.setter
     def access_key_id(self, value: str) -> None:
-        if (value := self._normalize_string_value(value)) is not None:
-            self._access_key_id = value or None
+        self._credentials.access_key_id = value
 
     @property
     def secret_access_key(self) -> Optional[str]:
-        return self._secret_access_key
+        return self._credentials.secret_access_key
 
     @secret_access_key.setter
     def secret_access_key(self, value: str) -> None:
-        if (value := self._normalize_string_value(value)) is not None:
-            self._secret_access_key = value or None
+        self._credentials.secret_access_key = value
 
     @property
     def session_token(self) -> Optional[str]:
-        return self._session_token
+        return self._credentials.session_token
 
     @session_token.setter
     def session_token(self, value: str) -> None:
-        if (value := self._normalize_string_value(value)) is not None:
-            self._session_token = value or None
+        self._credentials.session_token = value
 
     @property
     def kms_key_id(self) -> Optional[str]:
-        return self._kms_key_id
+        return self._credentials.kms_key_id
 
     @kms_key_id.setter
     def kms_key_id(self, value: str) -> None:
-        if (value := self._normalize_string_value(value)) is not None:
-            self._kms_key_id = value or None
-
-    @property
-    def bucket(self) -> Optional[str]:
-        return self._bucket
-
-    @bucket.setter
-    def bucket(self, value: str) -> None:
-        if (value := self._normalize_string_value(value)) is not None:
-            self._bucket = value or None
+        self._credentials.kms_key_id = value
 
     @property
     def config(self) -> dict:
@@ -135,7 +137,7 @@ class AmazonCredentials:
         return self._access_key_id
 
     @access_key_id.setter
-    def access_key_id(self, value: Optional[str]) -> Optional[str]:
+    def access_key_id(self, value: Optional[str]) -> None:
         if (value := RCloneConfig._normalize_string_value(value)) is not None:
             self._access_key_id = value or None
 
@@ -144,7 +146,7 @@ class AmazonCredentials:
         return self._secret_access_key
 
     @secret_access_key.setter
-    def secret_access_key(self, value: Optional[str]) -> Optional[str]:
+    def secret_access_key(self, value: Optional[str]) -> None:
         if (value := RCloneConfig._normalize_string_value(value)) is not None:
             self._secret_access_key = value or None
 
@@ -153,7 +155,7 @@ class AmazonCredentials:
         return self._session_token
 
     @session_token.setter
-    def session_token(self, value: Optional[str]) -> Optional[str]:
+    def session_token(self, value: Optional[str]) -> None:
         if (value := RCloneConfig._normalize_string_value(value)) is not None:
             self._session_token = value or None
 
@@ -162,11 +164,12 @@ class AmazonCredentials:
         return self._kms_key_id
 
     @kms_key_id.setter
-    def kms_key_id(self, value: Optional[str]) -> Optional[str]:
+    def kms_key_id(self, value: Optional[str]) -> None:
         if (value := RCloneConfig._normalize_string_value(value)) is not None:
             self._kms_key_id = value or None
 
-    def generate_temporary_credentials(self, duration: Optional[Union[int, timedelta]] = None,
+    def generate_temporary_credentials(self,
+                                       duration: Optional[Union[int, timedelta]] = None,
                                        policy: Optional[dict] = None,
                                        raise_exception: bool = True) -> Optional[AmazonCredentials]:
         """
@@ -174,8 +177,7 @@ class AmazonCredentials:
         for the generated credential is one hour; this can be overridden by specifying
         the duration argument (which is in seconds). By default the generated credentials
         will have the same permissions as the credentials of this (self) AmazonCredentials
-        object; this can currently be changed to either just S3 full access or S3 readonly
-        access by specifying as True th s3 or s3_readonly arguments, respectively.
+        object; this can be changed by passing in an AWS policy object (dictionary).
         """
         DURATION_DEFAULT = 60 * 60  # One hour
         DURATION_MIN = 60 * 15  # Fifteen minutes
