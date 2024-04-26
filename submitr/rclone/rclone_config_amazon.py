@@ -27,7 +27,7 @@ class RCloneConfigAmazon(RCloneConfig):
                                               kms_key_id=kms_key_id)
 
     @property
-    def credentials(self) -> Optional[AmazonCredentials]:
+    def credentials(self) -> AmazonCredentials:
         return self._credentials
 
     @credentials.setter

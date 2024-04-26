@@ -46,15 +46,15 @@ class AwsCredentials(AmazonCredentials):
             self._credentials_file = None
 
         if region := RCloneConfig._normalize_string_value(region):
-            super().region = region
+            self.region = region
         if access_key_id := RCloneConfig._normalize_string_value(access_key_id):
-            super().access_key_id = access_key_id
+            self.access_key_id = access_key_id
         if secret_access_key := RCloneConfig._normalize_string_value(secret_access_key):
-            super().secret_access_key = secret_access_key
+            self.secret_access_key = secret_access_key
         if session_token := RCloneConfig._normalize_string_value(session_token):
-            super().session_token = session_token
+            self.session_token = session_token
         if kms_key_id := RCloneConfig._normalize_string_value(kms_key_id):
-            super().kms_key_id = kms_key_id
+            self.kms_key_id = kms_key_id
 
     @property
     def credentials_file(self) -> Optional[str]:
@@ -126,12 +126,6 @@ class AwsS3:
             aws_access_key_id=self._credentials.access_key_id,
             aws_secret_access_key=self._credentials.secret_access_key,
             aws_session_token=self._credentials.session_token)
-        self._resource = boto3.resource(
-            "s3",
-            region_name=self._credentials.region,
-            aws_access_key_id=self._credentials.access_key_id,
-            aws_secret_access_key=self._credentials.secret_access_key,
-            aws_session_token=self._credentials.session_token)
 
     @property
     def credentials(self) -> AwsCredentials:
@@ -154,17 +148,20 @@ class AwsS3:
     def default_bucket(self, value: str) -> Optional[str]:
         self._default_bucket = value
 
-    @property
-    def extra_args(self) -> Optional[dict]:
-        if self.credentials.kms_key_id:
-            return {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": self.credentials.kms_key_id}
-        return None
-
     def upload_file(self, file: str, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> bool:
         try:
             if not key:
                 key = os.path.basename(file)
-            self.client.upload_file(file, bucket, key, ExtraArgs=self.extra_args)
+            import pdb ; pdb.set_trace()
+            pass
+            if kms_key_id := self.credentials.kms_key_id:
+                # Note that it is not necessary to use the KMS Key ID when downloading
+                # a file uploaded with a KMS Key ID, since this info is stored together
+                # with the uploaded file and is used if applicable.
+                extra_args = {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": self.credentials.kms_key_id}
+            else:
+                extra_args = None
+            self.client.upload_file(file, bucket, key, ExtraArgs=extra_args)
             return True
         except Exception as e:
             if raise_exception is True:
