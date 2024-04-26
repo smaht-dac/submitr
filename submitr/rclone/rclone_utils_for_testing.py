@@ -30,8 +30,6 @@ class AwsCredentials(AmazonCredentials):
                  session_token: Optional[str] = None,
                  kms_key_id: Optional[str] = None) -> None:
 
-        import pdb ; pdb.set_trace()
-        pass
         if isinstance(credentials, AmazonCredentials):
             super().__init__(credentials)
             self._credentials_file = None
