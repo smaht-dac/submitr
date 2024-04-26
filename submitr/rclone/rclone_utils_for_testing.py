@@ -4,10 +4,11 @@ from botocore.client import BaseClient as BotoClient
 import configparser
 from datetime import timedelta
 import os
-from typing import Optional, Union
+from typing import List, Optional, Union
 from dcicutils.file_utils import are_files_equal, create_random_file, normalize_file_path
 from dcicutils.misc_utils import create_dict
 from dcicutils.tmpfile_utils import temporary_file
+from dcicutils.datetime_utils import format_datetime
 from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_config_amazon import AmazonCredentials
 
@@ -125,6 +126,12 @@ class AwsS3:
             aws_access_key_id=self._credentials.access_key_id,
             aws_secret_access_key=self._credentials.secret_access_key,
             aws_session_token=self._credentials.session_token)
+        self._resource = boto3.resource(
+            "s3",
+            region_name=self._credentials.region,
+            aws_access_key_id=self._credentials.access_key_id,
+            aws_secret_access_key=self._credentials.secret_access_key,
+            aws_session_token=self._credentials.session_token)
 
     @property
     def credentials(self) -> AwsCredentials:
@@ -184,6 +191,40 @@ class AwsS3:
             if raise_exception is True:
                 raise e
         return False
+
+    def list_files(self, bucket: str,
+                   prefix: Optional[str] = None,
+                   sort: Optional[str] = None,
+                   count: Optional[int] = None, offset: Optional[int] = None,
+                   raise_exception: bool = True) -> List[str]:
+        keys = []
+        try:
+            args = {"Prefix": prefix} if isinstance(prefix, str) and prefix else {}
+            while True:
+                response = self.client.list_objects_v2(Bucket=bucket, **args)
+                if contents := response.get("Contents"):
+                    for item in contents:
+                        keys.append({"key": item["Key"],
+                                     "modified": format_datetime(item["LastModified"]),
+                                     "size": item["Size"]})
+                if not (continuation_token := response.get("NextContinuationToken")):
+                    break
+                args["ContinuationToken"] = continuation_token
+            if isinstance(sort, str) and (sort := sort.strip().lower()):
+                sort_reverse = sort.startswith("-")
+                sort_key = "modified" if "modified" in sort else "name"
+                keys = sorted(keys, key=lambda item: item[sort_key], reverse=sort_reverse)
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+        if isinstance(offset, int) and (offset >= 0):
+            if isinstance(count, int) and (count >= 0):
+                keys = keys[offset:offset + count]
+            else:
+                keys = keys[offset:]
+        elif isinstance(count, int) and (count >= 0):
+            keys = keys[:count]
+        return keys
 
     def file_exists(self, bucket: str, key: str, raise_exception: bool = True) -> bool:
         try:
