@@ -2,97 +2,67 @@ from __future__ import annotations
 import boto3
 from botocore.client import BaseClient as BotoClient
 import configparser
+from datetime import timedelta
 import os
-from typing import Optional, Tuple
-from uuid import uuid4 as create_uuid
+from typing import Optional, Union
 from dcicutils.file_utils import are_files_equal, create_random_file, normalize_file_path
 from dcicutils.misc_utils import create_dict
 from dcicutils.tmpfile_utils import temporary_file
+from submitr.rclone.rclone_config import RCloneConfig
+from submitr.rclone.rclone_config_amazon import AmazonCredentials
 
 
 # Module with class/functions to aid in
 # integration testing of smaht-submitr rclone support.
 
-class AwsCredentials:
+class AwsCredentials(AmazonCredentials):
 
     @staticmethod
     def create(*args, **kwargs) -> AwsCredentials:
         return AwsCredentials(*args, **kwargs)
 
     def __init__(self,
-                 credentials_file: Optional[str] = None,
-                 credentials_file_section: Optional[str] = None,
-                 default_region: Optional[str] = None,
+                 credentials: Optional[Union[str, AwsCredentials]] = None,
+                 credentials_section: Optional[str] = None,
+                 region: Optional[str] = None,
                  access_key_id: Optional[str] = None,
                  secret_access_key: Optional[str] = None,
                  session_token: Optional[str] = None,
                  kms_key_id: Optional[str] = None) -> None:
-        self._kms_key_id = kms_key_id
-        if credentials_file:
-            credentials, credentials_file = AwsCredentials.get_credentials_from_file(
-                credentials_file, credentials_file_section)
-            if credentials:
-                self._default_region = default_region or credentials.get("aws_default_region", None)
-                self._access_key_id = access_key_id or credentials.get("aws_access_key_id", None)
-                self._secret_access_key = secret_access_key or credentials.get("aws_secret_access_key", None)
-                self._session_token = session_token or credentials.get("aws_session_token", None)
-                self._credentials_file = normalize_file_path(credentials_file)
-                return
-        self._default_region = default_region
-        self._access_key_id = access_key_id
-        self._secret_access_key = secret_access_key
-        self._session_token = session_token
-        self._credentials_file = None
+
+        if isinstance(credentials, AmazonCredentials):
+            super().__init__(credentials)
+            self._credentials_file = None
+        elif (isinstance(credentials, str) and
+              (credentials := AwsCredentials.get_credentials_from_file(credentials, credentials_section))):
+            super().__init__(region=credentials.get("default_region"),
+                             access_key_id=credentials.get("access_key_id"),
+                             secret_access_key=credentials.get("secret_access_key"),
+                             session_token=credentials.get("session_token"))
+            self._credentials_file = credentials.get("credentials_file")
+        else:
+            super().__init__()
+            self._credentials_file = None
+
+        if region := RCloneConfig._normalize_string_value(region):
+            super().region = region
+        if access_key_id := RCloneConfig._normalize_string_value(access_key_id):
+            super().access_key_id = access_key_id
+        if secret_access_key := RCloneConfig._normalize_string_value(secret_access_key):
+            super().secret_access_key = secret_access_key
+        if session_token := RCloneConfig._normalize_string_value(session_token):
+            super().session_token = session_token
+        if kms_key_id := RCloneConfig._normalize_string_value(kms_key_id):
+            super().kms_key_id = kms_key_id
 
     @property
     def credentials_file(self) -> Optional[str]:
         return self._credentials_file
 
-    @property
-    def default_region(self) -> Optional[str]:
-        return self._default_region
-
-    @default_region.setter
-    def default_region(self, value: str) -> None:
-        self._default_region = value
-
-    @property
-    def access_key_id(self) -> Optional[str]:
-        return self._access_key_id
-
-    @access_key_id.setter
-    def access_key_id(self, value: str) -> Optional[str]:
-        self._access_key_id = value
-
-    @property
-    def secret_access_key(self) -> Optional[str]:
-        return self._secret_access_key
-
-    @secret_access_key.setter
-    def secret_access_key(self, value: str) -> Optional[str]:
-        self._secret_access_key = value
-
-    @property
-    def session_token(self) -> Optional[str]:
-        return self._session_token
-
-    @session_token.setter
-    def session_token(self, value: str) -> Optional[str]:
-        self._session_token = value
-
-    @property
-    def kms_key_id(self) -> Optional[str]:
-        return self._kms_key_id
-
-    @kms_key_id.setter
-    def kms_key_id(self, value: str) -> Optional[str]:
-        self._kms_key_id = value
-
     @staticmethod
-    def get_credentials_from_file(credentials_file: str,
-                                  section_name: str = None) -> Tuple[Optional[dict], Optional[str]]:
-        if not section_name:
-            section_name = "default"
+    def get_credentials_from_file(credentials_file: str, credentials_section: str = None) -> Optional[dict]:
+        if not credentials_section:
+            credentials_section = "default"
         try:
             credentials_file = os.path.expanduser(credentials_file)
             if not os.path.isfile(credentials_file):
@@ -102,10 +72,10 @@ class AwsCredentials:
                     credentials_file = os.path.join(f"~/.aws_test.{credentials_file}/credentials")
             config = configparser.ConfigParser()
             config.read(os.path.expanduser(credentials_file))
-            credentials = config[section_name]
-            default_region = (credentials.get("region", None) or
-                              credentials.get("region_name", None) or
-                              credentials.get("aws_default_region", None))
+            credentials = config[credentials_section]
+            region = (credentials.get("region", None) or
+                      credentials.get("region_name", None) or
+                      credentials.get("aws_default_region", None))
             access_key_id = (credentials.get("aws_access_key_id", None) or
                              credentials.get("access_key_id", None))
             secret_access_key = (credentials.get("aws_secret_access_key", None) or
@@ -113,21 +83,21 @@ class AwsCredentials:
             session_token = (credentials.get("aws_session_token", None) or
                              credentials.get("session_token", None))
             return create_dict(
-                aws_default_region=default_region,
-                aws_access_key_id=access_key_id,
-                aws_secret_access_key=secret_access_key,
-                aws_session_token=session_token), credentials_file
+                region=region,
+                access_key_id=access_key_id,
+                secret_access_key=secret_access_key,
+                session_token=session_token,
+                credentials_file=normalize_file_path(credentials_file))
         except Exception:
-            pass
-        return None, None
+            return None
 
     @staticmethod
     def get_credentials_from_environment_variables() -> dict:
         return create_dict(
-            aws_default_region=os.environ.get("AWS_DEFAULT_REGION", None),
-            aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", None),
-            aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", None),
-            aws_session_token=os.environ.get("AWS_SESSION_TOKEN", None))
+            region=os.environ.get("AWS_DEFAULT_REGION", None),
+            access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", None),
+            secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", None),
+            session_token=os.environ.get("AWS_SESSION_TOKEN", None))
 
     @staticmethod
     def clear_credentials_from_environment_variables() -> None:
@@ -136,34 +106,8 @@ class AwsCredentials:
         os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
         os.environ.pop("AWS_SESSION_TOKEN", None)
 
-    def generate_session_credentials(self, role: Optional[str] = None,
-                                     raise_exception: bool = True) -> Optional[AwsCredentials]:
-        # This is so we can create a AWS session token programmatically for integration testing.
-        # Created this role (integration-testing-s3-related-role) in smaht-wolf on 2024-04-25
-        # especially for this purpose; it has full S3 access (AmazonS3FullAccess) and allows
-        # only the user david.michaels to assume role.
-        DEFAULT_TESTING_ROLE = "arn:aws:iam::537626822796:role/integration-testing-s3-related-role"
-        if not isinstance(role, str) or not role:
-            role = DEFAULT_TESTING_ROLE
-        try:
-            sts = boto3.client("sts",
-                               aws_access_key_id=self.access_key_id,
-                               aws_secret_access_key=self.secret_access_key)
-            name = f"smaht-submitr-test-session-{create_uuid()}"
-            if isinstance(response := sts.assume_role(RoleArn=role, RoleSessionName=name), dict):
-                if isinstance(response_credentials := response.get("Credentials"), dict):
-                    access_key_id = response_credentials.get("AccessKeyId", None)
-                    secret_access_key = response_credentials.get("SecretAccessKey", None)
-                    session_token = response_credentials.get("SessionToken", None)
-                    if access_key_id and secret_access_key and session_token:
-                        return AwsCredentials(
-                            access_key_id=access_key_id,
-                            secret_access_key=secret_access_key,
-                            session_token=session_token)
-        except Exception as e:
-            if raise_exception:
-                raise e
-        return None
+    def generate_temporary_credentials(self, *args, **kwargs):
+        return AwsCredentials(super().generate_temporary_credentials(*args, **kwargs))
 
 
 class AwsS3:
@@ -175,8 +119,8 @@ class AwsS3:
     def __init__(self,
                  credentials: Optional[AwsCredentials] = None,
                  credentials_file: Optional[str] = None,
-                 credentials_file_section: Optional[str] = None,
-                 default_region: Optional[str] = None,
+                 credentials_section: Optional[str] = None,
+                 region: Optional[str] = None,
                  access_key_id: Optional[str] = None,
                  secret_access_key: Optional[str] = None,
                  session_token: Optional[str] = None,
@@ -187,8 +131,8 @@ class AwsS3:
         else:
             self._credentials = AwsCredentials(
                 credentials_file=credentials_file,
-                credentials_file_section=credentials_file_section,
-                default_region=default_region,
+                credentials_section=credentials_section,
+                region=region,
                 access_key_id=access_key_id,
                 secret_access_key=secret_access_key,
                 session_token=session_token,
@@ -196,7 +140,7 @@ class AwsS3:
         self._default_bucket = default_bucket
         self._client = boto3.client(
             "s3",
-            region_name=self._credentials.default_region,
+            region_name=self._credentials.region,
             aws_access_key_id=self._credentials.access_key_id,
             aws_secret_access_key=self._credentials.secret_access_key,
             aws_session_token=self._credentials.session_token)
@@ -292,3 +236,32 @@ class AwsS3:
                            prefix: Optional[str] = None, suffix: Optional[str] = None,
                            nbytes: int = 1024, binary: bool = False) -> str:
         return create_random_file(file=file, prefix=prefix, suffix=suffix, nbytes=nbytes, binary=binary)
+
+    def generate_temporary_credentials(self, duration: Optional[Union[int, timedelta]] = None,
+                                       bucket: Optional[str] = None, key: Optional[str] = None,
+                                       readonly: bool = False) -> AwsCredentials:
+        policy_resources = ["*"]
+        policy_include_deny = False
+        if isinstance(bucket, str) and bucket:
+            if isinstance(key, str) and bucket:
+                policy_resources = ["arn:aws:s3:::{bucket}/{key}"]
+            else:
+                policy_resources = ["arn:aws:s3:::{bucket}", "arn:aws:s3:::{bucket}/*"]
+                policy_include_deny = True
+
+        if readonly:
+            # AmazonS3ReadOnlyAccess
+            policy_actions = ["s3:Get*", "s3:Head*", "s3:List*", "s3:Describe*",
+                              "s3-object-lambda:Get*", "s3-object-lambda:Head*", "s3-object-lambda:List*"]
+        else:
+            # AmazonS3FullAccess
+            policy_actions = ["s3:*", "s3-object-lambda:*"]
+
+        statements = []
+        statements.append({"Effect": "Allow", "Action": policy_actions, "Resource": policy_resources})
+        if policy_include_deny:
+            statements.append = [{"Effect": "Deny", "Action": policy_actions, "NotResource": policy_resources}]
+
+        policy = {"Version": "2012-10-17", "Statement": statements}
+
+        return self.credentials.generate_temporary_credentials(duration=duration, policy=policy)
