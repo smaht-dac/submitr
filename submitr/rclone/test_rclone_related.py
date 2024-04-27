@@ -1,5 +1,4 @@
 import os
-import time
 from dcicutils.file_utils import are_files_equal
 from dcicutils.tmpfile_utils import (
     temporary_directory,
@@ -33,7 +32,7 @@ def test_rclone_utils_for_testing():
     s3 = AwsS3(temporary_session_credentials)
 
     with temporary_random_file(prefix="test-submitr-rclone-", suffix=".txt") as tmp_source_file_path:
-        tmp_source_file_name = os.path.basename(tmp_source_file_path)  # key name within bucket 
+        tmp_source_file_name = os.path.basename(tmp_source_file_path)  # key name within bucket
         assert s3.upload_file(tmp_source_file_path, bucket) is True
         assert s3.file_exists(bucket, tmp_source_file_name) is True
         assert s3.file_equals(bucket, tmp_source_file_name, tmp_source_file_path) is True
