@@ -42,7 +42,7 @@ class SmahtWolf:
     def temporary_test_file():
         with temporary_random_file(prefix=ENV.temporary_test_file_prefix,
                                    suffix=ENV.temporary_test_file_suffix) as tmp_file_path:
-            yield tmp_file_path
+            yield tmp_file_path, os.path.basename(tmp_file_path)
 
 
 ENV = SmahtWolf
@@ -67,30 +67,29 @@ def _test_rclone_utils_for_testing(credentials):
     s3 = AwsS3(credentials)
     bucket = ENV.bucket
 
-    with ENV.temporary_test_file() as tmp_source_file_path:
-        tmp_source_file_name = os.path.basename(tmp_source_file_path)  # key name within bucket
-        assert s3.upload_file(tmp_source_file_path, bucket) is True
-        assert s3.file_exists(bucket, tmp_source_file_name) is True
-        assert s3.file_equals(bucket, tmp_source_file_name, tmp_source_file_path) is True
-        assert s3.file_exists(bucket, tmp_source_file_name + "-junk-suffix") is False
+    with ENV.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        assert s3.upload_file(tmp_test_file_path, bucket) is True
+        assert s3.file_exists(bucket, tmp_test_file_name) is True
+        assert s3.file_equals(bucket, tmp_test_file_name, tmp_test_file_path) is True
+        assert s3.file_exists(bucket, tmp_test_file_name + "-junk-suffix") is False
         assert len(s3_test_files := s3.list_files(bucket, prefix=ENV.temporary_test_file_prefix)) > 0
-        assert len(s3_test_files_found := [f for f in s3_test_files if f["key"] == tmp_source_file_name]) == 1
-        assert s3_test_files_found[0]["key"] == tmp_source_file_name
-        assert len(s3.list_files(bucket, prefix=tmp_source_file_name)) == 1
+        assert len(s3_test_files_found := [f for f in s3_test_files if f["key"] == tmp_test_file_name]) == 1
+        assert s3_test_files_found[0]["key"] == tmp_test_file_name
+        assert len(s3.list_files(bucket, prefix=tmp_test_file_name)) == 1
         with temporary_random_file() as some_random_file_path:
-            assert s3.file_equals(bucket, tmp_source_file_name, some_random_file_path) is False
+            assert s3.file_equals(bucket, tmp_test_file_name, some_random_file_path) is False
         with temporary_file() as tmp_downloaded_file_path:
-            assert s3.download_file(bucket, tmp_source_file_name, tmp_downloaded_file_path) is True
-            assert s3.download_file(bucket, tmp_source_file_name, "/dev/null") is True
-            assert are_files_equal(tmp_source_file_path, tmp_downloaded_file_path) is True
-            assert are_files_equal(tmp_source_file_path, "/dev/null") is False
+            assert s3.download_file(bucket, tmp_test_file_name, tmp_downloaded_file_path) is True
+            assert s3.download_file(bucket, tmp_test_file_name, "/dev/null") is True
+            assert are_files_equal(tmp_test_file_path, tmp_downloaded_file_path) is True
+            assert are_files_equal(tmp_test_file_path, "/dev/null") is False
         with temporary_directory() as tmp_download_directory:
-            assert s3.download_file(bucket, tmp_source_file_name, tmp_download_directory) is True
-            assert are_files_equal(tmp_source_file_path, f"{tmp_download_directory}/{tmp_source_file_name}") is True
-        assert s3.delete_file(bucket, tmp_source_file_name) is True
-        assert s3.file_exists(bucket, tmp_source_file_name) is False
-        assert s3.file_equals(bucket, tmp_source_file_name, "/dev/null") is False
-        assert s3.download_file(bucket, tmp_source_file_name, "/dev/null") is False
+            assert s3.download_file(bucket, tmp_test_file_name, tmp_download_directory) is True
+            assert are_files_equal(tmp_test_file_path, f"{tmp_download_directory}/{tmp_test_file_name}") is True
+        assert s3.delete_file(bucket, tmp_test_file_name) is True
+        assert s3.file_exists(bucket, tmp_test_file_name) is False
+        assert s3.file_equals(bucket, tmp_test_file_name, "/dev/null") is False
+        assert s3.download_file(bucket, tmp_test_file_name, "/dev/null") is False
 
 
 def test_rclone_local_to_amazon():
