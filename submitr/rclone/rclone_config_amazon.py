@@ -17,6 +17,7 @@ class RCloneConfigAmazon(RCloneConfig):
                  secret_access_key: Optional[str] = None,
                  session_token: Optional[str] = None,
                  kms_key_id: Optional[str] = None,
+                 nokms: bool = False,
                  name: Optional[str] = None, bucket: Optional[str] = None) -> None:
 
         if isinstance(credentials_or_config, RCloneConfigAmazon):
@@ -34,7 +35,8 @@ class RCloneConfigAmazon(RCloneConfig):
                                               access_key_id=access_key_id,
                                               secret_access_key=secret_access_key,
                                               session_token=session_token,
-                                              kms_key_id=kms_key_id)
+                                              kms_key_id=kms_key_id,
+                                              nokms=nokms)
 
     @property
     def credentials(self) -> AmazonCredentials:
@@ -116,14 +118,15 @@ class AmazonCredentials:
                  access_key_id: Optional[str] = None,
                  secret_access_key: Optional[str] = None,
                  session_token: Optional[str] = None,
-                 kms_key_id: Optional[str] = None) -> None:
+                 kms_key_id: Optional[str] = None,
+                 nokms: bool = False) -> None:
 
         if isinstance(credentials, AmazonCredentials):
             self._region = credentials.region
             self._access_key_id = credentials.access_key_id
             self._secret_access_key = credentials.secret_access_key
             self._session_token = credentials.session_token
-            self._kms_key_id = credentials.kms_key_id
+            self._kms_key_id = None if nokms is True else credentials.kms_key_id
         else:
             self._region = None
             self._access_key_id = None
@@ -140,7 +143,7 @@ class AmazonCredentials:
         if session_token := RCloneConfig._normalize_string_value(session_token):
             self._session_token = session_token
         if kms_key_id := RCloneConfig._normalize_string_value(kms_key_id):
-            self._kms_key_id = kms_key_id
+            self._kms_key_id = None if nokms is True else kms_key_id
 
     @property
     def region(self) -> Optional[str]:
@@ -231,6 +234,8 @@ class AmazonCredentials:
         name = f"test.smaht.submitr.{self._create_short_unique_identifier()}"
         try:
             if policy:
+                # response = sts.get_federation_token(Name=name, Policy=policy)
+                # xyzzy
                 response = sts.get_federation_token(Name=name, DurationSeconds=duration, Policy=policy)
             else:
                 response = sts.get_federation_token(Name=name, DurationSeconds=duration)

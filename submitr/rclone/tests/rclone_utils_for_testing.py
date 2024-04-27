@@ -236,7 +236,7 @@ class AwsS3:
     def generate_temporary_credentials(self,
                                        duration: Optional[Union[int, timedelta]] = None,
                                        bucket: Optional[str] = None, key: Optional[str] = None,
-                                       kms: bool = True, readonly: bool = False) -> AwsCredentials:
+                                       nokms: bool = False, readonly: bool = False) -> AwsCredentials:
         """
         Generates and returns temporary AWS credentials. The default duration of validity for
         the generated credential is one hour; this can be overridden by specifying the duration
@@ -249,17 +249,20 @@ class AwsS3:
         if isinstance(bucket, str) and (bucket := bucket.strip()):
             if isinstance(key, str) and (key := key.strip()):
                 resources = [f"arn:aws:s3:::{bucket}/{key}"]
+                # Note that this is specifically required (for some reason) by rclone (but not for plain aws).
+                resources += [f"arn:aws:s3:::{bucket}"]
             else:
                 resources = [f"arn:aws:s3:::{bucket}", f"arn:aws:s3:::{bucket}/*"] ; deny = True  # noqa
         # For how this policy is defined in smaht-portal for file upload
         # session token creation see: encoded_core.types.file.external_creds
         actions = ["s3:GetObject", "s3:HeadObject", "s3:ListBucket", "s3:DescribeBucket"]
-        if not (kms is False):
+        if not (nokms is True):
             actions += ["kms:GenerateDataKey", "kms:Decrypt", "kms:Encrypt", "kms:ReEncrypt", "kms:DescribeKey"]
         if not (readonly is True):
-            # Note the s3:CreateBucket is specifically required (for some reason) by rclone.
+            # Note the s3:CreateBucket is specifically required (for some reason) by rclone (but not for plain
+            # aws), unless these temporary (session) credentials are targetted specifically for the bucket/key.
             actions = actions + ["s3:PutObject", "s3:DeleteObject", "s3:CreateBucket"]
-        actions += ["kms:GenerateDataKey", "kms:Decrypt", "kms:Encrypt", "kms:ReEncrypt", "kms:DescribeKey"]
+        # actions += ["s3:*"] # xyzzy/debug
         statements = [{"Effect": "Allow", "Action": actions, "Resource": resources}]
         if deny:
             statements += [{"Effect": "Deny", "Action": actions, "NotResource": resources}]

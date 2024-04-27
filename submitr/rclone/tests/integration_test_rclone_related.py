@@ -7,7 +7,7 @@ from dcicutils.tmpfile_utils import (
     temporary_random_file
 )
 from submitr.rclone.rclone import RClone
-from submitr.rclone.rclone_config_amazon import RCloneConfigAmazon
+from submitr.rclone.rclone_config_amazon import AmazonCredentials, RCloneConfigAmazon
 from submitr.rclone.tests.rclone_utils_for_testing import AwsCredentials, AwsS3
 
 # Integration tests for rclone related functionality within smaht-submitr.
@@ -96,22 +96,40 @@ def test_rclone_local_to_amazon():
 
     # _test_rclone_local_to_amazon(ENV.credentials())
 
+    """
     credentials = AwsS3(ENV.credentials()).generate_temporary_credentials()
     # credentials.kms_key_id = None  # TODO: Test with and without kms
     assert isinstance(credentials.session_token, str) and credentials.session_token
     _test_rclone_local_to_amazon(credentials)
+    """
+
+    _test_rclone_local_to_amazon(ENV.credentials(), use_temporary_credentials_key_specific=True)
+    _test_rclone_local_to_amazon(ENV.credentials(), use_temporary_credentials=True)
 
 
-def _test_rclone_local_to_amazon(credentials):
+def _test_rclone_local_to_amazon(credentials: AmazonCredentials,
+                                 use_temporary_credentials: bool = False,
+                                 use_temporary_credentials_key_specific: bool = False,
+                                 nokms: bool = False) -> None:
 
-    config = RCloneConfigAmazon(credentials)
-    assert config.credentials == credentials
-    assert config.access_key_id == credentials.access_key_id
-    assert config.secret_access_key == credentials.secret_access_key
-    assert config.session_token == credentials.session_token
-    assert config.kms_key_id == credentials.kms_key_id
-    rclone = RClone(destination=config)
+    nokms = True # todo; breaks when false
+    if nokms is True:
+        credentials = AmazonCredentials(credentials, nokms=True)
     with ENV.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        if use_temporary_credentials_key_specific is True:
+            credentials = AwsS3(credentials).generate_temporary_credentials(bucket=ENV.bucket,
+                                                                            key=tmp_test_file_name, nokms=nokms)
+            assert isinstance(credentials.session_token, str) and credentials.session_token
+        elif use_temporary_credentials is True:
+            credentials = AwsS3(credentials).generate_temporary_credentials(nokms=nokms)
+            assert isinstance(credentials.session_token, str) and credentials.session_token
+        config = RCloneConfigAmazon(credentials, nokms=nokms)
+        assert config.credentials == credentials
+        assert config.access_key_id == credentials.access_key_id
+        assert config.secret_access_key == credentials.secret_access_key
+        assert config.session_token == credentials.session_token
+        assert config.kms_key_id == credentials.kms_key_id
+        rclone = RClone(destination=config)
         assert rclone.copy(tmp_test_file_path, ENV.bucket) is True
         s3 = AwsS3(credentials)
         assert s3.file_exists(ENV.bucket, tmp_test_file_name) is True
@@ -124,5 +142,5 @@ def _test_rclone_local_to_amazon(credentials):
 
 
 # Manually run ...
-test_rclone_utils_for_testing()
+# test_rclone_utils_for_testing()
 test_rclone_local_to_amazon()

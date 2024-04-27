@@ -119,6 +119,7 @@ class RClone:
                                "copy", "--config", destination_config_file, source_file,
                                f"{destination_config.name}:{destination_config.bucket}"]
                 command.append("--progress")
+                command.append("-vv")
                 try:
                     if dryrun is True:
                         if " " in command[0]:
@@ -126,8 +127,6 @@ class RClone:
                         return " ".join(command)
                     result = subprocess.run(command, capture_output=True, text=True, check=True)
                     return True if (result.returncode == 0) else False
-                    pass
-                    return result
                 except Exception as e:
                     if raise_exception is True:
                         raise e
