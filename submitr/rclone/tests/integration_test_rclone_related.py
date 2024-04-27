@@ -19,6 +19,7 @@ class SmahtWolf:
     credentials = credentials_with_kms
 
 
+# TODO: How to possibly test this as unit test within GA/CI? Need an AWS access/secret key.
 Env = SmahtWolf
 
 
