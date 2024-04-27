@@ -107,8 +107,8 @@ def _test_rclone_local_to_amazon(credentiasl):
     config = RCloneConfigAmazon(credentials)
     rclone = RClone(destination=config)  # noqa
     with ENV.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
-        todo = rclone.copy(tmp_test_file_path, ENV.bucket, dryrun=False)
-        import pdb ; pdb.set_trace()
+        # todo = rclone.copy(tmp_test_file_path, ENV.bucket, dryrun=False)
+        # import pdb ; pdb.set_trace()
         pass
 
 
