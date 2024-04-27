@@ -90,6 +90,7 @@ class RClone:
                     # Here the given destination appears to be a file; so we use rclone copyto rather than copy.
                     # The destination bucket must either be specified in the destination_config or as the
                     # first (path-style) component of the given destination.
+                    import pdb ; pdb.set_trace()
                     if not (destination_bucket := destination_config.bucket):
                         if (destination := normalize_file_path(destination, home_directory=False)).startswith(os.sep):
                             destination = destination[1:]
