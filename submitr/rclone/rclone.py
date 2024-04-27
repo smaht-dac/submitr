@@ -13,9 +13,9 @@ from submitr.rclone.rclone_installation import (
 
 class RClone:
 
-    def __init__(self) -> None:
-        self._source_config = None
-        self._destination_config = None
+    def __init__(self, source: Optional[RCloneConfig] = None, destination: Optional[RCloneConfig] = None) -> None:
+        self._source_config = source if isinstance(source, RCloneConfig) else None
+        self._destination_config = destination if isinstance(destination, RCloneConfig) else None
 
     @property
     def source_config(self) -> Optional[RCloneConfig]:

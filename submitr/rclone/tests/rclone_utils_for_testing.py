@@ -31,7 +31,7 @@ class AwsCredentials(AmazonCredentials):
         if isinstance(credentials, str):
             credentials = AwsCredentials.get_credentials_from_file(credentials, credentials_section)
         if isinstance(credentials, AmazonCredentials):
-            super().__init__(credentials)
+            super().__init__(credentials, kms_key_id=kms_key_id)
         else:
             super().__init__(region=region,
                              access_key_id=access_key_id,
@@ -234,10 +234,14 @@ class AwsS3:
             actions = ["s3:Get*", "s3:Head*", "s3:List*", "s3:Describe*",
                        "s3-object-lambda:Get*", "s3-object-lambda:Head*", "s3-object-lambda:List*"]
         else:
-            actions = ["s3:*", "s3-object-lambda:*"]
+            # TODO: Understand why we need kms:GenerateDataKey and kms:Decrypt;
+            # use case is uploading to S3 with a KMS Key ID defined.
+            # For how this is done in smaht-portal see: encoded_core.types.file.external_creds
+            actions = ["s3:*", "s3-object-lambda:*", "kms:GenerateDataKey", "kms:Decrypt"]
         statements = []
         statements.append({"Effect": "Allow", "Action": actions, "Resource": resources})
         if include_deny:
             statements.append = [{"Effect": "Deny", "Action": actions, "NotResource": resources}]
         policy = {"Version": "2012-10-17", "Statement": statements}
-        return self.credentials.generate_temporary_credentials(duration=duration, policy=policy)
+        credentials = self.credentials.generate_temporary_credentials(duration=duration, policy=policy)
+        return AwsCredentials(credentials)

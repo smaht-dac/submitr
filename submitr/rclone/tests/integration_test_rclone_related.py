@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import os
 from dcicutils.file_utils import are_files_equal
 from dcicutils.tmpfile_utils import (
@@ -5,6 +6,8 @@ from dcicutils.tmpfile_utils import (
     temporary_file,
     temporary_random_file
 )
+from submitr.rclone.rclone import RClone
+from submitr.rclone.rclone_config_amazon import RCloneConfigAmazon
 from submitr.rclone.tests.rclone_utils_for_testing import AwsCredentials, AwsS3
 
 # Integration tests for rclone related functionality within smaht-submitr.
@@ -16,26 +19,58 @@ class SmahtWolf:
     # Specifying the env name here (as smaht-wolf) will cause
     # AwsCredentials to read from: ~/.aws_test.smaht-wolf/credentials
     env = "smaht-wolf"
+    # See ENCODED_S3_ENCRYPT_KEY_ID in SecretsManager for C4AppConfigSmahtWolf.
     kms_key_id = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"
     bucket = "smaht-unit-testing-files"
-    credentials_with_kms = lambda: AwsCredentials(SmahtWolf.env, kms_key_id=SmahtWolf.kms_key_id)  # noqa
-    credentials_sans_kms = lambda: AwsCredentials(SmahtWolf.env)  # noqa
-    credentials = credentials_with_kms
+    temporary_file_prefix = "test-submitr-rclone-"
+    temporary_file_suffix = ".txt"
+
+    @staticmethod
+    def credentials_with_kms():
+        return AwsCredentials(SmahtWolf.env, kms_key_id=SmahtWolf.kms_key_id)
+
+    @staticmethod
+    def credentials_sans_kms():
+        return AwsCredentials(SmahtWolf.env)
+
+    @staticmethod
+    def credentials():
+        return SmahtWolf.credentials_with_kms()
+
+    @staticmethod
+    @contextmanager
+    def temporary_random_file():
+        with temporary_random_file(prefix=ENV.temporary_file_prefix,
+                                   suffix=ENV.temporary_file_suffix) as tmp_file_path:
+            yield tmp_file_path
 
 
-TestEnv = SmahtWolf
+ENV = SmahtWolf
 
 
 def test_rclone_utils_for_testing():
 
-    credentials = TestEnv.credentials()
-    bucket = TestEnv.bucket
+    credentials = ENV.credentials()
+    _test_rclone_utils_for_testing(credentials)
 
-    temporary_session_credentials = credentials.generate_temporary_credentials()
-    temporary_session_credentials = credentials  # TODO - permission issue wrt kms
-    s3 = AwsS3(temporary_session_credentials)
+    credentials = AwsS3(credentials).generate_temporary_credentials()
+    assert isinstance(credentials.session_token, str) and credentials.session_token
+    _test_rclone_utils_for_testing(credentials)
 
-    with temporary_random_file(prefix="test-submitr-rclone-", suffix=".txt") as tmp_source_file_path:
+
+def _test_rclone_utils_for_testing(credentials):
+
+    assert isinstance(credentials, AwsCredentials)
+    assert isinstance(credentials.access_key_id, str) and credentials.access_key_id
+    assert isinstance(credentials.secret_access_key, str) and credentials.secret_access_key
+
+    s3 = AwsS3(credentials)
+    bucket = ENV.bucket
+    temporary_file_prefix = ENV.temporary_file_prefix
+    temporary_file_suffix = ENV.temporary_file_suffix
+
+#   with temporary_random_file(prefix=temporary_file_prefix, suffix=temporary_file_suffix) as tmp_source_file_path:
+    with ENV.temporary_random_file() as tmp_source_file_path:
         tmp_source_file_name = os.path.basename(tmp_source_file_path)  # key name within bucket
         assert s3.upload_file(tmp_source_file_path, bucket) is True
         assert s3.file_exists(bucket, tmp_source_file_name) is True
@@ -57,10 +92,24 @@ def test_rclone_utils_for_testing():
         assert s3.download_file(bucket, tmp_source_file_name, "/dev/null") is False
 
 
-def test_rclone_amazon_to_from():
-    pass
+def test_rclone_local_to_amazon():
+
+    credentials = ENV.credentials()
+    _test_rclone_local_to_amazon(credentials)
+
+    credentials = AwsS3(credentials).generate_temporary_credentials()
+    assert isinstance(credentials.session_token, str) and credentials.session_token
+    _test_rclone_local_to_amazon(credentials)
+
+
+def _test_rclone_local_to_amazon(credentiasl):
+
+    credentials = ENV.credentials()
+    config = RCloneConfigAmazon(credentials)
+    rclone = RClone(destination=config)  # noqa
+    rclone.copy
 
 
 # Manually run ...
 test_rclone_utils_for_testing()
-test_rclone_amazon_to_from()
+test_rclone_local_to_amazon()

@@ -1193,13 +1193,18 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         SHOW(f"Use this command to check its status: {command_summary}")
 
     if not (uuid_metadata := portal.get_metadata(uuid, raise_exception=False)):
-        message = f"Submission ID not found: {uuid}" if uuid != "dummy" else "No submission ID specified."
-        message += "\nSome recent submission IDs below. Use list-submissions to view more."
-        if _print_recent_submissions(portal, message=message, count=4):
-            if check_submission_script:
-                exit(1)
-            return
-        raise Exception(f"Cannot find object given uuid: {uuid}")
+        found_non_suffixed_uuid = False
+        if (dot := uuid.find(".")) > 0:
+            if uuid_metadata := portal.get_metadata(uuid := uuid[:dot], raise_exception=False):
+                found_non_suffixed_uuid = True
+        if not found_non_suffixed_uuid:
+            message = f"Submission ID not found: {uuid}" if uuid != "dummy" else "No submission ID specified."
+            message += "\nSome recent submission IDs below. Use list-submissions to view more."
+            if _print_recent_submissions(portal, message=message, count=4):
+                if check_submission_script:
+                    exit(1)
+                return
+            raise Exception(f"Cannot find object given uuid: {uuid}")
     if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
         if portal.is_schema_file_type(uuid_metadata):
             _print_upload_file_summary(portal, uuid_metadata)
