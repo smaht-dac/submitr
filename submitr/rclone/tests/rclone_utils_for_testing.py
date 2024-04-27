@@ -184,6 +184,21 @@ class AwsS3:
                 raise e
         return False
 
+    def file_kms_encrypted(self, bucket: str, key: str,
+                           kms_key_id: Optional[str] = None, raise_exception: bool = True) -> bool:
+        try:
+            response = self.client.head_object(Bucket=bucket, Key=key)
+            if file_kms_key_id := response.get("SSEKMSKeyId"):
+                if isinstance(kms_key_id, str) and (kms_key_id := kms_key_id.strip()):
+                    return True if (kms_key_id in file_kms_key_id) else False
+                return True
+        except Exception as e:
+            if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
+                return False
+            if raise_exception is True:
+                raise e
+        return False
+
     def list_files(self, bucket: str,
                    prefix: Optional[str] = None,
                    sort: Optional[str] = None,
@@ -221,7 +236,7 @@ class AwsS3:
     def generate_temporary_credentials(self,
                                        duration: Optional[Union[int, timedelta]] = None,
                                        bucket: Optional[str] = None, key: Optional[str] = None,
-                                       readonly: bool = False) -> AwsCredentials:
+                                       kms: bool = True, readonly: bool = False) -> AwsCredentials:
         """
         Generates and returns temporary AWS credentials. The default duration of validity for
         the generated credential is one hour; this can be overridden by specifying the duration
@@ -232,15 +247,19 @@ class AwsS3:
         """
         resources = ["*"] ; deny = False  # noqa
         if isinstance(bucket, str) and (bucket := bucket.strip()):
-            if isinstance(key, str) and (key := key.string()):
-                resources = ["arn:aws:s3:::{bucket}/{key}"]
+            if isinstance(key, str) and (key := key.strip()):
+                resources = [f"arn:aws:s3:::{bucket}/{key}"]
             else:
-                resources = ["arn:aws:s3:::{bucket}", "arn:aws:s3:::{bucket}/*"] ; deny = True  # noqa
-        actions = ["s3:GetObject", "s3:HeadObject", "s3:ListBucket", "s3:DescribeBucket",
-                   "kms:GenerateDataKey", "kms:Decrypt"]
-        if not readonly:
-            # For how this is defined in smaht-portal see: encoded_core.types.file.external_creds
-            actions = actions + ["s3:PutObject", "s3:DeleteObject"]
+                resources = [f"arn:aws:s3:::{bucket}", f"arn:aws:s3:::{bucket}/*"] ; deny = True  # noqa
+        # For how this policy is defined in smaht-portal for file upload
+        # session token creation see: encoded_core.types.file.external_creds
+        actions = ["s3:GetObject", "s3:HeadObject", "s3:ListBucket", "s3:DescribeBucket"]
+        if not (kms is False):
+            actions += ["kms:GenerateDataKey", "kms:Decrypt", "kms:Encrypt", "kms:ReEncrypt", "kms:DescribeKey"]
+        if not (readonly is True):
+            # Note the s3:CreateBucket is specifically required (for some reason) by rclone.
+            actions = actions + ["s3:PutObject", "s3:DeleteObject", "s3:CreateBucket"]
+        actions += ["kms:GenerateDataKey", "kms:Decrypt", "kms:Encrypt", "kms:ReEncrypt", "kms:DescribeKey"]
         statements = [{"Effect": "Allow", "Action": actions, "Resource": resources}]
         if deny:
             statements += [{"Effect": "Deny", "Action": actions, "NotResource": resources}]

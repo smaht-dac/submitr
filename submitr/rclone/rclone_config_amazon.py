@@ -100,7 +100,8 @@ class RCloneConfigAmazon(RCloneConfig):
                            access_key_id=self.access_key_id,
                            secret_access_key=self.secret_access_key,
                            session_token=self.session_token,
-                           kms_key_id=self.kms_key_id)
+                           sse_kms_key_id=self.kms_key_id,
+                           server_side_encryption="aws:kms" if self.kms_key_id else None)
 
 
 class AmazonCredentials:

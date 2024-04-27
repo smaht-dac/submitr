@@ -94,9 +94,10 @@ def _test_rclone_utils_for_testing(credentials):
 
 def test_rclone_local_to_amazon():
 
-    _test_rclone_local_to_amazon(ENV.credentials())
+    # _test_rclone_local_to_amazon(ENV.credentials())
 
     credentials = AwsS3(ENV.credentials()).generate_temporary_credentials()
+    # credentials.kms_key_id = None  # TODO: Test with and without kms
     assert isinstance(credentials.session_token, str) and credentials.session_token
     _test_rclone_local_to_amazon(credentials)
 
@@ -111,12 +112,17 @@ def _test_rclone_local_to_amazon(credentials):
     assert config.kms_key_id == credentials.kms_key_id
     rclone = RClone(destination=config)  # noqa
     with ENV.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
-        # x = rclone.copy(tmp_test_file_path, ENV.bucket)
-        # print(x)
-        # import pdb ; pdb.set_trace()
-        pass
+        assert rclone.copy(tmp_test_file_path, ENV.bucket) is True
+        s3 = AwsS3(credentials)
+        assert s3.file_exists(ENV.bucket, tmp_test_file_name) is True
+        assert s3.file_equals(ENV.bucket, tmp_test_file_name, tmp_test_file_path) is True
+        if config.kms_key_id:
+            assert s3.file_kms_encrypted(ENV.bucket, tmp_test_file_name) is True
+            assert s3.file_kms_encrypted(ENV.bucket, tmp_test_file_name, config.kms_key_id) is True
+        assert s3.delete_file(ENV.bucket, tmp_test_file_name) is True
+        assert s3.file_exists(ENV.bucket, tmp_test_file_name) is False
 
 
 # Manually run ...
 test_rclone_utils_for_testing()
-# test_rclone_local_to_amazon()
+test_rclone_local_to_amazon()

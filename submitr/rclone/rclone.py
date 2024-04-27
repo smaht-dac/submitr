@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 import re
 import subprocess
-from typing import List, Optional
+from typing import List, Optional, Union
 from dcicutils.tmpfile_utils import temporary_file
 from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_installation import (
@@ -56,7 +56,7 @@ class RClone:
         RCloneConfig._write_config_file_lines(file, self.config_lines)
 
     def copy(self, source_file: str, destination: Optional[str] = None,
-             dryrun: bool = False, raise_exception: bool = True) -> object:
+             dryrun: bool = False, raise_exception: bool = True) -> Union[bool, str]:
         """
         Uses rclone to copy the given source file to the given destination. All manner of variation is
         encapsulated within this simple statement. Depends on whether or not a source and/or destination
@@ -118,24 +118,27 @@ class RClone:
                     command = [self.executable_path(),
                                "copy", "--config", destination_config_file, source_file,
                                f"{destination_config.name}:{destination_config.bucket}"]
+                command.append("--progress")
                 try:
                     if dryrun is True:
                         if " " in command[0]:
                             command[0] = f"\"{command[0]}\""
                         return " ".join(command)
                     result = subprocess.run(command, capture_output=True, text=True, check=True)
+                    return True if (result.returncode == 0) else False
+                    pass
                     return result
                 except Exception as e:
                     if raise_exception is True:
                         raise e
-                return None
+                return False if not (dryrun is True) else None
         elif isinstance(source_config, RCloneConfig):
             # Here only a source config has been specified.
             # TODO
             with source_config.config_file() as source_config_file:  # noqa
                 # TODO
                 pass
-        return None
+        return False if not (dryrun is True) else None
 
     @staticmethod
     def install(force_update: bool = True) -> Optional[str]:
