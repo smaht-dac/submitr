@@ -39,7 +39,7 @@ class SmahtWolf:
 
     @staticmethod
     @contextmanager
-    def temporary_random_file():
+    def temporary_test_file():
         with temporary_random_file(prefix=ENV.temporary_file_prefix,
                                    suffix=ENV.temporary_file_suffix) as tmp_file_path:
             yield tmp_file_path
@@ -66,11 +66,8 @@ def _test_rclone_utils_for_testing(credentials):
 
     s3 = AwsS3(credentials)
     bucket = ENV.bucket
-    temporary_file_prefix = ENV.temporary_file_prefix
-    temporary_file_suffix = ENV.temporary_file_suffix
 
-#   with temporary_random_file(prefix=temporary_file_prefix, suffix=temporary_file_suffix) as tmp_source_file_path:
-    with ENV.temporary_random_file() as tmp_source_file_path:
+    with ENV.temporary_test_file() as tmp_source_file_path:
         tmp_source_file_name = os.path.basename(tmp_source_file_path)  # key name within bucket
         assert s3.upload_file(tmp_source_file_path, bucket) is True
         assert s3.file_exists(bucket, tmp_source_file_name) is True
