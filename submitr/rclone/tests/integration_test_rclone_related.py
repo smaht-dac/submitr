@@ -22,8 +22,8 @@ class SmahtWolf:
     # See ENCODED_S3_ENCRYPT_KEY_ID in SecretsManager for C4AppConfigSmahtWolf.
     kms_key_id = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"
     bucket = "smaht-unit-testing-files"
-    temporary_file_prefix = "test-submitr-rclone-"
-    temporary_file_suffix = ".txt"
+    temporary_test_file_prefix = "test-submitr-rclone-"
+    temporary_test_file_suffix = ".txt"
 
     @staticmethod
     def credentials_with_kms():
@@ -40,8 +40,8 @@ class SmahtWolf:
     @staticmethod
     @contextmanager
     def temporary_test_file():
-        with temporary_random_file(prefix=ENV.temporary_file_prefix,
-                                   suffix=ENV.temporary_file_suffix) as tmp_file_path:
+        with temporary_random_file(prefix=ENV.temporary_test_file_prefix,
+                                   suffix=ENV.temporary_test_file_suffix) as tmp_file_path:
             yield tmp_file_path
 
 
@@ -72,7 +72,11 @@ def _test_rclone_utils_for_testing(credentials):
         assert s3.upload_file(tmp_source_file_path, bucket) is True
         assert s3.file_exists(bucket, tmp_source_file_name) is True
         assert s3.file_equals(bucket, tmp_source_file_name, tmp_source_file_path) is True
-        assert s3.file_exists(bucket, tmp_source_file_name + "xyzzy") is False
+        assert s3.file_exists(bucket, tmp_source_file_name + "-junk-suffix") is False
+        assert len(s3_test_files := s3.list_files(bucket, prefix=ENV.temporary_test_file_prefix)) > 0
+        assert len(s3_test_files_found := [f for f in s3_test_files if f["key"] == tmp_source_file_name]) == 1
+        assert s3_test_files_found[0]["key"] == tmp_source_file_name
+        assert len(s3.list_files(bucket, prefix=tmp_source_file_name)) == 1
         with temporary_random_file() as some_random_file_path:
             assert s3.file_equals(bucket, tmp_source_file_name, some_random_file_path) is False
         with temporary_file() as tmp_downloaded_file_path:
@@ -104,6 +108,7 @@ def _test_rclone_local_to_amazon(credentiasl):
     credentials = ENV.credentials()
     config = RCloneConfigAmazon(credentials)
     rclone = RClone(destination=config)  # noqa
+    # TODO
     rclone.copy
 
 

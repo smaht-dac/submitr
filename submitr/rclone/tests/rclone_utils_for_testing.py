@@ -222,26 +222,20 @@ class AwsS3:
         limited to readonly S3 access (AmazonS3ReadOnlyAccess). Passing bucket or bucket/key
         key argument/s will further limit access to just the specified bucket or bucket/key.
         """
-        resources = ["*"]
-        include_deny = False
-        if isinstance(bucket, str) and bucket:
-            if isinstance(key, str) and bucket:
+        resources = ["*"] ; deny = False  # noqa
+        if isinstance(bucket, str) and (bucket := bucket.strip()):
+            if isinstance(key, str) and (key := key.string()):
                 resources = ["arn:aws:s3:::{bucket}/{key}"]
             else:
-                resources = ["arn:aws:s3:::{bucket}", "arn:aws:s3:::{bucket}/*"]
-                include_deny = True
-        if readonly:
-            actions = ["s3:Get*", "s3:Head*", "s3:List*", "s3:Describe*",
-                       "s3-object-lambda:Get*", "s3-object-lambda:Head*", "s3-object-lambda:List*"]
-        else:
-            # TODO: Understand why we need kms:GenerateDataKey and kms:Decrypt;
-            # use case is uploading to S3 with a KMS Key ID defined.
-            # For how this is done in smaht-portal see: encoded_core.types.file.external_creds
-            actions = ["s3:*", "s3-object-lambda:*", "kms:GenerateDataKey", "kms:Decrypt"]
-        statements = []
-        statements.append({"Effect": "Allow", "Action": actions, "Resource": resources})
-        if include_deny:
-            statements.append = [{"Effect": "Deny", "Action": actions, "NotResource": resources}]
+                resources = ["arn:aws:s3:::{bucket}", "arn:aws:s3:::{bucket}/*"] ; deny = True  # noqa
+        actions = ["s3:GetObject", "s3:HeadObject", "s3:ListBucket", "s3:DescribeBucket",
+                   "kms:GenerateDataKey", "kms:Decrypt"]
+        if not readonly:
+            # For how this is defined in smaht-portal see: encoded_core.types.file.external_creds
+            actions = actions + ["s3:PutObject", "s3:DeleteObject"]
+        statements = [{"Effect": "Allow", "Action": actions, "Resource": resources}]
+        if deny:
+            statements += [{"Effect": "Deny", "Action": actions, "NotResource": resources}]
         policy = {"Version": "2012-10-17", "Statement": statements}
         credentials = self.credentials.generate_temporary_credentials(duration=duration, policy=policy)
         return AwsCredentials(credentials)
