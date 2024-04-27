@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 import os
+import re
 import subprocess
 from typing import List, Optional
 from dcicutils.file_utils import normalize_file_path
@@ -77,44 +78,47 @@ class RClone:
         destination_config = self.destination_config
         if isinstance(destination_config, RCloneConfig):
             if isinstance(source_config, RCloneConfig):
-                # Here both a source and destination config have been specified; meaing we
-                # are copy from some cloud source to some cloud destination; i.e. e.g from
+                # Here both a source and destination config have been specified; meaning we
+                # are copying from some cloud source to some cloud destination; i.e. e.g from
                 # Amazon S3 or Google Cloud Storage to Amazon S3 or Google Cloud Storage.
                 with self.config_file() as config_file:  # noqa
                     # TODO
                     pass
                 return None
             # Here only a destination config has been specified; meaning we
-            # are copying from the local file system to some cloud destination;
+            # are copying from the (local file) source to some cloud destination;
             # i.e. e.g. to Amazon S3 or Google Cloud Storage.
-            with destination_config.config_file(persist_file=dryrun) as destination_config_file:
-                if isinstance(destination, str) and destination and (destination != ".") and (destination != "/"):
-                    # Here the given destination appears to be a file; so we use rclone copyto rather than copy.
-                    # The destination bucket must either be specified in the destination_config or as the
-                    # first (path-style) component of the given destination.
+            with destination_config.config_file(persist_file=dryrun is True) as destination_config_file:
+                command = None
+                destination = self._normalize_cloud_path(destination)
+                if destination and not (destination in [".", "/"]):
+                    # Here the given destination appears to be a file (bucket key); so we use rclone
+                    # copyto rather than copy. The destination bucket be specified either in the
+                    # destination_config or as the first (path-style) component of the given destination.
                     if not (destination_bucket := destination_config.bucket):
-                        if (destination := normalize_file_path(destination, home_directory=False)).startswith(os.sep):
+                        if destination.startswith("/"):
                             destination = destination[1:]
-                        if len(destination_components := destination.split(os.sep)) >= 2:
+                        if len(destination_components := destination.split("/")) >= 2:
                             destination_bucket = destination_components[0]
                             destination = "/".join(destination_components[1:])
                         else:
-                            raise Exception(f"No bucket in given destination for rclone copyto"
-                                            f" and no bucket specified in destination config.")
-                    command = [self.executable_path(),
-                               "copyto", "--config", destination_config_file,
-                               source_file,
-                               f"{destination_config.name}:{destination_bucket}/{destination}"]
+                            destination_bucket = destination
+                            command = [self.executable_path(),
+                                       "copy", "--config", destination_config_file, source_file,
+                                       f"{destination_config.name}:{destination_bucket}"]
+                    if not command:
+                        command = [self.executable_path(),
+                                   "copyto", "--config", destination_config_file, source_file,
+                                   f"{destination_config.name}:{destination_bucket}/{destination}"]
                 else:
-                    # Here no given destination was specified (or it was just a dot or slash)
-                    # meaning copy the source to the bucket which must have been specified
-                    # in the destination_config; so we use rclone copy rather than copyto.
+                    # Here the given destination argument was not specified (or it was just a dot or slash),
+                    # meaning we are copying the (local file) source to the destination bucket which must
+                    # have been specified in the destination_config; we use rclone copy rather than copyto.
                     if not destination_config.bucket:
                         raise Exception(f"No destination given for rclone copy and"
                                         f" no bucket specified in destination config.")
                     command = [self.executable_path(),
-                               "copy", "--config", destination_config_file,
-                               source_file,
+                               "copy", "--config", destination_config_file, source_file,
                                f"{destination_config.name}:{destination_config.bucket}"]
                 try:
                     if dryrun is True:
@@ -148,3 +152,9 @@ class RClone:
     @staticmethod
     def executable_path() -> str:
         return rclone_executable_path()
+
+    @staticmethod
+    def _normalize_cloud_path(value: str) -> str:
+        if not isinstance(value, str):
+            return ""
+        return re.compile(rf"({re.escape('/')})+").sub("/", value.strip())
