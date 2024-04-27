@@ -1,8 +1,9 @@
 from abc import ABC as AbstractBaseClass, abstractproperty
 from contextlib import contextmanager
+from shutil import copy as copy_file
 from typing import List, Optional
 from uuid import uuid4 as create_uuid
-from dcicutils.tmpfile_utils import temporary_file
+from dcicutils.tmpfile_utils import  create_temporary_file_name, temporary_file
 
 
 class RCloneConfig(AbstractBaseClass):
@@ -49,10 +50,15 @@ class RCloneConfig(AbstractBaseClass):
         return lines
 
     @contextmanager
-    def config_file(self) -> str:
-        with temporary_file(suffix=".conf") as temporary_file_name:
-            self.write_config_file(temporary_file_name)
-            yield temporary_file_name
+    def config_file(self, persist_file: bool = False) -> str:
+        with temporary_file(suffix=".conf") as temporary_config_file_name:
+            self.write_config_file(temporary_config_file_name)
+            if persist_file is True:
+                persistent_config_file_name = create_temporary_file_name(suffix=".conf")
+                copy_file(temporary_config_file_name, persistent_config_file_name)
+                yield persistent_config_file_name
+            else:
+                yield temporary_config_file_name
 
     def write_config_file(self, file: str) -> None:
         self._write_config_file_lines(file, self.config_lines)

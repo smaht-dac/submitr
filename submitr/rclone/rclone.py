@@ -1,10 +1,9 @@
 from contextlib import contextmanager
 import os
-from shutil import copy as copy_file
 import subprocess
 from typing import List, Optional
 from dcicutils.file_utils import normalize_file_path
-from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
+from dcicutils.tmpfile_utils import temporary_file
 from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_installation import (
     rclone_executable_install, rclone_executable_exists, rclone_executable_path
@@ -65,6 +64,10 @@ class RClone:
         configuration (RCloneConfig) has been specified and whether or not a bucket is specified in the
         that configuration et cetera. If no configuration is specified then we assume the local file
         system is the source and/or destination. TODO: Expand on these notes.
+
+        If self.source_config and/or self.destination_config is None then it means the
+        the source and/or destination arguments here refer to local files; i.e. when
+        no RCloneConfig is specified we assume the (degenerate) case of local file.
         """
         # TODO
         # Use copyto instead of copy to copy to specified file name.
@@ -74,18 +77,17 @@ class RClone:
         destination_config = self.destination_config
         if isinstance(destination_config, RCloneConfig):
             if isinstance(source_config, RCloneConfig):
-                # TODO
-                # Here both a source and destination config have been specified.
+                # Here both a source and destination config have been specified; meaing we
+                # are copy from some cloud source to some cloud destination; i.e. e.g from
+                # Amazon S3 or Google Cloud Storage to Amazon S3 or Google Cloud Storage.
                 with self.config_file() as config_file:  # noqa
                     # TODO
                     pass
                 return None
-            # Here only a destination config has been specified.
-            with destination_config.config_file() as destination_config_file:
-                if dryrun is True:
-                    destination_config_file_persistent = create_temporary_file_name(suffix=".conf")
-                    copy_file(destination_config_file, destination_config_file_persistent)
-                    destination_config_file = destination_config_file_persistent
+            # Here only a destination config has been specified; meaning we
+            # are copying from the local file system to some cloud destination;
+            # i.e. e.g. to Amazon S3 or Google Cloud Storage.
+            with destination_config.config_file(persist_file=dryrun) as destination_config_file:
                 if isinstance(destination, str) and destination and (destination != ".") and (destination != "/"):
                     # Here the given destination appears to be a file; so we use rclone copyto rather than copy.
                     # The destination bucket must either be specified in the destination_config or as the
