@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Union
 from dcicutils.misc_utils import create_dict
 from submitr.rclone.rclone_config import RCloneConfig
 
@@ -7,10 +7,20 @@ from submitr.rclone.rclone_config import RCloneConfig
 class RCloneConfigGoogle(RCloneConfig):
 
     def __init__(self,
-                 credentials: Optional[GoogleCredentials] = None,
+                 credentials_or_config: Optional[Union[GoogleCredentials, RCloneConfigGoogle]] = None,
                  location: Optional[str] = None,
                  service_account_file: Optional[str] = None,
                  name: Optional[str] = None, bucket: Optional[str] = None) -> None:
+
+        if isinstance(credentials_or_config, RCloneConfigGoogle):
+            name = RCloneConfig._normalize_string_value(name) or credentials_or_config.name
+            bucket = RCloneConfig._normalize_string_value(bucket) or credentials_or_config.bucket
+            credentials = None
+        elif isinstance(credentials_or_config, GoogleCredentials):
+            credentials = credentials_or_config
+        else:
+            credentials = None
+
         super().__init__(name=name, bucket=bucket)
         self._credentials = GoogleCredentials(credentials=credentials,
                                               location=location,
@@ -40,6 +50,14 @@ class RCloneConfigGoogle(RCloneConfig):
     @service_account_file.setter
     def service_account_file(self, value: str) -> None:
         self._credentials.service_account_file = value
+
+    def __eq__(self, other: RCloneConfigGoogle) -> bool:
+        return ((self.name == other.name) and
+                (self.bucket == other.bucket) and
+                (self.credentials == other.credentials))
+
+    def __ne__(self, other: RCloneConfigGoogle) -> bool:
+        return self.__eq__(other)
 
     @property
     def config(self) -> dict:
@@ -88,3 +106,10 @@ class GoogleCredentials:
     def service_account_file(self, value: str) -> None:
         if (value := RCloneConfig._normalize_string_value(value)) is not None:
             self._service_account_file = value or None
+
+    def __eq__(self, other: GoogleCredentials) -> bool:
+        return ((self.location == other.location) and
+                (self.service_account_file == other.service_account_file))
+
+    def __ne__(self, other: GoogleCredentials) -> bool:
+        return self.__eq__(other)

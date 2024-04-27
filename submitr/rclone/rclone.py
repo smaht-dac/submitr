@@ -1,9 +1,7 @@
 from contextlib import contextmanager
-import os
 import re
 import subprocess
 from typing import List, Optional
-from dcicutils.file_utils import normalize_file_path
 from dcicutils.tmpfile_utils import temporary_file
 from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_installation import (

@@ -97,19 +97,27 @@ class AwsS3:
 
     def __init__(self, credentials: AmazonCredentials) -> None:
         self._credentials = AwsCredentials(credentials)
-        self._client = boto3.client(
-            "s3",
-            region_name=self._credentials.region,
-            aws_access_key_id=self._credentials.access_key_id,
-            aws_secret_access_key=self._credentials.secret_access_key,
-            aws_session_token=self._credentials.session_token)
+        self._client = None
 
     @property
     def credentials(self) -> AwsCredentials:
         return self._credentials
 
+    @credentials.setter
+    def credentials(self, value: AmazonCredentials) -> None:
+        if isinstance(value, AmazonCredentials) and value != self._credentials:
+            self._credentials = value
+            self._client = None
+
     @property
     def client(self) -> BotoClient:
+        if not self._client:
+            self._client = boto3.client(
+                "s3",
+                region_name=self._credentials.region,
+                aws_access_key_id=self._credentials.access_key_id,
+                aws_secret_access_key=self._credentials.secret_access_key,
+                aws_session_token=self._credentials.session_token)
         return self._client
 
     def upload_file(self, file: str, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> bool:

@@ -11,13 +11,23 @@ from submitr.rclone.rclone_config import RCloneConfig
 class RCloneConfigAmazon(RCloneConfig):
 
     def __init__(self,
-                 credentials: Optional[AmazonCredentials] = None,
+                 credentials_or_config: Optional[Union[AmazonCredentials, RCloneConfigAmazon]] = None,
                  region: Optional[str] = None,
                  access_key_id: Optional[str] = None,
                  secret_access_key: Optional[str] = None,
                  session_token: Optional[str] = None,
                  kms_key_id: Optional[str] = None,
                  name: Optional[str] = None, bucket: Optional[str] = None) -> None:
+
+        if isinstance(credentials_or_config, RCloneConfigAmazon):
+            name = RCloneConfig._normalize_string_value(name) or credentials_or_config.name
+            bucket = RCloneConfig._normalize_string_value(bucket) or credentials_or_config.bucket
+            credentials = None
+        elif isinstance(credentials_or_config, AmazonCredentials):
+            credentials = credentials_or_config
+        else:
+            credentials = None
+
         super().__init__(name=name, bucket=bucket)
         self._credentials = AmazonCredentials(credentials=credentials,
                                               region=region,
@@ -74,6 +84,14 @@ class RCloneConfigAmazon(RCloneConfig):
     @kms_key_id.setter
     def kms_key_id(self, value: str) -> None:
         self._credentials.kms_key_id = value
+
+    def __eq__(self, other: RCloneConfigAmazon) -> bool:
+        return ((self.name == other.name) and
+                (self.bucket == other.bucket) and
+                (self.credentials == other.credentials))
+
+    def __ne__(self, other: RCloneConfigAmazon) -> bool:
+        return self.__eq__(other)
 
     @property
     def config(self) -> dict:
@@ -167,6 +185,16 @@ class AmazonCredentials:
     def kms_key_id(self, value: Optional[str]) -> None:
         if (value := RCloneConfig._normalize_string_value(value)) is not None:
             self._kms_key_id = value or None
+
+    def __eq__(self, other: AmazonCredentials) -> bool:
+        return ((self.region == other.region) and
+                (self.access_key_id == other.access_key_id) and
+                (self.secret_access_key == other.secret_access_key) and
+                (self.session_token == other.session_token) and
+                (self.kms_key_id == other.kms_key_id))
+
+    def __ne__(self, other: AmazonCredentials) -> bool:
+        return self.__eq__(other)
 
     def generate_temporary_credentials(self,
                                        duration: Optional[Union[int, timedelta]] = None,

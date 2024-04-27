@@ -53,9 +53,9 @@ def test_rclone_utils_for_testing():
     credentials = ENV.credentials()
     _test_rclone_utils_for_testing(credentials)
 
-    credentials = AwsS3(credentials).generate_temporary_credentials()
-    assert isinstance(credentials.session_token, str) and credentials.session_token
-    _test_rclone_utils_for_testing(credentials)
+    temporary_credentials = AwsS3(credentials).generate_temporary_credentials()
+    assert isinstance(temporary_credentials.session_token, str) and temporary_credentials.session_token
+    _test_rclone_utils_for_testing(temporary_credentials)
 
 
 def _test_rclone_utils_for_testing(credentials):
@@ -65,6 +65,7 @@ def _test_rclone_utils_for_testing(credentials):
     assert isinstance(credentials.secret_access_key, str) and credentials.secret_access_key
 
     s3 = AwsS3(credentials)
+    assert s3.credentials == credentials
 
     with ENV.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         assert s3.upload_file(tmp_test_file_path, ENV.bucket) is True
@@ -93,25 +94,29 @@ def _test_rclone_utils_for_testing(credentials):
 
 def test_rclone_local_to_amazon():
 
-    credentials = ENV.credentials()
-    _test_rclone_local_to_amazon(credentials)
+    _test_rclone_local_to_amazon(ENV.credentials())
 
-    credentials = AwsS3(credentials).generate_temporary_credentials()
+    credentials = AwsS3(ENV.credentials()).generate_temporary_credentials()
     assert isinstance(credentials.session_token, str) and credentials.session_token
     _test_rclone_local_to_amazon(credentials)
 
 
-def _test_rclone_local_to_amazon(credentiasl):
+def _test_rclone_local_to_amazon(credentials):
 
-    credentials = ENV.credentials()
     config = RCloneConfigAmazon(credentials)
+    assert config.credentials == credentials
+    assert config.access_key_id == credentials.access_key_id
+    assert config.secret_access_key == credentials.secret_access_key
+    assert config.session_token == credentials.session_token
+    assert config.kms_key_id == credentials.kms_key_id
     rclone = RClone(destination=config)  # noqa
     with ENV.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
-        # todo = rclone.copy(tmp_test_file_path, ENV.bucket, dryrun=False)
+        # x = rclone.copy(tmp_test_file_path, ENV.bucket)
+        # print(x)
         # import pdb ; pdb.set_trace()
         pass
 
 
 # Manually run ...
 test_rclone_utils_for_testing()
-test_rclone_local_to_amazon()
+# test_rclone_local_to_amazon()
