@@ -110,7 +110,7 @@ def _test_rclone_local_to_amazon(credentials):
     assert config.secret_access_key == credentials.secret_access_key
     assert config.session_token == credentials.session_token
     assert config.kms_key_id == credentials.kms_key_id
-    rclone = RClone(destination=config)  # noqa
+    rclone = RClone(destination=config)
     with ENV.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         assert rclone.copy(tmp_test_file_path, ENV.bucket) is True
         s3 = AwsS3(credentials)
