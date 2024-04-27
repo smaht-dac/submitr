@@ -7,6 +7,10 @@ from dcicutils.tmpfile_utils import (
 )
 from submitr.rclone.tests.rclone_utils_for_testing import AwsCredentials, AwsS3
 
+# Integration tests for rclone related functionality within smaht-submitr.
+# Need valid AWS credentials for (currently) smaht-wolf.
+# Wonder how to possibly test this as unit test within GA?
+
 
 class SmahtWolf:
     # Specifying the env name here (as smaht-wolf) will cause
@@ -19,14 +23,13 @@ class SmahtWolf:
     credentials = credentials_with_kms
 
 
-# TODO: How to possibly test this as unit test within GA/CI? Need an AWS access/secret key.
-Env = SmahtWolf
+TestEnv = SmahtWolf
 
 
 def test_rclone_utils_for_testing():
 
-    credentials = Env.credentials()
-    bucket = Env.bucket
+    credentials = TestEnv.credentials()
+    bucket = TestEnv.bucket
 
     temporary_session_credentials = credentials.generate_temporary_credentials()
     temporary_session_credentials = credentials  # TODO - permission issue wrt kms
@@ -54,4 +57,10 @@ def test_rclone_utils_for_testing():
         assert s3.download_file(bucket, tmp_source_file_name, "/dev/null") is False
 
 
+def test_rclone_amazon_to_from():
+    pass
+
+
+# Manually run ...
 test_rclone_utils_for_testing()
+test_rclone_amazon_to_from()
