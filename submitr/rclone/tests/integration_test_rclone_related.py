@@ -5,7 +5,7 @@ from dcicutils.tmpfile_utils import (
     temporary_file,
     temporary_random_file
 )
-from submitr.rclone.rclone_utils_for_testing import AwsCredentials, AwsS3
+from submitr.rclone.tests.rclone_utils_for_testing import AwsCredentials, AwsS3
 
 
 class SmahtWolf:
