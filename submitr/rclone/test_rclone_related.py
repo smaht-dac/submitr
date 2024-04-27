@@ -36,15 +36,20 @@ def test_rclone_utils_for_testing():
         assert s3.upload_file(tmp_source_file_path, bucket) is True
         assert s3.file_exists(bucket, tmp_source_file_name) is True
         assert s3.file_equals(bucket, tmp_source_file_name, tmp_source_file_path) is True
+        assert s3.file_exists(bucket, tmp_source_file_name + "xyzzy") is False
+        with temporary_random_file() as some_random_file_path:
+            assert s3.file_equals(bucket, tmp_source_file_name, some_random_file_path) is False
         with temporary_file() as tmp_downloaded_file_path:
             assert s3.download_file(bucket, tmp_source_file_name, tmp_downloaded_file_path) is True
             assert s3.download_file(bucket, tmp_source_file_name, "/dev/null") is True
             assert are_files_equal(tmp_source_file_path, tmp_downloaded_file_path) is True
+            assert are_files_equal(tmp_source_file_path, "/dev/null") is False
         with temporary_directory() as tmp_download_directory:
             assert s3.download_file(bucket, tmp_source_file_name, tmp_download_directory) is True
             assert are_files_equal(tmp_source_file_path, f"{tmp_download_directory}/{tmp_source_file_name}") is True
         assert s3.delete_file(bucket, tmp_source_file_name) is True
         assert s3.file_exists(bucket, tmp_source_file_name) is False
+        assert s3.file_equals(bucket, tmp_source_file_name, "/dev/null") is False
         assert s3.download_file(bucket, tmp_source_file_name, "/dev/null") is False
 
 
