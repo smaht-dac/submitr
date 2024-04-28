@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 import os
+from typing import Tuple
 from dcicutils.file_utils import are_files_equal
 from dcicutils.tmpfile_utils import (
     temporary_directory,
@@ -21,9 +22,8 @@ TEMPORARY_TEST_FILE_SUFFIX = ".txt"
 
 
 @contextmanager
-def temporary_test_file():
-    with temporary_random_file(prefix=TEMPORARY_TEST_FILE_PREFIX,
-                               suffix=TEMPORARY_TEST_FILE_SUFFIX) as tmp_file_path:
+def temporary_test_file() -> Tuple[str, str]:
+    with temporary_random_file(prefix=TEMPORARY_TEST_FILE_PREFIX, suffix=TEMPORARY_TEST_FILE_SUFFIX) as tmp_file_path:
         yield tmp_file_path, os.path.basename(tmp_file_path)
 
 
@@ -39,7 +39,7 @@ class AmazonTestEnv:
     bucket = "smaht-unit-testing-files"
 
     @staticmethod
-    def credentials():
+    def credentials() -> AmazonCredentials:
         return AwsCredentials.get_credentials_from_file(AmazonTestEnv.env, kms_key_id=AmazonTestEnv.kms_key_id)
 
 
@@ -51,12 +51,12 @@ class GoogleTestEnv:
     bucket = "smaht-submitr-rclone-testing"
 
     @staticmethod
-    def credentials():
+    def credentials() -> GoogleCredentials:
         return GoogleCredentials(location=GoogleTestEnv.location,
                                  service_account_file=GoogleTestEnv.service_account_file)
 
 
-def test_utils_for_testing():
+def test_utils_for_testing() -> None:
 
     credentials = AmazonTestEnv.credentials()
     _test_utils_for_testing(credentials)
@@ -66,7 +66,7 @@ def test_utils_for_testing():
     _test_utils_for_testing(temporary_credentials)
 
 
-def _test_utils_for_testing(credentials):
+def _test_utils_for_testing(credentials: AmazonCredentials) -> None:
 
     assert isinstance(credentials, AmazonCredentials)
     assert isinstance(credentials.access_key_id, str) and credentials.access_key_id
@@ -100,7 +100,7 @@ def _test_utils_for_testing(credentials):
         assert s3.download_file(AmazonTestEnv.bucket, tmp_test_file_name, "/dev/null") is False
 
 
-def test_local_to_amazon():
+def test_local_to_amazon() -> None:
 
     _test_local_to_amazon(AmazonTestEnv.credentials())
     _test_local_to_amazon(AmazonTestEnv.credentials(), nokms=True)
@@ -147,7 +147,7 @@ def _test_local_to_amazon(credentials: AmazonCredentials,
         assert s3.file_exists(AmazonTestEnv.bucket, tmp_test_file_name) is False
 
 
-def test_google_to_local():
+def test_google_to_local() -> None:
     credentials = GoogleTestEnv.credentials()
     config = RCloneConfigGoogle(credentials)
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
@@ -170,8 +170,11 @@ def test_google_to_local():
         # TODO
 
 
-# Manually run ...
-AwsCredentials.remove_credentials_from_environment_variables()
-test_google_to_local()
-test_utils_for_testing()
-test_local_to_amazon()
+def test():
+    AwsCredentials.remove_credentials_from_environment_variables()
+    test_google_to_local()
+    test_utils_for_testing()
+    test_local_to_amazon()
+
+
+test()
