@@ -245,27 +245,31 @@ class AwsS3:
         limited to readonly S3 access (AmazonS3ReadOnlyAccess). Passing bucket or bucket/key
         key argument/s will further limit access to just the specified bucket or bucket/key.
         """
+        statements = []
         resources = ["*"] ; deny = False  # noqa
         if isinstance(bucket, str) and (bucket := bucket.strip()):
             if isinstance(key, str) and (key := key.strip()):
                 resources = [f"arn:aws:s3:::{bucket}/{key}"]
                 # Note that this is specifically required (for some reason) by rclone (but not for plain aws).
                 resources += [f"arn:aws:s3:::{bucket}"]
+                # resources += [f"arn:aws:s3:::{bucket}/*"]  # xyzzy/debug
             else:
                 resources = [f"arn:aws:s3:::{bucket}", f"arn:aws:s3:::{bucket}/*"] ; deny = True  # noqa
-        # For how this policy is defined in smaht-portal for file upload
-        # session token creation see: encoded_core.types.file.external_creds
+        # For how this policy stuff is defined in smaht-portal for file upload
+        # session token creation process see: encoded_core.types.file.external_creds
         actions = ["s3:GetObject", "s3:HeadObject", "s3:ListBucket", "s3:DescribeBucket"]
-        if not (nokms is True):
-            actions += ["kms:GenerateDataKey", "kms:Decrypt", "kms:Encrypt", "kms:ReEncrypt", "kms:DescribeKey"]
+        if not (nokms is True) and (kms_key_id := self.credentials.kms_key_id):
+            actions_kms = ["kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey"]
+            account_number = "537626822796"  # TODO: Get this dynamically obviously
+            resource_kms = f"arn:aws:kms:{self.credentials.region}:{account_number}:key/{kms_key_id}"
+            statements.append({"Effect": "Allow", "Action": actions_kms, "Resource": resource_kms})
         if not (readonly is True):
             # Note the s3:CreateBucket is specifically required (for some reason) by rclone (but not for plain
             # aws), unless these temporary (session) credentials are targetted specifically for the bucket/key.
             actions = actions + ["s3:PutObject", "s3:DeleteObject", "s3:CreateBucket"]
-        # actions += ["s3:*"] # xyzzy/debug
-        statements = [{"Effect": "Allow", "Action": actions, "Resource": resources}]
+        statements.append({"Effect": "Allow", "Action": actions, "Resource": resources})
         if deny:
-            statements += [{"Effect": "Deny", "Action": actions, "NotResource": resources}]
+            statements.append({"Effect": "Deny", "Action": actions, "NotResource": resources})
         policy = {"Version": "2012-10-17", "Statement": statements}
         credentials = self.credentials.generate_temporary_credentials(duration=duration, policy=policy)
         return AwsCredentials(credentials)

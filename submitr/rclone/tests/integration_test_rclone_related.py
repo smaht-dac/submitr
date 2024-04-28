@@ -94,7 +94,8 @@ def _test_rclone_utils_for_testing(credentials):
 
 def test_rclone_local_to_amazon():
 
-    # _test_rclone_local_to_amazon(ENV.credentials())
+    _test_rclone_local_to_amazon(ENV.credentials())
+    _test_rclone_local_to_amazon(ENV.credentials(), nokms=True)
 
     """
     credentials = AwsS3(ENV.credentials()).generate_temporary_credentials()
@@ -103,8 +104,11 @@ def test_rclone_local_to_amazon():
     _test_rclone_local_to_amazon(credentials)
     """
 
-    _test_rclone_local_to_amazon(ENV.credentials(), use_temporary_credentials_key_specific=True)
     _test_rclone_local_to_amazon(ENV.credentials(), use_temporary_credentials=True)
+    _test_rclone_local_to_amazon(ENV.credentials(), use_temporary_credentials=True, nokms=True)
+
+    _test_rclone_local_to_amazon(ENV.credentials(), use_temporary_credentials_key_specific=True)
+    _test_rclone_local_to_amazon(ENV.credentials(), use_temporary_credentials_key_specific=True, nokms=True)
 
 
 def _test_rclone_local_to_amazon(credentials: AmazonCredentials,
@@ -112,7 +116,6 @@ def _test_rclone_local_to_amazon(credentials: AmazonCredentials,
                                  use_temporary_credentials_key_specific: bool = False,
                                  nokms: bool = False) -> None:
 
-    nokms = True # todo; breaks when false
     if nokms is True:
         credentials = AmazonCredentials(credentials, nokms=True)
     with ENV.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
@@ -142,5 +145,5 @@ def _test_rclone_local_to_amazon(credentials: AmazonCredentials,
 
 
 # Manually run ...
-# test_rclone_utils_for_testing()
+test_rclone_utils_for_testing()
 test_rclone_local_to_amazon()

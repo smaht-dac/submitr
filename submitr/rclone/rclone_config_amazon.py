@@ -99,6 +99,7 @@ class RCloneConfigAmazon(RCloneConfig):
     def config(self) -> dict:
         return create_dict(provider="AWS",
                            type="s3",
+                           region=self.region,
                            access_key_id=self.access_key_id,
                            secret_access_key=self.secret_access_key,
                            session_token=self.session_token,
