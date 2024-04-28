@@ -38,16 +38,15 @@ class Gcs:
                 return False
             if not (key := RCloneConfig._normalize_cloud_path(key)):
                 key = os.path.basename(file)
-            bucket = self.client.get_bucket(bucket)
-            blob = bucket.blob(key)
-            blob.upload_from_filename(file)
+            self.client.get_bucket(bucket).blob(key).upload_from_filename(file)
             return True
         except Exception as e:
             if raise_exception is True:
                 raise e
             return False
 
-    def download_file(self, bucket: str, key: str, file: str, raise_exception: bool = True) -> bool:
+    def download_file(self, bucket: str, key: str, file: str,
+                      nodirectories: bool = False, raise_exception: bool = True) -> bool:
         try:
             if not (bucket := RCloneConfig._normalize_cloud_path(bucket)):
                 return False
@@ -56,10 +55,17 @@ class Gcs:
             if not isinstance(file, str) or not file:
                 return False
             if os.path.isdir(file):
-                file = f"{file}/{key.replace(os.sep, '_')}"
-            bucket = self.client.get_bucket(bucket)
-            blob = bucket.blob(key)
-            blob.download_to_filename(file)
+                separator = RCloneConfig.CLOUD_PATH_SEPARATOR
+                if separator in key:
+                    if nodirectories is True:
+                        file = os.path.join(file, key.replace(separator, "_"))
+                    else:
+                        directory = os.path.join(file, os.path.dirname(key.replace(separator, os.sep)))
+                        os.makedirs(directory, exist_ok=True)
+                        file = os.path.join(directory, os.path.basename(key.replace(separator, os.sep)))
+                else:
+                    file = os.path.join(file, key)
+            self.client.get_bucket(bucket).blob(key).download_to_filename(file)
             return True
         except Exception as e:
             if raise_exception is True:

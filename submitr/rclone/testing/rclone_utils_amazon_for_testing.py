@@ -94,7 +94,7 @@ class AwsS3:
                 return False
             if raise_exception is True:
                 raise e
-        return False
+            return False
 
     def delete_file(self, bucket: str, key: str, check: bool = False, raise_exception: bool = True) -> bool:
         try:
@@ -104,7 +104,7 @@ class AwsS3:
         except Exception as e:
             if raise_exception is True:
                 raise e
-        return False
+            return False
 
     def file_exists(self, bucket: str, key: str, raise_exception: bool = True) -> bool:
         try:
@@ -115,7 +115,7 @@ class AwsS3:
                 return False
             if raise_exception is True:
                 raise e
-        return False
+            return False
 
     def file_equals(self, bucket: str, key: str, file: str, raise_exception: bool = True) -> bool:
         try:
