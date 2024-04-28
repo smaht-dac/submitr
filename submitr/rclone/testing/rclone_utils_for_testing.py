@@ -30,14 +30,14 @@ class AwsCredentials(AmazonCredentials):
 
         if isinstance(credentials, str):
             credentials = AwsCredentials.get_credentials_from_file(credentials, credentials_section)
-        if isinstance(credentials, AmazonCredentials):
-            super().__init__(credentials, kms_key_id=kms_key_id)
-        else:
-            super().__init__(region=region,
-                             access_key_id=access_key_id,
-                             secret_access_key=secret_access_key,
-                             session_token=session_token,
-                             kms_key_id=kms_key_id)
+        if not isinstance(credentials, AmazonCredentials):
+            credentials = None
+        super().__init__(credentials=credentials,
+                         region=region,
+                         access_key_id=access_key_id,
+                         secret_access_key=secret_access_key,
+                         session_token=session_token,
+                         kms_key_id=kms_key_id)
 
     @staticmethod
     def get_credentials_from_file(credentials_file: str, credentials_section: str = None) -> AmazonCredentials:
@@ -85,7 +85,7 @@ class AwsCredentials(AmazonCredentials):
         os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
         os.environ.pop("AWS_SESSION_TOKEN", None)
 
-    def generate_temporary_credentials(self, *args, **kwargs):
+    def generate_temporary_credentials(self, *args, **kwargs) -> AmazonCredentials:
         return AwsCredentials(super().generate_temporary_credentials(*args, **kwargs))
 
 

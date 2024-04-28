@@ -67,19 +67,19 @@ AWS_ENV = AmazonSmahtWolf
 GCS_ENV = GoogleTestEnv
 
 
-def test_rclone_utils_for_testing():
+def test_utils_for_testing():
 
     credentials = AWS_ENV.credentials()
-    _test_rclone_utils_for_testing(credentials)
+    _test_utils_for_testing(credentials)
 
     temporary_credentials = AwsS3(credentials).generate_temporary_credentials()
     assert isinstance(temporary_credentials.session_token, str) and temporary_credentials.session_token
-    _test_rclone_utils_for_testing(temporary_credentials)
+    _test_utils_for_testing(temporary_credentials)
 
 
-def _test_rclone_utils_for_testing(credentials):
+def _test_utils_for_testing(credentials):
 
-    assert isinstance(credentials, AwsCredentials)
+    assert isinstance(credentials, AmazonCredentials)
     assert isinstance(credentials.access_key_id, str) and credentials.access_key_id
     assert isinstance(credentials.secret_access_key, str) and credentials.secret_access_key
 
@@ -111,22 +111,22 @@ def _test_rclone_utils_for_testing(credentials):
         assert s3.download_file(AWS_ENV.bucket, tmp_test_file_name, "/dev/null") is False
 
 
-def test_rclone_local_to_amazon():
+def test_local_to_amazon():
 
-    _test_rclone_local_to_amazon(AWS_ENV.credentials())
-    _test_rclone_local_to_amazon(AWS_ENV.credentials(), nokms=True)
+    _test_local_to_amazon(AWS_ENV.credentials())
+    _test_local_to_amazon(AWS_ENV.credentials(), nokms=True)
 
-    _test_rclone_local_to_amazon(AWS_ENV.credentials(), use_temporary_credentials=True)
-    _test_rclone_local_to_amazon(AWS_ENV.credentials(), use_temporary_credentials=True, nokms=True)
+    _test_local_to_amazon(AWS_ENV.credentials(), use_temporary_credentials=True)
+    _test_local_to_amazon(AWS_ENV.credentials(), use_temporary_credentials=True, nokms=True)
 
-    _test_rclone_local_to_amazon(AWS_ENV.credentials(), use_temporary_credentials_key_specific=True)
-    _test_rclone_local_to_amazon(AWS_ENV.credentials(), use_temporary_credentials_key_specific=True, nokms=True)
+    _test_local_to_amazon(AWS_ENV.credentials(), use_temporary_credentials_key_specific=True)
+    _test_local_to_amazon(AWS_ENV.credentials(), use_temporary_credentials_key_specific=True, nokms=True)
 
 
-def _test_rclone_local_to_amazon(credentials: AmazonCredentials,
-                                 use_temporary_credentials: bool = False,
-                                 use_temporary_credentials_key_specific: bool = False,
-                                 nokms: bool = False) -> None:
+def _test_local_to_amazon(credentials: AmazonCredentials,
+                          use_temporary_credentials: bool = False,
+                          use_temporary_credentials_key_specific: bool = False,
+                          nokms: bool = False) -> None:
 
     if nokms is True:
         credentials = AmazonCredentials(credentials)
@@ -158,7 +158,7 @@ def _test_rclone_local_to_amazon(credentials: AmazonCredentials,
         assert s3.file_exists(AWS_ENV.bucket, tmp_test_file_name) is False
 
 
-def test_rclone_google_to_local():
+def test_google_to_local():
     credentials = GCS_ENV.credentials()
     config = RCloneConfigGoogle(credentials)
     with GCS_ENV.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
@@ -178,6 +178,6 @@ def test_rclone_google_to_local():
 
 
 # Manually run ...
-test_rclone_google_to_local()
-test_rclone_utils_for_testing()
-test_rclone_local_to_amazon()
+test_google_to_local()
+test_utils_for_testing()
+test_local_to_amazon()
