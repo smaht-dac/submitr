@@ -10,6 +10,7 @@ from submitr.rclone.rclone import RClone
 from submitr.rclone.rclone_config_amazon import AmazonCredentials, RCloneConfigAmazon
 from submitr.rclone.rclone_config_google import GoogleCredentials, RCloneConfigGoogle
 from submitr.rclone.testing.rclone_utils_amazon_for_testing import AwsCredentials, AwsS3
+from submitr.rclone.testing.rclone_utils_google_for_testing import Gcs
 
 # Integration tests for rclone related functionality within smaht-submitr.
 # Need valid AWS credentials for (currently) smaht-wolf.
@@ -165,7 +166,11 @@ def test_google_to_local():
         rclone = RClone(destination=config)
         # TODO
         command = rclone.copy(tmp_test_file_path, GCS_ENV.bucket, dryrun=True)
-        # rclone.copy(tmp_test_file_path, GCS_ENV.bucket)
+        rclone.copy(tmp_test_file_path, GCS_ENV.bucket)
+        with temporary_file() as tmp_downloaded_file_path:
+            gcs = Gcs(credentials)
+            gcs.download_file(GCS_ENV.bucket, tmp_test_file_name, tmp_downloaded_file_path)
+            assert are_files_equal(tmp_test_file_path, tmp_downloaded_file_path) is True
         # TODO
         assert command is not None
         # TODO
