@@ -247,10 +247,7 @@ class AmazonCredentials:
 
         name = f"test.smaht.submitr.{self._create_short_unique_identifier()}"
         try:
-            if policy:
-                response = sts.get_federation_token(Name=name, DurationSeconds=duration, Policy=policy)
-            else:
-                response = sts.get_federation_token(Name=name, DurationSeconds=duration)
+            response = sts.get_federation_token(Name=name, DurationSeconds=duration, Policy=policy)
             if isinstance(credentials := response.get("Credentials"), dict):
                 return AmazonCredentials(
                     access_key_id=credentials.get("AccessKeyId"),
