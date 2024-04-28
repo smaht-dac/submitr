@@ -164,7 +164,8 @@ def test_rclone_google_to_local():
     with GCS_ENV.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         rclone = RClone(destination=config)
         # TODO
-        command = rclone.copy(tmp_test_file_path, tmp_test_file_name, dryrun=True)
+        command = rclone.copy(tmp_test_file_path, GCS_ENV.bucket, dryrun=True)
+        # rclone.copy(tmp_test_file_path, GCS_ENV.bucket)
         # TODO
         assert command is not None
         # TODO
