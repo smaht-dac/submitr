@@ -98,25 +98,23 @@ class RClone:
             with destination_config.config_file(persist_file=dryrun is True) as destination_config_file:
                 command = None
                 destination = RCloneConfig.normalize_cloud_path(destination)
-                if destination and not (destination in [".", "/"]):
+                if destination and not (destination in ["."]):
                     # Here the given destination appears to be a file (bucket key); so we use rclone
                     # copyto rather than copy. The destination bucket be specified either in the
                     # destination_config or as the first (path-style) component of the given destination.
                     if not (destination_bucket := destination_config.bucket):
-#                       if destination.startswith("/"):
-#                           destination = destination[1:]
-                        if len(destination_components := destination.split("/")) >= 2:
+                        if len(destination_components := destination.split(RCloneConfig.CLOUD_PATH_SEPARATOR)) >= 2:
                             destination_bucket = destination_components[0]
-                            destination = "/".join(destination_components[1:])
+                            destination = RCloneConfig.CLOUD_PATH_SEPARATOR.join(destination_components[1:])
                         else:
                             destination_bucket = destination
                             command = [self.executable_path(),
                                        "copy", "--config", destination_config_file, source_file,
                                        f"{destination_config.name}:{destination_bucket}"]
                     if not command:
-                        command = [self.executable_path(),
-                                   "copyto", "--config", destination_config_file, source_file,
-                                   f"{destination_config.name}:{destination_bucket}/{destination}"]
+                        destination_path = f"{destination_bucket}{RCloneConfig.CLOUD_PATH_SEPARATOR}{destination}"
+                        command = [self.executable_path(), "copyto", "--config", destination_config_file, source_file,
+                                   f"{destination_config.name}:{destination_path}"]
                 else:
                     # Here the given destination argument was not specified (or it was just a dot or slash),
                     # meaning we are copying the (local file) source to the destination bucket which must
