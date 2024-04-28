@@ -31,6 +31,8 @@ class AmazonTestEnv:
 
     # Specifying the env name here (as smaht-wolf) will cause
     # AwsCredentials to read from: ~/.aws_test.smaht-wolf/credentials
+    # In addition to the basic (access-key-id, secret-access-key, optional session-token)
+    # credentials, this is also assumed to also contain the region.
     env = "smaht-wolf"
 
     # See ENCODED_S3_ENCRYPT_KEY_ID in SecretsManager for C4AppConfigSmahtWolf.
@@ -40,7 +42,9 @@ class AmazonTestEnv:
 
     @staticmethod
     def credentials() -> AmazonCredentials:
-        return AwsCredentials.get_credentials_from_file(AmazonTestEnv.env, kms_key_id=AmazonTestEnv.kms_key_id)
+        credentials = AwsCredentials.get_credentials_from_file(AmazonTestEnv.env, kms_key_id=AmazonTestEnv.kms_key_id)
+        assert credentials.region
+        return credentials
 
 
 class GoogleTestEnv:
@@ -54,6 +58,10 @@ class GoogleTestEnv:
     def credentials() -> GoogleCredentials:
         return GoogleCredentials(location=GoogleTestEnv.location,
                                  service_account_file=GoogleTestEnv.service_account_file)
+        assert credentials.location == GoogleTestEnv.location
+        assert credentials.service_account_file == GoogleTestEnv.service_account_file
+        assert os.path.isfile(credentials.service_account_file)
+        return credentials
 
 
 def test_utils_for_testing() -> None:
