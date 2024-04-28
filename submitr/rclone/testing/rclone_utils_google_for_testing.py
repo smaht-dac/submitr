@@ -2,6 +2,8 @@ from __future__ import annotations
 import os
 from google.cloud.storage import Client as GcsClient
 from typing import List, Optional
+from dcicutils.file_utils import are_files_equal
+from dcicutils.tmpfile_utils import temporary_file
 from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_config_google import GoogleCredentials
 
@@ -75,10 +77,26 @@ class Gcs:
         pass
 
     def file_exists(self, bucket: str, key: str, raise_exception: bool = True) -> bool:
-        pass
+        try:
+            if not (bucket := RCloneConfig.normalize_cloud_path(bucket)):
+                return False
+            if not (key := RCloneConfig.normalize_cloud_path(key)):
+                return False
+            return self.client.get_bucket(bucket).blob(key).exists()
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+            return False
 
     def file_equals(self, bucket: str, key: str, file: str, raise_exception: bool = True) -> bool:
-        pass
+        try:
+            with temporary_file() as temporary_downloaded_file_name:
+                if self.download_file(bucket, key, temporary_downloaded_file_name):
+                    return are_files_equal(file, temporary_downloaded_file_name)
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+        return False
 
     def list_files(self, bucket: str,
                    prefix: Optional[str] = None,

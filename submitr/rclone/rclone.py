@@ -80,13 +80,12 @@ class RClone:
         # TODO
         # Use copyto instead of copy to copy to specified file name.
         # rclone --config /tmp/rclone.conf copy hello.txt test-src-smaht-wolf:smaht-unit-testing-files
-        source_config = self.source
-        destination_config = self.destination
-        if isinstance(destination_config, RCloneConfig):
-            if isinstance(source_config, RCloneConfig):
-                # Here both a source and destination config have been specified; meaning we
-                # are copying from some cloud source to some cloud destination; i.e. e.g from
-                # Amazon S3 or Google Cloud Storage to Amazon S3 or Google Cloud Storage.
+        if isinstance(destination_config := self.destination, RCloneConfig):
+            # Here a destination cloud configuration has been defined for this RClone object.
+            if isinstance(source_config := self.source, RCloneConfig):
+                # Here both a source and destination cloud configuration have been defined for this RClone
+                # object; meaning we are copying from one cloud source to another cloud destination; i.e.
+                # e.g from Amazon S3 or Google Cloud Storage to Amazon S3 or Google Cloud Storage.
                 with self.config_file() as config_file:  # noqa
                     # TODO
                     pass
@@ -137,8 +136,8 @@ class RClone:
                     if raise_exception is True:
                         raise e
                 return False if not (dryrun is True) else None
-        elif isinstance(source_config, RCloneConfig):
-            # Here only a source config has been specified.
+        elif isinstance(source_config := self.source, RCloneConfig):
+            # Here only a source cloud configuration has been defined for this RClone object.
             # TODO
             with source_config.config_file() as source_config_file:  # noqa
                 # TODO

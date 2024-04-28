@@ -102,28 +102,28 @@ def _test_utils_for_testing(credentials: AmazonCredentials) -> None:
         assert s3.download_file(AmazonTestEnv.bucket, tmp_test_file_name, "/dev/null") is False
 
 
-def test_local_to_amazon() -> None:
+def test_between_amazon_and_local() -> None:
 
-    _test_local_to_amazon(AmazonTestEnv.credentials())
-    _test_local_to_amazon(AmazonTestEnv.credentials(), nokms=True)
+    _test_between_amazon_and_local(AmazonTestEnv.credentials())
+    _test_between_amazon_and_local(AmazonTestEnv.credentials(), nokms=True)
 
-    _test_local_to_amazon(AmazonTestEnv.credentials(), use_temporary_credentials=True)
-    _test_local_to_amazon(AmazonTestEnv.credentials(), use_temporary_credentials=True, nokms=True)
+    _test_between_amazon_and_local(AmazonTestEnv.credentials(), use_temporary_credentials=True)
+    _test_between_amazon_and_local(AmazonTestEnv.credentials(), use_temporary_credentials=True, nokms=True)
 
-    _test_local_to_amazon(AmazonTestEnv.credentials(), use_temporary_credentials_key_specific=True)
-    _test_local_to_amazon(AmazonTestEnv.credentials(), use_temporary_credentials_key_specific=True, nokms=True)
+    _test_between_amazon_and_local(AmazonTestEnv.credentials(), use_temporary_credentials_key_specific=True)
+    _test_between_amazon_and_local(AmazonTestEnv.credentials(), use_temporary_credentials_key_specific=True, nokms=True)
 
 
-def _test_local_to_amazon(credentials: AmazonCredentials,
-                          use_temporary_credentials: bool = False,
-                          use_temporary_credentials_key_specific: bool = False,
-                          nokms: bool = False) -> None:
+def _test_between_amazon_and_local(credentials: AmazonCredentials,
+                                   use_temporary_credentials: bool = False,
+                                   use_temporary_credentials_key_specific: bool = False,
+                                   nokms: bool = False) -> None:
 
     if nokms is True:
         credentials = AmazonCredentials(credentials)
         credentials.kms_key_id = None
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
-        # Here we have a test file to upload to AWS S3.
+        # Here we have a local test file to upload to AWS S3.
         if use_temporary_credentials_key_specific is True:
             credentials = AwsS3(credentials).generate_temporary_credentials(bucket=AmazonTestEnv.bucket,
                                                                             key=tmp_test_file_name)
@@ -137,20 +137,20 @@ def _test_local_to_amazon(credentials: AmazonCredentials,
         assert config.secret_access_key == credentials.secret_access_key
         assert config.session_token == credentials.session_token
         assert config.kms_key_id == credentials.kms_key_id
-        # Upload local file to AWS S3 using rclone;
+        # Upload the local test file to AWS S3 using RClone;
         # we upload tmp_test_file_path to the tmp_test_file_name key in AmazonTestEnv.bucket.
         rclone = RClone(destination=config)
         assert rclone.destination == config
         assert rclone.copy(tmp_test_file_path, AmazonTestEnv.bucket) is True  # TODO: maybe also to specify key?
-        # Santity check uploaded file.
+        # Sanity check uploaded file using non-RClone methods (via Aws3 which uses boto3).
         s3 = AwsS3(credentials)
         assert s3.file_exists(AmazonTestEnv.bucket, tmp_test_file_name) is True
         assert s3.file_equals(AmazonTestEnv.bucket, tmp_test_file_name, tmp_test_file_path) is True
         if config.kms_key_id:
             assert s3.file_kms_encrypted(AmazonTestEnv.bucket, tmp_test_file_name) is True
             assert s3.file_kms_encrypted(AmazonTestEnv.bucket, tmp_test_file_name, config.kms_key_id) is True
-        # Now try to download the uploaded test file in AWS S3 using rclone.
-        # use the same rclone config as for upload but as the source rather than destination.
+        # Now try to download the uploaded test file in AWS S3 using RClone;
+        # use the same RClone configuration as for upload but as the source rather than destination.
         # TODO
         rclone = RClone(source=config)
         assert rclone.source == config
@@ -166,34 +166,36 @@ def _test_local_to_amazon(credentials: AmazonCredentials,
         assert s3.file_exists(AmazonTestEnv.bucket, tmp_test_file_name) is False
 
 
-def test_google_to_local() -> None:
+def test_between_google_and_local() -> None:
     credentials = GoogleTestEnv.credentials()
     config = RCloneConfigGoogle(credentials)
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        # Here we have a local test file to upload to Google Cloud Storage.
         rclone = RClone(destination=config)
-        # TODO
-        command = rclone.copy(tmp_test_file_path, GoogleTestEnv.bucket, dryrun=True)
+        # Upload the local test file to Google Cloud Storage using rclone;
+        # we upload tmp_test_file_path to the tmp_test_file_name key in GoogleTestEnv.bucket.
         rclone.copy(tmp_test_file_path, GoogleTestEnv.bucket)
-        with temporary_file() as tmp_downloaded_file_path:
-            gcs = Gcs(credentials)
-            gcs.download_file(GoogleTestEnv.bucket, tmp_test_file_name, tmp_downloaded_file_path)
-            assert are_files_equal(tmp_test_file_path, tmp_downloaded_file_path) is True
-        # TODO
-        assert command is not None
-        # TODO
-        assert rclone.destination == config
+        # Sanity check uploaded file using non-RClone methods (via Gcs which uses google.cloud.storage).
+        gcs = Gcs(credentials)
+        assert gcs.file_exists(GoogleTestEnv.bucket, tmp_test_file_name) is True
+        assert gcs.file_equals(GoogleTestEnv.bucket, tmp_test_file_name, tmp_test_file_path) is True
+        # Now try to download the uploaded test file in Google Cloud Storage using RClone;
+        # use the same RClone configuration as for upload but as the source rather than destination.
         # TODO
         rclone = RClone(source=config)
-        # TODO
         assert rclone.source == config
-        # TODO
+        with temporary_directory() as tmp_download_directory:
+            assert tmp_download_directory  # TODO/placeholder
+            # import pdb ; pdb.set_trace()
+            # rclone.copy(GoogleTestEnv.bucket, tmp_test_file_name, tmp_download_directory)
+            pass
 
 
 def test():
     AwsCredentials.remove_credentials_from_environment_variables()
     test_utils_for_testing()
-    test_local_to_amazon()
-    test_google_to_local()
+    test_between_amazon_and_local()
+    test_between_google_and_local()
 
 
 test()
