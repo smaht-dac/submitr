@@ -56,8 +56,8 @@ class GoogleTestEnv:
 
     @staticmethod
     def credentials() -> GoogleCredentials:
-        return GoogleCredentials(location=GoogleTestEnv.location,
-                                 service_account_file=GoogleTestEnv.service_account_file)
+        credentials = GoogleCredentials(location=GoogleTestEnv.location,
+                                        service_account_file=GoogleTestEnv.service_account_file)
         assert credentials.location == GoogleTestEnv.location
         assert credentials.service_account_file == GoogleTestEnv.service_account_file
         assert os.path.isfile(credentials.service_account_file)
