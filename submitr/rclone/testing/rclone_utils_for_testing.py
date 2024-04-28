@@ -85,9 +85,6 @@ class AwsCredentials(AmazonCredentials):
         os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
         os.environ.pop("AWS_SESSION_TOKEN", None)
 
-    def generate_temporary_credentials(self, *args, **kwargs) -> AmazonCredentials:
-        return AwsCredentials(super().generate_temporary_credentials(*args, **kwargs))
-
 
 class AwsS3:
 
@@ -236,7 +233,7 @@ class AwsS3:
     def generate_temporary_credentials(self,
                                        duration: Optional[Union[int, timedelta]] = None,
                                        bucket: Optional[str] = None, key: Optional[str] = None,
-                                       readonly: bool = False) -> AwsCredentials:
+                                       readonly: bool = False) -> Optional[AmazonCredentials]:
         """
         Generates and returns temporary AWS credentials. The default duration of validity for
         the generated credential is one hour; this can be overridden by specifying the duration
@@ -270,4 +267,4 @@ class AwsS3:
             statements.append({"Effect": "Deny", "Action": actions, "NotResource": resources})
         policy = {"Version": "2012-10-17", "Statement": statements}
         credentials = self.credentials.generate_temporary_credentials(duration=duration, policy=policy)
-        return AwsCredentials(credentials)
+        return AwsCredentials(credentials) if credentials else None 
