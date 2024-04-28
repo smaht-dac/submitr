@@ -267,4 +267,4 @@ class AwsS3:
             statements.append({"Effect": "Deny", "Action": actions, "NotResource": resources})
         policy = {"Version": "2012-10-17", "Statement": statements}
         credentials = self.credentials.generate_temporary_credentials(duration=duration, policy=policy)
-        return AwsCredentials(credentials) if credentials else None 
+        return AwsCredentials(credentials) if credentials else None

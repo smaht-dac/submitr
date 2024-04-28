@@ -9,7 +9,7 @@ from dcicutils.tmpfile_utils import (
 from submitr.rclone.rclone import RClone
 from submitr.rclone.rclone_config_amazon import AmazonCredentials, RCloneConfigAmazon
 from submitr.rclone.rclone_config_google import GoogleCredentials, RCloneConfigGoogle
-from submitr.rclone.testing.rclone_utils_for_testing import AwsCredentials, AwsS3
+from submitr.rclone.testing.rclone_utils_amazon_for_testing import AwsCredentials, AwsS3
 
 # Integration tests for rclone related functionality within smaht-submitr.
 # Need valid AWS credentials for (currently) smaht-wolf.
@@ -178,6 +178,7 @@ def test_google_to_local():
 
 
 # Manually run ...
+AwsCredentials.remove_credentials_from_environment_variables()
 test_google_to_local()
 test_utils_for_testing()
 test_local_to_amazon()
