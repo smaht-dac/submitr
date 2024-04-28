@@ -31,7 +31,7 @@ class AmazonSmahtWolf:
 
     @staticmethod
     def credentials():
-        return AwsCredentials(AmazonSmahtWolf.env, kms_key_id=AmazonSmahtWolf.kms_key_id)
+        return AwsCredentials.get_credentials_from_file(AmazonSmahtWolf.env, kms_key_id=AmazonSmahtWolf.kms_key_id)
 
     @staticmethod
     @contextmanager

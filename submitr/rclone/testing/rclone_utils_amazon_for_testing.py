@@ -13,30 +13,12 @@ from submitr.rclone.rclone_config_amazon import AmazonCredentials
 
 # Module with class/functions to aid in integration testing of smaht-submitr rclone support.
 
-class AwsCredentials(AmazonCredentials):
-
-    def __init__(self,
-                 credentials: Optional[Union[str, AwsCredentials]] = None,
-                 credentials_section: Optional[str] = None,
-                 region: Optional[str] = None,
-                 access_key_id: Optional[str] = None,
-                 secret_access_key: Optional[str] = None,
-                 session_token: Optional[str] = None,
-                 kms_key_id: Optional[str] = None) -> None:
-
-        if isinstance(credentials, str):
-            credentials = AwsCredentials.get_credentials_from_file(credentials, credentials_section)
-        if not isinstance(credentials, AmazonCredentials):
-            credentials = None
-        super().__init__(credentials=credentials,
-                         region=region,
-                         access_key_id=access_key_id,
-                         secret_access_key=secret_access_key,
-                         session_token=session_token,
-                         kms_key_id=kms_key_id)
+class AwsCredentials:
 
     @staticmethod
-    def get_credentials_from_file(credentials_file: str, credentials_section: str = None) -> AmazonCredentials:
+    def get_credentials_from_file(credentials_file: str,
+                                  credentials_section: str = None,
+                                  kms_key_id: Optional[str] = None) -> AmazonCredentials:
         if not credentials_section:
             credentials_section = "default"
         try:
@@ -61,7 +43,8 @@ class AwsCredentials(AmazonCredentials):
             return AmazonCredentials(region=region,
                                      access_key_id=access_key_id,
                                      secret_access_key=secret_access_key,
-                                     session_token=session_token)
+                                     session_token=session_token,
+                                     kms_key_id=kms_key_id)
         except Exception:
             pass
         return AmazonCredentials()
@@ -89,11 +72,11 @@ class AwsS3:
         return AwsS3(*args, **kwargs)
 
     def __init__(self, credentials: AmazonCredentials) -> None:
-        self._credentials = AwsCredentials(credentials)
+        self._credentials = AmazonCredentials(credentials)
         self._client = None
 
     @property
-    def credentials(self) -> AwsCredentials:
+    def credentials(self) -> AmazonCredentials:
         return self._credentials
 
     @credentials.setter
@@ -263,4 +246,4 @@ class AwsS3:
             statements.append({"Effect": "Deny", "Action": actions, "NotResource": resources})
         policy = {"Version": "2012-10-17", "Statement": statements}
         credentials = self.credentials.generate_temporary_credentials(duration=duration, policy=policy)
-        return AwsCredentials(credentials) if credentials else None
+        return AmazonCredentials(credentials) if credentials else None
