@@ -98,11 +98,17 @@ class RCloneConfig(AbstractBaseClass):
     @staticmethod
     def join_cloud_path(*args) -> str:
         path = ""
-        separator = RCloneConfig.CLOUD_PATH_SEPARATOR
         for arg in args:
-            if not (arg := RCloneConfig.normalize_cloud_path(arg)):
-                continue
-            if path:
-                path += separator
-            path += arg
+            if isinstance(arg, list):
+                arg = RCloneConfig.join_cloud_path(*arg)
+            elif (arg := RCloneConfig.normalize_cloud_path(arg)):
+                if path:
+                    path += RCloneConfig.CLOUD_PATH_SEPARATOR
+                path += arg
         return path
+
+    @staticmethod
+    def split_cloud_path(value: str) -> List[str]:
+        if value := RCloneConfig.normalize_cloud_path(value):
+            return value.split(RCloneConfig.CLOUD_PATH_SEPARATOR)
+        return []

@@ -103,16 +103,16 @@ class RClone:
                     # copyto rather than copy. The destination bucket be specified either in the
                     # destination_config or as the first (path-style) component of the given destination.
                     if not (destination_bucket := destination_config.bucket):
-                        if len(destination_components := destination.split(RCloneConfig.CLOUD_PATH_SEPARATOR)) >= 2:
+                        if len(destination_components := RCloneConfig.split_cloud_path(destination)) >= 2:
                             destination_bucket = destination_components[0]
-                            destination = RCloneConfig.CLOUD_PATH_SEPARATOR.join(destination_components[1:])
+                            destination = RCloneConfig.join_cloud_path(destination_components[1:])
                         else:
                             destination_bucket = destination
                             command = [self.executable_path(),
                                        "copy", "--config", destination_config_file, source_file,
                                        f"{destination_config.name}:{destination_bucket}"]
                     if not command:
-                        destination_path = f"{destination_bucket}{RCloneConfig.CLOUD_PATH_SEPARATOR}{destination}"
+                        destination_path = RCloneConfig.join_cloud_path(destination_bucket, destination)
                         command = [self.executable_path(), "copyto", "--config", destination_config_file, source_file,
                                    f"{destination_config.name}:{destination_path}"]
                 else:
