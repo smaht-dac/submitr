@@ -236,13 +236,12 @@ class AmazonCredentials:
 
         policy = dump_json(policy) if isinstance(policy, dict) else None
 
-        sts = BotoClient("sts",
-                         aws_access_key_id=self.access_key_id,
-                         aws_secret_access_key=self.secret_access_key,
-                         aws_session_token=self.session_token)
-
-        name = f"test.smaht.submitr.{self._create_short_unique_identifier()}"
+        name = f"test.smaht.submitr.{create_uuid().hex[:13]}"
         try:
+            sts = BotoClient("sts",
+                             aws_access_key_id=self.access_key_id,
+                             aws_secret_access_key=self.secret_access_key,
+                             aws_session_token=self.session_token)
             response = sts.get_federation_token(Name=name, DurationSeconds=duration, Policy=policy)
             if isinstance(credentials := response.get("Credentials"), dict):
                 return AmazonCredentials(
@@ -254,7 +253,3 @@ class AmazonCredentials:
             if raise_exception is True:
                 raise e
         return None
-
-    @staticmethod
-    def _create_short_unique_identifier(length: int = 13):
-        return create_uuid().hex[:length]
