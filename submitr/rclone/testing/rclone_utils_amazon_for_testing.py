@@ -13,58 +13,6 @@ from submitr.rclone.rclone_config_amazon import AmazonCredentials
 
 # Module with class/functions to aid in integration testing of smaht-submitr rclone support.
 
-class AwsCredentials:
-
-    @staticmethod
-    def get_credentials_from_file(credentials_file: str,
-                                  credentials_section: str = None,
-                                  kms_key_id: Optional[str] = None) -> AmazonCredentials:
-        if not credentials_section:
-            credentials_section = "default"
-        try:
-            credentials_file = os.path.expanduser(credentials_file)
-            if not os.path.isfile(credentials_file):
-                if os.path.isdir(credentials_file):
-                    credentials_file = os.path.join(credentials_file, "credentials")
-                else:
-                    credentials_file = os.path.join(f"~/.aws_test.{credentials_file}/credentials")
-            config = configparser.ConfigParser()
-            config.read(os.path.expanduser(credentials_file))
-            section = config[credentials_section]
-            region = (section.get("region", None) or
-                      section.get("region_name", None) or
-                      section.get("aws_default_region", None))
-            access_key_id = (section.get("aws_access_key_id", None) or
-                             section.get("access_key_id", None))
-            secret_access_key = (section.get("aws_secret_access_key", None) or
-                                 section.get("secret_access_key", None))
-            session_token = (section.get("aws_session_token", None) or
-                             section.get("session_token", None))
-            return AmazonCredentials(region=region,
-                                     access_key_id=access_key_id,
-                                     secret_access_key=secret_access_key,
-                                     session_token=session_token,
-                                     kms_key_id=kms_key_id)
-        except Exception:
-            pass
-        return AmazonCredentials()
-
-    @staticmethod
-    def get_credentials_from_environment_variables() -> AmazonCredentials:
-        return AmazonCredentials(
-            region=os.environ.get("AWS_DEFAULT_REGION", None),
-            access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", None),
-            secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", None),
-            session_token=os.environ.get("AWS_SESSION_TOKEN", None))
-
-    @staticmethod
-    def remove_credentials_from_environment_variables() -> None:
-        os.environ.pop("AWS_DEFAULT_REGION", None)
-        os.environ.pop("AWS_ACCESS_KEY_ID", None)
-        os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
-        os.environ.pop("AWS_SESSION_TOKEN", None)
-
-
 class AwsS3:
 
     @staticmethod
@@ -247,3 +195,55 @@ class AwsS3:
         policy = {"Version": "2012-10-17", "Statement": statements}
         credentials = self.credentials.generate_temporary_credentials(duration=duration, policy=policy)
         return AmazonCredentials(credentials) if credentials else None
+
+
+class AwsCredentials:
+
+    @staticmethod
+    def get_credentials_from_file(credentials_file: str,
+                                  credentials_section: str = None,
+                                  kms_key_id: Optional[str] = None) -> AmazonCredentials:
+        if not credentials_section:
+            credentials_section = "default"
+        try:
+            credentials_file = os.path.expanduser(credentials_file)
+            if not os.path.isfile(credentials_file):
+                if os.path.isdir(credentials_file):
+                    credentials_file = os.path.join(credentials_file, "credentials")
+                else:
+                    credentials_file = os.path.join(f"~/.aws_test.{credentials_file}/credentials")
+            config = configparser.ConfigParser()
+            config.read(os.path.expanduser(credentials_file))
+            section = config[credentials_section]
+            region = (section.get("region", None) or
+                      section.get("region_name", None) or
+                      section.get("aws_default_region", None))
+            access_key_id = (section.get("aws_access_key_id", None) or
+                             section.get("access_key_id", None))
+            secret_access_key = (section.get("aws_secret_access_key", None) or
+                                 section.get("secret_access_key", None))
+            session_token = (section.get("aws_session_token", None) or
+                             section.get("session_token", None))
+            return AmazonCredentials(region=region,
+                                     access_key_id=access_key_id,
+                                     secret_access_key=secret_access_key,
+                                     session_token=session_token,
+                                     kms_key_id=kms_key_id)
+        except Exception:
+            pass
+        return AmazonCredentials()
+
+    @staticmethod
+    def get_credentials_from_environment_variables() -> AmazonCredentials:
+        return AmazonCredentials(
+            region=os.environ.get("AWS_DEFAULT_REGION", None),
+            access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", None),
+            secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", None),
+            session_token=os.environ.get("AWS_SESSION_TOKEN", None))
+
+    @staticmethod
+    def remove_credentials_from_environment_variables() -> None:
+        os.environ.pop("AWS_DEFAULT_REGION", None)
+        os.environ.pop("AWS_ACCESS_KEY_ID", None)
+        os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
+        os.environ.pop("AWS_SESSION_TOKEN", None)
