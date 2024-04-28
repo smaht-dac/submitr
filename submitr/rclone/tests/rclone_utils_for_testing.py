@@ -251,8 +251,7 @@ class AwsS3:
             if isinstance(key, str) and (key := key.strip()):
                 resources = [f"arn:aws:s3:::{bucket}/{key}"]
                 # Note that this is specifically required (for some reason) by rclone (but not for plain aws).
-                resources += [f"arn:aws:s3:::{bucket}"]
-                # resources += [f"arn:aws:s3:::{bucket}/*"]  # xyzzy/debug
+                resources += [f"arn:aws:s3:::{bucket}"]  # does not seem to be needed: f"arn:aws:s3:::{bucket}/*"
             else:
                 resources = [f"arn:aws:s3:::{bucket}", f"arn:aws:s3:::{bucket}/*"] ; deny = True  # noqa
         # For how this policy stuff is defined in smaht-portal for file upload
@@ -260,8 +259,7 @@ class AwsS3:
         actions = ["s3:GetObject", "s3:HeadObject", "s3:ListBucket", "s3:DescribeBucket"]
         if not (nokms is True) and (kms_key_id := self.credentials.kms_key_id):
             actions_kms = ["kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey"]
-            account_number = "537626822796"  # TODO: Get this dynamically obviously
-            resource_kms = f"arn:aws:kms:{self.credentials.region}:{account_number}:key/{kms_key_id}"
+            resource_kms = f"arn:aws:kms:{self.credentials.region}:{self.credentials.account_number}:key/{kms_key_id}"
             statements.append({"Effect": "Allow", "Action": actions_kms, "Resource": resource_kms})
         if not (readonly is True):
             # Note the s3:CreateBucket is specifically required (for some reason) by rclone (but not for plain

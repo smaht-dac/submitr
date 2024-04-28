@@ -145,6 +145,7 @@ class AmazonCredentials:
             self._session_token = session_token
         if kms_key_id := RCloneConfig._normalize_string_value(kms_key_id):
             self._kms_key_id = None if nokms is True else kms_key_id
+        self._account_number = None
 
     @property
     def region(self) -> Optional[str]:
@@ -191,6 +192,21 @@ class AmazonCredentials:
         if (value := RCloneConfig._normalize_string_value(value)) is not None:
             self._kms_key_id = value or None
 
+    @property
+    def account_number(self) -> Optional[str]:
+        if not self._account_number:
+            try:
+                iam = BotoClient("iam",
+                                 region_name=self.region,
+                                 aws_access_key_id=self.access_key_id,
+                                 aws_secret_access_key=self.secret_access_key,
+                                 aws_session_token=self.session_token)
+                response = iam.get_user()
+                self._account_number = response["User"]["Arn"].split(":")[4]
+            except Exception:
+                pass
+        return self._account_number
+
     def __eq__(self, other: AmazonCredentials) -> bool:
         return ((self.region == other.region) and
                 (self.access_key_id == other.access_key_id) and
@@ -235,8 +251,6 @@ class AmazonCredentials:
         name = f"test.smaht.submitr.{self._create_short_unique_identifier()}"
         try:
             if policy:
-                # response = sts.get_federation_token(Name=name, Policy=policy)
-                # xyzzy
                 response = sts.get_federation_token(Name=name, DurationSeconds=duration, Policy=policy)
             else:
                 response = sts.get_federation_token(Name=name, DurationSeconds=duration)
