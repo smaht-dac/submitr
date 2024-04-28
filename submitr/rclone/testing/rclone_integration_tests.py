@@ -17,11 +17,14 @@ from submitr.rclone.testing.rclone_utils_for_testing import AwsCredentials, AwsS
 
 
 class AmazonSmahtWolf:
+
     # Specifying the env name here (as smaht-wolf) will cause
     # AwsCredentials to read from: ~/.aws_test.smaht-wolf/credentials
     env = "smaht-wolf"
+
     # See ENCODED_S3_ENCRYPT_KEY_ID in SecretsManager for C4AppConfigSmahtWolf.
     kms_key_id = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"
+
     bucket = "smaht-unit-testing-files"
     temporary_test_file_prefix = "test-submitr-rclone-"
     temporary_test_file_suffix = ".txt"
@@ -40,14 +43,24 @@ class AmazonSmahtWolf:
 
 class GoogleTestEnv:
 
-    env = "todo"
     location = "us-east1"
     service_account_file = "/Users/dmichaels/.config/google-cloud/smaht-dac-617e0480d8e2.json"
+
+    bucket = "smaht-submitr-rclone-testing"
+    temporary_test_file_prefix = "test-submitr-rclone-"
+    temporary_test_file_suffix = ".txt"
 
     @staticmethod
     def credentials():
         return GoogleCredentials(location=GoogleTestEnv.location,
                                  service_account_file=GoogleTestEnv.service_account_file)
+
+    @staticmethod
+    @contextmanager
+    def temporary_test_file():
+        with temporary_random_file(prefix=GCS_ENV.temporary_test_file_prefix,
+                                   suffix=GCS_ENV.temporary_test_file_suffix) as tmp_file_path:
+            yield tmp_file_path, os.path.basename(tmp_file_path)
 
 
 AWS_ENV = AmazonSmahtWolf
@@ -146,8 +159,21 @@ def _test_rclone_local_to_amazon(credentials: AmazonCredentials,
 
 
 def test_rclone_google_to_local():
-    # TODO
-    _ = RCloneConfigGoogle(GCS_ENV.credentials())
+    credentials = GCS_ENV.credentials()
+    config = RCloneConfigGoogle(credentials)
+    with GCS_ENV.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        rclone = RClone(destination=config)
+        # TODO
+        command = rclone.copy(tmp_test_file_path, tmp_test_file_name, dryrun=True)
+        # TODO
+        assert command is not None
+        # TODO
+        assert rclone.destination_config == config
+        # TODO
+        rclone = RClone(source=config)
+        # TODO
+        assert rclone.source_config == config
+        # TODO
 
 
 # Manually run ...
