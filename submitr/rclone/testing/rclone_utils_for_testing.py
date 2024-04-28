@@ -236,7 +236,7 @@ class AwsS3:
     def generate_temporary_credentials(self,
                                        duration: Optional[Union[int, timedelta]] = None,
                                        bucket: Optional[str] = None, key: Optional[str] = None,
-                                       nokms: bool = False, readonly: bool = False) -> AwsCredentials:
+                                       readonly: bool = False) -> AwsCredentials:
         """
         Generates and returns temporary AWS credentials. The default duration of validity for
         the generated credential is one hour; this can be overridden by specifying the duration
@@ -257,7 +257,7 @@ class AwsS3:
         # For how this policy stuff is defined in smaht-portal for file upload
         # session token creation process see: encoded_core.types.file.external_creds
         actions = ["s3:GetObject", "s3:HeadObject", "s3:ListBucket", "s3:DescribeBucket"]
-        if not (nokms is True) and (kms_key_id := self.credentials.kms_key_id):
+        if kms_key_id := self.credentials.kms_key_id:
             actions_kms = ["kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey"]
             resource_kms = f"arn:aws:kms:{self.credentials.region}:{self.credentials.account_number}:key/{kms_key_id}"
             statements.append({"Effect": "Allow", "Action": actions_kms, "Resource": resource_kms})
