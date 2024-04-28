@@ -1,5 +1,4 @@
 from contextlib import contextmanager
-import re
 import subprocess
 from typing import List, Optional, Union
 from dcicutils.tmpfile_utils import temporary_file
@@ -98,7 +97,7 @@ class RClone:
             # i.e. e.g. to Amazon S3 or Google Cloud Storage.
             with destination_config.config_file(persist_file=dryrun is True) as destination_config_file:
                 command = None
-                destination = self._normalize_cloud_path(destination)
+                destination = RCloneConfig.normalize_cloud_path(destination)
                 if destination and not (destination in [".", "/"]):
                     # Here the given destination appears to be a file (bucket key); so we use rclone
                     # copyto rather than copy. The destination bucket be specified either in the
@@ -162,9 +161,3 @@ class RClone:
     @staticmethod
     def executable_path() -> str:
         return rclone_executable_path()
-
-    @staticmethod
-    def _normalize_cloud_path(value: str) -> str:
-        if not isinstance(value, str):
-            return ""
-        return re.compile(rf"({re.escape('/')})+").sub("/", value.strip())

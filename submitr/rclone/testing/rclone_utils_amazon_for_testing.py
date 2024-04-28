@@ -49,9 +49,9 @@ class AwsS3:
         try:
             if not isinstance(file, str) or not file:
                 return False
-            if not (bucket := RCloneConfig._normalize_cloud_path(bucket)):
+            if not (bucket := RCloneConfig.normalize_cloud_path(bucket)):
                 return False
-            if not (key := RCloneConfig._normalize_cloud_path(key)):
+            if not (key := RCloneConfig.normalize_cloud_path(key)):
                 key = os.path.basename(file)
             if kms_key_id := self.credentials.kms_key_id:
                 # Note that it is not necessary to use the KMS Key ID when downloading
@@ -70,9 +70,9 @@ class AwsS3:
     def download_file(self, bucket: str, key: str, file: str,
                       nodirectories: bool = False, raise_exception: bool = True) -> bool:
         try:
-            if not (bucket := RCloneConfig._normalize_cloud_path(bucket)):
+            if not (bucket := RCloneConfig.normalize_cloud_path(bucket)):
                 return False
-            if not (key := RCloneConfig._normalize_cloud_path(key)):
+            if not (key := RCloneConfig.normalize_cloud_path(key)):
                 return False
             if not isinstance(file, str) or not file:
                 return False

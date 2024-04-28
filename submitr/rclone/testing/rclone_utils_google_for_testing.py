@@ -1,6 +1,5 @@
 from __future__ import annotations
 import os
-import re
 from google.cloud.storage import Client as GcsClient
 from typing import List, Optional
 from submitr.rclone.rclone_config import RCloneConfig
@@ -34,9 +33,9 @@ class Gcs:
         try:
             if not isinstance(file, str) or not file:
                 return False
-            if not (bucket := RCloneConfig._normalize_cloud_path(bucket)):
+            if not (bucket := RCloneConfig.normalize_cloud_path(bucket)):
                 return False
-            if not (key := RCloneConfig._normalize_cloud_path(key)):
+            if not (key := RCloneConfig.normalize_cloud_path(key)):
                 key = os.path.basename(file)
             self.client.get_bucket(bucket).blob(key).upload_from_filename(file)
             return True
@@ -48,9 +47,9 @@ class Gcs:
     def download_file(self, bucket: str, key: str, file: str,
                       nodirectories: bool = False, raise_exception: bool = True) -> bool:
         try:
-            if not (bucket := RCloneConfig._normalize_cloud_path(bucket)):
+            if not (bucket := RCloneConfig.normalize_cloud_path(bucket)):
                 return False
-            if not (key := RCloneConfig._normalize_cloud_path(key)):
+            if not (key := RCloneConfig.normalize_cloud_path(key)):
                 return False
             if not isinstance(file, str) or not file:
                 return False
@@ -87,9 +86,3 @@ class Gcs:
                    count: Optional[int] = None, offset: Optional[int] = None,
                    raise_exception: bool = True) -> List[str]:
         pass
-
-    @staticmethod
-    def _normalize_cloud_path(value: str) -> str:
-        if not isinstance(value, str):
-            return ""
-        return re.compile(rf"({re.escape('/')})+").sub("/", value.strip())

@@ -121,6 +121,7 @@ def _test_local_to_amazon(credentials: AmazonCredentials,
         credentials = AmazonCredentials(credentials)
         credentials.kms_key_id = None
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        # Here we have a test file to upload to AWS S3.
         if use_temporary_credentials_key_specific is True:
             credentials = AwsS3(credentials).generate_temporary_credentials(bucket=AmazonTestEnv.bucket,
                                                                             key=tmp_test_file_name)
@@ -134,15 +135,31 @@ def _test_local_to_amazon(credentials: AmazonCredentials,
         assert config.secret_access_key == credentials.secret_access_key
         assert config.session_token == credentials.session_token
         assert config.kms_key_id == credentials.kms_key_id
+        # Upload local file to AWS S3 using rclone;
+        # we upload tmp_test_file_path to the tmp_test_file_name key in AmazonTestEnv.bucket.
         rclone = RClone(destination=config)
         assert rclone.destination_config == config
-        assert rclone.copy(tmp_test_file_path, AmazonTestEnv.bucket) is True
+        assert rclone.copy(tmp_test_file_path, AmazonTestEnv.bucket) is True  # TODO: maybe also to specify key?
+        # Santity check uploaded file.
         s3 = AwsS3(credentials)
         assert s3.file_exists(AmazonTestEnv.bucket, tmp_test_file_name) is True
         assert s3.file_equals(AmazonTestEnv.bucket, tmp_test_file_name, tmp_test_file_path) is True
         if config.kms_key_id:
             assert s3.file_kms_encrypted(AmazonTestEnv.bucket, tmp_test_file_name) is True
             assert s3.file_kms_encrypted(AmazonTestEnv.bucket, tmp_test_file_name, config.kms_key_id) is True
+        # Now try to download the uploaded test file in AWS S3 using rclone.
+        # use the same rclone config as for upload but as the source rather than destination.
+        # TODO
+        rclone = RClone(source=config)
+        assert rclone.source_config == config
+        with temporary_directory() as tmp_download_directory:
+            assert tmp_download_directory is not None
+            # TODO TODO
+            # import pdb
+            # pdb.set_trace()
+            # rclone.copy(AmazonTestEnv.bucket, tmp_test_file_name, tmp_download_directory)
+            pass
+        # Cleanup (delete) the test file in AWS S3.
         assert s3.delete_file(AmazonTestEnv.bucket, tmp_test_file_name) is True
         assert s3.file_exists(AmazonTestEnv.bucket, tmp_test_file_name) is False
 
@@ -172,9 +189,9 @@ def test_google_to_local() -> None:
 
 def test():
     AwsCredentials.remove_credentials_from_environment_variables()
-    test_google_to_local()
     test_utils_for_testing()
     test_local_to_amazon()
+    test_google_to_local()
 
 
 test()
