@@ -66,6 +66,8 @@ coverage = ">=6.5.0"
 # Linting generally
 flake8 = ">=3.9.2"
 
+google-cloud-storage = "^2.16.0"
+
 pip-licenses = ">=3.5.5"
 
 # pygments is used by PyCharm

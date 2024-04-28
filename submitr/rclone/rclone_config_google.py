@@ -61,8 +61,11 @@ class RCloneConfigGoogle(RCloneConfig):
 
     @property
     def config(self) -> dict:
+        # The bucket_policy_only=true option indicates that rclone should enforce a bucket-only access policy,
+        # meaning that object-level ACLs are not used to control access to objects within the bucket.
         return create_dict(type="google cloud storage",
                            location=self.location,
+                           bucket_policy_only=True,
                            service_account_file=self.service_account_file)
 
 

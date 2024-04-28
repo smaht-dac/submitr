@@ -38,10 +38,10 @@ class AwsS3:
         if not self._client:
             self._client = boto3.client(
                 "s3",
-                region_name=self._credentials.region,
-                aws_access_key_id=self._credentials.access_key_id,
-                aws_secret_access_key=self._credentials.secret_access_key,
-                aws_session_token=self._credentials.session_token)
+                region_name=self.credentials.region,
+                aws_access_key_id=self.credentials.access_key_id,
+                aws_secret_access_key=self.credentials.secret_access_key,
+                aws_session_token=self.credentials.session_token)
         return self._client
 
     def upload_file(self, file: str, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> bool:
