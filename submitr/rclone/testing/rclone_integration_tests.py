@@ -17,15 +17,6 @@ from submitr.rclone.testing.rclone_utils_google_for_testing import Gcs
 # Need valid AWS credentials for (currently) smaht-wolf.
 # Wonder how to possibly test this as unit test within GA?
 
-TEMPORARY_TEST_FILE_PREFIX = "test-submitr-rclone-"
-TEMPORARY_TEST_FILE_SUFFIX = ".txt"
-
-
-@contextmanager
-def temporary_test_file() -> Tuple[str, str]:
-    with temporary_random_file(prefix=TEMPORARY_TEST_FILE_PREFIX, suffix=TEMPORARY_TEST_FILE_SUFFIX) as tmp_file_path:
-        yield tmp_file_path, os.path.basename(tmp_file_path)
-
 
 class AmazonTestEnv:
 
@@ -59,6 +50,16 @@ class GoogleTestEnv:
         assert credentials.service_account_file == GoogleTestEnv.service_account_file
         assert os.path.isfile(credentials.service_account_file)
         return credentials
+
+
+TEMPORARY_TEST_FILE_PREFIX = "test-submitr-rclone-"
+TEMPORARY_TEST_FILE_SUFFIX = ".txt"
+
+
+@contextmanager
+def temporary_test_file() -> Tuple[str, str]:
+    with temporary_random_file(prefix=TEMPORARY_TEST_FILE_PREFIX, suffix=TEMPORARY_TEST_FILE_SUFFIX) as tmp_file_path:
+        yield tmp_file_path, os.path.basename(tmp_file_path)
 
 
 def test_utils_for_testing() -> None:
