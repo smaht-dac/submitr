@@ -103,8 +103,8 @@ class RClone:
                     # copyto rather than copy. The destination bucket be specified either in the
                     # destination_config or as the first (path-style) component of the given destination.
                     if not (destination_bucket := destination_config.bucket):
-                        if destination.startswith("/"):
-                            destination = destination[1:]
+#                       if destination.startswith("/"):
+#                           destination = destination[1:]
                         if len(destination_components := destination.split("/")) >= 2:
                             destination_bucket = destination_components[0]
                             destination = "/".join(destination_components[1:])

@@ -153,7 +153,7 @@ def _test_local_to_amazon(credentials: AmazonCredentials,
         rclone = RClone(source=config)
         assert rclone.source_config == config
         with temporary_directory() as tmp_download_directory:
-            assert tmp_download_directory is not None
+            assert tmp_download_directory is not None  # TODO/placeholder
             # TODO TODO
             # import pdb
             # pdb.set_trace()
