@@ -64,7 +64,7 @@ class RClone:
         # TODO
         pass
 
-    def copy(self, source_file: str, destination: Optional[str] = None,
+    def copy(self, source: str, destination: Optional[str] = None,
              dryrun: bool = False, raise_exception: bool = True) -> Union[bool, str]:
         """
         Uses rclone to copy the given source file to the given destination. All manner of variation is
@@ -109,11 +109,11 @@ class RClone:
                         else:
                             destination_bucket = destination
                             command = [self.executable_path(),
-                                       "copy", "--config", destination_config_file, source_file,
+                                       "copy", "--config", destination_config_file, source,
                                        f"{destination_config.name}:{destination_bucket}"]
                     if not command:
                         destination_path = RCloneConfig.join_cloud_path(destination_bucket, destination)
-                        command = [self.executable_path(), "copyto", "--config", destination_config_file, source_file,
+                        command = [self.executable_path(), "copyto", "--config", destination_config_file, source,
                                    f"{destination_config.name}:{destination_path}"]
                 else:
                     # Here the given destination argument was not specified (or it was just a dot or slash),
@@ -123,7 +123,7 @@ class RClone:
                         raise Exception(f"No destination given for rclone copy and"
                                         f" no bucket specified in destination config.")
                     command = [self.executable_path(),
-                               "copy", "--config", destination_config_file, source_file,
+                               "copy", "--config", destination_config_file, source,
                                f"{destination_config.name}:{destination_config.bucket}"]
                 command.append("--progress")
                 command.append("-vv")
