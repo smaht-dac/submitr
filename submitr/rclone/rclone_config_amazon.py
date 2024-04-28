@@ -121,12 +121,14 @@ class AmazonCredentials:
             self._secret_access_key = credentials.secret_access_key
             self._session_token = credentials.session_token
             self._kms_key_id = credentials.kms_key_id
+            self._account_number = credentials._account_number  # sic underscore
         else:
             self._region = None
             self._access_key_id = None
             self._secret_access_key = None
             self._session_token = None
             self._kms_key_id = None
+            self._account_number = None
 
         if region := RCloneConfig.normalize_string(region):
             self._region = region
@@ -138,7 +140,6 @@ class AmazonCredentials:
             self._session_token = session_token
         if kms_key_id := RCloneConfig.normalize_string(kms_key_id):
             self._kms_key_id = kms_key_id
-        self._account_number = None
 
     @property
     def region(self) -> Optional[str]:

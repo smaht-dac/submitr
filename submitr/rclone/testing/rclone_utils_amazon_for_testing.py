@@ -232,7 +232,6 @@ class AwsCredentials:
                 if os.path.isdir(credentials_file):
                     credentials_file = os.path.join(credentials_file, "credentials")
                 else:
-                    # credentials_file = os.path.join(f"~/.aws_test.{credentials_file}", "credentials")
                     credentials_file = os.path.join("~", f".aws_test.{credentials_file}", "credentials")
             config = configparser.ConfigParser()
             config.read(os.path.expanduser(credentials_file))
