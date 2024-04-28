@@ -15,10 +15,6 @@ from submitr.rclone.rclone_config_amazon import AmazonCredentials
 
 class AwsCredentials(AmazonCredentials):
 
-    @staticmethod
-    def create(*args, **kwargs) -> AwsCredentials:
-        return AwsCredentials(*args, **kwargs)
-
     def __init__(self,
                  credentials: Optional[Union[str, AwsCredentials]] = None,
                  credentials_section: Optional[str] = None,

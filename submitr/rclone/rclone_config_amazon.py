@@ -107,10 +107,6 @@ class RCloneConfigAmazon(RCloneConfig):
 
 class AmazonCredentials:
 
-    @staticmethod
-    def create(*args, **kwargs) -> AmazonCredentials:
-        return AmazonCredentials(*args, **kwargs)
-
     def __init__(self,
                  credentials: Optional[AmazonCredentials] = None,
                  region: Optional[str] = None,
