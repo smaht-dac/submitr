@@ -13,8 +13,8 @@ class RCloneConfigGoogle(RCloneConfig):
                  name: Optional[str] = None, bucket: Optional[str] = None) -> None:
 
         if isinstance(credentials_or_config, RCloneConfigGoogle):
-            name = RCloneConfig._normalize_string_value(name) or credentials_or_config.name
-            bucket = RCloneConfig._normalize_string_value(bucket) or credentials_or_config.bucket
+            name = RCloneConfig._normalize_string(name) or credentials_or_config.name
+            bucket = RCloneConfig._normalize_string(bucket) or credentials_or_config.bucket
             credentials = None
         elif isinstance(credentials_or_config, GoogleCredentials):
             credentials = credentials_or_config
@@ -87,9 +87,9 @@ class GoogleCredentials:
             self._location = None
             self._service_account_file = None
 
-        if location := RCloneConfig._normalize_string_value(location):
+        if location := RCloneConfig._normalize_string(location):
             self._location = location
-        if service_account_file := RCloneConfig._normalize_string_value(service_account_file):
+        if service_account_file := RCloneConfig._normalize_string(service_account_file):
             self._service_account_file = service_account_file
 
     @property
@@ -98,7 +98,7 @@ class GoogleCredentials:
 
     @location.setter
     def location(self, value: str) -> None:
-        if (value := RCloneConfig._normalize_string_value(value)) is not None:
+        if (value := RCloneConfig._normalize_string(value)) is not None:
             self._location = value or None
 
     @property
@@ -107,7 +107,7 @@ class GoogleCredentials:
 
     @service_account_file.setter
     def service_account_file(self, value: str) -> None:
-        if (value := RCloneConfig._normalize_string_value(value)) is not None:
+        if (value := RCloneConfig._normalize_string(value)) is not None:
             self._service_account_file = value or None
 
     def __eq__(self, other: GoogleCredentials) -> bool:

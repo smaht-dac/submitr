@@ -1,5 +1,6 @@
 from abc import ABC as AbstractBaseClass, abstractproperty
 from contextlib import contextmanager
+from re import compile as re_compile, escape as re_escape
 from shutil import copy as copy_file
 from typing import List, Optional
 from uuid import uuid4 as create_uuid
@@ -8,9 +9,11 @@ from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 
 class RCloneConfig(AbstractBaseClass):
 
+    CLOUD_PATH_SEPARATOR = "/"
+
     def __init__(self, name: Optional[str] = None, bucket: Optional[str] = None) -> None:
-        self._name = self._normalize_string_value(name) or create_uuid()
-        self._bucket = self._normalize_string_value(bucket) or None
+        self._name = self._normalize_string(name) or create_uuid()
+        self._bucket = self._normalize_string(bucket) or None
 
     @property
     def name(self) -> str:
@@ -20,7 +23,7 @@ class RCloneConfig(AbstractBaseClass):
 
     @name.setter
     def name(self, value: Optional[str]) -> None:
-        if (value := self._normalize_string_value(value)) is not None:
+        if (value := self._normalize_string(value)) is not None:
             if not value:
                 self._name = create_uuid()
             else:
@@ -32,7 +35,7 @@ class RCloneConfig(AbstractBaseClass):
 
     @bucket.setter
     def bucket(self, value: str) -> None:
-        if (value := self._normalize_string_value(value)) is not None:
+        if (value := self._normalize_string(value)) is not None:
             self._bucket = value or None
 
     @abstractproperty
@@ -65,7 +68,7 @@ class RCloneConfig(AbstractBaseClass):
 
     @staticmethod
     def _write_config_file_lines(file: str, lines: List[str]) -> None:
-        if (file := RCloneConfig._normalize_string_value(file)) is None:
+        if (file := RCloneConfig._normalize_string(file)) is None:
             return
         if not isinstance(lines, list) or not lines:
             return
@@ -74,9 +77,20 @@ class RCloneConfig(AbstractBaseClass):
                 f.write(f"{line}\n")
 
     @staticmethod
-    def _normalize_string_value(value: Optional[str]) -> Optional[str]:
+    def _normalize_string(value: Optional[str]) -> Optional[str]:
         if value is None:
             return ""
         elif isinstance(value, str):
             return value.strip()
         return None
+
+    @staticmethod
+    def _normalize_cloud_path(value: str) -> str:
+        if not isinstance(value, str):
+            return ""
+        separator = RCloneConfig.CLOUD_PATH_SEPARATOR
+        if (value := re_compile(rf"({re_escape(separator)})+").sub(separator, value.strip())).startswith(separator):
+            value = value[1:]
+        if value.endswith(separator):
+            value = value[:-1]
+        return value

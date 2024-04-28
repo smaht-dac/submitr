@@ -8,6 +8,7 @@ from typing import List, Optional, Union
 from dcicutils.file_utils import are_files_equal
 from dcicutils.tmpfile_utils import temporary_file
 from dcicutils.datetime_utils import format_datetime
+from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_config_amazon import AmazonCredentials
 
 
@@ -46,7 +47,11 @@ class AwsS3:
 
     def upload_file(self, file: str, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> bool:
         try:
-            if not key:
+            if not isinstance(file, str) or not file:
+                return False
+            if not (bucket := RCloneConfig._normalize_cloud_path(bucket)):
+                return False
+            if not (key := RCloneConfig._normalize_cloud_path(key)):
                 key = os.path.basename(file)
             if kms_key_id := self.credentials.kms_key_id:
                 # Note that it is not necessary to use the KMS Key ID when downloading
@@ -62,10 +67,26 @@ class AwsS3:
                 raise e
         return False
 
-    def download_file(self, bucket: str, key: str, file: str, raise_exception: bool = True) -> bool:
+    def download_file(self, bucket: str, key: str, file: str,
+                      nodirectories: bool = False, raise_exception: bool = True) -> bool:
         try:
+            if not (bucket := RCloneConfig._normalize_cloud_path(bucket)):
+                return False
+            if not (key := RCloneConfig._normalize_cloud_path(key)):
+                return False
+            if not isinstance(file, str) or not file:
+                return False
             if os.path.isdir(file):
-                file = f"{file}/{key.replace(os.sep, '_')}"
+                separator = RCloneConfig.CLOUD_PATH_SEPARATOR
+                if separator in key:
+                    if nodirectories is True:
+                        file = os.path.join(file, key.replace(separator, "_"))
+                    else:
+                        directory = os.path.join(file, os.path.dirname(key.replace(separator, os.sep)))
+                        os.makedirs(directory, exist_ok=True)
+                        file = os.path.join(directory, os.path.basename(key.replace(separator, os.sep)))
+                else:
+                    file = os.path.join(file, key)
             self.client.download_file(bucket, key, file)
             return True
         except Exception as e:
@@ -211,7 +232,8 @@ class AwsCredentials:
                 if os.path.isdir(credentials_file):
                     credentials_file = os.path.join(credentials_file, "credentials")
                 else:
-                    credentials_file = os.path.join(f"~/.aws_test.{credentials_file}/credentials")
+                    # credentials_file = os.path.join(f"~/.aws_test.{credentials_file}", "credentials")
+                    credentials_file = os.path.join("~", f".aws_test.{credentials_file}", "credentials")
             config = configparser.ConfigParser()
             config.read(os.path.expanduser(credentials_file))
             section = config[credentials_section]
