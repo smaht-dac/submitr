@@ -2,11 +2,7 @@ from contextlib import contextmanager
 import os
 from typing import Tuple
 from dcicutils.file_utils import are_files_equal
-from dcicutils.tmpfile_utils import (
-    temporary_directory,
-    temporary_file,
-    temporary_random_file
-)
+from dcicutils.tmpfile_utils import temporary_directory, temporary_file, temporary_random_file
 from submitr.rclone.rclone import RClone
 from submitr.rclone.rclone_config_amazon import AmazonCredentials, RCloneConfigAmazon
 from submitr.rclone.rclone_config_google import GoogleCredentials, RCloneConfigGoogle
