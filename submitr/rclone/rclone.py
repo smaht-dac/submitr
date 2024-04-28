@@ -15,30 +15,30 @@ class RClone:
         self._destination_config = destination if isinstance(destination, RCloneConfig) else None
 
     @property
-    def source_config(self) -> Optional[RCloneConfig]:
+    def source(self) -> Optional[RCloneConfig]:
         return self._source_config
 
-    @source_config.setter
-    def source_config(self, value: RCloneConfig) -> None:
+    @source.setter
+    def source(self, value: RCloneConfig) -> None:
         if isinstance(value, RCloneConfig) or value is None:
             self._source_config = value
 
     @property
-    def destination_config(self) -> Optional[RCloneConfig]:
+    def destination(self) -> Optional[RCloneConfig]:
         return self._destination_config
 
-    @destination_config.setter
-    def destination_config(self, value: RCloneConfig) -> None:
+    @destination.setter
+    def destination(self, value: RCloneConfig) -> None:
         if isinstance(value, RCloneConfig) or value is None:
             self._destination_config = value
 
     @property
     def config_lines(self) -> List[str]:
         lines = []
-        if (isinstance(source_config := self.source_config, RCloneConfig) and
-            isinstance(source_config_lines := source_config.config_lines, list)):  # noqa
+        if (isinstance(source := self.source, RCloneConfig) and
+            isinstance(source_config_lines := source.config_lines, list)):  # noqa
             lines.extend(source_config_lines)
-        if (isinstance(destination_config := self.destination_config, RCloneConfig) and
+        if (isinstance(destination_config := self.destination, RCloneConfig) and
             isinstance(destination_config_lines := destination_config.config_lines, list)):  # noqa
             if lines:
                 lines.append("")  # not necessary but sporting
@@ -73,16 +73,15 @@ class RClone:
         that configuration et cetera. If no configuration is specified then we assume the local file
         system is the source and/or destination. TODO: Expand on these notes.
 
-        If self.source_config and/or self.destination_config is None then it means the
+        If self.source and/or self.destination is None then it means the
         the source and/or destination arguments here refer to local files; i.e. when
         no RCloneConfig is specified we assume the (degenerate) case of local file.
         """
         # TODO
         # Use copyto instead of copy to copy to specified file name.
         # rclone --config /tmp/rclone.conf copy hello.txt test-src-smaht-wolf:smaht-unit-testing-files
-        # source_config = self.source_config
-        source_config = self.source_config
-        destination_config = self.destination_config
+        source_config = self.source
+        destination_config = self.destination
         if isinstance(destination_config, RCloneConfig):
             if isinstance(source_config, RCloneConfig):
                 # Here both a source and destination config have been specified; meaning we

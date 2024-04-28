@@ -140,7 +140,7 @@ def _test_local_to_amazon(credentials: AmazonCredentials,
         # Upload local file to AWS S3 using rclone;
         # we upload tmp_test_file_path to the tmp_test_file_name key in AmazonTestEnv.bucket.
         rclone = RClone(destination=config)
-        assert rclone.destination_config == config
+        assert rclone.destination == config
         assert rclone.copy(tmp_test_file_path, AmazonTestEnv.bucket) is True  # TODO: maybe also to specify key?
         # Santity check uploaded file.
         s3 = AwsS3(credentials)
@@ -153,7 +153,7 @@ def _test_local_to_amazon(credentials: AmazonCredentials,
         # use the same rclone config as for upload but as the source rather than destination.
         # TODO
         rclone = RClone(source=config)
-        assert rclone.source_config == config
+        assert rclone.source == config
         with temporary_directory() as tmp_download_directory:
             assert tmp_download_directory is not None  # TODO/placeholder
             # TODO TODO
@@ -181,11 +181,11 @@ def test_google_to_local() -> None:
         # TODO
         assert command is not None
         # TODO
-        assert rclone.destination_config == config
+        assert rclone.destination == config
         # TODO
         rclone = RClone(source=config)
         # TODO
-        assert rclone.source_config == config
+        assert rclone.source == config
         # TODO
 
 
