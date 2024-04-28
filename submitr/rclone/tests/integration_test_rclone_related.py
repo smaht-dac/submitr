@@ -97,13 +97,6 @@ def test_rclone_local_to_amazon():
     _test_rclone_local_to_amazon(ENV.credentials())
     _test_rclone_local_to_amazon(ENV.credentials(), nokms=True)
 
-    """
-    credentials = AwsS3(ENV.credentials()).generate_temporary_credentials()
-    # credentials.kms_key_id = None  # TODO: Test with and without kms
-    assert isinstance(credentials.session_token, str) and credentials.session_token
-    _test_rclone_local_to_amazon(credentials)
-    """
-
     _test_rclone_local_to_amazon(ENV.credentials(), use_temporary_credentials=True)
     _test_rclone_local_to_amazon(ENV.credentials(), use_temporary_credentials=True, nokms=True)
 
