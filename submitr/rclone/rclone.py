@@ -55,6 +55,16 @@ class RClone:
     def write_config_file(self, file: str) -> None:
         RCloneConfig._write_config_file_lines(file, self.config_lines)
 
+    def upload(self, source_file: str, destination: Optional[str] = None,
+               dryrun: bool = False, raise_exception: bool = True) -> Union[bool, str]:
+        # TODO
+        pass
+
+    def download(self, source: str, destination_file: Optional[str] = None,
+                 dryrun: bool = False, raise_exception: bool = True) -> Union[bool, str]:
+        # TODO
+        pass
+
     def copy(self, source_file: str, destination: Optional[str] = None,
              dryrun: bool = False, raise_exception: bool = True) -> Union[bool, str]:
         """
