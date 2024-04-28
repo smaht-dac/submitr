@@ -31,13 +31,11 @@ class AmazonTestEnv:
 
     # Specifying the env name here (as smaht-wolf) will cause
     # AwsCredentials to read from: ~/.aws_test.smaht-wolf/credentials
-    # In addition to the basic (access-key-id, secret-access-key, optional session-token)
-    # credentials, this is also assumed to also contain the region.
+    # In addition to the basic credentials (access_key_id, secret_access_key,
+    # optional session_token), this is also assumed to also contain the region.
+    # For the kms_key_id see ENCODED_S3_ENCRYPT_KEY_ID in AWS C4AppConfigSmahtWolf Secrets.
     env = "smaht-wolf"
-
-    # See ENCODED_S3_ENCRYPT_KEY_ID in SecretsManager for C4AppConfigSmahtWolf.
     kms_key_id = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"
-
     bucket = "smaht-unit-testing-files"
 
     @staticmethod
@@ -51,7 +49,6 @@ class GoogleTestEnv:
 
     location = "us-east1"
     service_account_file = "/Users/dmichaels/.config/google-cloud/smaht-dac-617e0480d8e2.json"
-
     bucket = "smaht-submitr-rclone-testing"
 
     @staticmethod
