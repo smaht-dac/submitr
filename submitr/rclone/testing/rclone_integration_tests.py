@@ -405,8 +405,8 @@ def test_all(use_cloud_key_folder: bool = False):
 
 
 def test():
-    test_all(use_cloud_key_folder=True)
     test_all(use_cloud_key_folder=False)
+    test_all(use_cloud_key_folder=True)
 
 
 test()
