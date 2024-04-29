@@ -54,10 +54,10 @@ class RCloneConfig(AbstractBaseClass):
         return lines
 
     @contextmanager
-    def config_file(self, persist_file: bool = False) -> str:
+    def config_file(self, persist: bool = False) -> str:
         with temporary_file(suffix=".conf") as temporary_config_file_name:
             self.write_config_file(temporary_config_file_name)
-            if persist_file is True:
+            if persist is True:
                 persistent_config_file_name = create_temporary_file_name(suffix=".conf")
                 copy_file(temporary_config_file_name, persistent_config_file_name)
                 yield persistent_config_file_name
@@ -102,8 +102,11 @@ class RCloneConfig(AbstractBaseClass):
         path = ""
         for arg in args:
             if isinstance(arg, list):
-                arg = RCloneConfig.join_cloud_path(*arg)
-            elif (arg := RCloneConfig.normalize_cloud_path(arg)):
+                if arg := RCloneConfig.join_cloud_path(*arg):
+                    if path:
+                        path += RCloneConfig.CLOUD_PATH_SEPARATOR
+                    path += arg
+            elif arg := RCloneConfig.normalize_cloud_path(arg):
                 if path:
                     path += RCloneConfig.CLOUD_PATH_SEPARATOR
                 path += arg
@@ -116,7 +119,24 @@ class RCloneConfig(AbstractBaseClass):
         return value.split(RCloneConfig.CLOUD_PATH_SEPARATOR)
 
     @staticmethod
+    def cloud_path_folder(value: str) -> Optional[str]:
+        if value := RCloneConfig.normalize_cloud_path(value):
+            if (last_separator := value.rfind(RCloneConfig.CLOUD_PATH_SEPARATOR)) > 0:
+                return value[:last_separator]
+        return None
+
+    @staticmethod
+    def has_cloud_path_folder(value: str) -> bool:
+        return True if (RCloneConfig.cloud_path_folder(value) is not None) else False
+
+    @staticmethod
     def cloud_path_to_file_path(value: str) -> str:
         if not (value := RCloneConfig.normalize_cloud_path(value)):
             return ""
         return value.replace(RCloneConfig.CLOUD_PATH_SEPARATOR, os_path_separator)
+
+    @staticmethod
+    def cloud_path_to_file_name(value: str) -> str:
+        if not (value := RCloneConfig.normalize_cloud_path(value)):
+            return ""
+        return value.replace(RCloneConfig.CLOUD_PATH_SEPARATOR, "_")

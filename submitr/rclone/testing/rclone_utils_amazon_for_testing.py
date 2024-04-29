@@ -79,14 +79,13 @@ class AwsS3:
             if os.path.isdir(file):
                 if RCloneConfig.CLOUD_PATH_SEPARATOR in key:
                     if nodirectories is True:
-                        key_path = key.replace(RCloneConfig.CLOUD_PATH_SEPARATOR, "_")
-                        file = os.path.join(file, key_path)
+                        key_as_file_name = key.replace(RCloneConfig.CLOUD_PATH_SEPARATOR, "_")
+                        file = os.path.join(file, key_as_file_name)
                     else:
-                        # import pdb ; pdb.set_trace()
-                        key_path = RCloneConfig.cloud_path_to_file_path(key)
-                        directory = os.path.normpath(os.path.join(file, os.path.dirname(key_path)))
+                        key_as_file_path = RCloneConfig.cloud_path_to_file_path(key)
+                        directory = os.path.normpath(os.path.join(file, os.path.dirname(key_as_file_path)))
                         os.makedirs(directory, exist_ok=True)
-                        file = os.path.join(directory, os.path.basename(key_path))
+                        file = os.path.join(directory, os.path.basename(key_as_file_path))
                 else:
                     file = os.path.join(file, key)
             self.client.download_file(bucket, key, file)
