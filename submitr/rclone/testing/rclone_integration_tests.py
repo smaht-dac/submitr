@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 import os
-from typing import Tuple
+from typing import Optional, Tuple
 from dcicutils.file_utils import are_files_equal
 from dcicutils.tmpfile_utils import temporary_directory, temporary_file, temporary_random_file
 from submitr.rclone.rclone import RClone
@@ -36,9 +36,12 @@ class AmazonTestEnv:
         return credentials
 
     @staticmethod
-    def temporary_credentials(nokms: bool = False) -> AmazonCredentials:
+    def temporary_credentials(nokms: bool = False, readonly: bool = False,
+                              bucket: Optional[str] = None, key: Optional[str] = None) -> AmazonCredentials:
+        # TODO: Use above new args instead of special code later/below ...
         credentials = AmazonTestEnv.credentials(nokms=nokms)
-        temporary_credentials = AwsS3(credentials).generate_temporary_credentials()
+        s3 = AwsS3(credentials)
+        temporary_credentials = s3.generate_temporary_credentials(readonly=readonly, bucket=bucket, key=key)
         assert isinstance(temporary_credentials.session_token, str) and temporary_credentials.session_token
         assert temporary_credentials.kms_key_id == (None if nokms is True else AmazonTestEnv.kms_key_id)
         return temporary_credentials
