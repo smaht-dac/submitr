@@ -180,28 +180,29 @@ def _test_utils_for_testing(credentials: AmazonCredentials) -> None:
     assert s3.credentials == credentials
 
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        key = tmp_test_file_name
         assert s3.upload_file(tmp_test_file_path, AmazonTestEnv.bucket) is True
-        assert s3.file_exists(AmazonTestEnv.bucket, tmp_test_file_name) is True
-        assert s3.file_equals(AmazonTestEnv.bucket, tmp_test_file_name, tmp_test_file_path) is True
-        assert s3.file_exists(AmazonTestEnv.bucket, tmp_test_file_name + "-junk-suffix") is False
+        assert s3.file_exists(AmazonTestEnv.bucket, key) is True
+        assert s3.file_equals(AmazonTestEnv.bucket, key, tmp_test_file_path) is True
+        assert s3.file_exists(AmazonTestEnv.bucket, key + "-junk-suffix") is False
         assert len(s3_test_files := s3.list_files(AmazonTestEnv.bucket, prefix=TEMPORARY_TEST_FILE_PREFIX)) > 0
-        assert len(s3_test_files_found := [f for f in s3_test_files if f["key"] == tmp_test_file_name]) == 1
-        assert s3_test_files_found[0]["key"] == tmp_test_file_name
-        assert len(s3.list_files(AmazonTestEnv.bucket, prefix=tmp_test_file_name)) == 1
+        assert len(s3_test_files_found := [f for f in s3_test_files if f["key"] == key]) == 1
+        assert s3_test_files_found[0]["key"] == key
+        assert len(s3.list_files(AmazonTestEnv.bucket, prefix=key)) == 1
         with temporary_random_file() as some_random_file_path:
-            assert s3.file_equals(AmazonTestEnv.bucket, tmp_test_file_name, some_random_file_path) is False
+            assert s3.file_equals(AmazonTestEnv.bucket, key, some_random_file_path) is False
         with temporary_file() as tmp_downloaded_file_path:
-            assert s3.download_file(AmazonTestEnv.bucket, tmp_test_file_name, tmp_downloaded_file_path) is True
-            assert s3.download_file(AmazonTestEnv.bucket, tmp_test_file_name, "/dev/null") is True
+            assert s3.download_file(AmazonTestEnv.bucket, key, tmp_downloaded_file_path) is True
+            assert s3.download_file(AmazonTestEnv.bucket, key, "/dev/null") is True
             assert are_files_equal(tmp_test_file_path, tmp_downloaded_file_path) is True
             assert are_files_equal(tmp_test_file_path, "/dev/null") is False
         with temporary_directory() as tmp_download_directory:
-            assert s3.download_file(AmazonTestEnv.bucket, tmp_test_file_name, tmp_download_directory) is True
-            assert are_files_equal(tmp_test_file_path, f"{tmp_download_directory}/{tmp_test_file_name}") is True
-        assert s3.delete_file(AmazonTestEnv.bucket, tmp_test_file_name) is True
-        assert s3.file_exists(AmazonTestEnv.bucket, tmp_test_file_name) is False
-        assert s3.file_equals(AmazonTestEnv.bucket, tmp_test_file_name, "/dev/null") is False
-        assert s3.download_file(AmazonTestEnv.bucket, tmp_test_file_name, "/dev/null") is False
+            assert s3.download_file(AmazonTestEnv.bucket, key, tmp_download_directory) is True
+            assert are_files_equal(tmp_test_file_path, f"{tmp_download_directory}/{key}") is True
+        assert s3.delete_file(AmazonTestEnv.bucket, key) is True
+        assert s3.file_exists(AmazonTestEnv.bucket, key) is False
+        assert s3.file_equals(AmazonTestEnv.bucket, key, "/dev/null") is False
+        assert s3.download_file(AmazonTestEnv.bucket, key, "/dev/null") is False
 
 
 def test_rclone_between_amazon_and_local() -> None:
