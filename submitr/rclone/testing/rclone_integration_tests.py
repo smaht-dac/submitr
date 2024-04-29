@@ -193,12 +193,12 @@ def test_rclone_between_amazon_and_local() -> None:
     _test_rclone_between_amazon_and_local(AmazonTestEnv.temporary_credentials)
     _test_rclone_between_amazon_and_local(AmazonTestEnv.temporary_credentials_nokms)
 
-    _test_rclone_between_amazon_and_local(AmazonTestEnv.temporary_credentials, use_key_temporary_credentials=True)
-    _test_rclone_between_amazon_and_local(AmazonTestEnv.temporary_credentials_nokms, use_key_temporary_credentials=True)
+    _test_rclone_between_amazon_and_local(AmazonTestEnv.temporary_credentials, use_key_specific_credentials=True)
+    _test_rclone_between_amazon_and_local(AmazonTestEnv.temporary_credentials_nokms, use_key_specific_credentials=True)
 
 
 def _test_rclone_between_amazon_and_local(credentials: Union[Callable, AmazonCredentials],
-                                          use_key_temporary_credentials: bool = False) -> None:
+                                          use_key_specific_credentials: bool = False) -> None:
 
     if isinstance(credentials, AmazonCredentials):
         credentials = lambda: credentials  # noqa
@@ -207,7 +207,7 @@ def _test_rclone_between_amazon_and_local(credentials: Union[Callable, AmazonCre
 
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         # Here we have a local test file to upload to AWS S3.
-        if use_key_temporary_credentials is True:
+        if use_key_specific_credentials is True:
             credentials = credentials(bucket=AmazonTestEnv.bucket, key=tmp_test_file_name)
         else:
             credentials = credentials()
@@ -269,15 +269,11 @@ def test_rclone_google_to_amazon() -> None:
         rclone = create_rclone(destination=google_config)
         rclone.copy(tmp_test_file_path, GoogleTestEnv.bucket)
         # Make sure it made it there.
-        gcs = Gcs(google_credentials)
-        assert gcs.file_exists(GoogleTestEnv.bucket, tmp_test_file_name) is True
-        assert gcs.file_equals(GoogleTestEnv.bucket, tmp_test_file_name, tmp_test_file_path) is True
+        sanity_check_google_file(google_credentials, GoogleTestEnv.bucket, tmp_test_file_name, tmp_test_file_path)
         # Now try to copy directly from Google Cloud Storage to AWS S3 (THIS is really the MAIN event).
         rclone = create_rclone(source=google_config, destination=amazon_config)
         rclone.copy(rclone.join_cloud_path(GoogleTestEnv.bucket, tmp_test_file_name), AmazonTestEnv.bucket)
         # Sanity check the file in AWS S3 which was copied directly from Google Cloud Storage.
-        # TODO
-        # import pdb ; pdb.set_trace()
         sanity_check_amazon_file(amazon_credentials, AmazonTestEnv.bucket, tmp_test_file_name, tmp_test_file_path)
         # Cleanup (delete) the test file in Google Cloud Storage.
         cleanup_google_file(google_credentials, GoogleTestEnv.bucket, tmp_test_file_name)
