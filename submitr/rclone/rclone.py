@@ -10,6 +10,8 @@ from submitr.rclone.rclone_installation import (
 
 class RClone:
 
+    CLOUD_PATH_SEPARATOR = RCloneConfig.CLOUD_PATH_SEPARATOR
+
     def __init__(self, source: Optional[RCloneConfig] = None, destination: Optional[RCloneConfig] = None) -> None:
         self._source_config = source if isinstance(source, RCloneConfig) else None
         self._destination_config = destination if isinstance(destination, RCloneConfig) else None
@@ -182,3 +184,7 @@ class RClone:
     @staticmethod
     def split_cloud_path(value: str) -> List[str]:
         return RCloneConfig.split_cloud_path(value)
+
+    @staticmethod
+    def cloud_path_to_file_path(value: str) -> str:
+        return RCloneConfig.cloud_path_to_file_path(value)

@@ -503,20 +503,20 @@ test-randomorder = ["pytest-randomly"]
 
 [[package]]
 name = "dcicutils"
-version = "8.8.4.1b13"
+version = "8.8.4.1b15"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 optional = false
 python-versions = "<3.13,>=3.8"
 files = [
-    {file = "dcicutils-8.8.4.1b13-py3-none-any.whl", hash = "sha256:1b984e16e72be9da8483992112d2a536f302d74590c1b8e9fb7153a2bc52f17a"},
-    {file = "dcicutils-8.8.4.1b13.tar.gz", hash = "sha256:ca006e88633a2568b63c426aeea534b1544ec68fea9a47e9fe34ed1025036f74"},
+    {file = "dcicutils-8.8.4.1b15-py3-none-any.whl", hash = "sha256:0aa8e1c1c95580c9c0f62c7f94568e294d65cc6eb05236e4731e2ad7239f7d80"},
+    {file = "dcicutils-8.8.4.1b15.tar.gz", hash = "sha256:e2cd901a19fb89bcd06052e07abdb37fbd9ed5ce6b99d80c6f01cd5a263a1525"},
 ]
 
 [package.dependencies]
 appdirs = ">=1.4.4,<2.0.0"
 aws-requests-auth = ">=0.4.2,<1"
-boto3 = ">=1.34.90,<2.0.0"
-botocore = ">=1.34.90,<2.0.0"
+boto3 = ">=1.34.93,<2.0.0"
+botocore = ">=1.34.93,<2.0.0"
 chardet = ">=5.2.0,<6.0.0"
 docker = ">=4.4.4,<5.0.0"
 elasticsearch = "7.13.4"
@@ -534,6 +534,7 @@ PyYAML = ">=6.0.1,<7.0.0"
 redis = ">=4.5.1,<5.0.0"
 requests = ">=2.21.0,<3.0.0"
 rfc3986 = ">=1.4.0,<2.0.0"
+shortuuid = ">=1.0.13,<2.0.0"
 structlog = ">=19.2.0,<20.0.0"
 toml = ">=0.10.1,<1"
 tqdm = ">=4.66.2,<5.0.0"
@@ -2023,6 +2024,17 @@ testing = ["build[virtualenv]", "filelock (>=3.4.0)", "importlib-metadata", "ini
 testing-integration = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "packaging (>=23.2)", "pytest", "pytest-enabler", "pytest-xdist", "tomli", "virtualenv (>=13.0.0)", "wheel"]
 
 [[package]]
+name = "shortuuid"
+version = "1.0.13"
+description = "A generator library for concise, unambiguous and URL-safe UUIDs."
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "shortuuid-1.0.13-py3-none-any.whl", hash = "sha256:a482a497300b49b4953e15108a7913244e1bb0d41f9d332f5e9925dba33a3c5a"},
+    {file = "shortuuid-1.0.13.tar.gz", hash = "sha256:3bb9cf07f606260584b1df46399c0b87dd84773e7b25912b7e391e30797c5e72"},
+]
+
+[[package]]
 name = "six"
 version = "1.16.0"
 description = "Python 2 and 3 compatibility utilities"
@@ -2539,4 +2551,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0,<3.13"
-content-hash = "c79efa14d02c1c68add84fafa473e1c46de262c3aa074d0a752c552ddb26f3b5"
+content-hash = "5d4be1ad9963aa20ecc4b1774811cd771b774363926fe9d87f28802c943ac036"

@@ -1,4 +1,5 @@
 from abc import ABC as AbstractBaseClass, abstractproperty
+from os.path import sep as os_path_separator
 from contextlib import contextmanager
 from re import compile as re_compile, escape as re_escape
 from shutil import copy as copy_file
@@ -110,6 +111,12 @@ class RCloneConfig(AbstractBaseClass):
 
     @staticmethod
     def split_cloud_path(value: str) -> List[str]:
-        if value := RCloneConfig.normalize_cloud_path(value):
-            return value.split(RCloneConfig.CLOUD_PATH_SEPARATOR)
-        return []
+        if not (value := RCloneConfig.normalize_cloud_path(value)):
+            return []
+        return value.split(RCloneConfig.CLOUD_PATH_SEPARATOR)
+
+    @staticmethod
+    def cloud_path_to_file_path(value: str) -> str:
+        if not (value := RCloneConfig.normalize_cloud_path(value)):
+            return ""
+        return value.replace(RCloneConfig.CLOUD_PATH_SEPARATOR, os_path_separator)
