@@ -58,6 +58,7 @@ class AmazonTestEnv:
 
 class GoogleTestEnv:
 
+    # The Google test account project is: smaht-dac
     location = "us-east1"
     service_account_file = "/Users/dmichaels/.config/google-cloud/smaht-dac-617e0480d8e2.json"
     bucket = "smaht-submitr-rclone-testing"
@@ -234,7 +235,7 @@ def _test_rclone_between_amazon_and_local(credentials: Union[Callable, AmazonCre
         # we upload tmp_test_file_path to the tmp_test_file_name key in AmazonTestEnv.bucket.
         rclone = create_rclone(destination=config)
         assert rclone.copy(tmp_test_file_path, AmazonTestEnv.bucket) is True  # TODO: maybe also to specify key?
-        # Sanity check the uploaded file using non-RClone methods (via Aws3 which uses boto3).
+        # Sanity check the uploaded file using non-RClone methods (via AwS3 which uses boto3).
         sanity_check_amazon_file(credentials, AmazonTestEnv.bucket, tmp_test_file_name, tmp_test_file_path)
         # Now try to download the test file (which was uploaded above to AWS S3 using RClone) to the local
         # file system; use the same RClone configuration as for upload but as the source rather than destination.
