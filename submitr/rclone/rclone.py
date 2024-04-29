@@ -87,9 +87,10 @@ class RClone:
                 # object; meaning we are copying from one cloud source to another cloud destination; i.e.
                 # e.g from Amazon S3 or Google Cloud Storage to Amazon S3 or Google Cloud Storage.
                 with self.config_file() as source_and_destination_config_file:  # noqa
-                    # TODO
-                    pass
-                return None
+                    # TODO: check what kind of source/destination etc.
+                    command_args = ["copy", "--config", source_and_destination_config_file,
+                                    f"{source_config.name}:{source}", f"{destination_config.name}:{destination}"]
+                    return self._execute_rclone_command(command_args, dryrun=dryrun)
             # Here only a destination config cloud configuration has been specified for this RClone
             # object; meaning we are copying from a local file source to some cloud destination;
             # i.e. e.g. to Amazon S3 or Google Cloud Storage.

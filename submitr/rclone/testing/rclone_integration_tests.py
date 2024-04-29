@@ -208,19 +208,20 @@ def test_google_to_amazon() -> None:
         gcs = Gcs(google_credentials)
         assert gcs.file_exists(GoogleTestEnv.bucket, tmp_test_file_name) is True
         assert gcs.file_equals(GoogleTestEnv.bucket, tmp_test_file_name, tmp_test_file_path) is True
-        # Now try to copy directly from Google Cloud Storage to AWS S3 (this is really the main event).
+        # Now try to copy directly from Google Cloud Storage to AWS S3 (THIS is really the MAIN event).
         rclone = RClone(source=google_config, destination=amazon_config)
-        # import pdb ; pdb.set_trace()
-        # rclone.copy(rclone.join_cloud_path(GoogleTestEnv.bucket, tmp_test_file_name), AmazonTestEnv.bucket)
+        rclone.copy(rclone.join_cloud_path(GoogleTestEnv.bucket, tmp_test_file_name), AmazonTestEnv.bucket)
         # TODO
         # Cleanup (delete) the test file in Google Cloud Storage.
         assert gcs.delete_file(GoogleTestEnv.bucket, tmp_test_file_name) is True
         assert gcs.file_exists(GoogleTestEnv.bucket, tmp_test_file_name) is False
+        # Cleanup (delete) the test file in AWS S3.
+        s3 = AwsS3(amazon_credentials)
+        assert s3.delete_file(AmazonTestEnv.bucket, tmp_test_file_name) is True
 
 
 def test_amazon_to_google() -> None:
-    # TODO
-    pass
+    pass  # TODO
 
 
 def test():
@@ -228,7 +229,7 @@ def test():
     test_utils_for_testing()
     test_between_amazon_and_local()
     test_between_google_and_local()
-    # test_google_to_amazon()
+    test_google_to_amazon()
 
 
 test()
