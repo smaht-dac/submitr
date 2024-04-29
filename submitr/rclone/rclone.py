@@ -196,21 +196,9 @@ class RClone:
         return RCloneConfig.join_cloud_path(*args)
 
     @staticmethod
-    def split_cloud_path(value: str) -> List[str]:
-        return RCloneConfig.split_cloud_path(value)
-
-    @staticmethod
-    def cloud_path_folder(value: str) -> Optional[str]:
-        return RCloneConfig.cloud_path_folder(value)
-
-    @staticmethod
     def has_cloud_path_folder(value: str) -> bool:
         return RCloneConfig.has_cloud_path_folder(value)
 
     @staticmethod
     def cloud_path_to_file_path(value: str) -> str:
         return RCloneConfig.cloud_path_to_file_path(value)
-
-    @staticmethod
-    def cloud_path_to_file_name(value: str) -> str:
-        return RCloneConfig.cloud_path_to_file_name(value)

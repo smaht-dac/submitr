@@ -8,8 +8,8 @@ from submitr.rclone.rclone import RClone
 from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_config_amazon import AmazonCredentials, RCloneConfigAmazon
 from submitr.rclone.rclone_config_google import GoogleCredentials, RCloneConfigGoogle
-from submitr.rclone.testing.rclone_utils_amazon_for_testing import AwsCredentials, AwsS3
-from submitr.rclone.testing.rclone_utils_google_for_testing import Gcs
+from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsCredentials, AwsS3
+from submitr.rclone.testing.rclone_utils_for_testing_google import Gcs
 
 # Integration tests for RClone related functionality within smaht-submitr.
 # Need valid AWS credentials for (currently) smaht-wolf.

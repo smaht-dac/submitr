@@ -113,30 +113,13 @@ class RCloneConfig(AbstractBaseClass):
         return path
 
     @staticmethod
-    def split_cloud_path(value: str) -> List[str]:
-        if not (value := RCloneConfig.normalize_cloud_path(value)):
-            return []
-        return value.split(RCloneConfig.CLOUD_PATH_SEPARATOR)
-
-    @staticmethod
-    def cloud_path_folder(value: str) -> Optional[str]:
-        if value := RCloneConfig.normalize_cloud_path(value):
-            if (last_separator := value.rfind(RCloneConfig.CLOUD_PATH_SEPARATOR)) > 0:
-                return value[:last_separator]
-        return None
-
-    @staticmethod
     def has_cloud_path_folder(value: str) -> bool:
-        return True if (RCloneConfig.cloud_path_folder(value) is not None) else False
+        if value := RCloneConfig.normalize_cloud_path(value):
+            return RCloneConfig.CLOUD_PATH_SEPARATOR in value
+        return False
 
     @staticmethod
     def cloud_path_to_file_path(value: str) -> str:
         if not (value := RCloneConfig.normalize_cloud_path(value)):
             return ""
         return value.replace(RCloneConfig.CLOUD_PATH_SEPARATOR, os_path_separator)
-
-    @staticmethod
-    def cloud_path_to_file_name(value: str) -> str:
-        if not (value := RCloneConfig.normalize_cloud_path(value)):
-            return ""
-        return value.replace(RCloneConfig.CLOUD_PATH_SEPARATOR, "_")
