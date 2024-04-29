@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 import os
-from typing import Optional, Tuple
+from typing import Callable, Optional, Tuple, Union
 from dcicutils.file_utils import are_files_equal
 from dcicutils.tmpfile_utils import temporary_directory, temporary_file, temporary_random_file
 from submitr.rclone.rclone import RClone
@@ -36,15 +36,22 @@ class AmazonTestEnv:
         return credentials
 
     @staticmethod
-    def temporary_credentials(nokms: bool = False, readonly: bool = False,
+    def credentials_nokms() -> AmazonCredentials:
+        return AmazonTestEnv.credentials(nokms=True)
+
+    @staticmethod
+    def temporary_credentials(nokms: bool = False,
                               bucket: Optional[str] = None, key: Optional[str] = None) -> AmazonCredentials:
-        # TODO: Use above new args instead of special code later/below ...
         credentials = AmazonTestEnv.credentials(nokms=nokms)
         s3 = AwsS3(credentials)
-        temporary_credentials = s3.generate_temporary_credentials(readonly=readonly, bucket=bucket, key=key)
+        temporary_credentials = s3.generate_temporary_credentials(bucket=bucket, key=key)
         assert isinstance(temporary_credentials.session_token, str) and temporary_credentials.session_token
         assert temporary_credentials.kms_key_id == (None if nokms is True else AmazonTestEnv.kms_key_id)
         return temporary_credentials
+
+    @staticmethod
+    def temporary_credentials_nokms(bucket: Optional[str] = None, key: Optional[str] = None) -> AmazonCredentials:
+        return AmazonTestEnv.temporary_credentials(nokms=True, bucket=bucket, key=key)
 
 
 class GoogleTestEnv:
@@ -122,34 +129,30 @@ def _test_utils_for_testing(credentials: AmazonCredentials) -> None:
 
 def test_rclone_between_amazon_and_local() -> None:
 
-    _test_rclone_between_amazon_and_local(AmazonTestEnv.credentials())
-    _test_rclone_between_amazon_and_local(AmazonTestEnv.credentials(), nokms=True)
+    _test_rclone_between_amazon_and_local(AmazonTestEnv.credentials)
+    _test_rclone_between_amazon_and_local(AmazonTestEnv.credentials_nokms)
 
-    _test_rclone_between_amazon_and_local(AmazonTestEnv.credentials(), use_temporary_credentials=True)
-    _test_rclone_between_amazon_and_local(AmazonTestEnv.credentials(), use_temporary_credentials=True, nokms=True)
+    _test_rclone_between_amazon_and_local(AmazonTestEnv.temporary_credentials)
+    _test_rclone_between_amazon_and_local(AmazonTestEnv.temporary_credentials_nokms)
 
-    _test_rclone_between_amazon_and_local(AmazonTestEnv.credentials(), use_temporary_credentials_key_specific=True)
-    _test_rclone_between_amazon_and_local(AmazonTestEnv.credentials(), use_temporary_credentials_key_specific=True,
-                                          nokms=True)
+    _test_rclone_between_amazon_and_local(AmazonTestEnv.temporary_credentials, use_key_temporary_credentials=True)
+    _test_rclone_between_amazon_and_local(AmazonTestEnv.temporary_credentials_nokms, use_key_temporary_credentials=True)
 
 
-def _test_rclone_between_amazon_and_local(credentials: AmazonCredentials,
-                                          use_temporary_credentials: bool = False,
-                                          use_temporary_credentials_key_specific: bool = False,
-                                          nokms: bool = False) -> None:
+def _test_rclone_between_amazon_and_local(credentials: Union[Callable, AmazonCredentials],
+                                          use_key_temporary_credentials: bool = False) -> None:
 
-    if nokms is True:
-        credentials = AmazonCredentials(credentials)
-        credentials.kms_key_id = None
+    if isinstance(credentials, AmazonCredentials):
+        credentials = lambda: credentials  # noqa
+    elif not callable(credentials):
+        assert False
+
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         # Here we have a local test file to upload to AWS S3.
-        if use_temporary_credentials_key_specific is True:
-            credentials = AwsS3(credentials).generate_temporary_credentials(bucket=AmazonTestEnv.bucket,
-                                                                            key=tmp_test_file_name)
-            assert isinstance(credentials.session_token, str) and credentials.session_token
-        elif use_temporary_credentials is True:
-            credentials = AwsS3(credentials).generate_temporary_credentials()
-            assert isinstance(credentials.session_token, str) and credentials.session_token
+        if use_key_temporary_credentials is True:
+            credentials = credentials(bucket=AmazonTestEnv.bucket, key=tmp_test_file_name)
+        else:
+            credentials = credentials()
         config = RCloneConfigAmazon(credentials)
         assert config.credentials == credentials
         assert config.access_key_id == credentials.access_key_id
