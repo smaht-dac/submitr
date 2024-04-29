@@ -6,6 +6,7 @@ from typing import Optional, Union
 from uuid import uuid4 as create_uuid
 from dcicutils.misc_utils import create_dict
 from submitr.rclone.rclone_config import RCloneConfig
+from submitr.rclone.rclone_utils import normalize_string
 
 
 class RCloneConfigAmazon(RCloneConfig):
@@ -20,8 +21,8 @@ class RCloneConfigAmazon(RCloneConfig):
                  name: Optional[str] = None, bucket: Optional[str] = None) -> None:
 
         if isinstance(credentials_or_config, RCloneConfigAmazon):
-            name = RCloneConfig.normalize_string(name) or credentials_or_config.name
-            bucket = RCloneConfig.normalize_string(bucket) or credentials_or_config.bucket
+            name = normalize_string(name) or credentials_or_config.name
+            bucket = normalize_string(bucket) or credentials_or_config.bucket
             credentials = None
         elif isinstance(credentials_or_config, AmazonCredentials):
             credentials = credentials_or_config
@@ -130,15 +131,15 @@ class AmazonCredentials:
             self._kms_key_id = None
             self._account_number = None
 
-        if region := RCloneConfig.normalize_string(region):
+        if region := normalize_string(region):
             self._region = region
-        if access_key_id := RCloneConfig.normalize_string(access_key_id):
+        if access_key_id := normalize_string(access_key_id):
             self._access_key_id = access_key_id
-        if secret_access_key := RCloneConfig.normalize_string(secret_access_key):
+        if secret_access_key := normalize_string(secret_access_key):
             self._secret_access_key = secret_access_key
-        if session_token := RCloneConfig.normalize_string(session_token):
+        if session_token := normalize_string(session_token):
             self._session_token = session_token
-        if kms_key_id := RCloneConfig.normalize_string(kms_key_id):
+        if kms_key_id := normalize_string(kms_key_id):
             self._kms_key_id = kms_key_id
 
     @property
@@ -147,7 +148,7 @@ class AmazonCredentials:
 
     @region.setter
     def region(self, value: Optional[str]) -> None:
-        if (value := RCloneConfig.normalize_string(value)) is not None:
+        if (value := normalize_string(value)) is not None:
             self._region = value or None
 
     @property
@@ -156,7 +157,7 @@ class AmazonCredentials:
 
     @access_key_id.setter
     def access_key_id(self, value: Optional[str]) -> None:
-        if (value := RCloneConfig.normalize_string(value)) is not None:
+        if (value := normalize_string(value)) is not None:
             self._access_key_id = value or None
 
     @property
@@ -165,7 +166,7 @@ class AmazonCredentials:
 
     @secret_access_key.setter
     def secret_access_key(self, value: Optional[str]) -> None:
-        if (value := RCloneConfig.normalize_string(value)) is not None:
+        if (value := normalize_string(value)) is not None:
             self._secret_access_key = value or None
 
     @property
@@ -174,7 +175,7 @@ class AmazonCredentials:
 
     @session_token.setter
     def session_token(self, value: Optional[str]) -> None:
-        if (value := RCloneConfig.normalize_string(value)) is not None:
+        if (value := normalize_string(value)) is not None:
             self._session_token = value or None
 
     @property
@@ -183,7 +184,7 @@ class AmazonCredentials:
 
     @kms_key_id.setter
     def kms_key_id(self, value: Optional[str]) -> None:
-        if (value := RCloneConfig.normalize_string(value)) is not None:
+        if (value := normalize_string(value)) is not None:
             self._kms_key_id = value or None
 
     @property

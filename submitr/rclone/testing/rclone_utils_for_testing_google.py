@@ -4,8 +4,8 @@ from google.cloud.storage import Client as GcsClient
 from typing import List, Optional
 from dcicutils.file_utils import are_files_equal
 from dcicutils.tmpfile_utils import temporary_file
-from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_config_google import GoogleCredentials
+from submitr.rclone.rclone_utils import cloud_path
 
 
 # Module with class/functions to aid in integration testing of smaht-submitr rclone support.
@@ -35,9 +35,9 @@ class Gcs:
         try:
             if not isinstance(file, str) or not file:
                 return False
-            if not (bucket := RCloneConfig.normalize_cloud_path(bucket)):
+            if not (bucket := cloud_path.normalize(bucket)):
                 return False
-            if not (key := RCloneConfig.normalize_cloud_path(key)):
+            if not (key := cloud_path.normalize(key)):
                 key = os.path.basename(file)
             self.client.get_bucket(bucket).blob(key).upload_from_filename(file)
             return True
@@ -49,14 +49,14 @@ class Gcs:
     def download_file(self, bucket: str, key: str, file: str,
                       nodirectories: bool = False, raise_exception: bool = True) -> bool:
         try:
-            if not (bucket := RCloneConfig.normalize_cloud_path(bucket)):
+            if not (bucket := cloud_path.normalize(bucket)):
                 return False
-            if not (key := RCloneConfig.normalize_cloud_path(key)):
+            if not (key := cloud_path.normalize(key)):
                 return False
             if not isinstance(file, str) or not file:
                 return False
             if os.path.isdir(file):
-                separator = RCloneConfig.CLOUD_PATH_SEPARATOR
+                separator = cloud_path.separator
                 if separator in key:
                     if nodirectories is True:
                         file = os.path.join(file, key.replace(separator, "_"))
@@ -85,7 +85,7 @@ class Gcs:
 
     def bucket_exists(self, bucket: str, raise_exception: bool = True) -> bool:
         try:
-            if not (bucket := RCloneConfig.normalize_cloud_path(bucket)):
+            if not (bucket := cloud_path.normalize(bucket)):
                 return False
             return self.client.get_bucket(bucket).exists()
         except Exception as e:
@@ -95,9 +95,9 @@ class Gcs:
 
     def file_exists(self, bucket: str, key: str, raise_exception: bool = True) -> bool:
         try:
-            if not (bucket := RCloneConfig.normalize_cloud_path(bucket)):
+            if not (bucket := cloud_path.normalize(bucket)):
                 return False
-            if not (key := RCloneConfig.normalize_cloud_path(key)):
+            if not (key := cloud_path.normalize(key)):
                 return False
             return self.client.get_bucket(bucket).blob(key).exists()
         except Exception as e:

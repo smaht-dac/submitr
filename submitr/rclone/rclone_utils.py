@@ -1,5 +1,6 @@
 from re import compile as re_compile, escape as re_escape
-from os.path import sep as os_path_separator
+import os
+from typing import Optional
 
 
 class cloud_path:
@@ -43,4 +44,12 @@ class cloud_path:
     def to_file_path(value: str) -> str:
         if not (value := cloud_path.normalize(value)):
             return ""
-        return value.replace(cloud_path.separator, os_path_separator)
+        return value.replace(cloud_path.separator, os.sep)
+
+
+def normalize_string(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return ""
+    elif isinstance(value, str):
+        return value.strip()
+    return None

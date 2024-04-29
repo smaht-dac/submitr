@@ -8,8 +8,8 @@ from typing import List, Optional, Union
 from dcicutils.file_utils import are_files_equal
 from dcicutils.tmpfile_utils import temporary_file
 from dcicutils.datetime_utils import format_datetime
-from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_config_amazon import AmazonCredentials
+from submitr.rclone.rclone_utils import cloud_path
 
 
 # Module with class/functions to aid in integration testing of smaht-submitr rclone support.
@@ -49,9 +49,9 @@ class AwsS3:
         try:
             if not isinstance(file, str) or not file:
                 return False
-            if not (bucket := RCloneConfig.normalize_cloud_path(bucket)):
+            if not (bucket := cloud_path.normalize(bucket)):
                 return False
-            if not (key := RCloneConfig.normalize_cloud_path(key)):
+            if not (key := cloud_path.normalize(key)):
                 key = os.path.basename(file)
             if kms_key_id := self.credentials.kms_key_id:
                 # Note that it is not necessary to use the KMS Key ID when downloading
@@ -70,19 +70,19 @@ class AwsS3:
     def download_file(self, bucket: str, key: str, file: str,
                       nodirectories: bool = False, raise_exception: bool = True) -> bool:
         try:
-            if not (bucket := RCloneConfig.normalize_cloud_path(bucket)):
+            if not (bucket := cloud_path.normalize(bucket)):
                 return False
-            if not (key := RCloneConfig.normalize_cloud_path(key)):
+            if not (key := cloud_path.normalize(key)):
                 return False
             if not isinstance(file, str) or not file:
                 return False
             if os.path.isdir(file):
-                if RCloneConfig.CLOUD_PATH_SEPARATOR in key:
+                if cloud_path.has_separator(key):
                     if nodirectories is True:
-                        key_as_file_name = key.replace(RCloneConfig.CLOUD_PATH_SEPARATOR, "_")
+                        key_as_file_name = key.replace(cloud_path.separator, "_")
                         file = os.path.join(file, key_as_file_name)
                     else:
-                        key_as_file_path = RCloneConfig.cloud_path_to_file_path(key)
+                        key_as_file_path = cloud_path.to_file_path(key)
                         directory = os.path.normpath(os.path.join(file, os.path.dirname(key_as_file_path)))
                         os.makedirs(directory, exist_ok=True)
                         file = os.path.join(directory, os.path.basename(key_as_file_path))

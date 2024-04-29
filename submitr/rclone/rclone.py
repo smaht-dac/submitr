@@ -1,18 +1,17 @@
 from contextlib import contextmanager
 from subprocess import run as subprocess_run
-from os.path import isdir as os_path_isdir
+import os
 from shutil import copy as copy_file
 from typing import List, Optional, Union
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 from submitr.rclone.rclone_config import RCloneConfig
+from submitr.rclone.rclone_utils import cloud_path
 from submitr.rclone.rclone_installation import (
     rclone_executable_install, rclone_executable_exists, rclone_executable_path
 )
 
 
 class RClone:
-
-    CLOUD_PATH_SEPARATOR = RCloneConfig.CLOUD_PATH_SEPARATOR
 
     def __init__(self, source: Optional[RCloneConfig] = None, destination: Optional[RCloneConfig] = None) -> None:
         self._source_config = source if isinstance(source, RCloneConfig) else None
@@ -95,9 +94,9 @@ class RClone:
             if destination_config.bucket:
                 # A bucket in the destination RCloneConfig is nothing more than an alternative
                 # way of manually placing it at the beginning of the given destination argument.
-                if not (destination := self.join_cloud_path(destination_config.bucket, destination)):
+                if not (destination := cloud_path.join(destination_config.bucket, destination)):
                     raise Exception("No cloud destination specified.")
-            if self.has_cloud_path_folder(destination):
+            if cloud_path.has_separator(destination):
                 # If the destination has NO slashes it is assumed to be ONLY the bucket;
                 # in which case we will rclone copy; otherwise we need to use rclone copyto.
                 copyto = True
@@ -108,7 +107,7 @@ class RClone:
                 if source_config.bucket:
                     # A bucket in the source RCloneConfig is nothing more than an alternative
                     # way of manually placing it at the beginning of the given source argument.
-                    if not (source := self.join_cloud_path(source_config.bucket, source)):
+                    if not (source := cloud_path.join(source_config.bucket, source)):
                         raise Exception("No cloud source specified.")
                 with self.config_file(persist=dryrun is True) as source_and_destination_config_file:  # noqa
                     command_args = ["--config", source_and_destination_config_file,
@@ -132,7 +131,7 @@ class RClone:
             # i.e. e.g. from either Amazon S3 or Google Cloud Storage to a local file.
             if not destination:  # TODO: normalize/whatever/etc
                 raise Exception("No file destination specified.")
-            if not os_path_isdir(destination):  # TODO: test
+            if not os.path.isdir(destination):  # TODO: test
                 copyto = True
             with source_config.config_file(persist=dryrun is True) as source_config_file:  # noqa
                 # TODO: NOT YET TESTED ...
@@ -150,7 +149,7 @@ class RClone:
                 raise Exception("No file source specified.")
             if not destination:  # TODO: normalize/whatever/etc
                 raise Exception("No file destination specified.")
-            if not os_path_isdir(destination):  # TODO: test
+            if not os.path.isdir(destination):  # TODO: test
                 copyto = True
             command_args = ["--config", source_config_file, source, destination]
             return self._execute_rclone_copy_command(command_args, copyto=copyto, dryrun=dryrun)
@@ -186,19 +185,3 @@ class RClone:
     @staticmethod
     def executable_path() -> str:
         return rclone_executable_path()
-
-    @staticmethod
-    def normalize_cloud_path(value: str) -> str:
-        return RCloneConfig.normalize_cloud_path(value)
-
-    @staticmethod
-    def join_cloud_path(*args) -> str:
-        return RCloneConfig.join_cloud_path(*args)
-
-    @staticmethod
-    def has_cloud_path_folder(value: str) -> bool:
-        return RCloneConfig.has_cloud_path_folder(value)
-
-    @staticmethod
-    def cloud_path_to_file_path(value: str) -> str:
-        return RCloneConfig.cloud_path_to_file_path(value)
