@@ -88,12 +88,13 @@ class RCloneConfig(AbstractBaseClass):
     def normalize_cloud_path(value: str) -> str:
         if not isinstance(value, str):
             return ""
-        separator = RCloneConfig.CLOUD_PATH_SEPARATOR
-        if (value := re_compile(rf"({re_escape(separator)})+").sub(separator, value.strip())).startswith(separator):
+        regex = re_compile(rf"({re_escape(RCloneConfig.CLOUD_PATH_SEPARATOR)})+")
+        value = regex.sub(RCloneConfig.CLOUD_PATH_SEPARATOR, value.strip())
+        if value.startswith(RCloneConfig.CLOUD_PATH_SEPARATOR):
             value = value[1:]
-        if value.endswith(separator):
+        if value.endswith(RCloneConfig.CLOUD_PATH_SEPARATOR):
             value = value[:-1]
-        return value
+        return value if value != "." else ""
 
     @staticmethod
     def join_cloud_path(*args) -> str:

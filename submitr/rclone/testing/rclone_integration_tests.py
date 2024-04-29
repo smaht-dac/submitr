@@ -179,8 +179,7 @@ def _test_rclone_between_amazon_and_local(credentials: Union[Callable, AmazonCre
         with temporary_directory() as tmp_download_directory:
             assert tmp_download_directory is not None  # TODO/placeholder
             # TODO TODO
-            # import pdb
-            # pdb.set_trace()
+            # import pdb ; pdb.set_trace()
             # rclone.copy(AmazonTestEnv.bucket, tmp_test_file_name, tmp_download_directory)
             pass
         # Cleanup (delete) the test file in AWS S3.
@@ -223,7 +222,9 @@ def test_rclone_google_to_amazon() -> None:
     amazon_config = RCloneConfigAmazon(amazon_credentials)
     # First upload a test file to Google Cloud Storage.
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
-        # Here we have a local test file to upload to Google Cloud Storage.
+        # Here we have a local test file to upload to Google Cloud Storage;
+        # which we will then copy direcly to AWS S3 via RClone.
+        # So first upload our local test file to Google Cloud Storage (via RClone - why not).
         rclone = RClone(destination=google_config)
         rclone.copy(tmp_test_file_path, GoogleTestEnv.bucket)
         # Make sure it made it there.
@@ -233,13 +234,18 @@ def test_rclone_google_to_amazon() -> None:
         # Now try to copy directly from Google Cloud Storage to AWS S3 (THIS is really the MAIN event).
         rclone = RClone(source=google_config, destination=amazon_config)
         rclone.copy(rclone.join_cloud_path(GoogleTestEnv.bucket, tmp_test_file_name), AmazonTestEnv.bucket)
+        # Sanity check the file in AWS S3 which was copied directly from Google Cloud Storage.
         # TODO
+        # import pdb ; pdb.set_trace()
+        s3 = AwsS3(amazon_credentials)
+        assert s3.file_exists(AmazonTestEnv.bucket, tmp_test_file_name) is True
+        assert s3.file_equals(AmazonTestEnv.bucket, tmp_test_file_name, tmp_test_file_path) is True
         # Cleanup (delete) the test file in Google Cloud Storage.
         assert gcs.delete_file(GoogleTestEnv.bucket, tmp_test_file_name) is True
         assert gcs.file_exists(GoogleTestEnv.bucket, tmp_test_file_name) is False
         # Cleanup (delete) the test file in AWS S3.
-        s3 = AwsS3(amazon_credentials)
         assert s3.delete_file(AmazonTestEnv.bucket, tmp_test_file_name) is True
+        assert s3.file_exists(AmazonTestEnv.bucket, tmp_test_file_name) is False
 
 
 def test_rclone_amazon_to_google() -> None:
@@ -250,12 +256,29 @@ def test_rclone_amazon_to_google() -> None:
     pass  # TODO
     # First upload a test file to AWS S3.
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
-        # Here we have a local test file to upload to AWS S3.
+        # Here we have a local test file to upload to AWS S3;
+        # which we will then copy directly to Google Cloud Storage via RClone.
+        # So first upload our local test file to AWS S3 (via RClone - why not).
         rclone = RClone(destination=amazon_config)
-        # TODO
-        assert rclone
-        # TODO
+        rclone.copy(tmp_test_file_path, AmazonTestEnv.bucket)
+        # Make sure it made it there.
+        s3 = AwsS3(amazon_credentials)
+        assert s3.file_exists(AmazonTestEnv.bucket, tmp_test_file_name) is True
+        assert s3.file_equals(AmazonTestEnv.bucket, tmp_test_file_name, tmp_test_file_path) is True
+        # Now try to copy directly from AWS S3 to Google Cloud Storage.
+        # import pdb ; pdb.set_trace()
         rclone = RClone(source=amazon_config, destination=google_config)
+        rclone.copy(rclone.join_cloud_path(AmazonTestEnv.bucket, tmp_test_file_name), GoogleTestEnv.bucket)
+        # Sanity check the file in Google Cloud Storage which was copied directly from AWS S3.
+        gcs = Gcs(google_credentials)
+        assert gcs.file_exists(GoogleTestEnv.bucket, tmp_test_file_name) is True
+        assert gcs.file_equals(GoogleTestEnv.bucket, tmp_test_file_name, tmp_test_file_path) is True
+        # Cleanup (delete) the test file in AWS S3.
+        assert s3.delete_file(AmazonTestEnv.bucket, tmp_test_file_name) is True
+        assert s3.file_exists(AmazonTestEnv.bucket, tmp_test_file_name) is False
+        # Cleanup (delete) the test file in Google Cloud Storage.
+        assert gcs.delete_file(GoogleTestEnv.bucket, tmp_test_file_name) is True
+        assert gcs.file_exists(GoogleTestEnv.bucket, tmp_test_file_name) is False
 
 
 def test():
