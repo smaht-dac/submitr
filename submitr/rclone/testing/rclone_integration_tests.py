@@ -26,18 +26,21 @@ class AmazonTestEnv:
     bucket = "smaht-unit-testing-files"
 
     @staticmethod
-    def credentials() -> AmazonCredentials:
-        credentials = AwsCredentials.get_credentials_from_file(AmazonTestEnv.env, kms_key_id=AmazonTestEnv.kms_key_id)
+    def credentials(nokms: bool = False) -> AmazonCredentials:
+        kms_key_id = None if nokms is True else AmazonTestEnv.kms_key_id
+        credentials = AwsCredentials.get_credentials_from_file(AmazonTestEnv.env, kms_key_id=kms_key_id)
         assert isinstance(credentials.region, str) and credentials.region
         assert isinstance(credentials.access_key_id, str) and credentials.access_key_id
         assert isinstance(credentials.secret_access_key, str) and credentials.secret_access_key
+        assert credentials.kms_key_id == (None if nokms is True else AmazonTestEnv.kms_key_id)
         return credentials
 
     @staticmethod
-    def temporary_credentials() -> AmazonCredentials:
-        credentials = AmazonTestEnv.credentials()
+    def temporary_credentials(nokms: bool = False) -> AmazonCredentials:
+        credentials = AmazonTestEnv.credentials(nokms=nokms)
         temporary_credentials = AwsS3(credentials).generate_temporary_credentials()
         assert isinstance(temporary_credentials.session_token, str) and temporary_credentials.session_token
+        assert temporary_credentials.kms_key_id == (None if nokms is True else AmazonTestEnv.kms_key_id)
         return temporary_credentials
 
 
