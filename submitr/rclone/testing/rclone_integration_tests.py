@@ -9,8 +9,9 @@ from submitr.rclone.rclone_config_google import GoogleCredentials, RCloneConfigG
 from submitr.rclone.testing.rclone_utils_amazon_for_testing import AwsCredentials, AwsS3
 from submitr.rclone.testing.rclone_utils_google_for_testing import Gcs
 
-# Integration tests for rclone related functionality within smaht-submitr.
+# Integration tests for RClone related functionality within smaht-submitr.
 # Need valid AWS credentials for (currently) smaht-wolf.
+# Need valid Google Cloud credentials for (currently) project smaht-dac.
 # Wonder how to possibly test this as unit test within GA?
 
 
@@ -193,7 +194,7 @@ def test_rclone_between_google_and_local() -> None:
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         # Here we have a local test file to upload to Google Cloud Storage.
         rclone = RClone(destination=config)
-        # Upload the local test file to Google Cloud Storage using rclone;
+        # Upload the local test file to Google Cloud Storage using RClone;
         # we upload tmp_test_file_path to the tmp_test_file_name key in GoogleTestEnv.bucket.
         rclone.copy(tmp_test_file_path, GoogleTestEnv.bucket)
         # Sanity check uploaded file using non-RClone methods (via Gcs which uses google.cloud.storage).
@@ -223,7 +224,7 @@ def test_rclone_google_to_amazon() -> None:
     # First upload a test file to Google Cloud Storage.
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         # Here we have a local test file to upload to Google Cloud Storage;
-        # which we will then copy direcly to AWS S3 via RClone.
+        # which we will then copy directly to AWS S3 via RClone.
         # So first upload our local test file to Google Cloud Storage (via RClone - why not).
         rclone = RClone(destination=google_config)
         rclone.copy(tmp_test_file_path, GoogleTestEnv.bucket)
