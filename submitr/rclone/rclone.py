@@ -135,6 +135,7 @@ class RClone:
             if not os_path_isdir(destination):  # TODO: test
                 copyto = True
             with source_config.config_file(persist=dryrun is True) as source_config_file:  # noqa
+                # TODO: NOT YET TESTED ...
                 import pdb ; pdb.set_trace()  # noqa
                 command_args = ["--config", source_config_file,
                                 f"{source_config.name}:{source_config.bucket}",
@@ -143,7 +144,7 @@ class RClone:
         else:
             # Here not source or destination cloud configuration has been defined for this RClone;
             # object; meaning this is (degenerate case of a) simple local file to file copy.
-            # TODO
+            # TODO: NOT YET TESTED ...
             import pdb ; pdb.set_trace()  # noqa
             if not source:  # TODO: normalize/whatever/etc
                 raise Exception("No file source specified.")
