@@ -169,3 +169,15 @@ class RClone:
     @staticmethod
     def executable_path() -> str:
         return rclone_executable_path()
+
+    @staticmethod
+    def normalize_cloud_path(value: str) -> str:
+        return RCloneConfig.normalize_cloud_path(value)
+
+    @staticmethod
+    def join_cloud_path(*args) -> str:
+        return RCloneConfig.join_cloud_path(*args)
+
+    @staticmethod
+    def split_cloud_path(value: str) -> List[str]:
+        return RCloneConfig.split_cloud_path(value)

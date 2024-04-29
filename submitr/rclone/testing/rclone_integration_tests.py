@@ -191,11 +191,32 @@ def test_between_google_and_local() -> None:
             pass
 
 
+def test_google_to_amazon() -> None:
+    google_credentials = GoogleTestEnv.credentials()
+    amazon_credentials = AmazonTestEnv.credentials()
+    google_config = RCloneConfigGoogle(google_credentials)
+    amazon_config = RCloneConfigAmazon(amazon_credentials)
+    # First upload a test file to Google Cloud Storage.
+    with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        # Here we have a local test file to upload to Google Cloud Storage.
+        rclone = RClone(destination=google_config)
+        rclone.copy(tmp_test_file_path, GoogleTestEnv.bucket)
+        # Make sure it made it there.
+        gcs = Gcs(google_credentials)
+        assert gcs.file_exists(GoogleTestEnv.bucket, tmp_test_file_name) is True
+        assert gcs.file_equals(GoogleTestEnv.bucket, tmp_test_file_name, tmp_test_file_path) is True
+        # Now try to copy directly from Google Cloud Storage to AWS S3 (this is really the main event).
+        rclone = RClone(source=google_config, destination=amazon_config)
+        # import pdb ; pdb.set_trace()
+        # rclone.copy(rclone.join_cloud_path(GoogleTestEnv.bucket, tmp_test_file_name), AmazonTestEnv.bucket)
+
+
 def test():
     AwsCredentials.remove_credentials_from_environment_variables()
     test_utils_for_testing()
     test_between_amazon_and_local()
     test_between_google_and_local()
+    test_google_to_amazon()
 
 
 test()
