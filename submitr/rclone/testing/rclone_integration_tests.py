@@ -225,18 +225,19 @@ def _test_rclone_between_amazon_and_local(credentials: Union[Callable, AmazonCre
         assert False
 
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        key = tmp_test_file_name
         # Here we have a local test file to upload to AWS S3.
         if use_key_specific_credentials is True:
-            credentials = credentials(bucket=AmazonTestEnv.bucket, key=tmp_test_file_name)
+            credentials = credentials(bucket=AmazonTestEnv.bucket, key=key)
         else:
             credentials = credentials()
         config = create_rclone_config_amazon(credentials)
         # Upload the local test file to AWS S3 using RClone;
-        # we upload tmp_test_file_path to the tmp_test_file_name key in AmazonTestEnv.bucket.
+        # we upload tmp_test_file_path to the key (tmp_test_file_name) key in AmazonTestEnv.bucket.
         rclone = create_rclone(destination=config)
         assert rclone.copy(tmp_test_file_path, AmazonTestEnv.bucket) is True  # TODO: maybe also to specify key?
         # Sanity check the uploaded file using non-RClone methods (via AwS3 which uses boto3).
-        sanity_check_amazon_file(credentials, AmazonTestEnv.bucket, tmp_test_file_name, tmp_test_file_path)
+        sanity_check_amazon_file(credentials, AmazonTestEnv.bucket, key, tmp_test_file_path)
         # Now try to download the test file (which was uploaded above to AWS S3 using RClone) to the local
         # file system; use the same RClone configuration as for upload but as the source rather than destination.
         # TODO
@@ -245,23 +246,24 @@ def _test_rclone_between_amazon_and_local(credentials: Union[Callable, AmazonCre
             assert tmp_download_directory is not None  # TODO/placeholder
             # TODO TODO
             # import pdb ; pdb.set_trace()
-            # rclone.copy(AmazonTestEnv.bucket, tmp_test_file_name, tmp_download_directory)
+            # rclone.copy(AmazonTestEnv.bucket, key, tmp_download_directory)
             pass
         # Cleanup (delete) the test file in AWS S3.
-        cleanup_amazon_file(credentials, AmazonTestEnv.bucket, tmp_test_file_name)
+        cleanup_amazon_file(credentials, AmazonTestEnv.bucket, key)
 
 
 def test_rclone_between_google_and_local() -> None:
     credentials = GoogleTestEnv.credentials()
     config = create_rclone_config_google(credentials)
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        key = tmp_test_file_name
         # Here we have a local test file to upload to Google Cloud Storage.
         rclone = create_rclone(destination=config)
-        # Upload the local test file to Google Cloud Storage using RClone;
-        # we upload tmp_test_file_path to the tmp_test_file_name key in GoogleTestEnv.bucket.
+        # Upload the local test file to Google Cloud Storage using RClone; we upload
+        # tmp_test_file_path to the key (tmp_test_file_name) key in GoogleTestEnv.bucket.
         rclone.copy(tmp_test_file_path, GoogleTestEnv.bucket)
         # Sanity check the uploaded file using non-RClone methods (via Gcs which uses google.cloud.storage).
-        sanity_check_google_file(credentials, GoogleTestEnv.bucket, tmp_test_file_name, tmp_test_file_path)
+        sanity_check_google_file(credentials, GoogleTestEnv.bucket, key, tmp_test_file_path)
         # Now try to download the uploaded test file in Google Cloud Storage using RClone;
         # use the same RClone configuration as for upload but as the source rather than destination.
         rclone = create_rclone(source=config)
@@ -269,10 +271,10 @@ def test_rclone_between_google_and_local() -> None:
             assert tmp_download_directory  # TODO/placeholder
             # TODO
             # import pdb ; pdb.set_trace()
-            # rclone.copy(GoogleTestEnv.bucket, tmp_test_file_name, tmp_download_directory)
+            # rclone.copy(GoogleTestEnv.bucket, key, tmp_download_directory)
             pass
         # Cleanup (delete) the test file in Google Cloud Storage.
-        cleanup_google_file(credentials, GoogleTestEnv.bucket, tmp_test_file_name)
+        cleanup_google_file(credentials, GoogleTestEnv.bucket, key)
 
 
 def test_rclone_google_to_amazon() -> None:
@@ -282,22 +284,23 @@ def test_rclone_google_to_amazon() -> None:
     amazon_config = create_rclone_config_amazon(amazon_credentials)
     # First upload a test file to Google Cloud Storage.
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        key = tmp_test_file_name
         # Here we have a local test file to upload to Google Cloud Storage;
         # which we will then copy directly to AWS S3 via RClone.
         # So first upload our local test file to Google Cloud Storage (via RClone - why not).
         rclone = create_rclone(destination=google_config)
         rclone.copy(tmp_test_file_path, GoogleTestEnv.bucket)
         # Make sure it made it there.
-        sanity_check_google_file(google_credentials, GoogleTestEnv.bucket, tmp_test_file_name, tmp_test_file_path)
+        sanity_check_google_file(google_credentials, GoogleTestEnv.bucket, key, tmp_test_file_path)
         # Now try to copy directly from Google Cloud Storage to AWS S3 (THIS is really the MAIN event).
         rclone = create_rclone(source=google_config, destination=amazon_config)
-        rclone.copy(rclone.join_cloud_path(GoogleTestEnv.bucket, tmp_test_file_name), AmazonTestEnv.bucket)
+        rclone.copy(rclone.join_cloud_path(GoogleTestEnv.bucket, key), AmazonTestEnv.bucket)
         # Sanity check the file in AWS S3 which was copied directly from Google Cloud Storage.
-        sanity_check_amazon_file(amazon_credentials, AmazonTestEnv.bucket, tmp_test_file_name, tmp_test_file_path)
+        sanity_check_amazon_file(amazon_credentials, AmazonTestEnv.bucket, key, tmp_test_file_path)
         # Cleanup (delete) the test file in Google Cloud Storage.
-        cleanup_google_file(google_credentials, GoogleTestEnv.bucket, tmp_test_file_name)
+        cleanup_google_file(google_credentials, GoogleTestEnv.bucket, key)
         # Cleanup (delete) the test file in AWS S3.
-        cleanup_amazon_file(amazon_credentials, AmazonTestEnv.bucket, tmp_test_file_name)
+        cleanup_amazon_file(amazon_credentials, AmazonTestEnv.bucket, key)
 
 
 def test_rclone_amazon_to_google() -> None:
@@ -308,23 +311,24 @@ def test_rclone_amazon_to_google() -> None:
     pass  # TODO
     # First upload a test file to AWS S3.
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        key = tmp_test_file_name
         # Here we have a local test file to upload to AWS S3;
         # which we will then copy directly to Google Cloud Storage via RClone.
         # So first upload our local test file to AWS S3 (via RClone - why not).
         rclone = create_rclone(destination=amazon_config)
         rclone.copy(tmp_test_file_path, AmazonTestEnv.bucket)
         # Make sure it made it there.
-        sanity_check_amazon_file(amazon_credentials, AmazonTestEnv.bucket, tmp_test_file_name, tmp_test_file_path)
+        sanity_check_amazon_file(amazon_credentials, AmazonTestEnv.bucket, key, tmp_test_file_path)
         # Now try to copy directly from AWS S3 to Google Cloud Storage.
         # import pdb ; pdb.set_trace()
         rclone = create_rclone(source=amazon_config, destination=google_config)
-        rclone.copy(rclone.join_cloud_path(AmazonTestEnv.bucket, tmp_test_file_name), GoogleTestEnv.bucket)
+        rclone.copy(rclone.join_cloud_path(AmazonTestEnv.bucket, key), GoogleTestEnv.bucket)
         # Sanity check the file in Google Cloud Storage which was copied directly from AWS S3.
-        sanity_check_google_file(google_credentials, GoogleTestEnv.bucket, tmp_test_file_name, tmp_test_file_path)
+        sanity_check_google_file(google_credentials, GoogleTestEnv.bucket, key, tmp_test_file_path)
         # Cleanup (delete) the test file in AWS S3.
-        cleanup_amazon_file(amazon_credentials, AmazonTestEnv.bucket, tmp_test_file_name)
+        cleanup_amazon_file(amazon_credentials, AmazonTestEnv.bucket, key)
         # Cleanup (delete) the test file in Google Cloud Storage.
-        cleanup_google_file(google_credentials, GoogleTestEnv.bucket, tmp_test_file_name)
+        cleanup_google_file(google_credentials, GoogleTestEnv.bucket, key)
 
 
 def test():
