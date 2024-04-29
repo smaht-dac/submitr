@@ -4,6 +4,7 @@ from typing import Callable, Optional, Tuple, Union
 from dcicutils.file_utils import are_files_equal
 from dcicutils.tmpfile_utils import temporary_directory, temporary_file, temporary_random_file
 from submitr.rclone.rclone import RClone
+from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_config_amazon import AmazonCredentials, RCloneConfigAmazon
 from submitr.rclone.rclone_config_google import GoogleCredentials, RCloneConfigGoogle
 from submitr.rclone.testing.rclone_utils_amazon_for_testing import AwsCredentials, AwsS3
@@ -81,6 +82,24 @@ def temporary_test_file() -> Tuple[str, str]:
         yield tmp_file_path, os.path.basename(tmp_file_path)
 
 
+def create_rclone_config_amazon(credentials: AmazonCredentials) -> RCloneConfig:
+    config = RCloneConfigAmazon(credentials)
+    assert config.credentials == credentials
+    assert config.access_key_id == credentials.access_key_id
+    assert config.secret_access_key == credentials.secret_access_key
+    assert config.session_token == credentials.session_token
+    assert config.kms_key_id == credentials.kms_key_id
+    return config
+
+
+def create_rclone_config_google(credentials: AmazonCredentials) -> RCloneConfig:
+    config = RCloneConfigGoogle(credentials)
+    assert config.credentials == credentials
+    assert config.location == credentials.location
+    assert config.service_account_file == credentials.service_account_file
+    return config
+
+
 def test_utils_for_testing() -> None:
 
     # First of all, test the test code, i.e. the Amazon/Google code which uploads,
@@ -154,26 +173,27 @@ def _test_rclone_between_amazon_and_local(credentials: Union[Callable, AmazonCre
             credentials = credentials(bucket=AmazonTestEnv.bucket, key=tmp_test_file_name)
         else:
             credentials = credentials()
-        config = RCloneConfigAmazon(credentials)
-        assert config.credentials == credentials
-        assert config.access_key_id == credentials.access_key_id
-        assert config.secret_access_key == credentials.secret_access_key
-        assert config.session_token == credentials.session_token
-        assert config.kms_key_id == credentials.kms_key_id
+        config = create_rclone_config_amazon(credentials)
+#       config = RCloneConfigAmazon(credentials)
+#       assert config.credentials == credentials
+#       assert config.access_key_id == credentials.access_key_id
+#       assert config.secret_access_key == credentials.secret_access_key
+#       assert config.session_token == credentials.session_token
+#       assert config.kms_key_id == credentials.kms_key_id
         # Upload the local test file to AWS S3 using RClone;
         # we upload tmp_test_file_path to the tmp_test_file_name key in AmazonTestEnv.bucket.
         rclone = RClone(destination=config)
         assert rclone.destination == config
         assert rclone.copy(tmp_test_file_path, AmazonTestEnv.bucket) is True  # TODO: maybe also to specify key?
-        # Sanity check uploaded file using non-RClone methods (via Aws3 which uses boto3).
+        # Sanity check the uploaded file using non-RClone methods (via Aws3 which uses boto3).
         s3 = AwsS3(credentials)
         assert s3.file_exists(AmazonTestEnv.bucket, tmp_test_file_name) is True
         assert s3.file_equals(AmazonTestEnv.bucket, tmp_test_file_name, tmp_test_file_path) is True
         if config.kms_key_id:
             assert s3.file_kms_encrypted(AmazonTestEnv.bucket, tmp_test_file_name) is True
             assert s3.file_kms_encrypted(AmazonTestEnv.bucket, tmp_test_file_name, config.kms_key_id) is True
-        # Now try to download the uploaded test file in AWS S3 using RClone;
-        # use the same RClone configuration as for upload but as the source rather than destination.
+        # Now try to download the test file (which was uploaded above to AWS S3 using RClone) to the local
+        # file system; use the same RClone configuration as for upload but as the source rather than destination.
         # TODO
         rclone = RClone(source=config)
         assert rclone.source == config
@@ -190,14 +210,14 @@ def _test_rclone_between_amazon_and_local(credentials: Union[Callable, AmazonCre
 
 def test_rclone_between_google_and_local() -> None:
     credentials = GoogleTestEnv.credentials()
-    config = RCloneConfigGoogle(credentials)
+    config = create_rclone_config_google(credentials)
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         # Here we have a local test file to upload to Google Cloud Storage.
         rclone = RClone(destination=config)
         # Upload the local test file to Google Cloud Storage using RClone;
         # we upload tmp_test_file_path to the tmp_test_file_name key in GoogleTestEnv.bucket.
         rclone.copy(tmp_test_file_path, GoogleTestEnv.bucket)
-        # Sanity check uploaded file using non-RClone methods (via Gcs which uses google.cloud.storage).
+        # Sanity check the uploaded file using non-RClone methods (via Gcs which uses google.cloud.storage).
         gcs = Gcs(credentials)
         assert gcs.file_exists(GoogleTestEnv.bucket, tmp_test_file_name) is True
         assert gcs.file_equals(GoogleTestEnv.bucket, tmp_test_file_name, tmp_test_file_path) is True
@@ -219,8 +239,8 @@ def test_rclone_between_google_and_local() -> None:
 def test_rclone_google_to_amazon() -> None:
     google_credentials = GoogleTestEnv.credentials()
     amazon_credentials = AmazonTestEnv.credentials()
-    google_config = RCloneConfigGoogle(google_credentials)
-    amazon_config = RCloneConfigAmazon(amazon_credentials)
+    google_config = create_rclone_config_google(google_credentials)
+    amazon_config = create_rclone_config_amazon(amazon_credentials)
     # First upload a test file to Google Cloud Storage.
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         # Here we have a local test file to upload to Google Cloud Storage;
@@ -252,8 +272,8 @@ def test_rclone_google_to_amazon() -> None:
 def test_rclone_amazon_to_google() -> None:
     amazon_credentials = AmazonTestEnv.credentials()
     google_credentials = GoogleTestEnv.credentials()
-    amazon_config = RCloneConfigAmazon(amazon_credentials)
-    google_config = RCloneConfigGoogle(google_credentials)
+    amazon_config = create_rclone_config_amazon(amazon_credentials)
+    google_config = create_rclone_config_google(google_credentials)
     pass  # TODO
     # First upload a test file to AWS S3.
     with temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
