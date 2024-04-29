@@ -181,11 +181,11 @@ def test_between_google_and_local() -> None:
         assert gcs.file_equals(GoogleTestEnv.bucket, tmp_test_file_name, tmp_test_file_path) is True
         # Now try to download the uploaded test file in Google Cloud Storage using RClone;
         # use the same RClone configuration as for upload but as the source rather than destination.
-        # TODO
         rclone = RClone(source=config)
         assert rclone.source == config
         with temporary_directory() as tmp_download_directory:
             assert tmp_download_directory  # TODO/placeholder
+            # TODO
             # import pdb ; pdb.set_trace()
             # rclone.copy(GoogleTestEnv.bucket, tmp_test_file_name, tmp_download_directory)
             pass

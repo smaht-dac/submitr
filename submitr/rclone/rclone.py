@@ -86,15 +86,15 @@ class RClone:
                 # Here both a source and destination cloud configuration have been defined for this RClone
                 # object; meaning we are copying from one cloud source to another cloud destination; i.e.
                 # e.g from Amazon S3 or Google Cloud Storage to Amazon S3 or Google Cloud Storage.
-                with self.config_file() as config_file:  # noqa
+                with self.config_file() as source_and_destination_config_file:  # noqa
                     # TODO
                     pass
                 return None
-            # Here only a destination config has been specified; meaning we
-            # are copying from the (local file) source to some cloud destination;
+            # Here only a destination config cloud configuration has been specified for this RClone
+            # object; meaning we are copying from a local file source to some cloud destination;
             # i.e. e.g. to Amazon S3 or Google Cloud Storage.
             with destination_config.config_file(persist_file=dryrun is True) as destination_config_file:
-                command = None
+                command_args = []
                 destination = RCloneConfig.normalize_cloud_path(destination)
                 if destination and not (destination in ["."]):
                     # Here the given destination appears to be a file (bucket key); so we use rclone
@@ -106,13 +106,12 @@ class RClone:
                             destination = RCloneConfig.join_cloud_path(destination_components[1:])
                         else:
                             destination_bucket = destination
-                            command = [self.executable_path(),
-                                       "copy", "--config", destination_config_file, source,
-                                       f"{destination_config.name}:{destination_bucket}"]
-                    if not command:
+                            command_args = ["copy", "--config", destination_config_file, source,
+                                            f"{destination_config.name}:{destination_bucket}"]
+                    if not command_args:
                         destination_path = RCloneConfig.join_cloud_path(destination_bucket, destination)
-                        command = [self.executable_path(), "copyto", "--config", destination_config_file, source,
-                                   f"{destination_config.name}:{destination_path}"]
+                        command_args = ["copyto", "--config", destination_config_file, source,
+                                        f"{destination_config.name}:{destination_path}"]
                 else:
                     # Here the given destination argument was not specified (or it was just a dot or slash),
                     # meaning we are copying the (local file) source to the destination bucket which must
@@ -120,29 +119,42 @@ class RClone:
                     if not destination_config.bucket:
                         raise Exception(f"No destination given for rclone copy and"
                                         f" no bucket specified in destination config.")
-                    command = [self.executable_path(),
-                               "copy", "--config", destination_config_file, source,
-                               f"{destination_config.name}:{destination_config.bucket}"]
-                command.append("--progress")
-                command.append("-vv")
-                try:
-                    if dryrun is True:
-                        if " " in command[0]:
-                            command[0] = f"\"{command[0]}\""
-                        return " ".join(command)
-                    result = subprocess.run(command, capture_output=True, text=True, check=True)
-                    return True if (result.returncode == 0) else False
-                except Exception as e:
-                    if raise_exception is True:
-                        raise e
-                return False if not (dryrun is True) else None
+                    command_args = ["copy", "--config", destination_config_file, source,
+                                    f"{destination_config.name}:{destination_config.bucket}"]
+                return self._execute_rclone_command(command_args, dryrun=dryrun)
         elif isinstance(source_config := self.source, RCloneConfig):
-            # Here only a source cloud configuration has been defined for this RClone object.
+            # Here only a source cloud configuration has been defined for this RClone object;
+            # meaning we are copying from some cloud source to a local destination file.
             # TODO
             with source_config.config_file() as source_config_file:  # noqa
-                # TODO
-                pass
+                # TODO: check what kind of source/destination etc.
+                if source_config.bucket:
+                    command_args = ["copy", "--config", source_config_file, source,
+                                    f"{source_config.name}:{source_config.bucket}", destination]
+                    pass
+                else:
+                    command_args = ["copy", "--config", source_config_file, source,
+                                    f"{source_config.name}:{source_config.bucket}", destination]
+                return self._execute_rclone_command(command_args, dryrun=dryrun)
         return False if not (dryrun is True) else None
+
+    def _execute_rclone_command(self, args: List[str], dryrun: bool = False,
+                                raise_exception: bool = False) -> Union[bool, str]:
+        command = [self.executable_path(), *(args or [])]
+        command.append("--progress")  # command.append("-vv")
+        def command_string(command: List[str]) -> str:  # noqa
+            if " " in command[0]:
+                command[0] = f"\"{command[0]}\""
+            return " ".join(command)
+        try:
+            if dryrun is True:
+                return command_string(command)
+            result = subprocess.run(command, capture_output=True, text=True, check=True)
+            return True if (result.returncode == 0) else False
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+            return False
 
     @staticmethod
     def install(force_update: bool = True) -> Optional[str]:
