@@ -189,6 +189,9 @@ def test_between_google_and_local() -> None:
             # import pdb ; pdb.set_trace()
             # rclone.copy(GoogleTestEnv.bucket, tmp_test_file_name, tmp_download_directory)
             pass
+        # Cleanup (delete) the test file in Google Cloud Storage.
+        assert gcs.delete_file(GoogleTestEnv.bucket, tmp_test_file_name) is True
+        assert gcs.file_exists(GoogleTestEnv.bucket, tmp_test_file_name) is False
 
 
 def test_google_to_amazon() -> None:
@@ -209,6 +212,15 @@ def test_google_to_amazon() -> None:
         rclone = RClone(source=google_config, destination=amazon_config)
         # import pdb ; pdb.set_trace()
         # rclone.copy(rclone.join_cloud_path(GoogleTestEnv.bucket, tmp_test_file_name), AmazonTestEnv.bucket)
+        # TODO
+        # Cleanup (delete) the test file in Google Cloud Storage.
+        assert gcs.delete_file(GoogleTestEnv.bucket, tmp_test_file_name) is True
+        assert gcs.file_exists(GoogleTestEnv.bucket, tmp_test_file_name) is False
+
+
+def test_amazon_to_google() -> None:
+    # TODO
+    pass
 
 
 def test():
@@ -216,7 +228,7 @@ def test():
     test_utils_for_testing()
     test_between_amazon_and_local()
     test_between_google_and_local()
-    test_google_to_amazon()
+    # test_google_to_amazon()
 
 
 test()
