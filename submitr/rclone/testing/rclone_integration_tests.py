@@ -76,10 +76,22 @@ TEMPORARY_TEST_FILE_PREFIX = "test-submitr-rclone-"
 TEMPORARY_TEST_FILE_SUFFIX = ".txt"
 
 
-@contextmanager
-def temporary_test_file() -> Tuple[str, str]:
-    with temporary_random_file(prefix=TEMPORARY_TEST_FILE_PREFIX, suffix=TEMPORARY_TEST_FILE_SUFFIX) as tmp_file_path:
-        yield tmp_file_path, os.path.basename(tmp_file_path)
+def initial_setup_and_sanity_checking() -> None:
+
+    AwsCredentials.remove_credentials_from_environment_variables()
+    assert os.environ.get("AWS_DEFAULT_REGION", None) is None
+    assert os.environ.get("AWS_ACCESS_KEY_ID", None) is None
+    assert os.environ.get("AWS_SECRET_ACCESS_KEY", None) is None
+    assert os.environ.get("AWS_SESSION_TOKEN", None) is None
+
+    amazon_credentials = AmazonTestEnv.credentials()
+    s3 = AwsS3(amazon_credentials)
+    assert s3.bucket_exists(AmazonTestEnv.bucket) is True
+
+    google_credentials = GoogleTestEnv.credentials()
+    assert os.path.isfile(google_credentials.service_account_file)
+    gcs = Gcs(google_credentials)
+    assert gcs.bucket_exists(GoogleTestEnv.bucket) is True
 
 
 def create_rclone_config_amazon(credentials: AmazonCredentials) -> RCloneConfig:
@@ -136,6 +148,12 @@ def cleanup_google_file(credentials: GoogleCredentials, bucket: str, key: str) -
     assert gcs.credentials == credentials
     assert gcs.delete_file(bucket, key) is True
     assert gcs.file_exists(bucket, key) is False
+
+
+@contextmanager
+def temporary_test_file() -> Tuple[str, str]:
+    with temporary_random_file(prefix=TEMPORARY_TEST_FILE_PREFIX, suffix=TEMPORARY_TEST_FILE_SUFFIX) as tmp_file_path:
+        yield tmp_file_path, os.path.basename(tmp_file_path)
 
 
 def test_utils_for_testing() -> None:
@@ -309,7 +327,7 @@ def test_rclone_amazon_to_google() -> None:
 
 
 def test():
-    AwsCredentials.remove_credentials_from_environment_variables()
+    initial_setup_and_sanity_checking()
     test_utils_for_testing()
     test_rclone_between_amazon_and_local()
     test_rclone_between_google_and_local()

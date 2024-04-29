@@ -83,6 +83,16 @@ class Gcs:
                 raise e
             return False
 
+    def bucket_exists(self, bucket: str, raise_exception: bool = True) -> bool:
+        try:
+            if not (bucket := RCloneConfig.normalize_cloud_path(bucket)):
+                return False
+            return self.client.get_bucket(bucket).exists()
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+            return False
+
     def file_exists(self, bucket: str, key: str, raise_exception: bool = True) -> bool:
         try:
             if not (bucket := RCloneConfig.normalize_cloud_path(bucket)):

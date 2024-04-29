@@ -106,6 +106,17 @@ class AwsS3:
                 raise e
             return False
 
+    def bucket_exists(self, bucket: str, raise_exception: bool = True) -> bool:
+        try:
+            self.client.head_bucket(Bucket=bucket)
+            return True
+        except Exception as e:
+            if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
+                return False
+            if raise_exception is True:
+                raise e
+            return False
+
     def file_exists(self, bucket: str, key: str, raise_exception: bool = True) -> bool:
         try:
             self.client.head_object(Bucket=bucket, Key=key)
