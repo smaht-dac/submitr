@@ -25,6 +25,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                           file_checksum: Optional[str] = None,
                           aws_credentials: Optional[dict] = None,
                           aws_kms_key_id: Optional[str] = None,
+                          rclone_from_google: Optional[str] = None,
                           print_progress: bool = True,
                           print_preamble: bool = True,
                           verify_upload: bool = True,
@@ -195,6 +196,19 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             printf("OK")
             return True
         return False
+
+#   if rclone_from_google:
+#       from submitr.rclone import RClone, RCloneConfigAmazon, RCloneConfigGoogle, cloud_path
+#       rclone_config_amazon = RCloneConfigAmazon(region=aws_credentials.get("region_name"),
+#                                                 access_key_id=aws_credentials.get("aws_access_key_id"),
+#                                                 secret_access_key=aws_credentials.get("aws_secret_access_key"),
+#                                                 session_token=aws_credentials.get("aws_session_token"),
+#                                                 kms_key_id=aws_kms_key_id)
+#       rclone_config_google = RCloneConfigGoogle(service_account_file=rclone_from_google)
+#       google_testing_bucket = "smaht-submitr-rclone-testing"  # --rclone-google-source --rclone-google-credentials
+#       rclone = RClone(source=rclone_config_google, destination=rclone_config_amazon)
+#       rclone.copy(cloud_path.join(google_testing_bucket, os.path.basename(file)), cloud_path.join(s3_bucket, s3_key))
+#       return
 
     if print_preamble:
         printf(f"Uploading {os.path.basename(file)} ({format_size(file_size)}) to: {s3_uri}")
