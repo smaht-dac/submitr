@@ -150,14 +150,13 @@ class RClone:
         else:
             # Here not source or destination cloud configuration has been defined for this RClone;
             # object; meaning this is (degenerate case of a) simple local file to file copy.
-            # TODO: Not yet tested.
             if not (source := normalize_path(source)):
                 raise Exception("No file source specified.")
             if not (destination := normalize_path(destination)):
                 raise Exception("No file destination specified.")
             if not os.path.isdir(destination):
                 copyto = True
-            command_args = ["--config", source_config_file, source, destination]
+            command_args = [source, destination]
             return self._execute_rclone_copy_command(command_args, copyto=copyto, dryrun=dryrun)
 
     def _execute_rclone_copy_command(self, args: List[str], copyto: bool = False,

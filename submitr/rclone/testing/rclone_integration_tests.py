@@ -397,6 +397,19 @@ def test_rclone_amazon_to_google(env_amazon: TestEnvAmazon, env_google: TestEnvG
         cleanup_google_file(credentials_google, env_google.bucket, key_google)
 
 
+def test_rclone_local_to_local() -> None:
+    # Just for completeness, and pretty much falls out, we
+    # support the degenerate case of local file to file copy via rclone.
+    with TestEnv.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        with temporary_file() as tmp_destination_file:
+            RClone().copy(tmp_test_file_path, tmp_destination_file)
+            assert are_files_equal(tmp_test_file_path, tmp_destination_file)
+        with temporary_directory() as tmp_destination_directory:
+            RClone().copy(tmp_test_file_path, tmp_destination_directory)
+            assert are_files_equal(tmp_test_file_path,
+                                   os.path.join(tmp_destination_directory, os.path.basename(tmp_test_file_path)))
+
+
 def test_all(use_cloud_key_folder: bool = False):
 
     env_amazon = TestEnvAmazon(use_cloud_key_folder=use_cloud_key_folder)
@@ -407,6 +420,7 @@ def test_all(use_cloud_key_folder: bool = False):
     test_rclone_between_google_and_local(env_google=env_google)
     test_rclone_google_to_amazon(env_amazon=env_amazon, env_google=env_google)
     test_rclone_amazon_to_google(env_amazon=env_amazon, env_google=env_google)
+    test_rclone_local_to_local()
 
 
 def test():

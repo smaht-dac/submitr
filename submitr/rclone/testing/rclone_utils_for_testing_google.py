@@ -55,7 +55,7 @@ class Gcs:
                 return False
             if not isinstance(file, str) or not file:
                 return False
-            if os.path.isdir(file):  # TODO: Make like the amazon one (or that like this one or something).
+            if os.path.isdir(file):
                 if cloud_path.has_separator(key):
                     if nodirectories is True:
                         key_as_file_name = key.replace(cloud_path.separator, "_")

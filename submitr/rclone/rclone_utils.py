@@ -48,7 +48,10 @@ class cloud_path:
 
     @staticmethod
     def key(value: str) -> str:
-        # Assuming the value is a cloud path starting with a bucket name.
+        # If the value looks like a cloud path which has an initial component (i.e.
+        # before the first slash), then assume that this first componentn is a bucket name,
+        # and return the part of the value (i.e the key) after this first (bucket) component.
+        # If the value does not have multiple component (i.e. no slash) then return just the value.
         if value := cloud_path.normalize(value):
             if (separator_index := value.find(cloud_path.separator)) > 0:
                 value = value[separator_index + 1:]
