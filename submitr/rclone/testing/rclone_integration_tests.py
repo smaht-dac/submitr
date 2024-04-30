@@ -376,13 +376,19 @@ def test_rclone_amazon_to_google(env_amazon: TestEnvAmazon, env_google: TestEnvG
         # which we will then copy directly to Google Cloud Storage via RClone.
         # So first upload our local test file to AWS S3 (via RClone - why not).
         rclone = create_rclone(destination=rclone_config_amazon)
-        rclone.copy(tmp_test_file_path, cloud_path.join(env_amazon.bucket, key_amazon))
+        if cloud_path.has_separator(key_google):
+            rclone.copy(tmp_test_file_path, cloud_path.join(env_amazon.bucket, key_amazon))
+        else:
+            rclone.copy(tmp_test_file_path, env_amazon.bucket)
         # Make sure it made it there.
         sanity_check_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
         # Now try to copy directly from AWS S3 to Google Cloud Storage.
         rclone = create_rclone(source=rclone_config_amazon, destination=rclone_config_google)
-        rclone.copy(cloud_path.join(env_amazon.bucket, key_amazon),
-                    cloud_path.join(env_google.bucket, key_google))
+        if cloud_path.has_separator(key_google):
+            rclone.copy(cloud_path.join(env_amazon.bucket, key_amazon),
+                        cloud_path.join(env_google.bucket, key_google))
+        else:
+            rclone.copy(cloud_path.join(env_amazon.bucket, key_amazon), env_google.bucket)
         # Sanity check the file in Google Cloud Storage which was copied directly from AWS S3.
         sanity_check_google_file(credentials_google, env_google.bucket, key_google, tmp_test_file_path)
         # Cleanup (delete) the test file in AWS S3.
