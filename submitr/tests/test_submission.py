@@ -625,7 +625,8 @@ def test_do_any_uploads():
                         res={'additional_data': {'upload_info': [{'uuid': '1234', 'filename': 'f1.fastq.gz'}]}},
                         keydict=SOME_KEYDICT,
                         ingestion_filename=SOME_BUNDLE_FILENAME,
-                        upload_folder=tmpdir
+                        upload_folder=tmpdir,
+                        rclone_from_google=None
                     )
                     mock_yes_or_no.assert_called_with("Upload this file?")
                     assert mock_uploads.call_count == 0
@@ -657,7 +658,8 @@ def test_do_any_uploads():
                         keydict=SOME_KEYDICT,
                         ingestion_filename=os.path.join(tmpdir,
                                                         SOME_BUNDLE_FILENAME),  # from which a folder can be inferred
-                        upload_folder=tmpdir
+                        upload_folder=tmpdir,
+                        rclone_from_google=None
                     )
                     mock_yes_or_no.assert_called_with("Upload these %s files?" % n_uploads)
                     mock_uploads.assert_called_with(
@@ -666,6 +668,7 @@ def test_do_any_uploads():
                         folder=tmpdir,  # the folder part of given SOME_BUNDLE_FILENAME
                         no_query=False,
                         subfolders=False,
+                        rclone_from_google=None,
                         portal=mock.ANY
                     )
                     assert shown.lines == []
@@ -675,7 +678,8 @@ def test_do_any_uploads():
                         res=SOME_UPLOAD_INFO_RESULT,
                         keydict=SOME_KEYDICT,
                         upload_folder=os.path.join(tmpdir,
-                                                   SOME_OTHER_BUNDLE_FOLDER[1:]),  # rather than ingestion_filename
+                                                   SOME_OTHER_BUNDLE_FOLDER[1:]),  # rather than ingestion_filename,
+                        rclone_from_google=None
                     )
                     mock_yes_or_no.assert_called_with("Upload these %s files?" % n_uploads)
                     mock_uploads.assert_called_with(
@@ -684,6 +688,7 @@ def test_do_any_uploads():
                         folder=os.path.join(tmpdir, SOME_OTHER_BUNDLE_FOLDER[1:]),  # passed straight through
                         no_query=False,
                         subfolders=False,
+                        rclone_from_google=None,
                         portal=mock.ANY
                     )
                     assert shown.lines == []
@@ -692,7 +697,8 @@ def test_do_any_uploads():
                     do_any_uploads(
                         res=SOME_UPLOAD_INFO_RESULT,
                         keydict=SOME_KEYDICT,
-                        upload_folder=tmpdir
+                        upload_folder=tmpdir,
+                        rclone_from_google=None
                         # No ingestion_filename or bundle_folder
                     )
                     mock_yes_or_no.assert_called_with("Upload these %s files?" % n_uploads)
@@ -702,6 +708,7 @@ def test_do_any_uploads():
                         folder=tmpdir,  # No folder
                         no_query=False,
                         subfolders=False,
+                        rclone_from_google=None,
                         portal=mock.ANY
                     )
                     assert shown.lines == []
@@ -713,7 +720,8 @@ def test_do_any_uploads():
                         # from which a folder can be inferred
                         ingestion_filename=os.path.join(tmpdir, SOME_BUNDLE_FILENAME[1:]),
                         no_query=False,
-                        subfolders=True
+                        subfolders=True,
+                        rclone_from_google=None
                     )
                     mock_uploads.assert_called_with(
                         SOME_UPLOAD_INFO,
@@ -722,6 +730,7 @@ def test_do_any_uploads():
                         folder=os.path.join(tmpdir, SOME_BUNDLE_FILENAME_FOLDER[1:]),
                         no_query=False,
                         subfolders=True,
+                        rclone_from_google=None,
                         portal=mock.ANY
                     )
                     assert shown.lines == []
@@ -736,7 +745,8 @@ def test_do_any_uploads():
                     keydict=SOME_KEYDICT,
                     # from which a folder can be inferred
                     ingestion_filename=os.path.join(tmpdir, SOME_BUNDLE_FILENAME[1:]),
-                    no_query=True
+                    no_query=True,
+                    rclone_from_google=None
                 )
                 mock_uploads.assert_called_with(
                     SOME_UPLOAD_INFO,
@@ -745,6 +755,7 @@ def test_do_any_uploads():
                     folder=os.path.join(tmpdir, SOME_BUNDLE_FILENAME_FOLDER[1:]),
                     no_query=True,
                     subfolders=False,
+                    rclone_from_google=None,
                     portal=mock.ANY
                 )
                 assert shown.lines == []
@@ -767,6 +778,7 @@ def test_resume_uploads():
                             upload_folder=None,
                             no_query=False,
                             subfolders=False,
+                            rclone_from_google=None,
                             portal=mock.ANY)
 
     with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):

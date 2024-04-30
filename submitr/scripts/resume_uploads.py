@@ -76,6 +76,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--directory', help="Directory of the upload files.")
     parser.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
     parser.add_argument('--upload_folder', help="Synonym for --directory.")
+    parser.add_argument('--rclone-from-google', help="Use rlcone to copy upload files from google.", default=False)
     parser.add_argument('--output', help="Output file for results.", default=False)
     parser.add_argument('--yes', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
@@ -134,6 +135,7 @@ def main(simulated_args_for_testing=None):
                        upload_folder=args.upload_folder,
                        no_query=args.yes,
                        subfolders=not directory_only,
+                       rclone_from_google=args.rclone_from_google,
                        output_file=args.output,
                        app=args.app)
 
