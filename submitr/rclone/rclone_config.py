@@ -4,14 +4,14 @@ from shutil import copy as copy_file
 from typing import List, Optional
 from uuid import uuid4 as create_uuid
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
-from submitr.rclone.rclone_utils import normalize_string
+from submitr.rclone.rclone_utils import cloud_path, normalize_string
 
 
 class RCloneConfig(AbstractBaseClass):
 
     def __init__(self, name: Optional[str] = None, bucket: Optional[str] = None) -> None:
         self._name = normalize_string(name) or create_uuid()
-        self._bucket = normalize_string(bucket) or None
+        self._bucket = cloud_path.normalize(bucket)
 
     @property
     def name(self) -> str:
@@ -33,7 +33,7 @@ class RCloneConfig(AbstractBaseClass):
 
     @bucket.setter
     def bucket(self, value: str) -> None:
-        if (value := normalize_string(value)) is not None:  # TODO: use cloud_path.normalize
+        if (value := cloud_path.normalize(value)) is not None:
             self._bucket = value or None
 
     @abstractproperty
