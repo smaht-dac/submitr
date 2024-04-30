@@ -314,11 +314,9 @@ def test_rclone_between_google_and_local(env_google: TestEnvGoogle) -> None:
         # use the same RClone configuration as for upload but as the source rather than destination.
         rclone = create_rclone(source=config)
         with temporary_directory() as tmp_download_directory:
-            # TODO
-            # rclone.copy(cloud_path.join(env_google.bucket, key_google), tmp_download_directory)
-            # assert are_files_equal(tmp_test_file_path,
-            #                        os.path.join(tmp_download_directory, cloud_path.to_file_path(key_google))) is True
-            pass
+            rclone.copy(cloud_path.join(env_google.bucket, key_google), tmp_download_directory)
+            assert are_files_equal(tmp_test_file_path,
+                                   os.path.join(tmp_download_directory, cloud_path.to_file_path(key_google))) is True
         # Cleanup (delete) the test file in Google Cloud Storage.
         cleanup_google_file(credentials, env_google.bucket, key_google)
 
