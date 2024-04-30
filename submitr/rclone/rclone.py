@@ -1,8 +1,9 @@
 from contextlib import contextmanager
-from subprocess import run as subprocess_run
 import os
+import re
 from shutil import copy as copy_file
-from typing import List, Optional, Union
+import subprocess
+from typing import Callable, List, Optional, Union
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_utils import cloud_path, normalize_path
@@ -63,6 +64,7 @@ class RClone:
         RCloneConfig._write_config_file_lines(file, self.config_lines)
 
     def copy(self, source: str, destination: Optional[str] = None,
+             progress: Optional[Callable] = None,
              nodirectories: bool = False, dryrun: bool = False, raise_exception: bool = True) -> Union[bool, str]:
         """
         Uses rclone to copy the given source file to the given destination. All manner of variation is
@@ -106,7 +108,7 @@ class RClone:
                     command_args = [f"{source_config.name}:{source}", f"{destination_config.name}:{destination}"]
                     return self._execute_rclone_copy_command(command_args,
                                                              config=source_and_destination_config_file,
-                                                             copyto=copyto, dryrun=dryrun)
+                                                             copyto=copyto, progress=progress, dryrun=dryrun)
             else:
                 # Here only a destination config cloud configuration has been defined for this RClone
                 # object; meaning we are copying from a local file source to some cloud destination;
@@ -117,7 +119,7 @@ class RClone:
                     command_args = [source, f"{destination_config.name}:{destination}"]
                     return self._execute_rclone_copy_command(command_args,
                                                              config=destination_config_file,
-                                                             copyto=copyto, dryrun=dryrun)
+                                                             copyto=copyto, progress=progress, dryrun=dryrun)
         elif isinstance(source_config := self.source, RCloneConfig):
             # Here only a source cloud configuration has been defined for this RClone object;
             # meaning we are copying from some cloud source to a local file destination;
@@ -146,7 +148,7 @@ class RClone:
                 command_args = [f"{source_config.name}:{source}", destination]
                 return self._execute_rclone_copy_command(command_args,
                                                          config=source_config_file,
-                                                         copyto=True, dryrun=dryrun)
+                                                         copyto=True, progress=progress, dryrun=dryrun)
         else:
             # Here not source or destination cloud configuration has been defined for this RClone;
             # object; meaning this is (degenerate case of a) simple local file to file copy.
@@ -157,30 +159,68 @@ class RClone:
             if not os.path.isdir(destination):
                 copyto = True
             command_args = [source, destination]
-            return self._execute_rclone_copy_command(command_args, copyto=copyto, dryrun=dryrun)
+            return self._execute_rclone_copy_command(command_args, copyto=copyto, progress=progress, dryrun=dryrun)
+
+    def size(self, source: str, config: Optional[RCloneConfig] = None) -> Optional[int]:
+        if not isinstance(config, RCloneConfig):
+            if not isinstance(config := self.source, RCloneConfig):
+                if not isinstance(config := self.destination, RCloneConfig):
+                    return None
+        try:
+            with config.config_file() as config_file:
+                return self._execute_rclone_size_command(source=f"{config.name}:{source}", config=config_file)
+        except Exception:
+            return None
 
     def _execute_rclone_copy_command(self, args: List[str], config: Optional[str] = None, copyto: bool = False,
+                                     progress: Optional[Callable] = None,
                                      dryrun: bool = False, raise_exception: bool = False) -> Union[bool, str]:
-        command = [self.executable_path(), "copyto" if copyto is True else "copy"]
-        command.append("--progress")
+        # N.B The rclone --ignore-times option forces copy even if the file seems
+        # not to have have changed, presumably based on something like a checksum.
+        command = [self.executable_path(), "copyto" if copyto is True else "copy", "--progress", "--ignore-times"]
         if isinstance(config, str) and config:
-            command.append("--config")
-            command.append(config)
+            command += ["--config", config]
         if isinstance(args, list):
             command += args
-        def command_string(command: List[str]) -> str:  # noqa
-            if " " in command[0]:
-                command[0] = f"\"{command[0]}\""
-            return " ".join(command)
+        if not callable(progress):
+            progress = None
         try:
             if dryrun is True:
-                return command_string(command)
-            result = subprocess_run(command, capture_output=True, text=True, check=True)
-            return True if (result.returncode == 0) else False
+                if " " in command[0]:
+                    command[0] = f"\"{command[0]}\""
+                return " ".join(command)
+            process = subprocess.Popen(command, universal_newlines=True,
+                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in process.stdout:
+                if progress and (nbytes := RClone._parse_rclone_progress_bytes(line)):
+                    progress(nbytes, line)
+            process.stdout.close()
+            result = process.wait()
+            return True if (result == 0) else False
         except Exception as e:
             if raise_exception is True:
                 raise e
             return False
+
+    def _execute_rclone_size_command(self, source: str, config: Optional[str] = None,
+                                     raise_exception: bool = False) -> Optional[int]:
+        command = [self.executable_path(), "size", source]
+        if isinstance(config, str) and config:
+            command += ["--config", config]
+        try:
+            process = subprocess.Popen(command, universal_newlines=True,
+                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in process.stdout:
+                # Total size: 64.850 MiB (68000001 Byte)
+                if (nbytes := RClone._parse_rclone_size_to_bytes(line)) is not None:
+                    process.stdout.close()
+                    return nbytes
+            process.stdout.close()
+            process.wait()
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+        return None
 
     @staticmethod
     def install(force_update: bool = True) -> Optional[str]:
@@ -195,3 +235,51 @@ class RClone:
     @staticmethod
     def executable_path() -> str:
         return rclone_executable_path()
+
+    _RCLONE_PROGRESS_UNITS = {"KiB": 2**10, "MiB": 2**20, "GiB": 2**30, "TiB": 2**40, "PiB": 2**50, "B": 1}
+    _RCLONE_PROGRESS_PATTERN = rf".*Transferred:\s*(\d+(?:\.\d+)?)\s*({'|'.join(_RCLONE_PROGRESS_UNITS.keys())}).*"
+    _RCLONE_PROGRESS_REGEX = re.compile(_RCLONE_PROGRESS_PATTERN)
+    _RCLONE_SIZE_PATERN = r".*\((\d+) Byte\)"
+    _RCLONE_SIZE_REGEX = re.compile(_RCLONE_SIZE_PATERN)
+
+    @staticmethod
+    def _parse_rclone_progress_bytes(value: str) -> Optional[str]:
+        try:
+            if match := RClone._RCLONE_PROGRESS_REGEX.search(value):
+                return RClone._parse_rclone_progress_size_to_bytes(match.group(1), match.group(2))
+        except Exception:
+            pass
+        return None
+
+    @staticmethod
+    def _parse_rclone_progress_size_to_bytes(size: str, units: Optional[str] = None) -> Optional[int]:
+        if isinstance(size, str):
+            if isinstance(units, str):
+                size += f" {units}"
+            try:
+                if len(size_string_components := size.split()) >= 2:
+                    value = float(size_string_components[0])
+                    units_size = RClone._RCLONE_PROGRESS_UNITS[size_string_components[1]]
+                elif (size := size.strip()):
+                    value = None
+                    for units in RClone._RCLONE_PROGRESS_UNITS:
+                        if (units_index := size.find(units)) > 0:
+                            value = float(size[0:units_index])
+                            units_size = RClone._RCLONE_PROGRESS_UNITS[units]
+                            break
+                    if not value:
+                        return None
+                return int(value * units_size)
+            except Exception:
+                pass
+        return None
+
+    def _parse_rclone_size_to_bytes(size: str) -> Optional[int]:
+        # Parse the relevant output from the rclone size command;
+        # for example: Total size: 64.850 MiB (68000001 Byte)
+        try:
+            if match := RClone._RCLONE_SIZE_REGEX.search(size):
+                return int(match.group(1))
+        except Exception:
+            pass
+        return None
