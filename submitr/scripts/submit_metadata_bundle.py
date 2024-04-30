@@ -218,6 +218,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
     parser.add_argument('--ping', action="store_true", help="Ping server.", default=False)
+    parser.add_argument('--rclone-from-google', help="Use rlcone to copy upload files from google.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     directory_only = True
@@ -335,6 +336,7 @@ def main(simulated_args_for_testing=None):
                              post_only=args.post_only,
                              patch_only=args.patch_only,
                              submit=args.submit,
+                             rclone_from_google=args.rclone_from_google,
                              validate_local_only=args.validate_local_only,
                              validate_remote_only=args.validate_remote_only,
                              validate_local_skip=args.validate_local_skip,
