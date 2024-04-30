@@ -9,7 +9,7 @@ from dcicutils.file_utils import are_files_equal
 from dcicutils.tmpfile_utils import temporary_file
 from dcicutils.datetime_utils import format_datetime
 from submitr.rclone.rclone_config_amazon import AmazonCredentials
-from submitr.rclone.rclone_utils import cloud_path
+from submitr.rclone.rclone_utils import cloud_path, normalize_path
 
 
 # Module with class/functions to aid in integration testing of smaht-submitr rclone support.
@@ -83,7 +83,7 @@ class AwsS3:
                         file = os.path.join(file, key_as_file_name)
                     else:
                         key_as_file_path = cloud_path.to_file_path(key)
-                        directory = os.path.normpath(os.path.join(file, os.path.dirname(key_as_file_path)))
+                        directory = normalize_path(os.path.join(file, os.path.dirname(key_as_file_path)))
                         os.makedirs(directory, exist_ok=True)
                         file = os.path.join(directory, os.path.basename(key_as_file_path))
                 else:
