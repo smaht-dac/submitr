@@ -959,16 +959,16 @@ def test_upload_file_to_uuid():
     with mock.patch("dcicutils.portal_utils.Portal.patch_metadata", return_value=SOME_UPLOAD_CREDENTIALS_RESULT):
         with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
             metadata = upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID,
-                                           auth=SOME_AUTH, first_time=False, portal=None)
+                                           rclone_from_google=None, auth=SOME_AUTH, first_time=False, portal=None)
             assert metadata == SOME_FILE_METADATA
-            mocked_upload.assert_called_with(SOME_FILENAME, auth=SOME_AUTH,
+            mocked_upload.assert_called_with(SOME_FILENAME, auth=SOME_AUTH, rclone_from_google=None,
                                              upload_credentials=SOME_UPLOAD_CREDENTIALS)
 
     with mock.patch("dcicutils.portal_utils.Portal.patch_metadata", return_value=SOME_BAD_RESULT):
         with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
             try:
                 upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID,
-                                    auth=SOME_AUTH, first_time=False, portal=None)
+                                    rclone_from_google=None, auth=SOME_AUTH, first_time=False, portal=None)
             except Exception as e:
                 assert str(e).startswith("Unable to obtain upload credentials")
             else:
@@ -1002,7 +1002,7 @@ def test_do_uploads(tmp_path):
 
         uploaded = {}
 
-        def mocked_upload_file(filename, uuid, auth, first_time=False, portal=None):
+        def mocked_upload_file(filename, uuid, auth, rclone_from_google=None, first_time=False, portal=None):
             if auth != SOME_AUTH:
                 raise Exception("Bad auth")
             uploaded[uuid] = filename
@@ -1109,12 +1109,14 @@ def test_do_uploads2(tmp_path):
             auth=SOME_AUTH,
             folder=subfolder,
             no_query=True,
+            rclone_from_google=None
         )
         mock_upload.assert_called_with(
             filename=file_path,
             uuid=uuid,
             auth=SOME_AUTH,
             first_time=True,
+            rclone_from_google=None,
             portal=mock.ANY
         )
 
@@ -1125,6 +1127,7 @@ def test_do_uploads2(tmp_path):
                 upload_spec_list,
                 auth=SOME_AUTH,
                 folder=folder,
+                rclone_from_google=None,
                 no_query=True,
             )
             assert shown.lines == [
@@ -1137,6 +1140,7 @@ def test_do_uploads2(tmp_path):
             auth=SOME_AUTH,
             folder=folder,
             no_query=True,
+            rclone_from_google=None,
             subfolders=True,
         )
         mock_upload.assert_called_with(
@@ -1144,6 +1148,7 @@ def test_do_uploads2(tmp_path):
             uuid=uuid,
             auth=SOME_AUTH,
             first_time=True,
+            rclone_from_google=None,
             portal=mock.ANY
         )
 
@@ -1159,6 +1164,7 @@ def test_do_uploads2(tmp_path):
                 auth=SOME_AUTH,
                 folder=folder,
                 no_query=True,
+                rclone_from_google=None,
                 subfolders=True,
             )
             mock_upload.assert_not_called()
@@ -1199,6 +1205,7 @@ def test_do_uploads2(tmp_path):
                         auth=SOME_AUTH,
                         folder=folder,
                         no_query=True,
+                        rclone_from_google=None,
                         subfolders=False,
                     )
                     mocked_upload_file_to_uuid.assert_called_once()
@@ -2843,7 +2850,7 @@ expected_schema_name = GENERIC_SCHEMA_TYPE
 
 def test_upload_file_to_new_uuid():
 
-    def mocked_execute_prearranged_upload(filename, upload_credentials, auth, **kwargs):
+    def mocked_execute_prearranged_upload(filename, upload_credentials, auth, rclone_from_google, **kwargs):
         assert not kwargs, "kwargs were not expected for mock of mocked_execute_prearranged_upload"
         assert filename == mocked_good_filename
         assert upload_credentials == mocked_good_upload_credentials
@@ -2865,8 +2872,8 @@ def test_upload_file_to_new_uuid():
             mock_post_metadata.side_effect = mocked_post_metadata
             with mock.patch.object(submission_module, "execute_prearranged_upload") as mock_execute_prearranged_upload:
                 mock_execute_prearranged_upload.side_effect = mocked_execute_prearranged_upload
-                res = upload_file_to_new_uuid(mocked_good_filename, schema_name=schema_name, auth=auth,
-                                              **context_attributes)
+                res = upload_file_to_new_uuid(mocked_good_filename, schema_name=schema_name,
+                                              auth=auth, rclone_from_google=None, **context_attributes)
                 assert res == mocked_good_file_metadata
 
     test_it(schema_name='FileOther', auth=mocked_good_auth,

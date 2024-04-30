@@ -218,7 +218,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
     parser.add_argument('--ping', action="store_true", help="Ping server.", default=False)
-    parser.add_argument('--rclone-from-google', help="Use rlcone to copy upload files from google.", default=False)
+    parser.add_argument('--rclone-from-google', help="Use rlcone to copy upload files from google.", default=None)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     directory_only = True

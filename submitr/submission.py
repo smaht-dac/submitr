@@ -2081,7 +2081,7 @@ def get_s3_encrypt_key_id(*, upload_credentials, auth):
     return s3_encrypt_key_id
 
 
-def execute_prearranged_upload(path, upload_credentials, auth=None):
+def execute_prearranged_upload(path, upload_credentials, rclone_from_google=None, auth=None):
     """
     This performs a file upload using special credentials received from ff_utils.patch_metadata.
 
@@ -2109,6 +2109,7 @@ def execute_prearranged_upload(path, upload_credentials, auth=None):
                           s3_uri=s3_uri,
                           aws_credentials=aws_credentials,
                           aws_kms_key_id=aws_kms_key_id,
+                          rclone_from_google=rclone_from_google,
                           print_progress=True,
                           print_function=PRINT,
                           verify_upload=True,
@@ -2130,7 +2131,7 @@ def compute_file_post_data(filename, context_attributes):
     }
 
 
-def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
+def upload_file_to_new_uuid(filename, schema_name, auth, rclone_from_google, **context_attributes):
     """
     Upload file to a target environment.
 
@@ -2153,12 +2154,13 @@ def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
                                                                            method='POST', schema_name=schema_name,
                                                                            filename=filename, payload_data=post_item)
 
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
+    execute_prearranged_upload(filename, upload_credentials=upload_credentials,
+                               rclone_from_google=rclone_from_google, auth=auth)
 
     return metadata
 
 
-def upload_file_to_uuid(filename, uuid, auth, first_time=False, portal=None):
+def upload_file_to_uuid(filename, uuid, auth, rclone_from_google=None, first_time=False, portal=None):
     """
     Upload file to a target environment.
 
@@ -2188,7 +2190,8 @@ def upload_file_to_uuid(filename, uuid, auth, first_time=False, portal=None):
                 # This assumes all files are going to the same bucket;
                 # which I think is a pretty solid assumption.
                 PRINT(f"Upload file destination AWS S3 bucket: {s3_bucket}")
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
+    execute_prearranged_upload(filename, rclone_from_google=rclone_from_google,
+                               upload_credentials=upload_credentials, auth=auth)
 
     return metadata
 
@@ -2261,7 +2264,8 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False,
             upload_file_to_uuid, file_path
         )
         file_metadata = wrapped_upload_file_to_uuid(
-            filename=file_path, uuid=uuid, auth=auth, first_time=first_time, portal=portal
+            filename=file_path, uuid=uuid, auth=auth, rclone_from_google=rclone_from_google,
+            first_time=first_time, portal=portal
         )
         if file_metadata:
             extra_files_credentials = file_metadata.get("extra_files_creds", [])
@@ -2318,7 +2322,7 @@ class UploadMessageWrapper:
 
 
 def _upload_extra_files(
-    credentials, uploader_wrapper, folder, auth, recursive=False
+    credentials, uploader_wrapper, folder, auth, recursive=False, rclone_from_google=None
 ):
     """Attempt upload of all extra files.
 
@@ -2351,7 +2355,8 @@ def _upload_extra_files(
         wrapped_execute_prearranged_upload = uploader_wrapper.wrap_upload_function(
             execute_prearranged_upload, extra_file_path
         )
-        wrapped_execute_prearranged_upload(extra_file_path, extra_file_credentials, auth=auth)
+        wrapped_execute_prearranged_upload(extra_file_path, extra_file_credentials,
+                                           rclone_from_google=rclone_from_google, auth=auth)
 
 
 def _upload_item_data(item_filename, uuid, server, env, directory=None, recursive=False,
