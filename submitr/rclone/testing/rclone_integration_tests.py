@@ -410,7 +410,7 @@ def test_rclone_local_to_local() -> None:
                                    os.path.join(tmp_destination_directory, os.path.basename(tmp_test_file_path)))
 
 
-def test_all(use_cloud_key_folder: bool = False):
+def test_cloud_variations(use_cloud_key_folder: bool = False):
 
     env_amazon = TestEnvAmazon(use_cloud_key_folder=use_cloud_key_folder)
     env_google = TestEnvGoogle(use_cloud_key_folder=use_cloud_key_folder)
@@ -420,12 +420,12 @@ def test_all(use_cloud_key_folder: bool = False):
     test_rclone_between_google_and_local(env_google=env_google)
     test_rclone_google_to_amazon(env_amazon=env_amazon, env_google=env_google)
     test_rclone_amazon_to_google(env_amazon=env_amazon, env_google=env_google)
-    test_rclone_local_to_local()
 
 
 def test():
-    test_all(use_cloud_key_folder=True)
-    test_all(use_cloud_key_folder=False)
+    test_cloud_variations(use_cloud_key_folder=True)
+    test_cloud_variations(use_cloud_key_folder=False)
+    test_rclone_local_to_local()
 
 
 test()
