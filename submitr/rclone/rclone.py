@@ -62,16 +62,6 @@ class RClone:
     def write_config_file(self, file: str) -> None:
         RCloneConfig._write_config_file_lines(file, self.config_lines)
 
-    def upload(self, source_file: str, destination: Optional[str] = None,
-               dryrun: bool = False, raise_exception: bool = True) -> Union[bool, str]:
-        # TODO
-        pass
-
-    def download(self, source: str, destination_file: Optional[str] = None,
-                 dryrun: bool = False, raise_exception: bool = True) -> Union[bool, str]:
-        # TODO
-        pass
-
     def copy(self, source: str, destination: Optional[str] = None,
              nodirectories: bool = False, dryrun: bool = False, raise_exception: bool = True) -> Union[bool, str]:
         """
@@ -96,7 +86,6 @@ class RClone:
                 # way of manually placing it at the beginning of the given destination argument.
                 if not (destination := cloud_path.join(destination_config.bucket, destination)):
                     raise Exception("No cloud destination specified.")
-                # TODO: check for empty destination even if no bucket
             if cloud_path.has_separator(destination):
                 # If the destination has NO slashes it is assumed to be ONLY the bucket;
                 # in which case we will rclone copy; otherwise we need to use rclone copyto.
@@ -122,7 +111,7 @@ class RClone:
                 # Here only a destination config cloud configuration has been defined for this RClone
                 # object; meaning we are copying from a local file source to some cloud destination;
                 # i.e. e.g. from a local file to either Amazon S3 or Google Cloud Storage.
-                if not source:  # TODO: normalize/whatever/etc
+                if not (source := normalize_path(source)):
                     raise Exception("No file source specified.")
                 with destination_config.config_file(persist=dryrun is True) as destination_config_file:
                     command_args = ["--config", destination_config_file,
@@ -141,9 +130,9 @@ class RClone:
                 raise Exception("No cloud source specified.")
             if not cloud_path.has_separator(source):
                 raise Exception("No cloud source key/file specified (only bucket: {source)}.")
-            if not (destination := normalize_path(destination)):  # TODO: normalize/whatever/etc
+            if not (destination := normalize_path(destination)):
                 raise Exception("No file destination specified.")
-            if os.path.isdir(destination):  # TODO: test
+            if os.path.isdir(destination):
                 if nodirectories is True:
                     # do i need to get the basename of the cloud source? no, but minus the bucket
                     key_as_file_name = cloud_path.key(source).replace(cloud_path.separator, "_")
@@ -161,13 +150,12 @@ class RClone:
         else:
             # Here not source or destination cloud configuration has been defined for this RClone;
             # object; meaning this is (degenerate case of a) simple local file to file copy.
-            # TODO: NOT YET TESTED ...
-            # import pdb ; pdb.set_trace()  # noqa
-            if not source:  # TODO: normalize/whatever/etc
+            # TODO: Not yet tested.
+            if not (source := normalize_path(source)):
                 raise Exception("No file source specified.")
-            if not destination:  # TODO: normalize/whatever/etc
+            if not (destination := normalize_path(destination)):
                 raise Exception("No file destination specified.")
-            if not os.path.isdir(destination):  # TODO: test
+            if not os.path.isdir(destination):
                 copyto = True
             command_args = ["--config", source_config_file, source, destination]
             return self._execute_rclone_copy_command(command_args, copyto=copyto, dryrun=dryrun)

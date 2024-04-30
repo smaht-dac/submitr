@@ -282,14 +282,11 @@ def _test_rclone_between_amazon_and_local(env_amazon: TestEnvAmazon,
         sanity_check_amazon_file(credentials, env_amazon.bucket, key_amazon, tmp_test_file_path)
         # Now try to download the test file (which was uploaded above to AWS S3 using RClone) to the local file system
         # using RClone; use the same RClone configuration as for upload, but as the source rather than the destination.
-        # TODO
         rclone = create_rclone(source=config)
         with temporary_directory() as tmp_download_directory:
-            # import pdb ; pdb.set_trace()  # noqa
             rclone.copy(cloud_path.join(env_amazon.bucket, key_amazon), tmp_download_directory)
             assert are_files_equal(tmp_test_file_path,
                                    os.path.join(tmp_download_directory, cloud_path.to_file_path(key_amazon))) is True
-            # TODO: sanity
         # Cleanup (delete) the test file in AWS S3.
         cleanup_amazon_file(credentials, env_amazon.bucket, key_amazon)
 
@@ -317,9 +314,10 @@ def test_rclone_between_google_and_local(env_google: TestEnvGoogle) -> None:
         # use the same RClone configuration as for upload but as the source rather than destination.
         rclone = create_rclone(source=config)
         with temporary_directory() as tmp_download_directory:
-            assert tmp_download_directory  # TODO/placeholder
             # TODO
-            # rclone.copy(env_google.bucket, key_google, tmp_download_directory)
+            # rclone.copy(cloud_path.join(env_google.bucket, key_google), tmp_download_directory)
+            # assert are_files_equal(tmp_test_file_path,
+            #                        os.path.join(tmp_download_directory, cloud_path.to_file_path(key_google))) is True
             pass
         # Cleanup (delete) the test file in Google Cloud Storage.
         cleanup_google_file(credentials, env_google.bucket, key_google)
