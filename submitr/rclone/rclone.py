@@ -5,7 +5,7 @@ from shutil import copy as copy_file
 from typing import List, Optional, Union
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 from submitr.rclone.rclone_config import RCloneConfig
-from submitr.rclone.rclone_utils import cloud_path
+from submitr.rclone.rclone_utils import cloud_path, normalize_path
 from submitr.rclone.rclone_installation import (
     rclone_executable_install, rclone_executable_exists, rclone_executable_path
 )
@@ -73,7 +73,7 @@ class RClone:
         pass
 
     def copy(self, source: str, destination: Optional[str] = None,
-             dryrun: bool = False, raise_exception: bool = True) -> Union[bool, str]:
+             nodirectories: bool = False, dryrun: bool = False, raise_exception: bool = True) -> Union[bool, str]:
         """
         Uses rclone to copy the given source file to the given destination. All manner of variation is
         encapsulated within this simple statement. Depends on whether or not a source and/or destination
@@ -96,6 +96,7 @@ class RClone:
                 # way of manually placing it at the beginning of the given destination argument.
                 if not (destination := cloud_path.join(destination_config.bucket, destination)):
                     raise Exception("No cloud destination specified.")
+                # TODO: check for empty destination even if no bucket
             if cloud_path.has_separator(destination):
                 # If the destination has NO slashes it is assumed to be ONLY the bucket;
                 # in which case we will rclone copy; otherwise we need to use rclone copyto.
@@ -107,8 +108,11 @@ class RClone:
                 if source_config.bucket:
                     # A bucket in the source RCloneConfig is nothing more than an alternative
                     # way of manually placing it at the beginning of the given source argument.
-                    if not (source := cloud_path.join(source_config.bucket, source)):
-                        raise Exception("No cloud source specified.")
+                    source = cloud_path.join(source_config.bucket, source)
+                if not (source := cloud_path.normalize(source)):
+                    raise Exception("No cloud source specified.")
+                if not cloud_path.has_separator(source):
+                    raise Exception("No cloud source key/file specified (only bucket: {source)}.")
                 with self.config_file(persist=dryrun is True) as source_and_destination_config_file:  # noqa
                     command_args = ["--config", source_and_destination_config_file,
                                     f"{source_config.name}:{source}",
@@ -129,22 +133,36 @@ class RClone:
             # Here only a source cloud configuration has been defined for this RClone object;
             # meaning we are copying from some cloud source to a local file destination;
             # i.e. e.g. from either Amazon S3 or Google Cloud Storage to a local file.
-            if not destination:  # TODO: normalize/whatever/etc
+            if source_config.bucket:
+                # A bucket in the source RCloneConfig is nothing more than an alternative
+                # way of manually placing it at the beginning of the given source argument.
+                source = cloud_path.join(source_config.bucket, source)
+            if not (source := cloud_path.normalize(source)):
+                raise Exception("No cloud source specified.")
+            if not cloud_path.has_separator(source):
+                raise Exception("No cloud source key/file specified (only bucket: {source)}.")
+            if not (destination := normalize_path(destination)):  # TODO: normalize/whatever/etc
                 raise Exception("No file destination specified.")
-            if not os.path.isdir(destination):  # TODO: test
-                copyto = True
+            if os.path.isdir(destination):  # TODO: test
+                if nodirectories is True:
+                    # do i need to get the basename of the cloud source? no, but minus the bucket
+                    key_as_file_name = cloud_path.key(source).replace(cloud_path.separator, "_")
+                    destination = os.path.join(destination, key_as_file_name)
+                else:
+                    key_as_file_path = cloud_path.to_file_path(cloud_path.key(source))
+                    destination_directory = normalize_path(os.path.join(destination, os.path.dirname(key_as_file_path)))
+                    os.makedirs(destination_directory, exist_ok=True)
+                    destination = os.path.join(destination, key_as_file_path)
             with source_config.config_file(persist=dryrun is True) as source_config_file:  # noqa
-                # TODO: NOT YET TESTED ...
-                import pdb ; pdb.set_trace()  # noqa
                 command_args = ["--config", source_config_file,
-                                f"{source_config.name}:{source_config.bucket}",
+                                f"{source_config.name}:{source}",
                                 destination]
-                return self._execute_rclone_copy_command(command_args, copyto=copyto, dryrun=dryrun)
+                return self._execute_rclone_copy_command(command_args, copyto=True, dryrun=dryrun)
         else:
             # Here not source or destination cloud configuration has been defined for this RClone;
             # object; meaning this is (degenerate case of a) simple local file to file copy.
             # TODO: NOT YET TESTED ...
-            import pdb ; pdb.set_trace()  # noqa
+            # import pdb ; pdb.set_trace()  # noqa
             if not source:  # TODO: normalize/whatever/etc
                 raise Exception("No file source specified.")
             if not destination:  # TODO: normalize/whatever/etc

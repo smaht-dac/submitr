@@ -235,9 +235,11 @@ def test_rclone_between_amazon_and_local(env_amazon: TestEnvAmazon) -> None:
                                           credentials=env_amazon.credentials_nokms)
 
     _test_rclone_between_amazon_and_local(env_amazon=env_amazon,
-                                          credentials=env_amazon.temporary_credentials)
+                                          credentials=env_amazon.temporary_credentials,
+                                          use_key_specific_credentials=False)
     _test_rclone_between_amazon_and_local(env_amazon=env_amazon,
-                                          credentials=env_amazon.temporary_credentials_nokms)
+                                          credentials=env_amazon.temporary_credentials_nokms,
+                                          use_key_specific_credentials=False)
 
     _test_rclone_between_amazon_and_local(env_amazon=env_amazon,
                                           credentials=env_amazon.temporary_credentials,
@@ -260,6 +262,7 @@ def _test_rclone_between_amazon_and_local(env_amazon: TestEnvAmazon,
         key_amazon = env_amazon.file_name_to_key_name(tmp_test_file_name)
         # Here we have a local test file to upload to AWS S3.
         if use_key_specific_credentials is True:
+            # Here we create (temporary) credentials with policies targetted to a specific bucket/key.
             credentials = credentials(bucket=env_amazon.bucket, key=key_amazon)
         else:
             credentials = credentials()
@@ -277,15 +280,16 @@ def _test_rclone_between_amazon_and_local(env_amazon: TestEnvAmazon,
             assert rclone.copy(tmp_test_file_path, env_amazon.bucket) is True
         # Sanity check the uploaded file using non-RClone methods (via AwS3 which uses boto3).
         sanity_check_amazon_file(credentials, env_amazon.bucket, key_amazon, tmp_test_file_path)
-        # Now try to download the test file (which was uploaded above to AWS S3 using RClone) to the local
-        # file system; use the same RClone configuration as for upload but as the source rather than destination.
+        # Now try to download the test file (which was uploaded above to AWS S3 using RClone) to the local file system
+        # using RClone; use the same RClone configuration as for upload, but as the source rather than the destination.
         # TODO
         rclone = create_rclone(source=config)
         with temporary_directory() as tmp_download_directory:
-            assert tmp_download_directory is not None  # TODO/placeholder
-            # TODO TODO
-            # rclone.copy(env_amazon.bucket, key_amazon, tmp_download_directory)
-            pass
+            # import pdb ; pdb.set_trace()  # noqa
+            rclone.copy(cloud_path.join(env_amazon.bucket, key_amazon), tmp_download_directory)
+            assert are_files_equal(tmp_test_file_path,
+                                   os.path.join(tmp_download_directory, cloud_path.to_file_path(key_amazon))) is True
+            # TODO: sanity
         # Cleanup (delete) the test file in AWS S3.
         cleanup_amazon_file(credentials, env_amazon.bucket, key_amazon)
 
@@ -351,7 +355,7 @@ def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon, env_google: TestEnvG
             # will specify the key explicitly, otherwise it will use just the basename of the
             # file (i.e. tmp_test_file_name); we can do this also even if the key does not have
             # a slash, but good to test specifying no key at all, i.e. in the else clause below.
-            rclone.copy(cloud_path.join(env_google.bucket, key_google),  # explicity specify copyto - hmm
+            rclone.copy(cloud_path.join(env_google.bucket, key_google),
                         cloud_path.join(env_amazon.bucket, key_amazon))
         else:
             rclone.copy(cloud_path.join(env_google.bucket, key_google), env_amazon.bucket)
@@ -404,8 +408,8 @@ def test_all(use_cloud_key_folder: bool = False):
 
 
 def test():
-    test_all(use_cloud_key_folder=False)
     test_all(use_cloud_key_folder=True)
+    test_all(use_cloud_key_folder=False)
 
 
 test()

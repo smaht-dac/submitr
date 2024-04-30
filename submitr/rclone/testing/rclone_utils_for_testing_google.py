@@ -56,14 +56,14 @@ class Gcs:
             if not isinstance(file, str) or not file:
                 return False
             if os.path.isdir(file):
-                separator = cloud_path.separator
-                if separator in key:
+                # TODO: Make like the amazon one (or that like this one or something).
+                if cloud_path.has_separator(key):
                     if nodirectories is True:
-                        file = os.path.join(file, key.replace(separator, "_"))
+                        file = os.path.join(file, key.replace(cloud_path.separator, "_"))
                     else:
-                        directory = os.path.join(file, os.path.dirname(key.replace(separator, os.sep)))
+                        directory = os.path.join(file, os.path.dirname(key.replace(cloud_path.separator, os.sep)))
                         os.makedirs(directory, exist_ok=True)
-                        file = os.path.join(directory, os.path.basename(key.replace(separator, os.sep)))
+                        file = os.path.join(directory, os.path.basename(key.replace(cloud_path.separator, os.sep)))
                 else:
                     file = os.path.join(file, key)
             self.client.get_bucket(bucket).blob(key).download_to_filename(file)

@@ -33,7 +33,7 @@ class RCloneConfig(AbstractBaseClass):
 
     @bucket.setter
     def bucket(self, value: str) -> None:
-        if (value := normalize_string(value)) is not None:
+        if (value := normalize_string(value)) is not None:  # TODO: use cloud_path.normalize
             self._bucket = value or None
 
     @abstractproperty

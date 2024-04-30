@@ -46,6 +46,20 @@ class cloud_path:
             return ""
         return value.replace(cloud_path.separator, os.sep)
 
+    @staticmethod
+    def key(value: str) -> str:
+        # Assuming the value is a cloud path starting with a bucket name.
+        if value := cloud_path.normalize(value):
+            if (separator_index := value.find(cloud_path.separator)) > 0:
+                value = value[separator_index + 1:]
+        return value
+
+
+def normalize_path(value: str) -> str:
+    if not isinstance(value, str):
+        return ""
+    return os.path.normpath(value := value.strip())
+
 
 def normalize_string(value: Optional[str]) -> Optional[str]:
     if value is None:
