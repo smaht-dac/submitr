@@ -17,7 +17,7 @@ from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 from dcicutils.data_readers import Excel
 from dcicutils.datetime_utils import format_datetime
-from dcicutils.file_utils import search_for_file
+from dcicutils.file_utils import compute_file_etag, compute_file_md5, search_for_file
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
@@ -40,7 +40,6 @@ from submitr.scripts.cli_utils import get_version
 from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import (
     format_path,
-    get_file_checksum, get_file_md5, get_file_md5_like_aws_s3_etag,
     get_file_modified_datetime, get_file_size, get_s3_bucket_and_key_from_s3_uri,
     is_excel_file_name, print_boxed, keyword_as_title, tobool
 )
@@ -515,7 +514,7 @@ def _initiate_server_ingestion_process(
         "autoadd": json.dumps(autoadd),
         "ingestion_directory": os.path.dirname(ingestion_filename) if ingestion_filename else None,
         "datafile_size": datafile_size or get_file_size(ingestion_filename),
-        "datafile_checksum": datafile_checksum or get_file_checksum(ingestion_filename),
+        "datafile_checksum": datafile_checksum or compute_file_md5(ingestion_filename),
         "submitr_version": get_version(),
         "user": json.dumps(user) if user else None
     }
@@ -3196,9 +3195,9 @@ def _print_metadata_file_info(file: str, env: str,
         PRINT(f"Size: {format_size(size)} ({size})")
     if modified := get_file_modified_datetime(file):
         PRINT(f"Modified: {modified}")
-    if md5 := get_file_md5(file):
+    if md5 := compute_file_md5(file):
         PRINT(f"MD5: {md5}")
-    if (etag := get_file_md5_like_aws_s3_etag(file)) and etag != md5:
+    if (etag := compute_file_etag(file)) and etag != md5:
         PRINT(f"S3 ETag: {etag}")
     sheet_lines = []
     if is_excel_file_name(file):

@@ -161,6 +161,17 @@ class RClone:
             command_args = [source, destination]
             return self._execute_rclone_copy_command(command_args, copyto=copyto, progress=progress, dryrun=dryrun)
 
+    def exists(self, source: str, config: Optional[RCloneConfig] = None) -> bool:
+        if not isinstance(config, RCloneConfig):
+            if not isinstance(config := self.source, RCloneConfig):
+                if not isinstance(config := self.destination, RCloneConfig):
+                    return None
+        try:
+            with config.config_file() as config_file:
+                return self._execute_rclone_exists_command(source=f"{config.name}:{source}", config=config_file)
+        except Exception:
+            return None
+
     def size(self, source: str, config: Optional[RCloneConfig] = None) -> Optional[int]:
         if not isinstance(config, RCloneConfig):
             if not isinstance(config := self.source, RCloneConfig):
@@ -169,6 +180,17 @@ class RClone:
         try:
             with config.config_file() as config_file:
                 return self._execute_rclone_size_command(source=f"{config.name}:{source}", config=config_file)
+        except Exception:
+            return None
+
+    def checksum(self, source: str, config: Optional[RCloneConfig] = None) -> Optional[str]:
+        if not isinstance(config, RCloneConfig):
+            if not isinstance(config := self.source, RCloneConfig):
+                if not isinstance(config := self.destination, RCloneConfig):
+                    return None
+        try:
+            with config.config_file() as config_file:
+                return self._execute_rclone_checksum_command(source=f"{config.name}:{source}", config=config_file)
         except Exception:
             return None
 
@@ -193,7 +215,7 @@ class RClone:
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             for line in process.stdout:
                 if progress and (nbytes := RClone._parse_rclone_progress_bytes(line)):
-                    progress(nbytes, line)
+                    progress(nbytes)
             process.stdout.close()
             result = process.wait()
             return True if (result == 0) else False
@@ -201,6 +223,26 @@ class RClone:
             if raise_exception is True:
                 raise e
             return False
+
+    def _execute_rclone_exists_command(self, source: str, config: Optional[str] = None,
+                                       raise_exception: bool = False) -> Optional[int]:
+        command = [self.executable_path(), "ls", source]
+        if isinstance(config, str) and config:
+            command += ["--config", config]
+        try:
+            process = subprocess.Popen(command, universal_newlines=True,
+                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            # Example output: "  1234 some_file.fastq" where 1234 is file size.
+            nlines = 0
+            for line in process.stdout:
+                nlines += 1
+            process.stdout.close()
+            process.wait()
+            return nlines == 1
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+        return False
 
     def _execute_rclone_size_command(self, source: str, config: Optional[str] = None,
                                      raise_exception: bool = False) -> Optional[int]:
@@ -210,11 +252,32 @@ class RClone:
         try:
             process = subprocess.Popen(command, universal_newlines=True,
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            # Example output: "Total objects: 1" <CR> "Total size: 64.850 MiB (68000001 Byte)"
             for line in process.stdout:
-                # Total size: 64.850 MiB (68000001 Byte)
                 if (nbytes := RClone._parse_rclone_size_to_bytes(line)) is not None:
                     process.stdout.close()
                     return nbytes
+            process.stdout.close()
+            process.wait()
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+        return None
+
+    def _execute_rclone_checksum_command(self, source: str, config: Optional[str] = None,
+                                         raise_exception: bool = False) -> Optional[str]:
+        command = [self.executable_path(), "hashsum", "md5", source]
+        if isinstance(config, str) and config:
+            command += ["--config", config]
+        try:
+            process = subprocess.Popen(command, universal_newlines=True,
+                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in process.stdout:
+                # Example output: "e0807de443b152ff44d6668959460064  some_file.fastq"
+                if len(line_components := line.split()) > 0 and line_components[0]:
+                    checksum = line_components[0]
+                    process.stdout.close()
+                    return checksum
             process.stdout.close()
             process.wait()
         except Exception as e:

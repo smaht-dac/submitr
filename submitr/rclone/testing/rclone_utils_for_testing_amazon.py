@@ -119,15 +119,9 @@ class AwsS3:
             return False
 
     def file_exists(self, bucket: str, key: str, raise_exception: bool = True) -> bool:
-        try:
-            self.client.head_object(Bucket=bucket, Key=key)
+        if self._file_head(bucket, key, raise_exception=raise_exception):
             return True
-        except Exception as e:
-            if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
-                return False
-            if raise_exception is True:
-                raise e
-            return False
+        return False
 
     def file_equals(self, bucket: str, key: str, file: str, raise_exception: bool = True) -> bool:
         try:
@@ -141,19 +135,23 @@ class AwsS3:
                 raise e
         return False
 
+    def file_size(self, bucket: str, key: str, raise_exception: bool = True) -> Optional[int]:
+        if file_head := self._file_head(bucket, key, raise_exception=raise_exception):
+            return file_head.get("ContentLength", None)
+        return None
+
+    def file_checksum(self, bucket: str, key: str, raise_exception: bool = True) -> Optional[str]:
+        if file_head := self._file_head(bucket, key, raise_exception=raise_exception):
+            return file_head.get("ETag").strip("\"")
+        return None
+
     def file_kms_encrypted(self, bucket: str, key: str,
                            kms_key_id: Optional[str] = None, raise_exception: bool = True) -> bool:
-        try:
-            response = self.client.head_object(Bucket=bucket, Key=key)
-            if file_kms_key_id := response.get("SSEKMSKeyId"):
+        if file_head := self._file_head(bucket, key, raise_exception=raise_exception):
+            if file_kms_key_id := file_head.get("SSEKMSKeyId"):
                 if isinstance(kms_key_id, str) and (kms_key_id := kms_key_id.strip()):
                     return True if (kms_key_id in file_kms_key_id) else False
                 return True
-        except Exception as e:
-            if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
-                return False
-            if raise_exception is True:
-                raise e
         return False
 
     def list_files(self, bucket: str,
@@ -213,7 +211,8 @@ class AwsS3:
                 resources = [f"arn:aws:s3:::{bucket}", f"arn:aws:s3:::{bucket}/*"] ; deny = True  # noqa
         # For how this policy stuff is defined in smaht-portal for file upload
         # session token creation process see: encoded_core.types.file.external_creds
-        actions = ["s3:GetObject", "s3:HeadObject", "s3:ListBucket", "s3:DescribeBucket"]
+        # actions = ["s3:GetObject", "s3:HeadObject", "s3:ListBucket", "s3:DescribeBucket"]
+        actions = ["s3:GetObject", "s3:ListBucket", "s3:DescribeBucket"]
         if kms_key_id := self.credentials.kms_key_id:
             actions_kms = ["kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey"]
             resource_kms = f"arn:aws:kms:{self.credentials.region}:{self.credentials.account_number}:key/{kms_key_id}"
@@ -228,6 +227,16 @@ class AwsS3:
         policy = {"Version": "2012-10-17", "Statement": statements}
         credentials = self.credentials.generate_temporary_credentials(duration=duration, policy=policy)
         return AmazonCredentials(credentials) if credentials else None
+
+    def _file_head(self, bucket: str, key: str, raise_exception: bool = True) -> Optional[dict]:
+        try:
+            return self.client.head_object(Bucket=bucket, Key=key)
+        except Exception as e:
+            if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
+                return None
+            if raise_exception is True:
+                raise e
+            return None
 
 
 class AwsCredentials:

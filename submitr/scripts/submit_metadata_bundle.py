@@ -54,6 +54,8 @@ OPTIONS:
   To specify a directory containing the files to upload; in addition
   to the default of using the directory containing the submitted file;
   this directory will be searched recursively.
+--rclone-from-google
+  TODO: Upload (transfer) files (to AWS S3) from Google Cloud Storage.
 --output OUTPUT-FILE
   Writes all logging output to the specified file;
   and refrains from printing lengthy content to output/stdout.

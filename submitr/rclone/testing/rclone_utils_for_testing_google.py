@@ -1,6 +1,7 @@
 from __future__ import annotations
-import os
+import base64
 from google.cloud.storage import Client as GcsClient
+import os
 from typing import List, Optional
 from dcicutils.file_utils import are_files_equal
 from dcicutils.tmpfile_utils import temporary_file
@@ -127,9 +128,41 @@ class Gcs:
                 raise e
         return False
 
+    def file_size(self, bucket: str, key: str, raise_exception: bool = True) -> Optional[int]:
+        try:
+            if not (bucket := cloud_path.normalize(bucket)):
+                return None
+            if not (key := cloud_path.normalize(key)):
+                return None
+            # Using list_blobs with the exact key as prefix because when just
+            # using the blob directly the size is None; for some reason.
+            # return self.client.get_bucket(bucket).blob(key).size
+            for blob in self.client.get_bucket(bucket).list_blobs(prefix=key):
+                return blob.size
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+            return None
+
+    def file_checksum(self, bucket: str, key: str, raise_exception: bool = True) -> Optional[str]:
+        if not (bucket := cloud_path.normalize(bucket)):
+            return None
+        if not (key := cloud_path.normalize(key)):
+            return None
+        try:
+            # Using list_blobs with the exact key as prefix because when just
+            # using the blob directly the md5_hash is None; for some reason.
+            # return self.client.get_bucket(bucket).blob(key).md5_hash
+            for blob in self.client.get_bucket(bucket).list_blobs(prefix=key):
+                return base64.b64decode(blob.md5_hash).hex()
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+        return None
+
     def list_files(self, bucket: str,
                    prefix: Optional[str] = None,
                    sort: Optional[str] = None,
                    count: Optional[int] = None, offset: Optional[int] = None,
                    raise_exception: bool = True) -> List[str]:
-        pass
+        pass  # NOT YET NEEDED
