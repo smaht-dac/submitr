@@ -44,7 +44,8 @@ _BIG_FILE_SIZE = 1024 * 1024 * 500  # 500 MB
 def upload_file_to_aws_s3(file: str, s3_uri: str,
                           aws_credentials: Optional[dict] = None,
                           aws_kms_key_id: Optional[str] = None,
-                          rclone_from_google: Optional[str] = None,
+                          rclone_google_source: Optional[str] = None,
+                          rclone_google_credentials: Optional[str] = None,
                           print_progress: bool = True,
                           print_preamble: bool = True,
                           verify_upload: bool = True,
@@ -76,13 +77,13 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     catch_interrupt = catch_interrupt is True
     printf = print_function if callable(print_function) else print
 
-    if rclone_from_google:
+    if rclone_google_source:
         rclone_config_amazon = RCloneConfigAmazon(region=aws_credentials.get("region_name"),
                                                   access_key_id=aws_credentials.get("aws_access_key_id"),
                                                   secret_access_key=aws_credentials.get("aws_secret_access_key"),
                                                   session_token=aws_credentials.get("aws_session_token"),
                                                   kms_key_id=aws_kms_key_id)
-        rclone_config_google = RCloneConfigGoogle(service_account_file=rclone_from_google)
+        rclone_config_google = RCloneConfigGoogle(service_account_file=rclone_google_source)
         google_testing_bucket = "smaht-submitr-rclone-testing"  # --rclone-google-source --rclone-google-credentials
         rclone = RClone(source=rclone_config_google, destination=rclone_config_amazon)
         google_cloud_path = cloud_path.join(google_testing_bucket, os.path.basename(file))
@@ -251,14 +252,14 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         return False
 
     def create_metadata_for_uploading_file() -> dict:
-        nonlocal aws_credentials, s3_bucket, s3_key, file_checksum, file_checksum_timestamp, rclone_from_google
+        nonlocal aws_credentials, s3_bucket, s3_key, file_checksum, file_checksum_timestamp, rclone_google_source
         try:
             s3 = boto3.client("s3", **aws_credentials)
             metadata = s3.head_object(Bucket=s3_bucket, Key=s3_key).get("Metadata", {})
             if file_checksum:
                 metadata["md5"] = file_checksum
                 metadata["md5-timestamp"] = str(file_checksum_timestamp)
-                metadata["md5-source"] = "google-cloud-storage" if rclone_from_google else "file-system"
+                metadata["md5-source"] = "google-cloud-storage" if rclone_google_source else "file-system"
             return metadata
         except Exception:
             return {}

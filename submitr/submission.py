@@ -683,7 +683,8 @@ def submit_any_ingestion(ingestion_filename, *,
                          subfolders=False,
                          submission_protocol=DEFAULT_SUBMISSION_PROTOCOL,
                          submit=False,
-                         rclone_from_google=None,
+                         rclone_google_source=None,
+                         rclone_google_credentials=None,
                          validate_local_only=False,
                          validate_remote_only=False,
                          validate_local_skip=False,
@@ -871,7 +872,8 @@ def submit_any_ingestion(ingestion_filename, *,
                 validation_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
                 show_details=show_details, report=False, messages=True,
                 validation=True,
-                rclone_from_google=rclone_from_google,
+                rclone_google_source=rclone_google_source,
+                rclone_google_credentials=rclone_google_credentials,
                 nofiles=True, noprogress=noprogress, timeout=timeout,
                 verbose=verbose, debug=debug, debug_sleep=debug_sleep)
 
@@ -916,7 +918,8 @@ def submit_any_ingestion(ingestion_filename, *,
     submission_done, submission_status, submission_response = _monitor_ingestion_process(
             submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
             show_details=show_details, report=False, messages=True,
-            rclone_from_google=rclone_from_google,
+            rclone_google_source=rclone_google_source,
+            rclone_google_credentials=rclone_google_credentials,
             validation=False,
             nofiles=True, noprogress=noprogress, timeout=timeout,
             verbose=verbose, debug=debug, debug_sleep=debug_sleep)
@@ -933,7 +936,10 @@ def submit_any_ingestion(ingestion_filename, *,
                              validation=validation, directory=upload_folder, recursive=subfolders)
 
     do_any_uploads(submission_response, keydict=portal.key, ingestion_filename=ingestion_filename,
-                   upload_folder=upload_folder, rclone_from_google=rclone_from_google, no_query=no_query,
+                   upload_folder=upload_folder,
+                   rclone_google_source=rclone_google_source,
+                   rclone_google_credentials=rclone_google_credentials,
+                   no_query=no_query,
                    subfolders=subfolders, portal=portal)
 
 
@@ -1032,7 +1038,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                                check_submission_script: bool = False,
                                upload_directory: Optional[str] = None,
                                upload_directory_recursive: bool = False,
-                               rclone_from_google: Optional[str] = None,
+                               rclone_google_source: Optional[str] = None,
+                               rclone_google_credentials: Optional[str] = None,
                                timeout: Optional[int] = None,
                                verbose: bool = False, debug: bool = False,
                                note: Optional[str] = None,
@@ -1359,7 +1366,9 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         if submission_status != "success":
             exit(1)
         PRINT("Submission complete!")
-        do_any_uploads(submission_response, keydict=portal.key, rclone_from_google=rclone_from_google,
+        do_any_uploads(submission_response, keydict=portal.key,
+                       rclone_google_source=rclone_google_source,
+                       rclone_google_credentials=rclone_google_credentials,
                        upload_folder=upload_directory, subfolders=upload_directory_recursive, portal=portal)
         return
 
@@ -1901,7 +1910,8 @@ def _show_upload_result(result,
 
 
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
-                   rclone_from_google=None,
+                   rclone_google_source=None,
+                   rclone_google_credentials=None,
                    no_query=False, subfolders=False, portal=None):
 
     def display_file_info(upload_file_info: dict) -> None:
@@ -1946,7 +1956,8 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
             return
         if no_query:
             do_uploads(files_to_upload, auth=keydict, no_query=no_query, folder=upload_folder,
-                       rclone_from_google=rclone_from_google,
+                       rclone_google_source=rclone_google_source,
+                       rclone_google_credentials=rclone_google_credentials,
                        subfolders=subfolders, portal=portal)
         else:
             message = ("Upload this file?" if len(files_to_upload) == 1
@@ -1954,7 +1965,8 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
             if yes_or_no(message):
                 do_uploads(files_to_upload, auth=keydict,
                            no_query=no_query, folder=upload_folder,
-                           rclone_from_google=rclone_from_google,
+                           rclone_google_source=rclone_google_source,
+                           rclone_google_credentials=rclone_google_credentials,
                            subfolders=subfolders, portal=portal)
             else:
                 noupload = True
@@ -1981,7 +1993,8 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
                    upload_folder=None, no_query=False, subfolders=False,
-                   rclone_from_google=None,
+                   rclone_google_source=None,
+                   rclone_google_credentials=None,
                    output_file=None, app=None, keys_file=None, env_from_env=False):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
@@ -2039,7 +2052,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                    keydict=portal.key,
                    ingestion_filename=bundle_filename,
                    upload_folder=upload_folder,
-                   rclone_from_google=rclone_from_google,
+                   rclone_google_source=rclone_google_source,
+                   rclone_google_credentials=rclone_google_credentials,
                    no_query=no_query,
                    subfolders=subfolders,
                    portal=portal)
@@ -2080,7 +2094,9 @@ def get_s3_encrypt_key_id(*, upload_credentials, auth):
     return s3_encrypt_key_id
 
 
-def execute_prearranged_upload(path, upload_credentials, rclone_from_google=None, auth=None):
+def execute_prearranged_upload(path, upload_credentials,
+                               rclone_google_source=None,
+                               rclone_google_credentials=None, auth=None):
     """
     This performs a file upload using special credentials received from ff_utils.patch_metadata.
 
@@ -2108,7 +2124,8 @@ def execute_prearranged_upload(path, upload_credentials, rclone_from_google=None
                           s3_uri=s3_uri,
                           aws_credentials=aws_credentials,
                           aws_kms_key_id=aws_kms_key_id,
-                          rclone_from_google=rclone_from_google,
+                          rclone_google_source=rclone_google_source,
+                          rclone_google_credentials=rclone_google_credentials,
                           print_progress=True,
                           print_function=PRINT,
                           verify_upload=True,
@@ -2130,7 +2147,8 @@ def compute_file_post_data(filename, context_attributes):
     }
 
 
-def upload_file_to_new_uuid(filename, schema_name, auth, rclone_from_google, **context_attributes):
+def upload_file_to_new_uuid(filename, schema_name, auth,
+                            rclone_google_source, rclone_google_credentials, **context_attributes):
     """
     Upload file to a target environment.
 
@@ -2154,12 +2172,16 @@ def upload_file_to_new_uuid(filename, schema_name, auth, rclone_from_google, **c
                                                                            filename=filename, payload_data=post_item)
 
     execute_prearranged_upload(filename, upload_credentials=upload_credentials,
-                               rclone_from_google=rclone_from_google, auth=auth)
+                               rclone_google_source=rclone_google_source,
+                               rclone_google_credentials=rclone_google_credentials,
+                               auth=auth)
 
     return metadata
 
 
-def upload_file_to_uuid(filename, uuid, auth, rclone_from_google=None, first_time=False, portal=None):
+def upload_file_to_uuid(filename, uuid, auth,
+                        rclone_google_source=None, rclone_google_credentials=None,
+                        first_time=False, portal=None):
     """
     Upload file to a target environment.
 
@@ -2189,7 +2211,9 @@ def upload_file_to_uuid(filename, uuid, auth, rclone_from_google=None, first_tim
                 # This assumes all files are going to the same bucket;
                 # which I think is a pretty solid assumption.
                 PRINT(f"Upload file destination AWS S3 bucket: {s3_bucket}")
-    execute_prearranged_upload(filename, rclone_from_google=rclone_from_google,
+    execute_prearranged_upload(filename,
+                               rclone_google_source=rclone_google_source,
+                               rclone_google_credentials=rclone_google_credentials,
                                upload_credentials=upload_credentials, auth=auth)
 
     return metadata
@@ -2228,7 +2252,9 @@ SUBMITR_SELECTIVE_UPLOADS = environ_bool("SUBMITR_SELECTIVE_UPLOADS")
 
 
 def do_uploads(upload_spec_list, auth, folder=None, no_query=False,
-               subfolders=False, rclone_from_google=None, portal=None):
+               subfolders=False,
+               rclone_google_source=None,
+               rclone_google_credentials=None, portal=None):
     """
     Uploads the files mentioned in the give upload_spec_list.
 
@@ -2263,7 +2289,9 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False,
             upload_file_to_uuid, file_path
         )
         file_metadata = wrapped_upload_file_to_uuid(
-            filename=file_path, uuid=uuid, auth=auth, rclone_from_google=rclone_from_google,
+            filename=file_path, uuid=uuid, auth=auth,
+            rclone_google_source=rclone_google_source,
+            rclone_google_credentials=rclone_google_credentials,
             first_time=first_time, portal=portal
         )
         if file_metadata:
@@ -2321,7 +2349,8 @@ class UploadMessageWrapper:
 
 
 def _upload_extra_files(
-    credentials, uploader_wrapper, folder, auth, recursive=False, rclone_from_google=None
+    credentials, uploader_wrapper, folder, auth, recursive=False,
+    rclone_google_source=None, rclone_google_credentials=None
 ):
     """Attempt upload of all extra files.
 
@@ -2355,7 +2384,9 @@ def _upload_extra_files(
             execute_prearranged_upload, extra_file_path
         )
         wrapped_execute_prearranged_upload(extra_file_path, extra_file_credentials,
-                                           rclone_from_google=rclone_from_google, auth=auth)
+                                           rclone_google_source=rclone_google_source,
+                                           rclone_google_credentials=rclone_google_credentials,
+                                           auth=auth)
 
 
 def _upload_item_data(item_filename, uuid, server, env, directory=None, recursive=False,

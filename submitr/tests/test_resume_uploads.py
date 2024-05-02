@@ -230,6 +230,7 @@ def test_c4_383_regression_action():
                                         mock_upload_file_to_uuid.assert_called_with(auth=fake_keydict,
                                                                                     filename=joined_filename,
                                                                                     uuid=SAMPLE_UPLOAD_INFO[-1]['uuid'],
-                                                                                    rclone_from_google=None,
+                                                                                    rclone_google_source=None,
+                                                                                    rclone_google_credentials=None,
                                                                                     first_time=False, portal=mock.ANY)
                                         assert output == []

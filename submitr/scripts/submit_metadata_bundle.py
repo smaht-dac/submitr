@@ -54,8 +54,12 @@ OPTIONS:
   To specify a directory containing the files to upload; in addition
   to the default of using the directory containing the submitted file;
   this directory will be searched recursively.
---rclone-from-google
-  TODO: Upload (transfer) files (to AWS S3) from Google Cloud Storage.
+--rclone-google-source GOOGLE-CLOUD-STORAGE-SOURCE
+  A Google Cloud Storage (GCS) bucket or bucket/key (foldrer)
+  from where the upload file(s) should be read.
+--rclone-google-credentials GCS-SERVICE-ACCOUNT-FILE
+  GCS credentials to use for --rclone-google-source;
+  e.g. a path to a service account file.
 --output OUTPUT-FILE
   Writes all logging output to the specified file;
   and refrains from printing lengthy content to output/stdout.
@@ -220,7 +224,8 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
     parser.add_argument('--ping', action="store_true", help="Ping server.", default=False)
-    parser.add_argument('--rclone-from-google', help="Use rlcone to copy upload files from google.", default=None)
+    parser.add_argument('--rclone-google-source', help="Use rlcone to copy upload files from GCS.", default=None)
+    parser.add_argument('--rclone-google-credentials', help="GCS credentials (service account file).", default=None)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     directory_only = True
@@ -338,7 +343,8 @@ def main(simulated_args_for_testing=None):
                              post_only=args.post_only,
                              patch_only=args.patch_only,
                              submit=args.submit,
-                             rclone_from_google=args.rclone_from_google,
+                             rclone_google_source=args.rclone_google_source,
+                             rclone_google_credentials=args.rclone_google_credentials,
                              validate_local_only=args.validate_local_only,
                              validate_remote_only=args.validate_remote_only,
                              validate_local_skip=args.validate_local_skip,
