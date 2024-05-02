@@ -41,6 +41,7 @@ from submitr.utils import get_s3_bucket_and_key_from_s3_uri, format_datetime
 # to do a checksum on the local file to see if it appears to be exactly the
 # the same as an already exisiting file in AWS S3.
 _BIG_FILE_SIZE = 1024 * 1024 * 500  # 500 MB
+_BIG_FILE_SIZE = 0
 
 
 def upload_file_to_aws_s3(file: str, s3_uri: str,
@@ -92,7 +93,12 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             printf(f"ERROR: Cannot find Google Cloud Storage object: {google_cloud_path}")
             return False
         file_size = rclone.size(google_cloud_path)
-        file_checksum = rclone.checksum(google_cloud_path)
+        file_checksum = None
+        if file_size >= _BIG_FILE_SIZE:
+            if yes_or_no("Do you want to compute the checksum on this file?"):
+                file_checksum = rclone.checksum(google_cloud_path)
+        else:
+            file_checksum = rclone.checksum(google_cloud_path)
         file_checksum_timestamp = time.time()
     else:
         rclone = None
@@ -211,7 +217,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                 # to their checksums; but if it is a big file prompt the user first to check.
                 if file_checksum:
                     compare_checksums = True
-                elif not (compare_checksums := existing_file_size < _BIG_FILE_SIZE):
+                elif not (compare_checksums := existing_file_size <= _BIG_FILE_SIZE):
                     if yes_or_no("Do you want to see if these files appear to be exactly the same (via checksum)?"):
                         compare_checksums = True
                     else:
