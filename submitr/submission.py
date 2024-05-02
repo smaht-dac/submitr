@@ -36,6 +36,7 @@ from submitr.base import DEFAULT_APP
 from submitr.exceptions import PortalPermissionError
 from submitr.metadata_template import check_metadata_version, print_metadata_version_warning
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
+from submitr.rclone import cloud_path, RClone, RCloneConfigGoogle
 from submitr.scripts.cli_utils import get_version
 from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import (
@@ -2440,20 +2441,33 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
         if not (item_filename := uuid_metadata.get("filename")):
             raise Exception(f"Cannot determine file name: {uuid}")
 
-    if not (item_filename_found := search_for_file(item_filename, location=directory,
-                                                   recursive=recursive, single=True)):
+    if rclone_google_source:
+        rclone = RClone(RCloneConfigGoogle(service_account_file=rclone_google_credentials))
+        google_source_file = cloud_path.join(rclone_google_source, os.path.basename(item_filename))
+        if not rclone.exists(google_source_file):
+            PRINT(f"WARNING: Cannot find Google Cloud Storage file to upload to AWS S3: {google_source_file}")
+            return False
+        file_size = format_size(rclone.size(google_source_file))
+        PRINT(f"File to upload from GCS to AWS S3: {google_source_file} ({file_size})")
+
+    elif not (item_filename_found := search_for_file(item_filename, location=directory,
+                                                     recursive=recursive, single=True)):
         raise Exception(f"File not found: {item_filename}")
+
     else:
         PRINT(f"File to upload to AWS S3: {format_path(item_filename_found)}")
         item_filename = item_filename_found
+        file_size = format_size(get_file_size(item_filename))
 
     if not no_query:
-        file_size = format_size(get_file_size(item_filename))
         if not yes_or_no(f"Upload {format_path(item_filename)} ({file_size}) to {server}?"):
             SHOW("Aborting submission.")
             exit(1)
 
-    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=portal.key, portal=portal)
+    upload_file_to_uuid(filename=item_filename, uuid=uuid,
+                        rclone_google_source=rclone_google_source,
+                        rclone_google_credentials=rclone_google_credentials,
+                        auth=portal.key, portal=portal)
 
 
 def _show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:

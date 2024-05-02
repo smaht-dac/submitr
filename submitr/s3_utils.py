@@ -41,7 +41,6 @@ from submitr.utils import get_s3_bucket_and_key_from_s3_uri, format_datetime
 # to do a checksum on the local file to see if it appears to be exactly the
 # the same as an already exisiting file in AWS S3.
 _BIG_FILE_SIZE = 1024 * 1024 * 500  # 500 MB
-_BIG_FILE_SIZE = 0
 
 
 def upload_file_to_aws_s3(file: str, s3_uri: str,
@@ -57,7 +56,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
 
     if not isinstance(file, str) or not file or not isinstance(s3_uri, str) or not s3_uri:
         return False
-    if not os.path.exists(file):
+    if not rclone_google_source and not os.path.exists(file):
         return False
 
     s3_bucket, s3_key = get_s3_bucket_and_key_from_s3_uri(s3_uri)
