@@ -11,10 +11,10 @@ from dcicutils.progress_bar import ProgressBar
 from submitr.rclone import RClone, RCloneConfigAmazon, RCloneConfigGoogle, cloud_path
 from submitr.utils import get_s3_bucket_and_key_from_s3_uri, format_datetime
 
-# Moduel to uploads a given file, with the given AWS credentials to AWS S3.
+# Module to upload a given file, with the given AWS credentials to AWS S3.
 # Displays progress bar and other info; checks if file already exists; verifies
 # upload; catches interrupts; et cetera. Circa May 2024 added support for upload,
-# or transfer, from Google Cloud Storage (GCS) directly to S3 via rclone.
+# or transfer rather, from Google Cloud Storage (GCS) directly to S3 via rclone.
 
 # Notes on checksums:
 #
