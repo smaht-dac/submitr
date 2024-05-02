@@ -1,9 +1,10 @@
 import os
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
-from .cli_utils import CustomArgumentParser
-from ..base import DEFAULT_APP
-from ..submission import resume_uploads
+from submitr.base import DEFAULT_APP
+from submitr.rclone import RClone
+from submitr.submission import resume_uploads
+from submitr.scripts.cli_utils import CustomArgumentParser
 
 
 _HELP = f"""
@@ -118,6 +119,10 @@ def main(simulated_args_for_testing=None):
     if args.upload_folder and not os.path.isdir(args.upload_folder):
         PRINT(f"Specified upload directory not found: {args.upload_folder}")
         exit(1)
+
+    if args.rclone_google_credentials or args.rclone_google_credentials:
+        if not RClone.verify_installation():
+            exit(1)
 
     if args.rclone_google_credentials and not os.path.isfile(args.rclone_google_credentials):
         PRINT(f"Google service account file does not exist: {args.rclone_google_credentials}")
