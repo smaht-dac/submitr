@@ -266,6 +266,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             return {}
 
     def update_metadata_for_uploaded_file() -> bool:
+        # Only need in the GCS case, as this metadata is set (via ExtraArgs) on the actual upload for S3.
         nonlocal aws_credentials, s3_bucket, s3_key
         if metadata := create_metadata_for_uploading_file():
             try:
