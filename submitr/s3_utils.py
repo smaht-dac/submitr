@@ -84,9 +84,9 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                                                   session_token=aws_credentials.get("aws_session_token"),
                                                   kms_key_id=aws_kms_key_id)
         rclone_config_google = RCloneConfigGoogle(service_account_file=rclone_google_credentials)
-        google_testing_bucket = "smaht-submitr-rclone-testing"  # --rclone-google-source --rclone-google-credentials
         rclone = RClone(source=rclone_config_google, destination=rclone_config_amazon)
-        google_cloud_path = cloud_path.join(google_testing_bucket, os.path.basename(file))
+        import pdb ; pdb.set_trace()  # noqa
+        google_cloud_path = cloud_path.join(rclone_google_source, os.path.basename(file))
         if not rclone.exists(google_cloud_path):
             printf(f"ERROR: Cannot find Google Cloud Storage object: {google_cloud_path}")
             return False
@@ -289,7 +289,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     if rclone:
         upload_file_callback = define_upload_file_callback(progress_total_nbytes=True)
         try:
-            rclone.copy(cloud_path.join(google_testing_bucket, os.path.basename(file)),
+            rclone.copy(cloud_path.join(rclone_google_source, os.path.basename(file)),
                         cloud_path.join(s3_bucket, s3_key),
                         progress=upload_file_callback.function)
             update_metadata_for_uploaded_file()
