@@ -1,8 +1,9 @@
 from __future__ import annotations
+import os
 from typing import Optional, Union
 from dcicutils.misc_utils import create_dict
 from submitr.rclone.rclone_config import RCloneConfig
-from submitr.rclone.rclone_utils import normalize_string
+from submitr.rclone.rclone_utils import cloud_path, normalize_path, normalize_string
 
 
 class RCloneConfigGoogle(RCloneConfig):
@@ -15,7 +16,7 @@ class RCloneConfigGoogle(RCloneConfig):
 
         if isinstance(credentials_or_config, RCloneConfigGoogle):
             name = normalize_string(name) or credentials_or_config.name
-            bucket = normalize_string(bucket) or credentials_or_config.bucket
+            bucket = cloud_path.normalize(bucket) or credentials_or_config.bucket
             credentials = None
         elif isinstance(credentials_or_config, GoogleCredentials):
             credentials = credentials_or_config
@@ -90,7 +91,9 @@ class GoogleCredentials:
 
         if location := normalize_string(location):
             self._location = location
-        if service_account_file := normalize_string(service_account_file):
+        if service_account_file := normalize_path(service_account_file):
+            if not os.path.isfile(service_account_file):
+                raise Exception(f"GCS service account file not found: {service_account_file}")
             self._service_account_file = service_account_file
 
     @property
@@ -108,7 +111,7 @@ class GoogleCredentials:
 
     @service_account_file.setter
     def service_account_file(self, value: str) -> None:
-        if (value := normalize_string(value)) is not None:
+        if (value := normalize_path(value)) is not None:
             self._service_account_file = value or None
 
     def __eq__(self, other: GoogleCredentials) -> bool:
