@@ -119,6 +119,10 @@ def main(simulated_args_for_testing=None):
         PRINT(f"Specified upload directory not found: {args.upload_folder}")
         exit(1)
 
+    if args.rclone_google_credentials and not os.path.isfile(args.rclone_google_credentials):
+        PRINT(f"Google service account file does not exist: {args.rclone_google_credentials}")
+        exit(1)
+
     env_from_env = False
     if not args.env:
         args.env = os.environ.get("SMAHT_ENV")
@@ -137,6 +141,7 @@ def main(simulated_args_for_testing=None):
                        no_query=args.yes,
                        subfolders=not directory_only,
                        rclone_google_source=args.rclone_google_source,
+                       rclone_google_credentials=args.rclone_google_credentials,
                        output_file=args.output,
                        app=args.app)
 

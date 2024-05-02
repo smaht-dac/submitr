@@ -83,7 +83,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                                                   secret_access_key=aws_credentials.get("aws_secret_access_key"),
                                                   session_token=aws_credentials.get("aws_session_token"),
                                                   kms_key_id=aws_kms_key_id)
-        rclone_config_google = RCloneConfigGoogle(service_account_file=rclone_google_source)
+        rclone_config_google = RCloneConfigGoogle(service_account_file=rclone_google_credentials)
         google_testing_bucket = "smaht-submitr-rclone-testing"  # --rclone-google-source --rclone-google-credentials
         rclone = RClone(source=rclone_config_google, destination=rclone_config_amazon)
         google_cloud_path = cloud_path.join(google_testing_bucket, os.path.basename(file))
@@ -264,6 +264,19 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         except Exception:
             return {}
 
+    def update_metadata_for_uploaded_file() -> bool:
+        nonlocal aws_credentials, s3_bucket, s3_key
+        if metadata := create_metadata_for_uploading_file():
+            try:
+                s3 = boto3.client("s3", **aws_credentials)
+                s3.copy_object(Bucket=s3_bucket, Key=s3_key,
+                               CopySource={"Bucket": s3_bucket, "Key": s3_key},
+                               Metadata=metadata, MetadataDirective="REPLACE")
+                return True
+            except Exception:
+                pass
+        return False
+
     if print_preamble:
         printf(f"Uploading {os.path.basename(file)} ({format_size(file_size)}) to: {s3_uri}")
 
@@ -276,10 +289,10 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
     if rclone:
         upload_file_callback = define_upload_file_callback(progress_total_nbytes=True)
         try:
-            # TODO: Add metadata.
             rclone.copy(cloud_path.join(google_testing_bucket, os.path.basename(file)),
                         cloud_path.join(s3_bucket, s3_key),
                         progress=upload_file_callback.function)
+            update_metadata_for_uploaded_file()
         except Exception:
             pass
     else:

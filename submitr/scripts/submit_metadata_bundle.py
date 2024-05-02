@@ -322,6 +322,10 @@ def main(simulated_args_for_testing=None):
                                   refs=args.refs, files=args.files, output_file=args.output, verbose=args.verbose)
         exit(0)
 
+    if args.rclone_google_credentials and not os.path.isfile(args.rclone_google_credentials):
+        PRINT(f"Google service account file does not exist: {args.rclone_google_credentials}")
+        exit(1)
+
     with script_catch_errors():
 
         if not _sanity_check_submitted_file(args.bundle_filename):
