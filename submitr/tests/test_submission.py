@@ -1262,7 +1262,10 @@ def test_upload_item_data():
                             _upload_item_data(item_filename=some_filename,
                                               uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
                             mock_upload.assert_called_with(filename=some_filename,
-                                                           uuid=SOME_UUID, auth=SOME_KEYDICT, portal=mock.ANY)
+                                                           uuid=SOME_UUID, auth=SOME_KEYDICT,
+                                                           rclone_google_source=mock.ANY,
+                                                           rclone_google_credentials=mock.ANY,
+                                                           portal=mock.ANY)
 
         with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
             mocked_portal_key_property.return_value = SOME_KEYDICT
@@ -1289,7 +1292,10 @@ def test_upload_item_data():
                         _upload_item_data(item_filename=some_filename, uuid=SOME_UUID,
                                           server=SOME_SERVER, env=SOME_ENV, no_query=True)
                         mock_upload.assert_called_with(filename=some_filename,
-                                                       uuid=SOME_UUID, auth=SOME_KEYDICT, portal=mock.ANY)
+                                                       uuid=SOME_UUID, auth=SOME_KEYDICT,
+                                                       rclone_google_source=mock.ANY,
+                                                       rclone_google_credentials=mock.ANY,
+                                                       portal=mock.ANY)
 
 
 def get_today_datetime_for_time(time_to_use):
