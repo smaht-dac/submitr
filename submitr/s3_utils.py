@@ -34,6 +34,8 @@ from submitr.utils import get_s3_bucket_and_key_from_s3_uri, format_datetime
 # Given this, we will get the md5 of the file to be uploaded to S3 and store it as metadata on
 # the uploaded S3 file/object. For local file uploads we just compute this md5 directly. For files
 # being uploaded from GCS we (trust and) take/use the md5 value stored in GCS for the file/object.
+# Then when we need the md5 of an already existing file in S3 we read this metadata rather than
+# using rclone (or boto3 for that matter) to do it.
 
 # This is to control whether or not we first prompt the user to take the time
 # to do a checksum on the local file to see if it appears to be exactly the
@@ -85,7 +87,6 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                                                   kms_key_id=aws_kms_key_id)
         rclone_config_google = RCloneConfigGoogle(service_account_file=rclone_google_credentials)
         rclone = RClone(source=rclone_config_google, destination=rclone_config_amazon)
-        import pdb ; pdb.set_trace()  # noqa
         google_cloud_path = cloud_path.join(rclone_google_source, os.path.basename(file))
         if not rclone.exists(google_cloud_path):
             printf(f"ERROR: Cannot find Google Cloud Storage object: {google_cloud_path}")
