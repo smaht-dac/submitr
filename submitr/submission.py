@@ -1919,6 +1919,14 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
         file = upload_file_info.get("filename")
         file_uuid = upload_file_info.get("uuid")
         if file:
+            if rclone_google_source:
+                from submitr.rclone import cloud_path, RClone, RCloneConfigGoogle
+                rclone = RClone(RCloneConfigGoogle(service_account_file=rclone_google_credentials))
+                google_source_file = cloud_path.join(rclone_google_source, os.path.basename(file))
+                if not rclone.exists(google_source_file):
+                    PRINT(f"WARNING: Cannot find Google Cloud Storage file to upload to AWS S3: {google_source_file}")
+                    return False
+                return True
             if file_paths := search_for_file(file, location=upload_folder, recursive=subfolders):
                 if len(file_paths) == 1:
                     PRINT(f"File to upload to AWS S3: {format_path(file_paths[0])}"
@@ -2034,6 +2042,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
         if portal.is_schema_file_type(response):
             _upload_item_data(item_filename=uuid, uuid=None, server=portal.server,
                               env=portal.env, directory=upload_folder, recursive=subfolders,
+                              rclone_google_source=rclone_google_source,
+                              rclone_google_credentials=rclone_google_credentials,
                               no_query=no_query, app=app, report=False)
             return
 
@@ -2147,6 +2157,7 @@ def compute_file_post_data(filename, context_attributes):
     }
 
 
+# TODO: obsolete
 def upload_file_to_new_uuid(filename, schema_name, auth,
                             rclone_google_source, rclone_google_credentials, **context_attributes):
     """
@@ -2390,6 +2401,8 @@ def _upload_extra_files(
 
 
 def _upload_item_data(item_filename, uuid, server, env, directory=None, recursive=False,
+                      rclone_google_source=None,
+                      rclone_google_credentials=None,
                       no_query=False, app=None, report=True):
     """
     Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
