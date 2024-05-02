@@ -290,14 +290,14 @@ class RClone:
     @staticmethod
     def verify_installation() -> bool:
         if RClone.is_installed():
-            print(f"You have requested an rclone feature; rclone is already installed: {RClone.executable_path()}")
+            print(f"You have requested an rclone feature; rclone installed OK: {format_path(RClone.executable_path())}")
             return True
         print("You have requested an rclone feature but rclone is not yet installed.")
         if yes_or_no("Do you want to install it now?"):
             if not (rclone_executable := RClone.install(force_update=False)):
                 print("ERROR: Encountered a problem installing rclone. Please seek help (TODO).")
                 return False
-            print(f"Successfully installed rclone: {rclone_executable}")
+            print(f"Successfully installed rclone: {format_path(rclone_executable)}")
         return True
 
     @staticmethod
@@ -314,7 +314,7 @@ class RClone:
 
     @staticmethod
     def executable_path() -> str:
-        return format_path(rclone_executable_path())
+        return rclone_executable_path()
 
     _RCLONE_PROGRESS_UNITS = {"KiB": 2**10, "MiB": 2**20, "GiB": 2**30, "TiB": 2**40, "PiB": 2**50, "B": 1}
     _RCLONE_PROGRESS_PATTERN = rf".*Transferred:\s*(\d+(?:\.\d+)?)\s*({'|'.join(_RCLONE_PROGRESS_UNITS.keys())}).*"
