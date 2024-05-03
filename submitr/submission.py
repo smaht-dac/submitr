@@ -3363,7 +3363,7 @@ def _print_metadata_file_info(file: str, env: str,
                 truncated = False
                 for file_for_upload in files_for_upload:
                     PRINT(f"- {file_for_upload.name} ({file_for_upload.type}) | "
-                        f"{'Found ...' if file_for_upload.found else 'Not found'}")
+                          f"{'Found ...' if file_for_upload.found else 'Not found'}")
                     if file_for_upload.found_locally:
                         if file_for_upload.found_locally_multiple:
                             for index, local_path in enumerate(file_for_upload.local_paths):
