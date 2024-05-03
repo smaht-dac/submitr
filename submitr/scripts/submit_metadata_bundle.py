@@ -319,7 +319,13 @@ def main(simulated_args_for_testing=None):
             PRINT(f"File does not exist: {args.bundle_filename}")
             exit(1)
         _print_metadata_file_info(args.bundle_filename, env=args.env,
-                                  refs=args.refs, files=args.files, output_file=args.output, verbose=args.verbose)
+                                  refs=args.refs, files=args.files,
+                                  subfolders=not directory_only,
+                                  upload_folder=args.upload_folder,
+                                  rclone_google_source=args.rclone_google_source,
+                                  rclone_google_credentials=args.rclone_google_credentials,
+                                  output_file=args.output,
+                                  verbose=args.verbose)
         exit(0)
 
     if args.rclone_google_credentials and not os.path.isfile(args.rclone_google_credentials):

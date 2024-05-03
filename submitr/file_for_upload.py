@@ -7,6 +7,8 @@ from dcicutils.structured_data import StructuredDataSet
 from submitr.rclone import cloud_path, RClone, RCloneConfigGoogle
 from submitr.utils import get_file_size
 
+# Unified the logic for looking for files to upload.
+
 
 class FileForUpload:
 
@@ -48,6 +50,8 @@ class FileForUpload:
                                          location=main_search_directory,
                                          recursive=main_search_directory_recursively is True)
         elif not isinstance(other_search_directories, list) or not other_search_directories:
+            # Only if to main search directory specifed to we default ther "other" search
+            # directories to the current directory (.) if it is not otherwise specified.
             other_search_directories = ["."]
 
         if not isinstance(file_paths, list) or not file_paths:

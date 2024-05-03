@@ -34,7 +34,7 @@ from dcicutils.submitr.progress_constants import PROGRESS_INGESTER, PROGRESS_LOA
 from dcicutils.submitr.ref_lookup_strategy import ref_lookup_strategy
 from submitr.base import DEFAULT_APP
 from submitr.exceptions import PortalPermissionError
-from submitr.file_for_upload import FilesForUpload
+from submitr.file_for_upload import FileForUpload, FilesForUpload
 from submitr.metadata_template import check_metadata_version, print_metadata_version_warning
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 from submitr.rclone import cloud_path, RClone, RCloneConfigGoogle
@@ -3292,6 +3292,10 @@ def _extract_accession_id(value: str) -> Optional[str]:
 
 def _print_metadata_file_info(file: str, env: str,
                               refs: bool = False, files: bool = False,
+                              upload_folder: Optional[str] = None,
+                              subfolders: bool = False,
+                              rclone_google_source: Optional[str] = None,
+                              rclone_google_credentials: Optional[str] = None,
                               output_file: Optional[str] = None,
                               verbose: bool = False) -> None:
     if output_file:
@@ -3345,7 +3349,8 @@ def _print_metadata_file_info(file: str, env: str,
             PRINT(f"References: {len(unchecked_refs)}")
             print_refs(unchecked_refs, max_output=max_output, output_file=output_file, verbose=verbose)
         if files is True:
-            def print_files(files: List[dict], max_output: int, output_file: str, verbose: bool = False) -> None:
+            def print_files(files: List[FileForUpload],
+                            max_output: int, output_file: str, verbose: bool = False) -> None:
                 def note_output():
                     nonlocal max_output, output_file, noutput, printf, truncated
                     noutput += 1
@@ -3356,12 +3361,25 @@ def _print_metadata_file_info(file: str, env: str,
                 printf = PRINT
                 noutput = 0
                 truncated = False
-                for file in sorted(files, key=lambda file: file["file"]):
-                    printf(f"- {file['file']} ({file['type']})")
+                for file_for_upload in files_for_upload:
+                    PRINT(f"- {file_for_upload.name} ({file_for_upload.type}) | "
+                        f"{'Found ...' if file_for_upload.found else 'Not found'}")
+                    if file_for_upload.found_locally:
+                        if file_for_upload.found_locally_multiple:
+                            for index, local_path in enumerate(file_for_upload.local_paths):
+                                PRINT(f"  Local file: {local_path}{' (amiguous)' if index > 0 else ''}")
+                        else:
+                            PRINT(f"  Local file: {file_for_upload.path}")
+                        if file_for_upload.found_in_google:
+                            PRINT(f"  Google file: {file_for_upload.google_path}")
                     note_output()
-            upload_files = structured_data.upload_files
-            PRINT(f"Files: {len(upload_files)}")
-            print_files(upload_files, max_output=max_output, output_file=output_file, verbose=verbose)
+            files_for_upload = FilesForUpload.define(structured_data,
+                                                     main_search_directory=upload_folder,
+                                                     main_search_directory_recursively=subfolders,
+                                                     google_source=rclone_google_source,
+                                                     google_credentials=rclone_google_credentials)
+            PRINT(f"Files: {len(files_for_upload)}")
+            print_files(files_for_upload, max_output=max_output, output_file=output_file, verbose=verbose)
     if not (refs is True):
         if not (files is True):
             PRINT("Note: Use --refs to view references; and --files to view files for upload.")
