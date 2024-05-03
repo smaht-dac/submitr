@@ -1,6 +1,7 @@
 import ast
 import boto3
 from botocore.exceptions import NoCredentialsError as BotoNoCredentialsError
+import copy
 from functools import lru_cache
 import io
 import json
@@ -934,6 +935,8 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if structured_data:
         _review_upload_files(structured_data, ingestion_filename,
+                             rclone_google_source=rclone_google_source,
+                             rclone_google_credentials=rclone_google_credentials,
                              validation=validation, directory=upload_folder, recursive=subfolders)
 
     do_any_uploads(submission_response, keydict=portal.key, ingestion_filename=ingestion_filename,
@@ -1921,7 +1924,6 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
         file_uuid = upload_file_info.get("uuid")
         if file:
             if rclone_google_source:
-                from submitr.rclone import cloud_path, RClone, RCloneConfigGoogle
                 rclone = RClone(RCloneConfigGoogle(service_account_file=rclone_google_credentials))
                 google_source_file = cloud_path.join(rclone_google_source, os.path.basename(file))
                 if not rclone.exists(google_source_file):
@@ -2679,9 +2681,13 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
 
 
 def _review_upload_files(structured_data: StructuredDataSet, ingestion_filename: str, validation: bool = False,
+                         rclone_google_source: Optional[str] = None,
+                         rclone_google_credentials: Optional[str] = None,
                          directory: Optional[str] = None, recursive: bool = False) -> None:
 
     nfiles_found, file_validation_errors = _validate_files(structured_data, ingestion_filename,
+                                                           rclone_google_source=rclone_google_source,
+                                                           rclone_google_credentials=rclone_google_credentials,
                                                            upload_folder=directory, recursive=recursive)
     if file_validation_errors:
         nfiles = len(file_validation_errors)
@@ -2838,16 +2844,77 @@ def _format_reference_errors(ref_errors: List[dict], verbose: bool = False, debu
     return errors
 
 
+def _files_for_upload(structured_data: StructuredDataSet,
+                      submission_filename: str,
+                      search_directory: str,
+                      search_directory_recursively: bool,
+                      rclone_google_source: Optional[str] = None,
+                      rclone_google_credentials: Optional[str] = None) -> List[dict]:
+
+    search_directories = []
+    if directory := os.path.normpath(search_directory or "") if search_directory else None:
+        if directory not in search_directories:
+            search_directories.append(directory)
+    if directory := os.path.dirname(os.path.normpath(submission_filename or "")):
+        if directory not in search_directories:
+            search_directories.append(directory)
+    if "." not in search_directories:
+        search_directories.append(".")
+
+    rclone = None
+    if rclone_google_source:
+        rclone = RClone(RCloneConfigGoogle(service_account_file=rclone_google_credentials))
+        rclone = RClone(RCloneConfigGoogle(service_account_file=rclone_google_credentials))
+
+    files_for_upload = copy.deepcopy(structured_data.upload_files)
+    for file_for_upload in files_for_upload:
+        found = False
+        file_name_for_upload = os.path.basename(file_for_upload.get("file"))
+        if file_paths := search_for_file(file_name_for_upload,
+                                         location=search_directories,
+                                         recursive=search_directory_recursively):
+            if len(file_paths) > 1:
+                file_for_upload["multiple_local_file_paths"] = file_paths
+            file_for_upload["local_file_path"] = file_paths[0]
+            found = True
+        if rclone:
+            google_file_path = cloud_path.join(rclone_google_source, file_name_for_upload)
+            if rclone.exists(google_file_path):
+                file_for_upload["google_file_path"] = google_file_path
+                found = True
+        if not found:
+            file_for_upload["not_found"] = True
+
+    return files_for_upload
+
+
 def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
-                    upload_folder: str, recursive: bool) -> Tuple[int, List[str]]:
+                    upload_folder: str, recursive: bool,
+                    rclone_google_source: Optional[str] = None,
+                    rclone_google_credentials: Optional[str] = None) -> Tuple[int, List[str]]:
+
     file_validation_errors = []
-    if files := structured_data.upload_files_located(location=[upload_folder,
-                                                               os.path.dirname(ingestion_filename) or "."],
-                                                     recursive=recursive):
-        if files_not_found := [file for file in files if not file.get("path")]:
-            for file in sorted(files_not_found, key=lambda key: key.get("file")):
-                file_validation_errors.append(f"{file.get('file')} -> File not found ({file.get('type')})")
-    return len(files) - len(file_validation_errors), sorted(file_validation_errors)
+
+    files_for_upload = _files_for_upload(structured_data=structured_data,
+                                         submission_filename=ingestion_filename,
+                                         search_directory=upload_folder,
+                                         search_directory_recursively=recursive,
+                                         rclone_google_source=rclone_google_source,
+                                         rclone_google_credentials=rclone_google_credentials)
+
+    if files_for_upload_not_found := [file for file in files_for_upload if file.get("not_found")]:
+        for file in files_for_upload_not_found:
+            file_validation_errors.append(f"{file.get('file')} -> File not found ({file.get('type')})")
+
+    return len(files_for_upload) - len(file_validation_errors), sorted(file_validation_errors)
+
+#   if files := structured_data.upload_files_located(location=[upload_folder,
+#                                                              os.path.dirname(ingestion_filename) or "."],
+#                                                    recursive=recursive):
+#       if files_not_found := [file for file in files if not file.get("path")]:
+#           for file in sorted(files_not_found, key=lambda key: key.get("file")):
+#               file_validation_errors.append(f"{file.get('file')} -> File not found ({file.get('type')})")
+#   return len(files) - len(file_validation_errors), sorted(file_validation_errors)
 
 
 def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> List[str]:
