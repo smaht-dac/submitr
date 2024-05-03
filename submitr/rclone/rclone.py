@@ -255,10 +255,13 @@ class RClone:
             process = subprocess.Popen(command, universal_newlines=True,
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             # Example output: "Total objects: 1" <CR> "Total size: 64.850 MiB (68000001 Byte)"
+            found = False
             for line in process.stdout:
-                if (nbytes := RClone._parse_rclone_size_to_bytes(line)) is not None:
+                if line.lower().strip().replace(" ", "") == "totalobjects:1":
+                    found = True
+                elif (nbytes := RClone._parse_rclone_size_to_bytes(line)) is not None:
                     process.stdout.close()
-                    return nbytes
+                    return nbytes if found else None
             process.stdout.close()
             process.wait()
         except Exception as e:
