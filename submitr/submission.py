@@ -2936,10 +2936,11 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
         PRINT_OUTPUT(f"\n> Parser warnings:")
         for reader_warning in reader_warnings:
             PRINT_OUTPUT(f"  - {_format_issue(reader_warning, ingestion_filename)}")
-    PRINT_OUTPUT(f"\n> Types submitting:")
-    for type_name in sorted(structured_data.data):
-        PRINT_OUTPUT(f"  - {type_name}: {len(structured_data.data[type_name])}"
-                     f" object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
+    if structured_data.data:
+        PRINT_OUTPUT(f"\n> Types submitting:")
+        for type_name in sorted(structured_data.data):
+            PRINT_OUTPUT(f"  - {type_name}: {len(structured_data.data[type_name])}"
+                         f" object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
     if resolved_refs := structured_data.resolved_refs:
         PRINT_OUTPUT(f"\n> Resolved object (linkTo) references:")
         for resolved_ref in sorted(resolved_refs):
