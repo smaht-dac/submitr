@@ -320,7 +320,8 @@ class RClone:
     @staticmethod
     def verify_installation(progress: bool = True) -> bool:
         if RClone.is_installed():
-            print(f"You have requested an rclone feature; rclone already installed : {format_path(RClone.executable_path())}")
+            print(f"You have requested an rclone feature; already installed:"
+                  f" {format_path(RClone.executable_path())} ✓")
             return True
         print("You have requested an rclone feature; rclone not installed.")
         if yes_or_no("Do you want to install rclone now (should be quick & painless)?"):
