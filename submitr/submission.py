@@ -3367,7 +3367,7 @@ def _print_metadata_file_info(file: str, env: str,
                     if file_for_upload.found_locally:
                         if file_for_upload.found_locally_multiple:
                             for index, local_path in enumerate(file_for_upload.local_paths):
-                                PRINT(f"  Local file: {local_path}{' (amiguous)' if index > 0 else ''}")
+                                PRINT(f"  Local file: {local_path}{' (ambiguous)' if index > 0 else ''}")
                         else:
                             PRINT(f"  Local file: {file_for_upload.path}")
                         if file_for_upload.found_in_google:
