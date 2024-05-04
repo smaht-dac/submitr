@@ -53,9 +53,9 @@ class RClone:
         return lines
 
     @contextmanager
-    def config_file(self, persist: bool = False) -> str:
+    def config_file(self, persist: bool = False, extra_lines: Optional[List[str]] = None) -> str:
         with temporary_file(suffix=".conf") as temporary_config_file_name:
-            self.write_config_file(temporary_config_file_name)
+            self.write_config_file(temporary_config_file_name, extra_lines=extra_lines)
             if persist is True:
                 persistent_config_file_name = create_temporary_file_name(suffix=".conf")
                 copy_file(temporary_config_file_name, persistent_config_file_name)
@@ -63,8 +63,8 @@ class RClone:
             else:
                 yield temporary_config_file_name
 
-    def write_config_file(self, file: str) -> None:
-        RCloneConfig._write_config_file_lines(file, self.config_lines)
+    def write_config_file(self, file: str, extra_lines: Optional[List[str]] = None) -> None:
+        RCloneConfig._write_config_file_lines(file, self.config_lines, extra_lines=extra_lines)
 
     def copy(self, source: str, destination: Optional[str] = None,
              progress: Optional[Callable] = None,
@@ -197,6 +197,23 @@ class RClone:
         except Exception:
             return None
 
+    def ping(self, config: Optional[RCloneConfig] = None) -> bool:
+        if not isinstance(config, RCloneConfig):
+            if not isinstance(config := self.source, RCloneConfig):
+                if not isinstance(config := self.destination, RCloneConfig):
+                    return None
+        try:
+            # Use the rclone lsd command as proxy for a "ping".
+            # For some reason with this command we need the project_number in the config for Google.
+            if hasattr(config, "project") and isinstance(project := config.project, str) and project:
+                extra_lines = [f"project_number = {project}"]
+            else:
+                extra_lines = None
+            with config.config_file(extra_lines=extra_lines) as config_file:
+                return self._execute_rclone_ping_command(source=f"{config.name}:", config=config_file)
+        except Exception:
+            return False
+
     def _execute_rclone_copy_command(self, args: List[str], config: Optional[str] = None, copyto: bool = False,
                                      progress: Optional[Callable] = None,
                                      dryrun: bool = False, raise_exception: bool = False) -> Union[bool, str]:
@@ -290,6 +307,15 @@ class RClone:
             if raise_exception is True:
                 raise e
         return None
+
+    def _execute_rclone_ping_command(self, source: str, config: Optional[str] = None) -> bool:
+        command = [self.executable_path(), "lsd", source]
+        if isinstance(config, str) and config:
+            command += ["--config", config]
+        try:
+            return subprocess.run(command, capture_output=True).returncode == 0
+        except Exception:
+            return None
 
     @staticmethod
     def verify_installation(progress: bool = True) -> bool:

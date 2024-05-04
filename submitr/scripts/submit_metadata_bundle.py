@@ -17,7 +17,7 @@ from ..submission import (
     _print_metadata_file_info,
     _pytesting
 )
-from submitr.rclone import RClone
+from submitr.rclone import RClone, RCloneConfigGoogle
 
 _HELP = f"""
 ===
@@ -332,6 +332,10 @@ def main(simulated_args_for_testing=None):
     if args.rclone_google_source or args.rclone_google_credentials:
         if not RClone.verify_installation():
             exit(1)
+        if not RClone().ping(RCloneConfigGoogle(service_account_file=args.rclone_google_credentials)):
+            PRINT("WARNING: Cannot ping Google Cloud Storage.")
+        elif args.verbose or args.debug:
+            PRINT("NOTE: Ping Google Cloud Storage OK.")
 
     if args.rclone_google_credentials and not os.path.isfile(args.rclone_google_credentials):
         PRINT(f"Google service account file does not exist: {args.rclone_google_credentials}")

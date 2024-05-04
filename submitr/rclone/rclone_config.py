@@ -52,9 +52,9 @@ class RCloneConfig(AbstractBaseClass):
         return lines
 
     @contextmanager
-    def config_file(self, persist: bool = False) -> str:
+    def config_file(self, persist: bool = False, extra_lines: Optional[List[str]] = None) -> str:
         with temporary_file(suffix=".conf") as temporary_config_file_name:
-            self.write_config_file(temporary_config_file_name)
+            self.write_config_file(temporary_config_file_name, extra_lines=extra_lines)
             if persist is True:
                 persistent_config_file_name = create_temporary_file_name(suffix=".conf")
                 copy_file(temporary_config_file_name, persistent_config_file_name)
@@ -62,11 +62,11 @@ class RCloneConfig(AbstractBaseClass):
             else:
                 yield temporary_config_file_name
 
-    def write_config_file(self, file: str) -> None:
-        self._write_config_file_lines(file, self.config_lines)
+    def write_config_file(self, file: str, extra_lines: Optional[List[str]] = None) -> None:
+        self._write_config_file_lines(file, self.config_lines, extra_lines=extra_lines)
 
     @staticmethod
-    def _write_config_file_lines(file: str, lines: List[str]) -> None:
+    def _write_config_file_lines(file: str, lines: List[str], extra_lines: Optional[List[str]] = None) -> None:
         if (file := normalize_string(file)) is None:
             return
         if not isinstance(lines, list) or not lines:
@@ -74,3 +74,6 @@ class RCloneConfig(AbstractBaseClass):
         with open(file, "w") as f:
             for line in lines:
                 f.write(f"{line}\n")
+            if isinstance(extra_lines, list):
+                for extra_line in extra_lines:
+                    f.write(f"{extra_line}\n")
