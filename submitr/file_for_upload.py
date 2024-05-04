@@ -39,8 +39,6 @@ class FileForUpload:
         local_path = None
         local_paths = None
         local_size = None
-        google_path = None
-        google_size = None
 
         file_paths = []
 
@@ -74,12 +72,8 @@ class FileForUpload:
                 local_paths = file_paths
 
         if isinstance(google_source, str):
-            rclone = RClone(RCloneConfigGoogle(service_account_file=google_credentials))
-            google_file = cloud_path.join(google_source, file)
-            # To save an extra call, we use RClone.size as a proxy for existence rather than calling
-            # RClone.exists here and then later calling RClone.size if/when we want the size.
-            if isinstance(google_size := rclone.size(google_file), int):
-                google_path = google_file
+            # We actually initialize Google related code lazily in FileForUpdate.google_path.
+            pass
 
         file_for_upload = FileForUpload(_for_internal_use_only=True,
                                         name=file,
@@ -88,8 +82,8 @@ class FileForUpload:
                                         local_path=local_path,
                                         local_paths=local_paths,
                                         local_size=local_size,
-                                        google_path=google_path,
-                                        google_size=google_size)
+                                        google_source=google_source,
+                                        google_credentials=google_credentials)
         return file_for_upload
 
     def __init__(self,
@@ -100,8 +94,8 @@ class FileForUpload:
                  local_path: Optional[str] = None,
                  local_paths: Optional[List[str]] = None,
                  local_size: Optional[int] = None,
-                 google_path: Optional[str] = None,
-                 google_size: Optional[int] = None) -> None:
+                 google_source: Optional[str] = None,
+                 google_credentials: Optional[str] = None) -> None:
 
         if not (_for_internal_use_only is True):
             raise Exception("Cannot create FileForUpload object directly; use FileForUpload.define")
@@ -111,8 +105,11 @@ class FileForUpload:
         self._local_path = local_path if isinstance(local_path, str) else None
         self._local_paths = local_paths if isinstance(local_paths, list) else None
         self._local_size = local_size if isinstance(local_size, int) else None
-        self._google_path = google_path if isinstance(google_path, str) else None
-        self._google_size = google_size if isinstance(google_size, int) else None
+        self._google_source = google_source if isinstance(google_source, str) else None
+        self._google_credentials = google_credentials if isinstance(google_credentials, str) else None
+        self._google_tried_and_failed = False
+        self._google_path = None
+        self._google_size = None
         self._favor_local = True
 
     @property
@@ -165,6 +162,15 @@ class FileForUpload:
 
     @property
     def google_path(self) -> Optional[str]:
+        if not self._google_path:
+            if self._google_source and self._google_credentials and not self._google_tried_and_failed:
+                rclone = RClone(RCloneConfigGoogle(service_account_file=self._google_credentials))
+                google_file = cloud_path.join(self._google_source, self.name)
+                if isinstance(google_size := rclone.size(google_file), int) is not None:
+                    self._google_path = google_file
+                    self._google_size = google_size
+                else:
+                    self._google_tried_and_failed = True
         return self._google_path
 
     @property

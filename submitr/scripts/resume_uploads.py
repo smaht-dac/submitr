@@ -120,7 +120,7 @@ def main(simulated_args_for_testing=None):
         PRINT(f"Specified upload directory not found: {args.upload_folder}")
         exit(1)
 
-    if args.rclone_google_credentials or args.rclone_google_credentials:
+    if args.rclone_google_source or args.rclone_google_credentials:
         if not RClone.verify_installation():
             exit(1)
 

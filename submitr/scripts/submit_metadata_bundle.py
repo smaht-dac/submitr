@@ -17,6 +17,7 @@ from ..submission import (
     _print_metadata_file_info,
     _pytesting
 )
+from submitr.rclone import RClone
 
 _HELP = f"""
 ===
@@ -327,6 +328,10 @@ def main(simulated_args_for_testing=None):
                                   output_file=args.output,
                                   verbose=args.verbose)
         exit(0)
+
+    if args.rclone_google_source or args.rclone_google_credentials:
+        if not RClone.verify_installation():
+            exit(1)
 
     if args.rclone_google_credentials and not os.path.isfile(args.rclone_google_credentials):
         PRINT(f"Google service account file does not exist: {args.rclone_google_credentials}")
