@@ -32,6 +32,7 @@ class RCloneConfigGoogle(RCloneConfig):
         self._credentials = GoogleCredentials(credentials=credentials,
                                               location=location,
                                               service_account_file=service_account_file)
+        self._project = None
 
     @property
     def credentials(self) -> GoogleCredentials:
@@ -64,12 +65,15 @@ class RCloneConfigGoogle(RCloneConfig):
         Returns the Google project name (or number associated with the account identifid
         by the service account file (if any) or with the system (e.g. if on a GCE instance).
         """
+        if self._project:
+            return self._project
         try:
             if (service_account_file := self.service_account_file) and os.path.isfile(service_account_file):
                 with io.open(service_account_file, "r") as f:
                     service_account_json = json.load(f)
                     if isinstance(project := service_account_json.get("project_id"), str) and project:
-                        return project
+                        self._project = project
+                        return self._project
         except Exception:
             pass
         try:
@@ -77,7 +81,8 @@ class RCloneConfigGoogle(RCloneConfig):
             command = "gcloud config get-value project".split()
             result = subprocess.run(command, capture_output=True)
             if (result.returncode == 0) and isinstance(project := result.stdout, str) and project:
-                return project
+                self._project = project
+                return self._project
         except Exception:
             pass
         try:
@@ -86,7 +91,8 @@ class RCloneConfigGoogle(RCloneConfig):
             headers = {"Metadata-Flavor": "Google"}
             response = requests.get(url, headers=headers)
             if (response.status_code == 200) and isinstance(project := response.text, str) and project:
-                return project
+                self._project = project
+                return self._project
         except Exception:
             pass
         return None
