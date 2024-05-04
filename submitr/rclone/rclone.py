@@ -5,10 +5,11 @@ from shutil import copy as copy_file
 import subprocess
 from typing import Callable, List, Optional, Union
 from dcicutils.command_utils import yes_or_no
+from dcicutils.file_utils import normalize_path
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 from submitr.utils import format_path
 from submitr.rclone.rclone_config import RCloneConfig
-from submitr.rclone.rclone_utils import cloud_path, normalize_path
+from submitr.rclone.rclone_utils import cloud_path
 from submitr.rclone.rclone_installation import (
     rclone_executable_install, rclone_executable_exists, rclone_executable_path
 )

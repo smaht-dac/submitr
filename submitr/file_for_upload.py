@@ -2,10 +2,9 @@ from __future__ import annotations
 import os
 import pathlib
 from typing import List, Optional, Union
-from dcicutils.file_utils import search_for_file
+from dcicutils.file_utils import get_file_size, search_for_file
 from dcicutils.structured_data import StructuredDataSet
 from submitr.rclone import cloud_path, RClone, RCloneConfigGoogle
-from submitr.utils import get_file_size
 
 # Unified the logic for looking for files to upload.
 

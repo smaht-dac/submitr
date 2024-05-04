@@ -111,20 +111,6 @@ def format_path(path: str) -> str:
     return path
 
 
-def get_file_size(file: str) -> int:
-    try:
-        return os.path.getsize(file) if isinstance(file, str) else ""
-    except Exception:
-        return -1
-
-
-def get_file_modified_datetime(file: str) -> str:
-    try:
-        return format_datetime(datetime.fromtimestamp(os.path.getmtime(file)))
-    except Exception:
-        return ""
-
-
 def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Callable]] = None,
                 printf: Optional[Callable] = PRINT) -> None:
     macro_name = None

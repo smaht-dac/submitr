@@ -4,9 +4,8 @@ from datetime import timedelta
 from json import dumps as dump_json
 from typing import Optional, Union
 from uuid import uuid4 as create_uuid
-from dcicutils.misc_utils import create_dict
+from dcicutils.misc_utils import create_dict, normalize_string
 from submitr.rclone.rclone_config import RCloneConfig
-from submitr.rclone.rclone_utils import normalize_string
 
 
 class RCloneConfigAmazon(RCloneConfig):

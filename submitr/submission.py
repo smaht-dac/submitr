@@ -19,7 +19,10 @@ from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 from dcicutils.data_readers import Excel
 from dcicutils.datetime_utils import format_datetime
-from dcicutils.file_utils import compute_file_etag, compute_file_md5, search_for_file
+from dcicutils.file_utils import (
+       compute_file_etag, compute_file_md5,
+       get_file_modified_datetime, get_file_size, search_for_file
+)
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
@@ -41,8 +44,7 @@ from submitr.rclone import cloud_path, RClone, RCloneConfigGoogle
 from submitr.scripts.cli_utils import get_version
 from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import (
-    format_path,
-    get_file_modified_datetime, get_file_size, get_s3_bucket_and_key_from_s3_uri,
+    format_path, get_s3_bucket_and_key_from_s3_uri,
     is_excel_file_name, print_boxed, keyword_as_title, tobool
 )
 

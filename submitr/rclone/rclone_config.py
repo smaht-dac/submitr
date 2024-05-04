@@ -4,7 +4,8 @@ from shutil import copy as copy_file
 from typing import List, Optional
 from uuid import uuid4 as create_uuid
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
-from submitr.rclone.rclone_utils import cloud_path, normalize_string
+from dcicutils.misc_utils import normalize_string
+from submitr.rclone.rclone_utils import cloud_path
 
 
 class RCloneConfig(AbstractBaseClass):

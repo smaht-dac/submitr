@@ -1,6 +1,5 @@
 from re import compile as re_compile, escape as re_escape
 import os
-from typing import Optional
 
 
 class cloud_path:
@@ -56,17 +55,3 @@ class cloud_path:
             if (separator_index := value.find(cloud_path.separator)) > 0:
                 value = value[separator_index + 1:]
         return value
-
-
-def normalize_path(value: str) -> str:
-    if not isinstance(value, str):
-        return ""
-    return os.path.normpath(value := value.strip())
-
-
-def normalize_string(value: Optional[str]) -> Optional[str]:
-    if value is None:
-        return ""
-    elif isinstance(value, str):
-        return value.strip()
-    return None

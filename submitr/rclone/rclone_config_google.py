@@ -1,9 +1,10 @@
 from __future__ import annotations
 import os
 from typing import Optional, Union
-from dcicutils.misc_utils import create_dict
+from dcicutils.file_utils import normalize_path
+from dcicutils.misc_utils import create_dict, normalize_string
 from submitr.rclone.rclone_config import RCloneConfig
-from submitr.rclone.rclone_utils import cloud_path, normalize_path, normalize_string
+from submitr.rclone.rclone_utils import cloud_path
 
 
 class RCloneConfigGoogle(RCloneConfig):
