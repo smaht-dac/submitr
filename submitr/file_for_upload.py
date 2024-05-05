@@ -165,7 +165,7 @@ class FileForUpload:
             if self._google_source and self._google_credentials and not self._google_tried_and_failed:
                 rclone_config_google = RCloneConfigGoogle(service_account_file=self._google_credentials)
                 google_file = cloud_path.join(self._google_source, self.name)
-                if isinstance(google_size := rclone_config_google.file_size(google_file), int) is not None:
+                if (google_size := rclone_config_google.file_size(google_file)) is not None:
                     self._google_path = google_file
                     self._google_size = google_size
                 else:

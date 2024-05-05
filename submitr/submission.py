@@ -1920,7 +1920,6 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
                    rclone_google_credentials=None,
                    no_query=False, subfolders=False, portal=None):
 
-    # import pdb ; pdb.set_trace()  # noqa
     files_for_upload = FilesForUpload.define(
         _get_section(res, "upload_info"),
         main_search_directory=upload_folder,
@@ -1930,6 +1929,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
         google_source=rclone_google_source,
         google_credentials=rclone_google_credentials)
     print(files_for_upload)
+    print(str(files_for_upload[0]))
 
     # NEW
     for file in files_for_upload:
