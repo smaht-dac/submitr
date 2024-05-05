@@ -1928,13 +1928,23 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
                                   ingestion_filename, os.path.curdir],
         google_source=rclone_google_source,
         google_credentials=rclone_google_credentials)
-    print(files_for_upload)
-    print(str(files_for_upload[0]))
 
     # NEW
-    for file in files_for_upload:
+    first_time = True
+    import pdb ; pdb.set_trace()  # noqa
+    for file_for_upload in files_for_upload:
+        if not file_for_upload.found:
+            SHOW(f"Upload file not found: {file_for_upload.name}")
+            continue
+        elif file_for_upload.found_locally_multiple:
+            PRINT(f"No upload attempted for file {file_for_upload.name} because multiple copies"
+                  f" were found in folder {file_for_upload.main_search_directory}:"
+                  f" {', '.join(file_for_upload.local_paths)}.")
+        import pdb ; pdb.set_trace()  # noqa
         pass
-    # END NEW
+        file_metadata = upload_file(file_for_upload, portal=portal, first_time=first_time)  # noqa (TODO)
+        first_time = False
+    # NEW
 
     def display_file_info(upload_file_info: dict) -> None:
         nonlocal upload_folder, subfolders
@@ -2256,6 +2266,59 @@ def upload_file_to_uuid(filename, uuid, auth,
     return metadata
 
 
+# NEW: replacement for upload_file_to_uuid
+def upload_file(file_for_upload, first_time=False, portal=None):
+    """
+    Upload file to a target environment.
+
+    :param filename: the name of a file to upload.
+    :param uuid: the item into which the filename is to be uploaded.
+    :param auth: auth info in the form of a dictionary containing 'key', 'secret', and 'server'.
+    :returns: item metadata dict or None
+    """
+    metadata = None
+    patch_data = {"filename": os.path.basename(file_for_upload.name)}
+    response = portal.patch_metadata(object_id=file_for_upload.uuid, data=patch_data)
+    metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
+                                                                           method="PATCH", uuid=file_for_upload.uuid,
+                                                                           filename=file_for_upload.name,
+                                                                           payload_data=patch_data,
+                                                                           portal=portal)
+    if first_time:
+        if upload_url := upload_credentials.get("upload_url"):
+            s3_bucket, _ = get_s3_bucket_and_key_from_s3_uri(upload_url)
+            if s3_bucket:
+                # This assumes all files are going to the same bucket;
+                # which I think is a pretty solid assumption.
+                PRINT(f"Upload file destination AWS S3 bucket: {s3_bucket}")
+    try:
+        s3_uri = upload_credentials["upload_url"]
+        aws_credentials = {
+            "AWS_ACCESS_KEY_ID": upload_credentials["AccessKeyId"],
+            "AWS_SECRET_ACCESS_KEY": upload_credentials["SecretAccessKey"],
+            "AWS_SECURITY_TOKEN": upload_credentials["SessionToken"]
+        }
+        aws_kms_key_id = get_s3_encrypt_key_id(upload_credentials=upload_credentials, auth=portal.key)
+    except Exception as e:
+        raise ValueError("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
+
+    upload_file_to_aws_s3(file=file_for_upload,
+                          s3_uri=s3_uri,
+                          aws_credentials=aws_credentials,
+                          aws_kms_key_id=aws_kms_key_id,
+                          print_progress=True,
+                          print_function=PRINT,
+                          verify_upload=True,
+                          catch_interrupt=True)
+
+#   execute_prearranged_upload(file_for_upload.name,
+#                              rclone_google_source=rclone_google_source,
+#                              rclone_google_credentials=rclone_google_credentials,
+#                              upload_credentials=upload_credentials, auth=auth)
+
+    return metadata
+
+
 def extract_metadata_and_upload_credentials(response, filename, method, payload_data,
                                             uuid=None, schema_name=None, portal=None):
     try:
@@ -2331,6 +2394,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False,
             rclone_google_credentials=rclone_google_credentials,
             first_time=first_time, portal=portal
         )
+        # xyzzy
         if file_metadata:
             extra_files_credentials = file_metadata.get("extra_files_creds", [])
             if extra_files_credentials:
@@ -2389,6 +2453,8 @@ def _upload_extra_files(
     credentials, uploader_wrapper, folder, auth, recursive=False,
     rclone_google_source=None, rclone_google_credentials=None
 ):
+    # UNUSED FOR SMAHT I THINK (VERIFY) - 2024-05-05.
+    import pdb ; pdb.set_trace()  # noqa
     """Attempt upload of all extra files.
 
     Similar to "do_uploads", search for each file and then call a
