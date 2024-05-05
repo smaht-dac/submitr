@@ -1945,7 +1945,7 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
                 rclone_config_google = RCloneConfigGoogle(service_account_file=rclone_google_credentials)
                 google_source_file = cloud_path.join(rclone_google_source, os.path.basename(file))
                 if not rclone_config_google.path_exists(google_source_file):
-                    PRINT(f"WARNING: xCannot find Google Cloud Storage file to upload to AWS S3: {google_source_file}")
+                    PRINT(f"WARNING: Cannot find Google Cloud Storage file to upload to AWS S3: {google_source_file}")
                     return False
                 return True
             if file_paths := search_for_file(file, location=upload_folder, recursive=subfolders):
