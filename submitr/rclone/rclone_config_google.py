@@ -7,6 +7,7 @@ import subprocess
 from typing import Optional, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, normalize_string
+from submitr.rclone.rclone import RClone
 from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_utils import cloud_path
 
@@ -98,7 +99,7 @@ class RCloneConfigGoogle(RCloneConfig):
         return None
 
     def ping(self) -> bool:
-        pass
+        return RClone.ping(self)
 
     def __eq__(self, other: RCloneConfigGoogle) -> bool:
         return ((self.name == other.name) and

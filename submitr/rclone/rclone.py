@@ -109,9 +109,9 @@ class RClone:
                     raise Exception(f"No cloud source key/file specified (only bucket: {source}).")
                 with self.config_file(persist=dryrun is True) as source_and_destination_config_file:  # noqa
                     command_args = [f"{source_config.name}:{source}", f"{destination_config.name}:{destination}"]
-                    return self._execute_rclone_copy_command(command_args,
-                                                             config=source_and_destination_config_file,
-                                                             copyto=copyto, progress=progress, dryrun=dryrun)
+                    return RClone._execute_rclone_copy_command(command_args,
+                                                               config=source_and_destination_config_file,
+                                                               copyto=copyto, progress=progress, dryrun=dryrun)
             else:
                 # Here only a destination config cloud configuration has been defined for this RClone
                 # object; meaning we are copying from a local file source to some cloud destination;
@@ -120,9 +120,9 @@ class RClone:
                     raise Exception(f"No file source specified.")
                 with destination_config.config_file(persist=dryrun is True) as destination_config_file:
                     command_args = [source, f"{destination_config.name}:{destination}"]
-                    return self._execute_rclone_copy_command(command_args,
-                                                             config=destination_config_file,
-                                                             copyto=copyto, progress=progress, dryrun=dryrun)
+                    return RClone._execute_rclone_copy_command(command_args,
+                                                               config=destination_config_file,
+                                                               copyto=copyto, progress=progress, dryrun=dryrun)
         elif isinstance(source_config := self.source, RCloneConfig):
             # Here only a source cloud configuration has been defined for this RClone object;
             # meaning we are copying from some cloud source to a local file destination;
@@ -149,9 +149,9 @@ class RClone:
                     destination = os.path.join(destination, key_as_file_path)
             with source_config.config_file(persist=dryrun is True) as source_config_file:  # noqa
                 command_args = [f"{source_config.name}:{source}", destination]
-                return self._execute_rclone_copy_command(command_args,
-                                                         config=source_config_file,
-                                                         copyto=True, progress=progress, dryrun=dryrun)
+                return RClone._execute_rclone_copy_command(command_args,
+                                                           config=source_config_file,
+                                                           copyto=True, progress=progress, dryrun=dryrun)
         else:
             # Here not source or destination cloud configuration has been defined for this RClone;
             # object; meaning this is (degenerate case of a) simple local file to file copy.
@@ -162,7 +162,7 @@ class RClone:
             if not os.path.isdir(destination):
                 copyto = True
             command_args = [source, destination]
-            return self._execute_rclone_copy_command(command_args, copyto=copyto, progress=progress, dryrun=dryrun)
+            return RClone._execute_rclone_copy_command(command_args, copyto=copyto, progress=progress, dryrun=dryrun)
 
     def exists(self, source: str, config: Optional[RCloneConfig] = None) -> bool:
         if not isinstance(config, RCloneConfig):
@@ -171,7 +171,7 @@ class RClone:
                     return None
         try:
             with config.config_file() as config_file:
-                return self._execute_rclone_exists_command(source=f"{config.name}:{source}", config=config_file)
+                return RClone._execute_rclone_exists_command(source=f"{config.name}:{source}", config=config_file)
         except Exception:
             return None
 
@@ -182,7 +182,7 @@ class RClone:
                     return None
         try:
             with config.config_file() as config_file:
-                return self._execute_rclone_size_command(source=f"{config.name}:{source}", config=config_file)
+                return RClone._execute_rclone_size_command(source=f"{config.name}:{source}", config=config_file)
         except Exception:
             return None
 
@@ -193,15 +193,14 @@ class RClone:
                     return None
         try:
             with config.config_file() as config_file:
-                return self._execute_rclone_checksum_command(source=f"{config.name}:{source}", config=config_file)
+                return RClone._execute_rclone_checksum_command(source=f"{config.name}:{source}", config=config_file)
         except Exception:
             return None
 
-    def ping(self, config: Optional[RCloneConfig] = None) -> bool:
+    @staticmethod
+    def ping(config: RCloneConfig = None) -> bool:
         if not isinstance(config, RCloneConfig):
-            if not isinstance(config := self.source, RCloneConfig):
-                if not isinstance(config := self.destination, RCloneConfig):
-                    return None
+            return None
         try:
             # Use the rclone lsd command as proxy for a "ping".
             # For some reason with this command we need the project_number in the config for Google.
@@ -210,16 +209,17 @@ class RClone:
             else:
                 extra_lines = None
             with config.config_file(extra_lines=extra_lines) as config_file:
-                return self._execute_rclone_ping_command(source=f"{config.name}:", config=config_file)
+                return RClone._execute_rclone_ping_command(source=f"{config.name}:", config=config_file)
         except Exception:
             return False
 
-    def _execute_rclone_copy_command(self, args: List[str], config: Optional[str] = None, copyto: bool = False,
+    @staticmethod
+    def _execute_rclone_copy_command(args: List[str], config: Optional[str] = None, copyto: bool = False,
                                      progress: Optional[Callable] = None,
                                      dryrun: bool = False, raise_exception: bool = False) -> Union[bool, str]:
         # N.B The rclone --ignore-times option forces copy even if the file seems
         # not to have have changed, presumably based on something like a checksum.
-        command = [self.executable_path(), "copyto" if copyto is True else "copy", "--progress", "--ignore-times"]
+        command = [RClone.executable_path(), "copyto" if copyto is True else "copy", "--progress", "--ignore-times"]
         if isinstance(config, str) and config:
             command += ["--config", config]
         if isinstance(args, list):
@@ -244,9 +244,10 @@ class RClone:
                 raise e
             return False
 
-    def _execute_rclone_exists_command(self, source: str, config: Optional[str] = None,
+    @staticmethod
+    def _execute_rclone_exists_command(source: str, config: Optional[str] = None,
                                        raise_exception: bool = False) -> Optional[int]:
-        command = [self.executable_path(), "ls", source]
+        command = [RClone.executable_path(), "ls", source]
         if isinstance(config, str) and config:
             command += ["--config", config]
         try:
@@ -264,9 +265,10 @@ class RClone:
                 raise e
         return False
 
-    def _execute_rclone_size_command(self, source: str, config: Optional[str] = None,
+    @staticmethod
+    def _execute_rclone_size_command(source: str, config: Optional[str] = None,
                                      raise_exception: bool = False) -> Optional[int]:
-        command = [self.executable_path(), "size", source]
+        command = [RClone.executable_path(), "size", source]
         if isinstance(config, str) and config:
             command += ["--config", config]
         try:
@@ -287,9 +289,10 @@ class RClone:
                 raise e
         return None
 
-    def _execute_rclone_checksum_command(self, source: str, config: Optional[str] = None,
+    @staticmethod
+    def _execute_rclone_checksum_command(source: str, config: Optional[str] = None,
                                          raise_exception: bool = False) -> Optional[str]:
-        command = [self.executable_path(), "hashsum", "md5", source]
+        command = [RClone.executable_path(), "hashsum", "md5", source]
         if isinstance(config, str) and config:
             command += ["--config", config]
         try:
@@ -308,8 +311,9 @@ class RClone:
                 raise e
         return None
 
-    def _execute_rclone_ping_command(self, source: str, config: Optional[str] = None) -> bool:
-        command = [self.executable_path(), "lsd", source]
+    @staticmethod
+    def _execute_rclone_ping_command(source: str, config: Optional[str] = None) -> bool:
+        command = [RClone.executable_path(), "lsd", source]
         if isinstance(config, str) and config:
             command += ["--config", config]
         try:
@@ -318,10 +322,11 @@ class RClone:
             return None
 
     @staticmethod
-    def verify_installation(progress: bool = True) -> bool:
+    def verify_installation(progress: bool = True, verbose: bool = False) -> bool:
         if RClone.is_installed():
-            print(f"You have requested an rclone feature; already installed:"
-                  f" {format_path(RClone.executable_path())} ✓")
+            if verbose is True:
+                print(f"You have requested an rclone feature; already installed:"
+                      f" {format_path(RClone.executable_path())} ✓")
             return True
         print("You have requested an rclone feature; rclone not installed.")
         if yes_or_no("Do you want to install rclone now (should be quick & painless)?"):

@@ -252,20 +252,42 @@ def main(simulated_args_for_testing=None):
         if args.env:
             env_from_env = True
 
-    if args.ping or (args.bundle_filename and args.bundle_filename.lower() == "ping"):
-        ping_okay = _ping(
-            env=args.env or os.environ.get("SMAHT_ENV"),
-            env_from_env=env_from_env,
-            server=args.server,
-            app=args.app,
-            keys_file=args.keys,
-            verbose=True)
-        if ping_okay:
-            PRINT("Ping success. Your connection appears to be OK.")
-            exit(0)
-        else:
-            PRINT("Ping failure. Your connection appears to be problematic.")
+    rclone_google_ping_okay = None
+    if args.rclone_google_source or args.rclone_google_credentials:
+        if not RClone.verify_installation(verbose=args.verbose):
             exit(1)
+        if args.rclone_google_credentials and not os.path.isfile(args.rclone_google_credentials):
+            PRINT(f"Google service account file does not exist: {args.rclone_google_credentials}")
+            exit(1)
+        rclone_config_google = RCloneConfigGoogle(service_account_file=args.rclone_google_credentials)
+        if not rclone_config_google.ping():
+            PRINT("WARNING: Google Cloud Storage cannot be accessed!")
+            rclone_google_ping_okay = False
+        else:
+            if args.verbose or args.debug:
+                PRINT(f"Google Cloud Storage accessibility ▶ OK (project: {rclone_config_google.project}).")
+            rclone_google_ping_okay = True
+
+    if args.ping or (args.bundle_filename and args.bundle_filename.lower() == "ping"):
+        if args.env or os.environ.get("SMAHT_ENV"):
+            ping_okay = _ping(env=args.env or os.environ.get("SMAHT_ENV"), env_from_env=env_from_env,
+                              server=args.server, app=args.app, keys_file=args.keys, verbose=True)
+            if ping_okay:
+                PRINT("SMaHT Portal connectivity appears to be OK ✓")
+            else:
+                PRINT("SMaHT Portal connectivty appears to be problematic ✗")
+        else:
+            PRINT("No environment specified (via --env); skipping SMaHT Portal ping.")
+            ping_okay = True
+        if rclone_google_ping_okay is not None:
+            PRINT(f"Google Cloud Storage (GCP) project: {rclone_config_google.project}")
+            if args.rclone_google_source:
+                PRINT(f"Google Cloud Storage source: {args.rclone_google_source}")
+        if rclone_google_ping_okay is True:
+            PRINT(f"Google Cloud Storage connectivity appears to be OK ✓")
+        elif rclone_google_ping_okay is False:
+            PRINT("Google Cloud Storage connectivity appears to be problematic ✗")
+        exit(0 if ping_okay and rclone_google_ping_okay is None or rclone_google_ping_okay is True else 1)
 
     if args.consortia or (args.bundle_filename and args.bundle_filename.lower() == "consortia"):
         portal = _define_portal(env=args.env)
@@ -328,19 +350,6 @@ def main(simulated_args_for_testing=None):
                                   output_file=args.output,
                                   verbose=args.verbose)
         exit(0)
-
-    if args.rclone_google_source or args.rclone_google_credentials:
-        if not RClone.verify_installation():
-            exit(1)
-        rclone_config_google = RCloneConfigGoogle(service_account_file=args.rclone_google_credentials)
-        if not RClone().ping(rclone_config_google):
-            PRINT("WARNING: Google Cloud Storage cannot be accessed!")
-        else:
-            PRINT(f"Google Cloud Storage accessibility ▶ OK (project: {rclone_config_google.project}).")
-
-    if args.rclone_google_credentials and not os.path.isfile(args.rclone_google_credentials):
-        PRINT(f"Google service account file does not exist: {args.rclone_google_credentials}")
-        exit(1)
 
     with script_catch_errors():
 
