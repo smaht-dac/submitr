@@ -1929,11 +1929,15 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
         google_source=rclone_google_source,
         google_credentials=rclone_google_credentials)
 
+    import pdb ; pdb.set_trace()  # noqa
+    FilesForUpload.verify(files_for_upload)
+
     # NEW
     first_time = True
     import pdb ; pdb.set_trace()  # noqa
     for file_for_upload in files_for_upload:
         if not file_for_upload.found:
+            import pdb ; pdb.set_trace()  # noqa
             SHOW(f"Upload file not found: {file_for_upload.name}")
             continue
         elif file_for_upload.found_locally_multiple:
@@ -2170,8 +2174,8 @@ def execute_prearranged_upload(path, upload_credentials,
                           s3_uri=s3_uri,
                           aws_credentials=aws_credentials,
                           aws_kms_key_id=aws_kms_key_id,
-                          rclone_google_source=rclone_google_source,
-                          rclone_google_credentials=rclone_google_credentials,
+                          # rclone_google_source=rclone_google_source,
+                          # rclone_google_credentials=rclone_google_credentials,
                           print_progress=True,
                           print_function=PRINT,
                           verify_upload=True,
@@ -2380,11 +2384,14 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False,
                 SHOW(f"No upload attempted for file {file_name} because multiple copies"
                      f" were found in folder {folder}: {', '.join(file_paths)}.")
             else:
+                import pdb ; pdb.set_trace()  # noqa
+                pass
                 SHOW(f"Upload file not found: {file_name}")
             continue
         file_path = file_paths[0]
         uuid = upload_spec['uuid']
         uploader_wrapper = UploadMessageWrapper(uuid, no_query=no_query)
+        import pdb ; pdb.set_trace()  # noqa
         wrapped_upload_file_to_uuid = uploader_wrapper.wrap_upload_function(
             upload_file_to_uuid, file_path
         )
@@ -2394,6 +2401,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False,
             rclone_google_credentials=rclone_google_credentials,
             first_time=first_time, portal=portal
         )
+        import pdb ; pdb.set_trace()  # noqa
         # xyzzy
         if file_metadata:
             extra_files_credentials = file_metadata.get("extra_files_creds", [])

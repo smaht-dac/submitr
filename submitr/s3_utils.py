@@ -373,7 +373,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         file_checksum_timestamp = None
 
     elif file.found_in_google:
-        rclone_config_google = file.google_rclone_config
+        rclone_config_google = file.google_config
         rclone_config_amazon = RCloneConfigAmazon(region=aws_credentials.get("region_name"),
                                                   access_key_id=aws_credentials.get("aws_access_key_id"),
                                                   secret_access_key=aws_credentials.get("aws_secret_access_key"),
@@ -385,7 +385,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
             return False
         file_size = file.google_size
         file_checksum = None
-        # Note that it is known to be the case that calling rclone size to get the checksum
+        # Note that it is known to be the case that calling rclone hashsum to get the checksum
         # of a file in Google Cloud Storage (GCS) merely retrieves the checksum from GCS,
         # which had previously been computed/stored by GCS for the file within GCS.
         file_checksum = rclone_config_google.file_checksum(file.google_path)

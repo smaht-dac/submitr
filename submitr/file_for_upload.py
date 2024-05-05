@@ -1,12 +1,18 @@
 from __future__ import annotations
 import os
 import pathlib
-from typing import List, Optional, Union
+from typing import Callable, List, Optional, Union
 from dcicutils.file_utils import get_file_size, search_for_file
+from dcicutils.misc_utils import format_size
 from dcicutils.structured_data import StructuredDataSet
-from submitr.rclone import cloud_path, RCloneConfigGoogle
+from submitr.rclone import cloud_path, GoogleCredentials, RCloneConfigGoogle
 
-# Unified the logic for looking for files to upload and storing related info.
+# Unified the logic for looking for files to upload (to AWS S3), and storing
+# related info; whether or not the file is coming from the local file system
+# or from Google Cloud Storage (GCS), via rclone.
+
+# TODO/QUESTION: If a file is found both locally and in GCS should we favor the
+# local file (I think)? Should we warn/notify and/or solicit choice/confirmation?
 
 
 class FileForUpload:
@@ -17,7 +23,7 @@ class FileForUpload:
                main_search_directory_recursively: bool = False,
                other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
                google_source: Optional[str] = None,
-               google_credentials: Optional[str] = None) -> Optional[FileForUpload]:
+               google_credentials: Optional[Union[GoogleCredentials, str]] = None) -> Optional[FileForUpload]:
 
         # Given file can be a dictionary (from structured_data.upload_files) like:
         # {"type": "ReferenceFile", "file": "first_file.fastq"}
@@ -97,7 +103,7 @@ class FileForUpload:
                  local_paths: Optional[List[str]] = None,
                  local_size: Optional[int] = None,
                  google_source: Optional[str] = None,
-                 google_credentials: Optional[str] = None,
+                 google_credentials: Optional[Union[GoogleCredentials, str]] = None,
                  _internal_use_only: bool = False) -> None:
 
         if not (_internal_use_only is True):
@@ -110,8 +116,13 @@ class FileForUpload:
         self._local_paths = local_paths if isinstance(local_paths, list) else None
         self._local_size = local_size if isinstance(local_size, int) else None
         self._google_source = google_source if isinstance(google_source, str) else None
-        self._google_credentials = google_credentials if isinstance(google_credentials, str) else None
-        self._google_rclone_config = None
+        if isinstance(google_credentials, GoogleCredentials):
+            self._google_credentials = GoogleCredentials(google_credentials)
+        elif isinstance(google_credentials, str):
+            self._google_credentials = GoogleCredentials(service_account_file=google_credentials)
+        else:
+            self._google_credentials = None
+        self._google_config = None
         self._google_tried_and_failed = False
         self._google_path = None
         self._google_size = None
@@ -135,19 +146,19 @@ class FileForUpload:
 
     @property
     def found(self) -> bool:
-        return self._local_path is not None or self._google_path is not None
+        return self.local_path is not None or self.google_path is not None
 
     @property
     def found_locally(self) -> bool:
-        return self._local_path is not None
+        return self.local_path is not None
 
     @property
     def found_locally_multiple(self) -> bool:
-        return self._local_paths is not None
+        return self.local_paths is not None
 
     @property
     def found_in_google(self) -> bool:
-        return self._google_path is not None
+        return self.google_path is not None
 
     @property
     def path(self) -> Optional[str]:
@@ -172,9 +183,9 @@ class FileForUpload:
     @property
     def google_path(self) -> Optional[str]:
         if (self._google_path is None) and (not self._google_tried_and_failed):
-            if self._google_source and (google_rclone_config := self.google_rclone_config):
+            if self._google_source and (google_config := self.google_config):
                 google_file = cloud_path.join(self._google_source, self.name)
-                if (google_size := google_rclone_config.file_size(google_file)) is not None:
+                if (google_size := google_config.file_size(google_file)) is not None:
                     self._google_path = google_file
                     self._google_size = google_size
                 else:
@@ -200,24 +211,46 @@ class FileForUpload:
     @property
     def google_size(self) -> Optional[int]:
         if self._google_size is None:
+            # Initialize GSC related info.
             _ = self.google_path
         return self._google_size
 
     @property
-    def google_credentials(self) -> Optional[str]:
+    def google_credentials(self) -> Optional[GoogleCredentials]:
         return self._google_credentials
 
     @property
-    def google_rclone_config(self) -> Optional[str]:
-        if (not self._google_rclone_config) and (google_credentials := self.google_credentials):
-            self._google_rclone_config = RCloneConfigGoogle(service_account_file=google_credentials)
-        return self._google_rclone_config
+    def google_config(self) -> Optional[str]:
+        if self._google_config is None:
+            if google_credentials := self.google_credentials:
+                self._google_config = RCloneConfigGoogle(google_credentials)
+        return self._google_config
 
     def resume_upload_command(self, env: Optional[str] = None) -> str:
         return (f"resume-uploads{f' --env {env}' if isinstance(env, str) else ''}"
                 f"{f' {self.uuid or self.name}' if self.uuid else ''}")
 
-    def __str__(self) -> str:
+    def verify(self, verbose: bool = False, printf: Optional[Callable] = None) -> bool:
+        if not self.found:
+            printf(f"WARNING: Cannot find file for upload: {self.name} ({self.uuid})")
+            return False
+        elif self.found_in_google:
+            if verbose:
+                printf(f"File for upload to AWS S3: gs://{self.google_path} ({format_size(self.google_size)})")
+            return True
+        elif self.found_locally:
+            if self.found_locally_multiple:
+                printf(f"WARNING: Ignoring file for upload as multiple instances found: {self.name}")
+                for local_path in self.local_paths:
+                    print(f"- {local_path}")
+                return False
+            if verbose:
+                printf(f"File for upload to AWS S3: {self.local_path} ({format_size(self.local_size)})")
+                return True
+            else:
+                return False
+
+    def __str__(self) -> str:  # for troubleshooting only
         return (
             f"name={self.name}|"
             f"found={self.found}|"
@@ -241,7 +274,7 @@ class FilesForUpload:
                main_search_directory_recursively: bool = False,
                other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
                google_source: Optional[str] = None,
-               google_credentials: Optional[str] = None) -> List[FileForUpload]:
+               google_credentials: Optional[Union[GoogleCredentials, str]] = None) -> List[FileForUpload]:
 
         if isinstance(files, StructuredDataSet):
             files = files.upload_files
@@ -260,3 +293,13 @@ class FilesForUpload:
             if file_for_upload:
                 files_for_upload.append(file_for_upload)
         return files_for_upload
+
+    @staticmethod
+    def verify(files_for_upload: List[FileForUpload], verbose: bool = False, printf: Optional[Callable] = None) -> bool:
+        if not callable(printf):
+            printf = print
+        result = True
+        for file_for_upload in files_for_upload:
+            if not file_for_upload.verify(verbose=verbose, printf=printf):
+                result = False
+        return result

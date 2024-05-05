@@ -47,7 +47,7 @@ class RCloneCommands:
             result = subprocess.run(command, capture_output=True)
             # Example output: "  1234 some_file.fastq" where 1234 is file size.
             # Unfortunately if the given source (file) does not exist the return
-            # code is 0; though if the bucket does not exist  then return code is 1.
+            # code is 0; though if the bucket does not exist then return code is 1.
             if not (result.returncode == 0):
                 return False
             # Here though return code is 0 (implying bucket is OK) it still might
@@ -83,6 +83,10 @@ class RCloneCommands:
 
     @staticmethod
     def checksum_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[str]:
+        # Note that it is known to be the case that calling rclone hashsum to get the checksum
+        # of a file in Google Cloud Storage (GCS) merely retrieves the checksum from GCS,
+        # which had previously been computed/stored by GCS for the file within GCS;
+        # presumably when the file was originally uploaded to GCS.
         command = [RCloneInstallation.executable_path(), "hashsum", "md5", source]
         if isinstance(config, str) and config:
             command += ["--config", config]
@@ -150,6 +154,7 @@ class RCloneCommands:
                 pass
         return None
 
+    @staticmethod
     def _parse_rclone_size_to_bytes(size: str) -> Optional[int]:
         # Parse the relevant output from the rclone size command;
         # for example: Total size: 64.850 MiB (68000001 Byte)
