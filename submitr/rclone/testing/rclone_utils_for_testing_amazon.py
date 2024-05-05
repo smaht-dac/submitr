@@ -5,11 +5,11 @@ import configparser
 from datetime import timedelta
 import os
 from typing import List, Optional, Union
-from dcicutils.file_utils import are_files_equal
+from dcicutils.file_utils import are_files_equal, normalize_path
 from dcicutils.tmpfile_utils import temporary_file
 from dcicutils.datetime_utils import format_datetime
 from submitr.rclone.rclone_config_amazon import AmazonCredentials
-from submitr.rclone.rclone_utils import cloud_path, normalize_path
+from submitr.rclone.rclone_utils import cloud_path
 
 
 # Module with class/functions to aid in integration testing of smaht-submitr rclone support.

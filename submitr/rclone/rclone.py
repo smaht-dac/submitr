@@ -175,18 +175,6 @@ class RClone:
         except Exception:
             return None
 
-    def bucket_exists(self, source: str, config: Optional[RCloneConfig] = None) -> bool:
-        if not isinstance(config, RCloneConfig):
-            if not isinstance(config := self.source, RCloneConfig):
-                if not isinstance(config := self.destination, RCloneConfig):
-                    return None
-        try:
-            with config.config_file() as config_file:
-                return RClone._execute_rclone_bucket_exists_command(source=f"{config.name}:{source}",
-                                                                    config=config_file)
-        except Exception:
-            return None
-
     def size(self, source: str, config: Optional[RCloneConfig] = None) -> Optional[int]:
         if not isinstance(config, RCloneConfig):
             if not isinstance(config := self.source, RCloneConfig):
@@ -263,31 +251,19 @@ class RClone:
         if isinstance(config, str) and config:
             command += ["--config", config]
         try:
-            process = subprocess.Popen(command, universal_newlines=True,
-                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            result = subprocess.run(command, capture_output=True)
             # Example output: "  1234 some_file.fastq" where 1234 is file size.
-            # Note that if the given source (file) does not exist
-            # but its parent bucket does then the returncode is still 0.
-            nlines = 0
-            for line in process.stdout:
-                nlines += 1
-            process.stdout.close()
-            process.wait()
-            return nlines == 1
+            # Unfortunately if the given source (file) does not exist the return
+            # code is 0; though if the bucket does not exist  then return code is 1.
+            if not (result.returncode == 0):
+                return False
+            # Here though return code is 0 (implying bucket is OK) it still might
+            # not be OK; will regard any output as an indication that it is OK.
+            return (result.returncode == 0) or (len(result) > 0)
         except Exception as e:
             if raise_exception is True:
                 raise e
         return False
-
-    @staticmethod
-    def _execute_rclone_bucket_exists_command(source: str, config: Optional[str] = None) -> bool:
-        command = [RClone.executable_path(), "lsd", source]
-        if isinstance(config, str) and config:
-            command += ["--config", config]
-        try:
-            return subprocess.run(command, capture_output=True).returncode == 0
-        except Exception:
-            return None
 
     @staticmethod
     def _execute_rclone_size_command(source: str, config: Optional[str] = None,

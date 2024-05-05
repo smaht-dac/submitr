@@ -65,6 +65,7 @@ class RCloneConfigGoogle(RCloneConfig):
         """
         Returns the Google project name (or number associated with the account identifid
         by the service account file (if any) or with the system (e.g. if on a GCE instance).
+        FYI only place needed was for rclone lsd comment which we use as a ping.
         """
         if self._project:
             return self._project
@@ -103,6 +104,7 @@ class RCloneConfigGoogle(RCloneConfig):
     @staticmethod
     def is_google_compute_engine() -> Optional[str]:
         try:
+            # Just FYI the file /etc/google_instance_id on a GCE contains the instance ID.
             url = "http://metadata.google.internal/computeMetadata/v1/instance/?alt=json&recursive=true"
             response = requests.get(url, headers={"Metadata-Flavor": "Google"})
             if (response.status_code == 200) and isinstance(instance := response.json().get("name"), str):

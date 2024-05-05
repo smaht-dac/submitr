@@ -273,16 +273,16 @@ def main(simulated_args_for_testing=None):
             ping_okay = _ping(env=args.env or os.environ.get("SMAHT_ENV"), env_from_env=env_from_env,
                               server=args.server, app=args.app, keys_file=args.keys, verbose=True)
             if ping_okay:
-                PRINT("SMaHT Portal connectivity appears to be OK ✓")
+                PRINT("Portal connectivity appears to be OK ✓")
             else:
-                PRINT("SMaHT Portal connectivty appears to be problematic ✗")
+                PRINT("Portal connectivty appears to be problematic ✗")
         else:
             PRINT("No environment specified (via --env); skipping SMaHT Portal ping.")
             ping_okay = True
         if instance := RCloneConfigGoogle.is_google_compute_engine():
             PRINT(f"Google Compute Engine instance: {instance}")
         if rclone_google_ping_okay is not None:
-            PRINT(f"Google Cloud Storage (GCP) project: {rclone_config_google.project}")
+            PRINT(f"Google Cloud Storage (GCS) project: {rclone_config_google.project}")
         if args.rclone_google_source:
             if RClone().bucket_exists(args.rclone_google_source, rclone_config_google):
                 PRINT(f"Google Cloud Storage source: {args.rclone_google_source} ✓")
