@@ -7,7 +7,6 @@ import subprocess
 from typing import Optional, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, normalize_string
-from submitr.rclone.rclone import RClone
 from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_utils import cloud_path
 
@@ -97,9 +96,6 @@ class RCloneConfigGoogle(RCloneConfig):
         except Exception:
             pass
         return None
-
-    def ping(self) -> bool:
-        return RClone.ping(self)
 
     @staticmethod
     def is_google_compute_engine() -> Optional[str]:

@@ -6,7 +6,6 @@ from typing import Optional, Union
 from uuid import uuid4 as create_uuid
 from dcicutils.misc_utils import create_dict, normalize_string
 from submitr.rclone.rclone_config import RCloneConfig
-from submitr.rclone.rclone import RClone
 
 
 class RCloneConfigAmazon(RCloneConfig):
@@ -85,9 +84,6 @@ class RCloneConfigAmazon(RCloneConfig):
     @kms_key_id.setter
     def kms_key_id(self, value: str) -> None:
         self._credentials.kms_key_id = value
-
-    def ping(self) -> bool:
-        return RClone.ping(self)
 
     def __eq__(self, other: RCloneConfigAmazon) -> bool:
         return ((self.name == other.name) and

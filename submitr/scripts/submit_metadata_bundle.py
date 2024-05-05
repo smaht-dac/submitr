@@ -284,7 +284,7 @@ def main(simulated_args_for_testing=None):
         if rclone_google_ping_okay is not None:
             PRINT(f"Google Cloud Storage (GCS) project: {rclone_config_google.project}")
         if args.rclone_google_source:
-            if RClone().bucket_exists(args.rclone_google_source, rclone_config_google):
+            if rclone_config_google.path_exists(args.rclone_google_source):
                 PRINT(f"Google Cloud Storage source: {args.rclone_google_source} ✓")
             else:
                 PRINT(f"Google Cloud Storage source: {args.rclone_google_source} ✗")

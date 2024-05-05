@@ -88,16 +88,16 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         rclone_config_google = RCloneConfigGoogle(service_account_file=rclone_google_credentials)
         rclone = RClone(source=rclone_config_google, destination=rclone_config_amazon)
         google_cloud_path = cloud_path.join(rclone_google_source, os.path.basename(file))
-        if not rclone.exists(google_cloud_path):
+        if not rclone_config_google.path_exists(google_cloud_path):
             printf(f"ERROR: Cannot find Google Cloud Storage object: {google_cloud_path}")
             return False
-        file_size = rclone.size(google_cloud_path)
+        file_size = rclone_config_google.file_size(google_cloud_path)
         file_checksum = None
         if file_size >= _BIG_FILE_SIZE:
             if yes_or_no("Do you want to compute the checksum on this file?"):
-                file_checksum = rclone.checksum(google_cloud_path)
+                file_checksum = rclone_config_google.file_checksum(google_cloud_path)
         else:
-            file_checksum = rclone.checksum(google_cloud_path)
+            file_checksum = rclone_config_google.file_checksum(google_cloud_path)
         file_checksum_timestamp = time.time()
     else:
         rclone = None
