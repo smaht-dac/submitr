@@ -89,8 +89,7 @@ class RCloneConfigGoogle(RCloneConfig):
         try:
             # If for some reason the gcloud command did not work try via URL.
             url = "http://metadata.google.internal/computeMetadata/v1/project/project-id"
-            headers = {"Metadata-Flavor": "Google"}
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers={"Metadata-Flavor": "Google"})
             if (response.status_code == 200) and isinstance(project := response.text, str) and project:
                 self._project = project
                 return self._project
@@ -100,6 +99,17 @@ class RCloneConfigGoogle(RCloneConfig):
 
     def ping(self) -> bool:
         return RClone.ping(self)
+
+    @staticmethod
+    def is_google_compute_engine() -> Optional[str]:
+        try:
+            url = "http://metadata.google.internal/computeMetadata/v1/instance/?alt=json&recursive=true"
+            response = requests.get(url, headers={"Metadata-Flavor": "Google"})
+            if (response.status_code == 200) and isinstance(instance := response.json().get("name"), str):
+                return instance
+        except Exception:
+            pass
+        return None
 
     def __eq__(self, other: RCloneConfigGoogle) -> bool:
         return ((self.name == other.name) and
