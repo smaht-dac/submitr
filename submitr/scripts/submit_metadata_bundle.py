@@ -284,7 +284,7 @@ def main(simulated_args_for_testing=None):
             if args.rclone_google_source:
                 PRINT(f"Google Cloud Storage source: {args.rclone_google_source}")
         if instance := RCloneConfigGoogle.is_google_compute_engine():
-            PRINT(f"Google Compute Engine: Yes (instance: {instance})")
+            PRINT(f"Google Compute Engine instance: {instance}")
         if rclone_google_ping_okay is True:
             PRINT(f"Google Cloud Storage connectivity appears to be OK ✓")
         elif rclone_google_ping_okay is False:
