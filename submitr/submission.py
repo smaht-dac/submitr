@@ -40,7 +40,7 @@ from submitr.exceptions import PortalPermissionError
 from submitr.file_for_upload import FileForUpload, FilesForUpload
 from submitr.metadata_template import check_metadata_version, print_metadata_version_warning
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
-from submitr.rclone import cloud_path, RClone, RCloneConfigGoogle
+from submitr.rclone import cloud_path, RCloneConfigGoogle
 from submitr.scripts.cli_utils import get_version
 from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import (
@@ -1942,9 +1942,9 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
         file_uuid = upload_file_info.get("uuid")
         if file:
             if rclone_google_source:
-                rclone = RClone(RCloneConfigGoogle(service_account_file=rclone_google_credentials))
+                rclone_config_google = RCloneConfigGoogle(service_account_file=rclone_google_credentials)
                 google_source_file = cloud_path.join(rclone_google_source, os.path.basename(file))
-                if not rclone.exists(google_source_file):
+                if not rclone_config_google.path_exists(google_source_file):
                     PRINT(f"WARNING: xCannot find Google Cloud Storage file to upload to AWS S3: {google_source_file}")
                     return False
                 return True
@@ -2467,12 +2467,12 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
             raise Exception(f"Cannot determine file name: {uuid}")
 
     if rclone_google_source:
-        rclone = RClone(RCloneConfigGoogle(service_account_file=rclone_google_credentials))
+        rclone_config_google = RCloneConfigGoogle(service_account_file=rclone_google_credentials)
         google_source_file = cloud_path.join(rclone_google_source, os.path.basename(item_filename))
-        if not rclone.exists(google_source_file):
+        if not rclone_config_google.path_exists(google_source_file):
             PRINT(f"WARNING: Cannot find Google Cloud Storage file to upload to AWS S3: {google_source_file}")
             return False
-        file_size = format_size(rclone.size(google_source_file))
+        file_size = format_size(rclone_config_google.file_size(google_source_file))
         PRINT(f"File to upload from GCS to AWS S3: {google_source_file} ({file_size})")
 
     elif not (item_filename_found := search_for_file(item_filename, location=directory,

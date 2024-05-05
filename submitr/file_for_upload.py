@@ -4,7 +4,7 @@ import pathlib
 from typing import List, Optional, Union
 from dcicutils.file_utils import get_file_size, search_for_file
 from dcicutils.structured_data import StructuredDataSet
-from submitr.rclone import cloud_path, RClone, RCloneConfigGoogle
+from submitr.rclone import cloud_path, RCloneConfigGoogle
 
 # Unified the logic for looking for files to upload.
 
@@ -163,9 +163,9 @@ class FileForUpload:
     def google_path(self) -> Optional[str]:
         if not self._google_path:
             if self._google_source and self._google_credentials and not self._google_tried_and_failed:
-                rclone = RClone(RCloneConfigGoogle(service_account_file=self._google_credentials))
+                rclone_config_google = RCloneConfigGoogle(service_account_file=self._google_credentials)
                 google_file = cloud_path.join(self._google_source, self.name)
-                if isinstance(google_size := rclone.size(google_file), int) is not None:
+                if isinstance(google_size := rclone_config_google.file_size(google_file), int) is not None:
                     self._google_path = google_file
                     self._google_size = google_size
                 else:
