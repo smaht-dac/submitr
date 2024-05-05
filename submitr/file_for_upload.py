@@ -6,7 +6,7 @@ from dcicutils.file_utils import get_file_size, search_for_file
 from dcicutils.structured_data import StructuredDataSet
 from submitr.rclone import cloud_path, RCloneConfigGoogle
 
-# Unified the logic for looking for files to upload.
+# Unified the logic for looking for files to upload and storing related info.
 
 
 class FileForUpload:
@@ -47,18 +47,18 @@ class FileForUpload:
                                          location=main_search_directory,
                                          recursive=main_search_directory_recursively is True)
         elif not isinstance(other_search_directories, list) or not other_search_directories:
-            # Only if to main search directory specifed to we default ther "other" search
-            # directories to the current directory (.) if it is not otherwise specified.
+            # Only if no main search directory specifed do we default the "other" search
+            # directories to the current directory (.), if it is not otherwise specified.
             other_search_directories = ["."]
 
         if not isinstance(file_paths, list) or not file_paths:
-            # Only look at "other" search directories if we haven't yet found the file; and if
-            # multiple instances of the file exist within these directories it doesn't matter,
-            # we just take the first one we find, with no flagging of multiple files found;
-            # unlike the case (above) of searching the specified main search directory where,
-            # if recursive is specified, we will flag any multiple file instances found.
-            # In practice these other directories are the directory containing the
-            # submission file and the current directory.
+            # Only look at other search directories if we have no yet found the file within the main
+            # search directory; and if multiple instances of the file exist within/among these other
+            # directories it doesn't matter; we just take the first one we find, with no flagging of
+            # multiple files found. Unlike the case (above) of searching the main search directory
+            # where (if recursive is specified) we will flag any multiple file instances found.
+            # In practice these other directories are the directory containing
+            # the submission file, and the current directory.
             if isinstance(other_search_directories, list) and other_search_directories:
                 # Actually, other_search_directories can also be just a str and/or PosixPath.
                 if file_path := search_for_file(file, location=other_search_directories, single=True, recursive=False):
@@ -161,7 +161,7 @@ class FileForUpload:
 
     @property
     def google_path(self) -> Optional[str]:
-        if not self._google_path:
+        if self._google_path is None:
             if self._google_source and self._google_credentials and not self._google_tried_and_failed:
                 rclone_config_google = RCloneConfigGoogle(service_account_file=self._google_credentials)
                 google_file = cloud_path.join(self._google_source, self.name)
@@ -190,10 +190,13 @@ class FileForUpload:
 
     @property
     def google_size(self) -> Optional[int]:
+        if self._google_size is None:
+            _ = self.google_path
         return self._google_size
 
     def resume_upload_command(self, env: Optional[str] = None) -> str:
-        return f"resume-uploads{f' --env {env}' if isinstance(env, str) else ''}{f' {self.uuid}' if self.uuid else ''}"
+        return (f"resume-uploads{f' --env {env}' if isinstance(env, str) else ''}"
+                f"{f' {self.uuid or self.name}' if self.uuid else ''}")
 
     def __str__(self) -> str:
         return (
