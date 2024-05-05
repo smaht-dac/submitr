@@ -175,6 +175,18 @@ class RClone:
         except Exception:
             return None
 
+    def bucket_exists(self, source: str, config: Optional[RCloneConfig] = None) -> bool:
+        if not isinstance(config, RCloneConfig):
+            if not isinstance(config := self.source, RCloneConfig):
+                if not isinstance(config := self.destination, RCloneConfig):
+                    return None
+        try:
+            with config.config_file() as config_file:
+                return RClone._execute_rclone_bucket_exists_command(source=f"{config.name}:{source}",
+                                                                    config=config_file)
+        except Exception:
+            return None
+
     def size(self, source: str, config: Optional[RCloneConfig] = None) -> Optional[int]:
         if not isinstance(config, RCloneConfig):
             if not isinstance(config := self.source, RCloneConfig):
@@ -254,6 +266,8 @@ class RClone:
             process = subprocess.Popen(command, universal_newlines=True,
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             # Example output: "  1234 some_file.fastq" where 1234 is file size.
+            # Note that if the given source (file) does not exist
+            # but its parent bucket does then the returncode is still 0.
             nlines = 0
             for line in process.stdout:
                 nlines += 1
@@ -264,6 +278,16 @@ class RClone:
             if raise_exception is True:
                 raise e
         return False
+
+    @staticmethod
+    def _execute_rclone_bucket_exists_command(source: str, config: Optional[str] = None) -> bool:
+        command = [RClone.executable_path(), "lsd", source]
+        if isinstance(config, str) and config:
+            command += ["--config", config]
+        try:
+            return subprocess.run(command, capture_output=True).returncode == 0
+        except Exception:
+            return None
 
     @staticmethod
     def _execute_rclone_size_command(source: str, config: Optional[str] = None,
