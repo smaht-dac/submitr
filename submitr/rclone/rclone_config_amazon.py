@@ -5,7 +5,8 @@ from json import dumps as dump_json
 from typing import Optional, Union
 from uuid import uuid4 as create_uuid
 from dcicutils.misc_utils import create_dict, normalize_string
-from submitr.rclone.rclone_config import RCloneConfig
+from submitr.rclone.rclone_config import RCloneConfig, RCloneCredentials
+from submitr.rclone.rclone_utils import cloud_path
 
 
 class RCloneConfigAmazon(RCloneConfig):
@@ -17,33 +18,34 @@ class RCloneConfigAmazon(RCloneConfig):
                  secret_access_key: Optional[str] = None,
                  session_token: Optional[str] = None,
                  kms_key_id: Optional[str] = None,
-                 name: Optional[str] = None, bucket: Optional[str] = None) -> None:
+                 name: Optional[str] = None,
+                 bucket: Optional[str] = None) -> None:
 
         if isinstance(credentials_or_config, RCloneConfigAmazon):
             name = normalize_string(name) or credentials_or_config.name
-            bucket = normalize_string(bucket) or credentials_or_config.bucket
+            bucket = cloud_path.normalize(bucket) or credentials_or_config.bucket
             credentials = None
         elif isinstance(credentials_or_config, AmazonCredentials):
             credentials = credentials_or_config
         else:
             credentials = None
-
-        super().__init__(name=name, bucket=bucket)
-        self._credentials = AmazonCredentials(credentials=credentials,
-                                              region=region,
-                                              access_key_id=access_key_id,
-                                              secret_access_key=secret_access_key,
-                                              session_token=session_token,
-                                              kms_key_id=kms_key_id)
+        if credentials:
+            credentials = AmazonCredentials(credentials=credentials,
+                                            region=region,
+                                            access_key_id=access_key_id,
+                                            secret_access_key=secret_access_key,
+                                            session_token=session_token,
+                                            kms_key_id=kms_key_id)
+        super().__init__(name=name, bucket=bucket, credentials=credentials)
 
     @property
     def credentials(self) -> AmazonCredentials:
-        return self._credentials
+        return super().credentials
 
     @credentials.setter
     def credentials(self, value: AmazonCredentials) -> None:
         if isinstance(value, AmazonCredentials):
-            self._credentials = value
+            super().credentials = value
 
     @property
     def region(self) -> Optional[str]:
@@ -105,7 +107,7 @@ class RCloneConfigAmazon(RCloneConfig):
                            server_side_encryption="aws:kms" if self.kms_key_id else None)
 
 
-class AmazonCredentials:
+class AmazonCredentials(RCloneCredentials):
 
     def __init__(self,
                  credentials: Optional[AmazonCredentials] = None,

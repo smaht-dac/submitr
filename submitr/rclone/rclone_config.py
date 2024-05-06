@@ -1,3 +1,4 @@
+from __future__ import annotations
 from abc import ABC as AbstractBaseClass, abstractproperty
 from contextlib import contextmanager
 from shutil import copy as copy_file
@@ -11,8 +12,15 @@ from submitr.rclone.rclone_utils import cloud_path
 
 class RCloneConfig(AbstractBaseClass):
 
-    def __init__(self, name: Optional[str] = None, bucket: Optional[str] = None) -> None:
+    def __init__(self,
+                 name: Optional[str] = None,
+                 credentials: Optional[RCloneCredentials] = None,
+                 bucket: Optional[str] = None) -> None:
         self._name = normalize_string(name) or create_uuid()
+        self._credentials = credentials if isinstance(credentials, RCloneCredentials) else None
+        # We actually allow here not just a bucket name but any "path",
+        # such as they are (i.e. path-like), beginning with a bucket
+        # name, within the cloud (S3, GCP) storage system.
         self._bucket = cloud_path.normalize(bucket)
 
     @property
@@ -37,6 +45,15 @@ class RCloneConfig(AbstractBaseClass):
     def bucket(self, value: str) -> None:
         if (value := cloud_path.normalize(value)) is not None:
             self._bucket = value or None
+
+    @property
+    def credentials(self) -> RCloneCredentials:
+        return self._credentials
+
+    @credentials.setter
+    def credentials(self, value: RCloneCredentials) -> None:
+        if isinstance(value, RCloneCredentials):
+            self._credentials = value
 
     @abstractproperty
     def config(self) -> dict:
@@ -98,3 +115,7 @@ class RCloneConfig(AbstractBaseClass):
             extra_lines = None
         with self.config_file(extra_lines=extra_lines) as config_file:
             return RCloneCommands.lsd_command(source=f"{self.name}:", config=config_file)
+
+
+class RCloneCredentials(AbstractBaseClass):
+    pass

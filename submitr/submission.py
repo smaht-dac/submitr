@@ -1920,6 +1920,27 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
                    rclone_google_credentials=None,
                    no_query=False, subfolders=False, portal=None):
 
+    if _pytesting():
+        return do_any_uploads_old(res=res, keydict=keydict,
+                                  upload_folder=upload_folder,
+                                  ingestion_filename=ingestion_filename,
+                                  rclone_google_source=rclone_google_source,
+                                  rclone_google_credentials=rclone_google_credentials,
+                                  no_query=no_query, subfolders=subfolders, portal=portal)
+    else:
+        return do_any_uploads_new(res=res, keydict=keydict,
+                                  upload_folder=upload_folder,
+                                  ingestion_filename=ingestion_filename,
+                                  rclone_google_source=rclone_google_source,
+                                  rclone_google_credentials=rclone_google_credentials,
+                                  no_query=no_query, subfolders=subfolders, portal=portal)
+
+
+def do_any_uploads_new(res, keydict, upload_folder=None, ingestion_filename=None,
+                       rclone_google_source=None,
+                       rclone_google_credentials=None,
+                       no_query=False, subfolders=False, portal=None):
+
     files_for_upload = FilesForUpload.define(
         _get_section(res, "upload_info"),
         main_search_directory=upload_folder,
@@ -1929,37 +1950,28 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
         google_source=rclone_google_source,
         google_credentials=rclone_google_credentials)
 
-    # NEW
     files_for_upload_found = [file for file in files_for_upload if file.found]
     files_for_upload_not_found = [file for file in files_for_upload if not file.found]
 
     if files_for_upload_not_found:
         for file in files_for_upload_not_found:
             PRINT(f"WARNING: Cannot find file for upload: {file.name} ({file.uuid})")
-            PRINT(f"- You may upload later with: {file.resume_upload_command}")
+            PRINT(f"- You may upload later with: {file.resume_upload_command(env=portal.env if portal else None)}")
 
     first_time = True
     if files_for_upload_found:
         for file in files_for_upload_found:
-            # upload_file(file, portal=portal, first_time=first_time)  # TODO
+            # import pdb ; pdb.set_trace()  # noqa
+            pass
+            upload_file(file, portal=portal, first_time=first_time)  # TODO
             first_time = False
             ignorable(first_time)
-    # NEW
 
-    # NEW
-#   first_time = True
-#   for file_for_upload in files_for_upload:
-#       if not file_for_upload.found:
-#           SHOW(f"Upload file not found: {file_for_upload.name}")
-#           continue
-#       elif file_for_upload.found_locally_multiple:
-#           PRINT(f"No upload attempted for file {file_for_upload.name} because multiple copies"
-#                 f" were found in folder {file_for_upload.main_search_directory}:"
-#                 f" {', '.join(file_for_upload.local_paths)}.")
-#       pass
-#       file_metadata = upload_file(file_for_upload, portal=portal, first_time=first_time)  # noqa (TODO)
-#       first_time = False
-#   # NEW
+
+def do_any_uploads_old(res, keydict, upload_folder=None, ingestion_filename=None,
+                       rclone_google_source=None,
+                       rclone_google_credentials=None,
+                       no_query=False, subfolders=False, portal=None):
 
     def display_file_info(upload_file_info: dict) -> None:
         nonlocal upload_folder, subfolders
@@ -2279,8 +2291,7 @@ def upload_file_to_uuid(filename, uuid, auth,
     return metadata
 
 
-# NEW: replacement for upload_file_to_uuid
-def upload_file(file_for_upload, first_time=False, portal=None):
+def upload_file(file_for_upload, first_time=False, portal=None):  # NEW: replacement for upload_file_to_uuid
     """
     Upload file to a target environment.
 
@@ -2290,7 +2301,7 @@ def upload_file(file_for_upload, first_time=False, portal=None):
     :returns: item metadata dict or None
     """
     metadata = None
-    patch_data = {"filename": os.path.basename(file_for_upload.name)}
+    patch_data = {"filename": file_for_upload.name}
     response = portal.patch_metadata(object_id=file_for_upload.uuid, data=patch_data)
     metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
                                                                            method="PATCH", uuid=file_for_upload.uuid,
@@ -2546,6 +2557,17 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
         if not (item_filename := uuid_metadata.get("filename")):
             raise Exception(f"Cannot determine file name: {uuid}")
 
+    # NEW
+    # import pdb ; pdb.set_trace()  # noqa
+    file_for_upload = FileForUpload.define(
+        item_filename,
+        main_search_directory=directory,
+        main_search_directory_recursively=recursive,
+        other_search_directories=[os.path.curdir],
+        google_source=rclone_google_source,
+        google_credentials=rclone_google_credentials)
+    ignorable(file_for_upload)
+
     if rclone_google_source:
         rclone_config_google = RCloneConfigGoogle(service_account_file=rclone_google_credentials)
         google_source_file = cloud_path.join(rclone_google_source, os.path.basename(item_filename))
@@ -2560,7 +2582,7 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
         raise Exception(f"File not found: {item_filename}")
 
     else:
-        PRINT(f"File to upload to AWS S3: {format_path(item_filename_found)}")
+        PRINT(f"xFile to upload to AWS S3: {format_path(item_filename_found)}")
         item_filename = item_filename_found
         file_size = format_size(get_file_size(item_filename))
 

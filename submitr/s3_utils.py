@@ -578,7 +578,6 @@ def upload_file_to_aws_s3(file: FileForUpload,
         return False
 
     if print_preamble:
-        # printf(f"Uploading {file.name} ({format_size(file_size)}) to: {s3_uri}")
         printf(f"▶ Upload: {file.name} ({format_size(file.size)}) ...")
         printf(f"  - From: {file.path_for_display}")
         printf(f"  -   To: {s3_uri}")

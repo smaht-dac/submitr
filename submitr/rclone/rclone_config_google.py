@@ -7,7 +7,7 @@ import subprocess
 from typing import Optional, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, normalize_string
-from submitr.rclone.rclone_config import RCloneConfig
+from submitr.rclone.rclone_config import RCloneConfig, RCloneCredentials
 from submitr.rclone.rclone_utils import cloud_path
 
 
@@ -17,7 +17,8 @@ class RCloneConfigGoogle(RCloneConfig):
                  credentials_or_config: Optional[Union[GoogleCredentials, RCloneConfigGoogle]] = None,
                  location: Optional[str] = None,
                  service_account_file: Optional[str] = None,
-                 name: Optional[str] = None, bucket: Optional[str] = None) -> None:
+                 name: Optional[str] = None,
+                 bucket: Optional[str] = None) -> None:
 
         if isinstance(credentials_or_config, RCloneConfigGoogle):
             name = normalize_string(name) or credentials_or_config.name
@@ -27,21 +28,21 @@ class RCloneConfigGoogle(RCloneConfig):
             credentials = credentials_or_config
         else:
             credentials = None
-
-        super().__init__(name=name, bucket=bucket)
-        self._credentials = GoogleCredentials(credentials=credentials,
-                                              location=location,
-                                              service_account_file=service_account_file)
+        if credentials:
+            credentials = GoogleCredentials(credentials=credentials,
+                                            location=location,
+                                            service_account_file=service_account_file)
+        super().__init__(name=name, bucket=bucket, credentials=credentials)
         self._project = None
 
     @property
     def credentials(self) -> GoogleCredentials:
-        return self._credentials
+        return super().credentials
 
     @credentials.setter
     def credentials(self, value: GoogleCredentials) -> None:
         if isinstance(value, GoogleCredentials):
-            self._credentials = value
+            super().credentials = value
 
     @property
     def location(self) -> Optional[str]:
@@ -127,7 +128,7 @@ class RCloneConfigGoogle(RCloneConfig):
                            service_account_file=self.service_account_file)
 
 
-class GoogleCredentials:
+class GoogleCredentials(RCloneCredentials):
 
     @staticmethod
     def create(*args, **kwargs) -> GoogleCredentials:
