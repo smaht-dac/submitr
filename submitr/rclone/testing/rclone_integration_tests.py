@@ -2,7 +2,7 @@ from contextlib import contextmanager
 import os
 from typing import Callable, Optional, Tuple, Union
 from dcicutils.file_utils import are_files_equal
-from dcicutils.misc_utils import short_uuid
+from dcicutils.misc_utils import create_short_uuid
 from dcicutils.tmpfile_utils import temporary_directory, temporary_file, temporary_random_file
 from submitr.rclone.rclone import RClone
 from submitr.rclone.rclone_config import RCloneConfig
@@ -38,7 +38,7 @@ class TestEnv:
         if not (self.use_cloud_key_folder is True):
             return file_name
         else:
-            return cloud_path.join(f"{TestEnv.test_file_prefix}{short_uuid(length=8)}", file_name)
+            return cloud_path.join(f"{TestEnv.test_file_prefix}{create_short_uuid(length=8)}", file_name)
 
 
 class TestEnvAmazon(TestEnv):
@@ -121,6 +121,8 @@ def create_rclone_config_amazon(credentials: AmazonCredentials) -> RCloneConfig:
     assert config.secret_access_key == credentials.secret_access_key
     assert config.session_token == credentials.session_token
     assert config.kms_key_id == credentials.kms_key_id
+    assert RCloneConfigAmazon(config) == config  # checking equals override
+    assert RCloneConfigAmazon(config, path="foo") != config  # checking equals override
     return config
 
 
@@ -129,6 +131,8 @@ def create_rclone_config_google(credentials: AmazonCredentials) -> RCloneConfig:
     assert config.credentials == credentials
     assert config.location == credentials.location
     assert config.service_account_file == credentials.service_account_file
+    assert RCloneConfigGoogle(config) == config  # checking equals override
+    assert RCloneConfigGoogle(config, path="foo") != config  # checking equals override
     return config
 
 

@@ -40,7 +40,7 @@ from submitr.exceptions import PortalPermissionError
 from submitr.file_for_upload import FileForUpload, FilesForUpload
 from submitr.metadata_template import check_metadata_version, print_metadata_version_warning
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
-from submitr.rclone import cloud_path, RCloneConfigGoogle
+from submitr.rclone import RCloneConfigGoogle
 from submitr.scripts.cli_utils import get_version
 from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import (
@@ -687,8 +687,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          subfolders=False,
                          submission_protocol=DEFAULT_SUBMISSION_PROTOCOL,
                          submit=False,
-                         rclone_google_source=None,
-                         rclone_google_credentials=None,
+                         rclone_google_config=None,
                          validate_local_only=False,
                          validate_remote_only=False,
                          validate_local_skip=False,
@@ -876,8 +875,7 @@ def submit_any_ingestion(ingestion_filename, *,
                 validation_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
                 show_details=show_details, report=False, messages=True,
                 validation=True,
-                rclone_google_source=rclone_google_source,
-                rclone_google_credentials=rclone_google_credentials,
+                rclone_google_config=rclone_google_config,
                 nofiles=True, noprogress=noprogress, timeout=timeout,
                 verbose=verbose, debug=debug, debug_sleep=debug_sleep)
 
@@ -922,8 +920,7 @@ def submit_any_ingestion(ingestion_filename, *,
     submission_done, submission_status, submission_response = _monitor_ingestion_process(
             submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
             show_details=show_details, report=False, messages=True,
-            rclone_google_source=rclone_google_source,
-            rclone_google_credentials=rclone_google_credentials,
+            rclone_google_config=rclone_google_config,
             validation=False,
             nofiles=True, noprogress=noprogress, timeout=timeout,
             verbose=verbose, debug=debug, debug_sleep=debug_sleep)
@@ -937,14 +934,12 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if structured_data:
         _review_upload_files(structured_data, ingestion_filename,
-                             rclone_google_source=rclone_google_source,
-                             rclone_google_credentials=rclone_google_credentials,
+                             rclone_google_config=rclone_google_config,
                              validation=validation, directory=upload_folder, recursive=subfolders)
 
     do_any_uploads(submission_response, keydict=portal.key, ingestion_filename=ingestion_filename,
                    upload_folder=upload_folder,
-                   rclone_google_source=rclone_google_source,
-                   rclone_google_credentials=rclone_google_credentials,
+                   rclone_google_config=rclone_google_config,
                    no_query=no_query,
                    subfolders=subfolders, portal=portal)
 
@@ -1044,8 +1039,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                                check_submission_script: bool = False,
                                upload_directory: Optional[str] = None,
                                upload_directory_recursive: bool = False,
-                               rclone_google_source: Optional[str] = None,
-                               rclone_google_credentials: Optional[str] = None,
+                               rclone_google_config: Optional[RCloneConfigGoogle] = None,
                                timeout: Optional[int] = None,
                                verbose: bool = False, debug: bool = False,
                                note: Optional[str] = None,
@@ -1373,8 +1367,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             exit(1)
         PRINT("Submission complete!")
         do_any_uploads(submission_response, keydict=portal.key,
-                       rclone_google_source=rclone_google_source,
-                       rclone_google_credentials=rclone_google_credentials,
+                       rclone_google_config=rclone_google_config,
                        upload_folder=upload_directory, subfolders=upload_directory_recursive, portal=portal)
         return
 
@@ -1916,29 +1909,25 @@ def _show_upload_result(result,
 
 
 def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
-                   rclone_google_source=None,
-                   rclone_google_credentials=None,
+                   rclone_google_config=None,
                    no_query=False, subfolders=False, portal=None):
 
     if _pytesting():
         return do_any_uploads_old(res=res, keydict=keydict,
                                   upload_folder=upload_folder,
                                   ingestion_filename=ingestion_filename,
-                                  rclone_google_source=rclone_google_source,
-                                  rclone_google_credentials=rclone_google_credentials,
+                                  rclone_google_config=rclone_google_config,
                                   no_query=no_query, subfolders=subfolders, portal=portal)
     else:
         return do_any_uploads_new(res=res, keydict=keydict,
                                   upload_folder=upload_folder,
                                   ingestion_filename=ingestion_filename,
-                                  rclone_google_source=rclone_google_source,
-                                  rclone_google_credentials=rclone_google_credentials,
+                                  rclone_google_config=rclone_google_config,
                                   no_query=no_query, subfolders=subfolders, portal=portal)
 
 
 def do_any_uploads_new(res, keydict, upload_folder=None, ingestion_filename=None,
-                       rclone_google_source=None,
-                       rclone_google_credentials=None,
+                       rclone_google_config=None,
                        no_query=False, subfolders=False, portal=None):
 
     files_for_upload = FilesForUpload.define(
@@ -1947,8 +1936,7 @@ def do_any_uploads_new(res, keydict, upload_folder=None, ingestion_filename=None
         main_search_directory_recursively=subfolders,
         other_search_directories=[res.get("parameters", {}).get("ingestion_directory"),
                                   ingestion_filename, os.path.curdir],
-        google_source=rclone_google_source,
-        google_credentials=rclone_google_credentials)
+        google_config=rclone_google_config)
 
     files_for_upload_found = [file for file in files_for_upload if file.found]
     files_for_upload_not_found = [file for file in files_for_upload if not file.found]
@@ -1969,8 +1957,7 @@ def do_any_uploads_new(res, keydict, upload_folder=None, ingestion_filename=None
 
 
 def do_any_uploads_old(res, keydict, upload_folder=None, ingestion_filename=None,
-                       rclone_google_source=None,
-                       rclone_google_credentials=None,
+                       rclone_google_config=None,
                        no_query=False, subfolders=False, portal=None):
 
     def display_file_info(upload_file_info: dict) -> None:
@@ -1978,11 +1965,10 @@ def do_any_uploads_old(res, keydict, upload_folder=None, ingestion_filename=None
         file = upload_file_info.get("filename")
         file_uuid = upload_file_info.get("uuid")
         if file:
-            if rclone_google_source:
-                rclone_config_google = RCloneConfigGoogle(service_account_file=rclone_google_credentials)
-                google_source_file = cloud_path.join(rclone_google_source, os.path.basename(file))
-                if not rclone_config_google.path_exists(google_source_file):
-                    PRINT(f"WARNING: Cannot find Google Cloud Storage file to upload to AWS S3: {google_source_file}")
+            if rclone_google_config:
+                if not rclone_google_config.path_exists(rclone_google_config.bucket):
+                    PRINT(f"WARNING: Cannot find Google Cloud Storage"
+                          f" file to upload to AWS S3: {rclone_google_config.bucket}")
                     return False
                 return True
             if file_paths := search_for_file(file, location=upload_folder, recursive=subfolders):
@@ -2025,8 +2011,7 @@ def do_any_uploads_old(res, keydict, upload_folder=None, ingestion_filename=None
             return
         if no_query:
             do_uploads(files_to_upload, auth=keydict, no_query=no_query, folder=upload_folder,
-                       rclone_google_source=rclone_google_source,
-                       rclone_google_credentials=rclone_google_credentials,
+                       rclone_google_config=rclone_google_config,
                        subfolders=subfolders, portal=portal)
         else:
             message = ("Upload this file?" if len(files_to_upload) == 1
@@ -2034,8 +2019,7 @@ def do_any_uploads_old(res, keydict, upload_folder=None, ingestion_filename=None
             if yes_or_no(message):
                 do_uploads(files_to_upload, auth=keydict,
                            no_query=no_query, folder=upload_folder,
-                           rclone_google_source=rclone_google_source,
-                           rclone_google_credentials=rclone_google_credentials,
+                           rclone_google_config=rclone_google_config,
                            subfolders=subfolders, portal=portal)
             else:
                 noupload = True
@@ -2062,8 +2046,7 @@ def do_any_uploads_old(res, keydict, upload_folder=None, ingestion_filename=None
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
                    upload_folder=None, no_query=False, subfolders=False,
-                   rclone_google_source=None,
-                   rclone_google_credentials=None,
+                   rclone_google_config=None,
                    output_file=None, app=None, keys_file=None, env_from_env=False):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
@@ -2103,8 +2086,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
         if portal.is_schema_file_type(response):
             _upload_item_data(item_filename=uuid, uuid=None, server=portal.server,
                               env=portal.env, directory=upload_folder, recursive=subfolders,
-                              rclone_google_source=rclone_google_source,
-                              rclone_google_credentials=rclone_google_credentials,
+                              rclone_google_config=rclone_google_config,
                               no_query=no_query, app=app, report=False)
             return
 
@@ -2123,8 +2105,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                    keydict=portal.key,
                    ingestion_filename=bundle_filename,
                    upload_folder=upload_folder,
-                   rclone_google_source=rclone_google_source,
-                   rclone_google_credentials=rclone_google_credentials,
+                   rclone_google_config=rclone_google_config,
                    no_query=no_query,
                    subfolders=subfolders,
                    portal=portal)
@@ -2165,9 +2146,7 @@ def get_s3_encrypt_key_id(*, upload_credentials, auth):
     return s3_encrypt_key_id
 
 
-def execute_prearranged_upload(path, upload_credentials,
-                               rclone_google_source=None,
-                               rclone_google_credentials=None, auth=None):
+def execute_prearranged_upload(path, upload_credentials, rclone_google_config=None, auth=None):
     """
     This performs a file upload using special credentials received from ff_utils.patch_metadata.
 
@@ -2195,8 +2174,7 @@ def execute_prearranged_upload(path, upload_credentials,
                           s3_uri=s3_uri,
                           aws_credentials=aws_credentials,
                           aws_kms_key_id=aws_kms_key_id,
-                          # rclone_google_source=rclone_google_source,  # xyzzy
-                          # rclone_google_credentials=rclone_google_credentials,  # xyzzy
+                          google_rclone_config=rclone_google_config,  # xyzzy
                           print_progress=True,
                           print_function=PRINT,
                           verify_upload=True,
@@ -2219,8 +2197,7 @@ def compute_file_post_data(filename, context_attributes):
 
 
 # TODO: obsolete
-def upload_file_to_new_uuid(filename, schema_name, auth,
-                            rclone_google_source, rclone_google_credentials, **context_attributes):
+def upload_file_to_new_uuid(filename, schema_name, auth, rclone_google_config, **context_attributes):
     """
     Upload file to a target environment.
 
@@ -2244,16 +2221,12 @@ def upload_file_to_new_uuid(filename, schema_name, auth,
                                                                            filename=filename, payload_data=post_item)
 
     execute_prearranged_upload(filename, upload_credentials=upload_credentials,
-                               rclone_google_source=rclone_google_source,
-                               rclone_google_credentials=rclone_google_credentials,
-                               auth=auth)
+                               rclone_google_config=rclone_google_config, auth=auth)
 
     return metadata
 
 
-def upload_file_to_uuid(filename, uuid, auth,
-                        rclone_google_source=None, rclone_google_credentials=None,
-                        first_time=False, portal=None):
+def upload_file_to_uuid(filename, uuid, auth, rclone_google_config=None, first_time=False, portal=None):
     """
     Upload file to a target environment.
 
@@ -2284,8 +2257,7 @@ def upload_file_to_uuid(filename, uuid, auth,
                 # which I think is a pretty solid assumption.
                 PRINT(f"Upload file destination AWS S3 bucket: {s3_bucket}")
     execute_prearranged_upload(filename,
-                               rclone_google_source=rclone_google_source,
-                               rclone_google_credentials=rclone_google_credentials,
+                               rclone_google_config=rclone_google_config,
                                upload_credentials=upload_credentials, auth=auth)
 
     return metadata
@@ -2339,8 +2311,7 @@ def upload_file(file_for_upload, first_time=False, portal=None):  # NEW: replace
                           catch_interrupt=True)
 
 #   execute_prearranged_upload(file_for_upload.name,
-#                              rclone_google_source=rclone_google_source,
-#                              rclone_google_credentials=rclone_google_credentials,
+#                              rclone_google_config=rclone_google_config,
 #                              upload_credentials=upload_credentials, auth=auth)
 
     return metadata
@@ -2379,9 +2350,7 @@ SUBMITR_SELECTIVE_UPLOADS = environ_bool("SUBMITR_SELECTIVE_UPLOADS")
 
 
 def do_uploads(upload_spec_list, auth, folder=None, no_query=False,
-               subfolders=False,
-               rclone_google_source=None,
-               rclone_google_credentials=None, portal=None):
+               subfolders=False, rclone_google_config=None, portal=None):
     """
     Uploads the files mentioned in the give upload_spec_list.
 
@@ -2417,8 +2386,7 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False,
         )
         file_metadata = wrapped_upload_file_to_uuid(
             filename=file_path, uuid=uuid, auth=auth,
-            rclone_google_source=rclone_google_source,
-            rclone_google_credentials=rclone_google_credentials,
+            rclone_google_config=rclone_google_config,
             first_time=first_time, portal=portal
         )
         if file_metadata:
@@ -2475,10 +2443,7 @@ class UploadMessageWrapper:
         return wrapper
 
 
-def _upload_extra_files(
-    credentials, uploader_wrapper, folder, auth, recursive=False,
-    rclone_google_source=None, rclone_google_credentials=None
-):
+def _upload_extra_files(credentials, uploader_wrapper, folder, auth, recursive=False, rclone_google_config=None):
     # UNUSED FOR SMAHT I THINK (VERIFY) - 2024-05-05.
     """Attempt upload of all extra files.
 
@@ -2512,14 +2477,12 @@ def _upload_extra_files(
             execute_prearranged_upload, extra_file_path
         )
         wrapped_execute_prearranged_upload(extra_file_path, extra_file_credentials,
-                                           rclone_google_source=rclone_google_source,
-                                           rclone_google_credentials=rclone_google_credentials,
+                                           rclone_google_config=rclone_google_config,
                                            auth=auth)
 
 
 def _upload_item_data(item_filename, uuid, server, env, directory=None, recursive=False,
-                      rclone_google_source=None,
-                      rclone_google_credentials=None,
+                      rclone_google_config=None,
                       no_query=False, app=None, report=True):
     """
     Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
@@ -2564,18 +2527,15 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
         main_search_directory=directory,
         main_search_directory_recursively=recursive,
         other_search_directories=[os.path.curdir],
-        google_source=rclone_google_source,
-        google_credentials=rclone_google_credentials)
+        google_source=rclone_google_config)
     ignorable(file_for_upload)
 
-    if rclone_google_source:
-        rclone_config_google = RCloneConfigGoogle(service_account_file=rclone_google_credentials)
-        google_source_file = cloud_path.join(rclone_google_source, os.path.basename(item_filename))
-        if not rclone_config_google.path_exists(google_source_file):
-            PRINT(f"WARNING: Cannot find Google Cloud Storage file to upload to AWS S3: {google_source_file}")
+    if rclone_google_config:
+        if not rclone_google_config.path_exists(rclone_google_config.bucket):
+            PRINT(f"WARNING: Cannot find Google Cloud Storage file to upload to AWS S3: {rclone_google_config.bucket}")
             return False
-        file_size = format_size(rclone_config_google.file_size(google_source_file))
-        PRINT(f"File to upload from GCS to AWS S3: {google_source_file} ({file_size})")
+        file_size = format_size(rclone_google_config.file_size(rclone_google_config.bucket))
+        PRINT(f"File to upload from GCS to AWS S3: {rclone_google_config.bucket} ({file_size})")
 
     elif not (item_filename_found := search_for_file(item_filename, location=directory,
                                                      recursive=recursive, single=True)):
@@ -2592,8 +2552,7 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
             exit(1)
 
     upload_file_to_uuid(filename=item_filename, uuid=uuid,
-                        rclone_google_source=rclone_google_source,
-                        rclone_google_credentials=rclone_google_credentials,
+                        rclone_google_config=rclone_google_config,
                         auth=portal.key, portal=portal)
 
 
@@ -2806,13 +2765,11 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
 
 
 def _review_upload_files(structured_data: StructuredDataSet, ingestion_filename: str, validation: bool = False,
-                         rclone_google_source: Optional[str] = None,
-                         rclone_google_credentials: Optional[str] = None,
+                         rclone_google_config: Optional[RCloneConfigGoogle] = None,
                          directory: Optional[str] = None, recursive: bool = False) -> None:
 
     nfiles_found, file_validation_errors = _validate_files(structured_data, ingestion_filename,
-                                                           rclone_google_source=rclone_google_source,
-                                                           rclone_google_credentials=rclone_google_credentials,
+                                                           rclone_google_config=rclone_google_config,
                                                            upload_folder=directory, recursive=recursive)
     if file_validation_errors:
         nfiles = len(file_validation_errors)
@@ -2971,8 +2928,7 @@ def _format_reference_errors(ref_errors: List[dict], verbose: bool = False, debu
 
 def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
                     upload_folder: str, recursive: bool,
-                    rclone_google_source: Optional[str] = None,
-                    rclone_google_credentials: Optional[str] = None) -> Tuple[int, List[str]]:
+                    rclone_google_config: Optional[RCloneConfigGoogle] = None) -> Tuple[int, List[str]]:
 
     file_validation_errors = []
 
@@ -2981,8 +2937,7 @@ def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
         main_search_directory=upload_folder,
         main_search_directory_recursively=recursive,
         other_search_directories=[ingestion_filename, os.path.curdir],
-        google_source=rclone_google_source,
-        google_credentials=rclone_google_credentials)
+        google_source=rclone_google_config)
 
     if files_for_upload_not_found := [file for file in files_for_upload if not file.found]:
         for file in files_for_upload_not_found:
@@ -3044,6 +2999,7 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
         PRINT_OUTPUT(f"\n> Resolved object (linkTo) references:")
         for resolved_ref in sorted(resolved_refs):
             PRINT_OUTPUT(f"  - {resolved_ref}")
+    # TODO: replace with FilesForUpload
     if files := structured_data.upload_files_located(location=[upload_folder,
                                                                os.path.dirname(ingestion_filename) or "."],
                                                      recursive=recursive):
@@ -3396,8 +3352,7 @@ def _print_metadata_file_info(file: str, env: str,
                               refs: bool = False, files: bool = False,
                               upload_folder: Optional[str] = None,
                               subfolders: bool = False,
-                              rclone_google_source: Optional[str] = None,
-                              rclone_google_credentials: Optional[str] = None,
+                              rclone_google_config: Optional[RCloneConfigGoogle] = None,
                               output_file: Optional[str] = None,
                               verbose: bool = False) -> None:
     if output_file:
@@ -3478,8 +3433,7 @@ def _print_metadata_file_info(file: str, env: str,
             files_for_upload = FilesForUpload.define(structured_data,
                                                      main_search_directory=upload_folder,
                                                      main_search_directory_recursively=subfolders,
-                                                     google_source=rclone_google_source,
-                                                     google_credentials=rclone_google_credentials)
+                                                     google_source=rclone_google_config)
             PRINT(f"Files: {len(files_for_upload)}")
             print_files(files_for_upload, max_output=max_output, output_file=output_file, verbose=verbose)
     if not (refs is True):

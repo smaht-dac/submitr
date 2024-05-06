@@ -3,9 +3,8 @@ from abc import ABC as AbstractBaseClass, abstractproperty
 from contextlib import contextmanager
 from shutil import copy as copy_file
 from typing import List, Optional
-from uuid import uuid4 as create_uuid
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
-from dcicutils.misc_utils import normalize_string
+from dcicutils.misc_utils import create_uuid, normalize_string
 from submitr.rclone.rclone_commands import RCloneCommands
 from submitr.rclone.rclone_utils import cloud_path
 
@@ -15,13 +14,13 @@ class RCloneConfig(AbstractBaseClass):
     def __init__(self,
                  name: Optional[str] = None,
                  credentials: Optional[RCloneCredentials] = None,
-                 bucket: Optional[str] = None) -> None:
+                 path: Optional[str] = None) -> None:
         self._name = normalize_string(name) or create_uuid()
         self._credentials = credentials if isinstance(credentials, RCloneCredentials) else None
-        # We actually allow here not just a bucket name but any "path",
-        # such as they are (i.e. path-like), beginning with a bucket
-        # name, within the cloud (S3, GCP) storage system.
-        self._bucket = cloud_path.normalize(bucket)
+        # We allow here not just a bucket name but any "path",
+        # such as they are (i.e. path-like), beginning with a
+        # bucket name, within the cloud (S3, GCP) storage system.
+        self._path = cloud_path.normalize(path)
 
     @property
     def name(self) -> str:
@@ -38,13 +37,13 @@ class RCloneConfig(AbstractBaseClass):
                 self._name = value
 
     @property
-    def bucket(self) -> Optional[str]:
-        return self._bucket
+    def path(self) -> Optional[str]:
+        return self._path
 
-    @bucket.setter
-    def bucket(self, value: str) -> None:
+    @path.setter
+    def path(self, value: str) -> None:
         if (value := cloud_path.normalize(value)) is not None:
-            self._bucket = value or None
+            self._path = value or None
 
     @property
     def credentials(self) -> RCloneCredentials:
@@ -94,17 +93,22 @@ class RCloneConfig(AbstractBaseClass):
                 for extra_line in extra_lines:
                     f.write(f"{extra_line}\n")
 
-    def path_exists(self, source: str) -> Optional[bool]:
-        with self.config_file() as config_file:
-            return RCloneCommands.exists_command(source=f"{self.name}:{source}", config=config_file)
+    def path_exists(self, path: str) -> Optional[bool]:
+        if path := cloud_path(path):
+            with self.config_file() as config_file:
+                return RCloneCommands.exists_command(source=f"{self.name}:{path}", config=config_file)
+        return False
 
-    def file_size(self, source: str) -> Optional[int]:
-        with self.config_file() as config_file:
-            return RCloneCommands.size_command(source=f"{self.name}:{source}", config=config_file)
+    def file_size(self, path: str) -> Optional[int]:
+        if path := cloud_path(path):
+            with self.config_file() as config_file:
+                return RCloneCommands.size_command(source=f"{self.name}:{path}", config=config_file)
+        return None
 
-    def file_checksum(self, source: str) -> Optional[str]:
-        with self.config_file() as config_file:
-            return RCloneCommands.checksum_command(source=f"{self.name}:{source}", config=config_file)
+    def file_checksum(self, path: str) -> Optional[str]:
+        if path := cloud_path(path):
+            with self.config_file() as config_file:
+                return RCloneCommands.checksum_command(source=f"{self.name}:{path}", config=config_file)
 
     def ping(self) -> bool:
         # Use the rclone lsd command as proxy for a "ping".
@@ -115,6 +119,15 @@ class RCloneConfig(AbstractBaseClass):
             extra_lines = None
         with self.config_file(extra_lines=extra_lines) as config_file:
             return RCloneCommands.lsd_command(source=f"{self.name}:", config=config_file)
+
+    def __eq__(self, other: RCloneConfig) -> bool:
+        return (isinstance(other, RCloneConfig) and
+                (self.name == other.name) and
+                (self.path == other.path) and
+                (self.credentials == other.credentials))
+
+    def __ne__(self, other: RCloneConfig) -> bool:
+        return not self.__eq__(other)
 
 
 class RCloneCredentials(AbstractBaseClass):

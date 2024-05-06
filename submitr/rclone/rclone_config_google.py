@@ -18,11 +18,11 @@ class RCloneConfigGoogle(RCloneConfig):
                  location: Optional[str] = None,
                  service_account_file: Optional[str] = None,
                  name: Optional[str] = None,
-                 bucket: Optional[str] = None) -> None:
+                 path: Optional[str] = None) -> None:
 
         if isinstance(credentials_or_config, RCloneConfigGoogle):
             name = normalize_string(name) or credentials_or_config.name
-            bucket = cloud_path.normalize(bucket) or credentials_or_config.bucket
+            path = cloud_path.normalize(path) or credentials_or_config.path
             credentials = credentials_or_config.credentials
         elif isinstance(credentials_or_config, GoogleCredentials):
             credentials = credentials_or_config
@@ -31,7 +31,7 @@ class RCloneConfigGoogle(RCloneConfig):
         credentials = GoogleCredentials(credentials=credentials,
                                         location=location,
                                         service_account_file=service_account_file)
-        super().__init__(name=name, bucket=bucket, credentials=credentials)
+        super().__init__(name=name, path=path, credentials=credentials)
         self._project = None
 
     @property
@@ -110,12 +110,10 @@ class RCloneConfigGoogle(RCloneConfig):
         return None
 
     def __eq__(self, other: RCloneConfigGoogle) -> bool:
-        return ((self.name == other.name) and
-                (self.bucket == other.bucket) and
-                (self.credentials == other.credentials))
+        return isinstance(other, RCloneConfigGoogle) and super().__eq__(other)
 
     def __ne__(self, other: RCloneConfigGoogle) -> bool:
-        return self.__eq__(other)
+        return not self.__eq__(other)
 
     @property
     def config(self) -> dict:
@@ -175,4 +173,4 @@ class GoogleCredentials(RCloneCredentials):
                 (self.service_account_file == other.service_account_file))
 
     def __ne__(self, other: GoogleCredentials) -> bool:
-        return self.__eq__(other)
+        return not self.__eq__(other)

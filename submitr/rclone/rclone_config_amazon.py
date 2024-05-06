@@ -3,8 +3,7 @@ from boto3 import client as BotoClient
 from datetime import timedelta
 from json import dumps as dump_json
 from typing import Optional, Union
-from uuid import uuid4 as create_uuid
-from dcicutils.misc_utils import create_dict, normalize_string
+from dcicutils.misc_utils import create_dict, create_short_uuid, normalize_string
 from submitr.rclone.rclone_config import RCloneConfig, RCloneCredentials
 from submitr.rclone.rclone_utils import cloud_path
 
@@ -19,11 +18,11 @@ class RCloneConfigAmazon(RCloneConfig):
                  session_token: Optional[str] = None,
                  kms_key_id: Optional[str] = None,
                  name: Optional[str] = None,
-                 bucket: Optional[str] = None) -> None:
+                 path: Optional[str] = None) -> None:
 
         if isinstance(credentials_or_config, RCloneConfigAmazon):
             name = normalize_string(name) or credentials_or_config.name
-            bucket = cloud_path.normalize(bucket) or credentials_or_config.bucket
+            path = cloud_path.normalize(path) or credentials_or_config.path
             credentials = credentials_or_config.credentials
         elif isinstance(credentials_or_config, AmazonCredentials):
             credentials = credentials_or_config
@@ -35,7 +34,7 @@ class RCloneConfigAmazon(RCloneConfig):
                                         secret_access_key=secret_access_key,
                                         session_token=session_token,
                                         kms_key_id=kms_key_id)
-        super().__init__(name=name, bucket=bucket, credentials=credentials)
+        super().__init__(name=name, path=path, credentials=credentials)
 
     @property
     def credentials(self) -> AmazonCredentials:
@@ -87,12 +86,10 @@ class RCloneConfigAmazon(RCloneConfig):
         self._credentials.kms_key_id = value
 
     def __eq__(self, other: RCloneConfigAmazon) -> bool:
-        return ((self.name == other.name) and
-                (self.bucket == other.bucket) and
-                (self.credentials == other.credentials))
+        return isinstance(other, RCloneConfigAmazon) and super().__eq__(other)
 
     def __ne__(self, other: RCloneConfigAmazon) -> bool:
-        return self.__eq__(other)
+        return not self.__eq__(other)
 
     @property
     def config(self) -> dict:
@@ -238,7 +235,7 @@ class AmazonCredentials(RCloneCredentials):
 
         policy = dump_json(policy) if isinstance(policy, dict) else None
 
-        name = f"test.smaht.submitr.{create_uuid().hex[:13]}"
+        name = f"test.smaht.submitr.{create_short_uuid(length=12)}"
         try:
             sts = BotoClient("sts",
                              aws_access_key_id=self.access_key_id,

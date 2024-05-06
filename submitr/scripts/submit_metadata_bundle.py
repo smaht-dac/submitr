@@ -261,9 +261,9 @@ def main(simulated_args_for_testing=None):
             PRINT(f"Google service account file does not exist: {args.rclone_google_credentials}")
             exit(1)
         # TODO: Allow "location" to be passed in (?) - not in service account file.
-        import pdb ; pdb.set_trace()  # noqa
+        # import pdb ; pdb.set_trace()  # noqa
         rclone_google_config = RCloneConfigGoogle(service_account_file=args.rclone_google_credentials,
-                                                  bucket=args.rclone_google_source)
+                                                  path=args.rclone_google_source)
         if not rclone_google_config.ping():
             PRINT("WARNING: Google Cloud Storage cannot be accessed!")
             rclone_google_ping_okay = False
@@ -357,8 +357,7 @@ def main(simulated_args_for_testing=None):
                                   refs=args.refs, files=args.files,
                                   subfolders=not directory_only,
                                   upload_folder=args.upload_folder,
-                                  rclone_google_source=args.rclone_google_source,
-                                  rclone_google_credentials=args.rclone_google_credentials,
+                                  rclone_google_config=rclone_google_config,
                                   output_file=args.output,
                                   verbose=args.verbose)
         exit(0)

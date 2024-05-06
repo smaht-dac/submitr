@@ -5,7 +5,7 @@ from typing import Callable, List, Optional, Union
 from dcicutils.file_utils import get_file_size, search_for_file
 from dcicutils.misc_utils import format_size
 from dcicutils.structured_data import StructuredDataSet
-from submitr.rclone import cloud_path, GoogleCredentials, RCloneConfigGoogle
+from submitr.rclone import cloud_path, RCloneConfigGoogle
 
 # Unified the logic for looking for files to upload (to AWS S3), and storing
 # related info; whether or not the file is coming from the local file system
@@ -22,8 +22,7 @@ class FileForUpload:
                main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
                main_search_directory_recursively: bool = False,
                other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
-               google_source: Optional[str] = None,
-               google_credentials: Optional[Union[GoogleCredentials, str]] = None) -> Optional[FileForUpload]:
+               google_config: Optional[RCloneConfigGoogle] = None) -> Optional[FileForUpload]:
 
         # Given file can be a dictionary (from structured_data.upload_files) like:
         # {"type": "ReferenceFile", "file": "first_file.fastq"}
@@ -78,9 +77,8 @@ class FileForUpload:
             if len(file_paths) > 1:
                 local_paths = file_paths
 
-        if isinstance(google_source, str):
-            # We actually initialize Google related code lazily in FileForUpdate.google_path.
-            pass
+        # Note that we actually initialize Google file existence and size
+        # data lazily in FileForUpdate.google_path from the given google_config.
 
         file_for_upload = FileForUpload(name=file,
                                         type=file_type,
@@ -89,8 +87,7 @@ class FileForUpload:
                                         local_path=local_path,
                                         local_paths=local_paths,
                                         local_size=local_size,
-                                        google_source=google_source,
-                                        google_credentials=google_credentials,
+                                        google_config=google_config,
                                         _internal_use_only=True)
         return file_for_upload
 
@@ -102,8 +99,7 @@ class FileForUpload:
                  local_path: Optional[str] = None,
                  local_paths: Optional[List[str]] = None,
                  local_size: Optional[int] = None,
-                 google_source: Optional[str] = None,
-                 google_credentials: Optional[Union[GoogleCredentials, str]] = None,
+                 google_config: Optional[RCloneConfigGoogle] = None,
                  _internal_use_only: bool = False) -> None:
 
         if not (_internal_use_only is True):
@@ -115,14 +111,7 @@ class FileForUpload:
         self._local_path = local_path if isinstance(local_path, str) else None
         self._local_paths = local_paths if isinstance(local_paths, list) else None
         self._local_size = local_size if isinstance(local_size, int) else None
-        self._google_source = google_source if isinstance(google_source, str) else None
-        if isinstance(google_credentials, GoogleCredentials):
-            self._google_credentials = GoogleCredentials(google_credentials)
-        elif isinstance(google_credentials, str):
-            self._google_credentials = GoogleCredentials(service_account_file=google_credentials)
-        else:
-            self._google_credentials = None
-        self._google_config = None
+        self._google_config = google_config if isinstance(google_config, RCloneConfigGoogle) else None
         self._google_tried_and_failed = False
         self._google_path = None
         self._google_size = None
@@ -195,8 +184,8 @@ class FileForUpload:
     @property
     def google_path(self) -> Optional[str]:
         if (self._google_path is None) and (not self._google_tried_and_failed):
-            if self._google_source and (google_config := self.google_config):
-                google_file = cloud_path.join(self._google_source, self.name)
+            if (google_config := self.google_config) and (google_source := google_config.bucket):
+                google_file = cloud_path.join(google_source, self.name)
                 if (google_size := google_config.file_size(google_file)) is not None:
                     self._google_path = google_file
                     self._google_size = google_size
@@ -234,15 +223,8 @@ class FileForUpload:
         return self._google_size
 
     @property
-    def google_credentials(self) -> Optional[GoogleCredentials]:
-        return self._google_credentials
-
-    @property
-    def google_config(self) -> Optional[str]:
-        if self._google_config is None:
-            if google_credentials := self.google_credentials:
-                self._google_config = RCloneConfigGoogle(google_credentials)
-        return self._google_config
+    def google_config(self) -> Optional[RCloneConfigGoogle]:
+        self._google_config
 
     def resume_upload_command(self, env: Optional[str] = None) -> str:
         return (f"resume-uploads{f' --env {env}' if isinstance(env, str) else ''}"
@@ -291,8 +273,7 @@ class FilesForUpload:
                main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
                main_search_directory_recursively: bool = False,
                other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
-               google_source: Optional[str] = None,
-               google_credentials: Optional[Union[GoogleCredentials, str]] = None) -> List[FileForUpload]:
+               google_config: Optional[RCloneConfigGoogle] = None) -> List[FileForUpload]:
 
         if isinstance(files, StructuredDataSet):
             files = files.upload_files
@@ -306,8 +287,7 @@ class FilesForUpload:
                 main_search_directory=main_search_directory,
                 main_search_directory_recursively=main_search_directory_recursively,
                 other_search_directories=other_search_directories,
-                google_source=google_source,
-                google_credentials=google_credentials)
+                google_config=google_config)
             if file_for_upload:
                 files_for_upload.append(file_for_upload)
         return files_for_upload
