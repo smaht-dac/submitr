@@ -120,17 +120,17 @@ def main(simulated_args_for_testing=None):
         PRINT(f"Specified upload directory not found: {args.upload_folder}")
         exit(1)
 
-    if args.rclone_google_source:
-        if not RClone.verify_installation():
-            exit(1)
-        rclone_google_config = RCloneConfigGoogle.create_from_args(args.rclone_google_source,
-                                                                   args.rclone_google_credentials)
-        if not rclone_google_config:
-            exit(1)
+#   if args.rclone_google_source:
+#       if not RClone.verify_installation():
+#           exit(1)
+#       rclone_google_config = RCloneConfigGoogle.create_from_args(args.rclone_google_source,
+#                                                                  args.rclone_google_credentials)
+#       if not rclone_google_config:
+#           exit(1)
 
-    if args.rclone_google_credentials and not os.path.isfile(args.rclone_google_credentials):
-        PRINT(f"Google service account file does not exist: {args.rclone_google_credentials}")
-        exit(1)
+#   if args.rclone_google_credentials and not os.path.isfile(args.rclone_google_credentials):
+#       PRINT(f"Google service account file does not exist: {args.rclone_google_credentials}")
+#       exit(1)
 
     env_from_env = False
     if not args.env:
@@ -149,7 +149,7 @@ def main(simulated_args_for_testing=None):
                        upload_folder=args.upload_folder,
                        no_query=args.yes,
                        subfolders=not directory_only,
-                       rclone_google_config=rclone_google_config,
+                       # rclone_google_config=rclone_google_config,
                        output_file=args.output,
                        app=args.app)
 

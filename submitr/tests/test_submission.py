@@ -626,8 +626,7 @@ def test_do_any_uploads():
                         keydict=SOME_KEYDICT,
                         ingestion_filename=SOME_BUNDLE_FILENAME,
                         upload_folder=tmpdir,
-                        rclone_google_source=None,
-                        rclone_google_credentials=None
+                        rclone_google_config=None
                     )
                     mock_yes_or_no.assert_called_with("Upload this file?")
                     assert mock_uploads.call_count == 0
@@ -660,8 +659,7 @@ def test_do_any_uploads():
                         ingestion_filename=os.path.join(tmpdir,
                                                         SOME_BUNDLE_FILENAME),  # from which a folder can be inferred
                         upload_folder=tmpdir,
-                        rclone_google_source=None,
-                        rclone_google_credentials=None
+                        rclone_google_config=None
                     )
                     mock_yes_or_no.assert_called_with("Upload these %s files?" % n_uploads)
                     mock_uploads.assert_called_with(
@@ -670,8 +668,7 @@ def test_do_any_uploads():
                         folder=tmpdir,  # the folder part of given SOME_BUNDLE_FILENAME
                         no_query=False,
                         subfolders=False,
-                        rclone_google_source=None,
-                        rclone_google_credentials=None,
+                        rclone_google_config=None,
                         portal=mock.ANY
                     )
                     assert shown.lines == []
@@ -682,8 +679,7 @@ def test_do_any_uploads():
                         keydict=SOME_KEYDICT,
                         upload_folder=os.path.join(tmpdir,
                                                    SOME_OTHER_BUNDLE_FOLDER[1:]),  # rather than ingestion_filename,
-                        rclone_google_source=None,
-                        rclone_google_credentials=None
+                        rclone_google_config=None
                     )
                     mock_yes_or_no.assert_called_with("Upload these %s files?" % n_uploads)
                     mock_uploads.assert_called_with(
@@ -692,8 +688,7 @@ def test_do_any_uploads():
                         folder=os.path.join(tmpdir, SOME_OTHER_BUNDLE_FOLDER[1:]),  # passed straight through
                         no_query=False,
                         subfolders=False,
-                        rclone_google_source=None,
-                        rclone_google_credentials=None,
+                        rclone_google_config=None,
                         portal=mock.ANY
                     )
                     assert shown.lines == []
@@ -703,8 +698,7 @@ def test_do_any_uploads():
                         res=SOME_UPLOAD_INFO_RESULT,
                         keydict=SOME_KEYDICT,
                         upload_folder=tmpdir,
-                        rclone_google_source=None,
-                        rclone_google_credentials=None
+                        rclone_google_config=None
                         # No ingestion_filename or bundle_folder
                     )
                     mock_yes_or_no.assert_called_with("Upload these %s files?" % n_uploads)
@@ -714,8 +708,7 @@ def test_do_any_uploads():
                         folder=tmpdir,  # No folder
                         no_query=False,
                         subfolders=False,
-                        rclone_google_source=None,
-                        rclone_google_credentials=None,
+                        rclone_google_config=None,
                         portal=mock.ANY
                     )
                     assert shown.lines == []
@@ -728,8 +721,7 @@ def test_do_any_uploads():
                         ingestion_filename=os.path.join(tmpdir, SOME_BUNDLE_FILENAME[1:]),
                         no_query=False,
                         subfolders=True,
-                        rclone_google_source=None,
-                        rclone_google_credentials=None
+                        rclone_google_config=None
                     )
                     mock_uploads.assert_called_with(
                         SOME_UPLOAD_INFO,
@@ -738,8 +730,7 @@ def test_do_any_uploads():
                         folder=os.path.join(tmpdir, SOME_BUNDLE_FILENAME_FOLDER[1:]),
                         no_query=False,
                         subfolders=True,
-                        rclone_google_source=None,
-                        rclone_google_credentials=None,
+                        rclone_google_config=None,
                         portal=mock.ANY
                     )
                     assert shown.lines == []
@@ -755,8 +746,7 @@ def test_do_any_uploads():
                     # from which a folder can be inferred
                     ingestion_filename=os.path.join(tmpdir, SOME_BUNDLE_FILENAME[1:]),
                     no_query=True,
-                    rclone_google_source=None,
-                    rclone_google_credentials=None
+                    rclone_google_config=None
                 )
                 mock_uploads.assert_called_with(
                     SOME_UPLOAD_INFO,
@@ -765,8 +755,7 @@ def test_do_any_uploads():
                     folder=os.path.join(tmpdir, SOME_BUNDLE_FILENAME_FOLDER[1:]),
                     no_query=True,
                     subfolders=False,
-                    rclone_google_source=None,
-                    rclone_google_credentials=None,
+                    rclone_google_config=None,
                     portal=mock.ANY
                 )
                 assert shown.lines == []
@@ -789,8 +778,7 @@ def test_resume_uploads():
                             upload_folder=None,
                             no_query=False,
                             subfolders=False,
-                            rclone_google_source=None,
-                            rclone_google_credentials=None,
+                            rclone_google_config=None,
                             portal=mock.ANY)
 
     with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
@@ -971,21 +959,18 @@ def test_upload_file_to_uuid():
     with mock.patch("dcicutils.portal_utils.Portal.patch_metadata", return_value=SOME_UPLOAD_CREDENTIALS_RESULT):
         with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
             metadata = upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID,
-                                           rclone_google_source=None,
-                                           rclone_google_credentials=None,
+                                           rclone_google_config=None,
                                            auth=SOME_AUTH, first_time=False, portal=None)
             assert metadata == SOME_FILE_METADATA
             mocked_upload.assert_called_with(SOME_FILENAME, auth=SOME_AUTH,
-                                             rclone_google_source=None,
-                                             rclone_google_credentials=None,
+                                             rclone_google_config=None,
                                              upload_credentials=SOME_UPLOAD_CREDENTIALS)
 
     with mock.patch("dcicutils.portal_utils.Portal.patch_metadata", return_value=SOME_BAD_RESULT):
         with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
             try:
                 upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID,
-                                    rclone_google_source=None,
-                                    rclone_google_credentials=None,
+                                    rclone_google_config=None,
                                     auth=SOME_AUTH, first_time=False, portal=None)
             except Exception as e:
                 assert str(e).startswith("Unable to obtain upload credentials")
@@ -1021,8 +1006,7 @@ def test_do_uploads(tmp_path):
         uploaded = {}
 
         def mocked_upload_file(filename, uuid, auth,
-                               rclone_google_source=None,
-                               rclone_google_credentials=None,
+                               rclone_google_config=None,
                                first_time=False, portal=None):
             if auth != SOME_AUTH:
                 raise Exception("Bad auth")
@@ -1130,16 +1114,14 @@ def test_do_uploads2(tmp_path):
             auth=SOME_AUTH,
             folder=subfolder,
             no_query=True,
-            rclone_google_source=None,
-            rclone_google_credentials=None
+            rclone_google_config=None
         )
         mock_upload.assert_called_with(
             filename=file_path,
             uuid=uuid,
             auth=SOME_AUTH,
             first_time=True,
-            rclone_google_source=None,
-            rclone_google_credentials=None,
+            rclone_google_config=None,
             portal=mock.ANY
         )
 
@@ -1150,8 +1132,7 @@ def test_do_uploads2(tmp_path):
                 upload_spec_list,
                 auth=SOME_AUTH,
                 folder=folder,
-                rclone_google_source=None,
-                rclone_google_credentials=None,
+                rclone_google_config=None,
                 no_query=True,
             )
             assert shown.lines == [
@@ -1164,8 +1145,7 @@ def test_do_uploads2(tmp_path):
             auth=SOME_AUTH,
             folder=folder,
             no_query=True,
-            rclone_google_source=None,
-            rclone_google_credentials=None,
+            rclone_google_config=None,
             subfolders=True,
         )
         mock_upload.assert_called_with(
@@ -1173,8 +1153,7 @@ def test_do_uploads2(tmp_path):
             uuid=uuid,
             auth=SOME_AUTH,
             first_time=True,
-            rclone_google_source=None,
-            rclone_google_credentials=None,
+            rclone_google_config=None,
             portal=mock.ANY
         )
 
@@ -1190,8 +1169,7 @@ def test_do_uploads2(tmp_path):
                 auth=SOME_AUTH,
                 folder=folder,
                 no_query=True,
-                rclone_google_source=None,
-                rclone_google_credentials=None,
+                rclone_google_config=None,
                 subfolders=True,
             )
             mock_upload.assert_not_called()
@@ -1232,8 +1210,7 @@ def test_do_uploads2(tmp_path):
                         auth=SOME_AUTH,
                         folder=folder,
                         no_query=True,
-                        rclone_google_source=None,
-                        rclone_google_credentials=None,
+                        rclone_google_config=None,
                         subfolders=False,
                     )
                     mocked_upload_file_to_uuid.assert_called_once()
@@ -1263,8 +1240,7 @@ def test_upload_item_data():
                                               uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
                             mock_upload.assert_called_with(filename=some_filename,
                                                            uuid=SOME_UUID, auth=SOME_KEYDICT,
-                                                           rclone_google_source=mock.ANY,
-                                                           rclone_google_credentials=mock.ANY,
+                                                           rclone_google_config=mock.ANY,
                                                            portal=mock.ANY)
 
         with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
@@ -1293,8 +1269,7 @@ def test_upload_item_data():
                                           server=SOME_SERVER, env=SOME_ENV, no_query=True)
                         mock_upload.assert_called_with(filename=some_filename,
                                                        uuid=SOME_UUID, auth=SOME_KEYDICT,
-                                                       rclone_google_source=mock.ANY,
-                                                       rclone_google_credentials=mock.ANY,
+                                                       rclone_google_config=mock.ANY,
                                                        portal=mock.ANY)
 
 
@@ -2885,7 +2860,7 @@ expected_schema_name = GENERIC_SCHEMA_TYPE
 def test_upload_file_to_new_uuid():
 
     def mocked_execute_prearranged_upload(filename, upload_credentials, auth,
-                                          rclone_google_source, rclone_google_credentials, **kwargs):
+                                          rclone_google_config, **kwargs):
         assert not kwargs, "kwargs were not expected for mock of mocked_execute_prearranged_upload"
         assert filename == mocked_good_filename
         assert upload_credentials == mocked_good_upload_credentials
@@ -2908,7 +2883,7 @@ def test_upload_file_to_new_uuid():
             with mock.patch.object(submission_module, "execute_prearranged_upload") as mock_execute_prearranged_upload:
                 mock_execute_prearranged_upload.side_effect = mocked_execute_prearranged_upload
                 res = upload_file_to_new_uuid(mocked_good_filename, schema_name=schema_name, auth=auth,
-                                              rclone_google_source=None, rclone_google_credentials=None,
+                                              rclone_google_config=None,
                                               **context_attributes)
                 assert res == mocked_good_file_metadata
 
