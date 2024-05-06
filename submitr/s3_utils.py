@@ -265,6 +265,9 @@ def OLD_upload_file_to_aws_s3(file: str, s3_uri: str,
         try:
             s3 = boto3.client("s3", **aws_credentials)
             metadata = s3.head_object(Bucket=s3_bucket, Key=s3_key).get("Metadata", {})
+            # FYI no need to actually use the md5-timestamp WRT it being up-to-date as the metadata
+            # for an S3 object is blown away whenever a new version of it is uploaded (by whatever means
+            # it seems); so this, and md5-source, are really only useful for troubleshooting purpose.
             if file_checksum:
                 metadata["md5"] = file_checksum
                 metadata["md5-timestamp"] = str(file_checksum_timestamp)
