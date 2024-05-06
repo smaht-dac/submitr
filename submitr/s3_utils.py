@@ -55,7 +55,7 @@ def OLD_upload_file_to_aws_s3(file: str, s3_uri: str,
                               catch_interrupt: bool = True,
                               print_function: Optional[Callable] = print) -> bool:
 
-    import pdb ; pdb.set_trace()  # noqa
+    # import pdb ; pdb.set_trace()  # noqa
     pass
     if not isinstance(file, str) or not file or not isinstance(s3_uri, str) or not s3_uri:
         return False
@@ -341,7 +341,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
                           catch_interrupt: bool = True,
                           print_function: Optional[Callable] = print) -> bool:
 
-    import pdb ; pdb.set_trace()  # noqa
+    # import pdb ; pdb.set_trace()  # noqa
     pass
     if not (isinstance(file, FileForUpload) and file.found and isinstance(s3_uri, str) and s3_uri):
         return False
@@ -575,7 +575,10 @@ def upload_file_to_aws_s3(file: FileForUpload,
         return False
 
     if print_preamble:
-        printf(f"Uploading {file.name} ({format_size(file_size)}) to: {s3_uri}")
+        # printf(f"Uploading {file.name} ({format_size(file_size)}) to: {s3_uri}")
+        printf(f"▶ Upload: {file.name} ({format_size(file.size)}) ...")
+        printf(f"  - From: {file.path_for_display}")
+        printf(f"  -   To: {s3_uri}")
 
     if verify_upload and not verify_with_any_already_uploaded_file():
         return False

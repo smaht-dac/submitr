@@ -1929,26 +1929,37 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
         google_source=rclone_google_source,
         google_credentials=rclone_google_credentials)
 
-    import pdb ; pdb.set_trace()  # noqa
-    FilesForUpload.verify(files_for_upload)
+    # NEW
+    files_for_upload_found = [file for file in files_for_upload if file.found]
+    files_for_upload_not_found = [file for file in files_for_upload if not file.found]
+
+    if files_for_upload_not_found:
+        for file in files_for_upload_not_found:
+            PRINT(f"WARNING: Cannot find file for upload: {file.name} ({file.uuid})")
+            PRINT(f"- You may upload later with: {file.resume_upload_command}")
+
+    first_time = True
+    if files_for_upload_found:
+        for file in files_for_upload_found:
+            upload_file(file, portal=portal, first_time=first_time)
+            first_time = False
+    # NEW
+    # import pdb ; pdb.set_trace()  # noqa
 
     # NEW
-    first_time = True
-    import pdb ; pdb.set_trace()  # noqa
-    for file_for_upload in files_for_upload:
-        if not file_for_upload.found:
-            import pdb ; pdb.set_trace()  # noqa
-            SHOW(f"Upload file not found: {file_for_upload.name}")
-            continue
-        elif file_for_upload.found_locally_multiple:
-            PRINT(f"No upload attempted for file {file_for_upload.name} because multiple copies"
-                  f" were found in folder {file_for_upload.main_search_directory}:"
-                  f" {', '.join(file_for_upload.local_paths)}.")
-        import pdb ; pdb.set_trace()  # noqa
-        pass
-        file_metadata = upload_file(file_for_upload, portal=portal, first_time=first_time)  # noqa (TODO)
-        first_time = False
-    # NEW
+#   first_time = True
+#   for file_for_upload in files_for_upload:
+#       if not file_for_upload.found:
+#           SHOW(f"Upload file not found: {file_for_upload.name}")
+#           continue
+#       elif file_for_upload.found_locally_multiple:
+#           PRINT(f"No upload attempted for file {file_for_upload.name} because multiple copies"
+#                 f" were found in folder {file_for_upload.main_search_directory}:"
+#                 f" {', '.join(file_for_upload.local_paths)}.")
+#       pass
+#       file_metadata = upload_file(file_for_upload, portal=portal, first_time=first_time)  # noqa (TODO)
+#       first_time = False
+#   # NEW
 
     def display_file_info(upload_file_info: dict) -> None:
         nonlocal upload_folder, subfolders
@@ -1971,14 +1982,12 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
                     PRINT(f"No upload attempted for file {file} because multiple"
                           f" copies were found in folder {upload_folder}: {', '.join(file_paths)}.")
                     return False
-            # import pdb ; pdb.set_trace()  # noqa
             PRINT(f"WARNING: Cannot find file to upload to AWS S3: {format_path(file)} ({file_uuid})")
         return False
 
     # TODO: upload_info:
     # [{'uuid': '96f29020-7abd-4a42-b4c7-d342563b7074', 'filename': 'first_file.fastq'},
     #  {'uuid': 'd294feaf-0f30-4912-b0d0-e91bc2fc0a53', 'filename': 'second_file.fastq'}]
-    # import pdb ; pdb.set_trace()  # noqa
     upload_info = _get_section(res, "upload_info")
     if not upload_folder:
         if ingestion_directory := res.get("parameters", {}).get("ingestion_directory"):
@@ -2294,7 +2303,7 @@ def upload_file(file_for_upload, first_time=False, portal=None):
             if s3_bucket:
                 # This assumes all files are going to the same bucket;
                 # which I think is a pretty solid assumption.
-                PRINT(f"Upload file destination AWS S3 bucket: {s3_bucket}")
+                PRINT(f"File upload destination bucket in AWS S3: {s3_bucket}")
     try:
         s3_uri = upload_credentials["upload_url"]
         aws_credentials = {
@@ -2306,6 +2315,9 @@ def upload_file(file_for_upload, first_time=False, portal=None):
     except Exception as e:
         raise ValueError("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
 
+    # PRINT(f"▶ Upload: {file_for_upload.name} ({format_size(file_for_upload.size)}) ...")
+    # PRINT(f"  - From: {file_for_upload.path_for_display}")
+    # PRINT(f"  -   To: {s3_uri}")
     upload_file_to_aws_s3(file=file_for_upload,
                           s3_uri=s3_uri,
                           aws_credentials=aws_credentials,
@@ -2384,14 +2396,11 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False,
                 SHOW(f"No upload attempted for file {file_name} because multiple copies"
                      f" were found in folder {folder}: {', '.join(file_paths)}.")
             else:
-                import pdb ; pdb.set_trace()  # noqa
-                pass
                 SHOW(f"Upload file not found: {file_name}")
             continue
         file_path = file_paths[0]
         uuid = upload_spec['uuid']
         uploader_wrapper = UploadMessageWrapper(uuid, no_query=no_query)
-        import pdb ; pdb.set_trace()  # noqa
         wrapped_upload_file_to_uuid = uploader_wrapper.wrap_upload_function(
             upload_file_to_uuid, file_path
         )
@@ -2401,8 +2410,6 @@ def do_uploads(upload_spec_list, auth, folder=None, no_query=False,
             rclone_google_credentials=rclone_google_credentials,
             first_time=first_time, portal=portal
         )
-        import pdb ; pdb.set_trace()  # noqa
-        # xyzzy
         if file_metadata:
             extra_files_credentials = file_metadata.get("extra_files_creds", [])
             if extra_files_credentials:
@@ -2462,7 +2469,7 @@ def _upload_extra_files(
     rclone_google_source=None, rclone_google_credentials=None
 ):
     # UNUSED FOR SMAHT I THINK (VERIFY) - 2024-05-05.
-    import pdb ; pdb.set_trace()  # noqa
+    # import pdb ; pdb.set_trace()  # noqa
     """Attempt upload of all extra files.
 
     Similar to "do_uploads", search for each file and then call a
@@ -2786,7 +2793,6 @@ def _review_upload_files(structured_data: StructuredDataSet, ingestion_filename:
                                                            rclone_google_source=rclone_google_source,
                                                            rclone_google_credentials=rclone_google_credentials,
                                                            upload_folder=directory, recursive=recursive)
-    # import pdb ; pdb.set_trace()  # noqa
     if file_validation_errors:
         nfiles = len(file_validation_errors)
         if nfiles_found > 0:
@@ -2949,7 +2955,6 @@ def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
 
     file_validation_errors = []
 
-    # import pdb ; pdb.set_trace()  # noqa
     files_for_upload = FilesForUpload.define(
         structured_data,
         main_search_directory=upload_folder,
@@ -2957,7 +2962,6 @@ def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
         other_search_directories=[ingestion_filename, os.path.curdir],
         google_source=rclone_google_source,
         google_credentials=rclone_google_credentials)
-    # import pdb ; pdb.set_trace()  # noqa
 
     if files_for_upload_not_found := [file for file in files_for_upload if not file.found]:
         for file in files_for_upload_not_found:

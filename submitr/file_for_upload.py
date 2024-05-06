@@ -173,6 +173,18 @@ class FileForUpload:
         return None
 
     @property
+    def path_for_display(self) -> Optional[str]:
+        if self.found_locally:
+            if self.found_in_google:
+                if self._favor_local:
+                    return self.local_path
+                return self.google_path_for_display
+            return self.local_path
+        elif self.found_in_google:
+            return self.google_path_for_display
+        return None
+
+    @property
     def local_path(self) -> Optional[str]:
         return self._local_path
 
@@ -191,6 +203,12 @@ class FileForUpload:
                 else:
                     self._google_tried_and_failed = True
         return self._google_path
+
+    @property
+    def google_path_for_display(self) -> Optional[str]:
+        if google_path := self.google_path:
+            return f"gs://{google_path}"
+        return None
 
     @property
     def size(self) -> Optional[int]:
