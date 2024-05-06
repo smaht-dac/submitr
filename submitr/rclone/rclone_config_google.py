@@ -23,15 +23,14 @@ class RCloneConfigGoogle(RCloneConfig):
         if isinstance(credentials_or_config, RCloneConfigGoogle):
             name = normalize_string(name) or credentials_or_config.name
             bucket = cloud_path.normalize(bucket) or credentials_or_config.bucket
-            credentials = None
+            credentials = credentials_or_config.credentials
         elif isinstance(credentials_or_config, GoogleCredentials):
             credentials = credentials_or_config
         else:
             credentials = None
-        if credentials:
-            credentials = GoogleCredentials(credentials=credentials,
-                                            location=location,
-                                            service_account_file=service_account_file)
+        credentials = GoogleCredentials(credentials=credentials,
+                                        location=location,
+                                        service_account_file=service_account_file)
         super().__init__(name=name, bucket=bucket, credentials=credentials)
         self._project = None
 

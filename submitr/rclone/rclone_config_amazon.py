@@ -24,18 +24,17 @@ class RCloneConfigAmazon(RCloneConfig):
         if isinstance(credentials_or_config, RCloneConfigAmazon):
             name = normalize_string(name) or credentials_or_config.name
             bucket = cloud_path.normalize(bucket) or credentials_or_config.bucket
-            credentials = None
+            credentials = credentials_or_config.credentials
         elif isinstance(credentials_or_config, AmazonCredentials):
             credentials = credentials_or_config
         else:
             credentials = None
-        if credentials:
-            credentials = AmazonCredentials(credentials=credentials,
-                                            region=region,
-                                            access_key_id=access_key_id,
-                                            secret_access_key=secret_access_key,
-                                            session_token=session_token,
-                                            kms_key_id=kms_key_id)
+        credentials = AmazonCredentials(credentials=credentials,
+                                        region=region,
+                                        access_key_id=access_key_id,
+                                        secret_access_key=secret_access_key,
+                                        session_token=session_token,
+                                        kms_key_id=kms_key_id)
         super().__init__(name=name, bucket=bucket, credentials=credentials)
 
     @property

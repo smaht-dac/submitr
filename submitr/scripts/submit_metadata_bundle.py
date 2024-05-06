@@ -261,6 +261,7 @@ def main(simulated_args_for_testing=None):
             PRINT(f"Google service account file does not exist: {args.rclone_google_credentials}")
             exit(1)
         # TODO: Allow "location" to be passed in (?) - not in service account file.
+        import pdb ; pdb.set_trace()  # noqa
         rclone_google_config = RCloneConfigGoogle(service_account_file=args.rclone_google_credentials,
                                                   bucket=args.rclone_google_source)
         if not rclone_google_config.ping():
@@ -282,20 +283,23 @@ def main(simulated_args_for_testing=None):
         else:
             PRINT("No environment specified (via --env); skipping SMaHT Portal ping.")
             ping_okay = True
-        if gce_instance_name := RCloneConfigGoogle.is_google_compute_engine():
-            PRINT(f"Google Compute Engine instance: {gce_instance_name}")
-        if rclone_google_ping_okay is not None:
-            PRINT(f"Google Cloud Storage (GCS) project: {rclone_google_config.project}")
-        if args.rclone_google_source:
-            if rclone_google_config.path_exists(args.rclone_google_source):
-                PRINT(f"Google Cloud Storage source: {args.rclone_google_source} ✓")
-            else:
-                PRINT(f"Google Cloud Storage source: {args.rclone_google_source} ✗")
-        if rclone_google_ping_okay is True:
-            PRINT(f"Google Cloud Storage connectivity appears to be OK ✓")
-        elif rclone_google_ping_okay is False:
-            PRINT("Google Cloud Storage connectivity appears to be problematic ✗")
-        exit(0 if ping_okay and rclone_google_ping_okay is None or rclone_google_ping_okay is True else 1)
+        if rclone_google_config:
+            if gce_instance_name := RCloneConfigGoogle.is_google_compute_engine():
+                PRINT(f"Google Compute Engine instance: {gce_instance_name}")
+            if rclone_google_ping_okay is not None:
+                PRINT(f"Google Cloud Storage (GCS) project: {rclone_google_config.project}")
+            if args.rclone_google_source:
+                if rclone_google_config.path_exists(args.rclone_google_source):
+                    PRINT(f"Google Cloud Storage source: {args.rclone_google_source} ✓")
+                else:
+                    PRINT(f"Google Cloud Storage source: {args.rclone_google_source} ✗")
+            if rclone_google_ping_okay is True:
+                PRINT(f"Google Cloud Storage connectivity appears to be OK ✓")
+            elif rclone_google_ping_okay is False:
+                PRINT("Google Cloud Storage connectivity appears to be problematic ✗")
+        if ping_okay and (rclone_google_ping_okay in (None, True)):
+            exit(0)
+        exit(1)
 
     if args.consortia or (args.bundle_filename and args.bundle_filename.lower() == "consortia"):
         portal = _define_portal(env=args.env)
@@ -380,8 +384,6 @@ def main(simulated_args_for_testing=None):
                              post_only=args.post_only,
                              patch_only=args.patch_only,
                              submit=args.submit,
-                             rclone_google_source=args.rclone_google_source,
-                             rclone_google_credentials=args.rclone_google_credentials,
                              rclone_google_config=rclone_google_config,
                              validate_local_only=args.validate_local_only,
                              validate_remote_only=args.validate_remote_only,
