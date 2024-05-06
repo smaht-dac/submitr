@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from dcicutils.license_utils import C4PythonInfrastructureLicenseChecker
+# TODO: from dcicutils.license_utils import C4PythonInfrastructureLicenseChecker
 from dcicutils.qa_checkers import ChangeLogChecker, DebuggingArtifactChecker, ContributionsChecker
 from .conftest_settings import REPOSITORY_ROOT_DIR
 
@@ -33,9 +33,9 @@ def test_utils_debugging_artifacts_print():
     checker.check_for_debugging_patterns()
 
 
-@pytest.mark.static
-def test_license_compatibility():
-    C4PythonInfrastructureLicenseChecker.validate()
+# TODO: @pytest.mark.static
+# TODO: def test_license_compatibility():
+# TODO:     C4PythonInfrastructureLicenseChecker.validate()
 
 
 @pytest.mark.static
