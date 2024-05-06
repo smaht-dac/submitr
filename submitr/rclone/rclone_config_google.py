@@ -139,9 +139,9 @@ class RCloneConfigGoogle(RCloneConfig):
         if not rclone_google_config.ping():
             if verbose:
                 printf("WARNING: Google Cloud Storage cannot be accessed!")
-        else:
-            if verbose:
-                printf(f"Google Cloud Storage accessibility ▶ OK (project: {rclone_google_config.project}).")
+            return None
+        if verbose:
+            printf(f"Google Cloud Storage accessibility ▶ OK (project: {rclone_google_config.project}).")
         return rclone_google_config
 
     def __eq__(self, other: RCloneConfigGoogle) -> bool:

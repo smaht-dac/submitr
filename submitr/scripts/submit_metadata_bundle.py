@@ -252,32 +252,33 @@ def main(simulated_args_for_testing=None):
         if args.env:
             env_from_env = True
 
-    import pdb ; pdb.set_trace()  # noqa
-    pass
-    rclone_google_config = RCloneConfigGoogle.create_from_args(args.rclone_google_source,
-                                                               args.rclone_google_credentials)
-    if rclone_google_config.pinged is False:
-        pass
-
-    rclone_google_ping_okay = None
-    rclone_google_config = None
     if args.rclone_google_source:
-        if not RClone.verify_installation(verbose=args.verbose):
+        if not RClone.verify_installation():
             exit(1)
-        if args.rclone_google_credentials and not os.path.isfile(args.rclone_google_credentials):
-            PRINT(f"Google service account file does not exist: {args.rclone_google_credentials}")
+        rclone_google_config = RCloneConfigGoogle.create_from_args(args.rclone_google_source,
+                                                                   args.rclone_google_credentials)
+        if not rclone_google_config:
             exit(1)
-        # TODO: Allow "location" to be passed in (?) - not in service account file.
-        # import pdb ; pdb.set_trace()  # noqa
-        rclone_google_config = RCloneConfigGoogle(service_account_file=args.rclone_google_credentials,
-                                                  path=args.rclone_google_source)
-        if not rclone_google_config.ping():
-            PRINT("WARNING: Google Cloud Storage cannot be accessed!")
-            rclone_google_ping_okay = False
-        else:
-            if args.verbose or args.debug:
-                PRINT(f"Google Cloud Storage accessibility ▶ OK (project: {rclone_google_config.project}).")
-            rclone_google_ping_okay = True
+
+#   rclone_google_ping_okay = None
+#   rclone_google_config = None
+#   if args.rclone_google_source:
+#       if not RClone.verify_installation(verbose=args.verbose):
+#           exit(1)
+#       if args.rclone_google_credentials and not os.path.isfile(args.rclone_google_credentials):
+#           PRINT(f"Google service account file does not exist: {args.rclone_google_credentials}")
+#           exit(1)
+#       # TODO: Allow "location" to be passed in (?) - not in service account file.
+#       # import pdb ; pdb.set_trace()  # noqa
+#       rclone_google_config = RCloneConfigGoogle(service_account_file=args.rclone_google_credentials,
+#                                                 path=args.rclone_google_source)
+#       if not rclone_google_config.ping():
+#           PRINT("WARNING: Google Cloud Storage cannot be accessed!")
+#           rclone_google_ping_okay = False
+#       else:
+#           if args.verbose or args.debug:
+#               PRINT(f"Google Cloud Storage accessibility ▶ OK (project: {rclone_google_config.project}).")
+#           rclone_google_ping_okay = True
 
     if args.ping or (args.bundle_filename and args.bundle_filename.lower() == "ping"):
         if args.env or os.environ.get("SMAHT_ENV"):
@@ -290,21 +291,22 @@ def main(simulated_args_for_testing=None):
         else:
             PRINT("No environment specified (via --env); skipping SMaHT Portal ping.")
             ping_okay = True
-        if rclone_google_config:
-            if gce_instance_name := RCloneConfigGoogle.is_google_compute_engine():
-                PRINT(f"Google Compute Engine instance: {gce_instance_name}")
-            if rclone_google_ping_okay is not None:
-                PRINT(f"Google Cloud Storage (GCS) project: {rclone_google_config.project}")
-            if args.rclone_google_source:
-                if rclone_google_config.path_exists(args.rclone_google_source):
-                    PRINT(f"Google Cloud Storage source: {args.rclone_google_source} ✓")
-                else:
-                    PRINT(f"Google Cloud Storage source: {args.rclone_google_source} ✗")
-            if rclone_google_ping_okay is True:
-                PRINT(f"Google Cloud Storage connectivity appears to be OK ✓")
-            elif rclone_google_ping_okay is False:
-                PRINT("Google Cloud Storage connectivity appears to be problematic ✗")
-        if ping_okay and (rclone_google_ping_okay in (None, True)):
+#       if rclone_google_config:
+#           if gce_instance_name := RCloneConfigGoogle.is_google_compute_engine():
+#               PRINT(f"Google Compute Engine instance: {gce_instance_name}")
+#           if rclone_google_ping_okay is not None:
+#               PRINT(f"Google Cloud Storage (GCS) project: {rclone_google_config.project}")
+#           if args.rclone_google_source:
+#               if rclone_google_config.path_exists(args.rclone_google_source):
+#                   PRINT(f"Google Cloud Storage source: {args.rclone_google_source} ✓")
+#               else:
+#                   PRINT(f"Google Cloud Storage source: {args.rclone_google_source} ✗")
+#           if rclone_google_ping_okay is True:
+#               PRINT(f"Google Cloud Storage connectivity appears to be OK ✓")
+#           elif rclone_google_ping_okay is False:
+#               PRINT("Google Cloud Storage connectivity appears to be problematic ✗")
+#       if ping_okay and (rclone_google_ping_okay in (None, True)):
+        if ping_okay:
             exit(0)
         exit(1)
 
