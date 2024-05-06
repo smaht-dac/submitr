@@ -219,10 +219,8 @@ def test_c4_383_regression_action():
                                             # Outside the call, we will always see the default filename for SMaHT keys
                                             # but inside the call, because of a decorator, the default might be
                                             # different. See additional test below.
-                                            import pdb ; pdb.set_trace()  # noqa
                                             resume_uploads_main(["2eab76cd-666c-4b04-9335-22f9c6084303",
                                                                  '--server', local_server])
-                                            import pdb ; pdb.set_trace()  # noqa
                                         except SystemExit as e:
                                             assert e.code == 0
                                         joined_filename = os.path.join(current_dir, SAMPLE_UPLOAD_INFO[-1]['filename'])

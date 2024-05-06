@@ -1941,10 +1941,10 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
     first_time = True
     if files_for_upload_found:
         for file in files_for_upload_found:
-            upload_file(file, portal=portal, first_time=first_time)
+            # upload_file(file, portal=portal, first_time=first_time)  # TODO
             first_time = False
+            ignorable(first_time)
     # NEW
-    # import pdb ; pdb.set_trace()  # noqa
 
     # NEW
 #   first_time = True
@@ -2183,8 +2183,8 @@ def execute_prearranged_upload(path, upload_credentials,
                           s3_uri=s3_uri,
                           aws_credentials=aws_credentials,
                           aws_kms_key_id=aws_kms_key_id,
-                          # rclone_google_source=rclone_google_source,
-                          # rclone_google_credentials=rclone_google_credentials,
+                          # rclone_google_source=rclone_google_source,  # xyzzy
+                          # rclone_google_credentials=rclone_google_credentials,  # xyzzy
                           print_progress=True,
                           print_function=PRINT,
                           verify_upload=True,
@@ -2469,7 +2469,6 @@ def _upload_extra_files(
     rclone_google_source=None, rclone_google_credentials=None
 ):
     # UNUSED FOR SMAHT I THINK (VERIFY) - 2024-05-05.
-    # import pdb ; pdb.set_trace()  # noqa
     """Attempt upload of all extra files.
 
     Similar to "do_uploads", search for each file and then call a
