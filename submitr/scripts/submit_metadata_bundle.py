@@ -252,6 +252,13 @@ def main(simulated_args_for_testing=None):
         if args.env:
             env_from_env = True
 
+    import pdb ; pdb.set_trace()  # noqa
+    pass
+    rclone_google_config = RCloneConfigGoogle.create_from_args(args.rclone_google_source,
+                                                               args.rclone_google_credentials)
+    if rclone_google_config.pinged is False:
+        pass
+
     rclone_google_ping_okay = None
     rclone_google_config = None
     if args.rclone_google_source:

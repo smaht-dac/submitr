@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 import pathlib
 from typing import Callable, List, Optional, Union
+from dcicutils.command_utils import yes_or_no
 from dcicutils.file_utils import get_file_size, search_for_file
 from dcicutils.misc_utils import format_size
 from dcicutils.structured_data import StructuredDataSet
@@ -10,9 +11,6 @@ from submitr.rclone import cloud_path, RCloneConfigGoogle
 # Unified the logic for looking for files to upload (to AWS S3), and storing
 # related info; whether or not the file is coming from the local file system
 # or from Google Cloud Storage (GCS), via rclone.
-
-# TODO/QUESTION: If a file is found both locally and in GCS should we favor the
-# local file (I think)? Should we warn/notify and/or solicit choice/confirmation?
 
 
 class FileForUpload:
@@ -115,7 +113,7 @@ class FileForUpload:
         self._google_tried_and_failed = False
         self._google_path = None
         self._google_size = None
-        self._favor_local = True
+        self._favor_local = None
 
     @property
     def name(self) -> str:
@@ -138,6 +136,58 @@ class FileForUpload:
         return self.local_path is not None or self.google_path is not None
 
     @property
+    def path(self) -> Optional[str]:
+        if self.found_locally:
+            if self.found_in_google:
+                if self.favor_local is None:
+                    return None
+                elif self.favor_local is False:
+                    return self.google_path
+            return self.local_path
+        elif self.found_in_google:
+            return self.google_path
+        return None
+
+    @property
+    def display_path(self) -> Optional[str]:
+        if self.found_locally:
+            if self.found_in_google:
+                if self.favor_local is None:
+                    return None
+                elif self.favor_local is False:
+                    return self.display_google_path
+            return self.local_path
+        elif self.found_in_google:
+            return self.display_google_path
+        return None
+
+    @property
+    def size(self) -> Optional[int]:
+        if self.found_locally:
+            if self.found_in_google:
+                if self.favor_local is None:
+                    return None
+                elif self.favor_local is False:
+                    return self.google_size
+            return self.local_size
+        elif self.found_in_google:
+            return self.google_size
+        return None
+
+    def resume_upload_command(self, env: Optional[str] = None) -> str:
+        return (f"resume-uploads{f' --env {env}' if isinstance(env, str) else ''}"
+                f"{f' {self.uuid or self.name}' if self.uuid else ''}")
+
+    @property
+    def favor_local(self) -> Optional[bool]:
+        return self._favor_local
+
+    @favor_local.setter
+    def favor_local(self, value: bool) -> None:
+        if isinstance(value, bool):
+            self._favor_local = value
+
+    @property
     def found_locally(self) -> bool:
         return self.local_path is not None
 
@@ -146,40 +196,20 @@ class FileForUpload:
         return self.local_paths is not None
 
     @property
-    def found_in_google(self) -> bool:
-        return self.google_path is not None
-
-    @property
-    def path(self) -> Optional[str]:
-        if self.found_locally:
-            if self.found_in_google:
-                if self._favor_local:
-                    return self.local_path
-                return self.google_path
-            return self.local_path
-        elif self.found_in_google:
-            return self.google_path
-        return None
-
-    @property
-    def path_for_display(self) -> Optional[str]:
-        if self.found_locally:
-            if self.found_in_google:
-                if self._favor_local:
-                    return self.local_path
-                return self.google_path_for_display
-            return self.local_path
-        elif self.found_in_google:
-            return self.google_path_for_display
-        return None
-
-    @property
     def local_path(self) -> Optional[str]:
         return self._local_path
 
     @property
     def local_paths(self) -> Optional[List[str]]:
         return self._local_paths
+
+    @property
+    def local_size(self) -> Optional[int]:
+        return self._local_size
+
+    @property
+    def found_in_google(self) -> bool:
+        return self.google_path is not None
 
     @property
     def google_path(self) -> Optional[str]:
@@ -194,26 +224,10 @@ class FileForUpload:
         return self._google_path
 
     @property
-    def google_path_for_display(self) -> Optional[str]:
+    def display_google_path(self) -> Optional[str]:
         if google_path := self.google_path:
             return f"gs://{google_path}"
         return None
-
-    @property
-    def size(self) -> Optional[int]:
-        if self.found_locally:
-            if self.found_in_google:
-                if self._favor_local:
-                    return self.local_size
-                return self.google_size
-            return self.local_size
-        elif self.found_in_google:
-            return self.google_size
-        return None
-
-    @property
-    def local_size(self) -> Optional[int]:
-        return self._local_size
 
     @property
     def google_size(self) -> Optional[int]:
@@ -226,29 +240,27 @@ class FileForUpload:
     def google_config(self) -> Optional[RCloneConfigGoogle]:
         self._google_config
 
-    def resume_upload_command(self, env: Optional[str] = None) -> str:
-        return (f"resume-uploads{f' --env {env}' if isinstance(env, str) else ''}"
-                f"{f' {self.uuid or self.name}' if self.uuid else ''}")
-
-    def verify(self, verbose: bool = False, printf: Optional[Callable] = None) -> bool:
+    def review(self, printf: Optional[Callable] = None) -> bool:
         if not self.found:
             printf(f"WARNING: Cannot find file for upload: {self.name} ({self.uuid})")
             return False
-        elif self.found_in_google:
-            if verbose:
-                printf(f"File for upload to AWS S3: gs://{self.google_path} ({format_size(self.google_size)})")
-            return True
         elif self.found_locally:
+            if self.found_in_google:
+                printf("File for upload found locally and in Google Cloud Storage: {self.name}")
+                printf("- Local: {self.local_path}")
+                printf("- Google Cloud Storage: {self.google_path}")
+                self.favor_local = not yes_or_no("Do you want to use the Google Cloud Storage version?")
             if self.found_locally_multiple:
                 printf(f"WARNING: Ignoring file for upload as multiple instances found: {self.name}")
                 for local_path in self.local_paths:
                     print(f"- {local_path}")
                 return False
-            if verbose:
-                printf(f"File for upload to AWS S3: {self.local_path} ({format_size(self.local_size)})")
-                return True
-            else:
-                return False
+            printf(f"File for upload to AWS S3: {self.display_path} ({format_size(self.size)})")
+            return True
+        elif self.found_in_google:
+            printf(f"File for upload to AWS S3 (from GCS):"
+                   f" gs://{self.google_path} ({format_size(self.google_size)})")
+            return True
 
     def __str__(self) -> str:  # for troubleshooting only
         return (
@@ -293,11 +305,11 @@ class FilesForUpload:
         return files_for_upload
 
     @staticmethod
-    def verify(files_for_upload: List[FileForUpload], verbose: bool = False, printf: Optional[Callable] = None) -> bool:
+    def review(files_for_upload: List[FileForUpload], printf: Optional[Callable] = None) -> bool:
         if not callable(printf):
             printf = print
         result = True
         for file_for_upload in files_for_upload:
-            if not file_for_upload.verify(verbose=verbose, printf=printf):
+            if not file_for_upload.review(printf=printf):
                 result = False
         return result

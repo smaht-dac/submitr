@@ -21,6 +21,7 @@ class RCloneConfig(AbstractBaseClass):
         # such as they are (i.e. path-like), beginning with a
         # bucket name, within the cloud (S3, GCP) storage system.
         self._path = cloud_path.normalize(path)
+        self._pinged = None
 
     @property
     def name(self) -> str:
@@ -118,7 +119,12 @@ class RCloneConfig(AbstractBaseClass):
         else:
             extra_lines = None
         with self.config_file(extra_lines=extra_lines) as config_file:
-            return RCloneCommands.lsd_command(source=f"{self.name}:", config=config_file)
+            self._pinged = RCloneCommands.lsd_command(source=f"{self.name}:", config=config_file)
+            return self._pinged
+
+    @property
+    def pinged(self) -> Optional[bool]:
+        return self._pinged
 
     def __eq__(self, other: RCloneConfig) -> bool:
         return (isinstance(other, RCloneConfig) and

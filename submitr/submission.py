@@ -2299,7 +2299,7 @@ def upload_file(file_for_upload, first_time=False, portal=None):  # NEW: replace
         raise ValueError("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
 
     # PRINT(f"▶ Upload: {file_for_upload.name} ({format_size(file_for_upload.size)}) ...")
-    # PRINT(f"  - From: {file_for_upload.path_for_display}")
+    # PRINT(f"  - From: {file_for_upload.display_path}")
     # PRINT(f"  -   To: {s3_uri}")
     upload_file_to_aws_s3(file=file_for_upload,
                           s3_uri=s3_uri,

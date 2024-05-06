@@ -3,6 +3,7 @@ from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
 from submitr.base import DEFAULT_APP
 from submitr.rclone import RClone
+from submitr.rclone import RClone, RCloneConfigGoogle
 from submitr.submission import resume_uploads
 from submitr.scripts.cli_utils import CustomArgumentParser
 
@@ -145,8 +146,7 @@ def main(simulated_args_for_testing=None):
                        upload_folder=args.upload_folder,
                        no_query=args.yes,
                        subfolders=not directory_only,
-                       rclone_google_source=args.rclone_google_source,
-                       rclone_google_credentials=args.rclone_google_credentials,
+                       rclone_google_config=rclone_google_config,
                        output_file=args.output,
                        app=args.app)
 

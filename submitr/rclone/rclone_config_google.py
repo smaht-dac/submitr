@@ -4,7 +4,7 @@ import json
 import os
 import requests
 import subprocess
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, normalize_string
 from submitr.rclone.rclone_config import RCloneConfig, RCloneCredentials
@@ -42,6 +42,15 @@ class RCloneConfigGoogle(RCloneConfig):
     def credentials(self, value: GoogleCredentials) -> None:
         if isinstance(value, GoogleCredentials):
             super().credentials = value
+
+    @property
+    def config(self) -> dict:
+        # The bucket_policy_only=true option indicates that rclone should enforce a bucket-only access policy,
+        # meaning that object-level ACLs are not used to control access to objects within the bucket.
+        return create_dict(type="google cloud storage",
+                           location=self.location,
+                           bucket_policy_only=True,
+                           service_account_file=self.service_account_file)
 
     @property
     def location(self) -> Optional[str]:
@@ -109,20 +118,37 @@ class RCloneConfigGoogle(RCloneConfig):
             pass
         return None
 
+    @staticmethod
+    def create_from_args(rclone_google_source: Optional[str],
+                         rclone_google_credentials: Optional[str] = None,
+                         printf: Optional[Callable] = None,
+                         verbose: bool = False) -> Optional[RCloneConfigGoogle]:
+        if not isinstance(rclone_google_source, str) or not rclone_google_source:
+            return None
+        if not isinstance(rclone_google_credentials, str):
+            rclone_google_credentials = None
+        if not callable(printf):
+            printf = print
+        if rclone_google_credentials and not os.path.isfile(rclone_google_credentials):
+            if verbose:
+                printf(f"ERROR: Google service account file does not exist: {rclone_google_credentials}")
+            return None, None
+        # TODO: Allow "location" to be passed in (?); not in service account file.
+        rclone_google_config = RCloneConfigGoogle(service_account_file=rclone_google_credentials,
+                                                  path=rclone_google_source)
+        if not rclone_google_config.ping():
+            if verbose:
+                printf("WARNING: Google Cloud Storage cannot be accessed!")
+        else:
+            if verbose:
+                printf(f"Google Cloud Storage accessibility ▶ OK (project: {rclone_google_config.project}).")
+        return rclone_google_config
+
     def __eq__(self, other: RCloneConfigGoogle) -> bool:
         return isinstance(other, RCloneConfigGoogle) and super().__eq__(other)
 
     def __ne__(self, other: RCloneConfigGoogle) -> bool:
         return not self.__eq__(other)
-
-    @property
-    def config(self) -> dict:
-        # The bucket_policy_only=true option indicates that rclone should enforce a bucket-only access policy,
-        # meaning that object-level ACLs are not used to control access to objects within the bucket.
-        return create_dict(type="google cloud storage",
-                           location=self.location,
-                           bucket_policy_only=True,
-                           service_account_file=self.service_account_file)
 
 
 class GoogleCredentials(RCloneCredentials):

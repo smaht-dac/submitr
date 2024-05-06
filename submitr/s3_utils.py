@@ -288,7 +288,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
 
     if print_preamble:
         printf(f"▶ Upload: {file.name} ({format_size(file.size)}) ...")
-        printf(f"  - From: {file.path_for_display}")
+        printf(f"  - From: {file.display_path}")
         printf(f"  -   To: {s3_uri}")
 
     if verify_upload and not verify_with_any_already_uploaded_file():

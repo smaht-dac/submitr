@@ -46,6 +46,17 @@ class RCloneConfigAmazon(RCloneConfig):
             super().credentials = value
 
     @property
+    def config(self) -> dict:
+        return create_dict(provider="AWS",
+                           type="s3",
+                           region=self.region,
+                           access_key_id=self.access_key_id,
+                           secret_access_key=self.secret_access_key,
+                           session_token=self.session_token,
+                           sse_kms_key_id=self.kms_key_id,
+                           server_side_encryption="aws:kms" if self.kms_key_id else None)
+
+    @property
     def region(self) -> Optional[str]:
         return self._credentials.region
 
@@ -90,17 +101,6 @@ class RCloneConfigAmazon(RCloneConfig):
 
     def __ne__(self, other: RCloneConfigAmazon) -> bool:
         return not self.__eq__(other)
-
-    @property
-    def config(self) -> dict:
-        return create_dict(provider="AWS",
-                           type="s3",
-                           region=self.region,
-                           access_key_id=self.access_key_id,
-                           secret_access_key=self.secret_access_key,
-                           session_token=self.session_token,
-                           sse_kms_key_id=self.kms_key_id,
-                           server_side_encryption="aws:kms" if self.kms_key_id else None)
 
 
 class AmazonCredentials(RCloneCredentials):
