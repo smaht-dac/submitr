@@ -53,7 +53,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
                           catch_interrupt: bool = True,
                           print_function: Optional[Callable] = print) -> bool:
 
-    # import pdb ; pdb.set_trace()  # noqa
+    import pdb ; pdb.set_trace()  # noqa
     pass
     if not (isinstance(file, FileForUpload) and file.found and isinstance(s3_uri, str) and s3_uri):
         return False

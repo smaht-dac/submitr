@@ -5,7 +5,7 @@ from typing import Callable, List, Optional, Union
 from dcicutils.command_utils import yes_or_no
 from dcicutils.file_utils import get_file_size, search_for_file
 from dcicutils.misc_utils import format_size
-from dcicutils.structured_data import StructuredDataSet
+from dcicutils.structured_data import Portal, StructuredDataSet
 from submitr.rclone import cloud_path, RCloneConfigGoogle
 
 # Unified the logic for looking for files to upload (to AWS S3), and storing
@@ -17,6 +17,10 @@ class FileForUpload:
 
     @staticmethod
     def define(file: Union[str, pathlib.PosixPath, dict],
+               type: Optional[str] = None,
+               accession: Optional[str] = None,
+               accession_name: Optional[str] = None,
+               uuid: Optional[str] = None,
                main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
                main_search_directory_recursively: bool = False,
                other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
@@ -27,8 +31,8 @@ class FileForUpload:
         # Or a dictionary (from additional_data.upload_info of submission object) like:
         # {"uuid": "96f29020-7abd-4a42-b4c7-d342563b7074", "filename": "first_file.fastq"}
         # Or just a file name.
-        file_type = None
-        file_uuid = None
+        file_type = type if isinstance(type, str) and type else None
+        file_uuid = uuid if isinstance(uuid, str) and uuid else None
         if isinstance(file, dict):
             file_type = file.get("type")
             file_uuid = file.get("uuid")
@@ -80,6 +84,8 @@ class FileForUpload:
 
         file_for_upload = FileForUpload(name=file,
                                         type=file_type,
+                                        accession=accession,
+                                        accession_name=accession_name,
                                         uuid=file_uuid,
                                         main_search_directory=main_search_directory,
                                         local_path=local_path,
@@ -92,6 +98,8 @@ class FileForUpload:
     def __init__(self,
                  name: str,
                  type: Optional[str] = None,
+                 accession: Optional[str] = None,
+                 accession_name: Optional[str] = None,
                  uuid: Optional[str] = None,
                  main_search_directory: Optional[str] = None,
                  local_path: Optional[str] = None,
@@ -104,6 +112,8 @@ class FileForUpload:
             raise Exception("Cannot create FileForUpload object directly; use FileForUpload.define")
         self._name = name.strip() if isinstance(name, str) else ""
         self._type = type if isinstance(type, str) else None
+        self._accession = accession if isinstance(accession, str) else None
+        self._accession_name = accession_name if isinstance(accession_name, str) else None
         self._uuid = uuid if isinstance(uuid, str) else None
         self._main_search_directory = main_search_directory if isinstance(main_search_directory, str) else None
         self._local_path = local_path if isinstance(local_path, str) else None
@@ -114,6 +124,7 @@ class FileForUpload:
         self._google_path = None
         self._google_size = None
         self._favor_local = None
+        self._ignore = None
 
     @property
     def name(self) -> str:
@@ -122,6 +133,14 @@ class FileForUpload:
     @property
     def type(self) -> Optional[str]:
         return self._type
+
+    @property
+    def accession(self) -> Optional[str]:
+        return self._accession
+
+    @property
+    def accession_name(self) -> Optional[str]:
+        return self._accession_name
 
     @property
     def uuid(self) -> Optional[str]:
@@ -173,6 +192,10 @@ class FileForUpload:
         elif self.found_in_google:
             return self.google_size
         return None
+
+    @property
+    def ignore(self) -> bool:
+        return self._ignore
 
     def resume_upload_command(self, env: Optional[str] = None) -> str:
         return (f"resume-uploads{f' --env {env}' if isinstance(env, str) else ''}"
@@ -240,20 +263,25 @@ class FileForUpload:
     def google_config(self) -> Optional[RCloneConfigGoogle]:
         return self._google_config
 
-    def review(self, printf: Optional[Callable] = None) -> bool:
+    def review(self, portal: Optional[Portal] = None, printf: Optional[Callable] = None) -> bool:
         if not self.found:
             printf(f"WARNING: Cannot find file for upload: {self.name} ({self.uuid})")
+            if isinstance(portal, Portal):
+                printf(f"- You may upload later with: {self.resume_upload_command(env=portal.env if portal else None)}")
+            self._ignore = True
             return False
         elif self.found_locally:
             if self.found_in_google:
-                printf("File for upload found locally and in Google Cloud Storage: {self.name}")
-                printf("- Local: {self.local_path}")
-                printf("- Google Cloud Storage: {self.google_path}")
+                printf(f"File for upload found BOTH locally AND in Google Cloud Storage: {self.name}")
+                printf(f"- Local: {self.local_path}")
+                printf(f"- Google Cloud Storage: {self.google_path}")
                 self.favor_local = not yes_or_no("Do you want to use the Google Cloud Storage version?")
             if self.found_locally_multiple:
+                # TODO: Could prompt for an option to choose one of them or something.
                 printf(f"WARNING: Ignoring file for upload as multiple instances found: {self.name}")
                 for local_path in self.local_paths:
                     print(f"- {local_path}")
+                self._ignore = True
                 return False
             printf(f"File for upload to AWS S3: {self.display_path} ({format_size(self.size)})")
             return True
@@ -265,15 +293,18 @@ class FileForUpload:
     def __str__(self) -> str:  # for troubleshooting only
         return (
             f"name={self.name}|"
+            f"uuid={self.uuid}|"
+            f"accession={self.accession}|"
+            f"accession_name={self.accession_name}|"
             f"found={self.found}|"
             f"path={self.path}|"
             f"size={self.size}|"
             f"found_locally={self.found_locally}|"
             f"found_locally_multiple={self.found_locally_multiple}|"
-            f"found_in_google={self.found_in_google}|"
             f"local_path={self.local_path}|"
             f"local_paths={self.local_paths}|"
             f"local_size={self.local_size}|"
+            f"found_in_google={self.found_in_google}|"
             f"google_path={self.google_path}|"
             f"google_size={self.google_size}")
 
@@ -307,11 +338,15 @@ class FilesForUpload:
         return files_for_upload
 
     @staticmethod
-    def review(files_for_upload: List[FileForUpload], printf: Optional[Callable] = None) -> bool:
+    def review(files_for_upload: List[FileForUpload],
+               portal: Optional[Portal] = None, printf: Optional[Callable] = None) -> bool:
+        if not isinstance(files_for_upload, list):
+            return False
         if not callable(printf):
             printf = print
         result = True
         for file_for_upload in files_for_upload:
-            if not file_for_upload.review(printf=printf):
-                result = False
+            if isinstance(file_for_upload, FileForUpload):
+                if not file_for_upload.review(portal=portal, printf=printf):
+                    result = False
         return result

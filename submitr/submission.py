@@ -1943,20 +1943,26 @@ def do_any_uploads_new(res, keydict, upload_folder=None, ingestion_filename=None
                                   ingestion_filename, os.path.curdir],
         google_config=rclone_google_config)
 
-    files_for_upload_found = [file for file in files_for_upload if file.found]
-    files_for_upload_not_found = [file for file in files_for_upload if not file.found]
+    upload_files(files_for_upload, portal)
 
-    if files_for_upload_not_found:
-        for file in files_for_upload_not_found:
-            PRINT(f"WARNING: Cannot find file for upload: {file.name} ({file.uuid})")
-            PRINT(f"- You may upload later with: {file.resume_upload_command(env=portal.env if portal else None)}")
+#   files_for_upload_found = [file for file in files_for_upload if file.found]
+#   files_for_upload_not_found = [file for file in files_for_upload if not file.found]
 
-    first_time = True
-    if files_for_upload_found:
-        for file in files_for_upload_found:
-            upload_file(file, portal=portal, first_time=first_time)  # TODO
-            first_time = False
-            ignorable(first_time)
+#   if files_for_upload_not_found:
+#       for file in files_for_upload_not_found:
+#           PRINT(f"WARNING: Cannot find file for upload: {file.name} ({file.uuid})")
+#           PRINT(f"- You may upload later with: {file.resume_upload_command(env=portal.env if portal else None)}")
+
+#   if files_for_upload_found:
+#       for file in files_for_upload_found:
+#           upload_file(file, portal)
+
+
+def upload_files(files_for_upload: List[FileForUpload], portal: Portal):
+    if isinstance(files_for_upload, list):
+        files_for_upload = [file for file in files_for_upload if not file.ignore]
+        for file in files_for_upload:
+            upload_file(file, portal=portal)
 
 
 def do_any_uploads_old(res, keydict, upload_folder=None, ingestion_filename=None,
@@ -2047,14 +2053,15 @@ def do_any_uploads_old(res, keydict, upload_folder=None, ingestion_filename=None
                 PRINT(f"▶ {resume_upload_command_missing}")
 
 
-def get_files_for_upload(arg: str,
-                         main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
-                         main_search_directory_recursively: bool = False,
-                         other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
-                         metadata_file: Optional[str] = None,
-                         google_config: Optional[RCloneConfigGoogle] = None,
-                         portal: Optional[Portal] = None,
-                         _recursive: bool = False) -> Optional[List[FileForUpload]]:
+def assemble_files_for_upload(arg: str,
+                              main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
+                              main_search_directory_recursively: bool = False,
+                              other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
+                              metadata_file: Optional[str] = None,
+                              google_config: Optional[RCloneConfigGoogle] = None,
+                              portal: Optional[Portal] = None,
+                              review: bool = True,
+                              _recursive: bool = False) -> Optional[List[FileForUpload]]:
 
     # Returns a list of FileForUpload from the given argument; the given argument can be any of:
     #
@@ -2067,9 +2074,10 @@ def get_files_for_upload(arg: str,
     #
     # Returns empty list no files found, or None if something unexpected in the data.
 
-    # import pdb ; pdb.set_trace()  # noqa
     if not isinstance(portal, Portal) or not isinstance(arg, str) or not arg:
         return None
+
+    files_for_upload = None
 
     if item := portal.get_metadata(arg, raise_exception=False):
 
@@ -2081,13 +2089,14 @@ def get_files_for_upload(arg: str,
                 return None
             if _recursive is True:  # Just-in-case paranoid guard against infinite recursive loop.
                 return None
-            return get_files_for_upload(associated_submission_uuid,
-                                        main_search_directory=main_search_directory,
-                                        main_search_directory_recursively=main_search_directory_recursively,
-                                        other_search_directories=other_search_directories,
-                                        metadata_file=metadata_file,
-                                        google_config=google_config,
-                                        portal=portal, _recursive=True)
+            files_for_upload = assemble_files_for_upload(
+                associated_submission_uuid,
+                main_search_directory=main_search_directory,
+                main_search_directory_recursively=main_search_directory_recursively,
+                other_search_directories=other_search_directories,
+                metadata_file=metadata_file,
+                google_config=google_config,
+                portal=portal, _recursive=True)
 
         elif is_submission_object(item, portal):
             # Here a submission (i.e. non-validate-only IngestionSubmission) UUID was given (and was found).
@@ -2099,45 +2108,60 @@ def get_files_for_upload(arg: str,
             other_search_directories.append(metadata_file)
             other_search_directories.append(get_submission_object_metadata_directory(item, portal))
             other_search_directories.append(os.path.curdir)
-            return FilesForUpload.define(get_submission_object_file_upload_info(item, portal),
-                                         main_search_directory=main_search_directory,
-                                         main_search_directory_recursively=main_search_directory_recursively,
-                                         other_search_directories=other_search_directories,
-                                         google_config=google_config)
+            files_for_upload = FilesForUpload.define(
+                get_submission_object_file_upload_info(item, portal),
+                main_search_directory=main_search_directory,
+                main_search_directory_recursively=main_search_directory_recursively,
+                other_search_directories=other_search_directories,
+                google_config=google_config)
 
         elif portal.is_schema_file_type(item):
             # Here a file type UUID, or accession ID (e.g. SMAFIQL563L8) for a file type, was given (and was found).
             if not (file := item.get("filename")):
-                # Probably should not happen.
                 PRINT(f"The given ID ({arg}) is for a file type but the associated file name cannot be found.")
                 return None
-            return FilesForUpload.define(file,
-                                         main_search_directory=main_search_directory,
-                                         main_search_directory_recursively=main_search_directory_recursively,
-                                         other_search_directories=other_search_directories,
-                                         google_config=google_config)
+            file_for_upload = FileForUpload.define(
+                file,
+                type=portal.get_schema_type(item),
+                accession=item.get("accession"),
+                accession_name=item.get("display_title"),
+                uuid=item.get("uuid"),
+                main_search_directory=main_search_directory,
+                main_search_directory_recursively=main_search_directory_recursively,
+                other_search_directories=other_search_directories,
+                google_config=google_config)
+            files_for_upload = [file_for_upload] if file_for_upload else []
 
         else:
             undesired_type = portal.get_schema_type(item)
             PRINT(f"The type ({undesired_type}) of the given ID ({arg}) is neither a submission nor a file type.")
             return None
 
-    # Here the given UUID (or accession ID) could not be found as such; perhaps an accession
-    # based file name was given; give that a try, by extracting the accession ID from it.
-
-    if accession_id := _extract_accession_id(arg):
+    elif accession_id := _extract_accession_id(arg):
+        # Here the given UUID (or accession ID) could not be found; it seems an
+        # accession based file name was given; use the accession ID extacted from it.
         if _recursive is True:  # Just-in-case paranoid guard against infinite recursive loop.
             return None
-        return get_files_for_upload(accession_id,
-                                    main_search_directory=main_search_directory,
-                                    main_search_directory_recursively=main_search_directory_recursively,
-                                    other_search_directories=other_search_directories,
-                                    metadata_file=metadata_file,
-                                    google_config=google_config,
-                                    portal=portal, _recursive=True)
+        files_for_upload = assemble_files_for_upload(
+            accession_id,
+            main_search_directory=main_search_directory,
+            main_search_directory_recursively=main_search_directory_recursively,
+            other_search_directories=other_search_directories,
+            metadata_file=metadata_file,
+            google_config=google_config,
+            portal=portal, _recursive=True)
+        if files_for_upload and files_for_upload[0].accession_name and (files_for_upload[0].accession_name != arg):
+            PRINT(f"Accession ID found but wrong filename: {files_for_upload[0].accession_name} vs {arg}")
+            return None
 
-    PRINT(f"Cannot find the given submission type or file type or accession ID: {arg}")
-    return None
+    else:
+        # Here the given UUID (or accession ID) could not be found.
+        PRINT(f"Cannot find the given submission type or file type or accession ID: {arg}")
+        return None
+
+    if review is True:
+        FilesForUpload.review(files_for_upload, portal=portal)
+    return files_for_upload
 
 
 def is_submission_ingestion_object(item: dict, portal: Portal) -> bool:
@@ -2183,6 +2207,65 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                    upload_folder=None, no_query=False, subfolders=False,
                    rclone_google_config=None,
                    output_file=None, app=None, keys_file=None, env_from_env=False):
+
+    if _pytesting():
+        return resume_uploads_old(uuid=uuid,
+                                  server=server,
+                                  env=env,
+                                  bundle_filename=bundle_filename,
+                                  keydict=keydict,
+                                  upload_folder=upload_folder,
+                                  no_query=no_query,
+                                  subfolders=subfolders,
+                                  rclone_google_config=rclone_google_config,
+                                  output_file=output_file,
+                                  app=app,
+                                  keys_file=keys_file,
+                                  env_from_env=env_from_env)
+    else:
+        return resume_uploads_new(uuid=uuid,
+                                  server=server,
+                                  env=env,
+                                  bundle_filename=bundle_filename,
+                                  keydict=keydict,
+                                  upload_folder=upload_folder,
+                                  no_query=no_query,
+                                  subfolders=subfolders,
+                                  rclone_google_config=rclone_google_config,
+                                  output_file=output_file,
+                                  app=app,
+                                  keys_file=keys_file,
+                                  env_from_env=env_from_env)
+
+
+def resume_uploads_new(uuid, server=None, env=None, bundle_filename=None, keydict=None,
+                       upload_folder=None, no_query=False, subfolders=False,
+                       rclone_google_config=None,
+                       output_file=None, app=None, keys_file=None, env_from_env=False):
+
+    if output_file:
+        global PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW
+        PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW = setup_for_output_file_option(output_file)
+
+    portal = _define_portal(key=keydict, keys_file=keys_file, env=env,
+                            server=server, app=app, env_from_env=env_from_env,
+                            report=True, note="Resuming File Upload")
+
+    files_for_upload = assemble_files_for_upload(
+        arg=uuid,
+        main_search_directory=upload_folder,
+        main_search_directory_recursively=subfolders,
+        metadata_file=bundle_filename,
+        google_config=rclone_google_config,
+        portal=portal)
+
+    upload_files(files_for_upload, portal)
+
+
+def resume_uploads_old(uuid, server=None, env=None, bundle_filename=None, keydict=None,
+                       upload_folder=None, no_query=False, subfolders=False,
+                       rclone_google_config=None,
+                       output_file=None, app=None, keys_file=None, env_from_env=False):
     """
     Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
     about uploading your data and then later are ready to do that upload.
@@ -2205,15 +2288,6 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                             server=server, app=app, env_from_env=env_from_env,
                             report=True, note="Resuming File Upload")
 
-    # new
-    files_for_upload = get_files_for_upload(arg=uuid,
-                                            main_search_directory=upload_folder,
-                                            main_search_directory_recursively=subfolders,
-                                            metadata_file=bundle_filename,
-                                            google_config=rclone_google_config,
-                                            portal=portal)
-    print(files_for_upload)
-    # new
     if not (response := portal.get_metadata(uuid, raise_exception=False)):
         # import pdb ; pdb.set_trace()  # noqa
         if accession_id := _extract_accession_id(uuid):
@@ -2408,7 +2482,7 @@ def upload_file_to_uuid(filename, uuid, auth, rclone_google_config=None, first_t
     return metadata
 
 
-def upload_file(file_for_upload, first_time=False, portal=None):  # NEW: replacement for upload_file_to_uuid
+def upload_file(file_for_upload: FileForUpload, portal: Portal):  # NEW: replacement for upload_file_to_uuid
     """
     Upload file to a target environment.
 
@@ -2417,6 +2491,9 @@ def upload_file(file_for_upload, first_time=False, portal=None):  # NEW: replace
     :param auth: auth info in the form of a dictionary containing 'key', 'secret', and 'server'.
     :returns: item metadata dict or None
     """
+    if not isinstance(file_for_upload, FileForUpload) or not isinstance(portal, Portal):
+        return
+
     metadata = None
     patch_data = {"filename": file_for_upload.name}
     response = portal.patch_metadata(object_id=file_for_upload.uuid, data=patch_data)
@@ -2425,13 +2502,6 @@ def upload_file(file_for_upload, first_time=False, portal=None):  # NEW: replace
                                                                            filename=file_for_upload.name,
                                                                            payload_data=patch_data,
                                                                            portal=portal)
-    if first_time:
-        if upload_url := upload_credentials.get("upload_url"):
-            s3_bucket, _ = get_s3_bucket_and_key_from_s3_uri(upload_url)
-            if s3_bucket:
-                # This assumes all files are going to the same bucket;
-                # which I think is a pretty solid assumption.
-                PRINT(f"File upload destination bucket in AWS S3: {s3_bucket}")
     try:
         s3_uri = upload_credentials["upload_url"]
         aws_credentials = {
