@@ -252,6 +252,7 @@ def main(simulated_args_for_testing=None):
         if args.env:
             env_from_env = True
 
+    rclone_google_config = None
     if args.rclone_google_source:
         if not RClone.verify_installation():
             exit(1)

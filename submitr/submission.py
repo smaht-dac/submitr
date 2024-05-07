@@ -2527,7 +2527,7 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
         main_search_directory=directory,
         main_search_directory_recursively=recursive,
         other_search_directories=[os.path.curdir],
-        google_source=rclone_google_config)
+        google_config=rclone_google_config)
     ignorable(file_for_upload)
 
     if rclone_google_config:
@@ -2937,7 +2937,7 @@ def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
         main_search_directory=upload_folder,
         main_search_directory_recursively=recursive,
         other_search_directories=[ingestion_filename, os.path.curdir],
-        google_source=rclone_google_config)
+        google_config=rclone_google_config)
 
     if files_for_upload_not_found := [file for file in files_for_upload if not file.found]:
         for file in files_for_upload_not_found:
@@ -3433,7 +3433,7 @@ def _print_metadata_file_info(file: str, env: str,
             files_for_upload = FilesForUpload.define(structured_data,
                                                      main_search_directory=upload_folder,
                                                      main_search_directory_recursively=subfolders,
-                                                     google_source=rclone_google_config)
+                                                     google_config=rclone_google_config)
             PRINT(f"Files: {len(files_for_upload)}")
             print_files(files_for_upload, max_output=max_output, output_file=output_file, verbose=verbose)
     if not (refs is True):
