@@ -2,7 +2,7 @@ import os
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
 from submitr.base import DEFAULT_APP
-# from submitr.rclone import RClone, RCloneConfigGoogle
+from submitr.rclone import RCloneConfigGoogle
 from submitr.submission import resume_uploads
 from submitr.scripts.cli_utils import CustomArgumentParser
 
@@ -80,6 +80,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--rclone-google-source', help="Use rlcone to copy upload files from GCS.", default=None)
     parser.add_argument('--rclone-google-credentials', help="GCS credentials (service account file).", default=None)
     parser.add_argument('--output', help="Output file for results.", default=False)
+    parser.add_argument('--verbose', action="store_true", default=False)
     parser.add_argument('--yes', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
@@ -120,17 +121,14 @@ def main(simulated_args_for_testing=None):
         PRINT(f"Specified upload directory not found: {args.upload_folder}")
         exit(1)
 
-#   if args.rclone_google_source:
-#       if not RClone.verify_installation():
-#           exit(1)
-#       rclone_google_config = RCloneConfigGoogle.create_from_args(args.rclone_google_source,
-#                                                                  args.rclone_google_credentials)
-#       if not rclone_google_config:
-#           exit(1)
-
-#   if args.rclone_google_credentials and not os.path.isfile(args.rclone_google_credentials):
-#       PRINT(f"Google service account file does not exist: {args.rclone_google_credentials}")
-#       exit(1)
+    if args.rclone_google_source:
+        if not (rclone_google_config := RCloneConfigGoogle.create_from_args(args.rclone_google_source,
+                                                                            args.rclone_google_credentials,
+                                                                            verify_installation=True,
+                                                                            verbose=args.verbose)):
+            exit(1)
+    else:
+        rclone_google_config = None
 
     env_from_env = False
     if not args.env:
@@ -149,7 +147,7 @@ def main(simulated_args_for_testing=None):
                        upload_folder=args.upload_folder,
                        no_query=args.yes,
                        subfolders=not directory_only,
-                       # rclone_google_config=rclone_google_config,
+                       rclone_google_config=rclone_google_config,
                        output_file=args.output,
                        app=args.app)
 

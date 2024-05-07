@@ -5,10 +5,11 @@ from functools import lru_cache
 import io
 import json
 import os
+import pathlib
 import re
 import sys
 import time
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple, Union
 from typing_extensions import Literal
 from urllib.parse import urlparse
 import yaml
@@ -1953,8 +1954,6 @@ def do_any_uploads_new(res, keydict, upload_folder=None, ingestion_filename=None
     first_time = True
     if files_for_upload_found:
         for file in files_for_upload_found:
-            # import pdb ; pdb.set_trace()  # noqa
-            pass
             upload_file(file, portal=portal, first_time=first_time)  # TODO
             first_time = False
             ignorable(first_time)
@@ -2048,6 +2047,138 @@ def do_any_uploads_old(res, keydict, upload_folder=None, ingestion_filename=None
                 PRINT(f"▶ {resume_upload_command_missing}")
 
 
+def get_files_for_upload(arg: str,
+                         main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
+                         main_search_directory_recursively: bool = False,
+                         other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
+                         metadata_file: Optional[str] = None,
+                         google_config: Optional[RCloneConfigGoogle] = None,
+                         portal: Optional[Portal] = None,
+                         _recursive: bool = False) -> Optional[List[FileForUpload]]:
+
+    # Returns a list of FileForUpload from the given argument; the given argument can be any of:
+    #
+    # - Submission type (IngestionSubmission) UUID
+    #   In which case we get the list of FileForUpload for upload-files associated with the submission.
+    # - File type UUID
+    # - Accession ID (e.g. SMAFIQL563L8)
+    # - Accession based file name (e.g. SMAFIQL563L8.fastq)
+    #   In which case we get the single FileForUpload for the upload-file as a (single item) list.
+    #
+    # Returns empty list no files found, or None if something unexpected in the data.
+
+    # import pdb ; pdb.set_trace()  # noqa
+    if not isinstance(portal, Portal) or not isinstance(arg, str) or not arg:
+        return None
+
+    if item := portal.get_metadata(arg, raise_exception=False):
+
+        if is_validation_object(item, portal):
+            # Here a validation (i.e. validate-only IngestinonSubmission) UUID was given (and was found);
+            # if we can get the associated submission ID then implicitly use that, otherwise error.
+            if not (associated_submission_uuid := get_associated_submission_uuid(item, portal)):
+                PRINT(f"This submission ID ({arg}) is for a validation not an actual submission.")
+                return None
+            if _recursive is True:  # Just-in-case paranoid guard against infinite recursive loop.
+                return None
+            return get_files_for_upload(associated_submission_uuid,
+                                        main_search_directory=main_search_directory,
+                                        main_search_directory_recursively=main_search_directory_recursively,
+                                        other_search_directories=other_search_directories,
+                                        metadata_file=metadata_file,
+                                        google_config=google_config,
+                                        portal=portal, _recursive=True)
+
+        elif is_submission_object(item, portal):
+            # Here a submission (i.e. non-validate-only IngestionSubmission) UUID was given (and was found).
+            # Note that other_directories ends up being handled by dcicutils.file_utils.search_for_file
+            # which is flexible; handling lists with None, or non-strings, or file names rather
+            # directories in which case the parent directory of the file will be assumed.
+            if not isinstance(other_search_directories, list):
+                other_search_directories = []
+            other_search_directories.append(metadata_file)
+            other_search_directories.append(get_submission_object_metadata_directory(item, portal))
+            other_search_directories.append(os.path.curdir)
+            return FilesForUpload.define(get_submission_object_file_upload_info(item, portal),
+                                         main_search_directory=main_search_directory,
+                                         main_search_directory_recursively=main_search_directory_recursively,
+                                         other_search_directories=other_search_directories,
+                                         google_config=google_config)
+
+        elif portal.is_schema_file_type(item):
+            # Here a file type UUID, or accession ID (e.g. SMAFIQL563L8) for a file type, was given (and was found).
+            if not (file := item.get("filename")):
+                # Probably should not happen.
+                PRINT(f"The given ID ({arg}) is for a file type but the associated file name cannot be found.")
+                return None
+            return FilesForUpload.define(file,
+                                         main_search_directory=main_search_directory,
+                                         main_search_directory_recursively=main_search_directory_recursively,
+                                         other_search_directories=other_search_directories,
+                                         google_config=google_config)
+
+        else:
+            undesired_type = portal.get_schema_type(item)
+            PRINT(f"The type ({undesired_type}) of the given ID ({arg}) is neither a submission nor a file type.")
+            return None
+
+    # Here the given UUID (or accession ID) could not be found as such; perhaps an accession
+    # based file name was given; give that a try, by extracting the accession ID from it.
+
+    if accession_id := _extract_accession_id(arg):
+        if _recursive is True:  # Just-in-case paranoid guard against infinite recursive loop.
+            return None
+        return get_files_for_upload(accession_id,
+                                    main_search_directory=main_search_directory,
+                                    main_search_directory_recursively=main_search_directory_recursively,
+                                    other_search_directories=other_search_directories,
+                                    metadata_file=metadata_file,
+                                    google_config=google_config,
+                                    portal=portal, _recursive=True)
+
+    PRINT(f"Cannot find the given submission type or file type or accession ID: {arg}")
+    return None
+
+
+def is_submission_ingestion_object(item: dict, portal: Portal) -> bool:
+    if isinstance(item, dict) and isinstance(portal, Portal):
+        global INGESTION_SUBMISSION_TYPE_NAME
+        return portal.is_schema_type(item, INGESTION_SUBMISSION_TYPE_NAME)
+    return False
+
+
+def is_validation_object(item: dict, portal: Portal) -> bool:
+    if is_submission_ingestion_object(item, portal):
+        if isinstance(parameters := item.get("parameters"), dict):
+            return tobool(parameters.get("validate_only"))
+    return False
+
+
+def is_submission_object(item: dict, portal: Portal) -> bool:
+    if is_submission_ingestion_object(item, portal):
+        return not is_validation_object(item, portal)
+    return False
+
+
+def get_associated_submission_uuid(validation_item: dict, portal: Portal) -> Optional[str]:
+    if is_validation_object(validation_item, portal):
+        return validation_item.get("parameters", {}).get("submission_uuid", None)
+    return None
+
+
+def get_submission_object_metadata_directory(submission_item: dict, portal: Portal) -> Optional[str]:
+    if is_submission_ingestion_object(submission_item, portal):
+        if isinstance(parameters := submission_item.get("parameters"), dict):
+            return parameters.get("ingestion_directory", None)
+    return None
+
+
+def get_submission_object_file_upload_info(submission_item: dict, portal: Portal) -> Optional[str]:
+    if is_submission_ingestion_object(submission_item, portal):
+        return _get_section(submission_item, "upload_info")
+    return None
+
+
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
                    upload_folder=None, no_query=False, subfolders=False,
                    rclone_google_config=None,
@@ -2074,7 +2205,17 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                             server=server, app=app, env_from_env=env_from_env,
                             report=True, note="Resuming File Upload")
 
+    # new
+    files_for_upload = get_files_for_upload(arg=uuid,
+                                            main_search_directory=upload_folder,
+                                            main_search_directory_recursively=subfolders,
+                                            metadata_file=bundle_filename,
+                                            google_config=rclone_google_config,
+                                            portal=portal)
+    print(files_for_upload)
+    # new
     if not (response := portal.get_metadata(uuid, raise_exception=False)):
+        # import pdb ; pdb.set_trace()  # noqa
         if accession_id := _extract_accession_id(uuid):
             if not (response := portal.get_metadata(accession_id)):
                 raise Exception(f"Given accession ID not found: {accession_id}")
@@ -2503,6 +2644,7 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
 
     # Allow the given "file name" to be uuid for submitted File object, or associated accession
     # ID (e.g. SMAFIP2PIEDG), or the (S3) accession ID based file name (e.g. SMAFIP2PIEDG.fastq).
+    # import pdb ; pdb.set_trace()  # noqa
     if not uuid:
         if is_uuid(item_filename) or _is_accession_id(item_filename):
             uuid = item_filename
@@ -3350,6 +3492,7 @@ def _extract_accession_id(value: str) -> Optional[str]:
         value, _ = os.path.splitext(value)
         if _is_accession_id(value):
             return value
+    return None
 
 
 def _print_metadata_file_info(file: str, env: str,

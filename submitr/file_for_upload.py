@@ -214,7 +214,7 @@ class FileForUpload:
     @property
     def google_path(self) -> Optional[str]:
         if (self._google_path is None) and (not self._google_tried_and_failed):
-            if (google_config := self.google_config) and (google_source := google_config.bucket):
+            if (google_config := self.google_config) and (google_source := google_config.path):
                 google_file = cloud_path.join(google_source, self.name)
                 if (google_size := google_config.file_size(google_file)) is not None:
                     self._google_path = google_file
@@ -238,7 +238,7 @@ class FileForUpload:
 
     @property
     def google_config(self) -> Optional[RCloneConfigGoogle]:
-        self._google_config
+        return self._google_config
 
     def review(self, printf: Optional[Callable] = None) -> bool:
         if not self.found:
@@ -289,6 +289,8 @@ class FilesForUpload:
 
         if isinstance(files, StructuredDataSet):
             files = files.upload_files
+        elif isinstance(files, (str, pathlib.PosixPath)):
+            files = [files]
         if not isinstance(files, list):
             return []
 

@@ -237,7 +237,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
                 printf(f"These files appear to be different{file_difference}")
             elif files_appear_to_be_the_same is True:
                 if not existing_file_md5:
-                    printf(f"NOTE: These files are the same size; checksum not available for further comparison.")
+                    printf(f"These files are the same size; but checksums not available for further comparison.")
                 else:
                     printf(f"These files appear to be the same | checksum: {existing_file_md5}")
             if not yes_or_no("Do you want to continue with this upload anyways?"):
