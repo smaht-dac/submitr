@@ -202,13 +202,12 @@ class FileForUpload:
                 f"{f' {self.uuid or self.name}' if self.uuid else ''}")
 
     @property
-    def favor_local(self) -> Optional[bool]:
-        return self._favor_local
+    def favor_local(self) -> bool:
+        return self._favor_local is True
 
-    @favor_local.setter
-    def favor_local(self, value: bool) -> None:
-        if isinstance(value, bool):
-            self._favor_local = value
+    @property
+    def favor_google(self) -> bool:
+        return self._favor_local is False
 
     @property
     def found_locally(self) -> bool:
@@ -275,8 +274,8 @@ class FileForUpload:
                 printf(f"File for upload found BOTH locally AND in Google Cloud Storage: {self.name}")
                 printf(f"- Local: {self.local_path}")
                 printf(f"- Google Cloud Storage: {self.google_path}")
-                self.favor_local = not yes_or_no("Do you want to use the Google Cloud Storage version?")
-            if self.found_locally_multiple:
+                self._favor_local = not yes_or_no("Do you want to use the Google Cloud Storage version?")
+            if self.found_locally_multiple and self.favor_local:
                 # TODO: Could prompt for an option to choose one of them or something.
                 printf(f"WARNING: Ignoring file for upload as multiple instances found: {self.name}")
                 for local_path in self.local_paths:

@@ -1935,27 +1935,16 @@ def do_any_uploads_new(res, keydict, upload_folder=None, ingestion_filename=None
                        rclone_google_config=None,
                        no_query=False, subfolders=False, portal=None):
 
-    files_for_upload = FilesForUpload.define(
-        _get_section(res, "upload_info"),
+    # TODO
+    files_for_upload = assemble_files_for_upload(
+        arg=res,
         main_search_directory=upload_folder,
         main_search_directory_recursively=subfolders,
-        other_search_directories=[res.get("parameters", {}).get("ingestion_directory"),
-                                  ingestion_filename, os.path.curdir],
-        google_config=rclone_google_config)
+        metadata_file=ingestion_filename,
+        google_config=rclone_google_config,
+        portal=portal)
 
     upload_files(files_for_upload, portal)
-
-#   files_for_upload_found = [file for file in files_for_upload if file.found]
-#   files_for_upload_not_found = [file for file in files_for_upload if not file.found]
-
-#   if files_for_upload_not_found:
-#       for file in files_for_upload_not_found:
-#           PRINT(f"WARNING: Cannot find file for upload: {file.name} ({file.uuid})")
-#           PRINT(f"- You may upload later with: {file.resume_upload_command(env=portal.env if portal else None)}")
-
-#   if files_for_upload_found:
-#       for file in files_for_upload_found:
-#           upload_file(file, portal)
 
 
 def upload_files(files_for_upload: List[FileForUpload], portal: Portal):
@@ -2053,7 +2042,7 @@ def do_any_uploads_old(res, keydict, upload_folder=None, ingestion_filename=None
                 PRINT(f"▶ {resume_upload_command_missing}")
 
 
-def assemble_files_for_upload(arg: str,
+def assemble_files_for_upload(arg: Union[str, dict],
                               main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
                               main_search_directory_recursively: bool = False,
                               other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
@@ -2065,21 +2054,23 @@ def assemble_files_for_upload(arg: str,
 
     # Returns a list of FileForUpload from the given argument; the given argument can be any of:
     #
-    # - Submission type (IngestionSubmission) UUID
+    # - Submission type (IngestionSubmission) object:
     #   In which case we get the list of FileForUpload for upload-files associated with the submission.
-    # - File type UUID
-    # - Accession ID (e.g. SMAFIQL563L8)
-    # - Accession based file name (e.g. SMAFIQL563L8.fastq)
+    # - Submission type (IngestionSubmission) UUID:
+    #   In which case we get the list of FileForUpload for upload-files associated with the submission.
+    # - File type UUID:
+    # - Accession ID (e.g. SMAFIQL563L8):
+    # - Accession based file name (e.g. SMAFIQL563L8.fastq):
     #   In which case we get the single FileForUpload for the upload-file as a (single item) list.
     #
     # Returns empty list no files found, or None if something unexpected in the data.
 
-    if not isinstance(portal, Portal) or not isinstance(arg, str) or not arg:
+    if not isinstance(portal, Portal) or not isinstance(arg, (str, dict)) or not arg:
         return None
 
     files_for_upload = None
 
-    if item := portal.get_metadata(arg, raise_exception=False):
+    if item := arg if isinstance(arg, dict) else portal.get_metadata(arg, raise_exception=False):
 
         if is_validation_object(item, portal):
             # Here a validation (i.e. validate-only IngestinonSubmission) UUID was given (and was found);
@@ -2109,7 +2100,7 @@ def assemble_files_for_upload(arg: str,
             other_search_directories.append(get_submission_object_metadata_directory(item, portal))
             other_search_directories.append(os.path.curdir)
             files_for_upload = FilesForUpload.define(
-                get_submission_object_file_upload_info(item, portal),
+                get_submission_object_upload_files(item, portal),
                 main_search_directory=main_search_directory,
                 main_search_directory_recursively=main_search_directory_recursively,
                 other_search_directories=other_search_directories,
@@ -2197,7 +2188,7 @@ def get_submission_object_metadata_directory(submission_item: dict, portal: Port
     return None
 
 
-def get_submission_object_file_upload_info(submission_item: dict, portal: Portal) -> Optional[str]:
+def get_submission_object_upload_files(submission_item: dict, portal: Portal) -> Optional[str]:
     if is_submission_ingestion_object(submission_item, portal):
         return _get_section(submission_item, "upload_info")
     return None
@@ -2611,7 +2602,6 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
 
     # Allow the given "file name" to be uuid for submitted File object, or associated accession
     # ID (e.g. SMAFIP2PIEDG), or the (S3) accession ID based file name (e.g. SMAFIP2PIEDG.fastq).
-    # import pdb ; pdb.set_trace()  # noqa
     if not uuid:
         if is_uuid(item_filename) or _is_accession_id(item_filename):
             uuid = item_filename
@@ -2634,7 +2624,6 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
             raise Exception(f"Cannot determine file name: {uuid}")
 
     # NEW
-    # import pdb ; pdb.set_trace()  # noqa
     file_for_upload = FileForUpload.define(
         item_filename,
         main_search_directory=directory,
