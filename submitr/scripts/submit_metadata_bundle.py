@@ -292,6 +292,11 @@ def main(simulated_args_for_testing=None):
         else:
             PRINT("No environment specified (via --env); skipping SMaHT Portal ping.")
             ping_okay = True
+        ping_rclone_okay = None
+        if rclone_google_config:
+            ping_rclone_okay = rclone_google_config.verify_connectivity()
+        exit(0 if ping_okay is True and (ping_rclone_okay is not False) else 1)
+
 #       if rclone_google_config:
 #           if gce_instance_name := RCloneConfigGoogle.is_google_compute_engine():
 #               PRINT(f"Google Compute Engine instance: {gce_instance_name}")

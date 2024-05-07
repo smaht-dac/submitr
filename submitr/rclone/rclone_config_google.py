@@ -3,7 +3,6 @@ import io
 import json
 import os
 import requests
-import subprocess
 from typing import Callable, Optional, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, normalize_string
@@ -87,34 +86,30 @@ class RCloneConfigGoogle(RCloneConfig):
                         return self._project
         except Exception:
             pass
-        try:
-            # If no service account file specified then maybe we are on a GCE instance.
-            command = "gcloud config get-value project".split()
-            result = subprocess.run(command, capture_output=True)
-            if (result.returncode == 0) and isinstance(project := result.stdout, str) and project:
-                self._project = project
-                return self._project
-        except Exception:
-            pass
-        try:
-            # If for some reason the gcloud command did not work try via URL.
-            url = "http://metadata.google.internal/computeMetadata/v1/project/project-id"
-            response = requests.get(url, headers={"Metadata-Flavor": "Google"})
-            if (response.status_code == 200) and isinstance(project := response.text, str) and project:
-                self._project = project
-                return self._project
-        except Exception:
-            pass
-        return None
+        # If no service account file specified then maybe we are on a GCE instance.
+        return RCloneConfigGoogle._get_project_name_assuming_google_compute_engine
 
     @staticmethod
     def is_google_compute_engine() -> Optional[str]:
+        return RCloneConfigGoogle._get_project_name_assuming_google_compute_engine() is not None
+
+    @staticmethod
+    def _get_project_name_assuming_google_compute_engine() -> Optional[str]:
+        """
+        Returns the name of the Google Compute Engine (GCE) that this code is running on,
+        if indeed we are running on a GCE instance; otherwise None.
+        """
         try:
-            # Just FYI the file /etc/google_instance_id on a GCE contains the instance ID.
-            url = "http://metadata.google.internal/computeMetadata/v1/instance/?alt=json&recursive=true"
+            # Just FYI this URL also yields more info on a GCE instance (with proper header below):
+            # - http://metadata.google.internal/computeMetadata/v1/instance/?alt=json&recursive=true
+            # Just FYI this file on a GCE instance contains the instance ID:
+            # - /etc/google_instance_id
+            # Just FYI this also gets what we are after (though slower):
+            # - gcloud config get-value project
+            url = "http://metadata.google.internal/computeMetadata/v1/project/project-id"
             response = requests.get(url, headers={"Metadata-Flavor": "Google"})
-            if (response.status_code == 200) and isinstance(instance := response.json().get("name"), str):
-                return instance
+            if (response.status_code == 200) and isinstance(project := response.text, str) and project:
+                return project
         except Exception:
             pass
         return None
@@ -144,13 +139,16 @@ class RCloneConfigGoogle(RCloneConfig):
     def verify_connectivity(self, verbose: bool = False, printf: Optional[Callable] = None) -> bool:
         if not callable(printf):
             printf = print
-        if not self.ping():
-            printf(f"WARNING: Google Cloud Storage project"
-                   f"{f' ({self.project})' if self.project else ''} cannot be accessed.")
+        if self.ping():
+            printf(f"Google Cloud Storage project"
+                   f"{f' ({self.project})' if self.project else ''}"
+                   f" connectivity appears to be OK ✓")
             return False
-        elif verbose:
-            printf(f"Google Cloud Storage project ({self.project}) connectivity: OK")
-        return True
+        else:
+            printf(f"Google Cloud Storage project"
+                   f"{f' ({self.project})' if self.project else ''}"
+                   f" connectivity appears to be problematic ✗")
+            return True
 
     def __eq__(self, other: RCloneConfigGoogle) -> bool:
         return isinstance(other, RCloneConfigGoogle) and super().__eq__(other)
