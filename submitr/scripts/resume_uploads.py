@@ -2,7 +2,7 @@ import os
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
 from submitr.base import DEFAULT_APP
-from submitr.rclone import RClone, RCloneConfigGoogle
+# from submitr.rclone import RClone, RCloneConfigGoogle
 from submitr.submission import resume_uploads
 from submitr.scripts.cli_utils import CustomArgumentParser
 
