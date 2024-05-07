@@ -2208,41 +2208,6 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                    rclone_google_config=None,
                    output_file=None, app=None, keys_file=None, env_from_env=False):
 
-    if _pytesting():
-        return resume_uploads_old(uuid=uuid,
-                                  server=server,
-                                  env=env,
-                                  bundle_filename=bundle_filename,
-                                  keydict=keydict,
-                                  upload_folder=upload_folder,
-                                  no_query=no_query,
-                                  subfolders=subfolders,
-                                  rclone_google_config=rclone_google_config,
-                                  output_file=output_file,
-                                  app=app,
-                                  keys_file=keys_file,
-                                  env_from_env=env_from_env)
-    else:
-        return resume_uploads_new(uuid=uuid,
-                                  server=server,
-                                  env=env,
-                                  bundle_filename=bundle_filename,
-                                  keydict=keydict,
-                                  upload_folder=upload_folder,
-                                  no_query=no_query,
-                                  subfolders=subfolders,
-                                  rclone_google_config=rclone_google_config,
-                                  output_file=output_file,
-                                  app=app,
-                                  keys_file=keys_file,
-                                  env_from_env=env_from_env)
-
-
-def resume_uploads_new(uuid, server=None, env=None, bundle_filename=None, keydict=None,
-                       upload_folder=None, no_query=False, subfolders=False,
-                       rclone_google_config=None,
-                       output_file=None, app=None, keys_file=None, env_from_env=False):
-
     if output_file:
         global PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW
         PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW = setup_for_output_file_option(output_file)
@@ -2260,74 +2225,6 @@ def resume_uploads_new(uuid, server=None, env=None, bundle_filename=None, keydic
         portal=portal)
 
     upload_files(files_for_upload, portal)
-
-
-def resume_uploads_old(uuid, server=None, env=None, bundle_filename=None, keydict=None,
-                       upload_folder=None, no_query=False, subfolders=False,
-                       rclone_google_config=None,
-                       output_file=None, app=None, keys_file=None, env_from_env=False):
-    """
-    Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
-    about uploading your data and then later are ready to do that upload.
-
-    :param uuid: a string guid that identifies the ingestion submission
-    :param server: the server to upload to
-    :param env: the portal environment to upload to
-    :param bundle_filename: the bundle file to be uploaded
-    :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
-    :param upload_folder: folder in which to find files to upload (default: same as ingestion_filename)
-    :param no_query: bool to suppress requests for user input
-    :param subfolders: bool to search subdirectories within upload_folder for files
-    """
-
-    if output_file:
-        global PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW
-        PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW = setup_for_output_file_option(output_file)
-
-    portal = _define_portal(key=keydict, keys_file=keys_file, env=env,
-                            server=server, app=app, env_from_env=env_from_env,
-                            report=True, note="Resuming File Upload")
-
-    if not (response := portal.get_metadata(uuid, raise_exception=False)):
-        # import pdb ; pdb.set_trace()  # noqa
-        if accession_id := _extract_accession_id(uuid):
-            if not (response := portal.get_metadata(accession_id)):
-                raise Exception(f"Given accession ID not found: {accession_id}")
-            if (display_title := response.get("display_title")) and not (uuid == display_title):
-                raise Exception(f"Accession ID found but wrong filename: {accession_id} vs {uuid}")
-            uuid = accession_id
-        else:
-            raise Exception(f"Given ID not found: {uuid}")
-
-    if not portal.is_schema_type(response, INGESTION_SUBMISSION_TYPE_NAME):
-
-        # Subsume function of upload-item-data into resume-uploads for convenience.
-        if portal.is_schema_file_type(response):
-            _upload_item_data(item_filename=uuid, uuid=None, server=portal.server,
-                              env=portal.env, directory=upload_folder, recursive=subfolders,
-                              rclone_google_config=rclone_google_config,
-                              no_query=no_query, app=app, report=False)
-            return
-
-        undesired_type = portal.get_schema_type(response)
-        raise Exception(f"Given ID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
-
-    if submission_parameters := response.get("parameters", {}):
-        if tobool(submission_parameters.get("validate_only")):
-            PRINT(f"This submission ID ({uuid}) is for a validation not an actual submission.")
-            if submission_uuid := submission_parameters.get("submission_uuid"):
-                PRINT(f"▶ Perhaps you meant to use the submission ID"
-                      f" associated with this: {submission_uuid}")  # noqa
-            exit(1)
-
-    do_any_uploads(response,
-                   keydict=portal.key,
-                   ingestion_filename=bundle_filename,
-                   upload_folder=upload_folder,
-                   rclone_google_config=rclone_google_config,
-                   no_query=no_query,
-                   subfolders=subfolders,
-                   portal=portal)
 
 
 @function_cache(serialize_key=True)

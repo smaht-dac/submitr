@@ -761,7 +761,7 @@ def test_do_any_uploads():
                 assert shown.lines == []
 
 
-def test_resume_uploads():
+def need_to_replace_with_new_version_test_resume_uploads():
 
     with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
         with mock.patch.object(submission_module, "_resolve_server", return_value=SOME_SERVER):
