@@ -17,7 +17,7 @@ from ..submission import (
     _print_metadata_file_info,
     _pytesting
 )
-from submitr.rclone import RClone, RCloneConfigGoogle
+from submitr.rclone import RCloneConfigGoogle
 
 _HELP = f"""
 ===
@@ -252,14 +252,14 @@ def main(simulated_args_for_testing=None):
         if args.env:
             env_from_env = True
 
-    rclone_google_config = None
     if args.rclone_google_source:
-        if not RClone.verify_installation():
+        if not (rclone_google_config := RCloneConfigGoogle.create_from_args(args.rclone_google_source,
+                                                                            args.rclone_google_credentials,
+                                                                            verify_installation=True,
+                                                                            verbose=args.verbose or args.debug)):
             exit(1)
-        rclone_google_config = RCloneConfigGoogle.create_from_args(args.rclone_google_source,
-                                                                   args.rclone_google_credentials)
-        if not rclone_google_config:
-            exit(1)
+    else:
+        rclone_google_config = None
 
 #   rclone_google_ping_okay = None
 #   rclone_google_config = None

@@ -95,19 +95,19 @@ class RCloneConfig(AbstractBaseClass):
                     f.write(f"{extra_line}\n")
 
     def path_exists(self, path: str) -> Optional[bool]:
-        if path := cloud_path(path):
+        if path := cloud_path.normalize(path):
             with self.config_file() as config_file:
                 return RCloneCommands.exists_command(source=f"{self.name}:{path}", config=config_file)
         return False
 
     def file_size(self, path: str) -> Optional[int]:
-        if path := cloud_path(path):
+        if path := cloud_path.normalize(path):
             with self.config_file() as config_file:
                 return RCloneCommands.size_command(source=f"{self.name}:{path}", config=config_file)
         return None
 
     def file_checksum(self, path: str) -> Optional[str]:
-        if path := cloud_path(path):
+        if path := cloud_path.normalize(path):
             with self.config_file() as config_file:
                 return RCloneCommands.checksum_command(source=f"{self.name}:{path}", config=config_file)
 

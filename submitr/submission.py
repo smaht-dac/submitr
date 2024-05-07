@@ -759,6 +759,7 @@ def submit_any_ingestion(ingestion_filename, *,
         exit(1)
 
     user_record = _get_user_record(portal.server, auth=portal.key_pair, quiet=json_only and not verbose)
+
     # Nevermind: Too confusing for both testing and general usage
     # to have different behaviours for admin and non-admin users.
     # is_admin_user = _is_admin_user(user_record)
@@ -816,6 +817,9 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if verbose:
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
+
+    if rclone_google_config:
+        rclone_google_config.verify_connectivity(verbose=verbose)
 
     if not noversion:
         check_metadata_version(ingestion_filename, portal=portal)

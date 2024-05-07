@@ -8,6 +8,7 @@ from typing import Callable, Optional, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, normalize_string
 from submitr.rclone.rclone_config import RCloneConfig, RCloneCredentials
+from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.rclone.rclone_utils import cloud_path
 
 
@@ -121,28 +122,35 @@ class RCloneConfigGoogle(RCloneConfig):
     @staticmethod
     def create_from_args(rclone_google_source: Optional[str],
                          rclone_google_credentials: Optional[str] = None,
-                         printf: Optional[Callable] = None,
-                         verbose: bool = False) -> Optional[RCloneConfigGoogle]:
+                         verify_installation: bool = False,
+                         verbose: bool = False,
+                         printf: Optional[Callable] = None) -> Optional[RCloneConfigGoogle]:
         if not isinstance(rclone_google_source, str) or not rclone_google_source:
             return None
+        if not RCloneInstallation.verify_installation(verbose=verbose):
+            exit(1)
         if not isinstance(rclone_google_credentials, str):
             rclone_google_credentials = None
         if not callable(printf):
             printf = print
         if rclone_google_credentials and not os.path.isfile(rclone_google_credentials):
-            if verbose:
-                printf(f"ERROR: Google service account file does not exist: {rclone_google_credentials}")
-            return None, None
+            printf(f"ERROR: Google service account file does not exist: {rclone_google_credentials}")
+            return None
         # TODO: Allow "location" to be passed in (?); not in service account file.
         rclone_google_config = RCloneConfigGoogle(service_account_file=rclone_google_credentials,
                                                   path=rclone_google_source)
-        if not rclone_google_config.ping():
-            if verbose:
-                printf("WARNING: Google Cloud Storage cannot be accessed!")
-            return None
-        if verbose:
-            printf(f"Google Cloud Storage accessibility ▶ OK (project: {rclone_google_config.project}).")
         return rclone_google_config
+
+    def verify_connectivity(self, verbose: bool = False, printf: Optional[Callable] = None) -> bool:
+        if not callable(printf):
+            printf = print
+        if not self.ping():
+            printf(f"WARNING: Google Cloud Storage project"
+                   f"{f' ({self.project})' if self.project else ''} cannot be accessed.")
+            return False
+        elif verbose:
+            printf(f"Google Cloud Storage project ({self.project}) connectivity: OK")
+        return True
 
     def __eq__(self, other: RCloneConfigGoogle) -> bool:
         return isinstance(other, RCloneConfigGoogle) and super().__eq__(other)
