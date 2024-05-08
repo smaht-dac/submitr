@@ -213,12 +213,13 @@ class FileForUpload:
     def google_config(self) -> Optional[RCloneConfigGoogle]:
         return self._google_config
 
-    def review(self, portal: Optional[Portal] = None, printf: Optional[Callable] = None) -> bool:
+    def review(self, portal: Optional[Portal] = None, verbose: bool = False, printf: Optional[Callable] = None) -> bool:
         if not callable(printf):
             printf = print
         if not self.found:
             printf(f"WARNING: Cannot find file for upload: {self.name} ({self.uuid})")
             if isinstance(portal, Portal):
+                printf(f"- Use --directory to specify a irectory where the file can be found.")
                 printf(f"- Upload later with: {self.resume_upload_command(env=portal.env if portal else None)}")
             self._ignore = True
             return False
@@ -237,11 +238,13 @@ class FileForUpload:
                 printf(f"- Upload later with: {self.resume_upload_command(env=portal.env if portal else None)}")
                 self._ignore = True
                 return False
-            printf(f"File for upload to AWS S3: {self.display_path} ({format_size(self.size)})")
+            if verbose:
+                printf(f"- File for upload to AWS S3: {self.display_path} ({format_size(self.size)})")
             return True
         elif self.found_in_google:
-            printf(f"File for upload to AWS S3 (from GCS):"
-                   f" gs://{self.google_path} ({format_size(self.google_size)})")
+            if verbose:
+                printf(f"- File for upload to AWS S3 (from GCS):"
+                       f" gs://{self.google_path} ({format_size(self.google_size)})")
             return True
 
     def __str__(self) -> str:  # for troubleshooting only
@@ -293,16 +296,25 @@ class FilesForUpload:
 
     @staticmethod
     def review(files_for_upload: List[FileForUpload],
-               portal: Optional[Portal] = None, printf: Optional[Callable] = None) -> bool:
+               portal: Optional[Portal] = None,
+               verbose: bool = False,
+               printf: Optional[Callable] = None) -> bool:
         if not isinstance(files_for_upload, list):
             return False
         if not callable(printf):
             printf = print
         result = True
         if files_for_upload:
-            printf("Reviewing files for upload ...")
+            files_for_upload_missing = [file for file in files_for_upload if not file.found]
+            files_for_upload_ambiguous = [file for file in files_for_upload if file.found_locally_multiple]
+            message = f"Reviewing files for upload | Total: {len(files_for_upload)}"
+            if files_for_upload_missing:
+                message += f" | Missing: {len(files_for_upload_missing)}"
+            if files_for_upload_ambiguous:
+                message += f" | Ambiguous: {len(files_for_upload_ambiguous)}"
+            printf(message)
             for file_for_upload in files_for_upload:
                 if isinstance(file_for_upload, FileForUpload):
-                    if not file_for_upload.review(portal=portal, printf=printf):
+                    if not file_for_upload.review(portal=portal, verbose=verbose, printf=printf):
                         result = False
         return result

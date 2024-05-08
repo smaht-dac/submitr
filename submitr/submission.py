@@ -860,7 +860,8 @@ def submit_any_ingestion(ingestion_filename, *,
                    main_search_directory=upload_folder,
                    main_search_directory_recursively=subfolders,
                    google_config=rclone_google_config,
-                   portal=portal)
+                   portal=portal,
+                   verbose=verbose)
 
 
 def _get_recent_submissions(portal: Portal, count: int = 30, name: Optional[str] = None) -> List[dict]:
@@ -1289,7 +1290,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                        main_search_directory=upload_directory,
                        main_search_directory_recursively=upload_directory_recursive,
                        google_config=rclone_google_config,
-                       portal=portal)
+                       portal=portal,
+                       verbose=verbose)
         return
 
     if check_submission_script or verbose or debug:  # or not validation
@@ -1713,7 +1715,7 @@ def _get_upload_file_info(portal: Portal, uuid: str) -> Tuple[Optional[str], Opt
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
                    upload_folder=None, no_query=False, subfolders=False,
                    rclone_google_config=None,
-                   output_file=None, app=None, keys_file=None, env_from_env=False):
+                   output_file=None, app=None, keys_file=None, env_from_env=False, verbose=False):
 
     if output_file:
         global PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW
@@ -1730,7 +1732,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                    main_search_directory=upload_folder,
                    main_search_directory_recursively=subfolders,
                    google_config=rclone_google_config,
-                   portal=portal)
+                   portal=portal,
+                   verbose=verbose)
 
 
 def get_metadata_bundles_bucket_from_health_path(key: dict) -> str:

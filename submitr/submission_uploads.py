@@ -16,7 +16,8 @@ def do_any_uploads(arg: Union[str, dict],
                    main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
                    main_search_directory_recursively: bool = False,
                    google_config: Optional[RCloneConfigGoogle] = None,
-                   portal: Optional[Portal] = None) -> None:
+                   portal: Optional[Portal] = None,
+                   verbose: bool = False) -> None:
 
     files_for_upload = assemble_files_for_upload(
         arg,
@@ -24,7 +25,8 @@ def do_any_uploads(arg: Union[str, dict],
         main_search_directory_recursively=main_search_directory_recursively,
         metadata_file=metadata_file,
         google_config=google_config,
-        portal=portal)
+        portal=portal,
+        verbose=verbose)
 
     upload_files(files_for_upload, portal)
 
@@ -37,6 +39,7 @@ def assemble_files_for_upload(arg: Union[str, dict],
                               google_config: Optional[RCloneConfigGoogle] = None,
                               portal: Optional[Portal] = None,
                               review: bool = True,
+                              verbose: bool = False,
                               _recursive: bool = False) -> Optional[List[FileForUpload]]:
 
     # Returns a list of FileForUpload from the given argument; the given argument can be any of:
@@ -138,7 +141,7 @@ def assemble_files_for_upload(arg: Union[str, dict],
         return None
 
     if (review is True) and (_recursive is False):
-        FilesForUpload.review(files_for_upload, portal=portal)
+        FilesForUpload.review(files_for_upload, portal=portal, verbose=verbose)
     return files_for_upload
 
 

@@ -142,7 +142,8 @@ def main(simulated_args_for_testing=None):
                        subfolders=not directory_only,
                        rclone_google_config=google_config,
                        output_file=args.output,
-                       app=args.app)
+                       app=args.app,
+                       verbose=args.verbose)
 
 
 if __name__ == '__main__':
