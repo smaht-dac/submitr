@@ -2065,59 +2065,6 @@ def extract_metadata_and_upload_credentials(response, filename, method, payload_
 SUBMITR_SELECTIVE_UPLOADS = environ_bool("SUBMITR_SELECTIVE_UPLOADS")
 
 
-def do_uploads(upload_spec_list, auth, folder=None, no_query=False,
-               subfolders=False, rclone_google_config=None, portal=None):
-    """
-    Uploads the files mentioned in the give upload_spec_list.
-
-    If any files have associated extra files, upload those as well.
-
-    :param upload_spec_list: a list of upload_spec dictionaries, each of the form {'filename': ..., 'uuid': ...},
-        representing uploads to be formed.
-    :param auth: a dictionary-form auth spec, of the form {'key': ..., 'secret': ..., 'server': ...}
-        representing destination and credentials.
-    :param folder: a string naming a folder in which to find the filenames to be uploaded.
-    :param no_query: bool to suppress requests for user input
-    :param subfolders: bool to search subdirectories within upload_folder for files
-    :return: None
-    """
-    folder = folder or os.path.curdir
-    if subfolders:
-        folder = os.path.join(folder, '**')
-    first_time = True
-    for upload_spec in upload_spec_list:
-        file_name = upload_spec["filename"]
-        if not (file_paths := search_for_file(file_name, location=folder, recursive=subfolders)) or len(file_paths) > 1:
-            if len(file_paths) > 1:
-                SHOW(f"No upload attempted for file {file_name} because multiple copies"
-                     f" were found in folder {folder}: {', '.join(file_paths)}.")
-            else:
-                SHOW(f"Upload file not found: {file_name}")
-            continue
-        file_path = file_paths[0]
-        uuid = upload_spec['uuid']
-        uploader_wrapper = UploadMessageWrapper(uuid, no_query=no_query)
-        wrapped_upload_file_to_uuid = uploader_wrapper.wrap_upload_function(
-            upload_file_to_uuid, file_path
-        )
-        file_metadata = wrapped_upload_file_to_uuid(
-            filename=file_path, uuid=uuid, auth=auth,
-            rclone_google_config=rclone_google_config,
-            first_time=first_time, portal=portal
-        )
-        if file_metadata:
-            extra_files_credentials = file_metadata.get("extra_files_creds", [])
-            if extra_files_credentials:
-                _upload_extra_files(
-                    extra_files_credentials,
-                    uploader_wrapper,
-                    folder,
-                    auth,
-                    recursive=subfolders,
-                )
-        first_time = False
-
-
 class UploadMessageWrapper:
     """Class to provide consistent queries/messages to user when
     uploading file(s) to given File UUID.

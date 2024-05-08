@@ -8,11 +8,10 @@ import pytest
 from . import test_misc  # noqa
 from dcicutils import command_utils as command_utils_module
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
-from dcicutils.misc_utils import ignored, ignorable, local_attrs, NamedObject
+from dcicutils.misc_utils import ignored, ignorable, NamedObject
 from dcicutils.portal_utils import Portal
 from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
 from dcicutils.s3_utils import HealthPageKey
-from dcicutils.tmpfile_utils import temporary_directory
 from typing import List, Dict
 from unittest import mock
 
@@ -21,7 +20,7 @@ from .. import submission as submission_module
 from ..submission import (  # noqa
     SERVER_REGEXP, PROGRESS_CHECK_INTERVAL, ATTEMPTS_BEFORE_TIMEOUT,
     _get_defaulted_institution, _get_defaulted_project,
-    do_uploads, _show_upload_info, _show_upload_result,
+    _show_upload_info, _show_upload_result,
     execute_prearranged_upload, _get_section, _get_user_record, _ingestion_submission_item_url,
     _resolve_server, resume_uploads, _show_section, submit_any_ingestion,
     upload_file_to_uuid,
@@ -807,231 +806,6 @@ def make_alternator(*values):
     alternatives = Alternatives(values)
 
     return alternatives.next_value
-
-
-def test_do_uploads(tmp_path):
-
-    @contextlib.contextmanager
-    def mock_uploads():
-
-        uploaded = {}
-
-        def mocked_upload_file(filename, uuid, auth,
-                               rclone_google_config=None,
-                               first_time=False, portal=None):
-            if auth != SOME_AUTH:
-                raise Exception("Bad auth")
-            uploaded[uuid] = filename
-
-        with mock.patch.object(submission_module, "upload_file_to_uuid", mocked_upload_file):
-            yield uploaded  # This starts out empty when yielded, but as uploads occur will get populated.
-
-    with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-
-        with mock_uploads() as mock_uploaded:
-            do_uploads(upload_spec_list=[], auth=SOME_AUTH)
-            assert mock_uploaded == {}
-
-        some_uploads_to_do = [
-            {'uuid': '1234', 'filename': 'foo.fastq.gz'},
-            {'uuid': '2345', 'filename': 'bar.fastq.gz'},
-            {'uuid': '3456', 'filename': 'baz.fastq.gz'}
-        ]
-
-        with temporary_directory() as tmpdir:
-            for some_upload_to_do in some_uploads_to_do:
-                some_upload_to_do["filename"] = os.path.join(tmpdir, some_upload_to_do["filename"])
-                open(some_upload_to_do["filename"], "w")
-            with mock_uploads() as mock_uploaded:
-                with shown_output() as shown:
-                    do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_BAD_AUTH)
-                    assert mock_uploaded == {}  # Nothing uploaded because of bad auth
-                    assert shown.lines == [
-                        # f"Uploading {os.path.join(tmpdir, 'foo.fastq.gz')} to item 1234 ...",
-                        'Exception: Bad auth',
-                        # f"Uploading {os.path.join(tmpdir, 'bar.fastq.gz')} to item 2345 ...",
-                        'Exception: Bad auth',
-                        # f"Uploading {os.path.join(tmpdir, 'baz.fastq.gz')} to item 3456 ...",
-                        'Exception: Bad auth'
-                    ]
-
-            with mock_uploads() as mock_uploaded:
-                with shown_output() as shown:
-                    do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_AUTH)
-                    assert mock_uploaded == {
-                        '1234': f"{os.path.join(tmpdir, 'foo.fastq.gz')}",
-                        '2345': f"{os.path.join(tmpdir, 'bar.fastq.gz')}",
-                        '3456': f"{os.path.join(tmpdir, 'baz.fastq.gz')}"
-                    }
-
-            with mock_uploads() as mock_uploaded:
-                with shown_output() as shown:
-                    do_uploads(upload_spec_list=some_uploads_to_do, auth=SOME_AUTH, no_query=True)
-                    assert mock_uploaded == {
-                        '1234': f"{os.path.join(tmpdir, 'foo.fastq.gz')}",
-                        '2345': f"{os.path.join(tmpdir, 'bar.fastq.gz')}",
-                        '3456': f"{os.path.join(tmpdir, 'baz.fastq.gz')}"
-                    }
-
-            with local_attrs(submission_module, SUBMITR_SELECTIVE_UPLOADS=True):
-                with mock.patch.object(submission_module, "yes_or_no", make_alternator(True, False)):
-                    with mock_uploads() as mock_uploaded:
-                        with shown_output() as shown:
-                            do_uploads(
-                                upload_spec_list=[
-                                    {'uuid': '1234', 'filename': f"{'foo.fastq.gz'}"},
-                                    {'uuid': '2345', 'filename': f"{'bar.fastq.gz'}"},
-                                    {'uuid': '3456', 'filename': f"{'baz.fastq.gz'}"}
-                                ],
-                                auth=SOME_AUTH,
-                                # folder='/x/yy/zzz/'
-                                folder=tmpdir
-                            )
-                            assert mock_uploaded == {
-                                '1234': f"{os.path.join(tmpdir, 'foo.fastq.gz')}",
-                                # The mock yes_or_no will have omitted this element.
-                                # '2345': './bar.fastq.gz',
-                                '3456': f"{os.path.join(tmpdir, 'baz.fastq.gz')}"
-                            }
-                            assert shown.lines == [
-                                # f"Uploading {os.path.join(tmpdir, 'foo.fastq.gz')} to item 1234 ...",
-                                # f"Upload of {os.path.join(tmpdir, 'foo.fastq.gz')} to item 1234 was successful.",
-                                # The query about uploading bar.fastq has been mocked out here
-                                # in favor of an unconditional False result, so the question does no I/O.
-                                # The only output is the result of simulating a 'no' answer.
-                                'OK, not uploading it.',
-                                # f"Uploading {os.path.join(tmpdir, 'baz.fastq.gz')} to item 3456 ...",
-                                # f"Upload of {os.path.join(tmpdir, 'baz.fastq.gz')} to item 3456 was successful.",
-                            ]
-
-
-def test_do_uploads2(tmp_path):
-
-    folder = tmp_path / "to_upload"
-    folder.mkdir()
-    subfolder = folder / "files"
-    subfolder.mkdir()
-    file_path = subfolder / "foo.fastq.gz"
-    file_path.write_text("")
-    file_path = file_path.as_posix()
-    upload_spec_list = [{'uuid': '1234', 'filename': 'foo.fastq.gz'}]
-    filename = upload_spec_list[0]["filename"]
-    uuid = upload_spec_list[0]["uuid"]
-
-    with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
-        # File in subfolder and found.
-        do_uploads(
-            upload_spec_list,
-            auth=SOME_AUTH,
-            folder=subfolder,
-            no_query=True,
-            rclone_google_config=None
-        )
-        mock_upload.assert_called_with(
-            filename=file_path,
-            uuid=uuid,
-            auth=SOME_AUTH,
-            first_time=True,
-            rclone_google_config=None,
-            portal=mock.ANY
-        )
-
-    with shown_output() as shown:
-        with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
-            # File not found, so pass join of folder and file.
-            do_uploads(
-                upload_spec_list,
-                auth=SOME_AUTH,
-                folder=folder,
-                rclone_google_config=None,
-                no_query=True,
-            )
-            assert shown.lines == [
-                f"Upload file not found: {upload_spec_list[0]['filename']}"]
-
-    with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
-        # File found within subfolder and upload called.
-        do_uploads(
-            upload_spec_list,
-            auth=SOME_AUTH,
-            folder=folder,
-            no_query=True,
-            rclone_google_config=None,
-            subfolders=True,
-        )
-        mock_upload.assert_called_with(
-            filename=file_path,
-            uuid=uuid,
-            auth=SOME_AUTH,
-            first_time=True,
-            rclone_google_config=None,
-            portal=mock.ANY
-        )
-
-    with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
-        # Multiple matching files found; show lines and don't call for upload.
-        with shown_output() as shown:
-            another_file_path = folder / "foo.fastq.gz"
-            another_file_path.write_text("")
-            another_file_path = another_file_path.as_posix()
-            folder_str = folder.as_posix()
-            do_uploads(
-                upload_spec_list,
-                auth=SOME_AUTH,
-                folder=folder,
-                no_query=True,
-                rclone_google_config=None,
-                subfolders=True,
-            )
-            mock_upload.assert_not_called()
-            assert shown.lines == [
-                "No upload attempted for file %s because multiple copies were found"
-                " in folder %s: %s."
-                % (filename, folder_str + "/**", ", ".join([another_file_path, file_path]))
-            ]
-
-    # Test extra files credentials found and passed to handler
-    def return_first_arg(first_arg, *args, **kwargs):
-        ignored(args, kwargs)
-        return first_arg
-
-    mocked_instance = mock.MagicMock()
-    mocked_instance.wrap_upload_function = mock.MagicMock(side_effect=return_first_arg)
-    mocked_upload_message_wrapper = mock.MagicMock(return_value=mocked_instance)
-#    mocked_upload_message_wrapper().wrap_upload_function = mock.MagicMock(
-#        side_effect=return_first_arg
-#    )
-    with mock.patch.object(
-        submission_module,
-        "upload_file_to_uuid",
-        return_value=SOME_FILE_METADATA_WITH_EXTRA_FILE_CREDENTIALS,
-    ) as mocked_upload_file_to_uuid:
-        with mock.patch.object(
-            submission_module, "_upload_extra_files"
-        ) as mocked_upload_extra_files:
-            with mock.patch.object(
-                submission_module,
-                "UploadMessageWrapper",
-                mocked_upload_message_wrapper,
-            ):
-                with shown_output() as shown:
-                    ignored(shown)
-                    do_uploads(
-                        upload_spec_list,
-                        auth=SOME_AUTH,
-                        folder=folder,
-                        no_query=True,
-                        rclone_google_config=None,
-                        subfolders=False,
-                    )
-                    mocked_upload_file_to_uuid.assert_called_once()
-                    mocked_upload_extra_files.assert_called_once_with(
-                        SOME_EXTRA_FILE_CREDENTIALS,
-                        mocked_instance,
-                        folder,
-                        SOME_AUTH,
-                        recursive=False
-                    )
 
 
 def get_today_datetime_for_time(time_to_use):
