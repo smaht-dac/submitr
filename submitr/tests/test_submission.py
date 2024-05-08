@@ -6,13 +6,11 @@ import platform
 import pytest
 
 from . import test_misc  # noqa
-from dcicutils import command_utils as command_utils_module
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
 from dcicutils.misc_utils import ignored, ignorable, NamedObject
 from dcicutils.portal_utils import Portal
-from dcicutils.qa_utils import ControlledTime, MockFileSystem, raises_regexp, printed_output
+from dcicutils.qa_utils import ControlledTime, MockFileSystem, printed_output
 from dcicutils.s3_utils import HealthPageKey
-from typing import List, Dict
 from unittest import mock
 
 from .test_utils import shown_output
@@ -20,15 +18,13 @@ from .. import submission as submission_module
 from ..submission import (  # noqa
     SERVER_REGEXP, PROGRESS_CHECK_INTERVAL, ATTEMPTS_BEFORE_TIMEOUT,
     _get_defaulted_institution, _get_defaulted_project,
-    _show_upload_info, _show_upload_result,
     execute_prearranged_upload, _get_section, _get_user_record, _ingestion_submission_item_url,
     _resolve_server, resume_uploads, _show_section, submit_any_ingestion,
-    upload_file_to_uuid,
-    get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page, _running_on_windows_native,
+    get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page,
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
     _post_files_data,  # noQA - again, testing a protected member
     _check_ingestion_progress,  # noQA - again, testing a protected member
-    _get_defaulted_lab, _get_defaulted_award, SubmissionProtocol, compute_file_post_data,
+    _get_defaulted_lab, _get_defaulted_award, SubmissionProtocol,
     GENERIC_SCHEMA_TYPE, DEFAULT_APP, _summarize_submission,
     _get_defaulted_submission_centers, _get_defaulted_consortia, _do_app_arg_defaulting, _monitor_ingestion_process
 )
@@ -151,20 +147,6 @@ SOME_EXTRA_FILE_CREDENTIALS = [
 SOME_FILE_METADATA_WITH_EXTRA_FILE_CREDENTIALS = {
     "extra_files_creds": SOME_EXTRA_FILE_CREDENTIALS
 }
-
-
-def _independently_confirmed_as_running_on_windows_native():
-    # There are two ways to tell if we're running on Windows native:
-    #    os.name == 'nt' (as opposed to 'posix')
-    #    platform.system() == 'Windows' (as opposed to 'Linux', 'Darwin', or 'CYGWIN_NT-<version>'
-    # Since we're wanting to test one of these, we  use the other mechansim to confirm things.
-    standard_result = _running_on_windows_native()
-    independent_result = platform.system() == 'Windows'
-    assert standard_result == independent_result, (
-        f"Mechanisms for telling whether we're on Windows disagree:"
-        f" standard_result={standard_result} independent_result={independent_result}"
-    )
-    return independent_result
 
 
 @contextlib.contextmanager
@@ -347,156 +329,6 @@ def test_ingestion_submission_item_url():
     ) == 'http://foo.com/ingestion-submissions/123-4567-890?format=json&datastore=database'
 
 
-def test_show_upload_info():
-
-    json_result = None  # Actual value comes later
-
-    index = 0
-
-    URLS = [
-        f"{SOME_SERVER}/ingestion-submissions/{SOME_UUID}?format=json&datastore=database",
-        f"{SOME_SERVER}/health",
-        f"{SOME_SERVER}/{SOME_UPLOAD_INFO[0]['uuid']}",
-        f"{SOME_SERVER}/{SOME_UPLOAD_INFO[1]['uuid']}"
-    ]
-
-    def mocked_get(url, *, auth, **kwargs):
-        nonlocal index
-        ignored(kwargs)
-        assert url == URLS[index]
-        assert auth == SOME_AUTH
-        index += 1
-        return FakeResponse(200, json=json_result)
-
-    with mock.patch("dcicutils.portal_utils.Portal.get_schemas", return_value={"dummy": "dummy"}):
-        with mock.patch("dcicutils.portal_utils.Portal.get_metadata", return_value={"dummy": "dummy"}):
-            with mock.patch("dcicutils.portal_utils.Portal.is_schema_type", return_value=True):
-                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch("requests.get", mocked_get):
-                        index = 0
-                        json_result = {}
-                        with shown_output() as shown:
-                            _show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
-                            assert shown.lines == ['Uploads: None']
-                        index = 0
-                        del URLS[1]
-                        json_result = SOME_UPLOAD_INFO_RESULT
-                        with shown_output() as shown:
-                            _show_upload_info(SOME_UUID, server=SOME_SERVER, env=None, keydict=SOME_KEYDICT)
-                            expected_lines = ['\n----- Upload Info -----']
-                            assert shown.lines == expected_lines
-
-
-def test_show_upload_info_with_app():
-
-    expected_app = APP_FOURFRONT
-
-    class TestFinished(BaseException):
-        pass
-
-    def mocked_get(url, *, auth, **kwargs):
-        ignored(url, auth, kwargs)
-        # This checks that the recursive call in _show_upload_info actually happened, binding the selected_app
-        # to the given app. Once we've verified that, this test is done.
-        raise TestFinished
-
-    with mock.patch("dcicutils.portal_utils.Portal.get_schemas", return_value={"dummy": "dummy"}):
-        with mock.patch("dcicutils.portal_utils.Portal.get_metadata", return_value={"dummy": "dummy"}):
-            with mock.patch("dcicutils.portal_utils.Portal.is_schema_type", return_value=True):
-                with mock.patch.object(command_utils_module, "script_catch_errors", script_dont_catch_errors):
-                    with mock.patch("requests.get") as mock_get:
-                        mock_get.side_effect = mocked_get
-                        with mock.patch.object(submission_module, "_show_upload_result"):
-                            assert mock_get.call_count == 0
-                            with pytest.raises(TestFinished):
-                                _show_upload_info(SOME_UUID,
-                                                  server=SOME_SERVER, env=None, keydict=SOME_KEYDICT, app=expected_app)
-                            assert mock_get.call_count == 1
-
-
-def test_show_upload_result():
-
-    # The primary output is handled a bit differently than other parts, so capture that nuance...
-    upload_info_items: List
-    for upload_info_items in [[], ['alpha', 'bravo']]:
-        with shown_output() as shown:
-            _show_upload_result({'upload_info': upload_info_items},
-                                show_primary_result=True,
-                                show_validation_output=False,
-                                show_processing_status=False,
-                                show_datafile_url=False)
-            assert shown.lines == upload_info_items or "Uploads: None"  # special case for no uploads
-
-    sample_validation_output = ['yep', 'uh huh', 'wait, what?']
-    for show_validation in [False, True]:
-        with shown_output() as shown:
-            _show_upload_result({'validation_output': sample_validation_output},
-                                show_primary_result=False,
-                                show_validation_output=show_validation,
-                                show_processing_status=False,
-                                show_datafile_url=False)
-            # assert shown.lines == (['----- Validation Output -----'] + sample_validation_output
-            #                        if show_validation
-            #                        else [])
-
-    # Special case for 'parameters' relates to presence or absence of 'datafile_url' within it
-    sample_non_data_parameters = {'some_key': 'some_value'}
-    sample_datafile_url = 'some-datafile-url'
-    test_cases = [
-        (False, {}),
-        (True, {'datafile_url': sample_datafile_url}),
-        (False, {'datafile_url': ''}),
-        (False, {'datafile_url': None})]
-    sample_data_parameters: Dict
-    for datafile_should_be_shown, sample_data_parameters in test_cases:
-        with shown_output() as shown:
-            _show_upload_result({'parameters': dict(sample_non_data_parameters, **sample_data_parameters)},
-                                show_primary_result=False,
-                                show_validation_output=False,
-                                show_processing_status=False,
-                                show_datafile_url=True)
-            if datafile_should_be_shown:
-                assert shown.lines == [
-                    "----- DataFile URL -----",
-                    sample_datafile_url,
-                ]
-            else:
-                assert shown.lines == []
-
-    for show_it in [False, True]:
-        with shown_output() as shown:
-            _show_upload_result({
-                'processing_status': {
-                    'state': 'some-state',
-                    'outcome': 'some-outcome',
-                    'progress': 'some-progress',
-                }},
-                show_primary_result=False,
-                show_validation_output=False,
-                show_processing_status=show_it,
-                show_datafile_url=False)
-            assert bool(shown.lines) is show_it
-
-    for state in ['some-state', None]:
-        n = 1 if state else 0
-        for outcome in ['some-outcome', None]:
-            n += 1 if outcome else 0
-            for progress in ['some-progress', None]:
-                n += 1 if progress else 0
-                with shown_output() as shown:
-                    _show_upload_result({
-                        'processing_status': {
-                            'state': state, 'outcome': outcome, 'progress': progress
-                        }},
-                        show_primary_result=False,
-                        show_validation_output=False,
-                        show_processing_status=True,
-                        show_datafile_url=False)
-                    # Heading is shown if there are n times, so that's the +1
-                    # Otherwise one output line is shown for each non-null item
-                    assert len(shown.lines) == 0 if n == 0 else n + 1
-
-
 def test_show_section_without_caveat():
 
     nothing_to_show = []
@@ -635,77 +467,6 @@ def os_simulation(*, simulation_mode):
             yield
 
 
-@pytest.mark.parametrize("os_simulation_mode", OS_SIMULATION_MODE_NAMES)
-def obsolete_test_execute_prearranged_upload(os_simulation_mode: str):
-    Portal.KEYS_FILE_DIRECTORY = "/dummy"
-    with os_simulation(simulation_mode=os_simulation_mode):
-        with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
-            with shown_output() as shown:
-                with pytest.raises(ValueError):
-                    bad_credentials = SOME_UPLOAD_CREDENTIALS.copy()
-                    bad_credentials.pop('SessionToken')
-                    # This will abort quite early because it can't construct a proper set of credentials as env vars.
-                    # Nothing has to be mocked because it won't get that far.
-                    execute_prearranged_upload('this-file-name-is-not-used', bad_credentials)
-                assert shown.lines == []
-
-        subprocess_options = {}
-        if _independently_confirmed_as_running_on_windows_native():
-            subprocess_options = {'shell': True}
-
-        with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
-            with shown_output() as shown:
-                with mock.patch("time.time", MockTime().time):
-                    with mock.patch("subprocess.call", return_value=0) as mock_aws_call:
-                        execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
-                        mock_aws_call.assert_called_with(
-                            ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
-                            env=SOME_ENVIRON_WITH_CREDS,
-                            **subprocess_options
-                        )
-                        assert shown.lines == [
-                            "Uploading some-filename to: some-url",
-                            "Upload of some-filename: OK -> 1.0 seconds",
-                            # 1 tick (at rate of 1 second per tick in our controlled time)
-                            # "Upload duration: 1.00 seconds"
-                        ]
-
-        with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
-            with shown_output() as shown:
-                with mock.patch("time.time", MockTime().time):
-                    with mock.patch("subprocess.call", return_value=0) as mock_aws_call:
-                        execute_prearranged_upload(path=SOME_FILENAME,
-                                                   upload_credentials=SOME_EXTENDED_UPLOAD_CREDENTIALS)
-                        mock_aws_call.assert_called_with(
-                            ['aws', 's3', 'cp',
-                             '--sse', 'aws:kms', '--sse-kms-key-id', SOME_S3_ENCRYPT_KEY_ID,
-                             '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
-                            env=SOME_ENVIRON_WITH_CREDS,
-                            **subprocess_options
-                        )
-                        assert shown.lines == [
-                            "Uploading some-filename to: some-url",
-                            "Upload of some-filename: OK -> 1.0 seconds",
-                            # 1 tick (at rate of 1 second per tick in our controlled time)
-                            # "Upload duration: 1.00 seconds"
-                        ]
-
-        with mock.patch.object(os, "environ", SOME_ENVIRON.copy()):
-            with shown_output() as shown:
-                with mock.patch("time.time", MockTime().time):
-                    with mock.patch("subprocess.call", return_value=17) as mock_aws_call:
-                        with raises_regexp(RuntimeError, "Upload failed with exit code 17"):
-                            execute_prearranged_upload(path=SOME_FILENAME, upload_credentials=SOME_UPLOAD_CREDENTIALS)
-                        mock_aws_call.assert_called_with(
-                            ['aws', 's3', 'cp', '--only-show-errors', SOME_FILENAME, SOME_UPLOAD_URL],
-                            env=SOME_ENVIRON_WITH_CREDS,
-                            **subprocess_options
-                        )
-                        assert shown.lines == [
-                            "Uploading some-filename to: some-url",
-                        ]
-
-
 @pytest.mark.parametrize('debug_protocol', [False, True])
 def test_get_s3_encrypt_key_id(debug_protocol):
 
@@ -761,31 +522,6 @@ def test_get_s3_encrypt_key_id_from_health_page(mocked_s3_encrypt_key_id):
     with mock.patch.object(submission_module, "_get_health_page") as mock_get_health_page:
         mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: mocked_s3_encrypt_key_id}
         assert get_s3_encrypt_key_id_from_health_page(auth='not-used-by-mock') == mocked_s3_encrypt_key_id
-
-
-def test_upload_file_to_uuid():
-
-    with mock.patch("dcicutils.portal_utils.Portal.patch_metadata", return_value=SOME_UPLOAD_CREDENTIALS_RESULT):
-        with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
-            metadata = upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID,
-                                           rclone_google_config=None,
-                                           auth=SOME_AUTH, first_time=False, portal=None)
-            assert metadata == SOME_FILE_METADATA
-            mocked_upload.assert_called_with(SOME_FILENAME, auth=SOME_AUTH,
-                                             rclone_google_config=None,
-                                             upload_credentials=SOME_UPLOAD_CREDENTIALS)
-
-    with mock.patch("dcicutils.portal_utils.Portal.patch_metadata", return_value=SOME_BAD_RESULT):
-        with mock.patch.object(submission_module, "execute_prearranged_upload") as mocked_upload:
-            try:
-                upload_file_to_uuid(filename=SOME_FILENAME, uuid=SOME_UUID,
-                                    rclone_google_config=None,
-                                    auth=SOME_AUTH, first_time=False, portal=None)
-            except Exception as e:
-                assert str(e).startswith("Unable to obtain upload credentials")
-            else:
-                raise Exception("Expected error was not raised.")  # pragma: no cover - we hope this never happens
-            assert mocked_upload.call_count == 0
 
 
 def make_alternator(*values):
@@ -949,13 +685,6 @@ class Scenario:
 
 # SOME_ORG_ARGS = {'institution': SOME_INSTITUTION, 'project': SOME_PROJECT}
 SOME_ORG_ARGS = {'consortium': SOME_CONSORTIUM, 'submission_center': SOME_SUBMISSION_CENTER}
-
-
-def test_running_on_windows_native():
-    for pair in [("nt", True), ("posix", False)]:
-        os_name, is_windows = pair
-        with mock.patch.object(os, "name", os_name):
-            assert _running_on_windows_native() is is_windows
 
 
 def test_resolve_app_args():
@@ -1240,30 +969,6 @@ def test_post_files_data():
         d = _post_files_data(SubmissionProtocol.S3, test_filename)
         assert d == {'datafile': None}
         mock_open.assert_not_called()
-
-
-def test_compute_file_post_data():
-
-    assert compute_file_post_data('foo.bar', dict(lab=None, award=None, institution=None, project=None)) == {
-        'filename': 'foo.bar',
-        'file_format': 'bar',
-    }
-
-    assert compute_file_post_data('foo.bar', dict(lab='/labs/L1/', award='/awards/A1/',
-                                                  institution=None, project=None)) == {
-        'filename': 'foo.bar',
-        'file_format': 'bar',
-        'lab': '/labs/L1/',
-        'award': '/awards/A1/',
-    }
-
-    assert compute_file_post_data('foo.bar', dict(lab=None, award=None,
-                                                  institution='/institutions/I1/', project='/projects/P1/')) == {
-        'filename': 'foo.bar',
-        'file_format': 'bar',
-        'institution': '/institutions/I1/',
-        'project': '/projects/P1/'
-    }
 
 
 mocked_key = 'an_authorized_key'

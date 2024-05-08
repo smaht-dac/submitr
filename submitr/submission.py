@@ -26,7 +26,7 @@ from dcicutils.function_cache_decorator import function_cache
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
     environ_bool, format_duration, format_size,
-    is_uuid, url_path_join, ignorable, normalize_spaces, remove_prefix
+    is_uuid, url_path_join, normalize_spaces
 )
 from dcicutils.progress_bar import ProgressBar
 from dcicutils.s3_utils import HealthPageKey
@@ -43,10 +43,7 @@ from submitr.rclone import RCloneConfigGoogle
 from submitr.scripts.cli_utils import get_version
 from submitr.submission_uploads import do_any_uploads
 from submitr.s3_utils import upload_file_to_aws_s3
-from submitr.utils import (
-    format_path, get_s3_bucket_and_key_from_s3_uri,
-    is_excel_file_name, print_boxed, keyword_as_title, tobool
-)
+from submitr.utils import format_path, is_excel_file_name, print_boxed, keyword_as_title, tobool
 
 
 def set_output_file(output_file):
@@ -1779,62 +1776,6 @@ def _format_submission_centers(submission_centers: Optional[List[dict]]) -> Opti
     return result
 
 
-def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
-                      show_primary_result=True,
-                      show_validation_output=True,
-                      show_processing_status=True,
-                      show_datafile_url=True,
-                      show_details=True):
-    """
-    Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
-    about uploading your data and then later are ready to do that upload.
-
-    :param uuid: a string guid that identifies the ingestion submission
-    :param server: the server to upload to
-    :param env: the portal environment to upload to
-    :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
-    :param app: the name of the app to use
-        e.g., affects whether to expect --lab, --award, --institution, --project, --consortium or --submission_center
-        and whether to use .fourfront-keys.json, .cgap-keys.json, or .smaht-keys.json
-    :param show_primary_result: bool controls whether the primary result is shown
-    :param show_validation_output: bool controls whether to show output resulting from validation checks
-    :param show_processing_status: bool controls whether to show the current processing status
-    :param show_datafile_url: bool controls whether to show the datafile_url parameter from the parameters.
-    :param show_details: bool controls whether to show the details from the results file in S3.
-    """
-
-    if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
-        app = DEFAULT_APP
-
-    portal = _define_portal(key=keydict, env=env, server=server, app=app, report=True)
-
-    if not (uuid_metadata := portal.get_metadata(uuid)):
-        raise Exception(f"Cannot find object given uuid: {uuid}")
-
-    if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
-        undesired_type = portal.get_schema_type(uuid_metadata)
-        raise Exception(f"Given ID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
-
-    url = _ingestion_submission_item_url(portal.server, uuid)
-    response = portal.get(url)
-    response.raise_for_status()
-    res = response.json()
-    _show_upload_result(res,
-                        show_primary_result=show_primary_result,
-                        show_validation_output=show_validation_output,
-                        show_processing_status=show_processing_status,
-                        show_datafile_url=show_datafile_url,
-                        show_details=show_details,
-                        portal=portal)
-    if show_details:
-        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
-        _show_detailed_results(uuid, metadata_bundles_bucket)
-
-    if not _pytesting():
-        PRINT("")
-        _print_submission_summary(portal, res)
-
-
 @lru_cache(maxsize=256)
 def _get_upload_file_info(portal: Portal, uuid: str) -> Tuple[Optional[str], Optional[str]]:
     try:
@@ -1850,44 +1791,6 @@ def _get_upload_file_info(portal: Portal, uuid: str) -> Tuple[Optional[str], Opt
         return upload_file_accession_based_name, upload_file_type
     except Exception:
         return None
-
-
-def _show_upload_result(result,
-                        show_primary_result=True,
-                        show_validation_output=True,
-                        show_processing_status=True,
-                        show_datafile_url=True,
-                        show_details=True,
-                        portal=None):
-
-    if show_primary_result:
-        if _get_section(result, 'upload_info'):
-            _show_section(result, 'upload_info', portal=portal)
-        else:
-            SHOW("Uploads: None")
-
-    # New March 2023 ...
-
-    if show_validation_output and _get_section(result, 'validation_output'):
-        _show_section(result, 'validation_output')
-
-    if show_processing_status and result.get('processing_status'):
-        SHOW("\n----- Processing Status -----")
-        state = result['processing_status'].get('state')
-        if state:
-            SHOW(f"State: {state.title()}")
-        outcome = result['processing_status'].get('outcome')
-        if outcome:
-            SHOW(f"Outcome: {outcome.title()}")
-        progress = result['processing_status'].get('progress')
-        if progress:
-            SHOW(f"Progress: {progress.title()}")
-
-    if show_datafile_url and result.get('parameters'):
-        datafile_url = result['parameters'].get('datafile_url')
-        if datafile_url:
-            SHOW("----- DataFile URL -----")
-            SHOW(datafile_url)
 
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
@@ -1979,58 +1882,6 @@ def execute_prearranged_upload(path, upload_credentials, rclone_google_config=No
                           print_function=PRINT,
                           verify_upload=True,
                           catch_interrupt=True)
-
-
-def _running_on_windows_native():
-    return os.name == 'nt'
-
-
-def compute_file_post_data(filename, context_attributes):
-    file_basename = os.path.basename(filename)
-    _, ext = os.path.splitext(file_basename)  # could probably get a nicer error message if file in bad format
-    file_format = remove_prefix('.', ext, required=True)
-    return {
-        'filename': file_basename,
-        'file_format': file_format,
-        **{attr: val for attr, val in context_attributes.items() if val}
-    }
-
-
-def upload_file_to_uuid(filename, uuid, auth, rclone_google_config=None, first_time=False, portal=None):
-    """
-    Upload file to a target environment.
-
-    :param filename: the name of a file to upload.
-    :param uuid: the item into which the filename is to be uploaded.
-    :param auth: auth info in the form of a dictionary containing 'key', 'secret', and 'server'.
-    :returns: item metadata dict or None
-    """
-    metadata = None
-    ignorable(metadata)  # PyCharm might need this if it worries it isn't set below
-
-    # filename here should not include path
-    patch_data = {'filename': os.path.basename(filename)}
-
-    response = Portal(auth).patch_metadata(object_id=uuid, data=patch_data)
-
-    metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
-                                                                           method='PATCH', uuid=uuid,
-                                                                           filename=filename,
-                                                                           payload_data=patch_data,
-                                                                           portal=portal)
-
-    if first_time:
-        if upload_url := upload_credentials.get('upload_url'):
-            s3_bucket, _ = get_s3_bucket_and_key_from_s3_uri(upload_url)
-            if s3_bucket:
-                # This assumes all files are going to the same bucket;
-                # which I think is a pretty solid assumption.
-                PRINT(f"Upload file destination AWS S3 bucket: {s3_bucket}")
-    execute_prearranged_upload(filename,
-                               rclone_google_config=rclone_google_config,
-                               upload_credentials=upload_credentials, auth=auth)
-
-    return metadata
 
 
 def extract_metadata_and_upload_credentials(response, filename, method, payload_data,
@@ -2840,22 +2691,6 @@ def _get_submission_centers(portal: Portal) -> List[str]:
                 (submission_center_uuid := submission_center.get("uuid"))):  # noqa
                 results.append({"name": submission_center_name, "uuid": submission_center_uuid})
     return results
-
-
-def _is_accession_id(value: str) -> bool:
-    # See smaht-portal/.../schema_formats.py
-    return isinstance(value, str) and re.match(r"^SMA[1-9A-Z]{9}$", value) is not None
-    # return isinstance(value, str) and re.match(r"^[A-Z0-9]{12}$", value) is not None
-
-
-def _extract_accession_id(value: str) -> Optional[str]:
-    if isinstance(value, str):
-        if value.endswith(".gz"):
-            value = value[:-3]
-        value, _ = os.path.splitext(value)
-        if _is_accession_id(value):
-            return value
-    return None
 
 
 def _print_metadata_file_info(file: str, env: str,
