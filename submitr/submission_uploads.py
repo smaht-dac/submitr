@@ -184,6 +184,12 @@ def get_submission_object_upload_files(submission_item: dict, portal: Portal) ->
     return None
 
 
+def upload_files(files: List[FileForUpload], portal: Portal):
+    if isinstance(files, list):
+        for file in [file for file in files if not file.ignore]:
+            upload_file(file, portal=portal)
+
+
 def upload_file(file: FileForUpload, portal: Portal) -> None:
     """
     Upload file to a target environment.
@@ -222,13 +228,6 @@ def upload_file(file: FileForUpload, portal: Portal) -> None:
                           verify_upload=True,
                           catch_interrupt=True,
                           printf=PRINT)
-
-
-def upload_files(files_for_upload: List[FileForUpload], portal: Portal):
-    if isinstance(files_for_upload, list):
-        files_for_upload = [file for file in files_for_upload if not file.ignore]
-        for file in files_for_upload:
-            upload_file(file, portal=portal)
 
 
 def generate_credentials_for_upload(file: str, uuid: str) -> dict:
