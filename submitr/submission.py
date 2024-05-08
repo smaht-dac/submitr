@@ -49,7 +49,7 @@ from submitr.utils import (
 )
 
 
-from submitr.submission_uploads import assemble_files_for_upload, do_any_uploads_new, upload_files
+from submitr.submission_uploads import do_any_uploads_new
 
 
 def set_output_file(output_file):
