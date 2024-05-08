@@ -1,14 +1,14 @@
 import os
 import pathlib
 import re
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.structured_data import Portal
 from submitr.file_for_upload import FileForUpload, FilesForUpload
 from submitr.output import PRINT
 from submitr.rclone import RCloneConfigGoogle
 from submitr.s3_utils import upload_file_to_aws_s3
-from submitr.utils import get_health_page, tobool
+from submitr.utils import tobool
 
 
 def do_any_uploads(arg: Union[str, dict],
@@ -202,26 +202,10 @@ def upload_file(file: FileForUpload, portal: Portal) -> None:
     if not isinstance(file, FileForUpload) or not isinstance(portal, Portal):
         return
 
-    patch_data = {"filename": file.name}
-    response = portal.patch_metadata(object_id=file.uuid, data=patch_data)
-    upload_credentials = extract_upload_credentials(response,
-                                                    method="PATCH", uuid=file.uuid,
-                                                    filename=file.name,
-                                                    payload_data=patch_data,
-                                                    portal=portal)
-    try:
-        s3_uri = upload_credentials["upload_url"]
-        aws_credentials = {
-            "AWS_ACCESS_KEY_ID": upload_credentials["AccessKeyId"],
-            "AWS_SECRET_ACCESS_KEY": upload_credentials["SecretAccessKey"],
-            "AWS_SECURITY_TOKEN": upload_credentials["SessionToken"]
-        }
-        aws_kms_key_id = get_s3_encrypt_key_id(upload_credentials=upload_credentials, auth=portal.key)
-    except Exception as e:
-        raise ValueError("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
+    aws_s3_uri, aws_credentials, aws_kms_key_id = generate_credentials_for_upload(file.name, file.uuid, portal)
 
     upload_file_to_aws_s3(file=file,
-                          s3_uri=s3_uri,
+                          s3_uri=aws_s3_uri,
                           aws_credentials=aws_credentials,
                           aws_kms_key_id=aws_kms_key_id,
                           print_progress=True,
@@ -230,12 +214,24 @@ def upload_file(file: FileForUpload, portal: Portal) -> None:
                           printf=PRINT)
 
 
-def generate_credentials_for_upload(file: str, uuid: str) -> dict:
-    pass
+def generate_credentials_for_upload(file: str, uuid: str, portal: Portal) -> Tuple[str, str, str]:
+    patch_data = {"filename": file}
+    response = portal.patch_metadata(object_id=uuid, data=patch_data)
+    upload_credentials = extract_upload_credentials(response, filename=file, uuid=uuid, portal=portal)
+    try:
+        aws_s3_uri = upload_credentials["upload_url"]
+        aws_credentials = {
+            "AWS_ACCESS_KEY_ID": upload_credentials["AccessKeyId"],
+            "AWS_SECRET_ACCESS_KEY": upload_credentials["SecretAccessKey"],
+            "AWS_SECURITY_TOKEN": upload_credentials["SessionToken"]
+        }
+        aws_kms_key_id = get_s3_encrypt_key_id(upload_credentials=upload_credentials, portal=portal)
+        return aws_s3_uri, aws_credentials, aws_kms_key_id
+    except Exception as e:
+        raise ValueError("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
 
 
-def extract_upload_credentials(response, filename, method, payload_data,
-                               uuid=None, schema_name=None, portal=None):
+def extract_upload_credentials(response: dict, filename: str, uuid: str, portal: Portal) -> dict:
     try:
         # TODO
         # N.B. Older code used to pass this metadata back to the caller to process any extra
@@ -257,17 +253,15 @@ def extract_upload_credentials(response, filename, method, payload_data,
     return upload_credentials
 
 
-def get_s3_encrypt_key_id(*, upload_credentials, auth):
+def get_s3_encrypt_key_id(upload_credentials: dict, portal: Portal):
     if "s3_encrypt_key_id" in upload_credentials:
-        s3_encrypt_key_id = upload_credentials.get("s3_encrypt_key_id")
-    else:
-        s3_encrypt_key_id = get_s3_encrypt_key_id_from_health_page(auth)
-    return s3_encrypt_key_id
+        return upload_credentials["s3_encrypt_key_id"]
+    return get_s3_encrypt_key_id_from_health_page(portal)
 
 
-def get_s3_encrypt_key_id_from_health_page(auth):
+def get_s3_encrypt_key_id_from_health_page(portal: Portal):
     try:
-        return get_health_page(key=auth).get(HealthPageKey.S3_ENCRYPT_KEY_ID)
+        return portal.get_health().get(HealthPageKey.S3_ENCRYPT_KEY_ID)
     except Exception:  # pragma: no cover
         # We don't actually unit test this section because get_health_page realistically always returns
         # a dictionary, and so health.get(...) always succeeds, possibly returning None, which should

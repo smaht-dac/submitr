@@ -10,7 +10,6 @@ from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
 from dcicutils.misc_utils import ignored, ignorable, NamedObject
 from dcicutils.portal_utils import Portal
 from dcicutils.qa_utils import ControlledTime, MockFileSystem
-from dcicutils.s3_utils import HealthPageKey
 from unittest import mock
 
 from .. import submission as submission_module
@@ -26,8 +25,6 @@ from ..submission import (  # noqa
     GENERIC_SCHEMA_TYPE, DEFAULT_APP, _summarize_submission,
     _get_defaulted_submission_centers, _get_defaulted_consortia, _do_app_arg_defaulting, _monitor_ingestion_process
 )
-from .. import submission_uploads as submission_uploads_module
-from ..submission_uploads import get_s3_encrypt_key_id_from_health_page
 from ..utils import FakeResponse
 
 
@@ -342,13 +339,6 @@ def os_simulation(*, simulation_mode):
         with mock.patch.object(platform, "system") as mock_system:
             mock_system.side_effect = mocked_system
             yield
-
-
-@pytest.mark.parametrize("mocked_s3_encrypt_key_id", [None, "", TEST_ENCRYPT_KEY])
-def test_get_s3_encrypt_key_id_from_health_page(mocked_s3_encrypt_key_id):
-    with mock.patch.object(submission_uploads_module, "get_health_page") as mock_get_health_page:
-        mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: mocked_s3_encrypt_key_id}
-        assert get_s3_encrypt_key_id_from_health_page(auth='not-used-by-mock') == mocked_s3_encrypt_key_id
 
 
 def make_alternator(*values):
