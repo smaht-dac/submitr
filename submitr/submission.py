@@ -383,18 +383,6 @@ ATTEMPTS_BEFORE_TIMEOUT = 100
 ATTEMPTS_BEFORE_TIMEOUT = 4
 
 
-def _get_section(res, section):
-    """
-    Given a description of an ingestion submission, returns a section name within that ingestion.
-
-    :param res: the description of an ingestion submission as a python dictionary that represents JSON data
-    :param section: the name of a section to find either in the toplevel or in additional_data.
-    :return: the section's content
-    """
-
-    return res.get(section) or res.get('additional_data', {}).get(section)
-
-
 def _ingestion_submission_item_url(server, uuid):
     # Note that we use datastore=database for quicker feedback.
     return url_path_join(server, "ingestion-submissions", uuid) + "?format=json&datastore=database"
