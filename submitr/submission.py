@@ -10,7 +10,6 @@ import sys
 import time
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple
 from typing_extensions import Literal
-from urllib.parse import urlparse
 import yaml
 
 # get_env_real_url would rely on env_utils
@@ -1530,31 +1529,6 @@ def _summarize_submission(uuid: str, app: str, server: Optional[str] = None, env
     return command_summary
 
 
-def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, **other_args):
-    uuid = ingestion_post_result['uuid']
-    at_id = ingestion_post_result['@id']
-    accession = ingestion_post_result.get('accession')  # maybe not always there?
-    upload_credentials = ingestion_post_result['upload_credentials']
-    upload_urlstring = upload_credentials['upload_url']
-    upload_url = urlparse(upload_urlstring)
-    upload_key = upload_credentials['key']
-    upload_bucket = upload_url.netloc
-    # Possible sanity check, probably not needed...
-    # check_true(upload_key == remove_prefix('/', upload_url.path, required=True),
-    #            message=f"The upload_key, {upload_key!r}, did not match path of {upload_url}.")
-    submission_post_data = {
-        'datafile_uuid': uuid,
-        'datafile_accession': accession,
-        'datafile_@id': at_id,
-        'datafile_url': upload_urlstring,
-        'datafile_bucket': upload_bucket,
-        'datafile_key': upload_key,
-        'datafile_source_filename': os.path.basename(ingestion_filename),
-        **other_args  # validate_remote_only, and any of institution, project, lab, or award that caller gave us
-    }
-    return submission_post_data
-
-
 def _print_submission_summary(portal: Portal, result: dict,
                               nofiles: bool = False,
                               check_submission_script: bool = False,
@@ -2020,36 +1994,6 @@ def compute_file_post_data(filename, context_attributes):
         'file_format': file_format,
         **{attr: val for attr, val in context_attributes.items() if val}
     }
-
-
-# TODO: obsolete
-def upload_file_to_new_uuid(filename, schema_name, auth, rclone_google_config, **context_attributes):
-    """
-    Upload file to a target environment.
-
-    :param filename: the name of a file to upload.
-    :param schema_name: the schema_name to use when creating a new file item whose content is to be uploaded.
-    :param auth: auth info in the form of a dictionary containing 'key', 'secret', and 'server'.
-    :returns: item metadata dict or None
-    """
-
-    post_item = compute_file_post_data(filename=filename, context_attributes=context_attributes)
-
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        SHOW("Creating FileOther type object ...")
-    response = Portal(auth).post_metadata(object_type=schema_name, data=post_item)
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        type_object_message = f" {response.get('@graph', [{'uuid': 'not-found'}])[0].get('uuid', 'not-found')}"
-        SHOW(f"Created FileOther type object: {type_object_message}")
-
-    metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
-                                                                           method='POST', schema_name=schema_name,
-                                                                           filename=filename, payload_data=post_item)
-
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials,
-                               rclone_google_config=rclone_google_config, auth=auth)
-
-    return metadata
 
 
 def upload_file_to_uuid(filename, uuid, auth, rclone_google_config=None, first_time=False, portal=None):

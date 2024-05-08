@@ -31,7 +31,7 @@ from ..submission import (  # noqa
     _post_files_data,  # noQA - again, testing a protected member
     _check_ingestion_progress,  # noQA - again, testing a protected member
     _get_defaulted_lab, _get_defaulted_award, SubmissionProtocol, compute_file_post_data,
-    upload_file_to_new_uuid, compute_s3_submission_post_data, GENERIC_SCHEMA_TYPE, DEFAULT_APP, _summarize_submission,
+    GENERIC_SCHEMA_TYPE, DEFAULT_APP, _summarize_submission,
     _get_defaulted_submission_centers, _get_defaulted_consortia, _do_app_arg_defaulting, _monitor_ingestion_process
 )
 from ..utils import FakeResponse
@@ -1632,87 +1632,6 @@ mocked_good_file_metadata = {
     'upload_credentials': mocked_good_upload_credentials,
 }
 expected_schema_name = GENERIC_SCHEMA_TYPE
-
-
-def test_upload_file_to_new_uuid():
-
-    def mocked_execute_prearranged_upload(filename, upload_credentials, auth,
-                                          rclone_google_config, **kwargs):
-        assert not kwargs, "kwargs were not expected for mock of mocked_execute_prearranged_upload"
-        assert filename == mocked_good_filename
-        assert upload_credentials == mocked_good_upload_credentials
-        assert auth == mocked_good_auth
-
-    def test_it(schema_name, auth, expected_post_item, **context_attributes):
-
-        def mocked_post_metadata(object_type, data):
-            assert data == expected_post_item
-            assert object_type == expected_schema_name
-            return {
-                '@graph': [
-                    mocked_good_file_metadata
-                ]
-            }
-
-        # Note: compute_file_post_data is allowed to run without mocking
-        with mock.patch("dcicutils.portal_utils.Portal.post_metadata") as mock_post_metadata:
-            mock_post_metadata.side_effect = mocked_post_metadata
-            with mock.patch.object(submission_module, "execute_prearranged_upload") as mock_execute_prearranged_upload:
-                mock_execute_prearranged_upload.side_effect = mocked_execute_prearranged_upload
-                res = upload_file_to_new_uuid(mocked_good_filename, schema_name=schema_name, auth=auth,
-                                              rclone_google_config=None,
-                                              **context_attributes)
-                assert res == mocked_good_file_metadata
-
-    test_it(schema_name='FileOther', auth=mocked_good_auth,
-            expected_post_item={
-                'filename': mocked_good_filename,
-                'file_format': mocked_good_filename_ext
-            })
-
-    test_it(schema_name='FileOther', auth=mocked_good_auth,
-            expected_post_item={
-                'filename': mocked_good_filename,
-                'file_format': mocked_good_filename_ext,
-                **mocked_award_and_lab
-            },
-            **mocked_award_and_lab)
-
-    test_it(schema_name='FileOther', auth=mocked_good_auth,
-            expected_post_item={
-                'filename': mocked_good_filename,
-                'file_format': mocked_good_filename_ext,
-                **mocked_institution_and_project
-            },
-            **mocked_institution_and_project)
-
-    with pytest.raises(Exception):
-        test_it(schema_name='FileOther', auth=mocked_bad_auth,
-                expected_post_item={
-                    'filename': mocked_good_filename,
-                    'file_format': mocked_good_filename_ext
-                })
-
-
-def test_compute_s3_submission_post_data():
-
-    other_args = {'other_arg1': 1, 'other_arg2': 2}
-
-    some_filename = f'/some/upload/dir/{mocked_good_filename}'
-
-    assert compute_s3_submission_post_data(ingestion_filename=some_filename,
-                                           ingestion_post_result=mocked_good_file_metadata,
-                                           **other_args
-                                           ) == {
-        'datafile_uuid': mocked_good_uuid,
-        'datafile_accession': mocked_good_at_id,
-        'datafile_@id': mocked_good_at_id,
-        'datafile_url': mocked_s3_url,
-        'datafile_bucket': mocked_s3_upload_bucket,
-        'datafile_key': mocked_s3_upload_key,
-        'datafile_source_filename': mocked_good_filename,
-        **other_args
-    }
 
 
 def test_do_app_arg_defaulting():
