@@ -16,15 +16,19 @@ from submitr.utils import tobool
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
 
 
-def do_any_uploads_new(arg, upload_folder=None, ingestion_filename=None,
-                       rclone_google_config=None, subfolders=False, portal=None):
+def do_any_uploads(arg: Union[str, dict],
+                   metadata_file: Optional[str] = None,
+                   main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
+                   main_search_directory_recursively: bool = False,
+                   google_config: Optional[RCloneConfigGoogle] = None,
+                   portal: Optional[Portal] = None) -> None:
 
     files_for_upload = assemble_files_for_upload(
-        arg=arg,
-        main_search_directory=upload_folder,
-        main_search_directory_recursively=subfolders,
-        metadata_file=ingestion_filename,
-        google_config=rclone_google_config,
+        arg,
+        main_search_directory=main_search_directory,
+        main_search_directory_recursively=main_search_directory_recursively,
+        metadata_file=metadata_file,
+        google_config=google_config,
         portal=portal)
 
     upload_files(files_for_upload, portal)

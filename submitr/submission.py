@@ -42,14 +42,12 @@ from submitr.metadata_template import check_metadata_version, print_metadata_ver
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 from submitr.rclone import RCloneConfigGoogle
 from submitr.scripts.cli_utils import get_version
+from submitr.submission_uploads import do_any_uploads
 from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import (
     format_path, get_s3_bucket_and_key_from_s3_uri,
     is_excel_file_name, print_boxed, keyword_as_title, tobool
 )
-
-
-from submitr.submission_uploads import do_any_uploads_new
 
 
 def set_output_file(output_file):
@@ -944,11 +942,12 @@ def submit_any_ingestion(ingestion_filename, *,
                              rclone_google_config=rclone_google_config,
                              validation=validation, directory=upload_folder, recursive=subfolders)
 
-    do_any_uploads(submission_response, keydict=portal.key, ingestion_filename=ingestion_filename,
-                   upload_folder=upload_folder,
-                   rclone_google_config=rclone_google_config,
-                   no_query=no_query,
-                   subfolders=subfolders, portal=portal)
+    do_any_uploads(submission_response,
+                   metadata_file=ingestion_filename,
+                   main_search_directory=upload_folder,
+                   main_search_directory_recursively=subfolders,
+                   google_config=rclone_google_config,
+                   portal=portal)
 
 
 def _get_recent_submissions(portal: Portal, count: int = 30, name: Optional[str] = None) -> List[dict]:
@@ -1373,9 +1372,11 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         if submission_status != "success":
             exit(1)
         PRINT("Submission complete!")
-        do_any_uploads(submission_response, keydict=portal.key,
-                       rclone_google_config=rclone_google_config,
-                       upload_folder=upload_directory, subfolders=upload_directory_recursive, portal=portal)
+        do_any_uploads(submission_response,
+                       main_search_directory=upload_directory,
+                       main_search_directory_recursively=upload_directory_recursive,
+                       google_config=rclone_google_config,
+                       portal=portal)
         return
 
     if check_submission_script or verbose or debug:  # or not validation
@@ -1915,112 +1916,6 @@ def _show_upload_result(result,
             SHOW(datafile_url)
 
 
-def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
-                   rclone_google_config=None,
-                   no_query=False, subfolders=False, portal=None):
-
-    if _pytesting():
-        return do_any_uploads_old(res=res, keydict=keydict,
-                                  upload_folder=upload_folder,
-                                  ingestion_filename=ingestion_filename,
-                                  rclone_google_config=rclone_google_config,
-                                  no_query=no_query, subfolders=subfolders, portal=portal)
-    else:
-        return do_any_uploads_new(arg=res,
-                                  upload_folder=upload_folder,
-                                  ingestion_filename=ingestion_filename,
-                                  rclone_google_config=rclone_google_config,
-                                  subfolders=subfolders, portal=portal)
-
-
-def do_any_uploads_old(res, keydict, upload_folder=None, ingestion_filename=None,
-                       rclone_google_config=None,
-                       no_query=False, subfolders=False, portal=None):
-
-    def display_file_info(upload_file_info: dict) -> None:
-        nonlocal upload_folder, subfolders
-        file = upload_file_info.get("filename")
-        file_uuid = upload_file_info.get("uuid")
-        if file:
-            if rclone_google_config:
-                if not rclone_google_config.path_exists(rclone_google_config.bucket):
-                    PRINT(f"WARNING: Cannot find Google Cloud Storage"
-                          f" file to upload to AWS S3: {rclone_google_config.bucket}")
-                    return False
-                return True
-            if file_paths := search_for_file(file, location=upload_folder, recursive=subfolders):
-                if len(file_paths) == 1:
-                    PRINT(f"File to upload to AWS S3: {format_path(file_paths[0])}"
-                          f" ({format_size(get_file_size(file_paths[0]))})")
-                    return True
-                else:
-                    PRINT(f"No upload attempted for file {file} because multiple"
-                          f" copies were found in folder {upload_folder}: {', '.join(file_paths)}.")
-                    return False
-            PRINT(f"WARNING: Cannot find file to upload to AWS S3: {format_path(file)} ({file_uuid})")
-        return False
-
-    # TODO: upload_info:
-    # [{'uuid': '96f29020-7abd-4a42-b4c7-d342563b7074', 'filename': 'first_file.fastq'},
-    #  {'uuid': 'd294feaf-0f30-4912-b0d0-e91bc2fc0a53', 'filename': 'second_file.fastq'}]
-    upload_info = _get_section(res, "upload_info")
-    if not upload_folder:
-        if ingestion_directory := res.get("parameters", {}).get("ingestion_directory"):
-            if os.path.isdir(ingestion_directory):
-                upload_folder = ingestion_directory
-    if not upload_folder and ingestion_filename:
-        if ingestion_directory := os.path.dirname(ingestion_filename):
-            upload_folder = ingestion_directory
-    resume_upload_commands = []
-    resume_upload_commands_missing = []
-    noupload = False
-    if upload_info:
-        files_to_upload = []
-        for upload_file_info in upload_info:
-            if display_file_info(upload_file_info):
-                files_to_upload.append(upload_file_info)
-                if portal:
-                    resume_upload_commands.append(f"resume-uploads --env {portal.env} {upload_file_info.get('uuid')}")
-            elif portal:
-                resume_upload_commands_missing.append(
-                    f"resume-uploads --env {portal.env} {upload_file_info.get('uuid')}")
-        if len(files_to_upload) == 0:
-            return
-        if no_query:
-            do_uploads(files_to_upload, auth=keydict, no_query=no_query, folder=upload_folder,
-                       rclone_google_config=rclone_google_config,
-                       subfolders=subfolders, portal=portal)
-        else:
-            message = ("Upload this file?" if len(files_to_upload) == 1
-                       else f"Upload these {len(files_to_upload)} files?")
-            if yes_or_no(message):
-                do_uploads(files_to_upload, auth=keydict,
-                           no_query=no_query, folder=upload_folder,
-                           rclone_google_config=rclone_google_config,
-                           subfolders=subfolders, portal=portal)
-            else:
-                noupload = True
-                SHOW("No uploads attempted.")
-                if resume_upload_commands:
-                    resume_upload_commands += resume_upload_commands_missing
-                    nresume_upload_commands = len(resume_upload_commands)
-                    if yes_or_no(f"Do you want to see the resume-uploads"
-                                 f" command{'s' if nresume_upload_commands != 1 else ''} to use to"
-                                 f" upload {'these' if nresume_upload_commands != 1 else 'this'} separately?"):
-                        for resume_upload_command in resume_upload_commands:
-                            PRINT(f"▶ {resume_upload_command}")
-    if not noupload and resume_upload_commands_missing:
-        nresume_upload_commands_missing = len(resume_upload_commands_missing)
-        PRINT(f"There {'were' if nresume_upload_commands_missing != 1 else 'was'}"
-              f" {nresume_upload_commands_missing} missing"
-              f" file{'s' if nresume_upload_commands_missing != 1 else ''} as mentioned above.")
-        if yes_or_no(f"Do you want to see the resume-uploads"
-                     f" command{'s' if nresume_upload_commands_missing != 1 else ''}"
-                     f" to use to upload {'these' if nresume_upload_commands_missing != 1 else 'this'} separately?"):
-            for resume_upload_command_missing in resume_upload_commands_missing:
-                PRINT(f"▶ {resume_upload_command_missing}")
-
-
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
                    upload_folder=None, no_query=False, subfolders=False,
                    rclone_google_config=None,
@@ -2034,22 +1929,12 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                             server=server, app=app, env_from_env=env_from_env,
                             report=True, note="Resuming File Upload")
 
-    do_any_uploads_new(arg=uuid,
-                       upload_folder=upload_folder,
-                       ingestion_filename=bundle_filename,
-                       rclone_google_config=rclone_google_config,
-                       subfolders=subfolders,
-                       portal=portal)
-
-#   files_for_upload = assemble_files_for_upload(
-#       arg=uuid,
-#       main_search_directory=upload_folder,
-#       main_search_directory_recursively=subfolders,
-#       metadata_file=bundle_filename,
-#       google_config=rclone_google_config,
-#       portal=portal)
-
-#   upload_files(files_for_upload, portal)
+    do_any_uploads(uuid,
+                   metadata_file=bundle_filename,
+                   main_search_directory=upload_folder,
+                   main_search_directory_recursively=subfolders,
+                   google_config=rclone_google_config,
+                   portal=portal)
 
 
 @function_cache(serialize_key=True)
