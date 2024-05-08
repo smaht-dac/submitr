@@ -42,7 +42,6 @@ from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_f
 from submitr.rclone import RCloneConfigGoogle
 from submitr.scripts.cli_utils import get_version
 from submitr.submission_uploads import do_any_uploads
-from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import format_path, is_excel_file_name, print_boxed, keyword_as_title, tobool
 
 
@@ -1849,94 +1848,8 @@ def get_s3_encrypt_key_id(*, upload_credentials, auth):
     return s3_encrypt_key_id
 
 
-def execute_prearranged_upload(path, upload_credentials, rclone_google_config=None, auth=None):
-    """
-    This performs a file upload using special credentials received from ff_utils.patch_metadata.
-
-    :param path: the name of a local file to upload
-    :param upload_credentials: a dictionary of credentials to be used for the upload,
-        containing the keys 'AccessKeyId', 'SecretAccessKey', 'SessionToken', and 'upload_url'.
-    :param auth: auth info in the form of a dictionary containing 'key', 'secret', and 'server',
-        and possibly other useful information such as an encryption key id.
-    """
-
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT(f"Upload credentials contain {conjoined_list(list(upload_credentials.keys()))}.")
-    try:
-        s3_uri = upload_credentials["upload_url"]
-        aws_credentials = {
-            "AWS_ACCESS_KEY_ID": upload_credentials["AccessKeyId"],
-            "AWS_SECRET_ACCESS_KEY": upload_credentials["SecretAccessKey"],
-            "AWS_SECURITY_TOKEN": upload_credentials["SessionToken"]
-        }
-        aws_kms_key_id = get_s3_encrypt_key_id(upload_credentials=upload_credentials, auth=auth)
-    except Exception as e:
-        raise ValueError("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
-
-    upload_file_to_aws_s3(file=path,
-                          s3_uri=s3_uri,
-                          aws_credentials=aws_credentials,
-                          aws_kms_key_id=aws_kms_key_id,
-                          google_rclone_config=rclone_google_config,  # xyzzy
-                          print_progress=True,
-                          print_function=PRINT,
-                          verify_upload=True,
-                          catch_interrupt=True)
-
-
-def extract_metadata_and_upload_credentials(response, filename, method, payload_data,
-                                            uuid=None, schema_name=None, portal=None):
-    try:
-        [metadata] = response['@graph']
-        upload_credentials = metadata['upload_credentials']
-    except Exception as e:
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f"Problem trying to {method} to get upload credentials.")
-            PRINT(f" payload_data={payload_data}")
-            if uuid:
-                PRINT(f" uuid={uuid}")
-            if schema_name:
-                PRINT(f" schema_name={schema_name}")
-            PRINT(f" response={response}")
-            PRINT(f"Got error {type(e)}: {e}")
-        file_status = None
-        if portal and uuid:
-            try:
-                file_status = portal.get_metadata(uuid).get("status")
-            except Exception:
-                pass
-        message = f"Unable to obtain upload credentials for file {filename}."
-        if file_status:
-            message += f" File status: {file_status}"
-        raise RuntimeError(message)
-    return metadata, upload_credentials
-
-
 # This can be set to True in unusual situations, but normally will be False to avoid unnecessary querying.
 SUBMITR_SELECTIVE_UPLOADS = environ_bool("SUBMITR_SELECTIVE_UPLOADS")
-
-
-def _show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
-
-    PRINT(f"----- Detailed Info -----")
-
-    submission_results_location, submission_results = _fetch_submission_results(metadata_bundles_bucket, uuid)
-    exception_results_location, exception_results = _fetch_exception_results(metadata_bundles_bucket, uuid)
-
-    if not submission_results and not exception_results:
-        PRINT(f"Neither submission nor exception results found!")
-        PRINT(f"-> {submission_results_location}")
-        PRINT(f"-> {exception_results_location}")
-        return
-
-    if submission_results:
-        PRINT(f"From: {submission_results_location}")
-        PRINT(yaml.dump(submission_results))
-
-    if exception_results:
-        PRINT("Exception during schema ingestion processing:")
-        PRINT(f"From: {exception_results_location}")
-        PRINT(exception_results)
 
 
 def _fetch_submission_results(metadata_bundles_bucket: str, uuid: str) -> Optional[Tuple[str, dict]]:

@@ -18,7 +18,7 @@ from .. import submission as submission_module
 from ..submission import (  # noqa
     SERVER_REGEXP, PROGRESS_CHECK_INTERVAL, ATTEMPTS_BEFORE_TIMEOUT,
     _get_defaulted_institution, _get_defaulted_project,
-    execute_prearranged_upload, _get_section, _get_user_record, _ingestion_submission_item_url,
+    _get_section, _get_user_record, _ingestion_submission_item_url,
     _resolve_server, resume_uploads, _show_section, submit_any_ingestion,
     get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page,
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
