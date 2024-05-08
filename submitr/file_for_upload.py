@@ -94,7 +94,7 @@ class FileForUpload:
         self._google_path = None
         self._google_size = None
         self._google_tried_and_failed = False
-        self._favor_local = None
+        self._favor_local = True
         self._ignore = None
 
     @property
@@ -124,11 +124,8 @@ class FileForUpload:
     @property
     def path(self) -> Optional[str]:
         if self.found_locally:
-            if self.found_in_google:
-                if self.favor_local is None:
-                    return None
-                elif self.favor_local is False:
-                    return self.google_path
+            if self.found_in_google and (not self._favor_local):
+                return self.google_path
             return self.local_path
         elif self.found_in_google:
             return self.google_path
@@ -137,11 +134,8 @@ class FileForUpload:
     @property
     def display_path(self) -> Optional[str]:
         if self.found_locally:
-            if self.found_in_google:
-                if self.favor_local is None:
-                    return None
-                elif self.favor_local is False:
-                    return self.display_google_path
+            if self.found_in_google and (not self._favor_local):
+                return self.display_google_path
             return self.local_path
         elif self.found_in_google:
             return self.display_google_path
@@ -150,11 +144,8 @@ class FileForUpload:
     @property
     def size(self) -> Optional[int]:
         if self.found_locally:
-            if self.found_in_google:
-                if self.favor_local is None:
-                    return None
-                elif self.favor_local is False:
-                    return self.google_size
+            if self.found_in_google and (not self._favor_local):
+                return self.google_size
             return self.local_size
         elif self.found_in_google:
             return self.google_size
@@ -167,14 +158,6 @@ class FileForUpload:
     def resume_upload_command(self, env: Optional[str] = None) -> str:
         return (f"resume-uploads{f' --env {env}' if isinstance(env, str) else ''}"
                 f"{f' {self.uuid or self.name}' if self.uuid else ''}")
-
-    @property
-    def favor_local(self) -> bool:
-        return self._favor_local is True
-
-    @property
-    def favor_google(self) -> bool:
-        return self._favor_local is False
 
     @property
     def found_locally(self) -> bool:
@@ -231,10 +214,12 @@ class FileForUpload:
         return self._google_config
 
     def review(self, portal: Optional[Portal] = None, printf: Optional[Callable] = None) -> bool:
+        if not callable(printf):
+            printf = print
         if not self.found:
             printf(f"WARNING: Cannot find file for upload: {self.name} ({self.uuid})")
             if isinstance(portal, Portal):
-                printf(f"- You may upload later with: {self.resume_upload_command(env=portal.env if portal else None)}")
+                printf(f"- Upload later with: {self.resume_upload_command(env=portal.env if portal else None)}")
             self._ignore = True
             return False
         elif self.found_locally:
@@ -243,11 +228,13 @@ class FileForUpload:
                 printf(f"- Local: {self.local_path}")
                 printf(f"- Google Cloud Storage: {self.google_path}")
                 self._favor_local = not yes_or_no("Do you want to use the Google Cloud Storage version?")
-            if self.found_locally_multiple and self.favor_local:
+            if self.found_locally_multiple and self._favor_local:
                 # TODO: Could prompt for an option to choose one of them or something.
-                printf(f"WARNING: Ignoring file for upload as multiple instances found: {self.name}")
+                printf(f"WARNING: Ignoring file for upload as multiple/ambiguous instances found: {self.name}")
                 for local_path in self.local_paths:
-                    print(f"- {local_path}")
+                    printf(f"- {local_path}")
+                printf(f"- Use --directory-only rather than --directory to not search recursively.")
+                printf(f"- Upload later with: {self.resume_upload_command(env=portal.env if portal else None)}")
                 self._ignore = True
                 return False
             printf(f"File for upload to AWS S3: {self.display_path} ({format_size(self.size)})")
@@ -312,8 +299,10 @@ class FilesForUpload:
         if not callable(printf):
             printf = print
         result = True
-        for file_for_upload in files_for_upload:
-            if isinstance(file_for_upload, FileForUpload):
-                if not file_for_upload.review(portal=portal, printf=printf):
-                    result = False
+        if files_for_upload:
+            printf("Reviewing files for upload ...")
+            for file_for_upload in files_for_upload:
+                if isinstance(file_for_upload, FileForUpload):
+                    if not file_for_upload.review(portal=portal, printf=printf):
+                        result = False
         return result

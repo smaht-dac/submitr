@@ -137,7 +137,7 @@ def assemble_files_for_upload(arg: Union[str, dict],
         PRINT(f"Cannot find the given submission type or file type or accession ID: {arg}")
         return None
 
-    if review is True:
+    if (review is True) and (_recursive is False):
         FilesForUpload.review(files_for_upload, portal=portal)
     return files_for_upload
 
