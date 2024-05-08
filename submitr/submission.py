@@ -1926,11 +1926,11 @@ def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
                                   rclone_google_config=rclone_google_config,
                                   no_query=no_query, subfolders=subfolders, portal=portal)
     else:
-        return do_any_uploads_new(res=res, keydict=keydict,
+        return do_any_uploads_new(arg=res,
                                   upload_folder=upload_folder,
                                   ingestion_filename=ingestion_filename,
                                   rclone_google_config=rclone_google_config,
-                                  no_query=no_query, subfolders=subfolders, portal=portal)
+                                  subfolders=subfolders, portal=portal)
 
 
 def do_any_uploads_old(res, keydict, upload_folder=None, ingestion_filename=None,
@@ -2034,15 +2034,22 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                             server=server, app=app, env_from_env=env_from_env,
                             report=True, note="Resuming File Upload")
 
-    files_for_upload = assemble_files_for_upload(
-        arg=uuid,
-        main_search_directory=upload_folder,
-        main_search_directory_recursively=subfolders,
-        metadata_file=bundle_filename,
-        google_config=rclone_google_config,
-        portal=portal)
+    do_any_uploads_new(arg=uuid,
+                       upload_folder=upload_folder,
+                       ingestion_filename=bundle_filename,
+                       rclone_google_config=rclone_google_config,
+                       subfolders=subfolders,
+                       portal=portal)
 
-    upload_files(files_for_upload, portal)
+#   files_for_upload = assemble_files_for_upload(
+#       arg=uuid,
+#       main_search_directory=upload_folder,
+#       main_search_directory_recursively=subfolders,
+#       metadata_file=bundle_filename,
+#       google_config=rclone_google_config,
+#       portal=portal)
+
+#   upload_files(files_for_upload, portal)
 
 
 @function_cache(serialize_key=True)
