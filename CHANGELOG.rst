@@ -6,7 +6,7 @@ smaht-submitr
 Change Log
 ----------
 
-0.8.1
+0.8.2
 =====
 
 * 2024-05-08/dmichaels/PR-8
