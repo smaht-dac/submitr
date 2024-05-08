@@ -484,6 +484,7 @@ def _initiate_server_ingestion_process(
         is_server_validation: bool = False,
         is_resume_submission: bool = False,
         validation_ingestion_submission_object: Optional[dict] = None,
+        validate_remote_skip: bool = False,
         post_only: bool = False,
         patch_only: bool = False,
         autoadd: Optional[dict] = None,
