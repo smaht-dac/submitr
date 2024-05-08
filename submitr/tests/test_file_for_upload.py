@@ -4,6 +4,7 @@ from dcicutils.misc_utils import create_uuid
 from dcicutils.tmpfile_utils import temporary_directory
 from submitr.file_for_upload import FilesForUpload
 
+
 def test_file_for_upload():
     with temporary_directory() as tmpdir:
         upload_file_a_size = 1024
