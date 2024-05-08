@@ -6,6 +6,14 @@ smaht-submitr
 Change Log
 ----------
 
+0.8.1
+=====
+
+* 2024-05-08/dmichaels/PR-8
+  Pass validate_only flag to ingester on --validate-remote-skip to
+  skip server-side validation on submit; previously this flag merely
+  served to skip kicking off server-side validatieon from submitr.
+
 
 0.8.1
 =====

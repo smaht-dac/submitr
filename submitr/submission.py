@@ -509,6 +509,7 @@ def _initiate_server_ingestion_process(
 
     submission_post_data = {
         "validate_only": is_server_validation,
+        "validate_skip": validate_remote_skip,
         "post_only": post_only,
         "patch_only": patch_only,
         "ref_nocache": False,  # Do not do this server-side at all; only client-side for testing.
@@ -858,6 +859,7 @@ def submit_any_ingestion(ingestion_filename, *,
             add_submission_center=add_submission_center,
             post_only=post_only,
             patch_only=patch_only,
+            validate_remote_skip=validate_remote_skip,
             autoadd=autoadd,
             user={"uuid": user_record.get("uuid"),
                   "email": user_record.get("email"),
@@ -897,6 +899,7 @@ def submit_any_ingestion(ingestion_filename, *,
         portal=portal,
         ingestion_filename=ingestion_filename,
         is_server_validation=False,
+        validate_remote_skip=validate_remote_skip,
         validation_ingestion_submission_object=server_validation_response,
         consortia=app_args.get("consortia"),
         submission_centers=app_args.get("submission_centers"),
