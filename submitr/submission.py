@@ -10,7 +10,6 @@ import sys
 import time
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple
 from typing_extensions import Literal
-import yaml
 
 # get_env_real_url would rely on env_utils
 # from dcicutils.env_utils import get_env_real_url
@@ -40,7 +39,7 @@ from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_f
 from submitr.rclone import RCloneConfigGoogle
 from submitr.scripts.cli_utils import get_version
 from submitr.submission_uploads import do_any_uploads
-from submitr.utils import format_path, get_health_page, is_excel_file_name, keyword_as_title, print_boxed, tobool
+from submitr.utils import format_path, get_health_page, is_excel_file_name, print_boxed, tobool
 
 
 def set_output_file(output_file):
@@ -394,73 +393,6 @@ def _get_section(res, section):
     """
 
     return res.get(section) or res.get('additional_data', {}).get(section)
-
-
-def _show_section(res, section, caveat_outcome=None, portal=None):
-    """
-    Shows a given named section from a description of an ingestion submission.
-
-    The caveat is used when there has been an error and should be a phrase that describes the fact that output
-    shown is only up to the point of the caveat situation. Instead of a "My Heading" header the output will be
-    "My Heading (prior to <caveat>)."
-
-    :param res: the description of an ingestion submission as a python dictionary that represents JSON data
-    :param section: the name of a section to find either in the toplevel or in additional_data.
-    :param caveat_outcome: a phrase describing some caveat on the output
-    """
-
-    section_data = _get_section(res, section)
-    if caveat_outcome and not section_data:
-        # In the case of non-success, be brief unless there's data to show.
-        return
-    if caveat_outcome:
-        caveat = " (prior to %s)" % caveat_outcome
-    else:
-        caveat = ""
-    if not section_data:
-        return
-    SHOW("\n----- %s%s -----" % (keyword_as_title(section), caveat))
-    if isinstance(section_data, dict):
-        if file := section_data.get("file"):
-            PRINT(f"File: {file}")
-        if s3_file := section_data.get("s3_file"):
-            PRINT(f"S3 File: {s3_file}")
-        if details := section_data.get("details"):
-            PRINT(f"Details: {details}")
-        for item in section_data:
-            if isinstance(section_data[item], list) and section_data[item]:
-                issue_prefix = ""
-                if item == "reader":
-                    PRINT(f"Parser Warnings:")
-                    issue_prefix = "WARNING: "
-                elif item == "validation":
-                    PRINT(f"Validation Errors:")
-                    issue_prefix = "ERROR: "
-                elif item == "ref":
-                    PRINT(f"Reference (linkTo) Errors:")
-                    issue_prefix = "ERROR: "
-                elif item == "errors":
-                    PRINT(f"Other Errors:")
-                    issue_prefix = "ERROR: "
-                else:
-                    continue
-                for issue in section_data[item]:
-                    if isinstance(issue, dict):
-                        PRINT(f"- {issue_prefix}{_format_issue(issue, file)}")
-                    elif isinstance(issue, str):
-                        PRINT(f"- {issue_prefix}{issue}")
-    elif isinstance(section_data, list):
-        if section == "upload_info":
-            for info in section_data:
-                if isinstance(info, dict) and info.get("filename") and (uuid := info.get("uuid")):
-                    upload_file_accession_name, upload_file_type = _get_upload_file_info(portal, uuid)
-                    info["target"] = upload_file_accession_name
-                    info["type"] = upload_file_type
-            PRINT(yaml.dump(section_data))
-        else:
-            [SHOW(line) for line in section_data]
-    else:  # We don't expect this, but such should be shown as-is, mostly to see what it is.
-        SHOW(section_data)
 
 
 def _ingestion_submission_item_url(server, uuid):

@@ -13,13 +13,12 @@ from dcicutils.qa_utils import ControlledTime, MockFileSystem, printed_output
 from dcicutils.s3_utils import HealthPageKey
 from unittest import mock
 
-from .test_utils import shown_output
 from .. import submission as submission_module
 from ..submission import (  # noqa
     SERVER_REGEXP, PROGRESS_CHECK_INTERVAL, ATTEMPTS_BEFORE_TIMEOUT,
     _get_defaulted_institution, _get_defaulted_project,
-    _get_section, _get_user_record, _ingestion_submission_item_url,
-    _resolve_server, resume_uploads, _show_section, submit_any_ingestion,
+    _get_user_record, _ingestion_submission_item_url,
+    _resolve_server, resume_uploads, submit_any_ingestion,
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
     _post_files_data,  # noQA - again, testing a protected member
     _check_ingestion_progress,  # noQA - again, testing a protected member
@@ -303,16 +302,6 @@ def test_get_defaulted_project():
     assert successful_result == "/projects/the_only_project"
 
 
-def test_get_section():
-
-    assert _get_section({}, 'foo') is None
-    assert _get_section({'alpha': 3, 'beta': 4}, 'foo') is None
-    assert _get_section({'alpha': 3, 'foo': 5, 'beta': 4}, 'foo') == 5
-    assert _get_section({'additional_data': {}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'omega') is None
-    assert _get_section({'additional_data': {'omega': 24}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'epsilon') is None
-    assert _get_section({'additional_data': {'omega': 24}, 'alpha': 3, 'foo': 5, 'beta': 4}, 'omega') == 24
-
-
 def test_progress_check_interval():
 
     assert isinstance(PROGRESS_CHECK_INTERVAL, int) and PROGRESS_CHECK_INTERVAL > 0
@@ -328,110 +317,6 @@ def test_ingestion_submission_item_url():
         server='http://foo.com',
         uuid='123-4567-890'
     ) == 'http://foo.com/ingestion-submissions/123-4567-890?format=json&datastore=database'
-
-
-def test_show_section_without_caveat():
-
-    nothing_to_show = []
-
-    # Lines section available, without caveat.
-    with shown_output() as shown:
-        _show_section(
-            res={'foo': ['abc', 'def']},
-            section='foo',
-            caveat_outcome=None)
-        assert shown.lines == [
-            '\n----- Foo -----',
-            'abc',
-            'def',
-        ]
-
-    # Lines section available, without caveat, but no section entry.
-    with shown_output() as shown:
-        _show_section(
-            res={},
-            section='foo',
-            caveat_outcome=None
-        )
-        assert shown.lines == nothing_to_show
-
-    # Lines section available, without caveat, but empty.
-    with shown_output() as shown:
-        _show_section(
-            res={'foo': []},
-            section='foo',
-            caveat_outcome=None
-        )
-        assert shown.lines == nothing_to_show
-
-    # Lines section available, without caveat, but null.
-    with shown_output() as shown:
-        _show_section(
-            res={'foo': None},
-            section='foo',
-            caveat_outcome=None
-        )
-        assert shown.lines == nothing_to_show
-
-    # Dictionary section available, without caveat, and with a dictionary.
-    with shown_output() as shown:
-        _show_section(
-            res={'foo': {'alpha': 'beta', 'gamma': 'delta'}},
-            section='foo',
-            caveat_outcome=None
-        )
-        assert shown.lines == ['\n----- Foo -----']
-
-    # Dictionary section available, without caveat, and with an empty dictionary.
-    with shown_output() as shown:
-        _show_section(
-            res={'foo': {}},
-            section='foo',
-            caveat_outcome=None
-        )
-        assert shown.lines == nothing_to_show
-
-    # Random unexpected data, with caveat.
-    with shown_output() as shown:
-        _show_section(
-            res={'foo': 17},
-            section='foo',
-            caveat_outcome=None
-        )
-        assert shown.lines == [
-            '\n----- Foo -----',
-            '17',
-        ]
-
-
-def test_show_section_with_caveat():
-
-    # Some output is shown marked by a caveat, that indicates execution stopped early for some reason
-    # and the output is partial.
-
-    caveat = 'some error'
-
-    # Lines section available, with caveat.
-    with shown_output() as shown:
-        _show_section(
-            res={'foo': ['abc', 'def']},
-            section='foo',
-            caveat_outcome=caveat
-        )
-        assert shown.lines == [
-            '\n----- Foo (prior to %s) -----' % caveat,
-            'abc',
-            'def',
-        ]
-
-    # Lines section available, with caveat.
-    with shown_output() as shown:
-        _show_section(
-            res={},
-            section='foo',
-            caveat_outcome=caveat
-        )
-        assert shown.lines == []  # Nothing shown if there is a caveat specified
 
 
 class MockTime:
