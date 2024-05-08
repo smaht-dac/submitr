@@ -808,6 +808,14 @@ def submit_any_ingestion(ingestion_filename, *,
               f" {'--validate-local-only' if validate_local_only else '--validate-remote-skip'}).")
 
     if validation:
+        do_any_uploads(structured_data,
+                       metadata_file=ingestion_filename,
+                       main_search_directory=upload_folder,
+                       main_search_directory_recursively=subfolders,
+                       google_config=rclone_google_config,
+                       portal=portal,
+                       verbose=True,
+                       review_only=True)
         exit(0)
 
     # Server submission.
@@ -850,10 +858,12 @@ def submit_any_ingestion(ingestion_filename, *,
 
     # Now that submission has successfully complete, review the files to upload and then do it.
 
-    if structured_data:
-        _review_upload_files(structured_data, ingestion_filename,
-                             rclone_google_config=rclone_google_config,
-                             validation=validation, directory=upload_folder, recursive=subfolders)
+#   if structured_data:
+#       import pdb ; pdb.set_trace()  # noqa
+#       pass
+#       _review_upload_files(structured_data, ingestion_filename,
+#                            rclone_google_config=rclone_google_config,
+#                            validation=validation, directory=upload_folder, recursive=subfolders)
 
     do_any_uploads(submission_response,
                    metadata_file=ingestion_filename,
@@ -1905,10 +1915,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             PRINT_STDOUT("Use the --output FILE option to write errors to a file.")
         exit(1)
 
-    # They don't want to present upload file info on validate, only on submit.
-    # _review_upload_files(structured_data, ingestion_filename,
-    #                      validation=validation, directory=upload_folder, recursive=subfolders)
-
     if verbose:
         _print_structured_data_verbose(portal, structured_data, ingestion_filename, upload_folder=upload_folder,
                                        recursive=subfolders, validation=validation, verbose=verbose)
@@ -2097,7 +2103,7 @@ def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
 
     file_validation_errors = []
 
-    files_for_upload = FilesForUpload.define(
+    files_for_upload = FilesForUpload.assemble(
         structured_data,
         main_search_directory=upload_folder,
         main_search_directory_recursively=recursive,
@@ -2580,10 +2586,10 @@ def _print_metadata_file_info(file: str, env: str,
                         if file_for_upload.found_in_google:
                             PRINT(f"  Google file: {file_for_upload.google_path}")
                     note_output()
-            files_for_upload = FilesForUpload.define(structured_data,
-                                                     main_search_directory=upload_folder,
-                                                     main_search_directory_recursively=subfolders,
-                                                     google_config=rclone_google_config)
+            files_for_upload = FilesForUpload.assemble(structured_data,
+                                                       main_search_directory=upload_folder,
+                                                       main_search_directory_recursively=subfolders,
+                                                       google_config=rclone_google_config)
             PRINT(f"Files: {len(files_for_upload)}")
             print_files(files_for_upload, max_output=max_output, output_file=output_file, verbose=verbose)
     if not (refs is True):

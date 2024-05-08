@@ -3,7 +3,7 @@ import pathlib
 import re
 from typing import List, Optional, Tuple, Union
 from dcicutils.s3_utils import HealthPageKey
-from dcicutils.structured_data import Portal
+from dcicutils.structured_data import Portal, StructuredDataSet
 from submitr.file_for_upload import FileForUpload, FilesForUpload
 from submitr.output import PRINT
 from submitr.rclone import RCloneConfigGoogle
@@ -11,12 +11,13 @@ from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import tobool
 
 
-def do_any_uploads(arg: Union[str, dict],
+def do_any_uploads(arg: Union[str, dict, StructuredDataSet],
                    metadata_file: Optional[str] = None,
                    main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
                    main_search_directory_recursively: bool = False,
                    google_config: Optional[RCloneConfigGoogle] = None,
                    portal: Optional[Portal] = None,
+                   review_only: bool = False,
                    verbose: bool = False) -> None:
 
     files_for_upload = assemble_files_for_upload(
@@ -26,12 +27,14 @@ def do_any_uploads(arg: Union[str, dict],
         metadata_file=metadata_file,
         google_config=google_config,
         portal=portal,
+        review_only=review_only,
         verbose=verbose)
 
-    upload_files(files_for_upload, portal)
+    if not review_only:
+        upload_files(files_for_upload, portal)
 
 
-def assemble_files_for_upload(arg: Union[str, dict],
+def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
                               main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
                               main_search_directory_recursively: bool = False,
                               other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
@@ -39,6 +42,7 @@ def assemble_files_for_upload(arg: Union[str, dict],
                               google_config: Optional[RCloneConfigGoogle] = None,
                               portal: Optional[Portal] = None,
                               review: bool = True,
+                              review_only: bool = True,
                               verbose: bool = False,
                               _recursive: bool = False) -> Optional[List[FileForUpload]]:
 
@@ -55,12 +59,20 @@ def assemble_files_for_upload(arg: Union[str, dict],
     #
     # Returns empty list no files found, or None if something unexpected in the data.
 
-    if not isinstance(portal, Portal) or not isinstance(arg, (str, dict)) or not arg:
+    if not isinstance(portal, Portal) or not isinstance(arg, (str, dict, StructuredDataSet)) or not arg:
         return None
 
     files_for_upload = None
 
-    if item := arg if isinstance(arg, dict) else portal.get_metadata(arg, raise_exception=False):
+    if isinstance(arg, StructuredDataSet):
+        files_for_upload = FilesForUpload.assemble(
+            arg,
+            main_search_directory=main_search_directory,
+            main_search_directory_recursively=main_search_directory_recursively,
+            other_search_directories=other_search_directories,
+            google_config=google_config)
+
+    elif item := arg if isinstance(arg, dict) else portal.get_metadata(arg, raise_exception=False):
 
         if is_validation_object(item, portal):
             # Here a validation (i.e. validate-only IngestinonSubmission) UUID was given (and was found);
@@ -141,7 +153,7 @@ def assemble_files_for_upload(arg: Union[str, dict],
         return None
 
     if (review is True) and (_recursive is False):
-        FilesForUpload.review(files_for_upload, portal=portal, verbose=verbose)
+        FilesForUpload.review(files_for_upload, portal=portal, review_only=review_only, verbose=verbose)
     return files_for_upload
 
 
@@ -188,7 +200,10 @@ def get_submission_object_upload_files(submission_item: dict, portal: Portal) ->
 
 
 def upload_files(files: List[FileForUpload], portal: Portal):
-    if isinstance(files, list):
+    import pdb ; pdb.set_trace()  # noqa
+    pass
+    if isinstance(files, list) and files:
+        PRINT("Ready to actually upload files now.")
         for file in [file for file in files if not file.ignore]:
             upload_file(file, portal=portal)
 

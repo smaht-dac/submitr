@@ -16,14 +16,14 @@ from submitr.rclone import cloud_path, RCloneConfigGoogle
 class FileForUpload:
 
     def __init__(self,
-                 file: Union[str, pathlib.PosixPath, dict],
+                 file: Union[dict, str, pathlib.Path],
                  type: Optional[str] = None,
                  accession: Optional[str] = None,
                  accession_name: Optional[str] = None,
                  uuid: Optional[str] = None,
-                 main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
+                 main_search_directory: Optional[Union[str, pathlib.Path]] = None,
                  main_search_directory_recursively: bool = False,
-                 other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
+                 other_search_directories: Optional[List[Union[str, pathlib.Path]]] = None,
                  google_config: Optional[RCloneConfigGoogle] = None) -> Optional[FileForUpload]:
 
         # Given file can be a dictionary (from structured_data.upload_files) like:
@@ -36,7 +36,7 @@ class FileForUpload:
             self._name = file.get("file", file.get("filename", ""))
             self._type = normalize_string(file.get("type")) or None
             self._uuid = normalize_string(file.get("uuid")) or None
-        elif isinstance(file, pathlib.PosixPath):
+        elif isinstance(file, pathlib.Path):
             self._name = str(file)
         elif isinstance(file, str):
             self._name = file
@@ -74,7 +74,7 @@ class FileForUpload:
                 # directories to the current directory (.), if it is not otherwise specified.
                 other_search_directories = ["."]
             if isinstance(other_search_directories, list) and other_search_directories:
-                # Actually, other_search_directories can also be just a str and/or PosixPath.
+                # Actually, other_search_directories can also be just a str and/or Path.
                 if file_path := search_for_file(self._name,
                                                 location=other_search_directories,
                                                 single=True, recursive=False):
@@ -213,29 +213,41 @@ class FileForUpload:
     def google_config(self) -> Optional[RCloneConfigGoogle]:
         return self._google_config
 
-    def review(self, portal: Optional[Portal] = None, verbose: bool = False, printf: Optional[Callable] = None) -> bool:
+    def review(self, portal: Optional[Portal] = None, review_only: bool = False,
+               verbose: bool = False, printf: Optional[Callable] = None) -> bool:
         if not callable(printf):
             printf = print
         if not self.found:
             printf(f"WARNING: Cannot find file for upload: {self.name} ({self.uuid})")
             if isinstance(portal, Portal):
                 printf(f"- Use --directory to specify a irectory where the file can be found.")
-                printf(f"- Upload later with: {self.resume_upload_command(env=portal.env if portal else None)}")
+                if not review_only:
+                    printf(f"- Upload later with:"
+                           f" {self.resume_upload_command(env=portal.env if portal else None)}")
             self._ignore = True
             return False
         elif self.found_locally:
             if self.found_in_google:
-                printf(f"File for upload found BOTH locally AND in Google Cloud Storage: {self.name}")
-                printf(f"- Local: {self.local_path}")
-                printf(f"- Google Cloud Storage: {self.google_path}")
-                self._favor_local = not yes_or_no("Do you want to use the Google Cloud Storage version?")
+                printf(f"- File for upload found BOTH locally AND in Google Cloud Storage: {self.name}")
+                printf(f"  - Local: {self.local_path}")
+                printf(f"  - Google Cloud Storage: {self.google_path}")
+                if not review_only:
+                    self._favor_local = not yes_or_no("  - Do you want to use the Google Cloud Storage version?")
             if self.found_locally_multiple and self._favor_local:
                 # TODO: Could prompt for an option to choose one of them or something.
-                printf(f"WARNING: Ignoring file for upload as multiple/ambiguous instances found: {self.name}")
+                if not review_only:
+                    indent = ""
+                    printf(f"- WARNING: Ignoring file for upload"
+                           f" as multiple/ambiguous local instances found: {self.name}")
+                else:
+                    indent = "  " if self.found_in_google else ""
+                    printf(f"{indent}- Multiple/ambiguous instances of local file for upload found: {self.name}")
                 for local_path in self.local_paths:
-                    printf(f"- {local_path}")
-                printf(f"- Use --directory-only rather than --directory to not search recursively.")
-                printf(f"- Upload later with: {self.resume_upload_command(env=portal.env if portal else None)}")
+                    printf(f"{indent}  - {local_path}")
+                printf(f"{indent}  - Use --directory-only rather than --directory to not search recursively.")
+                if not review_only:
+                    printf(f"  - Upload later with:"
+                           f" {self.resume_upload_command(env=portal.env if portal else None)}")
                 self._ignore = True
                 return False
             if verbose:
@@ -269,15 +281,15 @@ class FileForUpload:
 class FilesForUpload:
 
     @staticmethod
-    def assemble(files: Union[StructuredDataSet, List[str]],
-                 main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
+    def assemble(files: Union[StructuredDataSet, List[dict], List[Union[str, pathlib.Path]], str, pathlib.Path],
+                 main_search_directory: Optional[Union[str, pathlib.Path]] = None,
                  main_search_directory_recursively: bool = False,
-                 other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
+                 other_search_directories: Optional[List[Union[str, pathlib.Path]]] = None,
                  google_config: Optional[RCloneConfigGoogle] = None) -> List[FileForUpload]:
 
         if isinstance(files, StructuredDataSet):
             files = files.upload_files
-        elif isinstance(files, (str, pathlib.PosixPath)):
+        elif isinstance(files, (str, pathlib.Path)):
             files = [files]
         if not isinstance(files, list):
             return []
@@ -297,8 +309,11 @@ class FilesForUpload:
     @staticmethod
     def review(files_for_upload: List[FileForUpload],
                portal: Optional[Portal] = None,
+               review_only: bool = False,
                verbose: bool = False,
                printf: Optional[Callable] = None) -> bool:
+        import pdb ; pdb.set_trace()  # noqa
+        pass
         if not isinstance(files_for_upload, list):
             return False
         if not callable(printf):
@@ -315,6 +330,7 @@ class FilesForUpload:
             printf(message)
             for file_for_upload in files_for_upload:
                 if isinstance(file_for_upload, FileForUpload):
-                    if not file_for_upload.review(portal=portal, verbose=verbose, printf=printf):
+                    if not file_for_upload.review(portal=portal, review_only=review_only,
+                                                  verbose=verbose, printf=printf):
                         result = False
         return result
