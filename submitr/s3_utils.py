@@ -51,7 +51,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
                           print_preamble: bool = True,
                           verify_upload: bool = True,
                           catch_interrupt: bool = True,
-                          print_function: Optional[Callable] = print) -> bool:
+                          printf: Optional[Callable] = print) -> bool:
 
     if not (isinstance(file, FileForUpload) and file.found and isinstance(s3_uri, str) and s3_uri):
         return False
@@ -74,7 +74,8 @@ def upload_file_to_aws_s3(file: FileForUpload,
     print_preamble = print_preamble is True
     verify_upload = verify_upload is True
     catch_interrupt = catch_interrupt is True
-    printf = print_function if callable(print_function) else print
+    if not callable(printf):
+        printf = print
 
     if file.found_locally:
         rclone = None

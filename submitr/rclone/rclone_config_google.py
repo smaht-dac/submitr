@@ -146,7 +146,7 @@ class RCloneConfigGoogle(RCloneConfig):
             return False
         else:
             printf(f"Google Cloud Storage project"
-                   f"{f' ({self.project})' if self.project else ''}"
+                   f"{f' ({self.project()})' if self.project() else ''}"
                    f" connectivity appears to be problematic ✗")
             return True
 

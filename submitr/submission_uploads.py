@@ -2,7 +2,6 @@ import os
 import pathlib
 import re
 from typing import List, Optional, Union
-from dcicutils.misc_utils import environ_bool
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.structured_data import Portal
 from submitr.file_for_upload import FileForUpload, FilesForUpload
@@ -10,9 +9,6 @@ from submitr.output import PRINT
 from submitr.rclone import RCloneConfigGoogle
 from submitr.s3_utils import upload_file_to_aws_s3
 from submitr.utils import get_health_page, tobool
-
-
-DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
 
 
 def do_any_uploads(arg: Union[str, dict],
@@ -119,7 +115,7 @@ def assemble_files_for_upload(arg: Union[str, dict],
             PRINT(f"The type ({undesired_type}) of the given ID ({arg}) is neither a submission nor a file type.")
             return None
 
-    elif accession_id := _extract_accession_id(arg):
+    elif accession_id := extract_accession_id(arg):
         # Here the given UUID (or accession ID) could not be found; it seems an
         # accession based file name was given; use the accession ID extacted from it.
         if _recursive is True:  # Just-in-case paranoid guard against infinite recursive loop.
@@ -188,7 +184,7 @@ def get_submission_object_upload_files(submission_item: dict, portal: Portal) ->
     return None
 
 
-def upload_file(file_for_upload: FileForUpload, portal: Portal):  # NEW: replacement for upload_file_to_uuid
+def upload_file(file: FileForUpload, portal: Portal) -> None:
     """
     Upload file to a target environment.
 
@@ -197,17 +193,16 @@ def upload_file(file_for_upload: FileForUpload, portal: Portal):  # NEW: replace
     :param auth: auth info in the form of a dictionary containing 'key', 'secret', and 'server'.
     :returns: item metadata dict or None
     """
-    if not isinstance(file_for_upload, FileForUpload) or not isinstance(portal, Portal):
+    if not isinstance(file, FileForUpload) or not isinstance(portal, Portal):
         return
 
-    metadata = None
-    patch_data = {"filename": file_for_upload.name}
-    response = portal.patch_metadata(object_id=file_for_upload.uuid, data=patch_data)
-    metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
-                                                                           method="PATCH", uuid=file_for_upload.uuid,
-                                                                           filename=file_for_upload.name,
-                                                                           payload_data=patch_data,
-                                                                           portal=portal)
+    patch_data = {"filename": file.name}
+    response = portal.patch_metadata(object_id=file.uuid, data=patch_data)
+    upload_credentials = extract_upload_credentials(response,
+                                                    method="PATCH", uuid=file.uuid,
+                                                    filename=file.name,
+                                                    payload_data=patch_data,
+                                                    portal=portal)
     try:
         s3_uri = upload_credentials["upload_url"]
         aws_credentials = {
@@ -219,15 +214,14 @@ def upload_file(file_for_upload: FileForUpload, portal: Portal):  # NEW: replace
     except Exception as e:
         raise ValueError("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
 
-    upload_file_to_aws_s3(file=file_for_upload,
+    upload_file_to_aws_s3(file=file,
                           s3_uri=s3_uri,
                           aws_credentials=aws_credentials,
                           aws_kms_key_id=aws_kms_key_id,
                           print_progress=True,
-                          print_function=PRINT,
                           verify_upload=True,
-                          catch_interrupt=True)
-    return metadata
+                          catch_interrupt=True,
+                          printf=PRINT)
 
 
 def upload_files(files_for_upload: List[FileForUpload], portal: Portal):
@@ -241,21 +235,16 @@ def generate_credentials_for_upload(file: str, uuid: str) -> dict:
     pass
 
 
-def extract_metadata_and_upload_credentials(response, filename, method, payload_data,
-                                            uuid=None, schema_name=None, portal=None):
+def extract_upload_credentials(response, filename, method, payload_data,
+                               uuid=None, schema_name=None, portal=None):
     try:
-        [metadata] = response['@graph']
-        upload_credentials = metadata['upload_credentials']
-    except Exception as e:
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f"Problem trying to {method} to get upload credentials.")
-            PRINT(f" payload_data={payload_data}")
-            if uuid:
-                PRINT(f" uuid={uuid}")
-            if schema_name:
-                PRINT(f" schema_name={schema_name}")
-            PRINT(f" response={response}")
-            PRINT(f"Got error {type(e)}: {e}")
+        # TODO
+        # N.B. Older code used to pass this metadata back to the caller to process any extra
+        # files which might be present; removed all of this processing from smaht-submitr
+        # for now to simplify, as this is not currently supported; may well add back later.
+        [metadata] = response["@graph"]
+        upload_credentials = metadata["upload_credentials"]
+    except Exception:
         file_status = None
         if portal and uuid:
             try:
@@ -266,17 +255,15 @@ def extract_metadata_and_upload_credentials(response, filename, method, payload_
         if file_status:
             message += f" File status: {file_status}"
         raise RuntimeError(message)
-    return metadata, upload_credentials
+    return upload_credentials
 
 
-def _extract_accession_id(value: str) -> Optional[str]:
-    if isinstance(value, str):
-        if value.endswith(".gz"):
-            value = value[:-3]
-        value, _ = os.path.splitext(value)
-        if _is_accession_id(value):
-            return value
-    return None
+def get_s3_encrypt_key_id(*, upload_credentials, auth):
+    if "s3_encrypt_key_id" in upload_credentials:
+        s3_encrypt_key_id = upload_credentials.get("s3_encrypt_key_id")
+    else:
+        s3_encrypt_key_id = get_s3_encrypt_key_id_from_health_page(auth)
+    return s3_encrypt_key_id
 
 
 def get_s3_encrypt_key_id_from_health_page(auth):
@@ -290,22 +277,17 @@ def get_s3_encrypt_key_id_from_health_page(auth):
         return None
 
 
-def get_s3_encrypt_key_id(*, upload_credentials, auth):
-    if 's3_encrypt_key_id' in upload_credentials:
-        s3_encrypt_key_id = upload_credentials.get('s3_encrypt_key_id')
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f"Extracted s3_encrypt_key_id from upload_credentials: {s3_encrypt_key_id}")
-    else:
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f"No s3_encrypt_key_id entry found in upload_credentials.")
-            PRINT(f"Fetching s3_encrypt_key_id from health page.")
-        s3_encrypt_key_id = get_s3_encrypt_key_id_from_health_page(auth)
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f" =id=> {s3_encrypt_key_id!r}")
-    return s3_encrypt_key_id
-
-
-def _is_accession_id(value: str) -> bool:
+def is_accession_id(value: str) -> bool:
     # See smaht-portal/.../schema_formats.py
     return isinstance(value, str) and re.match(r"^SMA[1-9A-Z]{9}$", value) is not None
     # return isinstance(value, str) and re.match(r"^[A-Z0-9]{12}$", value) is not None
+
+
+def extract_accession_id(value: str) -> Optional[str]:
+    if isinstance(value, str):
+        if value.endswith(".gz"):
+            value = value[:-3]
+        value, _ = os.path.splitext(value)
+        if is_accession_id(value):
+            return value
+    return None

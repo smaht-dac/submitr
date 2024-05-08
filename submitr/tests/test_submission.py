@@ -9,7 +9,7 @@ from . import test_misc  # noqa
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
 from dcicutils.misc_utils import ignored, ignorable, NamedObject
 from dcicutils.portal_utils import Portal
-from dcicutils.qa_utils import ControlledTime, MockFileSystem, printed_output
+from dcicutils.qa_utils import ControlledTime, MockFileSystem
 from dcicutils.s3_utils import HealthPageKey
 from unittest import mock
 
@@ -27,7 +27,7 @@ from ..submission import (  # noqa
     _get_defaulted_submission_centers, _get_defaulted_consortia, _do_app_arg_defaulting, _monitor_ingestion_process
 )
 from .. import submission_uploads as submission_uploads_module
-from ..submission_uploads import get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page
+from ..submission_uploads import get_s3_encrypt_key_id_from_health_page
 from ..utils import FakeResponse
 
 
@@ -138,15 +138,6 @@ SOME_ENVIRON_WITH_CREDS = {
 }
 
 ANOTHER_FILE_NAME = "another_file"
-
-SOME_EXTRA_FILE_CREDENTIALS = [
-    {"filename": SOME_FILENAME, "upload_credentials": SOME_ENVIRON_WITH_CREDS},
-    {"filename": ANOTHER_FILE_NAME, "upload_credentials": SOME_ENVIRON_WITH_CREDS},
-]
-
-SOME_FILE_METADATA_WITH_EXTRA_FILE_CREDENTIALS = {
-    "extra_files_creds": SOME_EXTRA_FILE_CREDENTIALS
-}
 
 
 @contextlib.contextmanager
@@ -353,57 +344,6 @@ def os_simulation(*, simulation_mode):
             yield
 
 
-@pytest.mark.parametrize('debug_protocol', [False, True])
-def test_get_s3_encrypt_key_id(debug_protocol):
-
-    with mock.patch.object(submission_uploads_module,
-                           'get_s3_encrypt_key_id_from_health_page') as mock_health_page_getter:
-        mock_health_page_getter.return_value = 'gotten-from-health-page'
-
-        with printed_output() as printed:
-            with mock.patch.object(submission_uploads_module, "DEBUG_PROTOCOL", debug_protocol):
-                upload_creds = {'s3_encrypt_key_id': 'gotten-from-upload-creds', 'other-stuff': 'yes'}
-                assert (get_s3_encrypt_key_id(upload_credentials=upload_creds, auth='not-used-by-mock')
-                        == 'gotten-from-upload-creds')
-                assert mock_health_page_getter.call_count == 0
-                assert printed.lines == (['Extracted s3_encrypt_key_id from upload_credentials:'
-                                          ' gotten-from-upload-creds']
-                                         if debug_protocol
-                                         else [])
-
-                printed.lines = []
-                upload_creds = {'s3_encrypt_key_id': None, 'other-stuff': 'yes'}
-                assert (get_s3_encrypt_key_id(upload_credentials=upload_creds, auth='not-used-by-mock')
-                        is None)
-                assert mock_health_page_getter.call_count == 0
-                assert printed.lines == (['Extracted s3_encrypt_key_id from upload_credentials: None']
-                                         if debug_protocol
-                                         else [])
-
-                printed.lines = []
-                upload_creds = {'other-stuff': 'yes'}
-                assert (get_s3_encrypt_key_id(upload_credentials=upload_creds, auth='not-used-by-mock')
-                        == 'gotten-from-health-page')
-                assert mock_health_page_getter.call_count == 1
-                assert printed.lines == (["No s3_encrypt_key_id entry found in upload_credentials.",
-                                          "Fetching s3_encrypt_key_id from health page.",
-                                          " =id=> 'gotten-from-health-page'"]
-                                         if debug_protocol
-                                         else [])
-
-                mock_health_page_getter.return_value = None
-
-                printed.lines = []
-                upload_creds = {'other-stuff': 'yes'}
-                assert get_s3_encrypt_key_id(upload_credentials=upload_creds, auth='not-used-by-mock') is None
-                assert mock_health_page_getter.call_count == 2
-                assert printed.lines == (["No s3_encrypt_key_id entry found in upload_credentials.",
-                                          "Fetching s3_encrypt_key_id from health page.",
-                                          " =id=> None"]
-                                         if debug_protocol
-                                         else [])
-
-
 @pytest.mark.parametrize("mocked_s3_encrypt_key_id", [None, "", TEST_ENCRYPT_KEY])
 def test_get_s3_encrypt_key_id_from_health_page(mocked_s3_encrypt_key_id):
     with mock.patch.object(submission_uploads_module, "get_health_page") as mock_get_health_page:
@@ -463,8 +403,6 @@ class Scenario:
             f'Using given consortium: {SOME_CONSORTIUM}',
             f'Using given submission center: {SOME_SUBMISSION_CENTER}',
         ]
-        if submission_module.DEBUG_PROTOCOL:  # pragma: no cover - useful if it happens to help, but not a big deal
-            result.append(f"Created IngestionSubmission object: s3://{self.bundles_bucket}/{SOME_UUID}")
         result.append(f"{uploaded_time} Metadata bundle uploaded to bucket ({self.bundles_bucket});"
                       f" tracking UUID: {SOME_UUID} Awaiting processing...")
         return result
