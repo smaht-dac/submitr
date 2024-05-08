@@ -403,6 +403,7 @@ def _initiate_server_ingestion_process(
         validation_ingestion_submission_object: Optional[dict] = None,
         post_only: bool = False,
         patch_only: bool = False,
+        validate_remote_skip: bool = False,
         autoadd: Optional[dict] = None,
         datafile_size: Optional[Any] = None,
         datafile_checksum: Optional[Any] = None,
@@ -426,6 +427,7 @@ def _initiate_server_ingestion_process(
 
     submission_post_data = {
         "validate_only": is_server_validation,
+        "validate_skip": validate_remote_skip,
         "post_only": post_only,
         "patch_only": patch_only,
         "ref_nocache": False,  # Do not do this server-side at all; only client-side for testing.
@@ -838,6 +840,7 @@ def submit_any_ingestion(ingestion_filename, *,
         user={"uuid": user_record.get("uuid"),
               "email": user_record.get("email"),
               "name": user_record.get("display_title")} if user_record else None,
+        validate_remote_skip=validate_remote_skip,
         debug=debug,
         debug_sleep=debug_sleep)
 

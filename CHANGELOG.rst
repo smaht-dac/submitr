@@ -24,6 +24,8 @@ Change Log
 * Improved messaging for check-submission.
 * Fix for usage of --keys (was not being used for server validation/submission).
 * Minor fix for --validate-local-skip option (undefined structured_data variable).
+* Fix for --validate-remote-skip option to pass validate_skip to ingester to
+  skip the validation on submission which happens by default before the loadxl.
 * Added --files for use with --info to submit-metadata-bundle.
 
 
