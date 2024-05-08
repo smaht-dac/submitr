@@ -20,7 +20,7 @@ from dcicutils.data_readers import Excel
 from dcicutils.datetime_utils import format_datetime
 from dcicutils.file_utils import (
        compute_file_etag, compute_file_md5,
-       get_file_modified_datetime, get_file_size, search_for_file
+       get_file_modified_datetime, get_file_size
 )
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
@@ -2063,85 +2063,6 @@ def extract_metadata_and_upload_credentials(response, filename, method, payload_
 
 # This can be set to True in unusual situations, but normally will be False to avoid unnecessary querying.
 SUBMITR_SELECTIVE_UPLOADS = environ_bool("SUBMITR_SELECTIVE_UPLOADS")
-
-
-class UploadMessageWrapper:
-    """Class to provide consistent queries/messages to user when
-    uploading file(s) to given File UUID.
-    """
-
-    def __init__(self, uuid, no_query=False):
-        """Initialize instance for given UUID
-
-        :param uuid: UUID of File item for uploads
-        :param no_query: Whether to suppress asking for user
-            confirmation prior to upload
-        """
-        self.uuid = uuid
-        self.no_query = no_query
-
-    def wrap_upload_function(self, function, file_name):
-        """Wrap upload given function with messages conerning upload.
-
-        :param function: Upload function to wrap
-        :param file_name: File to upload
-        :returns: Wrapped function
-        """
-        def wrapper(*args, **kwargs):
-            result = None
-            perform_upload = True
-            if not self.no_query:
-                if (
-                    SUBMITR_SELECTIVE_UPLOADS
-                    and not yes_or_no(f"Upload {file_name}?")
-                ):
-                    SHOW("OK, not uploading it.")
-                    perform_upload = False
-            if perform_upload:
-                try:
-                    result = function(*args, **kwargs)
-                except Exception as e:
-                    SHOW("%s: %s" % (e.__class__.__name__, e))
-            return result
-        return wrapper
-
-
-def _upload_extra_files(credentials, uploader_wrapper, folder, auth, recursive=False, rclone_google_config=None):
-    # UNUSED FOR SMAHT I THINK (VERIFY) - 2024-05-05.
-    """Attempt upload of all extra files.
-
-    Similar to "do_uploads", search for each file and then call a
-    wrapped upload function. Here, since extra files do not correspond
-    to Items on the portal, no need to PATCH an Item to retrieve AWS
-    credentials; they are directly passed in from the parent File's
-    metadata.
-
-    :param credentials: AWS credentials dictionary
-    :param uploader_wrapper: UploadMessageWrapper instance
-    :param folder: Directory to search for files
-    :param auth: a portal authorization tuple
-    :param recursive: Whether to search subdirectories for file
-    """
-    for extra_file_item in credentials:
-        extra_file_name = extra_file_item.get("filename")
-        extra_file_credentials = extra_file_item.get("upload_credentials")
-        if not extra_file_name or not extra_file_credentials:
-            continue
-        if (not (extra_file_paths := search_for_file(extra_file_name, location=folder,
-                                                     recursive=recursive)) or len(extra_file_paths) > 1):
-            if len(extra_file_paths) > 1:
-                SHOW(f"No upload attempted for file {extra_file_name} because multiple"
-                     f" copies were found in folder {folder}: {', '.join(extra_file_paths)}.")
-            else:
-                SHOW(f"Upload file not found: {extra_file_name}")
-            continue
-        extra_file_path = extra_file_paths[0]
-        wrapped_execute_prearranged_upload = uploader_wrapper.wrap_upload_function(
-            execute_prearranged_upload, extra_file_path
-        )
-        wrapped_execute_prearranged_upload(extra_file_path, extra_file_credentials,
-                                           rclone_google_config=rclone_google_config,
-                                           auth=auth)
 
 
 def _show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:

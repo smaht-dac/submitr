@@ -25,7 +25,6 @@ from ..submission import (  # noqa
     _resolve_server, resume_uploads, _show_section, submit_any_ingestion,
     upload_file_to_uuid,
     get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page, _running_on_windows_native,
-    search_for_file, UploadMessageWrapper, _upload_extra_files,
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
     _post_files_data,  # noQA - again, testing a protected member
     _check_ingestion_progress,  # noQA - again, testing a protected member
@@ -957,114 +956,6 @@ def test_running_on_windows_native():
         os_name, is_windows = pair
         with mock.patch.object(os, "name", os_name):
             assert _running_on_windows_native() is is_windows
-
-
-@pytest.mark.parametrize(
-    "no_query,submitr_selective_uploads,yes_or_no_result,error_raised,expected_result",
-    [
-        (False, True, False, None, None),
-        (False, False, False, None, None),
-        (False, True, True, None, "something"),
-        (False, True, True, True, None),
-        (True, True, False, None, "something"),
-        (True, True, False, True, None),
-    ]
-)
-def test_wrap_upload_function(
-    no_query, submitr_selective_uploads, yes_or_no_result, error_raised, expected_result
-):
-    """Test UploadMessageWrapper.wrap_upload_function creates
-    appropriate messages on given upload function.
-
-    Ensure wrapped function is indeed wrapped and returns expected
-    output when called.
-    """
-    with shown_output():
-        with mock.patch.object(
-            submission_module, "yes_or_no", return_value=yes_or_no_result
-        ) as mocked_yes_or_no:
-            with mock.patch.object(submission_module, "SUBMITR_SELECTIVE_UPLOADS", submitr_selective_uploads):
-                side_effect = None
-                if error_raised:
-                    side_effect = RuntimeError("Error occurred")
-                simple_function = mock.MagicMock(
-                    side_effect=side_effect, return_value=expected_result
-                )
-
-                uuid = "some_uuid"
-                file_name = "foo/bar"
-                input_arg = "foo"
-                function_wrapper = UploadMessageWrapper(uuid, no_query=no_query)
-                wrapped_function = function_wrapper.wrap_upload_function(
-                    simple_function, file_name
-                )
-                _ = wrapped_function(input_arg, error_raised=error_raised)
-
-                expected_lines = []
-                if not no_query and submitr_selective_uploads and not yes_or_no_result:
-                    mocked_yes_or_no.assert_called_once()
-                    expected_lines.append("OK, not uploading it.")
-                    simple_function.assert_not_called()
-                else:
-                    # expected_lines.append(f"Uploading {file_name} to item {uuid} ...")
-                    expected_lines.append(f"Uploading {file_name} to {uuid} ...")
-                    simple_function.assert_called_once_with(
-                        input_arg, error_raised=error_raised
-                    )
-                    if error_raised:
-                        expected_lines.append(f"RuntimeError: Error occurred")
-                    else:
-                        expected_lines.append(
-                            # f"Upload of {file_name} to item {uuid} was successful."
-                            f"Upload of {file_name}: OK -> 1.0 seconds"
-                        )
-                # assert shown.lines == expected_lines
-                # assert result == expected_result
-
-
-@pytest.mark.parametrize(
-    "credentials,files_found,expected_file_search_calls,expected_uploader_calls",
-    [
-        ([], [], 0, 0),
-        ([{"filename": "foo"}], [], 0, 0),
-        ([{"upload_credentials": {"key": "value"}}], [], 0, 0),
-        (SOME_EXTRA_FILE_CREDENTIALS, [], 2, 0),
-        (SOME_EXTRA_FILE_CREDENTIALS, [SOME_FILENAME], 2, 1),
-        (SOME_EXTRA_FILE_CREDENTIALS, [SOME_FILENAME, ANOTHER_FILE_NAME], 2, 2),
-    ]
-)
-def test_upload_extra_files(
-    credentials, files_found, expected_file_search_calls, expected_uploader_calls
-):
-    """Test extra files credentials utilized to search for and then
-    upload files.
-    """
-    folder = SOME_USER_HOMEDIR
-    recursive = True
-    auth = SOME_AUTH
-
-    def mocked_file_search(file, location, recursive=False, single=False):
-        if file in files_found:
-            return [os.path.join(location, file)]
-        else:
-            return []
-
-    with mock.patch.object(
-        submission_module, "search_for_file", side_effect=mocked_file_search
-    ) as mocked_search_for_file:
-        with mock.patch.object(
-            submission_module, "execute_prearranged_upload"
-        ) as mocked_execute_upload:
-            uploader_wrapper = UploadMessageWrapper(SOME_UUID)
-            _upload_extra_files(
-                credentials,
-                uploader_wrapper,
-                folder,
-                auth,
-                recursive=recursive,
-            )
-            assert len(mocked_search_for_file.call_args_list) == expected_file_search_calls
-            assert len(mocked_execute_upload.call_args_list) == expected_uploader_calls
 
 
 def test_resolve_app_args():
