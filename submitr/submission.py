@@ -22,14 +22,12 @@ from dcicutils.file_utils import (
        compute_file_etag, compute_file_md5,
        get_file_modified_datetime, get_file_size
 )
-from dcicutils.function_cache_decorator import function_cache
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
     environ_bool, format_duration, format_size,
     is_uuid, url_path_join, normalize_spaces
 )
 from dcicutils.progress_bar import ProgressBar
-from dcicutils.s3_utils import HealthPageKey
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
 from dcicutils.structured_data import Portal, StructuredDataSet
 from dcicutils.submitr.progress_constants import PROGRESS_INGESTER, PROGRESS_LOADXL, PROGRESS_PARSE
@@ -42,7 +40,7 @@ from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_f
 from submitr.rclone import RCloneConfigGoogle
 from submitr.scripts.cli_utils import get_version
 from submitr.submission_uploads import do_any_uploads
-from submitr.utils import format_path, is_excel_file_name, print_boxed, keyword_as_title, tobool
+from submitr.utils import format_path, get_health_page, is_excel_file_name, keyword_as_title, print_boxed, tobool
 
 
 def set_output_file(output_file):
@@ -1813,39 +1811,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                    portal=portal)
 
 
-@function_cache(serialize_key=True)
-def _get_health_page(key: dict) -> dict:
-    return Portal(key).get_health().json()
-
-
 def get_metadata_bundles_bucket_from_health_path(key: dict) -> str:
-    return _get_health_page(key=key).get("metadata_bundles_bucket")
-
-
-def get_s3_encrypt_key_id_from_health_page(auth):
-    try:
-        return _get_health_page(key=auth).get(HealthPageKey.S3_ENCRYPT_KEY_ID)
-    except Exception:  # pragma: no cover
-        # We don't actually unit test this section because _get_health_page realistically always returns
-        # a dictionary, and so health.get(...) always succeeds, possibly returning None, which should
-        # already be tested. Returning None here amounts to the same and needs no extra unit testing.
-        # The presence of this error clause is largely pro forma and probably not really needed.
-        return None
-
-
-def get_s3_encrypt_key_id(*, upload_credentials, auth):
-    if 's3_encrypt_key_id' in upload_credentials:
-        s3_encrypt_key_id = upload_credentials.get('s3_encrypt_key_id')
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f"Extracted s3_encrypt_key_id from upload_credentials: {s3_encrypt_key_id}")
-    else:
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f"No s3_encrypt_key_id entry found in upload_credentials.")
-            PRINT(f"Fetching s3_encrypt_key_id from health page.")
-        s3_encrypt_key_id = get_s3_encrypt_key_id_from_health_page(auth)
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f" =id=> {s3_encrypt_key_id!r}")
-    return s3_encrypt_key_id
+    return get_health_page(key=key).get("metadata_bundles_bucket")
 
 
 # This can be set to True in unusual situations, but normally will be False to avoid unnecessary querying.

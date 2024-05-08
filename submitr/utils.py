@@ -12,8 +12,10 @@ import requests
 from signal import signal, SIGINT
 import string
 from typing import Any, Callable, List, Optional, Tuple
-from dcicutils.misc_utils import PRINT, str_to_bool
 from dcicutils.datetime_utils import format_datetime, parse_datetime
+from dcicutils.function_cache_decorator import function_cache
+from dcicutils.misc_utils import PRINT, str_to_bool
+from dcicutils.structured_data import Portal
 
 
 ERASE_LINE = "\033[K"
@@ -218,3 +220,8 @@ def catch_interrupt(on_interrupt: Optional[Callable] = None):
         yield
     finally:
         signal(SIGINT, previous_interrupt_handler)
+
+
+@function_cache(serialize_key=True)
+def get_health_page(key: dict) -> dict:
+    return Portal(key).get_health().json()

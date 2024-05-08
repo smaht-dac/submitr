@@ -20,7 +20,6 @@ from ..submission import (  # noqa
     _get_defaulted_institution, _get_defaulted_project,
     _get_section, _get_user_record, _ingestion_submission_item_url,
     _resolve_server, resume_uploads, _show_section, submit_any_ingestion,
-    get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page,
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
     _post_files_data,  # noQA - again, testing a protected member
     _check_ingestion_progress,  # noQA - again, testing a protected member
@@ -28,6 +27,8 @@ from ..submission import (  # noqa
     GENERIC_SCHEMA_TYPE, DEFAULT_APP, _summarize_submission,
     _get_defaulted_submission_centers, _get_defaulted_consortia, _do_app_arg_defaulting, _monitor_ingestion_process
 )
+from .. import submission_uploads as submission_uploads_module
+from ..submission_uploads import get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page
 from ..utils import FakeResponse
 
 
@@ -470,11 +471,12 @@ def os_simulation(*, simulation_mode):
 @pytest.mark.parametrize('debug_protocol', [False, True])
 def test_get_s3_encrypt_key_id(debug_protocol):
 
-    with mock.patch.object(submission_module, 'get_s3_encrypt_key_id_from_health_page') as mock_health_page_getter:
+    with mock.patch.object(submission_uploads_module,
+                           'get_s3_encrypt_key_id_from_health_page') as mock_health_page_getter:
         mock_health_page_getter.return_value = 'gotten-from-health-page'
 
         with printed_output() as printed:
-            with mock.patch.object(submission_module, "DEBUG_PROTOCOL", debug_protocol):
+            with mock.patch.object(submission_uploads_module, "DEBUG_PROTOCOL", debug_protocol):
                 upload_creds = {'s3_encrypt_key_id': 'gotten-from-upload-creds', 'other-stuff': 'yes'}
                 assert (get_s3_encrypt_key_id(upload_credentials=upload_creds, auth='not-used-by-mock')
                         == 'gotten-from-upload-creds')
@@ -519,7 +521,7 @@ def test_get_s3_encrypt_key_id(debug_protocol):
 
 @pytest.mark.parametrize("mocked_s3_encrypt_key_id", [None, "", TEST_ENCRYPT_KEY])
 def test_get_s3_encrypt_key_id_from_health_page(mocked_s3_encrypt_key_id):
-    with mock.patch.object(submission_module, "_get_health_page") as mock_get_health_page:
+    with mock.patch.object(submission_uploads_module, "get_health_page") as mock_get_health_page:
         mock_get_health_page.return_value = {HealthPageKey.S3_ENCRYPT_KEY_ID: mocked_s3_encrypt_key_id}
         assert get_s3_encrypt_key_id_from_health_page(auth='not-used-by-mock') == mocked_s3_encrypt_key_id
 

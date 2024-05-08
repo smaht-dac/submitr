@@ -2,7 +2,6 @@ import os
 import pathlib
 import re
 from typing import List, Optional, Union
-from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import environ_bool
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.structured_data import Portal
@@ -10,7 +9,7 @@ from submitr.file_for_upload import FileForUpload, FilesForUpload
 from submitr.output import PRINT
 from submitr.rclone import RCloneConfigGoogle
 from submitr.s3_utils import upload_file_to_aws_s3
-from submitr.utils import tobool
+from submitr.utils import get_health_page, tobool
 
 
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
@@ -290,9 +289,9 @@ def _extract_accession_id(value: str) -> Optional[str]:
 
 def get_s3_encrypt_key_id_from_health_page(auth):
     try:
-        return _get_health_page(key=auth).get(HealthPageKey.S3_ENCRYPT_KEY_ID)
+        return get_health_page(key=auth).get(HealthPageKey.S3_ENCRYPT_KEY_ID)
     except Exception:  # pragma: no cover
-        # We don't actually unit test this section because _get_health_page realistically always returns
+        # We don't actually unit test this section because get_health_page realistically always returns
         # a dictionary, and so health.get(...) always succeeds, possibly returning None, which should
         # already be tested. Returning None here amounts to the same and needs no extra unit testing.
         # The presence of this error clause is largely pro forma and probably not really needed.
@@ -318,8 +317,3 @@ def _is_accession_id(value: str) -> bool:
     # See smaht-portal/.../schema_formats.py
     return isinstance(value, str) and re.match(r"^SMA[1-9A-Z]{9}$", value) is not None
     # return isinstance(value, str) and re.match(r"^[A-Z0-9]{12}$", value) is not None
-
-
-@function_cache(serialize_key=True)
-def _get_health_page(key: dict) -> dict:
-    return Portal(key).get_health().json()
