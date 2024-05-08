@@ -200,8 +200,6 @@ def get_submission_object_upload_files(submission_item: dict, portal: Portal) ->
 
 
 def upload_files(files: List[FileForUpload], portal: Portal):
-    import pdb ; pdb.set_trace()  # noqa
-    pass
     if isinstance(files, list) and files:
         PRINT("Ready to actually upload files now.")
         for file in [file for file in files if not file.ignore]:

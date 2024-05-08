@@ -312,8 +312,6 @@ class FilesForUpload:
                review_only: bool = False,
                verbose: bool = False,
                printf: Optional[Callable] = None) -> bool:
-        import pdb ; pdb.set_trace()  # noqa
-        pass
         if not isinstance(files_for_upload, list):
             return False
         if not callable(printf):

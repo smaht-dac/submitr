@@ -858,13 +858,6 @@ def submit_any_ingestion(ingestion_filename, *,
 
     # Now that submission has successfully complete, review the files to upload and then do it.
 
-#   if structured_data:
-#       import pdb ; pdb.set_trace()  # noqa
-#       pass
-#       _review_upload_files(structured_data, ingestion_filename,
-#                            rclone_google_config=rclone_google_config,
-#                            validation=validation, directory=upload_folder, recursive=subfolders)
-
     do_any_uploads(submission_response,
                    metadata_file=ingestion_filename,
                    main_search_directory=upload_folder,
@@ -1935,42 +1928,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     return structured_data
 
 
-def _review_upload_files(structured_data: StructuredDataSet, ingestion_filename: str, validation: bool = False,
-                         rclone_google_config: Optional[RCloneConfigGoogle] = None,
-                         directory: Optional[str] = None, recursive: bool = False) -> None:
-
-    nfiles_found, file_validation_errors = _validate_files(structured_data, ingestion_filename,
-                                                           rclone_google_config=rclone_google_config,
-                                                           upload_folder=directory, recursive=recursive)
-    if file_validation_errors:
-        nfiles = len(file_validation_errors)
-        if nfiles_found > 0:
-            PRINT(f"WARNING: There {'is' if nfiles == 1 else 'are'} {nfiles}"
-                  f" file{'' if nfiles == 1 else 's'} referenced which are missing.")
-        else:
-            PRINT(f"WARNING: All {nfiles} file{'' if nfiles == 1 else 's'} are missing.")
-        if not (show_missing_files := (nfiles <= 3)):
-            show_missing_files = yes_or_no(f"Do you want to see a list of these {nfiles}"
-                                           f" missing file{'' if nfiles == 1 else 's'}?")
-        if show_missing_files:
-            for error in sorted(file_validation_errors):
-                PRINT(f"- {error}")
-        if nfiles_found == 0:
-            PRINT("No files found for upload.")
-            exit(1)
-        if not validation:
-            if not yes_or_no(f"Do you want to continue even with"
-                             f" {'this' if nfiles == 1 else 'these'} missing file{'' if nfiles == 1 else 's'}?"):
-                exit(1)
-        else:
-            PRINT(f"Continuing even with {'this' if nfiles == 1 else 'these'}"
-                  f" missing file{'' if nfiles == 1 else 's'} as noted above.")
-    if nfiles_found > 0:
-        PRINT(f"Files referenced for upload (and which exist): {nfiles_found}")
-    elif not file_validation_errors:
-        PRINT("No files to upload were referenced.")
-
-
 def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str,
                    upload_folder: str, recursive: bool, verbose: bool = False, debug: bool = False) -> bool:
     nerrors = 0
@@ -2095,34 +2052,6 @@ def _format_reference_errors(ref_errors: List[dict], verbose: bool = False, debu
             if truncated:
                 errors.append(f"  - {truncated}")
     return errors
-
-
-def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
-                    upload_folder: str, recursive: bool,
-                    rclone_google_config: Optional[RCloneConfigGoogle] = None) -> Tuple[int, List[str]]:
-
-    file_validation_errors = []
-
-    files_for_upload = FilesForUpload.assemble(
-        structured_data,
-        main_search_directory=upload_folder,
-        main_search_directory_recursively=recursive,
-        other_search_directories=[ingestion_filename, os.path.curdir],
-        google_config=rclone_google_config)
-
-    if files_for_upload_not_found := [file for file in files_for_upload if not file.found]:
-        for file in files_for_upload_not_found:
-            file_validation_errors.append(f"{file.name} -> File not found ({file.type})")
-
-    return len(files_for_upload) - len(file_validation_errors), sorted(file_validation_errors)
-
-#   if files := structured_data.upload_files_located(location=[upload_folder,
-#                                                              os.path.dirname(ingestion_filename) or "."],
-#                                                    recursive=recursive):
-#       if files_not_found := [file for file in files if not file.get("path")]:
-#           for file in sorted(files_not_found, key=lambda key: key.get("file")):
-#               file_validation_errors.append(f"{file.get('file')} -> File not found ({file.get('type')})")
-#   return len(files) - len(file_validation_errors), sorted(file_validation_errors)
 
 
 def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> List[str]:
