@@ -6,10 +6,10 @@ smaht-submitr
 Change Log
 ----------
 
-
-0.8.1
+0.8.3
 =====
 
+* 2024-05-??/dmichaels/PR-7
 * Added metadata_template.py module with goal of checking the user's metadata
   file with the latest HMS DBMI metadata template and giving a warning if the
   version appears to be out of date. Also new convenience command to export and
@@ -28,6 +28,14 @@ Change Log
   skip the validation on submission which happens by default before the loadxl.
 * Added --files for use with --info to submit-metadata-bundle.
 
+
+0.8.2
+=====
+
+* 2024-05-08/dmichaels/PR-8
+  Pass validate_only flag to ingester on --validate-remote-skip to
+  skip server-side validation on submit; previously this flag merely
+  served to skip kicking off server-side validatieon from submitr.
 
 0.8.0
 =====
