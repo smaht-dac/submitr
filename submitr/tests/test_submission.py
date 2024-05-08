@@ -1,10 +1,9 @@
 import contextlib
 import datetime
-import io
+import io  # noqa
 import os
 import platform
 import pytest
-import re
 
 from . import test_misc  # noqa
 from dcicutils import command_utils as command_utils_module
@@ -602,7 +601,6 @@ def test_show_section_with_caveat():
             caveat_outcome=caveat
         )
         assert shown.lines == []  # Nothing shown if there is a caveat specified
-
 
 
 class MockTime:
