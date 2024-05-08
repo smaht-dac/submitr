@@ -18,7 +18,6 @@ from typing import List, Dict
 from unittest import mock
 
 from .test_utils import shown_output
-from .test_upload_item_data import TEST_ENCRYPT_KEY
 from .. import submission as submission_module
 from ..submission import (  # noqa
     SERVER_REGEXP, PROGRESS_CHECK_INTERVAL, ATTEMPTS_BEFORE_TIMEOUT,
@@ -26,7 +25,7 @@ from ..submission import (  # noqa
     do_any_uploads, do_uploads, _show_upload_info, _show_upload_result,
     execute_prearranged_upload, _get_section, _get_user_record, _ingestion_submission_item_url,
     _resolve_server, resume_uploads, _show_section, submit_any_ingestion,
-    upload_file_to_uuid, _upload_item_data,
+    upload_file_to_uuid,
     get_s3_encrypt_key_id, get_s3_encrypt_key_id_from_health_page, _running_on_windows_native,
     search_for_file, UploadMessageWrapper, _upload_extra_files,
     _resolve_app_args,  # noQA - yes, a protected member, but we still need to test it
@@ -38,6 +37,8 @@ from ..submission import (  # noqa
 )
 from ..utils import FakeResponse
 
+
+TEST_ENCRYPT_KEY = 'encrypt-key-for-testing'
 
 SOME_INGESTION_TYPE = 'metadata_bundle'
 
@@ -1221,56 +1222,6 @@ def test_do_uploads2(tmp_path):
                         SOME_AUTH,
                         recursive=False
                     )
-
-
-def test_upload_item_data():
-
-    with temporary_directory() as tmpdir:
-        open(os.path.join(tmpdir, "some-filename"), "w")
-        some_filename = os.path.join(tmpdir, SOME_FILENAME)
-
-        Portal.KEYS_FILE_DIRECTORY = tmpdir
-        with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
-            mocked_portal_key_property.return_value = SOME_KEYDICT
-            with mock.patch.object(submission_module, "yes_or_no", return_value=True):
-                with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
-                    with mock.patch("dcicutils.portal_utils.Portal.get_metadata", return_value={"@type": "File"}):
-                        with mock.patch("dcicutils.portal_utils.Portal.get_schemas", return_value={}):
-                            _upload_item_data(item_filename=some_filename,
-                                              uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
-                            mock_upload.assert_called_with(filename=some_filename,
-                                                           uuid=SOME_UUID, auth=SOME_KEYDICT,
-                                                           rclone_google_config=mock.ANY,
-                                                           portal=mock.ANY)
-
-        with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
-            mocked_portal_key_property.return_value = SOME_KEYDICT
-            with mock.patch.object(submission_module, "yes_or_no", return_value=False):
-                with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
-                    with mock.patch("dcicutils.portal_utils.Portal.get_metadata", return_value={"@type": "File"}):
-                        with mock.patch("dcicutils.portal_utils.Portal.get_schemas", return_value={}):
-                            with shown_output() as shown:
-                                try:
-                                    _upload_item_data(item_filename=some_filename,
-                                                      uuid=SOME_UUID, server=SOME_SERVER, env=SOME_ENV)
-                                except SystemExit as e:
-                                    assert e.code == 1
-                                else:
-                                    raise AssertionError("Expected SystemExit not raised.")  # pragma: no cover
-                                assert shown.lines == ['Aborting submission.']
-                            assert mock_upload.call_count == 0
-
-        with mock.patch.object(Portal, "key", new_callable=mock.PropertyMock) as mocked_portal_key_property:
-            mocked_portal_key_property.return_value = SOME_KEYDICT
-            with mock.patch.object(submission_module, "upload_file_to_uuid") as mock_upload:
-                with mock.patch("dcicutils.portal_utils.Portal.get_metadata", return_value={"@type": "File"}):
-                    with mock.patch("dcicutils.portal_utils.Portal.get_schemas", return_value={}):
-                        _upload_item_data(item_filename=some_filename, uuid=SOME_UUID,
-                                          server=SOME_SERVER, env=SOME_ENV, no_query=True)
-                        mock_upload.assert_called_with(filename=some_filename,
-                                                       uuid=SOME_UUID, auth=SOME_KEYDICT,
-                                                       rclone_google_config=mock.ANY,
-                                                       portal=mock.ANY)
 
 
 def get_today_datetime_for_time(time_to_use):
