@@ -3,8 +3,8 @@ import os
 import pathlib
 from typing import Callable, List, Optional, Union
 from dcicutils.command_utils import yes_or_no
-from dcicutils.file_utils import get_file_size, search_for_file
-from dcicutils.misc_utils import format_size
+from dcicutils.file_utils import get_file_size, normalize_path, search_for_file
+from dcicutils.misc_utils import format_size, normalize_string
 from dcicutils.structured_data import Portal, StructuredDataSet
 from submitr.rclone import cloud_path, RCloneConfigGoogle
 
@@ -15,51 +15,51 @@ from submitr.rclone import cloud_path, RCloneConfigGoogle
 
 class FileForUpload:
 
-    @staticmethod
-    def define(file: Union[str, pathlib.PosixPath, dict],
-               type: Optional[str] = None,
-               accession: Optional[str] = None,
-               accession_name: Optional[str] = None,
-               uuid: Optional[str] = None,
-               main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
-               main_search_directory_recursively: bool = False,
-               other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
-               google_config: Optional[RCloneConfigGoogle] = None) -> Optional[FileForUpload]:
+    def __init__(self,
+                 file: Union[str, pathlib.PosixPath, dict],
+                 type: Optional[str] = None,
+                 accession: Optional[str] = None,
+                 accession_name: Optional[str] = None,
+                 uuid: Optional[str] = None,
+                 main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
+                 main_search_directory_recursively: bool = False,
+                 other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
+                 google_config: Optional[RCloneConfigGoogle] = None) -> Optional[FileForUpload]:
 
         # Given file can be a dictionary (from structured_data.upload_files) like:
         # {"type": "ReferenceFile", "file": "first_file.fastq"}
         # Or a dictionary (from additional_data.upload_info of submission object) like:
         # {"uuid": "96f29020-7abd-4a42-b4c7-d342563b7074", "filename": "first_file.fastq"}
         # Or just a file name.
-        file_type = type if isinstance(type, str) and type else None
-        file_uuid = uuid if isinstance(uuid, str) and uuid else None
+
         if isinstance(file, dict):
-            file_type = file.get("type")
-            file_uuid = file.get("uuid")
-            if not (file := file.get("file", file.get("filename", "")).strip()):
-                return None
-        if isinstance(file, (str, pathlib.PosixPath)):
-            if not (file := os.path.normpath(os.path.basename(file.strip()))):
-                return None
+            self._name = file.get("file", file.get("filename", ""))
+            self._type = normalize_string(file.get("type")) or None
+            self._uuid = normalize_string(file.get("uuid")) or None
+        elif isinstance(file, pathlib.PosixPath):
+            self._name = str(file)
+        elif isinstance(file, str):
+            self._name = file
+        else:
+            self._name = ""
 
-        local_path = None
-        local_paths = None
-        local_size = None
-        file_paths = []
+        self._name = os.path.basename(normalize_path(self._name))
+        if not self._name:
+            raise Exception("Cannot create FileForUpload.")
 
-        if not isinstance(main_search_directory, (str, pathlib.PosixPath)) or not main_search_directory:
+        if value := normalize_string(type):
+            self._type = value
+        if value := normalize_string(uuid):
+            self._uuid = value
+
+        if not (main_search_directory := normalize_path(main_search_directory)):
             main_search_directory = None
 
+        file_paths = []
         if main_search_directory:
-            # Actually, main_search_directory can also be a list (of str or PosixPath) of directories.
-            file_paths = search_for_file(file,
+            file_paths = search_for_file(self._name,
                                          location=main_search_directory,
                                          recursive=main_search_directory_recursively is True)
-        elif not isinstance(other_search_directories, list) or not other_search_directories:
-            # Only if no main search directory specifed do we default the "other" search
-            # directories to the current directory (.), if it is not otherwise specified.
-            other_search_directories = ["."]
-
         if not isinstance(file_paths, list) or not file_paths:
             # Only look at other search directories if we have no yet found the file within the main
             # search directory; and if multiple instances of the file exist within/among these other
@@ -68,61 +68,32 @@ class FileForUpload:
             # where (if recursive is specified) we will flag any multiple file instances found.
             # In practice these other directories are the directory containing
             # the submission file, and the current directory.
+            if (not main_search_directory and
+                not isinstance(other_search_directories, list) or not other_search_directories):  # noqa
+                # Only if no main search directory is specifed do we default the other search
+                # directories to the current directory (.), if it is not otherwise specified.
+                other_search_directories = ["."]
             if isinstance(other_search_directories, list) and other_search_directories:
                 # Actually, other_search_directories can also be just a str and/or PosixPath.
-                if file_path := search_for_file(file, location=other_search_directories, single=True, recursive=False):
+                if file_path := search_for_file(self._name,
+                                                location=other_search_directories,
+                                                single=True, recursive=False):
                     file_paths = [file_path]
 
+        self._local_path = None
+        self._local_paths = None
         if isinstance(file_paths, list) and file_paths:
-            local_path = file_paths[0]
-            local_size = get_file_size(local_path)
+            self._local_path = file_paths[0]
             if len(file_paths) > 1:
-                local_paths = file_paths
+                self._local_paths = file_paths
 
-        # Note that we actually initialize Google file existence and size
-        # data lazily in FileForUpdate.google_path from the given google_config.
-
-        file_for_upload = FileForUpload(name=file,
-                                        type=file_type,
-                                        accession=accession,
-                                        accession_name=accession_name,
-                                        uuid=file_uuid,
-                                        main_search_directory=main_search_directory,
-                                        local_path=local_path,
-                                        local_paths=local_paths,
-                                        local_size=local_size,
-                                        google_config=google_config,
-                                        _internal_use_only=True)
-        return file_for_upload
-
-    def __init__(self,
-                 name: str,
-                 type: Optional[str] = None,
-                 accession: Optional[str] = None,
-                 accession_name: Optional[str] = None,
-                 uuid: Optional[str] = None,
-                 main_search_directory: Optional[str] = None,
-                 local_path: Optional[str] = None,
-                 local_paths: Optional[List[str]] = None,
-                 local_size: Optional[int] = None,
-                 google_config: Optional[RCloneConfigGoogle] = None,
-                 _internal_use_only: bool = False) -> None:
-
-        if not (_internal_use_only is True):
-            raise Exception("Cannot create FileForUpload object directly; use FileForUpload.define")
-        self._name = name.strip() if isinstance(name, str) else ""
-        self._type = type if isinstance(type, str) else None
-        self._accession = accession if isinstance(accession, str) else None
-        self._accession_name = accession_name if isinstance(accession_name, str) else None
-        self._uuid = uuid if isinstance(uuid, str) else None
-        self._main_search_directory = main_search_directory if isinstance(main_search_directory, str) else None
-        self._local_path = local_path if isinstance(local_path, str) else None
-        self._local_paths = local_paths if isinstance(local_paths, list) else None
-        self._local_size = local_size if isinstance(local_size, int) else None
+        self._accession = normalize_string(accession) or None
+        self._accession_name = normalize_string(accession_name) or None
+        self._local_size = None
         self._google_config = google_config if isinstance(google_config, RCloneConfigGoogle) else None
-        self._google_tried_and_failed = False
         self._google_path = None
         self._google_size = None
+        self._google_tried_and_failed = False
         self._favor_local = None
         self._ignore = None
 
@@ -145,10 +116,6 @@ class FileForUpload:
     @property
     def uuid(self) -> Optional[str]:
         return self._uuid
-
-    @property
-    def main_search_directory(self) -> Optional[str]:
-        return self._main_search_directory
 
     @property
     def found(self) -> bool:
@@ -227,6 +194,8 @@ class FileForUpload:
 
     @property
     def local_size(self) -> Optional[int]:
+        if self._local_size is None and (local_path := self._local_path):
+            self._local_size = get_file_size(local_path)
         return self._local_size
 
     @property
@@ -254,8 +223,7 @@ class FileForUpload:
     @property
     def google_size(self) -> Optional[int]:
         if self._google_size is None:
-            # Initialize GSC related info.
-            _ = self.google_path
+            _ = self.google_path  # Initialize GSC related info.
         return self._google_size
 
     @property
@@ -326,7 +294,7 @@ class FilesForUpload:
 
         files_for_upload = []
         for file in files:
-            file_for_upload = FileForUpload.define(
+            file_for_upload = FileForUpload(
                 file,
                 main_search_directory=main_search_directory,
                 main_search_directory_recursively=main_search_directory_recursively,

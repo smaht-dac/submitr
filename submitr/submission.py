@@ -2111,7 +2111,7 @@ def assemble_files_for_upload(arg: Union[str, dict],
             if not (file := item.get("filename")):
                 PRINT(f"The given ID ({arg}) is for a file type but the associated file name cannot be found.")
                 return None
-            file_for_upload = FileForUpload.define(
+            file_for_upload = FileForUpload(
                 file,
                 type=portal.get_schema_type(item),
                 accession=item.get("accession"),
@@ -2624,7 +2624,7 @@ def _upload_item_data(item_filename, uuid, server, env, directory=None, recursiv
             raise Exception(f"Cannot determine file name: {uuid}")
 
     # NEW
-    file_for_upload = FileForUpload.define(
+    file_for_upload = FileForUpload(
         item_filename,
         main_search_directory=directory,
         main_search_directory_recursively=recursive,
