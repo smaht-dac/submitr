@@ -95,7 +95,7 @@ class FileForUpload:
         self._google_size = None
         self._google_tried_and_failed = False
         self._favor_local = True
-        self._ignore = None
+        self._ignore = False
 
     @property
     def name(self) -> str:
