@@ -2061,7 +2061,7 @@ def assemble_files_for_upload(arg: Union[str, dict],
     # - File type UUID:
     # - Accession ID (e.g. SMAFIQL563L8):
     # - Accession based file name (e.g. SMAFIQL563L8.fastq):
-    #   In which case we get the single FileForUpload for the upload-file as a (single item) list.
+    #   In which case we get the SINGLE FileForUpload for the upload-file as a (SINGLE item) LIST.
     #
     # Returns empty list no files found, or None if something unexpected in the data.
 
