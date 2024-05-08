@@ -90,7 +90,7 @@ def assemble_files_for_upload(arg: Union[str, dict],
             other_search_directories.append(metadata_file)
             other_search_directories.append(get_submission_object_metadata_file_directory(item, portal))
             other_search_directories.append(os.path.curdir)
-            files_for_upload = FilesForUpload.define(
+            files_for_upload = FilesForUpload.assemble(
                 get_submission_object_upload_files(item, portal),
                 main_search_directory=main_search_directory,
                 main_search_directory_recursively=main_search_directory_recursively,
@@ -219,9 +219,6 @@ def upload_file(file_for_upload: FileForUpload, portal: Portal):  # NEW: replace
     except Exception as e:
         raise ValueError("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
 
-    # PRINT(f"▶ Upload: {file_for_upload.name} ({format_size(file_for_upload.size)}) ...")
-    # PRINT(f"  - From: {file_for_upload.display_path}")
-    # PRINT(f"  -   To: {s3_uri}")
     upload_file_to_aws_s3(file=file_for_upload,
                           s3_uri=s3_uri,
                           aws_credentials=aws_credentials,
@@ -230,11 +227,6 @@ def upload_file(file_for_upload: FileForUpload, portal: Portal):  # NEW: replace
                           print_function=PRINT,
                           verify_upload=True,
                           catch_interrupt=True)
-
-#   execute_prearranged_upload(file_for_upload.name,
-#                              rclone_google_config=rclone_google_config,
-#                              upload_credentials=upload_credentials, auth=auth)
-
     return metadata
 
 

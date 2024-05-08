@@ -733,7 +733,7 @@ def submit_any_ingestion(ingestion_filename, *,
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
 
     if rclone_google_config:
-        rclone_google_config.verify_connectivity(verbose=verbose)
+        rclone_google_config.verify_connectivity()
 
     if not noversion:
         check_metadata_version(ingestion_filename, portal=portal)
@@ -1722,6 +1722,8 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     portal = _define_portal(key=keydict, keys_file=keys_file, env=env,
                             server=server, app=app, env_from_env=env_from_env,
                             report=True, note="Resuming File Upload")
+    if rclone_google_config:
+        rclone_google_config.verify_connectivity()
 
     do_any_uploads(uuid,
                    metadata_file=bundle_filename,

@@ -5,7 +5,7 @@ import os
 import requests
 from typing import Callable, Optional, Union
 from dcicutils.file_utils import normalize_path
-from dcicutils.misc_utils import create_dict, normalize_string
+from dcicutils.misc_utils import create_dict, normalize_string, PRINT
 from submitr.rclone.rclone_config import RCloneConfig, RCloneCredentials
 from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.rclone.rclone_utils import cloud_path
@@ -115,14 +115,16 @@ class RCloneConfigGoogle(RCloneConfig):
         return None
 
     @staticmethod
-    def create_from_args(rclone_google_source: Optional[str],
-                         rclone_google_credentials: Optional[str] = None,
-                         verify_installation: bool = False,
-                         verbose: bool = False,
-                         printf: Optional[Callable] = None) -> Optional[RCloneConfigGoogle]:
+    def from_command_args(rclone_google_source: Optional[str],
+                          rclone_google_credentials: Optional[str] = None,
+                          verify_installation: bool = True,
+                          printf: Optional[Callable] = None) -> Optional[RCloneConfigGoogle]:
         if not isinstance(rclone_google_source, str) or not rclone_google_source:
             return None
-        if not RCloneInstallation.verify_installation(verbose=verbose):
+        if not callable(printf):
+            printf = PRINT
+        if not RCloneInstallation.verify_installation():
+            printf(f"ERROR: Cannot install rclone for some reason (contact support).")
             exit(1)
         if not isinstance(rclone_google_credentials, str):
             rclone_google_credentials = None
@@ -130,13 +132,11 @@ class RCloneConfigGoogle(RCloneConfig):
             printf = print
         if rclone_google_credentials and not os.path.isfile(rclone_google_credentials):
             printf(f"ERROR: Google service account file does not exist: {rclone_google_credentials}")
-            return None
+            exit(1)
         # TODO: Allow "location" to be passed in (?); not in service account file.
-        rclone_google_config = RCloneConfigGoogle(service_account_file=rclone_google_credentials,
-                                                  path=rclone_google_source)
-        return rclone_google_config
+        return RCloneConfigGoogle(service_account_file=rclone_google_credentials, path=rclone_google_source)
 
-    def verify_connectivity(self, verbose: bool = False, printf: Optional[Callable] = None) -> bool:
+    def verify_connectivity(self, printf: Optional[Callable] = None) -> bool:
         if not callable(printf):
             printf = print
         if self.ping():

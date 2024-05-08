@@ -243,14 +243,7 @@ def main(simulated_args_for_testing=None):
         if args.env:
             env_from_env = True
 
-    if args.rclone_google_source:
-        if not (rclone_google_config := RCloneConfigGoogle.create_from_args(args.rclone_google_source,
-                                                                            args.rclone_google_credentials,
-                                                                            verify_installation=True,
-                                                                            verbose=args.verbose or args.debug)):
-            exit(1)
-    else:
-        rclone_google_config = None
+    google_config = RCloneConfigGoogle.from_command_args(args.rclone_google_source, args.rclone_google_credentials)
 
     if args.ping or (args.bundle_filename and args.bundle_filename.lower() == "ping"):
         if args.env or os.environ.get("SMAHT_ENV"):
@@ -264,8 +257,8 @@ def main(simulated_args_for_testing=None):
             PRINT("No environment specified (via --env); skipping SMaHT Portal ping.")
             ping_okay = True
         ping_rclone_okay = None
-        if rclone_google_config:
-            ping_rclone_okay = rclone_google_config.verify_connectivity()
+        if google_config:
+            ping_rclone_okay = google_config.verify_connectivity()
         exit(0 if ping_okay is True and (ping_rclone_okay is not False) else 1)
 
     if args.consortia or (args.bundle_filename and args.bundle_filename.lower() == "consortia"):
@@ -324,7 +317,7 @@ def main(simulated_args_for_testing=None):
                                   refs=args.refs, files=args.files,
                                   subfolders=not directory_only,
                                   upload_folder=args.upload_folder,
-                                  rclone_google_config=rclone_google_config,
+                                  rclone_google_config=google_config,
                                   output_file=args.output,
                                   verbose=args.verbose)
         exit(0)
@@ -350,7 +343,7 @@ def main(simulated_args_for_testing=None):
                              post_only=args.post_only,
                              patch_only=args.patch_only,
                              submit=args.submit,
-                             rclone_google_config=rclone_google_config,
+                             rclone_google_config=google_config,
                              validate_local_only=args.validate_local_only,
                              validate_remote_only=args.validate_remote_only,
                              validate_local_skip=args.validate_local_skip,

@@ -15,14 +15,11 @@ RCLONE_DOWNLOAD_BASE_URL = "https://downloads.rclone.org"
 class RCloneInstallation:
 
     @staticmethod
-    def verify_installation(progress: bool = True, verbose: bool = False) -> bool:
+    def verify_installation(progress: bool = True) -> bool:
         if RCloneInstallation.is_installed():
-            if verbose is True:
-                print(f"You have requested an rclone feature; already installed:"
-                      f" {format_path(RCloneInstallation.executable_path())} ✓")
             return True
         print("You have requested an rclone feature; rclone not installed.")
-        if yes_or_no("Do you want to install rclone now (should be quick & painless)?"):
+        if yes_or_no("Do you want to install rclone locally now (should be quick & painless)?"):
             if not (rclone_executable := RCloneInstallation.install(progress=progress, force_update=False)):
                 print("ERROR: Encountered a problem installing rclone. Please seek help (TODO).")
                 return False

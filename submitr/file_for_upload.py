@@ -279,11 +279,11 @@ class FileForUpload:
 class FilesForUpload:
 
     @staticmethod
-    def define(files: Union[StructuredDataSet, List[str]],
-               main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
-               main_search_directory_recursively: bool = False,
-               other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
-               google_config: Optional[RCloneConfigGoogle] = None) -> List[FileForUpload]:
+    def assemble(files: Union[StructuredDataSet, List[str]],
+                 main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
+                 main_search_directory_recursively: bool = False,
+                 other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
+                 google_config: Optional[RCloneConfigGoogle] = None) -> List[FileForUpload]:
 
         if isinstance(files, StructuredDataSet):
             files = files.upload_files
