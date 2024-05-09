@@ -48,10 +48,9 @@ class RClone(RCloneCommands, RCloneInstallation):
         return lines
 
     @contextmanager
-    def config_file(self, persist: bool = False, extra_lines: Optional[List[str]] = None) -> str:
+    def config_file(self, persist: bool = False) -> str:
         with temporary_file(suffix=".conf") as temporary_config_file_name:
-            RCloneConfig.write_config_file_lines(temporary_config_file_name,
-                                                 self.config_lines, extra_lines=extra_lines)
+            RCloneConfig.write_config_file_lines(temporary_config_file_name, self.config_lines)
             if persist is True:
                 # This is just for dryrun for testing/troubleshooting.
                 persistent_config_file_name = create_temporary_file_name(suffix=".conf")
@@ -81,7 +80,7 @@ class RClone(RCloneCommands, RCloneInstallation):
             # Here a destination cloud configuration has been defined for this RClone object;
             # meaning we are copying to some cloud destination (and not to a local file destination).
             if destination_config.path:
-                # A bucket in the destination RCloneConfig is nothing more than an alternative
+                # A path/bucket in the destination RCloneConfig is nothing more than an alternative
                 # way of manually placing it at the beginning of the given destination argument.
                 if not (destination := cloud_path.join(destination_config.path, destination)):
                     raise Exception(f"No cloud destination specified.")
@@ -94,7 +93,7 @@ class RClone(RCloneCommands, RCloneInstallation):
                 # object; meaning we are copying from one cloud source to another cloud destination; i.e. e.g.
                 # from either Amazon S3 or Google Cloud Storage to either Amazon S3 or Google Cloud Storage.
                 if source_config.path:
-                    # A bucket in the source RCloneConfig is nothing more than an alternative
+                    # A path/bucket in the source RCloneConfig is nothing more than an alternative
                     # way of manually placing it at the beginning of the given source argument.
                     source = cloud_path.join(source_config.path, source)
                 if not (source := cloud_path.normalize(source)):
@@ -122,7 +121,7 @@ class RClone(RCloneCommands, RCloneInstallation):
             # meaning we are copying from some cloud source to a local file destination;
             # i.e. e.g. from either Amazon S3 or Google Cloud Storage to a local file.
             if source_config.path:
-                # A bucket in the source RCloneConfig is nothing more than an alternative
+                # A path/bucket in the source RCloneConfig is nothing more than an alternative
                 # way of manually placing it at the beginning of the given source argument.
                 source = cloud_path.join(source_config.path, source)
             if not (source := cloud_path.normalize(source)):

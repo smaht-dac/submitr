@@ -6,6 +6,7 @@ import requests
 from typing import Callable, Optional, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, normalize_string, PRINT
+from submitr.rclone.rclone_commands import RCloneCommands
 from submitr.rclone.rclone_config import RCloneConfig, RCloneCredentials
 from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.rclone.rclone_utils import cloud_path
@@ -51,6 +52,13 @@ class RCloneConfigGoogle(RCloneConfig):
                            location=self.location,
                            bucket_policy_only=True,
                            service_account_file=self.service_account_file)
+
+    def ping(self) -> bool:
+        # Override from RCloneConfig base class because for some reason with this ping command,
+        # for which we actually use rclone lsd, we need to specify the project_number for Google.
+        args = ["--gcs-project-number", project] if (project := self.project) else None
+        with self.config_file() as config_file:
+            return RCloneCommands.ping_command(source=f"{self.name}:", config=config_file, args=args)
 
     @property
     def location(self) -> Optional[str]:

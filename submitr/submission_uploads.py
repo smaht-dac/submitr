@@ -2,6 +2,7 @@ import os
 import pathlib
 import re
 from typing import List, Optional, Tuple, Union
+from dcicutils.command_utils import yes_or_no
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.structured_data import Portal, StructuredDataSet
 from submitr.file_for_upload import FileForUpload, FilesForUpload
@@ -199,11 +200,15 @@ def get_submission_object_upload_files(submission_item: dict, portal: Portal) ->
     return None
 
 
-def upload_files(files: List[FileForUpload], portal: Portal):
+def upload_files(files: List[FileForUpload], portal: Portal) -> None:
     if isinstance(files, list) and files:
-        PRINT("Ready to actually upload files now.")
-        for file in [file for file in files if not file.ignore]:
-            upload_file(file, portal=portal)
+        files = [file for file in files if not file.ignore]
+        if not files:
+            PRINT("No files to upload.")
+            return
+        if yes_or_no("Ready to actually upload ({len(files)}) file{'s' if len(files) != 1 else ''}. Upload now?"):
+            for file in [file for file in files if not file.ignore]:
+                upload_file(file, portal=portal)
 
 
 def upload_file(file: FileForUpload, portal: Portal) -> None:

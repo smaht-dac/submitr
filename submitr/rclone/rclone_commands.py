@@ -92,10 +92,13 @@ class RCloneCommands:
         return None
 
     @staticmethod
-    def lsd_command(source: str, config: Optional[str] = None) -> bool:
+    def ping_command(source: str, config: Optional[str] = None, args: Optional[List[str]] = None) -> bool:
+        # Use the rclone lsd command as proxy for a "ping".
         command = [RCloneInstallation.executable_path(), "lsd", source]
         if isinstance(config, str) and config:
             command += ["--config", config]
+        if isinstance(args, list):
+            command += [arg for arg in args if isinstance(arg, str) and arg]
         try:
             return RCloneCommands._run_okay(command)
         except Exception:

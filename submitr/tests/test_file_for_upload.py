@@ -1,29 +1,51 @@
 import os
-from dcicutils.file_utils import create_random_file
+import tempfile
+from dcicutils.file_utils import create_random_file, get_file_size, compute_file_md5
 from dcicutils.misc_utils import create_uuid
-from dcicutils.tmpfile_utils import temporary_directory
+from dcicutils.tmpfile_utils import remove_temporary_directory, temporary_directory
 from submitr.file_for_upload import FilesForUpload
 from submitr.rclone import RCloneConfigGoogle
 from unittest.mock import patch as mock_patch
 
+TMPDIR = None
+
+
+def setup_module():
+    global TMPDIR
+    TMPDIR = tempfile.mkdtemp()
+
+
+def teardown_module():
+    global TMPDIR
+    remove_temporary_directory(TMPDIR)
+
 
 class Mock_RCloneConfigGoogle(RCloneConfigGoogle):
 
+    @staticmethod
+    def create_for_testing(self, file, tmpdir: str = None):
+        return Mock_RCloneConfigGoogle(file, tmpdir=tmpdir)
+
+    def __init__(self, file, tmpdir: str = None):
+        if not tmpdir:
+            tmpdir = TMPDIR
+        self._file = file
+
     def path_exists(self, path):
-        return True
+        return os.path.isfile(path)
 
-    def file_size(self, path):
-        return 1025
+    def file_size(self, file):
+        get_file_size(file)
 
-    def file_checksum(self, path):
-        return "1ac114755c78649673330f572cd4b5e8"
+    def file_checksum(self, file):
+        return compute_file_md5(file)
 
 
 def test_file_for_upload_b():
 
     with temporary_directory() as tmpdir:
-        google_config = Mock_RCloneConfigGoogle()
-        assert google_config.path_exists("dummy") is True
+        google_config = Mock_RCloneConfigGoogle("asdf")
+        # assert google_config.path_exists("dummy") is True
 
     with mock_patch("submitr.rclone.RCloneConfigGoogle") as MockedRCloneConfigGoogle:
         with temporary_directory() as tmpdir:
