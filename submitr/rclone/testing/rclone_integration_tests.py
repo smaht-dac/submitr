@@ -89,6 +89,7 @@ class TestEnvGoogle(TestEnv):
         super().__init__(use_cloud_key_folder=use_cloud_key_folder)
         self.location = "us-east1"
         self.service_account_file = "/Users/dmichaels/.config/google-cloud/smaht-dac-617e0480d8e2.json"
+        self.project_id = "smaht-dac"
         self.bucket = "smaht-submitr-rclone-testing"
 
     def credentials(self) -> GoogleCredentials:
@@ -129,13 +130,14 @@ def create_rclone_config_amazon(credentials: AmazonCredentials) -> RCloneConfig:
     return config
 
 
-def create_rclone_config_google(credentials: AmazonCredentials) -> RCloneConfig:
+def create_rclone_config_google(credentials: GoogleCredentials, env_google: TestEnvGoogle) -> RCloneConfig:
     config = RCloneConfigGoogle(credentials)
     assert config.credentials == credentials
     assert config.location == credentials.location
     assert config.service_account_file == credentials.service_account_file
     assert RCloneConfigGoogle(config) == config  # checking equals override
-    assert RCloneConfigGoogle(config, path="foo") != config  # checking equals override
+    assert RCloneConfigGoogle(config, path="mismatch") != config  # checking equals override
+    assert config.project == env_google.project_id
     return config
 
 
@@ -300,7 +302,7 @@ def _test_rclone_between_amazon_and_local(env_amazon: TestEnvAmazon,
 
 def test_rclone_between_google_and_local(env_google: TestEnvGoogle) -> None:
     credentials = env_google.credentials()
-    config = create_rclone_config_google(credentials)
+    config = create_rclone_config_google(credentials, env_google)
     with TestEnv.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         key_google = env_google.file_name_to_key_name(tmp_test_file_name)
         # Here we have a local test file to upload to Google Cloud Storage.
@@ -331,7 +333,7 @@ def test_rclone_between_google_and_local(env_google: TestEnvGoogle) -> None:
 def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon, env_google: TestEnvGoogle) -> None:
     credentials_google = env_google.credentials()
     credentials_amazon = env_amazon.credentials()
-    rclone_config_google = create_rclone_config_google(credentials_google)
+    rclone_config_google = create_rclone_config_google(credentials_google, env_google)
     rclone_config_amazon = create_rclone_config_amazon(credentials_amazon)
     # First upload a test file to Google Cloud Storage.
     with TestEnv.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
@@ -386,7 +388,7 @@ def test_rclone_amazon_to_google(env_amazon: TestEnvAmazon, env_google: TestEnvG
     credentials_amazon = env_amazon.credentials()
     credentials_google = env_google.credentials()
     rclone_config_amazon = create_rclone_config_amazon(credentials_amazon)
-    rclone_config_google = create_rclone_config_google(credentials_google)
+    rclone_config_google = create_rclone_config_google(credentials_google, env_google)
     # First upload a test file to AWS S3.
     with TestEnv.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         key_amazon = env_amazon.file_name_to_key_name(tmp_test_file_name)

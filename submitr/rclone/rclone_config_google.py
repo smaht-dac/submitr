@@ -79,8 +79,8 @@ class RCloneConfigGoogle(RCloneConfig):
     @property
     def project(self) -> Optional[str]:
         """
-        Returns the Google project name (or number associated with the account identifid
-        by the service account file (if any) or with the system (e.g. if on a GCE instance).
+        Returns the Google project name (or number - either) associated with the account identified
+        by the service account file (if any) or with the system (e.g. if running on a GCE instance).
         FYI only place needed was for rclone lsd comment which we use as a ping.
         """
         if self._project:
