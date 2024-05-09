@@ -15,6 +15,9 @@ class Mock_RCloneConfigGoogle(RCloneConfigGoogle):
     def file_size(self, path):
         return 1025
 
+    def file_checksum(self, path):
+        return "1ac114755c78649673330f572cd4b5e8"
+
 
 def test_file_for_upload_b():
 

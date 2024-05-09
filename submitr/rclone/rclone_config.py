@@ -17,9 +17,9 @@ class RCloneConfig(AbstractBaseClass):
                  path: Optional[str] = None) -> None:
         self._name = normalize_string(name) or create_uuid()
         self._credentials = credentials if isinstance(credentials, RCloneCredentials) else None
-        # We allow here not just a bucket name but any "path",
-        # such as they are (i.e. path-like), beginning with a
-        # bucket name, within the cloud (S3, GCP) storage system.
+        # We allow here not just a bucket name but any "path", such as they are (i.e. path-like),
+        # beginning with a bucket name, within the cloud (S3, GCP) storage system. This is just
+        # metadata associated with this class; it's not integral to the functioning of this class.
         self._path = cloud_path.normalize(path)
         self._pinged = None
 
