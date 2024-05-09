@@ -60,6 +60,8 @@ def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
     #
     # Returns empty list no files found, or None if something unexpected in the data.
 
+    # import pdb ; pdb.set_trace()  # noqa
+    pass
     if not isinstance(portal, Portal) or not isinstance(arg, (str, dict, StructuredDataSet)) or not arg:
         return None
 
@@ -206,7 +208,7 @@ def upload_files(files: List[FileForUpload], portal: Portal) -> None:
         if not files:
             PRINT("No files to upload.")
             return
-        if yes_or_no("Ready to actually upload ({len(files)}) file{'s' if len(files) != 1 else ''}. Upload now?"):
+        if yes_or_no(f"Ready to actually upload ({len(files)}) file{'s' if len(files) != 1 else ''}. Upload now?"):
             for file in [file for file in files if not file.ignore]:
                 upload_file(file, portal=portal)
 

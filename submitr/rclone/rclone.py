@@ -59,9 +59,9 @@ class RClone(RCloneCommands, RCloneInstallation):
             else:
                 yield temporary_config_file_name
 
-    def copy(self, source: str, destination: Optional[str] = None,
-             progress: Optional[Callable] = None,
-             nodirectories: bool = False, dryrun: bool = False, raise_exception: bool = True) -> Union[bool, str]:
+    def copy(self, source: str, destination: Optional[str] = None, progress: Optional[Callable] = None,
+             nodirectories: bool = False, dryrun: bool = False, copyto: bool = True,
+             raise_exception: bool = True) -> Union[bool, str]:
         """
         Uses rclone to copy the given source file to the given destination. All manner of variation is
         encapsulated within this simple statement. Depends on whether or not a source and/or destination
@@ -69,37 +69,34 @@ class RClone(RCloneCommands, RCloneInstallation):
         that configuration et cetera. If no configuration is specified then we assume the local file
         system is the source and/or destination. TODO: Expand on these notes.
 
-        If self.source and/or self.destination is None then it means the
-        the source and/or destination arguments here refer to local files; i.e. when
-        no RCloneConfig is specified we assume the (degenerate) case of local file.
+        If self.source and/or self.destination is None then it means the the source and/or
+        destination arguments here refer to local files; i.e. when no RCloneConfig is
+        specified we assume the (degenerate) case of local file.
+
+        Note the we assume (by default) that the destination path is to a *file*, not a "directory" (such
+        as they are in cloud storage); and we therefore use the rclone 'copyto' command rather than 'copy'.
+        This keeps it simple (otherwise it gets surprisingly confusing with 'copy' WRT whether or not the
+        destination is a file or "directory" et cetera); and in any case this is our only actual use-case.
+        Can force to use 'copy' by passing False as the copyto argument.
         """
-        copyto = False
+        # JUST FYI WRT copy/copyto ...
+        # - Using 'copy' when the cloud destination is a file gives error: "is a file not a directory"
+        # - Using 'copyto' when the cloud destination is a "directory" creates a *file* of that name;
+        #   along side the "directory" of the same name.
+        # - So we want to do if is_directory(destination) then 'copy' else 'copyto'
         # Use copyto instead of copy to copy to specified file name.
         # rclone --config /tmp/rclone.conf copy hello.txt test-src-smaht-wolf:smaht-unit-testing-files
         if isinstance(destination_config := self.destination, RCloneConfig):
             # Here a destination cloud configuration has been defined for this RClone object;
             # meaning we are copying to some cloud destination (and not to a local file destination).
-            if destination_config.path:
-                # A path/bucket in the destination RCloneConfig is nothing more than an alternative
-                # way of manually placing it at the beginning of the given destination argument.
-                if not (destination := cloud_path.join(destination_config.path, destination)):
-                    raise Exception(f"No cloud destination specified.")
-            if cloud_path.has_separator(destination):
-                # If the destination has NO slashes it is assumed to be ONLY the bucket;
-                # in which case we will rclone copy; otherwise we need to use rclone copyto.
-                copyto = True
+            if not (destination := destination_config.path(destination)):
+                raise Exception(f"No cloud destination specified.")
             if isinstance(source_config := self.source, RCloneConfig):
                 # Here both a source and destination cloud configuration have been defined for this RClone
                 # object; meaning we are copying from one cloud source to another cloud destination; i.e. e.g.
                 # from either Amazon S3 or Google Cloud Storage to either Amazon S3 or Google Cloud Storage.
-                if source_config.path:
-                    # A path/bucket in the source RCloneConfig is nothing more than an alternative
-                    # way of manually placing it at the beginning of the given source argument.
-                    source = cloud_path.join(source_config.path, source)
-                if not (source := cloud_path.normalize(source)):
+                if not (source := source_config.path(source)):
                     raise Exception(f"No cloud source specified.")
-                if not cloud_path.has_separator(source):
-                    raise Exception(f"No cloud source key/file specified (only bucket: {source}).")
                 with self.config_file(persist=dryrun is True) as source_and_destination_config_file:  # noqa
                     command_args = [f"{source_config.name}:{source}", f"{destination_config.name}:{destination}"]
                     return RCloneCommands.copy_command(command_args,
@@ -120,10 +117,10 @@ class RClone(RCloneCommands, RCloneInstallation):
             # Here only a source cloud configuration has been defined for this RClone object;
             # meaning we are copying from some cloud source to a local file destination;
             # i.e. e.g. from either Amazon S3 or Google Cloud Storage to a local file.
-            if source_config.path:
+            if source_config.bucket:
                 # A path/bucket in the source RCloneConfig is nothing more than an alternative
                 # way of manually placing it at the beginning of the given source argument.
-                source = cloud_path.join(source_config.path, source)
+                source = cloud_path.join(source_config.bucket, source)
             if not (source := cloud_path.normalize(source)):
                 raise Exception(f"No cloud source specified.")
             if not cloud_path.has_separator(source):

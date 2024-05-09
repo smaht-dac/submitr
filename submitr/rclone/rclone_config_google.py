@@ -16,14 +16,14 @@ class RCloneConfigGoogle(RCloneConfig):
 
     def __init__(self,
                  credentials_or_config: Optional[Union[GoogleCredentials, RCloneConfigGoogle]] = None,
-                 location: Optional[str] = None,
+                 location: Optional[str] = None,  # analagous to AWS region
                  service_account_file: Optional[str] = None,
                  name: Optional[str] = None,
-                 path: Optional[str] = None) -> None:
+                 bucket: Optional[str] = None) -> None:
 
         if isinstance(credentials_or_config, RCloneConfigGoogle):
             name = normalize_string(name) or credentials_or_config.name
-            path = cloud_path.normalize(path) or credentials_or_config.path
+            bucket = cloud_path.normalize(bucket) or credentials_or_config.bucket
             credentials = credentials_or_config.credentials
         elif isinstance(credentials_or_config, GoogleCredentials):
             credentials = credentials_or_config
@@ -32,7 +32,7 @@ class RCloneConfigGoogle(RCloneConfig):
         credentials = GoogleCredentials(credentials=credentials,
                                         location=location,
                                         service_account_file=service_account_file)
-        super().__init__(name=name, path=path, credentials=credentials)
+        super().__init__(name=name, bucket=bucket, credentials=credentials)
         self._project = None
 
     @property
@@ -127,6 +127,9 @@ class RCloneConfigGoogle(RCloneConfig):
                           rclone_google_credentials: Optional[str] = None,
                           verify_installation: bool = True,
                           printf: Optional[Callable] = None) -> Optional[RCloneConfigGoogle]:
+        """
+        Assumed to be called at the start of command-line utility (i.e. e.g. submit-metadata-bundle).
+        """
         if not isinstance(rclone_google_source, str) or not rclone_google_source:
             return None
         if not callable(printf):
@@ -142,7 +145,7 @@ class RCloneConfigGoogle(RCloneConfig):
             printf(f"ERROR: Google service account file does not exist: {rclone_google_credentials}")
             exit(1)
         # TODO: Allow "location" to be passed in (?); not in service account file.
-        return RCloneConfigGoogle(service_account_file=rclone_google_credentials, path=rclone_google_source)
+        return RCloneConfigGoogle(service_account_file=rclone_google_credentials, bucket=rclone_google_source)
 
     def verify_connectivity(self, printf: Optional[Callable] = None) -> bool:
         if not callable(printf):

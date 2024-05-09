@@ -23,12 +23,11 @@ def teardown_module():
 class Mock_RCloneConfigGoogle(RCloneConfigGoogle):
 
     @staticmethod
-    def create_for_testing(self, file, tmpdir: str = None):
-        return Mock_RCloneConfigGoogle(file, tmpdir=tmpdir)
+    def create_for_testing(self, file):
+        return Mock_RCloneConfigGoogle(file)
 
-    def __init__(self, file, tmpdir: str = None):
-        if not tmpdir:
-            tmpdir = TMPDIR
+    def __init__(self, file):
+        # tmpdir = TMPDIR if TMPDIR else "/tmp"
         self._file = file
 
     def path_exists(self, path):

@@ -14,14 +14,14 @@ class RCloneConfig(AbstractBaseClass):
     def __init__(self,
                  name: Optional[str] = None,
                  credentials: Optional[RCloneCredentials] = None,
-                 path: Optional[str] = None) -> None:
+                 bucket: Optional[str] = None) -> None:
         self._name = normalize_string(name) or create_uuid()
         self._credentials = credentials if isinstance(credentials, RCloneCredentials) else None
         # We allow here not just a bucket name but any "path", such as they are (i.e. path-like),
         # beginning with a bucket name, within the cloud (S3, GCP) storage system. If set then
         # this will be prepended (via cloud_path.join) to any path which is operated upon,
         # e.g. for the path_exists, file_size, file_checksum, and RClone.copy functions.
-        self._path = cloud_path.normalize(path)
+        self._bucket = cloud_path.normalize(bucket)
 
     @property
     def name(self) -> str:
@@ -38,13 +38,13 @@ class RCloneConfig(AbstractBaseClass):
                 self._name = value
 
     @property
-    def path(self) -> Optional[str]:
-        return self._path
+    def bucket(self) -> Optional[str]:
+        return self._bucket
 
-    @path.setter
-    def path(self, value: str) -> None:
+    @bucket.setter
+    def bucket(self, value: str) -> None:
         if (value := cloud_path.normalize(value)) is not None:
-            self._path = value or None
+            self._bucket = value or None
 
     @property
     def credentials(self) -> RCloneCredentials:
@@ -90,25 +90,30 @@ class RCloneConfig(AbstractBaseClass):
             for line in lines:
                 f.write(f"{line}\n")
 
-    def path_exists(self, path: str) -> Optional[bool]:
+    def path(self, path: str) -> Optional[str]:
         if path := cloud_path.normalize(path):
+            return cloud_path.join(self.bucket, path)
+        return None
+
+    def path_exists(self, path: str) -> Optional[bool]:
+        if path := self.path(path):
             with self.config_file() as config_file:
                 return RCloneCommands.exists_command(
-                    source=f"{self.name}:{cloud_path.join(self.path, path)}", config=config_file)
+                    source=f"{self.name}:{path}", config=config_file)
         return False
 
     def file_size(self, path: str) -> Optional[int]:
-        if path := cloud_path.normalize(path):
+        if path := self.path(path):
             with self.config_file() as config_file:
                 return RCloneCommands.size_command(
-                    source=f"{self.name}:{cloud_path.join(self.path, path)}", config=config_file)
+                    source=f"{self.name}:{path}", config=config_file)
         return None
 
     def file_checksum(self, path: str) -> Optional[str]:
-        if path := cloud_path.normalize(path):
+        if path := self.path(path):
             with self.config_file() as config_file:
                 return RCloneCommands.checksum_command(
-                    source=f"{self.name}:{cloud_path.join(self.path, path)}", config=config_file)
+                    source=f"{self.name}:{path}", config=config_file)
 
     def ping(self) -> bool:
         # For some reason with this command we need the project_number in the config for Google.
@@ -118,7 +123,7 @@ class RCloneConfig(AbstractBaseClass):
     def __eq__(self, other: RCloneConfig) -> bool:
         return (isinstance(other, RCloneConfig) and
                 (self.name == other.name) and
-                (self.path == other.path) and
+                (self.bucket == other.bucket) and
                 (self.credentials == other.credentials))
 
     def __ne__(self, other: RCloneConfig) -> bool:

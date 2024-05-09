@@ -3,7 +3,7 @@ import os
 import pathlib
 from typing import Callable, List, Optional, Union
 from dcicutils.command_utils import yes_or_no
-from dcicutils.file_utils import get_file_size, normalize_path, search_for_file
+from dcicutils.file_utils import compute_file_md5, get_file_size, normalize_path, search_for_file
 from dcicutils.misc_utils import format_size, normalize_string
 from dcicutils.structured_data import Portal, StructuredDataSet
 from submitr.rclone import cloud_path, RCloneConfigGoogle
@@ -90,9 +90,11 @@ class FileForUpload:
         self._accession = normalize_string(accession) or None
         self._accession_name = normalize_string(accession_name) or None
         self._local_size = None
+        self._local_checksum = None
         self._google_config = google_config if isinstance(google_config, RCloneConfigGoogle) else None
         self._google_path = None
         self._google_size = None
+        self._google_checksum = None
         self._google_tried_and_failed = False
         self._favor_local = True
         self._ignore = False
@@ -161,6 +163,7 @@ class FileForUpload:
 
     @property
     def found_locally(self) -> bool:
+        # import pdb ; pdb.set_trace()  # noqa
         return self.local_path is not None
 
     @property
@@ -182,7 +185,14 @@ class FileForUpload:
         return self._local_size
 
     @property
+    def local_checksum(self) -> Optional[int]:
+        if self._local_checksum is None and (local_path := self._local_path):
+            self._local_checksum = compute_file_md5(local_path)
+        return self._local_checksum
+
+    @property
     def found_in_google(self) -> bool:
+        # import pdb ; pdb.set_trace()  # noqa
         return self.google_path is not None
 
     @property
@@ -190,10 +200,12 @@ class FileForUpload:
         if (self._google_path is None) and (not self._google_tried_and_failed):
             if (google_config := self.google_config) and (google_source := google_config.path):
                 google_file = cloud_path.join(google_source, self.name)
+                # import pdb ; pdb.set_trace()  # noqa
                 if (google_size := google_config.file_size(google_file)) is not None:
                     self._google_path = google_file
                     self._google_size = google_size
                 else:
+                    # import pdb ; pdb.set_trace()  # noqa
                     self._google_tried_and_failed = True
         return self._google_path
 
@@ -210,6 +222,12 @@ class FileForUpload:
         return self._google_size
 
     @property
+    def google_checksum(self) -> Optional[int]:
+        if self._google_checksum is None:
+            _ = self.google_path  # Initialize GSC related info.
+        return self._google_checksum
+
+    @property
     def google_config(self) -> Optional[RCloneConfigGoogle]:
         return self._google_config
 
@@ -217,6 +235,7 @@ class FileForUpload:
                verbose: bool = False, printf: Optional[Callable] = None) -> bool:
         if not callable(printf):
             printf = print
+        # import pdb ; pdb.set_trace()  # noqa
         if not self.found:
             printf(f"WARNING: Cannot find file for upload: {self.name} ({self.uuid})")
             if isinstance(portal, Portal):
