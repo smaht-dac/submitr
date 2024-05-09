@@ -3,9 +3,71 @@ from dcicutils.file_utils import create_random_file
 from dcicutils.misc_utils import create_uuid
 from dcicutils.tmpfile_utils import temporary_directory
 from submitr.file_for_upload import FilesForUpload
+from submitr.rclone import RCloneConfigGoogle
+from unittest.mock import patch as mock_patch
 
 
-def test_file_for_upload():
+class Mock_RCloneConfigGoogle(RCloneConfigGoogle):
+
+    def path_exists(self, path):
+        return True
+
+    def file_size(self, path):
+        return 1025
+
+
+def test_file_for_upload_b():
+
+    with temporary_directory() as tmpdir:
+        google_config = Mock_RCloneConfigGoogle()
+        assert google_config.path_exists("dummy") is True
+
+    with mock_patch("submitr.rclone.RCloneConfigGoogle") as MockedRCloneConfigGoogle:
+        with temporary_directory() as tmpdir:
+
+            google_config = MockedRCloneConfigGoogle.return_value
+            google_config.path_exists.return_value = True
+            google_config.file_size.return_value = 1023
+            assert google_config.path_exists("dummy") is True
+            assert google_config.file_size("dummy") == 1023
+
+            upload_file_a = os.path.join(tmpdir, "some_file_a.fastq")
+            upload_file_b = os.path.join(tmpdir, "some_file_b.fastq")
+            upload_file_a_uuid = create_uuid()
+            upload_file_b_uuid = create_uuid()
+
+            files = [{"filename": upload_file_a, "uuid": upload_file_a_uuid},
+                     {"filename": upload_file_b, "uuid": upload_file_b_uuid}]
+            ffu = FilesForUpload.assemble(files,
+                                          main_search_directory=tmpdir,
+                                          main_search_directory_recursively=True,
+                                          google_config=google_config)
+            print(ffu)
+            # assert ffu[0].found_in_google is True
+
+    google_config = RCloneConfigGoogle()
+    with mock_patch.object(RCloneConfigGoogle, "path_exists") as mocked_google_config_path_exists:
+        with temporary_directory() as tmpdir:
+            mocked_google_config_path_exists.return_value = True
+            assert google_config.path_exists("dummy") is True
+            return
+
+            upload_file_a = os.path.join(tmpdir, "some_file_a.fastq")
+            upload_file_b = os.path.join(tmpdir, "some_file_b.fastq")
+            upload_file_a_uuid = create_uuid()
+            upload_file_b_uuid = create_uuid()
+
+            files = [{"filename": upload_file_a, "uuid": upload_file_a_uuid},
+                     {"filename": upload_file_b, "uuid": upload_file_b_uuid}]
+            ffu = FilesForUpload.assemble(files,
+                                          main_search_directory=tmpdir,
+                                          main_search_directory_recursively=True,
+                                          google_config=google_config)
+            # assert ffu[0].found_in_google is True
+        pass
+
+
+def test_file_for_upload_a():
 
     with temporary_directory() as tmpdir:
         upload_file_a = os.path.join(tmpdir, "some_file_a.fastq")

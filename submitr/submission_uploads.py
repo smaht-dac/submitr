@@ -230,7 +230,7 @@ def upload_file(file: FileForUpload, portal: Portal) -> None:
                           printf=PRINT)
 
 
-def generate_credentials_for_upload(file: str, uuid: str, portal: Portal) -> Tuple[str, str, str]:
+def generate_credentials_for_upload(file: str, uuid: str, portal: Portal) -> Tuple[str, dict, str]:
     patch_data = {"filename": file}
     response = portal.patch_metadata(object_id=uuid, data=patch_data)
     upload_credentials = extract_upload_credentials(response, filename=file, uuid=uuid, portal=portal)
