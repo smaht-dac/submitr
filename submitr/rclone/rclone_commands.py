@@ -44,15 +44,12 @@ class RCloneCommands:
         if isinstance(config, str) and config:
             command += ["--config", config]
         try:
-            result = subprocess.run(command, capture_output=True)
             # Example output: "  1234 some_file.fastq" where 1234 is file size.
             # Unfortunately if the given source (file) does not exist the return
             # code is 0; though if the bucket does not exist then return code is 1.
-            if not (result.returncode == 0):
-                return False
-            # Here though return code is 0 (implying bucket is OK) it still might
+            # So even if return code is 0 (implying bucket is OK) it still might
             # not be OK; will regard any output as an indication that it is OK.
-            return (result.returncode == 0) or (len(result) > 0)
+            return RCloneCommands._run_okay(command, some_output_required=True)
         except Exception as e:
             if raise_exception is True:
                 raise e
@@ -64,18 +61,11 @@ class RCloneCommands:
         if isinstance(config, str) and config:
             command += ["--config", config]
         try:
-            process = subprocess.Popen(command, universal_newlines=True,
-                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            # Example output: "Total objects: 1" <CR> "Total size: 64.850 MiB (68000001 Byte)"
-            found = False
-            for line in process.stdout:
+            for line in RCloneCommands._run(command):
                 if line.lower().strip().replace(" ", "") == "totalobjects:1":
                     found = True
                 elif (nbytes := RCloneCommands._parse_rclone_size_to_bytes(line)) is not None:
-                    process.stdout.close()
                     return nbytes if found else None
-            process.stdout.close()
-            process.wait()
         except Exception as e:
             if raise_exception is True:
                 raise e
@@ -91,16 +81,11 @@ class RCloneCommands:
         if isinstance(config, str) and config:
             command += ["--config", config]
         try:
-            process = subprocess.Popen(command, universal_newlines=True,
-                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            for line in process.stdout:
-                # Example output: "e0807de443b152ff44d6668959460064  some_file.fastq"
+            # Example output: "e0807de443b152ff44d6668959460064  some_file.fastq"
+            for line in RCloneCommands._run(command):
                 if len(line_components := line.split()) > 0 and line_components[0]:
                     checksum = line_components[0]
-                    process.stdout.close()
                     return checksum
-            process.stdout.close()
-            process.wait()
         except Exception as e:
             if raise_exception is True:
                 raise e
@@ -112,9 +97,28 @@ class RCloneCommands:
         if isinstance(config, str) and config:
             command += ["--config", config]
         try:
-            return subprocess.run(command, capture_output=True).returncode == 0
+            return RCloneCommands._run_okay(command)
         except Exception:
             return None
+
+    @staticmethod
+    def _run(command: List[str], return_code_only: bool = False) -> Union[List[str], int]:
+        result = RCloneCommands._execute(command)
+        if return_code_only is True:
+            return result.returncode
+        return result.stdout.split("\n")
+
+    @staticmethod
+    def _run_okay(command: List[str], some_output_required: bool = False) -> bool:
+        result = RCloneCommands._execute(command)
+        if result.returncode == 0:
+            if not (some_output_required is True) or (len(result.stdout) > 0):
+                return True
+        return False
+
+    @staticmethod
+    def _execute(command: List[str]) -> subprocess.CompletedProcess:
+        return subprocess.run(command, capture_output=True, universal_newlines=True)
 
     _RCLONE_PROGRESS_UNITS = {"KiB": 2**10, "MiB": 2**20, "GiB": 2**30, "TiB": 2**40, "PiB": 2**50, "B": 1}
     _RCLONE_PROGRESS_PATTERN = rf".*Transferred:\s*(\d+(?:\.\d+)?)\s*({'|'.join(_RCLONE_PROGRESS_UNITS.keys())}).*"

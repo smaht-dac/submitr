@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 import os
 from typing import Callable, Optional, Tuple, Union
-from dcicutils.file_utils import are_files_equal
+from dcicutils.file_utils import are_files_equal, compute_file_md5
 from dcicutils.misc_utils import create_short_uuid
 from dcicutils.tmpfile_utils import temporary_directory, temporary_file, temporary_random_file
 from submitr.rclone.rclone import RClone
@@ -22,6 +22,7 @@ class TestEnv:
 
     test_file_prefix = "test-smaht-submitr-"
     test_file_suffix = ".txt"
+    test_file_size = 2048
 
     def __init__(self, use_cloud_key_folder: bool = False):
         self.use_cloud_key_folder = True if (use_cloud_key_folder is True) else False
@@ -30,7 +31,9 @@ class TestEnv:
     @staticmethod
     @contextmanager
     def temporary_test_file() -> Tuple[str, str]:
-        with temporary_random_file(prefix=TestEnv.test_file_prefix, suffix=TestEnv.test_file_suffix) as tmp_file_path:
+        with temporary_random_file(prefix=TestEnv.test_file_prefix,
+                                   suffix=TestEnv.test_file_suffix,
+                                   nbytes=TestEnv.test_file_size) as tmp_file_path:
             yield tmp_file_path, os.path.basename(tmp_file_path)
 
     def file_name_to_key_name(self, file_name: str) -> str:
@@ -361,6 +364,18 @@ def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon, env_google: TestEnvG
             rclone.copy(cloud_path.join(env_google.bucket, key_google), env_amazon.bucket)
         # Sanity check the file in AWS S3 which was copied directly from Google Cloud Storage.
         sanity_check_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
+        # Exercise the RCloneConfig rclone commands (path_exists, file_size, file_checksum) for Google file.
+        google_path = cloud_path.join(env_google.bucket, key_google)
+        assert rclone_config_google.file_size(google_path) == TestEnv.test_file_size
+        assert rclone_config_google.path_exists(google_path) is True
+        assert rclone_config_google.file_checksum(google_path) == compute_file_md5(tmp_test_file_path)
+        assert rclone_config_google.ping() is True
+        # Exercise the RCloneConfig rclone commands (path_exists, file_size, file_checksum) for Amazon file.
+        amazon_path = cloud_path.join(env_amazon.bucket, key_amazon)
+        assert rclone_config_amazon.file_size(amazon_path) == TestEnv.test_file_size
+        assert rclone_config_amazon.path_exists(amazon_path) is True
+        assert rclone_config_amazon.file_checksum(amazon_path) == compute_file_md5(tmp_test_file_path)
+        assert rclone_config_amazon.ping() is True
         # Cleanup (delete) the test file in Google Cloud Storage.
         cleanup_google_file(credentials_google, env_google.bucket, key_google)
         # Cleanup (delete) the test file in AWS S3.
