@@ -6,6 +6,20 @@ from submitr.file_for_upload import FilesForUpload
 
 
 def test_file_for_upload():
+
+    with temporary_directory() as tmpdir:
+        upload_file_a = os.path.join(tmpdir, "some_file_a.fastq")
+        upload_file_b = os.path.join(tmpdir, "some_file_b.fastq")
+        upload_file_a_uuid = create_uuid()
+        upload_file_b_uuid = create_uuid()
+        files = [{"filename": upload_file_a, "uuid": upload_file_a_uuid},
+                 {"filename": upload_file_b, "uuid": upload_file_b_uuid}]
+        ffu = FilesForUpload.assemble(files,
+                                      main_search_directory=tmpdir,
+                                      main_search_directory_recursively=True)
+        assert ffu[0].found is False
+        assert ffu[1].found is False
+
     with temporary_directory() as tmpdir:
         upload_file_a_size = 1024
         upload_file_a_dup_size = 1024
@@ -25,25 +39,27 @@ def test_file_for_upload():
                                       main_search_directory=tmpdir,
                                       main_search_directory_recursively=True)
         assert ffu[0].found is True
+        assert ffu[0].path == upload_file_a
+        assert ffu[0].size == upload_file_a_size
         assert ffu[0].found_locally is True
         assert ffu[0].found_locally_multiple is True
-        assert ffu[0].found_in_google is False
-        assert ffu[0].path == upload_file_a
         assert ffu[0].local_path == upload_file_a
         assert ffu[0].local_paths == [upload_file_a, upload_file_a_dup]
         assert ffu[0].local_size == upload_file_a_size
-        assert ffu[0].size == upload_file_a_size
+        assert ffu[0].found_in_google is False
+        assert ffu[0].google_path is None
         assert ffu[0].ignore is False
         assert ffu[0].resume_upload_command(env="some_env") == f"resume-uploads --env some_env {upload_file_a_uuid}"
 
         assert ffu[1].found is True
+        assert ffu[1].path == upload_file_b
+        assert ffu[1].size == upload_file_b_size
         assert ffu[1].found_locally is True
         assert ffu[1].found_locally_multiple is False
-        assert ffu[1].found_in_google is False
-        assert ffu[1].path == upload_file_b
         assert ffu[1].local_path == upload_file_b
         assert ffu[1].local_paths is None
         assert ffu[1].local_size == upload_file_b_size
-        assert ffu[1].size == upload_file_b_size
+        assert ffu[1].found_in_google is False
+        assert ffu[1].google_path is None
         assert ffu[1].ignore is False
         assert ffu[1].resume_upload_command(env="some_env") == f"resume-uploads --env some_env {upload_file_b_uuid}"
