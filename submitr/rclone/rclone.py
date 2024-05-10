@@ -79,13 +79,11 @@ class RClone(RCloneCommands, RCloneInstallation):
         destination is a file or "directory" et cetera); and in any case this is our only actual use-case.
         Can force to use 'copy' by passing False as the copyto argument.
         """
-        # JUST FYI WRT copy/copyto ...
-        # - Using 'copy' when the cloud destination is a file gives error: "is a file not a directory"
+        # Just FYI WRT copy/copyto:
+        # - Using 'copy' when the cloud destination is a file gives error: "is a file not a directory".
         # - Using 'copyto' when the cloud destination is a "directory" creates a *file* of that name;
-        #   along side the "directory" of the same name.
-        # - So we want to do if is_directory(destination) then 'copy' else 'copyto'
-        # Use copyto instead of copy to copy to specified file name.
-        # rclone --config /tmp/rclone.conf copy hello.txt test-src-smaht-wolf:smaht-unit-testing-files
+        #   along side the "directory" of the same name (which is odd and alomst certainly undesireble).
+        # - So we want to do if is_directory(destination) then 'copy' else 'copyto'.
         if isinstance(destination_config := self.destination, RCloneConfig):
             # Here a destination cloud configuration has been defined for this RClone object;
             # meaning we are copying to some cloud destination (and not to a local file destination).

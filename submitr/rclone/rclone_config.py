@@ -17,9 +17,9 @@ class RCloneConfig(AbstractBaseClass):
                  bucket: Optional[str] = None) -> None:
         self._name = normalize_string(name) or create_uuid()
         self._credentials = credentials if isinstance(credentials, RCloneCredentials) else None
-        # We allow here not just a bucket name but any "path", such as they are (i.e. path-like),
+        # Heree we allow not just a bucket name but any "path", such as they are (i.e. path-like),
         # beginning with a bucket name, within the cloud (S3, GCP) storage system. If set then
-        # this will be prepended (via cloud_path.join) to any path which is operated upon,
+        # this will be prepended (via cloud_path.path/join) to any path which is operated upon,
         # e.g. for the path_exists, file_size, file_checksum, and RClone.copy functions.
         self._bucket = cloud_path.normalize(bucket)
 
@@ -91,7 +91,9 @@ class RCloneConfig(AbstractBaseClass):
                 f.write(f"{line}\n")
 
     def path(self, path: str) -> Optional[str]:
-        if path := cloud_path.normalize(path):
+        if isinstance(path, str) or path is None:
+            # Sic: Not cloud_path.normalize above as, so long as the given path
+            # is a string or None allow it to be joined with any defined bucket.
             return cloud_path.join(self.bucket, path)
         return None
 

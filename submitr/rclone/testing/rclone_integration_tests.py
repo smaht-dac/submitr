@@ -24,8 +24,8 @@ class TestEnv:
     test_file_suffix = ".txt"
     test_file_size = 2048
 
-    def __init__(self, use_cloud_key_folder: bool = False):
-        self.use_cloud_key_folder = True if (use_cloud_key_folder is True) else False
+    def __init__(self, user_cloud_subfolder_key: bool = False):
+        self.user_cloud_subfolder_key = True if (user_cloud_subfolder_key is True) else False
         self.bucket = None
 
     @staticmethod
@@ -38,7 +38,7 @@ class TestEnv:
 
     def file_name_to_key_name(self, file_name: str) -> str:
         # Assumed that the given file name is just that, a file base name, not a path name.
-        if not (self.use_cloud_key_folder is True):
+        if not (self.user_cloud_subfolder_key is True):
             return file_name
         else:
             return cloud_path.join(f"{TestEnv.test_file_prefix}{create_short_uuid(length=8)}", file_name)
@@ -46,13 +46,13 @@ class TestEnv:
 
 class TestEnvAmazon(TestEnv):
 
-    def __init__(self, use_cloud_key_folder: bool = False):
+    def __init__(self, user_cloud_subfolder_key: bool = False):
         # Specifying the env name here (as smaht-wolf) will cause
         # AwsCredentials to read from: ~/.aws_test.smaht-wolf/credentials
         # In addition to the basic credentials (access_key_id, secret_access_key,
         # optional session_token), this is also assumed to also contain the region.
         # For the kms_key_id see ENCODED_S3_ENCRYPT_KEY_ID in AWS C4AppConfigSmahtWolf Secrets.
-        super().__init__(use_cloud_key_folder=use_cloud_key_folder)
+        super().__init__(user_cloud_subfolder_key=user_cloud_subfolder_key)
         self.env = "smaht-wolf"
         self.kms_key_id = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"
         self.bucket = "smaht-unit-testing-files"
@@ -84,9 +84,9 @@ class TestEnvAmazon(TestEnv):
 
 class TestEnvGoogle(TestEnv):
 
-    def __init__(self, use_cloud_key_folder: bool = False):
+    def __init__(self, user_cloud_subfolder_key: bool = False):
         # The Google test account project is: smaht-dac
-        super().__init__(use_cloud_key_folder=use_cloud_key_folder)
+        super().__init__(user_cloud_subfolder_key=user_cloud_subfolder_key)
         self.location = "us-east1"
         self.service_account_file = "/Users/dmichaels/.config/google-cloud/smaht-dac-617e0480d8e2.json"
         self.project_id = "smaht-dac"
@@ -366,6 +366,11 @@ def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon, env_google: TestEnvG
             rclone.copy(cloud_path.join(env_google.bucket, key_google), env_amazon.bucket, copyto=False)
         # Sanity check the file in AWS S3 which was copied directly from Google Cloud Storage.
         sanity_check_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
+
+        # Do the above copy again but this time with the destination
+        # bucket specified within the RCloneConfigGoogle object (new: 2024-05-10).
+        # TODO
+
         # Exercise the RCloneConfig rclone commands (path_exists, file_size, file_checksum) for Google file.
         google_path = cloud_path.join(env_google.bucket, key_google)
         assert rclone_config_google.file_size(google_path) == TestEnv.test_file_size
@@ -378,10 +383,10 @@ def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon, env_google: TestEnvG
         assert rclone_config_amazon.path_exists(amazon_path) is True
         assert rclone_config_amazon.file_checksum(amazon_path) == compute_file_md5(tmp_test_file_path)
         assert rclone_config_amazon.ping() is True
-        # Cleanup (delete) the test file in Google Cloud Storage.
-        cleanup_google_file(credentials_google, env_google.bucket, key_google)
-        # Cleanup (delete) the test file in AWS S3.
+        # Cleanup (delete) the test destination file in AWS S3.
         cleanup_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon)
+        # Cleanup (delete) the test source file in Google Cloud Storage.
+        cleanup_google_file(credentials_google, env_google.bucket, key_google)
 
 
 def test_rclone_amazon_to_google(env_amazon: TestEnvAmazon, env_google: TestEnvGoogle) -> None:
@@ -412,10 +417,22 @@ def test_rclone_amazon_to_google(env_amazon: TestEnvAmazon, env_google: TestEnvG
             rclone.copy(cloud_path.join(env_amazon.bucket, key_amazon), env_google.bucket, copyto=False)
         # Sanity check the file in Google Cloud Storage which was copied directly from AWS S3.
         sanity_check_google_file(credentials_google, env_google.bucket, key_google, tmp_test_file_path)
-        # Cleanup (delete) the test file in AWS S3.
-        cleanup_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon)
-        # Cleanup (delete) the test file in Google Cloud Storage.
+        # Cleanup (delete) the test destination file in Google Cloud Storage.
         cleanup_google_file(credentials_google, env_google.bucket, key_google)
+        # Do the above copy again but this time with the destination
+        # bucket specified within the RCloneConfigGoogle object (new: 2024-05-10).
+        rclone_config_google.bucket = env_google.bucket
+        rclone = create_rclone(source=rclone_config_amazon, destination=rclone_config_google)
+        if cloud_path.has_separator(key_google):
+            rclone.copy(cloud_path.join(env_amazon.bucket, key_amazon), key_google)
+        else:
+            rclone.copy(cloud_path.join(env_amazon.bucket, key_amazon), None, copyto=False)
+        # Sanity check the file in Google Cloud Storage which was copied directly from AWS S3.
+        sanity_check_google_file(credentials_google, env_google.bucket, key_google, tmp_test_file_path)
+        # Cleanup (delete) the test destination file in Google Cloud Storage.
+        cleanup_google_file(credentials_google, env_google.bucket, key_google)
+        # Cleanup (delete) the test source file in AWS S3.
+        cleanup_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon)
 
 
 def test_rclone_local_to_local() -> None:
@@ -431,10 +448,10 @@ def test_rclone_local_to_local() -> None:
                                    os.path.join(tmp_destination_directory, os.path.basename(tmp_test_file_path)))
 
 
-def test_cloud_variations(use_cloud_key_folder: bool = False):
+def test_cloud_variations(user_cloud_subfolder_key: bool = False):
 
-    env_amazon = TestEnvAmazon(use_cloud_key_folder=use_cloud_key_folder)
-    env_google = TestEnvGoogle(use_cloud_key_folder=use_cloud_key_folder)
+    env_amazon = TestEnvAmazon(user_cloud_subfolder_key=user_cloud_subfolder_key)
+    env_google = TestEnvGoogle(user_cloud_subfolder_key=user_cloud_subfolder_key)
     initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
     test_utils_for_testing(env_amazon=env_amazon)
     test_rclone_between_amazon_and_local(env_amazon=env_amazon)
@@ -444,8 +461,8 @@ def test_cloud_variations(use_cloud_key_folder: bool = False):
 
 
 def test():
-    test_cloud_variations(use_cloud_key_folder=True)
-    test_cloud_variations(use_cloud_key_folder=False)
+    test_cloud_variations(user_cloud_subfolder_key=True)
+    test_cloud_variations(user_cloud_subfolder_key=False)
     test_rclone_local_to_local()
 
 
