@@ -71,6 +71,7 @@ class RCloneConfig(AbstractBaseClass):
 
     @contextmanager
     def config_file(self, persist: bool = False) -> str:
+        persist = True # xyzzy
         with temporary_file(suffix=".conf") as temporary_config_file_name:
             self.write_config_file_lines(temporary_config_file_name, self.config_lines)
             if persist is True:

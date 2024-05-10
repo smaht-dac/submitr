@@ -25,9 +25,11 @@ class RCloneCommands:
                 if " " in command[0]:
                     command[0] = f"\"{command[0]}\""
                 return " ".join(command)
+            print(f"XYZZY:[{' '.join(command)}]", flush=True)
             process = subprocess.Popen(command, universal_newlines=True,
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             for line in process.stdout:
+                print(f"XYZZY:[{line.strip()}]", flush=True)
                 if progress and (nbytes := RCloneCommands._parse_rclone_progress_bytes(line)):
                     progress(nbytes)
             process.stdout.close()

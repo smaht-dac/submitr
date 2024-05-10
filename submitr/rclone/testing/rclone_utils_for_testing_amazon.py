@@ -206,7 +206,7 @@ class AwsS3:
             if isinstance(key, str) and (key := key.strip()):
                 resources = [f"arn:aws:s3:::{bucket}/{key}"]
                 # Note that this is specifically required (for some reason) by rclone (but not for plain aws).
-                resources += [f"arn:aws:s3:::{bucket}"]  # does not seem to be needed: f"arn:aws:s3:::{bucket}/*"
+                ### resources += [f"arn:aws:s3:::{bucket}"]  # does not seem to be needed: f"arn:aws:s3:::{bucket}/*"
             else:
                 resources = [f"arn:aws:s3:::{bucket}", f"arn:aws:s3:::{bucket}/*"] ; deny = True  # noqa
         # For how this policy stuff is defined in smaht-portal for file upload
@@ -220,7 +220,9 @@ class AwsS3:
         if not (readonly is True):
             # Note the s3:CreateBucket is specifically required (for some reason) by rclone (but not for plain
             # aws), unless these temporary (session) credentials are targetted specifically for the bucket/key.
-            actions = actions + ["s3:PutObject", "s3:DeleteObject", "s3:CreateBucket"]
+            # actions = actions + ["s3:PutObject", "s3:DeleteObject", "s3:CreateBucket"]
+            ### actions = actions + ["s3:PutObject", "s3:CreateBucket"]  # xyzzy trying to get rid of CreateBucket
+            actions = actions + ["s3:PutObject"]
         statements.append({"Effect": "Allow", "Action": actions, "Resource": resources})
         if deny:
             statements.append({"Effect": "Deny", "Action": actions, "NotResource": resources})

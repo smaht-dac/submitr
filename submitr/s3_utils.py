@@ -1,5 +1,6 @@
 import boto3
 from collections import namedtuple
+import json
 import threading
 import time
 from typing import Callable, Optional
@@ -69,7 +70,17 @@ def upload_file_to_aws_s3(file: FileForUpload,
         }
     else:
         aws_credentials = {}
+    print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+    print(json.dumps(aws_credentials, indent=4))
+    print(f"portal_temporary_credentials = AmazonCredentials()")
+    print(f"portal_temporary_credentials.region = \"{aws_credentials['region_name']}\"")
+    print(f"portal_temporary_credentials.access_key_id = \"{aws_credentials['aws_access_key_id']}\"")
+    print(f"portal_temporary_credentials.secret_access_key = \"{aws_credentials['aws_secret_access_key']}\"")
+    print(f"portal_temporary_credentials.session_token = \"{aws_credentials['aws_session_token']}\"")
+    print(f"portal_destination = \"{s3_bucket}/{s3_key}\"")
 
+    import pdb ; pdb.set_trace()  # noqa
+    pass
     print_progress = print_progress is True
     print_preamble = print_preamble is True
     verify_upload = verify_upload is True
@@ -178,7 +189,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         upload_file_callback_type = namedtuple("upload_file_callback", ["function", "done", "abort_upload"])
         return upload_file_callback_type(upload_file_callback, done, abort_upload)
 
-    def get_uploaded_file_info() -> Optional[dict]:
+    def get_uploaded_file_info() -> Optional[dict]:  # TODO: does this actually work with no HeadObject support?
         nonlocal aws_credentials, s3_bucket, s3_key
         try:
             # Note that we do not need to use any KMS key for head_object.

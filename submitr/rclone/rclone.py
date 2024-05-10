@@ -52,6 +52,7 @@ class RClone(RCloneCommands, RCloneInstallation):
         with temporary_file(suffix=".conf") as temporary_config_file_name:
             RCloneConfig.write_config_file_lines(temporary_config_file_name, self.config_lines)
             if persist is True:
+                pass
                 # This is just for dryrun for testing/troubleshooting.
                 persistent_config_file_name = create_temporary_file_name(suffix=".conf")
                 copy_file(temporary_config_file_name, persistent_config_file_name)
@@ -95,7 +96,7 @@ class RClone(RCloneCommands, RCloneInstallation):
                 # from either Amazon S3 or Google Cloud Storage to either Amazon S3 or Google Cloud Storage.
                 if not (source := source_config.path(source)):
                     raise Exception(f"No cloud source specified.")
-                with self.config_file(persist=dryrun is True) as source_and_destination_config_file:  # noqa
+                with self.config_file(persist=True or dryrun is True) as source_and_destination_config_file:  # noqa
                     command_args = [f"{source_config.name}:{source}", f"{destination_config.name}:{destination}"]
                     return RCloneCommands.copy_command(command_args,
                                                        config=source_and_destination_config_file,
@@ -150,4 +151,5 @@ class RClone(RCloneCommands, RCloneInstallation):
             if not os.path.isdir(destination):
                 copyto = True
             command_args = [source, destination]
-            return RCloneCommands.copy_command(command_args, copyto=copyto, progress=progress, dryrun=dryrun)
+            return RCloneCommands.copy_command(command_args, copyto=copyto, progress=progress,
+                                               dryrun=dryrun, raise_exception=raise_exception)

@@ -207,12 +207,14 @@ class AmazonCredentials(RCloneCredentials):
                 (self.kms_key_id == other.kms_key_id))
 
     def __ne__(self, other: AmazonCredentials) -> bool:
-        return self.__eq__(other)
+        return not self.__eq__(other)
 
     def generate_temporary_credentials(self,
                                        duration: Optional[Union[int, timedelta]] = None,
                                        policy: Optional[dict] = None,
+                                       name: Optional[str] = None,
                                        raise_exception: bool = True) -> Optional[AmazonCredentials]:
+        # TODO: This should be in the testing directory ONLY.
         """
         Generates and returns temporary AWS credentials. The default duration of validity
         for the generated credential is one hour; this can be overridden by specifying
@@ -235,13 +237,14 @@ class AmazonCredentials(RCloneCredentials):
 
         policy = dump_json(policy) if isinstance(policy, dict) else None
 
-        name = f"test.smaht.submitr.{create_short_uuid(length=12)}"
+        name = normalize_string(name) or f"test.smaht.submitr.{create_short_uuid(length=12)}"
         try:
             sts = BotoClient("sts",
                              aws_access_key_id=self.access_key_id,
                              aws_secret_access_key=self.secret_access_key,
                              aws_session_token=self.session_token)
-            response = sts.get_federation_token(Name=name, DurationSeconds=duration, Policy=policy)
+            # response = sts.get_federation_token(Name=name, DurationSeconds=duration, Policy=policy)
+            response = sts.get_federation_token(Name=name, Policy=policy)
             if isinstance(credentials := response.get("Credentials"), dict):
                 return AmazonCredentials(
                     access_key_id=credentials.get("AccessKeyId"),
