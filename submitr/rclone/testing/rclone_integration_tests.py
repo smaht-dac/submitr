@@ -353,6 +353,7 @@ def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon, env_google: TestEnvG
             rclone.copy(tmp_test_file_path, env_google.bucket, copyto=False)
         # Make sure it made it there.
         sanity_check_google_file(credentials_google, env_google.bucket, key_google, tmp_test_file_path)
+
         # Now try to copy directly from Google Cloud Storage to AWS S3 (THIS is really the MAIN event).
         rclone = create_rclone(source=rclone_config_google, destination=rclone_config_amazon)
         if cloud_path.has_separator(key_amazon):
@@ -366,11 +367,6 @@ def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon, env_google: TestEnvG
             rclone.copy(cloud_path.join(env_google.bucket, key_google), env_amazon.bucket, copyto=False)
         # Sanity check the file in AWS S3 which was copied directly from Google Cloud Storage.
         sanity_check_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
-
-        # Do the above copy again but this time with the destination
-        # bucket specified within the RCloneConfigGoogle object (new: 2024-05-10).
-        # TODO
-
         # Exercise the RCloneConfig rclone commands (path_exists, file_size, file_checksum) for Google file.
         google_path = cloud_path.join(env_google.bucket, key_google)
         assert rclone_config_google.file_size(google_path) == TestEnv.test_file_size
@@ -383,6 +379,24 @@ def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon, env_google: TestEnvG
         assert rclone_config_amazon.path_exists(amazon_path) is True
         assert rclone_config_amazon.file_checksum(amazon_path) == compute_file_md5(tmp_test_file_path)
         assert rclone_config_amazon.ping() is True
+        # Do the above copy again but this time with the destination
+        # bucket specified within the RCloneConfigGoogle object (new: 2024-05-10).
+        cleanup_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon)
+        rclone_config_amazon.bucket = env_amazon.bucket
+        if cloud_path.has_separator(key_amazon):
+            # If we are uploading to a key which has a slash (i.e. a folder-like key) then we
+            # will specify the key explicitly, otherwise it will use just the basename of the
+            # file (i.e. tmp_test_file_name); we can do this also even if the key does not have
+            # a slash, but good to test specifying no key at all, i.e. in the else clause below.
+            rclone.copy(cloud_path.join(env_google.bucket, key_google), key_amazon)
+        else:
+            rclone.copy(cloud_path.join(env_google.bucket, key_google), None, copyto=False)
+        # Sanity check the file in AWS S3 which was copied directly from Google Cloud Storage.
+        sanity_check_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
+        # Re-exercise the RCloneConfig rclone commands (path_exists, file_size, file_checksum) for Amazon file.
+        assert rclone_config_amazon.file_size(key_amazon) == TestEnv.test_file_size
+        assert rclone_config_amazon.path_exists(key_amazon) is True
+        assert rclone_config_amazon.file_checksum(key_amazon) == compute_file_md5(tmp_test_file_path)
         # Cleanup (delete) the test destination file in AWS S3.
         cleanup_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon)
         # Cleanup (delete) the test source file in Google Cloud Storage.
@@ -418,9 +432,9 @@ def test_rclone_amazon_to_google(env_amazon: TestEnvAmazon, env_google: TestEnvG
         # Sanity check the file in Google Cloud Storage which was copied directly from AWS S3.
         sanity_check_google_file(credentials_google, env_google.bucket, key_google, tmp_test_file_path)
         # Cleanup (delete) the test destination file in Google Cloud Storage.
-        cleanup_google_file(credentials_google, env_google.bucket, key_google)
         # Do the above copy again but this time with the destination
         # bucket specified within the RCloneConfigGoogle object (new: 2024-05-10).
+        cleanup_google_file(credentials_google, env_google.bucket, key_google)
         rclone_config_google.bucket = env_google.bucket
         rclone = create_rclone(source=rclone_config_amazon, destination=rclone_config_google)
         if cloud_path.has_separator(key_google):
