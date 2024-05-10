@@ -126,42 +126,38 @@ class FileForUpload:
     @property
     def path(self) -> Optional[str]:
         if self.found_local:
-            if self.found_google and (not self._favor_local):
-                return self.path_google
-            return self.path_local
-        elif self.found_google:
-            return self.path_google
-        return None
+            return self.path_local if not self.found_google or self._favor_local else self.path_google
+        return self.path_google if self.found_google else None
+#       elif self.found_google:
+#           return self.path_google
+#       return None
 
     @property
     def display_path(self) -> Optional[str]:
         if self.found_local:
-            if self.found_google and (not self._favor_local):
-                return self.display_path_google
-            return self.path_local
-        elif self.found_google:
-            return self.display_path_google
-        return None
+            return self.path_local if not self.found_google or self._favor_local else self.display_path_google
+        return self.display_path_google if self.found_google else None
+#       elif self.found_google:
+#           return self.display_path_google
+#       return None
 
     @property
     def size(self) -> Optional[int]:
         if self.found_local:
-            if self.found_google and (not self._favor_local):
-                return self.size_google
-            return self.size_local
-        elif self.found_google:
-            return self.size_google
-        return None
+            return self.size_local if not self.found_google or self._favor_local else self.size_google
+        return self.size_google if self.found_google else None
+#       elif self.found_google:
+#           return self.size_google
+#       return None
 
     @property
     def checksum(self) -> Optional[int]:
         if self.found_local:
-            if self.found_google and (not self._favor_local):
-                return self.checksum_google
-            return self.checksum_local
-        elif self.found_google:
-            return self.checksum_google
-        return None
+            return self.checksum_local if not self.found_google or self._favor_local else self.checksum_google
+        return self.checksum_google if self.found_google else None
+#       elif self.found_google:
+#           return self.checksum_google
+#       return None
 
     @property
     def ignore(self) -> bool:
