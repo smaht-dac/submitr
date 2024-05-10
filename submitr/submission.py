@@ -603,7 +603,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          subfolders=False,
                          submission_protocol=DEFAULT_SUBMISSION_PROTOCOL,
                          submit=False,
-                         rclone_google_config=None,
+                         rclone_config_google=None,
                          validate_local_only=False,
                          validate_remote_only=False,
                          validate_local_skip=False,
@@ -734,8 +734,8 @@ def submit_any_ingestion(ingestion_filename, *,
     if verbose:
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
 
-    if rclone_google_config:
-        rclone_google_config.verify_connectivity()
+    if rclone_config_google:
+        rclone_config_google.verify_connectivity()
 
     if not noversion:
         check_metadata_version(ingestion_filename, portal=portal)
@@ -795,7 +795,7 @@ def submit_any_ingestion(ingestion_filename, *,
                 validation_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
                 show_details=show_details, report=False, messages=True,
                 validation=True,
-                rclone_google_config=rclone_google_config,
+                rclone_config_google=rclone_config_google,
                 nofiles=True, noprogress=noprogress, timeout=timeout,
                 verbose=verbose, debug=debug, debug_sleep=debug_sleep)
 
@@ -814,7 +814,7 @@ def submit_any_ingestion(ingestion_filename, *,
                        metadata_file=ingestion_filename,
                        main_search_directory=upload_folder,
                        main_search_directory_recursively=subfolders,
-                       google_config=rclone_google_config,
+                       config_google=rclone_config_google,
                        portal=portal,
                        verbose=True,
                        review_only=True)
@@ -849,7 +849,7 @@ def submit_any_ingestion(ingestion_filename, *,
     submission_done, submission_status, submission_response = _monitor_ingestion_process(
             submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
             show_details=show_details, report=False, messages=True,
-            rclone_google_config=rclone_google_config,
+            rclone_config_google=rclone_config_google,
             validation=False,
             nofiles=True, noprogress=noprogress, timeout=timeout,
             verbose=verbose, debug=debug, debug_sleep=debug_sleep)
@@ -865,7 +865,7 @@ def submit_any_ingestion(ingestion_filename, *,
                    metadata_file=ingestion_filename,
                    main_search_directory=upload_folder,
                    main_search_directory_recursively=subfolders,
-                   google_config=rclone_google_config,
+                   config_google=rclone_config_google,
                    portal=portal,
                    verbose=verbose)
 
@@ -965,7 +965,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                                check_submission_script: bool = False,
                                upload_directory: Optional[str] = None,
                                upload_directory_recursive: bool = False,
-                               rclone_google_config: Optional[RCloneConfigGoogle] = None,
+                               rclone_config_google: Optional[RCloneConfigGoogle] = None,
                                timeout: Optional[int] = None,
                                verbose: bool = False, debug: bool = False,
                                note: Optional[str] = None,
@@ -1295,7 +1295,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         do_any_uploads(submission_response,
                        main_search_directory=upload_directory,
                        main_search_directory_recursively=upload_directory_recursive,
-                       google_config=rclone_google_config,
+                       config_google=rclone_config_google,
                        portal=portal,
                        verbose=verbose)
         return
@@ -1720,7 +1720,7 @@ def _get_upload_file_info(portal: Portal, uuid: str) -> Tuple[Optional[str], Opt
 
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
                    upload_folder=None, no_query=False, subfolders=False,
-                   rclone_google_config=None,
+                   rclone_config_google=None,
                    output_file=None, app=None, keys_file=None, env_from_env=False, verbose=False):
 
     if output_file:
@@ -1730,14 +1730,14 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     portal = _define_portal(key=keydict, keys_file=keys_file, env=env,
                             server=server, app=app, env_from_env=env_from_env,
                             report=True, note="Resuming File Upload")
-    if rclone_google_config:
-        rclone_google_config.verify_connectivity()
+    if rclone_config_google:
+        rclone_config_google.verify_connectivity()
 
     do_any_uploads(uuid,
                    metadata_file=bundle_filename,
                    main_search_directory=upload_folder,
                    main_search_directory_recursively=subfolders,
-                   google_config=rclone_google_config,
+                   config_google=rclone_config_google,
                    portal=portal,
                    verbose=verbose)
 
@@ -2440,7 +2440,7 @@ def _print_metadata_file_info(file: str, env: str,
                               refs: bool = False, files: bool = False,
                               upload_folder: Optional[str] = None,
                               subfolders: bool = False,
-                              rclone_google_config: Optional[RCloneConfigGoogle] = None,
+                              rclone_config_google: Optional[RCloneConfigGoogle] = None,
                               output_file: Optional[str] = None,
                               verbose: bool = False) -> None:
     if output_file:
@@ -2509,19 +2509,19 @@ def _print_metadata_file_info(file: str, env: str,
                 for file_for_upload in files_for_upload:
                     PRINT(f"- {file_for_upload.name} ({file_for_upload.type}) | "
                           f"{'Found ...' if file_for_upload.found else 'Not found'}")
-                    if file_for_upload.found_locally:
+                    if file_for_upload.found_local:
                         if file_for_upload.found_locally_multiple:
-                            for index, local_path in enumerate(file_for_upload.local_paths):
-                                PRINT(f"  Local file: {local_path}{' (ambiguous)' if index > 0 else ''}")
+                            for index, path_local in enumerate(file_for_upload.path_local_multiple):
+                                PRINT(f"  Local file: {path_local}{' (ambiguous)' if index > 0 else ''}")
                         else:
                             PRINT(f"  Local file: {file_for_upload.path}")
-                        if file_for_upload.found_in_google:
-                            PRINT(f"  Google file: {file_for_upload.google_path}")
+                        if file_for_upload.found_google:
+                            PRINT(f"  Google file: {file_for_upload.path_google}")
                     note_output()
             files_for_upload = FilesForUpload.assemble(structured_data,
                                                        main_search_directory=upload_folder,
                                                        main_search_directory_recursively=subfolders,
-                                                       google_config=rclone_google_config)
+                                                       config_google=rclone_config_google)
             PRINT(f"Files: {len(files_for_upload)}")
             print_files(files_for_upload, max_output=max_output, output_file=output_file, verbose=verbose)
     if not (refs is True):

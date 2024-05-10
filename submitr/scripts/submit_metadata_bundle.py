@@ -243,7 +243,7 @@ def main(simulated_args_for_testing=None):
         if args.env:
             env_from_env = True
 
-    google_config = RCloneConfigGoogle.from_command_args(args.rclone_google_source, args.rclone_google_credentials)
+    config_google = RCloneConfigGoogle.from_command_args(args.rclone_google_source, args.rclone_google_credentials)
 
     if args.ping or (args.bundle_filename and args.bundle_filename.lower() == "ping"):
         if args.env or os.environ.get("SMAHT_ENV"):
@@ -257,8 +257,8 @@ def main(simulated_args_for_testing=None):
             PRINT("No environment specified (via --env); skipping SMaHT Portal ping.")
             ping_okay = True
         ping_rclone_okay = None
-        if google_config:
-            ping_rclone_okay = google_config.verify_connectivity()
+        if config_google:
+            ping_rclone_okay = config_google.verify_connectivity()
         exit(0 if ping_okay is True and (ping_rclone_okay is not False) else 1)
 
     if args.consortia or (args.bundle_filename and args.bundle_filename.lower() == "consortia"):
@@ -317,7 +317,7 @@ def main(simulated_args_for_testing=None):
                                   refs=args.refs, files=args.files,
                                   subfolders=not directory_only,
                                   upload_folder=args.upload_folder,
-                                  rclone_google_config=google_config,
+                                  rclone_config_google=config_google,
                                   output_file=args.output,
                                   verbose=args.verbose)
         exit(0)
@@ -343,7 +343,7 @@ def main(simulated_args_for_testing=None):
                              post_only=args.post_only,
                              patch_only=args.patch_only,
                              submit=args.submit,
-                             rclone_google_config=google_config,
+                             rclone_config_google=config_google,
                              validate_local_only=args.validate_local_only,
                              validate_remote_only=args.validate_remote_only,
                              validate_local_skip=args.validate_local_skip,

@@ -368,10 +368,10 @@ def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon, env_google: TestEnvG
         # Sanity check the file in AWS S3 which was copied directly from Google Cloud Storage.
         sanity_check_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
         # Exercise the RCloneConfig rclone commands (path_exists, file_size, file_checksum) for Google file.
-        google_path = cloud_path.join(env_google.bucket, key_google)
-        assert rclone_config_google.file_size(google_path) == TestEnv.test_file_size
-        assert rclone_config_google.path_exists(google_path) is True
-        assert rclone_config_google.file_checksum(google_path) == compute_file_md5(tmp_test_file_path)
+        path_google = cloud_path.join(env_google.bucket, key_google)
+        assert rclone_config_google.file_size(path_google) == TestEnv.test_file_size
+        assert rclone_config_google.path_exists(path_google) is True
+        assert rclone_config_google.file_checksum(path_google) == compute_file_md5(tmp_test_file_path)
         assert rclone_config_google.ping() is True
         # Exercise the RCloneConfig rclone commands (path_exists, file_size, file_checksum) for Amazon file.
         amazon_path = cloud_path.join(env_amazon.bucket, key_amazon)

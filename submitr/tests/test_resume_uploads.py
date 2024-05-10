@@ -230,6 +230,6 @@ def need_to_replace_with_new_version_c4_383_regression_action():
                                         mock_upload_file_to_uuid.assert_called_with(auth=fake_keydict,
                                                                                     filename=joined_filename,
                                                                                     uuid=SAMPLE_UPLOAD_INFO[-1]['uuid'],
-                                                                                    rclone_google_config=None,
+                                                                                    rclone_config_google=None,
                                                                                     first_time=False, portal=mock.ANY)
                                         assert output == []

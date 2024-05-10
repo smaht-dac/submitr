@@ -16,7 +16,7 @@ def do_any_uploads(arg: Union[str, dict, StructuredDataSet],
                    metadata_file: Optional[str] = None,
                    main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
                    main_search_directory_recursively: bool = False,
-                   google_config: Optional[RCloneConfigGoogle] = None,
+                   config_google: Optional[RCloneConfigGoogle] = None,
                    portal: Optional[Portal] = None,
                    review_only: bool = False,
                    verbose: bool = False) -> None:
@@ -26,7 +26,7 @@ def do_any_uploads(arg: Union[str, dict, StructuredDataSet],
         main_search_directory=main_search_directory,
         main_search_directory_recursively=main_search_directory_recursively,
         metadata_file=metadata_file,
-        google_config=google_config,
+        config_google=config_google,
         portal=portal,
         review_only=review_only,
         verbose=verbose)
@@ -40,7 +40,7 @@ def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
                               main_search_directory_recursively: bool = False,
                               other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
                               metadata_file: Optional[str] = None,
-                              google_config: Optional[RCloneConfigGoogle] = None,
+                              config_google: Optional[RCloneConfigGoogle] = None,
                               portal: Optional[Portal] = None,
                               review: bool = True,
                               review_only: bool = True,
@@ -73,7 +73,7 @@ def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
             main_search_directory=main_search_directory,
             main_search_directory_recursively=main_search_directory_recursively,
             other_search_directories=other_search_directories,
-            google_config=google_config)
+            config_google=config_google)
 
     elif item := arg if isinstance(arg, dict) else portal.get_metadata(arg, raise_exception=False):
 
@@ -91,7 +91,7 @@ def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
                 main_search_directory_recursively=main_search_directory_recursively,
                 other_search_directories=other_search_directories,
                 metadata_file=metadata_file,
-                google_config=google_config,
+                config_google=config_google,
                 portal=portal, _recursive=True)
 
         elif is_submission_object(item, portal):
@@ -109,7 +109,7 @@ def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
                 main_search_directory=main_search_directory,
                 main_search_directory_recursively=main_search_directory_recursively,
                 other_search_directories=other_search_directories,
-                google_config=google_config)
+                config_google=config_google)
 
         elif portal.is_schema_file_type(item):
             # Here a file type UUID, or accession ID (e.g. SMAFIQL563L8) for a file type, was given (and was found).
@@ -125,7 +125,7 @@ def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
                 main_search_directory=main_search_directory,
                 main_search_directory_recursively=main_search_directory_recursively,
                 other_search_directories=other_search_directories,
-                google_config=google_config)
+                config_google=config_google)
             files_for_upload = [file_for_upload] if file_for_upload else []
 
         else:
@@ -144,7 +144,7 @@ def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
             main_search_directory_recursively=main_search_directory_recursively,
             other_search_directories=other_search_directories,
             metadata_file=metadata_file,
-            google_config=google_config,
+            config_google=config_google,
             portal=portal, _recursive=True)
         if files_for_upload and files_for_upload[0].accession_name and (files_for_upload[0].accession_name != arg):
             PRINT(f"Accession ID found but wrong filename: {files_for_upload[0].accession_name} vs {arg}")

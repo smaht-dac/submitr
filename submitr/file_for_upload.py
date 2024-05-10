@@ -6,7 +6,7 @@ from dcicutils.command_utils import yes_or_no
 from dcicutils.file_utils import compute_file_md5, get_file_size, normalize_path, search_for_file
 from dcicutils.misc_utils import format_size, normalize_string
 from dcicutils.structured_data import Portal, StructuredDataSet
-from submitr.rclone import cloud_path, RCloneConfigGoogle
+from submitr.rclone import RCloneConfigGoogle
 
 # Unified the logic for looking for files to upload (to AWS S3), and storing
 # related info; whether or not the file is coming from the local file system
@@ -24,11 +24,11 @@ class FileForUpload:
                  main_search_directory: Optional[Union[str, pathlib.Path]] = None,
                  main_search_directory_recursively: bool = False,
                  other_search_directories: Optional[List[Union[str, pathlib.Path]]] = None,
-                 google_config: Optional[RCloneConfigGoogle] = None) -> Optional[FileForUpload]:
+                 config_google: Optional[RCloneConfigGoogle] = None) -> Optional[FileForUpload]:
 
         # Given file can be a dictionary (from structured_data.upload_files) like:
         # {"type": "ReferenceFile", "file": "first_file.fastq"}
-        # Or a dictionary (from additional_data.upload_info of submission object) like:
+        # Or a dictionary (from additional_data.upload_info of IngestionSubmission object) like:
         # {"uuid": "96f29020-7abd-4a42-b4c7-d342563b7074", "filename": "first_file.fastq"}
         # Or just a file name.
 
@@ -80,21 +80,21 @@ class FileForUpload:
                                                 single=True, recursive=False):
                     file_paths = [file_path]
 
-        self._local_path = None
-        self._local_paths = None
+        self._path_local = None
+        self._path_local_multiple = None
         if isinstance(file_paths, list) and file_paths:
-            self._local_path = file_paths[0]
+            self._path_local = file_paths[0]
             if len(file_paths) > 1:
-                self._local_paths = file_paths
+                self._path_local_multiple = file_paths
 
         self._accession = normalize_string(accession) or None
         self._accession_name = normalize_string(accession_name) or None
-        self._local_size = None
-        self._local_checksum = None
-        self._google_config = google_config if isinstance(google_config, RCloneConfigGoogle) else None
-        self._google_path = None
-        self._google_size = None
-        self._google_checksum = None
+        self._size_local = None
+        self._checksum_local = None
+        self._config_google = config_google if isinstance(config_google, RCloneConfigGoogle) else None
+        self._path_google = None
+        self._size_google = None
+        self._checksum_google = None
         self._google_tried_and_failed = False
         self._favor_local = True
         self._ignore = False
@@ -121,36 +121,46 @@ class FileForUpload:
 
     @property
     def found(self) -> bool:
-        return self.local_path is not None or self.google_path is not None
+        return self.path_local is not None or self.path_google is not None
 
     @property
     def path(self) -> Optional[str]:
-        if self.found_locally:
-            if self.found_in_google and (not self._favor_local):
-                return self.google_path
-            return self.local_path
-        elif self.found_in_google:
-            return self.google_path
+        if self.found_local:
+            if self.found_google and (not self._favor_local):
+                return self.path_google
+            return self.path_local
+        elif self.found_google:
+            return self.path_google
         return None
 
     @property
     def display_path(self) -> Optional[str]:
-        if self.found_locally:
-            if self.found_in_google and (not self._favor_local):
-                return self.display_google_path
-            return self.local_path
-        elif self.found_in_google:
-            return self.display_google_path
+        if self.found_local:
+            if self.found_google and (not self._favor_local):
+                return self.display_path_google
+            return self.path_local
+        elif self.found_google:
+            return self.display_path_google
         return None
 
     @property
     def size(self) -> Optional[int]:
-        if self.found_locally:
-            if self.found_in_google and (not self._favor_local):
-                return self.google_size
-            return self.local_size
-        elif self.found_in_google:
-            return self.google_size
+        if self.found_local:
+            if self.found_google and (not self._favor_local):
+                return self.size_google
+            return self.size_local
+        elif self.found_google:
+            return self.size_google
+        return None
+
+    @property
+    def checksum(self) -> Optional[int]:
+        if self.found_local:
+            if self.found_google and (not self._favor_local):
+                return self.checksum_google
+            return self.checksum_local
+        elif self.found_google:
+            return self.checksum_google
         return None
 
     @property
@@ -162,74 +172,73 @@ class FileForUpload:
                 f"{f' {self.uuid or self.name}' if self.uuid else ''}")
 
     @property
-    def found_locally(self) -> bool:
+    def found_local(self) -> bool:
         # import pdb ; pdb.set_trace()  # noqa
-        return self.local_path is not None
+        return self.path_local is not None
 
     @property
-    def found_locally_multiple(self) -> bool:
-        return self.local_paths is not None
+    def found_local_multiple(self) -> bool:
+        return self.path_local_multiple is not None
 
     @property
-    def local_path(self) -> Optional[str]:
-        return self._local_path
+    def path_local(self) -> Optional[str]:
+        return self._path_local
 
     @property
-    def local_paths(self) -> Optional[List[str]]:
-        return self._local_paths
+    def path_local_multiple(self) -> Optional[List[str]]:
+        return self._path_local_multiple
 
     @property
-    def local_size(self) -> Optional[int]:
-        if self._local_size is None and (local_path := self._local_path):
-            self._local_size = get_file_size(local_path)
-        return self._local_size
+    def size_local(self) -> Optional[int]:
+        if self._size_local is None and (path_local := self._path_local):
+            self._size_local = get_file_size(path_local)
+        return self._size_local
 
     @property
-    def local_checksum(self) -> Optional[int]:
-        if self._local_checksum is None and (local_path := self._local_path):
-            self._local_checksum = compute_file_md5(local_path)
-        return self._local_checksum
+    def checksum_local(self) -> Optional[int]:
+        if self._checksum_local is None and (path_local := self._path_local):
+            self._checksum_local = compute_file_md5(path_local)
+        return self._checksum_local
 
     @property
-    def found_in_google(self) -> bool:
+    def config_google(self) -> Optional[RCloneConfigGoogle]:
+        return self._config_google
+
+    @property
+    def found_google(self) -> bool:
         # import pdb ; pdb.set_trace()  # noqa
-        return self.google_path is not None
+        return self.path_google is not None
 
     @property
-    def google_path(self) -> Optional[str]:
-        if (self._google_path is None) and (not self._google_tried_and_failed):
-            if (google_config := self.google_config) and (google_source := google_config.path):
-                google_file = cloud_path.join(google_source, self.name)
-                # import pdb ; pdb.set_trace()  # noqa
-                if (google_size := google_config.file_size(google_file)) is not None:
-                    self._google_path = google_file
-                    self._google_size = google_size
+    def path_google(self) -> Optional[str]:
+        if (self._path_google is None) and (not self._google_tried_and_failed):
+            if (config_google := self.config_google):
+                # We use the obtaining of the Google Cloud Storage file size as a proxy for existence.
+                if (size_google := config_google.file_size(self.name)) is not None:
+                    self._size_google = size_google
+                    self._path_google = config_google.path(self.name)
                 else:
                     # import pdb ; pdb.set_trace()  # noqa
                     self._google_tried_and_failed = True
-        return self._google_path
+        return self._path_google
 
     @property
-    def display_google_path(self) -> Optional[str]:
-        if google_path := self.google_path:
-            return f"gs://{google_path}"
+    def display_path_google(self) -> Optional[str]:
+        if path_google := self.path_google:
+            return f"gs://{path_google}"
         return None
 
     @property
-    def google_size(self) -> Optional[int]:
-        if self._google_size is None:
-            _ = self.google_path  # Initialize GSC related info.
-        return self._google_size
+    def size_google(self) -> Optional[int]:
+        if self._size_google is None:
+            _ = self.path_google  # Initialize GSC related info.
+        return self._size_google
 
     @property
-    def google_checksum(self) -> Optional[int]:
-        if self._google_checksum is None:
-            _ = self.google_path  # Initialize GSC related info.
-        return self._google_checksum
-
-    @property
-    def google_config(self) -> Optional[RCloneConfigGoogle]:
-        return self._google_config
+    def checksum_google(self) -> Optional[int]:
+        if self._checksum_google is None:
+            _ = self.path_google  # Initialize GSC related info.
+        return self._checksum_google
 
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,
                verbose: bool = False, printf: Optional[Callable] = None) -> bool:
@@ -245,24 +254,24 @@ class FileForUpload:
                            f" {self.resume_upload_command(env=portal.env if portal else None)}")
             self._ignore = True
             return False
-        elif self.found_locally:
-            if self.found_in_google:
+        elif self.found_local:
+            if self.found_google:
                 printf(f"- File for upload found BOTH locally AND in Google Cloud Storage: {self.name}")
-                printf(f"  - Local: {self.local_path}")
-                printf(f"  - Google Cloud Storage: {self.google_path}")
+                printf(f"  - Local: {self.path_local}")
+                printf(f"  - Google Cloud Storage: {self.display_path_google}")
                 if not review_only:
                     self._favor_local = not yes_or_no("  - Do you want to use the Google Cloud Storage version?")
-            if self.found_locally_multiple and self._favor_local:
+            if self.found_local_multiple and self._favor_local:
                 # TODO: Could prompt for an option to choose one of them or something.
                 if not review_only:
                     indent = ""
                     printf(f"- WARNING: Ignoring file for upload"
                            f" as multiple/ambiguous local instances found: {self.name}")
                 else:
-                    indent = "  " if self.found_in_google else ""
+                    indent = "  " if self.found_google else ""
                     printf(f"{indent}- Multiple/ambiguous instances of local file for upload found: {self.name}")
-                for local_path in self.local_paths:
-                    printf(f"{indent}  - {local_path}")
+                for path_local in self.path_local_multiple:
+                    printf(f"{indent}  - {path_local}")
                 printf(f"{indent}  - Use --directory-only rather than --directory to not search recursively.")
                 if not review_only:
                     printf(f"  - Upload later with:"
@@ -272,10 +281,10 @@ class FileForUpload:
             if verbose:
                 printf(f"- File for upload to AWS S3: {self.display_path} ({format_size(self.size)})")
             return True
-        elif self.found_in_google:
+        elif self.found_google:
             if verbose:
                 printf(f"- File for upload to AWS S3 (from GCS):"
-                       f" gs://{self.google_path} ({format_size(self.google_size)})")
+                       f" gs://{self.path_google} ({format_size(self.size_google)})")
             return True
 
     def __str__(self) -> str:  # for troubleshooting only
@@ -287,14 +296,14 @@ class FileForUpload:
             f"found={self.found}|"
             f"path={self.path}|"
             f"size={self.size}|"
-            f"found_locally={self.found_locally}|"
-            f"found_locally_multiple={self.found_locally_multiple}|"
-            f"local_path={self.local_path}|"
-            f"local_paths={self.local_paths}|"
-            f"local_size={self.local_size}|"
-            f"found_in_google={self.found_in_google}|"
-            f"google_path={self.google_path}|"
-            f"google_size={self.google_size}")
+            f"found_local={self.found_local}|"
+            f"found_local_multiple={self.found_local_multiple}|"
+            f"path_local={self.path_local}|"
+            f"path_local_multiple={self.path_local_multiple}|"
+            f"size_local={self.size_local}|"
+            f"found_google={self.found_google}|"
+            f"path_google={self.path_google}|"
+            f"size_google={self.size_google}")
 
 
 class FilesForUpload:
@@ -304,7 +313,7 @@ class FilesForUpload:
                  main_search_directory: Optional[Union[str, pathlib.Path]] = None,
                  main_search_directory_recursively: bool = False,
                  other_search_directories: Optional[List[Union[str, pathlib.Path]]] = None,
-                 google_config: Optional[RCloneConfigGoogle] = None) -> List[FileForUpload]:
+                 config_google: Optional[RCloneConfigGoogle] = None) -> List[FileForUpload]:
 
         if isinstance(files, StructuredDataSet):
             files = files.upload_files
@@ -320,7 +329,7 @@ class FilesForUpload:
                 main_search_directory=main_search_directory,
                 main_search_directory_recursively=main_search_directory_recursively,
                 other_search_directories=other_search_directories,
-                google_config=google_config)
+                config_google=config_google)
             if file_for_upload:
                 files_for_upload.append(file_for_upload)
         return files_for_upload
@@ -338,7 +347,7 @@ class FilesForUpload:
         result = True
         if files_for_upload:
             files_for_upload_missing = [file for file in files_for_upload if not file.found]
-            files_for_upload_ambiguous = [file for file in files_for_upload if file.found_locally_multiple]
+            files_for_upload_ambiguous = [file for file in files_for_upload if file.found_local_multiple]
             message = f"Reviewing files for upload | Total: {len(files_for_upload)}"
             if files_for_upload_missing:
                 message += f" | Missing: {len(files_for_upload_missing)}"

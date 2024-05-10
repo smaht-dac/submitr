@@ -121,7 +121,7 @@ def main(simulated_args_for_testing=None):
         PRINT(f"Specified upload directory not found: {args.upload_folder}")
         exit(1)
 
-    google_config = RCloneConfigGoogle.from_command_args(args.rclone_google_source, args.rclone_google_credentials)
+    config_google = RCloneConfigGoogle.from_command_args(args.rclone_google_source, args.rclone_google_credentials)
 
     env_from_env = False
     if not args.env:
@@ -140,7 +140,7 @@ def main(simulated_args_for_testing=None):
                        upload_folder=args.upload_folder,
                        no_query=args.yes,
                        subfolders=not directory_only,
-                       rclone_google_config=google_config,
+                       rclone_config_google=config_google,
                        output_file=args.output,
                        app=args.app,
                        verbose=args.verbose)

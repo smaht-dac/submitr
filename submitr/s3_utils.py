@@ -77,29 +77,29 @@ def upload_file_to_aws_s3(file: FileForUpload,
     if not callable(printf):
         printf = print
 
-    if file.found_locally:
+    if file.found_local:
         rclone = None
-        file_size = file.local_size
+        file_size = file.size_local
         file_checksum = None
         file_checksum_timestamp = None
 
-    elif file.found_in_google:
-        rclone_config_google = file.google_config
+    elif file.found_google:
+        rclone_config_google = file.config_google
         rclone_amazon_config = RCloneConfigAmazon(region=aws_credentials.get("region_name"),
                                                   access_key_id=aws_credentials.get("aws_access_key_id"),
                                                   secret_access_key=aws_credentials.get("aws_secret_access_key"),
                                                   session_token=aws_credentials.get("aws_session_token"),
                                                   kms_key_id=aws_kms_key_id)
         rclone = RClone(source=rclone_config_google, destination=rclone_amazon_config)
-        if not rclone_config_google.path_exists(file.google_path):
-            printf(f"ERROR: Cannot find Google Cloud Storage object: {file.google_path}")
+        if not rclone_config_google.path_exists(file.name):
+            printf(f"ERROR: Cannot find Google Cloud Storage object: {file.path_google}")
             return False
-        file_size = file.google_size
+        file_size = file.size_google
         file_checksum = None
         # Note that it is known to be the case that calling rclone hashsum to get the checksum
         # of a file in Google Cloud Storage (GCS) merely retrieves the checksum from GCS,
         # which had previously been computed/stored by GCS for the file within GCS.
-        file_checksum = rclone_config_google.file_checksum(file.google_path)
+        file_checksum = rclone_config_google.file_checksum(file.name)
         file_checksum_timestamp = time.time()
 
     else:
@@ -224,7 +224,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
                 if compare_checksums:
                     if not file_checksum:
                         # Here only for local file; for GCS we got the checksum up front (above).
-                        file_checksum = compute_file_md5(file.local_path)
+                        file_checksum = compute_file_md5(file.path_local)
                         file_checksum_timestamp = time.time()
                     if existing_file_md5:
                         if file_checksum != existing_file_md5:
@@ -266,7 +266,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
             if file_checksum:
                 metadata["md5"] = file_checksum
                 metadata["md5-timestamp"] = str(file_checksum_timestamp)
-                metadata["md5-source"] = "google-cloud-storage" if file.found_in_google else "file-system"
+                metadata["md5-source"] = "google-cloud-storage" if file.found_google else "file-system"
             return metadata
         except Exception:
             return {}
@@ -299,10 +299,10 @@ def upload_file_to_aws_s3(file: FileForUpload,
     if rclone:
         upload_file_callback = define_upload_file_callback(progress_total_nbytes=True)
         try:
-            rclone.copy(file.google_path, cloud_path.join(s3_bucket, s3_key), progress=upload_file_callback.function)
+            rclone.copy(file.path_google, cloud_path.join(s3_bucket, s3_key), progress=upload_file_callback.function)
             update_metadata_for_uploaded_file()
         except Exception:
-            printf(f"Upload ABORTED: {file.google_path} ◀")  # TODO: test
+            printf(f"Upload ABORTED: {file.path_google} ◀")  # TODO: test
             upload_aborted = True
             pass
     else:
@@ -311,7 +311,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         aws_extra_args = {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": aws_kms_key_id} if aws_kms_key_id else {}
         if metadata:
             aws_extra_args["Metadata"] = metadata
-        with open(file.local_path, "rb") as f:
+        with open(file.path_local, "rb") as f:
             try:
                 if aws_extra_args:
                     s3.upload_fileobj(f, s3_bucket, s3_key,
@@ -320,7 +320,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
                 else:
                     s3.upload_fileobj(f, s3_bucket, s3_key, Callback=upload_file_callback.function)
             except Exception:
-                printf(f"Upload ABORTED: {file.local_path} ◀")
+                printf(f"Upload ABORTED: {file.path_local} ◀")
                 upload_aborted = True
 
     upload_file_callback.done()
