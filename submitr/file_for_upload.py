@@ -95,7 +95,7 @@ class FileForUpload:
         self._path_google = None
         self._size_google = None
         self._checksum_google = None
-        self._google_tried_and_failed = False
+        self._google_inaccessible = False
         self._favor_local = True
         self._ignore = False
 
@@ -151,9 +151,9 @@ class FileForUpload:
     def ignore(self) -> bool:
         return self._ignore
 
-    def resume_upload_command(self, env: Optional[str] = None) -> str:
+    def resume_upload_command(self, env: Optional[str] = None) -> Optional[str]:
         return (f"resume-uploads{f' --env {env}' if isinstance(env, str) else ''}"
-                f"{f' {self.uuid or self.name}' if self.uuid else ''}")
+                f"{f' {self.uuid or self.name}' if self.uuid else ''}") if self.uuid else None
 
     @property
     def found_local(self) -> bool:
@@ -179,7 +179,7 @@ class FileForUpload:
         return self._size_local
 
     @property
-    def checksum_local(self) -> Optional[int]:
+    def checksum_local(self) -> Optional[str]:
         if self._checksum_local is None and (path_local := self._path_local):
             self._checksum_local = compute_file_md5(path_local)
         return self._checksum_local
@@ -195,15 +195,13 @@ class FileForUpload:
 
     @property
     def path_google(self) -> Optional[str]:
-        if (self._path_google is None) and (not self._google_tried_and_failed):
-            if (config_google := self.config_google):
-                # We use the obtaining of the Google Cloud Storage file size as a proxy for existence.
-                if (size_google := config_google.file_size(self.name)) is not None:
-                    self._size_google = size_google
-                    self._path_google = config_google.path(self.name)
-                else:
-                    # import pdb ; pdb.set_trace()  # noqa
-                    self._google_tried_and_failed = True
+        if (self._path_google is None) and (config_google := self.config_google) and (not self._google_inaccessible):
+            # We use the obtaining of the Google Cloud Storage file size as a proxy for existence.
+            if (size_google := config_google.file_size(self.name)) is not None:
+                self._path_google = config_google.path(self.name)
+                self._size_google = size_google
+            else:
+                self._google_inaccessible = True
         return self._path_google
 
     @property
@@ -215,13 +213,13 @@ class FileForUpload:
     @property
     def size_google(self) -> Optional[int]:
         if self._size_google is None:
-            _ = self.path_google  # Initialize GSC related info.
+            _ = self.path_google  # Initialize Google related info.
         return self._size_google
 
     @property
-    def checksum_google(self) -> Optional[int]:
+    def checksum_google(self) -> Optional[str]:
         if self._checksum_google is None:
-            _ = self.path_google  # Initialize GSC related info.
+            _ = self.path_google  # Initialize Google related info.
         return self._checksum_google
 
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,

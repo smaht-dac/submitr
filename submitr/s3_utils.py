@@ -299,7 +299,12 @@ def upload_file_to_aws_s3(file: FileForUpload,
     if rclone:
         upload_file_callback = define_upload_file_callback(progress_total_nbytes=True)
         try:
-            rclone.copy(file.path_google, cloud_path.join(s3_bucket, s3_key), progress=upload_file_callback.function)
+            # Note that the source is just file.name, which is just the base name of the file,
+            # from the metadata file); the bucket (or bucket/path; whatever was passed in via
+            # --rclone-google-source) is stored in RCloneConfigGoogle (from file.config_google),
+            # and RClone.copy (which has this RCloneConfigGoogle, by virtue of RClone being
+            # created with it as a source), resolves/expands this to the full Google path name.
+            rclone.copy(file.name, cloud_path.join(s3_bucket, s3_key), progress=upload_file_callback.function)
             update_metadata_for_uploaded_file()
         except Exception:
             printf(f"Upload ABORTED: {file.path_google} ◀")  # TODO: test
