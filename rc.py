@@ -4,6 +4,7 @@ from dcicutils.misc_utils import create_short_uuid
 
 bucket = "smaht-unit-testing-files"
 key = f"testfolder/test-hello-{create_short_uuid(8)}.txt"
+key = f"testfolder/test-hello.txt"
 destination = f"{bucket}/{key}"
 print(key)
 
@@ -24,22 +25,30 @@ policy = {"Version": "2012-10-17",
           "Statement": [
               {
                   "Action": [
-                      "s3:PutObject", # needed (obviously)
-                      "s3:GetObject", # needed
-                      # "s3:CreateBucket", # not needed
-                      # "s3:ListBucket" # not needed
+                      "s3:PutObject",
+                      "s3:GetObject",
                   ],
                   "Resource": [f"arn:aws:s3:::{destination}"],
                   "Effect": "Allow"
               },
               {
                   "Action": [
-                      # "s3:PutObject", # not needed
-                      # "s3:GetObject", # not needed
-                      "s3:CreateBucket", # needed
-                      "s3:ListBucket" # needed
+                      #"s3:CreateBucket",
+                      "s3:ListBucket"
                   ],
                   "Resource": [f"arn:aws:s3:::{bucket}"],
+                  "Effect": "Allow"
+              }
+          ]
+}
+policy = {"Version": "2012-10-17",
+          "Statement": [
+              {
+                  "Action": [
+                      "s3:PutObject",
+                      "s3:GetObject",
+                  ],
+                  "Resource": [f"arn:aws:s3:::{destination}"],
                   "Effect": "Allow"
               }
           ]
@@ -58,3 +67,9 @@ rclone_config_amazon = RCloneConfigAmazon(credentials)
 rclone = RClone(destination=rclone_config_amazon)
 result = rclone.copy("/tmp/hello.txt", destination, raise_exception=True, dryrun=False)
 print(result)
+
+s3 = AwsS3(main_credentials)
+if s3.file_exists(bucket, key):
+    print("OK" )
+else:
+    print("ERROR!")

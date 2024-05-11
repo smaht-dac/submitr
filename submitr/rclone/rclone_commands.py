@@ -25,6 +25,9 @@ class RCloneCommands:
                 if " " in command[0]:
                     command[0] = f"\"{command[0]}\""
                 return " ".join(command)
+            command += ["--s3-no-check-bucket"] # with this no need for s3:CreateBucket policy
+            #command += ["--s3-no-head"]
+            command += ["--s3-no-head-object"]
             print(f"XYZZY:[{' '.join(command)}]", flush=True)
             process = subprocess.Popen(command, universal_newlines=True,
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
