@@ -17,10 +17,33 @@ policy = {"Version": "2012-10-17",
                             "s3:CreateBucket",
                             "s3:ListBucket",
                        ],
-                       #"Resource": [f"arn:aws:s3:::{destination}", f"arn:aws:s3:::{destination}/*"],
                        "Resource": [f"arn:aws:s3:::{destination}", f"arn:aws:s3:::{bucket}"], # OK (with s3:*)
-                       #"Resource": [f"*"],
                        "Effect": "Allow"}]}
+
+policy = {"Version": "2012-10-17",
+          "Statement": [
+              {
+                  "Action": [
+                      "s3:PutObject", # needed (obviously)
+                      "s3:GetObject", # needed
+                      # "s3:CreateBucket", # not needed
+                      # "s3:ListBucket" # not needed
+                  ],
+                  "Resource": [f"arn:aws:s3:::{destination}"],
+                  "Effect": "Allow"
+              },
+              {
+                  "Action": [
+                      # "s3:PutObject", # not needed
+                      # "s3:GetObject", # not needed
+                      "s3:CreateBucket", # needed
+                      "s3:ListBucket" # needed
+                  ],
+                  "Resource": [f"arn:aws:s3:::{bucket}"],
+                  "Effect": "Allow"
+              }
+          ]
+}
 
 print(policy)
 
