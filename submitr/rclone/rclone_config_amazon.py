@@ -248,7 +248,6 @@ class AmazonCredentials(RCloneCredentials):
                     access_key_id=credentials.get("AccessKeyId"),
                     secret_access_key=credentials.get("SecretAccessKey"),
                     session_token=credentials.get("SessionToken"),
-#                   kms_key_id=self.kms_key_id)
                     kms_key_id=kms_key_id)
         except Exception as e:
             if raise_exception is True:
