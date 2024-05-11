@@ -208,8 +208,9 @@ class AwsS3:
             if isinstance(key, str) and (key := key.strip()):
                 resources = [f"arn:aws:s3:::{bucket}/{key}"]
                 # Note that this is specifically required (for some reason) by rclone (but not for plain aws).
-                # resources += [f"arn:aws:s3:::{bucket}"]  # does not seem to be needed: f"arn:aws:s3:::{bucket}/*"
             else:
+                import pdb ; pdb.set_trace()  # noqa
+                pass
                 resources = [f"arn:aws:s3:::{bucket}", f"arn:aws:s3:::{bucket}/*"] ; deny = True  # noqa
         # For how this policy stuff is defined in smaht-portal for file upload
         # session token creation process see: encoded_core.types.file.external_creds
