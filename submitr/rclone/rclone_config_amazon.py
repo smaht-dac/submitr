@@ -242,13 +242,12 @@ class AmazonCredentials(RCloneCredentials):
                              aws_access_key_id=self.access_key_id,
                              aws_secret_access_key=self.secret_access_key,
                              aws_session_token=self.session_token)
-            response = sts.get_federation_token(Name=name, DurationSeconds=duration, Policy=policy)
+            response = sts.get_federation_token(Name=name, Policy=policy, DurationSeconds=duration)
             if isinstance(credentials := response.get("Credentials"), dict):
-                return AmazonCredentials(
-                    access_key_id=credentials.get("AccessKeyId"),
-                    secret_access_key=credentials.get("SecretAccessKey"),
-                    session_token=credentials.get("SessionToken"),
-                    kms_key_id=kms_key_id)
+                return AmazonCredentials(access_key_id=credentials.get("AccessKeyId"),
+                                         secret_access_key=credentials.get("SecretAccessKey"),
+                                         session_token=credentials.get("SessionToken"),
+                                         kms_key_id=kms_key_id)
         except Exception as e:
             if raise_exception is True:
                 raise e
