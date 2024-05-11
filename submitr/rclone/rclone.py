@@ -5,6 +5,7 @@ from typing import Callable, List, Optional, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 from submitr.rclone.rclone_config import RCloneConfig
+from submitr.rclone.rclone_config_amazon import RCloneConfigAmazon
 from submitr.rclone.rclone_commands import RCloneCommands
 from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.rclone.rclone_utils import cloud_path
@@ -97,9 +98,11 @@ class RClone(RCloneCommands, RCloneInstallation):
                     raise Exception(f"No cloud source specified.")
                 with self.config_file(persist=dryrun is True) as source_and_destination_config_file:  # noqa
                     command_args = [f"{source_config.name}:{source}", f"{destination_config.name}:{destination}"]
+                    destination_s3 = isinstance(destination_config, RCloneConfigAmazon)
                     return RCloneCommands.copy_command(command_args,
                                                        config=source_and_destination_config_file,
-                                                       copyto=copyto, progress=progress, dryrun=dryrun)
+                                                       copyto=copyto, destination_s3=destination_s3,
+                                                       progress=progress, dryrun=dryrun)
             else:
                 # Here only a destination config cloud configuration has been defined for this RClone
                 # object; meaning we are copying from a local file source to some cloud destination;
@@ -108,9 +111,11 @@ class RClone(RCloneCommands, RCloneInstallation):
                     raise Exception(f"No file source specified.")
                 with destination_config.config_file(persist=dryrun is True) as destination_config_file:
                     command_args = [source, f"{destination_config.name}:{destination}"]
+                    destination_s3 = isinstance(destination_config, RCloneConfigAmazon)
                     return RCloneCommands.copy_command(command_args,
                                                        config=destination_config_file,
-                                                       copyto=copyto, progress=progress, dryrun=dryrun)
+                                                       copyto=copyto, destination_s3=destination_s3,
+                                                       progress=progress, dryrun=dryrun)
         elif isinstance(source_config := self.source, RCloneConfig):
             # Here only a source cloud configuration has been defined for this RClone object;
             # meaning we are copying from some cloud source to a local file destination;

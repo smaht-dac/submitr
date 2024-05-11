@@ -6,6 +6,7 @@ from datetime import timedelta
 import os
 from typing import List, Optional, Union
 from dcicutils.file_utils import are_files_equal, normalize_path
+from dcicutils.misc_utils import normalize_string
 from dcicutils.tmpfile_utils import temporary_file
 from dcicutils.datetime_utils import format_datetime
 from submitr.rclone.rclone_config_amazon import AmazonCredentials
@@ -189,8 +190,9 @@ class AwsS3:
         return keys
 
     def generate_temporary_credentials(self,
-                                       duration: Optional[Union[int, timedelta]] = None,
                                        bucket: Optional[str] = None, key: Optional[str] = None,
+                                       kms_key_id: Optional[str] = None,
+                                       duration: Optional[Union[int, timedelta]] = None,
                                        readonly: bool = False) -> Optional[AmazonCredentials]:
         """
         Generates and returns temporary AWS credentials. The default duration of validity for
@@ -212,20 +214,24 @@ class AwsS3:
         # For how this policy stuff is defined in smaht-portal for file upload
         # session token creation process see: encoded_core.types.file.external_creds
         # actions = ["s3:GetObject", "s3:HeadObject", "s3:ListBucket", "s3:DescribeBucket"]
-        actions = ["s3:GetObject", "s3:ListBucket", "s3:DescribeBucket"]
-        if kms_key_id := self.credentials.kms_key_id:
+        # actions = ["s3:GetObject", "s3:ListBucket", "s3:DescribeBucket"]
+        actions = ["s3:GetObject"]
+#       if kms_key_id := self.credentials.kms_key_id:
+        if kms_key_id := normalize_string(kms_key_id):
             actions_kms = ["kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey"]
             resource_kms = f"arn:aws:kms:{self.credentials.region}:{self.credentials.account_number}:key/{kms_key_id}"
             statements.append({"Effect": "Allow", "Action": actions_kms, "Resource": resource_kms})
         if not (readonly is True):
             # Note the s3:CreateBucket is specifically required (for some reason) by rclone (but not for plain
             # aws), unless these temporary (session) credentials are targetted specifically for the bucket/key.
-            actions = actions + ["s3:PutObject", "s3:DeleteObject", "s3:CreateBucket"]
+            # actions = actions + ["s3:PutObject", "s3:DeleteObject", "s3:CreateBucket"]
+            actions = actions + ["s3:PutObject"]
         statements.append({"Effect": "Allow", "Action": actions, "Resource": resources})
         if deny:
             statements.append({"Effect": "Deny", "Action": actions, "NotResource": resources})
         policy = {"Version": "2012-10-17", "Statement": statements}
-        credentials = self.credentials.generate_temporary_credentials(duration=duration, policy=policy)
+        credentials = self.credentials.generate_temporary_credentials(policy=policy,
+                                                                      kms_key_id=kms_key_id, duration=duration)
         return AmazonCredentials(credentials) if credentials else None
 
     def _file_head(self, bucket: str, key: str, raise_exception: bool = True) -> Optional[dict]:

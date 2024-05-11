@@ -210,8 +210,9 @@ class AmazonCredentials(RCloneCredentials):
         return self.__eq__(other)
 
     def generate_temporary_credentials(self,
-                                       duration: Optional[Union[int, timedelta]] = None,
                                        policy: Optional[dict] = None,
+                                       kms_key_id: Optional[str] = None,
+                                       duration: Optional[Union[int, timedelta]] = None,
                                        raise_exception: bool = True) -> Optional[AmazonCredentials]:
         """
         Generates and returns temporary AWS credentials. The default duration of validity
@@ -247,7 +248,8 @@ class AmazonCredentials(RCloneCredentials):
                     access_key_id=credentials.get("AccessKeyId"),
                     secret_access_key=credentials.get("SecretAccessKey"),
                     session_token=credentials.get("SessionToken"),
-                    kms_key_id=self.kms_key_id)
+#                   kms_key_id=self.kms_key_id)
+                    kms_key_id=kms_key_id)
         except Exception as e:
             if raise_exception is True:
                 raise e

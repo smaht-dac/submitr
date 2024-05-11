@@ -56,6 +56,7 @@ class TestEnvAmazon(TestEnv):
         self.env = "smaht-wolf"
         self.kms_key_id = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"
         self.bucket = "smaht-unit-testing-files"
+        self.main_credentials = self.credentials()
 
     def credentials(self, nokms: bool = False) -> AmazonCredentials:
         kms_key_id = None if nokms is True else self.kms_key_id
@@ -71,15 +72,22 @@ class TestEnvAmazon(TestEnv):
 
     def temporary_credentials(self, nokms: bool = False,
                               bucket: Optional[str] = None, key: Optional[str] = None) -> AmazonCredentials:
-        credentials = self.credentials(nokms=nokms)
-        s3 = AwsS3(credentials)
-        temporary_credentials = s3.generate_temporary_credentials(bucket=bucket, key=key)
+        # credentials = self.credentials(nokms=nokms)
+        # s3 = AwsS3(credentials)
+        s3 = self.s3_non_rclone()
+        kms_key_id = None if nokms else self.kms_key_id # xyzzy/new
+        temporary_credentials = s3.generate_temporary_credentials(bucket=bucket, key=key, kms_key_id=kms_key_id) # xyzzy/update
         assert isinstance(temporary_credentials.session_token, str) and temporary_credentials.session_token
+        # xyzzy5
+        pass
         assert temporary_credentials.kms_key_id == (None if nokms is True else self.kms_key_id)
         return temporary_credentials
 
     def temporary_credentials_nokms(self, bucket: Optional[str] = None, key: Optional[str] = None) -> AmazonCredentials:
         return self.temporary_credentials(nokms=True, bucket=bucket, key=key)
+
+    def s3_non_rclone(self):
+        return AwsS3(self.main_credentials)
 
 
 class TestEnvGoogle(TestEnv):
@@ -109,7 +117,8 @@ def initial_setup_and_sanity_checking(env_amazon: TestEnvAmazon, env_google: Tes
     assert os.environ.get("AWS_SESSION_TOKEN", None) is None
 
     credentials_amazon = env_amazon.credentials()
-    s3 = AwsS3(credentials_amazon)
+    # s3 = AwsS3(credentials_amazon)
+    s3 = env_amazon.s3_non_rclone()
     assert s3.bucket_exists(env_amazon.bucket) is True
 
     credentials_google = env_google.credentials()
@@ -148,12 +157,15 @@ def create_rclone(source: Optional[RCloneConfig] = None, destination: Optional[R
     return rclone
 
 
-def sanity_check_amazon_file(credentials: AmazonCredentials, bucket: str, key: str, file: str) -> None:
-    s3 = AwsS3(credentials)
-    assert s3.credentials == credentials
+def sanity_check_amazon_file(env_amazon: TestEnvAmazon,
+                             credentials: AmazonCredentials, bucket: str, key: str, file: str) -> None:
+    # s3 = AwsS3(credentials)
+    s3 = env_amazon.s3_non_rclone()
+    # assert s3.credentials == credentials
     assert s3.file_exists(bucket, key) is True
     assert s3.file_equals(bucket, key, file) is True
-    if kms_key_id := s3.credentials.kms_key_id:
+#   if kms_key_id := s3.credentials.kms_key_id: # xyzzy
+    if kms_key_id := credentials.kms_key_id:
         assert s3.file_kms_encrypted(bucket, key) is True
         assert s3.file_kms_encrypted(bucket, key, kms_key_id) is True
 
@@ -165,9 +177,10 @@ def sanity_check_google_file(credentials: GoogleCredentials, bucket: str, key: s
     assert gcs.file_equals(bucket, key, file) is True
 
 
-def cleanup_amazon_file(credentials: AmazonCredentials, bucket: str, key: str) -> None:
-    s3 = AwsS3(credentials)
-    assert s3.credentials == credentials
+def cleanup_amazon_file(env_amazon: TestEnvAmazon, credentials: AmazonCredentials, bucket: str, key: str) -> None:
+    # s3 = AwsS3(credentials)
+    s3 = env_amazon.s3_non_rclone()
+    # assert s3.credentials == credentials
     assert s3.delete_file(bucket, key) is True
     assert s3.file_exists(bucket, key) is False
 
@@ -198,11 +211,13 @@ def _test_utils_for_testing_amazon(env_amazon: TestEnvAmazon, credentials: Amazo
     assert isinstance(credentials.access_key_id, str) and credentials.access_key_id
     assert isinstance(credentials.secret_access_key, str) and credentials.secret_access_key
 
-    s3 = AwsS3(credentials)
-    assert s3.credentials == credentials
+    # s3 = AwsS3(credentials)
+    s3 = env_amazon.s3_non_rclone()
+    # assert s3.credentials == credentials
 
     with TestEnv.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         key = env_amazon.file_name_to_key_name(tmp_test_file_name)
+        # xyzzy3 - todo - use main credentials for non-rclone s3 stufff
         if cloud_path.has_separator(key):
             # If we are uploading to a key which has a slash (i.e. a folder-like key) then we
             # will specify the key explicitly, otherwise it will use just the basename of the
@@ -279,6 +294,7 @@ def _test_rclone_between_amazon_and_local(env_amazon: TestEnvAmazon,
         # Upload the local test file to AWS S3 using RClone;
         # we upload tmp_test_file_path to the key (tmp_test_file_name) key in env_amazon.bucket.
         rclone = create_rclone(destination=config)
+        # xyzzy4
         if cloud_path.has_separator(key_amazon):
             # If we are uploading to a key which has a slash (i.e. a folder-like key) then we
             # will specify the key explicitly, otherwise it will use just the basename of the
@@ -288,16 +304,17 @@ def _test_rclone_between_amazon_and_local(env_amazon: TestEnvAmazon,
         else:
             assert rclone.copy(tmp_test_file_path, env_amazon.bucket, copyto=False) is True
         # Sanity check the uploaded file using non-RClone methods (via AwS3 which uses boto3).
-        sanity_check_amazon_file(credentials, env_amazon.bucket, key_amazon, tmp_test_file_path)
+        sanity_check_amazon_file(env_amazon, credentials, env_amazon.bucket, key_amazon, tmp_test_file_path)
         # Now try to download the test file (which was uploaded above to AWS S3 using RClone) to the local file system
         # using RClone; use the same RClone configuration as for upload, but as the source rather than the destination.
         rclone = create_rclone(source=config)
         with temporary_directory() as tmp_download_directory:
+            # xyzzy
             rclone.copy(cloud_path.join(env_amazon.bucket, key_amazon), tmp_download_directory, copyto=False)
             assert are_files_equal(tmp_test_file_path,
                                    os.path.join(tmp_download_directory, cloud_path.to_file_path(key_amazon))) is True
         # Cleanup (delete) the test file in AWS S3.
-        cleanup_amazon_file(credentials, env_amazon.bucket, key_amazon)
+        cleanup_amazon_file(env_amazon, credentials, env_amazon.bucket, key_amazon)
 
 
 def test_rclone_between_google_and_local(env_google: TestEnvGoogle) -> None:
@@ -366,7 +383,7 @@ def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon, env_google: TestEnvG
         else:
             rclone.copy(cloud_path.join(env_google.bucket, key_google), env_amazon.bucket, copyto=False)
         # Sanity check the file in AWS S3 which was copied directly from Google Cloud Storage.
-        sanity_check_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
+        sanity_check_amazon_file(env_amazon, credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
         # Exercise the RCloneConfig rclone commands (path_exists, file_size, file_checksum) for Google file.
         path_google = cloud_path.join(env_google.bucket, key_google)
         assert rclone_config_google.file_size(path_google) == TestEnv.test_file_size
@@ -381,7 +398,7 @@ def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon, env_google: TestEnvG
         assert rclone_config_amazon.ping() is True
         # Do the above copy again but this time with the destination
         # bucket specified within the RCloneConfigGoogle object (new: 2024-05-10).
-        cleanup_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon)
+        cleanup_amazon_file(env_amazon, credentials_amazon, env_amazon.bucket, key_amazon)
         rclone_config_amazon.bucket = env_amazon.bucket
         if cloud_path.has_separator(key_amazon):
             # If we are uploading to a key which has a slash (i.e. a folder-like key) then we
@@ -392,13 +409,13 @@ def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon, env_google: TestEnvG
         else:
             rclone.copy(cloud_path.join(env_google.bucket, key_google), None, copyto=False)
         # Sanity check the file in AWS S3 which was copied directly from Google Cloud Storage.
-        sanity_check_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
+        sanity_check_amazon_file(env_amazon, credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
         # Re-exercise the RCloneConfig rclone commands (path_exists, file_size, file_checksum) for Amazon file.
         assert rclone_config_amazon.file_size(key_amazon) == TestEnv.test_file_size
         assert rclone_config_amazon.path_exists(key_amazon) is True
         assert rclone_config_amazon.file_checksum(key_amazon) == compute_file_md5(tmp_test_file_path)
         # Cleanup (delete) the test destination file in AWS S3.
-        cleanup_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon)
+        cleanup_amazon_file(env_amazon, credentials_amazon, env_amazon.bucket, key_amazon)
         # Cleanup (delete) the test source file in Google Cloud Storage.
         cleanup_google_file(credentials_google, env_google.bucket, key_google)
 
@@ -421,9 +438,10 @@ def test_rclone_amazon_to_google(env_amazon: TestEnvAmazon, env_google: TestEnvG
         else:
             rclone.copy(tmp_test_file_path, env_amazon.bucket, copyto=False)
         # Make sure it made it there.
-        sanity_check_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
+        sanity_check_amazon_file(env_amazon, credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
         # Now try to copy directly from AWS S3 to Google Cloud Storage.
         rclone = create_rclone(source=rclone_config_amazon, destination=rclone_config_google)
+        # xyzzy2
         if cloud_path.has_separator(key_google):
             rclone.copy(cloud_path.join(env_amazon.bucket, key_amazon),
                         cloud_path.join(env_google.bucket, key_google))
@@ -446,7 +464,7 @@ def test_rclone_amazon_to_google(env_amazon: TestEnvAmazon, env_google: TestEnvG
         # Cleanup (delete) the test destination file in Google Cloud Storage.
         cleanup_google_file(credentials_google, env_google.bucket, key_google)
         # Cleanup (delete) the test source file in AWS S3.
-        cleanup_amazon_file(credentials_amazon, env_amazon.bucket, key_amazon)
+        cleanup_amazon_file(env_amazon, credentials_amazon, env_amazon.bucket, key_amazon)
 
 
 def test_rclone_local_to_local() -> None:
