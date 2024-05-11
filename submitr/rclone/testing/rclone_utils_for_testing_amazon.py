@@ -1,8 +1,4 @@
 from __future__ import annotations
-# import boto3
-# from botocore.client import BaseClient as BotoClient
-# from botocore.client import S3 as BotoClient
-# from botocore.client import BaseClient as BotoClient
 from boto3 import client as BotoClient
 import configparser
 from datetime import timedelta
@@ -42,7 +38,6 @@ class AwsS3:
     @property
     def client(self) -> BotoClient:
         if not self._client:
-            # self._client = boto3.client(
             self._client = BotoClient(
                 "s3",
                 region_name=self.credentials.region,
@@ -213,15 +208,12 @@ class AwsS3:
             if isinstance(key, str) and (key := key.strip()):
                 resources = [f"arn:aws:s3:::{bucket}/{key}"]
                 # Note that this is specifically required (for some reason) by rclone (but not for plain aws).
-                resources += [f"arn:aws:s3:::{bucket}"]  # does not seem to be needed: f"arn:aws:s3:::{bucket}/*"
+                # resources += [f"arn:aws:s3:::{bucket}"]  # does not seem to be needed: f"arn:aws:s3:::{bucket}/*"
             else:
                 resources = [f"arn:aws:s3:::{bucket}", f"arn:aws:s3:::{bucket}/*"] ; deny = True  # noqa
         # For how this policy stuff is defined in smaht-portal for file upload
         # session token creation process see: encoded_core.types.file.external_creds
-        # actions = ["s3:GetObject", "s3:HeadObject", "s3:ListBucket", "s3:DescribeBucket"]
-        # actions = ["s3:GetObject", "s3:ListBucket", "s3:DescribeBucket"]
         actions = ["s3:GetObject"]
-#       if kms_key_id := self.credentials.kms_key_id:
         if kms_key_id := normalize_string(kms_key_id):
             actions_kms = ["kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey"]
             resource_kms = f"arn:aws:kms:{self.credentials.region}:{self.credentials.account_number}:key/{kms_key_id}"
