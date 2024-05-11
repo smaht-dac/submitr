@@ -1,9 +1,7 @@
 from __future__ import annotations
 from boto3 import client as BotoClient
-from datetime import timedelta
-from json import dumps as dump_json
 from typing import Optional, Union
-from dcicutils.misc_utils import create_dict, create_short_uuid, normalize_string
+from dcicutils.misc_utils import create_dict, normalize_string
 from submitr.rclone.rclone_config import RCloneConfig, RCloneCredentials
 from submitr.rclone.rclone_utils import cloud_path
 
@@ -208,47 +206,3 @@ class AmazonCredentials(RCloneCredentials):
 
     def __ne__(self, other: AmazonCredentials) -> bool:
         return self.__eq__(other)
-
-    def generate_temporary_credentials(self,
-                                       policy: Optional[dict] = None,
-                                       kms_key_id: Optional[str] = None,
-                                       duration: Optional[Union[int, timedelta]] = None,
-                                       raise_exception: bool = True) -> Optional[AmazonCredentials]:
-        """
-        Generates and returns temporary AWS credentials. The default duration of validity
-        for the generated credential is one hour; this can be overridden by specifying
-        the duration argument (which is in seconds). By default the generated credentials
-        will have the same permissions as the credentials of this (self) AmazonCredentials
-        object; this can be changed by passing in an AWS policy object (dictionary).
-        """
-        DURATION_DEFAULT = 60 * 60  # One hour
-        DURATION_MIN = 60 * 15  # Fifteen minutes
-        DURATION_MAX = 60 * 60 * 12  # Twelve hours
-
-        if isinstance(duration, timedelta):
-            duration = duration.total_seconds()
-        if (not isinstance(duration, int)) or (duration <= 0):
-            duration = DURATION_DEFAULT
-        elif duration < DURATION_MIN:
-            duration = DURATION_MIN
-        elif duration > DURATION_MAX:
-            duration = DURATION_MAX
-
-        policy = dump_json(policy) if isinstance(policy, dict) else None
-
-        name = f"test.smaht.submitr.{create_short_uuid(length=12)}"
-        try:
-            sts = BotoClient("sts",
-                             aws_access_key_id=self.access_key_id,
-                             aws_secret_access_key=self.secret_access_key,
-                             aws_session_token=self.session_token)
-            response = sts.get_federation_token(Name=name, Policy=policy, DurationSeconds=duration)
-            if isinstance(credentials := response.get("Credentials"), dict):
-                return AmazonCredentials(access_key_id=credentials.get("AccessKeyId"),
-                                         secret_access_key=credentials.get("SecretAccessKey"),
-                                         session_token=credentials.get("SessionToken"),
-                                         kms_key_id=kms_key_id)
-        except Exception as e:
-            if raise_exception is True:
-                raise e
-        return None

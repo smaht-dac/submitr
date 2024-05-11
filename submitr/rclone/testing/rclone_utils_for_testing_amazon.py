@@ -1,12 +1,16 @@
 from __future__ import annotations
-import boto3
-from botocore.client import BaseClient as BotoClient
+# import boto3
+# from botocore.client import BaseClient as BotoClient
+# from botocore.client import S3 as BotoClient
+# from botocore.client import BaseClient as BotoClient
+from boto3 import client as BotoClient
 import configparser
 from datetime import timedelta
+from json import dumps as dump_json
 import os
 from typing import List, Optional, Union
 from dcicutils.file_utils import are_files_equal, normalize_path
-from dcicutils.misc_utils import normalize_string
+from dcicutils.misc_utils import create_short_uuid, normalize_string
 from dcicutils.tmpfile_utils import temporary_file
 from dcicutils.datetime_utils import format_datetime
 from submitr.rclone.rclone_config_amazon import AmazonCredentials
@@ -38,7 +42,8 @@ class AwsS3:
     @property
     def client(self) -> BotoClient:
         if not self._client:
-            self._client = boto3.client(
+            # self._client = boto3.client(
+            self._client = BotoClient(
                 "s3",
                 region_name=self.credentials.region,
                 aws_access_key_id=self.credentials.access_key_id,
@@ -230,9 +235,55 @@ class AwsS3:
         if deny:
             statements.append({"Effect": "Deny", "Action": actions, "NotResource": resources})
         policy = {"Version": "2012-10-17", "Statement": statements}
-        credentials = self.credentials.generate_temporary_credentials(policy=policy,
-                                                                      kms_key_id=kms_key_id, duration=duration)
+        credentials = AwsS3._generate_temporary_credentials(generating_credentials=self.credentials,
+                                                            policy=policy,
+                                                            kms_key_id=kms_key_id,
+                                                            duration=duration)
         return AmazonCredentials(credentials) if credentials else None
+
+    def _generate_temporary_credentials(generating_credentials: AmazonCredentials,
+                                        policy: Optional[dict] = None,
+                                        kms_key_id: Optional[str] = None,
+                                        duration: Optional[Union[int, timedelta]] = None,
+                                        raise_exception: bool = True) -> Optional[AmazonCredentials]:
+        """
+        Generates and returns temporary AWS credentials. The default duration of validity
+        for the generated credential is one hour; this can be overridden by specifying
+        the duration argument (which is in seconds). By default the generated credentials
+        will have the same permissions as the given generating_credentials; this can be
+        changed by passing in an AWS policy object (dictionary).
+        """
+        DURATION_DEFAULT = 60 * 60  # One hour
+        DURATION_MIN = 60 * 15  # Fifteen minutes
+        DURATION_MAX = 60 * 60 * 12  # Twelve hours
+
+        if isinstance(duration, timedelta):
+            duration = duration.total_seconds()
+        if (not isinstance(duration, int)) or (duration <= 0):
+            duration = DURATION_DEFAULT
+        elif duration < DURATION_MIN:
+            duration = DURATION_MIN
+        elif duration > DURATION_MAX:
+            duration = DURATION_MAX
+
+        policy = dump_json(policy) if isinstance(policy, dict) else None
+
+        name = f"test.smaht.submitr.{create_short_uuid(length=12)}"
+        try:
+            sts = BotoClient("sts",
+                             aws_access_key_id=generating_credentials.access_key_id,
+                             aws_secret_access_key=generating_credentials.secret_access_key,
+                             aws_session_token=generating_credentials.session_token)
+            response = sts.get_federation_token(Name=name, Policy=policy, DurationSeconds=duration)
+            if isinstance(credentials := response.get("Credentials"), dict):
+                return AmazonCredentials(access_key_id=credentials.get("AccessKeyId"),
+                                         secret_access_key=credentials.get("SecretAccessKey"),
+                                         session_token=credentials.get("SessionToken"),
+                                         kms_key_id=kms_key_id)
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+        return None
 
     def _file_head(self, bucket: str, key: str, raise_exception: bool = True) -> Optional[dict]:
         try:
