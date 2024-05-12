@@ -18,6 +18,19 @@ from submitr.rclone.testing.rclone_utils_for_testing_google import Gcs
 # Need valid Google Cloud credentials for (currently) project smaht-dac.
 # Wonder how to possibly test this as unit test within GA?
 
+# These are two things likely needing updates for running locally:
+# - The AWS environment name (per use_test_creds).
+# - The Google service account file path.
+AMAZON_ENVIRONMENT_NAME = "smaht-wolf"
+GOOGLE_SERVICE_ACCOUNT_FILE_PATH = "/Users/dmichaels/.config/google-cloud/smaht-dac-617e0480d8e2.json"
+
+# These are slightly less likely to need updates for running locally:
+AMAZON_TEST_BUCKET_NAME = "smaht-unit-testing-files"
+AMAZON_KMS_KEY_ID = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"
+GOOGLE_ACCOUNT_NAME = "smaht-dac"
+GOOGLE_TEST_BUCKET_NAME = "smaht-submitr-rclone-testing"
+GOOGLE_LOCATION = "us-east1"
+
 
 class TestEnv:
 
@@ -58,9 +71,9 @@ class TestEnvAmazon(TestEnv):
         # optional session_token), this is also assumed to also contain the region.
         # For the kms_key_id see ENCODED_S3_ENCRYPT_KEY_ID in AWS C4AppConfigSmahtWolf Secrets.
         super().__init__(use_cloud_subfolder_key=use_cloud_subfolder_key)
-        self.env = "smaht-wolf"
-        self.kms_key_id = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"
-        self.bucket = "smaht-unit-testing-files"
+        self.env = AMAZON_ENVIRONMENT_NAME
+        self.kms_key_id = AMAZON_KMS_KEY_ID
+        self.bucket = AMAZON_TEST_BUCKET_NAME
         self.main_credentials = self.credentials()
 
     def credentials(self, nokms: bool = False) -> AmazonCredentials:
@@ -96,10 +109,10 @@ class TestEnvGoogle(TestEnv):
     def __init__(self, use_cloud_subfolder_key: bool = False):
         # The Google test account project is: smaht-dac
         super().__init__(use_cloud_subfolder_key=use_cloud_subfolder_key)
-        self.location = "us-east1"
-        self.service_account_file = "/Users/dmichaels/.config/google-cloud/smaht-dac-617e0480d8e2.json"
-        self.project_id = "smaht-dac"
-        self.bucket = "smaht-submitr-rclone-testing"
+        self.location = GOOGLE_LOCATION
+        self.service_account_file = GOOGLE_SERVICE_ACCOUNT_FILE_PATH
+        self.project_id = GOOGLE_ACCOUNT_NAME
+        self.bucket = GOOGLE_TEST_BUCKET_NAME
 
     def credentials(self) -> GoogleCredentials:
         credentials = GoogleCredentials(location=self.location, service_account_file=self.service_account_file)
