@@ -46,9 +46,15 @@ class cloud_path:
         return value.replace(cloud_path.separator, os.sep)
 
     @staticmethod
+    def basename(value: str) -> str:
+        if not (value := cloud_path.normalize(value)):
+            return ""
+        return os.path.basename(cloud_path.to_file_path(value))
+
+    @staticmethod
     def key(value: str) -> str:
         # If the value looks like a cloud path which has an initial component (i.e.
-        # before the first slash), then assume that this first componentn is a bucket name,
+        # before the first slash), then assume that this first component is a bucket name,
         # and return the part of the value (i.e the key) after this first (bucket) component.
         # If the value does not have multiple component (i.e. no slash) then return just the value.
         if value := cloud_path.normalize(value):

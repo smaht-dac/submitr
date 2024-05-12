@@ -62,7 +62,7 @@ class RClone(RCloneCommands, RCloneInstallation):
                 yield temporary_config_file_name
 
     def copy(self, source: str, destination: Optional[str] = None, progress: Optional[Callable] = None,
-             nodirectories: bool = False, dryrun: bool = False, copyto: bool = True,
+             directories: bool = False, dryrun: bool = False, copyto: bool = True,
              raise_exception: bool = True) -> Union[bool, str]:
         """
         Uses rclone to copy the given source file to the given destination. All manner of variation is
@@ -132,11 +132,11 @@ class RClone(RCloneCommands, RCloneInstallation):
             if not (destination := normalize_path(destination)):
                 raise Exception(f"No file destination specified.")
             if os.path.isdir(destination):
-                if nodirectories is True:
-                    # do i need to get the basename of the cloud source? no, but minus the bucket
-                    key_as_file_name = cloud_path.key(source).replace(cloud_path.separator, "_")
-                    destination = os.path.join(destination, key_as_file_name)
+                if not (directories is True):
+                    # Normal/usually-desired case e.g.: cp s3://bucket/subfolder/file to destination/file
+                    destination = os.path.join(destination, cloud_path.basename(source))
                 else:
+                    # Unusual case e.g.: cp s3://bucket/subfolder/file to destination/subfolder/file
                     key_as_file_path = cloud_path.to_file_path(cloud_path.key(source))
                     destination_directory = normalize_path(os.path.join(destination, os.path.dirname(key_as_file_path)))
                     os.makedirs(destination_directory, exist_ok=True)

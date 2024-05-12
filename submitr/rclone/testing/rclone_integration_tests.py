@@ -307,7 +307,7 @@ def _test_rclone_between_amazon_and_local(env_amazon: TestEnvAmazon,
         with temporary_directory() as tmp_download_directory:
             rclone.copy(cloud_path.join(env_amazon.bucket, key_amazon), tmp_download_directory, copyto=False)
             assert are_files_equal(tmp_test_file_path,
-                                   os.path.join(tmp_download_directory, cloud_path.to_file_path(key_amazon))) is True
+                                   os.path.join(tmp_download_directory, cloud_path.basename(key_amazon))) is True
         # Cleanup (delete) the test file in AWS S3.
         cleanup_amazon_file(env_amazon, env_amazon.bucket, key_amazon)
 
@@ -337,7 +337,7 @@ def test_rclone_between_google_and_local(env_google: TestEnvGoogle) -> None:
         with temporary_directory() as tmp_download_directory:
             rclone.copy(cloud_path.join(env_google.bucket, key_google), tmp_download_directory, copyto=False)
             assert are_files_equal(tmp_test_file_path,
-                                   os.path.join(tmp_download_directory, cloud_path.to_file_path(key_google))) is True
+                                   os.path.join(tmp_download_directory, cloud_path.basename(key_google))) is True
         # Cleanup (delete) the test file in Google Cloud Storage.
         cleanup_google_file(env_google, env_google.bucket, key_google)
 
