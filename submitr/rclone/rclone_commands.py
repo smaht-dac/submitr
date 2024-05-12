@@ -12,13 +12,15 @@ class RCloneCommands:
                      dryrun: bool = False,
                      destination_s3: bool = False,
                      raise_exception: bool = False) -> Union[bool, str]:
-        # N.B The rclone --ignore-times option forces copy even if the file seems
-        # not to have have changed, presumably based on something like a checksum.
         command = [RCloneInstallation.executable_path(),
                    "copyto" if copyto is True else "copy", "--progress", "--ignore-times"]
+        # The rclone --ignore-times option forces copy even if the file seems
+        # not to have have changed, presumably based on something like a checksum.
+        command += ["--ignore-times"]
         if destination_s3:
-            command += ["--s3-no-check-bucket"]  # Obviates need for s3:CreateBucket in credentials policy
-            command += ["--s3-no-head-object"]  # Obviates need for s3:ListBucket in credentials policy
+            # The rclone --s3-no-check-bucket option obviates need for s3:CreateBucket in credentials policy.
+            # The rclone --s3-no-head-object option obviates need for s3:ListBucket in credentials policy.
+            command += ["--s3-no-check-bucket", "--s3-no-head-object"]
         if isinstance(config, str) and config:
             command += ["--config", config]
         if isinstance(args, list):
