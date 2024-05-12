@@ -56,6 +56,7 @@ class RClone(RCloneCommands, RCloneInstallation):
                 # This is just for dryrun for testing/troubleshooting.
                 persistent_config_file_name = create_temporary_file_name(suffix=".conf")
                 copy_file(temporary_config_file_name, persistent_config_file_name)
+                os.chmod(persistent_config_file_name, 0o600)  # for security
                 yield persistent_config_file_name
             else:
                 yield temporary_config_file_name
