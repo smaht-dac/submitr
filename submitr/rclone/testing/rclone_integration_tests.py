@@ -380,10 +380,10 @@ def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon,
         assert rclone_config_google.file_checksum(path_google) == compute_file_md5(tmp_test_file_path)
         assert rclone_config_google.ping() is True
         # Exercise the RCloneConfig rclone commands (path_exists, file_size, file_checksum) for Amazon file.
-        amazon_path = cloud_path.join(env_amazon.bucket, key_amazon)
         assert env_amazon.s3_non_rclone().file_size(env_amazon.bucket, key_amazon) == TestEnv.test_file_size
         assert env_amazon.s3_non_rclone().file_exists(env_amazon.bucket, key_amazon) is True
-        assert env_amazon.s3_non_rclone().file_checksum(env_amazon.bucket, key_amazon) == compute_file_md5(tmp_test_file_path)
+        assert (env_amazon.s3_non_rclone().file_checksum(env_amazon.bucket, key_amazon) ==
+                compute_file_md5(tmp_test_file_path))
         # Do the above copy again but this time with the destination
         # bucket specified within the RCloneConfigGoogle object (new: 2024-05-10).
         cleanup_amazon_file(env_amazon, env_amazon.bucket, key_amazon)
@@ -401,7 +401,8 @@ def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon,
         # Re-exercise the RCloneConfig rclone commands (path_exists, file_size, file_checksum) for Amazon file.
         assert env_amazon.s3_non_rclone().file_size(env_amazon.bucket, key_amazon) == TestEnv.test_file_size
         assert env_amazon.s3_non_rclone().file_exists(env_amazon.bucket, key_amazon) is True
-        assert env_amazon.s3_non_rclone().file_checksum(env_amazon.bucket, key_amazon) == compute_file_md5(tmp_test_file_path)
+        assert (env_amazon.s3_non_rclone().file_checksum(env_amazon.bucket, key_amazon) ==
+                compute_file_md5(tmp_test_file_path))
         # Cleanup (delete) the test destination file in AWS S3.
         cleanup_amazon_file(env_amazon, env_amazon.bucket, key_amazon)
         # Cleanup (delete) the test source file in Google Cloud Storage.
