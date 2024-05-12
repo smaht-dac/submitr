@@ -60,8 +60,6 @@ def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
     #
     # Returns empty list no files found, or None if something unexpected in the data.
 
-    # import pdb ; pdb.set_trace()  # noqa
-    pass
     if not isinstance(portal, Portal) or not isinstance(arg, (str, dict, StructuredDataSet)) or not arg:
         return None
 

@@ -120,6 +120,14 @@ class FileForUpload:
         return self._uuid
 
     @property
+    def from_local(self) -> bool:
+        return self.found_local and ((not self.found_google) or self._favor_local)
+
+    @property
+    def from_google(self) -> bool:
+        return self.found_google and ((not self.found_local) or (not self._favor_local))
+
+    @property
     def found(self) -> bool:
         return self.path_local is not None or self.path_google is not None
 
@@ -157,7 +165,6 @@ class FileForUpload:
 
     @property
     def found_local(self) -> bool:
-        # import pdb ; pdb.set_trace()  # noqa
         return self.path_local is not None
 
     @property
@@ -190,7 +197,6 @@ class FileForUpload:
 
     @property
     def found_google(self) -> bool:
-        # import pdb ; pdb.set_trace()  # noqa
         return self.path_google is not None
 
     @property
@@ -226,7 +232,6 @@ class FileForUpload:
                verbose: bool = False, printf: Optional[Callable] = None) -> bool:
         if not callable(printf):
             printf = print
-        # import pdb ; pdb.set_trace()  # noqa
         if not self.found:
             printf(f"WARNING: Cannot find file for upload: {self.name} ({self.uuid})")
             if isinstance(portal, Portal):

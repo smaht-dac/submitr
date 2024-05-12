@@ -83,13 +83,13 @@ def upload_file_to_aws_s3(file: FileForUpload,
     if not callable(printf):
         printf = print
 
-    if file.found_local:
+    if file.from_local:
         rclone = None
         file_size = file.size_local
         file_checksum = None
         file_checksum_timestamp = None
 
-    elif file.found_google:
+    elif file.from_google:
         rclone_config_google = file.config_google
         rclone_amazon_config = RCloneConfigAmazon(region=aws_credentials.get("region_name"),
                                                   access_key_id=aws_credentials.get("aws_access_key_id"),
@@ -109,7 +109,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         file_checksum_timestamp = current_timestamp()
 
     else:
-        return False
+        raise Exception("File for upload not found; should not happen at this point!")
 
     def define_upload_file_callback(progress_total_nbytes: bool = False) -> None:
         nonlocal file_size
@@ -284,14 +284,16 @@ def upload_file_to_aws_s3(file: FileForUpload,
         nonlocal aws_credentials, s3_bucket, s3_key, file_checksum, file_checksum_timestamp
         try:
             s3 = BotoClient("s3", **aws_credentials)
-            metadata = s3.head_object(Bucket=s3_bucket, Key=s3_key).get("Metadata", {})
-            if file_checksum:
-                metadata["md5"] = file_checksum
-                metadata["md5-timestamp"] = str(file_checksum_timestamp)
-                metadata["md5-source"] = "google-cloud-storage" if file.found_google else "file-system"
-            return metadata
+            if isinstance(s3_file_head := s3.head_object(Bucket=s3_bucket, Key=s3_key), dict):
+                if isinstance(metadata := s3_file_head.get("Metadata"), dict):
+                    if file_checksum:
+                        metadata["md5"] = file_checksum
+                        metadata["md5-timestamp"] = str(file_checksum_timestamp)
+                        metadata["md5-source"] = "google-cloud-storage" if file.found_google else "file-system"
+                    return metadata
         except Exception:
-            return {}
+            pass
+        return {}
 
     def update_metadata_for_uploaded_file() -> bool:
         # Only need in the GCS case, as this metadata is set (via ExtraArgs) on the actual upload for S3.
