@@ -1,8 +1,8 @@
 from contextlib import contextmanager
 from enum import Enum
 import os
-from typing import Callable, Optional, Tuple, Union
-from dcicutils.file_utils import are_files_equal, compute_file_md5
+from typing import Optional, Tuple
+from dcicutils.file_utils import are_files_equal, compute_file_md5, normalize_path
 from dcicutils.misc_utils import create_short_uuid
 from dcicutils.tmpfile_utils import temporary_directory, temporary_file, temporary_random_file
 from submitr.rclone.rclone import RClone
@@ -19,10 +19,12 @@ from submitr.rclone.testing.rclone_utils_for_testing_google import Gcs
 # Wonder how to possibly test this as unit test within GA?
 
 # These are two things likely needing updates for running locally:
-# - The AWS environment name (per use_test_creds).
-# - The Google service account file path.
+# - The AWS environment-name (per use_test_creds).
+#   I.e. e.g. load AWS credentials from: ~/.aws_test.{environment-name}/credentials
+# - The Google service-account-file path.
+#   As exported from Google account.
 AMAZON_ENVIRONMENT_NAME = "smaht-wolf"
-GOOGLE_SERVICE_ACCOUNT_FILE_PATH = "/Users/dmichaels/.config/google-cloud/smaht-dac-617e0480d8e2.json"
+GOOGLE_SERVICE_ACCOUNT_FILE_PATH = "~dmichaels/.config/google-cloud/smaht-dac-617e0480d8e2.json"
 
 # These are slightly less likely to need updates for running locally:
 AMAZON_TEST_BUCKET_NAME = "smaht-unit-testing-files"
@@ -85,20 +87,15 @@ class TestEnvAmazon(TestEnv):
         assert credentials.kms_key_id == (None if nokms is True else self.kms_key_id)
         return credentials
 
-    def credentials_nokms(self) -> AmazonCredentials:
-        return self.credentials(nokms=True)
-
-    def temporary_credentials(self, nokms: bool = False,
-                              bucket: Optional[str] = None, key: Optional[str] = None) -> AmazonCredentials:
+    def temporary_credentials(self,
+                              bucket: Optional[str] = None, key: Optional[str] = None,
+                              nokms: bool = False) -> AmazonCredentials:
         s3 = self.s3_non_rclone()
         kms_key_id = None if nokms else self.kms_key_id
         temporary_credentials = s3.generate_temporary_credentials(bucket=bucket, key=key, kms_key_id=kms_key_id)
         assert isinstance(temporary_credentials.session_token, str) and temporary_credentials.session_token
         assert temporary_credentials.kms_key_id == (None if nokms is True else self.kms_key_id)
         return temporary_credentials
-
-    def temporary_credentials_nokms(self, bucket: Optional[str] = None, key: Optional[str] = None) -> AmazonCredentials:
-        return self.temporary_credentials(nokms=True, bucket=bucket, key=key)
 
     def s3_non_rclone(self):
         return AwsS3(self.main_credentials)
@@ -107,7 +104,6 @@ class TestEnvAmazon(TestEnv):
 class TestEnvGoogle(TestEnv):
 
     def __init__(self, use_cloud_subfolder_key: bool = False):
-        # The Google test account project is: smaht-dac
         super().__init__(use_cloud_subfolder_key=use_cloud_subfolder_key)
         self.location = GOOGLE_LOCATION
         self.service_account_file = GOOGLE_SERVICE_ACCOUNT_FILE_PATH
@@ -117,7 +113,7 @@ class TestEnvGoogle(TestEnv):
     def credentials(self) -> GoogleCredentials:
         credentials = GoogleCredentials(location=self.location, service_account_file=self.service_account_file)
         assert credentials.location == self.location
-        assert credentials.service_account_file == self.service_account_file
+        assert credentials.service_account_file == normalize_path(self.service_account_file, expand_home=True)
         assert os.path.isfile(credentials.service_account_file)
         return credentials
 
@@ -258,43 +254,40 @@ def _test_utils_for_testing_amazon(env_amazon: TestEnvAmazon, credentials: Amazo
 def test_rclone_between_amazon_and_local(env_amazon: TestEnvAmazon) -> None:
 
     _test_rclone_between_amazon_and_local(env_amazon=env_amazon,
-                                          credentials=env_amazon.credentials)
+                                          credentials_type_amazon=None,
+                                          nokms=False)
     _test_rclone_between_amazon_and_local(env_amazon=env_amazon,
-                                          credentials=env_amazon.credentials_nokms)
+                                          credentials_type_amazon=None,
+                                          nokms=True)
 
     _test_rclone_between_amazon_and_local(env_amazon=env_amazon,
-                                          credentials=env_amazon.temporary_credentials,
-                                          use_key_specific_credentials=False)
+                                          credentials_type_amazon=TestEnvAmazon.CredentialsType.TEMPORARY,
+                                          nokms=False)
     _test_rclone_between_amazon_and_local(env_amazon=env_amazon,
-                                          credentials=env_amazon.temporary_credentials_nokms,
-                                          use_key_specific_credentials=False)
+                                          credentials_type_amazon=TestEnvAmazon.CredentialsType.TEMPORARY,
+                                          nokms=True)
 
     _test_rclone_between_amazon_and_local(env_amazon=env_amazon,
-                                          credentials=env_amazon.temporary_credentials,
-                                          use_key_specific_credentials=True)
+                                          credentials_type_amazon=TestEnvAmazon.CredentialsType.TEMPORARY_KEY_SPECIFIC,
+                                          nokms=False)
     _test_rclone_between_amazon_and_local(env_amazon=env_amazon,
-                                          credentials=env_amazon.temporary_credentials_nokms,
-                                          use_key_specific_credentials=True)
+                                          credentials_type_amazon=TestEnvAmazon.CredentialsType.TEMPORARY_KEY_SPECIFIC,
+                                          nokms=True)
 
 
 def _test_rclone_between_amazon_and_local(env_amazon: TestEnvAmazon,
-                                          credentials: Union[Callable, AmazonCredentials],
-                                          use_key_specific_credentials: bool = False) -> None:
-
-    if isinstance(credentials, AmazonCredentials):
-        credentials = lambda: credentials  # noqa
-    elif not callable(credentials):
-        assert False
+                                          credentials_type_amazon: Optional[TestEnvAmazon.CredentialsType] = None,
+                                          nokms: bool = False) -> None:
 
     with TestEnv.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         key_amazon = env_amazon.file_name_to_key_name(tmp_test_file_name)
-        # Here we have a local test file to upload to AWS S3.
-        if use_key_specific_credentials is True:
-            # Here we create (temporary) credentials with policies targetted to a specific bucket/key.
-            credentials = credentials(bucket=env_amazon.bucket, key=key_amazon)
+        if credentials_type_amazon == TestEnvAmazon.CredentialsType.TEMPORARY:
+            credentials_amazon = env_amazon.temporary_credentials(nokms=nokms)
+        elif credentials_type_amazon == TestEnvAmazon.CredentialsType.TEMPORARY_KEY_SPECIFIC:
+            credentials_amazon = env_amazon.temporary_credentials(bucket=env_amazon.bucket, key=key_amazon, nokms=nokms)
         else:
-            credentials = credentials()
-        config = create_rclone_config_amazon(credentials)
+            credentials_amazon = env_amazon.credentials(nokms=nokms)
+        config = create_rclone_config_amazon(credentials_amazon)
         # Upload the local test file to AWS S3 using RClone;
         # we upload tmp_test_file_path to the key (tmp_test_file_name) key in env_amazon.bucket.
         rclone = create_rclone(destination=config)
@@ -307,7 +300,7 @@ def _test_rclone_between_amazon_and_local(env_amazon: TestEnvAmazon,
         else:
             assert rclone.copy(tmp_test_file_path, env_amazon.bucket, copyto=False) is True
         # Sanity check the uploaded file using non-RClone methods (via AwS3 which uses boto3).
-        sanity_check_amazon_file(env_amazon, credentials, env_amazon.bucket, key_amazon, tmp_test_file_path)
+        sanity_check_amazon_file(env_amazon, credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
         # Now try to download the test file (which was uploaded above to AWS S3 using RClone) to the local file system
         # using RClone; use the same RClone configuration as for upload, but as the source rather than the destination.
         rclone = create_rclone(source=config)

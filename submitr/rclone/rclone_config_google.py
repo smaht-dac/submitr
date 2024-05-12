@@ -188,7 +188,7 @@ class GoogleCredentials(RCloneCredentials):
 
         if location := normalize_string(location):
             self._location = location
-        if service_account_file := normalize_path(service_account_file):
+        if service_account_file := normalize_path(service_account_file, expand_home=True):
             if not os.path.isfile(service_account_file):
                 raise Exception(f"GCS service account file not found: {service_account_file}")
             self._service_account_file = service_account_file
