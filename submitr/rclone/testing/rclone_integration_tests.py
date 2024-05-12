@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from enum import Enum
 import os
 from typing import Callable, Optional, Tuple, Union
 from dcicutils.file_utils import are_files_equal, compute_file_md5
@@ -24,8 +25,8 @@ class TestEnv:
     test_file_suffix = ".txt"
     test_file_size = 2048
 
-    def __init__(self, user_cloud_subfolder_key: bool = False):
-        self.user_cloud_subfolder_key = True if (user_cloud_subfolder_key is True) else False
+    def __init__(self, use_cloud_subfolder_key: bool = False):
+        self.use_cloud_subfolder_key = True if (use_cloud_subfolder_key is True) else False
         self.bucket = None
 
     @staticmethod
@@ -38,7 +39,7 @@ class TestEnv:
 
     def file_name_to_key_name(self, file_name: str) -> str:
         # Assumed that the given file name is just that, a file base name, not a path name.
-        if not (self.user_cloud_subfolder_key is True):
+        if not (self.use_cloud_subfolder_key is True):
             return file_name
         else:
             return cloud_path.join(f"{TestEnv.test_file_prefix}{create_short_uuid(length=8)}", file_name)
@@ -46,13 +47,17 @@ class TestEnv:
 
 class TestEnvAmazon(TestEnv):
 
-    def __init__(self, user_cloud_subfolder_key: bool = False):
+    class CredentialsType(Enum):
+        TEMPORARY = "temporary"
+        TEMPORARY_KEY_SPECIFIC = "temporary-key-specific"
+
+    def __init__(self, use_cloud_subfolder_key: bool = False):
         # Specifying the env name here (as smaht-wolf) will cause
         # AwsCredentials to read from: ~/.aws_test.smaht-wolf/credentials
         # In addition to the basic credentials (access_key_id, secret_access_key,
         # optional session_token), this is also assumed to also contain the region.
         # For the kms_key_id see ENCODED_S3_ENCRYPT_KEY_ID in AWS C4AppConfigSmahtWolf Secrets.
-        super().__init__(user_cloud_subfolder_key=user_cloud_subfolder_key)
+        super().__init__(use_cloud_subfolder_key=use_cloud_subfolder_key)
         self.env = "smaht-wolf"
         self.kms_key_id = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"
         self.bucket = "smaht-unit-testing-files"
@@ -76,7 +81,6 @@ class TestEnvAmazon(TestEnv):
         kms_key_id = None if nokms else self.kms_key_id
         temporary_credentials = s3.generate_temporary_credentials(bucket=bucket, key=key, kms_key_id=kms_key_id)
         assert isinstance(temporary_credentials.session_token, str) and temporary_credentials.session_token
-        pass
         assert temporary_credentials.kms_key_id == (None if nokms is True else self.kms_key_id)
         return temporary_credentials
 
@@ -89,9 +93,9 @@ class TestEnvAmazon(TestEnv):
 
 class TestEnvGoogle(TestEnv):
 
-    def __init__(self, user_cloud_subfolder_key: bool = False):
+    def __init__(self, use_cloud_subfolder_key: bool = False):
         # The Google test account project is: smaht-dac
-        super().__init__(user_cloud_subfolder_key=user_cloud_subfolder_key)
+        super().__init__(use_cloud_subfolder_key=use_cloud_subfolder_key)
         self.location = "us-east1"
         self.service_account_file = "/Users/dmichaels/.config/google-cloud/smaht-dac-617e0480d8e2.json"
         self.project_id = "smaht-dac"
@@ -332,20 +336,48 @@ def test_rclone_between_google_and_local(env_google: TestEnvGoogle) -> None:
         cleanup_google_file(env_google, env_google.bucket, key_google)
 
 
-def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon,
-                                 env_google: TestEnvGoogle,
-                                 use_temporary_credentials_amazon: bool = False) -> None:
+def test_rclone_google_to_amazon(env_amazon: TestEnvAmazon, env_google: TestEnvGoogle) -> None:
+
+    _test_rclone_google_to_amazon(env_amazon=env_amazon, env_google=env_google,
+                                  credentials_type_amazon=None,
+                                  nokms=False)
+    _test_rclone_google_to_amazon(env_amazon=env_amazon, env_google=env_google,
+                                  credentials_type_amazon=None,
+                                  nokms=True)
+
+    _test_rclone_google_to_amazon(env_amazon=env_amazon, env_google=env_google,
+                                  credentials_type_amazon=TestEnvAmazon.CredentialsType.TEMPORARY,
+                                  nokms=False)
+    _test_rclone_google_to_amazon(env_amazon=env_amazon, env_google=env_google,
+                                  credentials_type_amazon=TestEnvAmazon.CredentialsType.TEMPORARY,
+                                  nokms=True)
+
+    _test_rclone_google_to_amazon(env_amazon=env_amazon, env_google=env_google,
+                                  credentials_type_amazon=TestEnvAmazon.CredentialsType.TEMPORARY_KEY_SPECIFIC,
+                                  nokms=False)
+    _test_rclone_google_to_amazon(env_amazon=env_amazon, env_google=env_google,
+                                  credentials_type_amazon=TestEnvAmazon.CredentialsType.TEMPORARY_KEY_SPECIFIC,
+                                  nokms=True)
+
+
+def _test_rclone_google_to_amazon(env_amazon: TestEnvAmazon,
+                                  env_google: TestEnvGoogle,
+                                  credentials_type_amazon: Optional[TestEnvAmazon.CredentialsType] = None,
+                                  nokms: bool = False) -> None:
+
     credentials_google = env_google.credentials()
-    if use_temporary_credentials_amazon:
-        credentials_amazon = env_amazon.temporary_credentials()
-    else:
-        credentials_amazon = env_amazon.credentials()
     rclone_config_google = create_rclone_config_google(credentials_google, env_google)
-    rclone_config_amazon = create_rclone_config_amazon(credentials_amazon)
     # First upload a test file to Google Cloud Storage.
     with TestEnv.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         key_amazon = env_amazon.file_name_to_key_name(tmp_test_file_name)
         key_google = env_google.file_name_to_key_name(tmp_test_file_name)
+        if credentials_type_amazon == TestEnvAmazon.CredentialsType.TEMPORARY:
+            credentials_amazon = env_amazon.temporary_credentials(nokms=nokms)
+        elif credentials_type_amazon == TestEnvAmazon.CredentialsType.TEMPORARY_KEY_SPECIFIC:
+            credentials_amazon = env_amazon.temporary_credentials(bucket=env_amazon.bucket, key=key_amazon, nokms=nokms)
+        else:
+            credentials_amazon = env_amazon.credentials(nokms=nokms)
+        rclone_config_amazon = create_rclone_config_amazon(credentials_amazon)
         # Here we have a local test file to upload to Google Cloud Storage;
         # which we will then copy directly to AWS S3 via RClone.
         # So first upload our local test file to Google Cloud Storage (via RClone - why not).
@@ -468,22 +500,21 @@ def test_rclone_local_to_local() -> None:
                                    os.path.join(tmp_destination_directory, os.path.basename(tmp_test_file_path)))
 
 
-def test_cloud_variations(user_cloud_subfolder_key: bool = False):
+def test_cloud_variations(use_cloud_subfolder_key: bool = False):
 
-    env_amazon = TestEnvAmazon(user_cloud_subfolder_key=user_cloud_subfolder_key)
-    env_google = TestEnvGoogle(user_cloud_subfolder_key=user_cloud_subfolder_key)
+    env_amazon = TestEnvAmazon(use_cloud_subfolder_key=use_cloud_subfolder_key)
+    env_google = TestEnvGoogle(use_cloud_subfolder_key=use_cloud_subfolder_key)
     initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
     test_utils_for_testing(env_amazon=env_amazon)
     test_rclone_between_amazon_and_local(env_amazon=env_amazon)
     test_rclone_between_google_and_local(env_google=env_google)
     test_rclone_google_to_amazon(env_amazon=env_amazon, env_google=env_google)
-    test_rclone_google_to_amazon(env_amazon=env_amazon, env_google=env_google, use_temporary_credentials_amazon=True)
     test_rclone_amazon_to_google(env_amazon=env_amazon, env_google=env_google)
 
 
 def test():
-    test_cloud_variations(user_cloud_subfolder_key=True)
-    test_cloud_variations(user_cloud_subfolder_key=False)
+    test_cloud_variations(use_cloud_subfolder_key=True)
+    test_cloud_variations(use_cloud_subfolder_key=False)
     test_rclone_local_to_local()
 
 
