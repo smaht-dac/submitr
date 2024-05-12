@@ -1,4 +1,5 @@
 from __future__ import annotations
+from base64 import b64decode as base64_decode
 from boto3 import client as BotoClient
 import configparser
 from datetime import timedelta
@@ -142,7 +143,18 @@ class AwsS3:
         return None
 
     def file_checksum(self, bucket: str, key: str, raise_exception: bool = True) -> Optional[str]:
+        # N.B. When using rclone to copy a file to AWS S3, it writes checksum (md5) for the file
+        # to the metadata associated with the target key; it seems to put it in two places, in
+        # x-amz-meta-md5chksum in the HTTPHeaders and also in md5chksum in the Metadata; see below.
+        # But this is (possibly/plausibly) only for smaller sized files; see rclone.py for more
+        # comments on checksums; in any case this code here is only for testing and is fine for
+        # our purposes of testing the basic functioning of the rclone copy/copyto commands.
         if file_head := self._file_head(bucket, key, raise_exception=raise_exception):
+            if isinstance(md5 := file_head.get("Metadata", {}).get("md5chksum"), str):
+                return base64_decode(md5).hex()
+            md5 = file_head.get("ResponseMetadata", {}).get("HTTPHeaders", {}).get("x-amz-meta-md5chksum")
+            if isinstance(md5, str):
+                return base64_decode(md5).hex()
             return file_head.get("ETag").strip("\"")
         return None
 
@@ -207,11 +219,8 @@ class AwsS3:
         if isinstance(bucket, str) and (bucket := bucket.strip()):
             if isinstance(key, str) and (key := key.strip()):
                 resources = [f"arn:aws:s3:::{bucket}/{key}"]
-                # Note that this is specifically required (for some reason) by rclone (but not for plain aws).
             else:
-                import pdb ; pdb.set_trace()  # noqa
-                pass
-                resources = [f"arn:aws:s3:::{bucket}", f"arn:aws:s3:::{bucket}/*"] ; deny = True  # noqa
+                raise Exception("Must use both bucket and key for temporary credentials or no bucket at all.")
         # For how this policy stuff is defined in smaht-portal for file upload
         # session token creation process see: encoded_core.types.file.external_creds
         actions = ["s3:GetObject"]

@@ -30,8 +30,12 @@ from submitr.utils import get_s3_bucket_and_key_from_s3_uri, format_datetime
 # WRT the "rclone hashsum md5" command, it seems unreliable for S3 (it seems to just return
 # the etag which generally seems to be the same as md5 for smaller files); so we do not use it;
 # this rclone command does seem to be reliable for GCS (modulo the above comment about multi-parts).
+# And actually in any case, for our use case, where we use Portal-generated temporary AWS credentials
+# for the AWS S3 upload, which have policies only for s3:PutObject ans s3:GetObject, we cannot use
+# rclone hashsum because it requires additionally s3:ListBucket; so we don't (and we don't) want to
+# change this then rclone hashsum is not really a viable option to get the checksum of and AWS S3 key.
 #
-# Given this, we will get the md5 of the file to be uploaded to S3 and store it as metadata on
+# Given all this, we will get the md5 of the file to be uploaded to S3 and store it as metadata on
 # the uploaded S3 file/object. For local file uploads we just compute this md5 directly. For files
 # being uploaded from GCS we (trust and) take/use the md5 value stored in GCS for the file/object.
 # Then when we need the md5 of an already existing file in S3 we read this metadata rather than

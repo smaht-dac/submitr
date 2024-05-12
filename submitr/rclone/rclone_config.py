@@ -17,7 +17,7 @@ class RCloneConfig(AbstractBaseClass):
                  bucket: Optional[str] = None) -> None:
         self._name = normalize_string(name) or create_uuid()
         self._credentials = credentials if isinstance(credentials, RCloneCredentials) else None
-        # Heree we allow not just a bucket name but any "path", such as they are (i.e. path-like),
+        # Here we allow not just a bucket name but any "path", such as they are (i.e. path-like),
         # beginning with a bucket name, within the cloud (S3, GCP) storage system. If set then
         # this will be prepended (via cloud_path.path/join) to any path which is operated upon,
         # e.g. for the path_exists, file_size, file_checksum, and RClone.copy functions.
@@ -98,6 +98,10 @@ class RCloneConfig(AbstractBaseClass):
         return None
 
     def path_exists(self, path: str) -> Optional[bool]:
+        # N.B. For AWS S3 rclone ls requires policies s3:GetObject and s3:ListBucket
+        # for the bucket/key. So for our main use case (using Portal-granted temporary
+        # credentials to copy to AWS S3, which only have s3:PutObject and s3:GetObject
+        # policies) we cannot use this. See submitr.s3_utils for special handling.
         if path := self.path(path):
             with self.config_file() as config_file:
                 return RCloneCommands.exists_command(
@@ -105,6 +109,10 @@ class RCloneConfig(AbstractBaseClass):
         return False
 
     def file_size(self, path: str) -> Optional[int]:
+        # N.B. For AWS S3 rclone size requires policies s3:GetObject and s3:ListBucket
+        # for the bucket/key. So for our main use case (using Portal-granted temporary
+        # credentials to copy to AWS S3, which only have s3:PutObject and s3:GetObject
+        # policies) we cannot use this. See submitr.s3_utils for special handling.
         if path := self.path(path):
             with self.config_file() as config_file:
                 return RCloneCommands.size_command(
@@ -112,6 +120,10 @@ class RCloneConfig(AbstractBaseClass):
         return None
 
     def file_checksum(self, path: str) -> Optional[str]:
+        # N.B. For AWS S3 rclone hashsum requires policies s3:GetObject and s3:ListBucket
+        # for the bucket/key. So for our main use case (using Portal-granted temporary
+        # credentials to copy to AWS S3, which only have s3:PutObject and s3:GetObject
+        # policies) we cannot use this. See submitr.s3_utils for special handling.
         if path := self.path(path):
             with self.config_file() as config_file:
                 return RCloneCommands.checksum_command(
