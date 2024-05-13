@@ -300,9 +300,23 @@ class AwsS3:
 
 class AwsCredentials(AmazonCredentials):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def generate_temporary_credentials(self, *args, **kwargs) -> Optional[AmazonCredentials]:
+        return AwsS3(self).generate_temporary_credentials(*args, **kwargs)
+
+    def to_dict(self) -> dict:
+        return {
+            "region_name": self.region,
+            "aws_access_key_id": self.access_key_id,
+            "aws_secret_access_key": self.secret_access_key,
+            "aws_session_token": self.session_token
+        }
+
     @staticmethod
     def from_file(credentials_file: str, credentials_section: str = None,
-                  kms_key_id: Optional[str] = None) -> AmazonCredentials:
+                  kms_key_id: Optional[str] = None) -> Optional[AwsCredentials]:
         if not credentials_section:
             credentials_section = "default"
         try:
@@ -324,27 +338,27 @@ class AwsCredentials(AmazonCredentials):
                                  section.get("secret_access_key", None))
             session_token = (section.get("aws_session_token", None) or
                              section.get("session_token", None))
-            return AmazonCredentials(region=region,
-                                     access_key_id=access_key_id,
-                                     secret_access_key=secret_access_key,
-                                     session_token=session_token,
-                                     kms_key_id=kms_key_id)
+            return AwsCredentials(region=region,
+                                  access_key_id=access_key_id,
+                                  secret_access_key=secret_access_key,
+                                  session_token=session_token,
+                                  kms_key_id=kms_key_id)
         except Exception:
             pass
-        return AmazonCredentials()
+        return AwsCredentials()
 
     @staticmethod
-    def from_environment_variables() -> Optional[AmazonCredentials]:
+    def from_environment_variables() -> Optional[AwsCredentials]:
         region = os.environ.get("AWS_DEFAULT_REGION", None)
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
         secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
         session_token = os.environ.get("AWS_SESSION_TOKEN", None)
         if not (access_key_id and secret_access_key):
             return None
-        return AmazonCredentials(region=region,
-                                 access_key_id=access_key_id,
-                                 secret_access_key=secret_access_key,
-                                 session_token=session_token)
+        return AwsCredentials(region=region,
+                              access_key_id=access_key_id,
+                              secret_access_key=secret_access_key,
+                              session_token=session_token)
 
     @staticmethod
     def remove_credentials_from_environment_variables() -> None:

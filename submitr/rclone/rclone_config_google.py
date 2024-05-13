@@ -16,8 +16,8 @@ class RCloneConfigGoogle(RCloneConfig):
 
     def __init__(self,
                  credentials_or_config: Optional[Union[GoogleCredentials, RCloneConfigGoogle]] = None,
-                 location: Optional[str] = None,  # analagous to AWS region
                  service_account_file: Optional[str] = None,
+                 location: Optional[str] = None,  # analagous to AWS region
                  name: Optional[str] = None,
                  bucket: Optional[str] = None) -> None:
 
