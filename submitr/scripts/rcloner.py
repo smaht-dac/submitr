@@ -6,7 +6,7 @@ from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredential
 # Little command-line utility to interactively test out rclone support code in smaht-submitr.
 
 
-def main():
+def main() -> None:
     args = argparse.ArgumentParser(description="Test utility for rclone support in smaht-submitr.")
     args.add_argument("source", help="Source file or cloud bucket/key.")
     args.add_argument("destination", help="Destination file/directory or cloud bucket/key.")
