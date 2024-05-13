@@ -170,14 +170,10 @@ class RCloneConfigGoogle(RCloneConfig):
 
 class GoogleCredentials(RCloneCredentials):
 
-    @staticmethod
-    def create(*args, **kwargs) -> GoogleCredentials:
-        return GoogleCredentials(*args, **kwargs)
-
     def __init__(self,
                  credentials: Optional[GoogleCredentials] = None,
-                 location: Optional[str] = None,
-                 service_account_file: Optional[str] = None) -> None:
+                 service_account_file: Optional[str] = None,
+                 location: Optional[str] = None) -> None:
 
         if isinstance(credentials, GoogleCredentials):
             self._location = credentials.location

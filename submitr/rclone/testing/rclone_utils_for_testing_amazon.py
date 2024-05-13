@@ -301,9 +301,8 @@ class AwsS3:
 class AwsCredentials:
 
     @staticmethod
-    def get_credentials_from_file(credentials_file: str,
-                                  credentials_section: str = None,
-                                  kms_key_id: Optional[str] = None) -> AmazonCredentials:
+    def from_file(credentials_file: str, credentials_section: str = None,
+                  kms_key_id: Optional[str] = None) -> AmazonCredentials:
         if not credentials_section:
             credentials_section = "default"
         try:

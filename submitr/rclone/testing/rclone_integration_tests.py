@@ -80,7 +80,7 @@ class TestEnvAmazon(TestEnv):
 
     def credentials(self, nokms: bool = False) -> AmazonCredentials:
         kms_key_id = None if nokms is True else self.kms_key_id
-        credentials = AwsCredentials.get_credentials_from_file(self.env, kms_key_id=kms_key_id)
+        credentials = AwsCredentials.from_file(self.env, kms_key_id=kms_key_id)
         assert isinstance(credentials.region, str) and credentials.region
         assert isinstance(credentials.access_key_id, str) and credentials.access_key_id
         assert isinstance(credentials.secret_access_key, str) and credentials.secret_access_key

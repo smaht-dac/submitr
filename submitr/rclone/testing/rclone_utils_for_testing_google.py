@@ -166,3 +166,10 @@ class Gcs:
                    count: Optional[int] = None, offset: Optional[int] = None,
                    raise_exception: bool = True) -> List[str]:
         pass  # NOT YET NEEDED
+
+
+class GcpCredentials(GoogleCredentials):
+
+    @staticmethod
+    def from_file(service_account_file: str, location: Optional[str] = None) -> GoogleCredentials:
+        return GoogleCredentials(service_account_file=service_account_file, location=location)

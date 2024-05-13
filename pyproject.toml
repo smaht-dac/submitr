@@ -91,6 +91,7 @@ get-metadata-template = "submitr.scripts.get_metadata_template:main"
 list-submissions= "submitr.scripts.list_submissions:main"
 make-sample-fastq-file = "submitr.scripts.make_sample_fastq_file:main"
 publish-to-pypi = "dcicutils.scripts.publish_to_pypi:main"
+rcloner= "submitr.scripts.rcloner:main"
 resume-uploads = "submitr.scripts.resume_uploads:main"
 # Covered by check-submission
 # show-submission-info = "submitr.scripts.show_upload_info:main"
