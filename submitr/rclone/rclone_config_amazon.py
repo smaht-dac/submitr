@@ -197,6 +197,14 @@ class AmazonCredentials(RCloneCredentials):
                 pass
         return self._account_number
 
+    def to_dict(self) -> dict:
+        return {
+            "region_name": self.region,
+            "aws_access_key_id": self.access_key_id,
+            "aws_secret_access_key": self.secret_access_key,
+            "aws_session_token": self.session_token
+        }
+
     def __eq__(self, other: AmazonCredentials) -> bool:
         return ((self.region == other.region) and
                 (self.access_key_id == other.access_key_id) and

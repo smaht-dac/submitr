@@ -298,7 +298,7 @@ class AwsS3:
             return None
 
 
-class AwsCredentials:
+class AwsCredentials(AmazonCredentials):
 
     @staticmethod
     def from_file(credentials_file: str, credentials_section: str = None,
@@ -332,6 +332,14 @@ class AwsCredentials:
         except Exception:
             pass
         return AmazonCredentials()
+
+    @staticmethod
+    def from_environment_variables() -> AmazonCredentials:
+        return AmazonCredentials(
+            region=os.environ.get("AWS_DEFAULT_REGION", None),
+            access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", None),
+            secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", None),
+            session_token=os.environ.get("AWS_SESSION_TOKEN", None))
 
     @staticmethod
     def remove_credentials_from_environment_variables() -> None:

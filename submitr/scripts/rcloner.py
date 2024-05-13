@@ -1,6 +1,6 @@
 import argparse
 from submitr.rclone import RClone, RCloneConfigAmazon, RCloneConfigGoogle, cloud_path
-from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsCredentials
+from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsCredentials, AwsS3
 from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredentials
 
 credentials = AwsCredentials.from_file("smaht-wolf")
@@ -17,6 +17,8 @@ def main():
     args.add_argument("destination", help="Destination file/directory or cloud bucket/key.")
     args.add_argument("--amazon", help="AWS environment; for ~/.aws_test.{env}/credentials file.")
     args.add_argument("--google", help="Amazon or Google configuration file.")
+    args.add_argument("--kms", help="Amazon KMS key ID.")
+    args.add_argument("--temporary-credentials", "-tc", nargs="?", help="Amazon KMS key ID.", const=True)
     args = args.parse_args()
 
     rclone_config_amazon = None
@@ -25,6 +27,16 @@ def main():
     if args.amazon:
         credentials_amazon = AwsCredentials.from_file(args.amazon)
         rclone_config_amazon = RCloneConfigAmazon(credentials_amazon)
+    else:
+        credentials_amazon = AwsCredentials.from_environment_variables()
+
+    if args.temporary_credentials:
+        s3 = AwsS3(credentials_amazon)
+        if args.temporary_credentials is True:
+            credentials_amazon = s3.generate_temporary_credentials(kms_key_id=args.kms)
+        else:
+            credentials_amazon = s3.generate_temporary_credentials(bucket="todo", key="todo",
+                                                                   kms_key_id=args.kms)
 
     if args.google:
         credentials_google = GcpCredentials.from_file(args.google)
