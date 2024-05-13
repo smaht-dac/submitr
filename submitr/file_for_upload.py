@@ -233,7 +233,8 @@ class FileForUpload:
         if not callable(printf):
             printf = print
         if not self.found:
-            printf(f"WARNING: Cannot find file for upload: {self.name} ({self.uuid})")
+            printf(f"WARNING: Cannot find file for upload: {self.name}"
+                   f" ({self.uuid}{f' | {self.accession}' if self.accession else ''})")
             if isinstance(portal, Portal):
                 printf(f"- Use --directory to specify a directory where the file can be found.")
                 if not review_only:

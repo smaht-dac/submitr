@@ -52,12 +52,22 @@ class cloud_path:
         return os.path.basename(cloud_path.to_file_path(value))
 
     @staticmethod
-    def key(value: str) -> str:
-        # If the value looks like a cloud path which has an initial component (i.e.
-        # before the first slash), then assume that this first component is a bucket name,
-        # and return the part of the value (i.e the key) after this first (bucket) component.
-        # If the value does not have multiple component (i.e. no slash) then return just the value.
+    def bucket(value: str) -> str:
+        # Returns the bucket portion of the given cloud path assuming it consists of
+        # a bucket (a single name followed by a separator, i.e. a slash) followed
+        # by an optional key. If no bucket is found then returns and empty string.
         if value := cloud_path.normalize(value):
             if (separator_index := value.find(cloud_path.separator)) > 0:
-                value = value[separator_index + 1:]
-        return value
+                value = value[:separator_index]
+            return value
+        return ""
+
+    @staticmethod
+    def key(value: str) -> str:
+        # Returns the key portion of the given cloud path assuming it consists of
+        # a bucket (a single name followed by a separator, i.e. a slash) followed
+        # by an optional key. If no key is found then returns and empty string.
+        if value := cloud_path.normalize(value):
+            if (separator_index := value.find(cloud_path.separator)) > 0:
+                return value[separator_index + 1:]
+        return ""

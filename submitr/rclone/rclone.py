@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 import os
 from shutil import copy as copy_file
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional, Tuple, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 from submitr.rclone.rclone_config import RCloneConfig
@@ -63,7 +63,7 @@ class RClone(RCloneCommands, RCloneInstallation):
 
     def copy(self, source: str, destination: Optional[str] = None, progress: Optional[Callable] = None,
              directories: bool = False, dryrun: bool = False, copyto: bool = True,
-             raise_exception: bool = True) -> Union[bool, str]:
+             return_output: bool = False, raise_exception: bool = True) -> Union[bool, Tuple[bool, List[str]]]:
         """
         Uses rclone to copy the given source file to the given destination. All manner of variation is
         encapsulated within this simple statement. Depends on whether or not a source and/or destination
@@ -103,7 +103,8 @@ class RClone(RCloneCommands, RCloneInstallation):
                     return RCloneCommands.copy_command(command_args,
                                                        config=source_and_destination_config_file,
                                                        copyto=copyto, destination_s3=destination_s3,
-                                                       progress=progress, dryrun=dryrun)
+                                                       progress=progress, dryrun=dryrun,
+                                                       return_output=return_output)
             else:
                 # Here only a destination config cloud configuration has been defined for this RClone
                 # object; meaning we are copying from a local file source to some cloud destination;
@@ -116,7 +117,8 @@ class RClone(RCloneCommands, RCloneInstallation):
                     return RCloneCommands.copy_command(command_args,
                                                        config=destination_config_file,
                                                        copyto=copyto, destination_s3=destination_s3,
-                                                       progress=progress, dryrun=dryrun)
+                                                       progress=progress, dryrun=dryrun,
+                                                       return_output=return_output)
         elif isinstance(source_config := self.source, RCloneConfig):
             # Here only a source cloud configuration has been defined for this RClone object;
             # meaning we are copying from some cloud source to a local file destination;
@@ -145,7 +147,9 @@ class RClone(RCloneCommands, RCloneInstallation):
                 command_args = [f"{source_config.name}:{source}", destination]
                 return RCloneCommands.copy_command(command_args,
                                                    config=source_config_file,
-                                                   copyto=True, progress=progress, dryrun=dryrun)
+                                                   copyto=True,
+                                                   progress=progress, dryrun=dryrun,
+                                                   return_output=return_output)
         else:
             # Here not source or destination cloud configuration has been defined for this RClone;
             # object; meaning this is (degenerate case of a) simple local file to file copy.
@@ -156,4 +160,7 @@ class RClone(RCloneCommands, RCloneInstallation):
             if not os.path.isdir(destination):
                 copyto = True
             command_args = [source, destination]
-            return RCloneCommands.copy_command(command_args, copyto=copyto, progress=progress, dryrun=dryrun)
+            return RCloneCommands.copy_command(command_args,
+                                               copyto=copyto,
+                                               progress=progress, dryrun=dryrun,
+                                               return_output=return_output)

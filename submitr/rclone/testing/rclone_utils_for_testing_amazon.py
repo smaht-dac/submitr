@@ -334,12 +334,17 @@ class AwsCredentials(AmazonCredentials):
         return AmazonCredentials()
 
     @staticmethod
-    def from_environment_variables() -> AmazonCredentials:
-        return AmazonCredentials(
-            region=os.environ.get("AWS_DEFAULT_REGION", None),
-            access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", None),
-            secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", None),
-            session_token=os.environ.get("AWS_SESSION_TOKEN", None))
+    def from_environment_variables() -> Optional[AmazonCredentials]:
+        region = os.environ.get("AWS_DEFAULT_REGION", None)
+        access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
+        secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
+        session_token = os.environ.get("AWS_SESSION_TOKEN", None)
+        if not (access_key_id and secret_access_key):
+            return None
+        return AmazonCredentials(region=region,
+                                 access_key_id=access_key_id,
+                                 secret_access_key=secret_access_key,
+                                 session_token=session_token)
 
     @staticmethod
     def remove_credentials_from_environment_variables() -> None:

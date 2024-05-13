@@ -1,6 +1,7 @@
 import re
 import subprocess
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional, Tuple, Union
+from dcicutils.misc_utils import normalize_string
 from submitr.rclone.rclone_installation import RCloneInstallation
 
 
@@ -11,7 +12,8 @@ class RCloneCommands:
                      progress: Optional[Callable] = None,
                      dryrun: bool = False,
                      destination_s3: bool = False,
-                     raise_exception: bool = False) -> Union[bool, str]:
+                     return_output: bool = False,
+                     raise_exception: bool = False) -> Union[bool, Tuple[bool, List[str]]]:
         command = [RCloneInstallation.executable_path(),
                    "copyto" if copyto is True else "copy", "--progress", "--ignore-times"]
         # The rclone --ignore-times option forces copy even if the file seems
@@ -34,16 +36,21 @@ class RCloneCommands:
                 return " ".join(command)
             process = subprocess.Popen(command, universal_newlines=True,
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            if return_output is True:
+                lines = []
             for line in process.stdout:
                 if progress and (nbytes := RCloneCommands._parse_rclone_progress_bytes(line)):
                     progress(nbytes)
+                if (return_output is True) and (line := normalize_string(line)):
+                    lines.append(line)
             process.stdout.close()
             result = process.wait()
-            return True if (result == 0) else False
+            result = True if (result == 0) else False
+            return result if not (return_output is True) else (result, lines)
         except Exception as e:
             if raise_exception is True:
                 raise e
-            return False
+            return False if not (return_output is True) else (False, [])
 
     @staticmethod
     def exists_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[int]:
