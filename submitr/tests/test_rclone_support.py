@@ -66,8 +66,8 @@ def setup_module():
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
         secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
         session_token = os.environ.get("AWS_SESSION_TOKEN", None)
-        print(f"xyzzy/[{hash(access_key_id)}]")
-        print(f"xyzzy/[{hash(secret_access_key)}]")
+        print(f"xyzzy/[{_hash(access_key_id)}]")
+        print(f"xyzzy/[{_hash(secret_access_key)}]")
         if access_key_id and secret_access_key:
             with open(amazon_credentials_file_path, "w") as f:
                 f.write(f"[default]\n")
@@ -84,7 +84,7 @@ def setup_module():
 
     if GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
         if service_account_json_string := os.environ.get("GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON"):
-            print("xyzzy/[{hash(service_account_json_string)}]")
+            print("xyzzy/[{_hash(service_account_json_string)}]")
             service_account_json = json.loads(service_account_json_string)
             google_service_account_file_path = create_temporary_file_name(suffix=".json")
             with open(google_service_account_file_path, "w") as f:
