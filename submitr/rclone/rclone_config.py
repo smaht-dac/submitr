@@ -95,7 +95,7 @@ class RCloneConfig(AbstractBaseClass):
     def path(self, path: str) -> Optional[str]:
         if isinstance(path, str) or path is None:
             # Sic: Not cloud_path.normalize above as, so long as the given path
-            # is a string or None allow it to be joined with any defined bucket.
+            # is a string or None allow, it to be joined with any defined bucket.
             return cloud_path.join(self.bucket, path)
         return None
 
