@@ -248,14 +248,11 @@ class FileForUpload:
             file_identifier += f" ({self.accession})"
 
         if not self.found:
-            if review_only:
-                printf(f"- File for upload NOT FOUND: {file_identifier}")
-            else:
-                printf(f"WARNING: Cannot find file for upload: {file_identifier}")
+            printf(f"- WARNING ▶ File for upload NOT FOUND: {file_identifier}")
             if isinstance(portal, Portal):
-                printf(f"- Use --directory to specify a directory where the file can be found.")
+                printf(f"  - Use --directory to specify a directory where the file can be found.")
                 if not review_only:
-                    printf(f"- Upload later with:"
+                    printf(f"  - Upload later with:"
                            f" {self.resume_upload_command(env=portal.env if portal else None)}")
             self._ignore = True
             return False
@@ -272,7 +269,7 @@ class FileForUpload:
                 # TODO: Could prompt for an option to choose one of them or something.
                 if not review_only:
                     indent = ""
-                    printf(f"- WARNING: Ignoring file for upload"
+                    printf(f"- WARNING ▶ Ignoring file for upload"
                            f" as multiple/ambiguous local instances found: {file_identifier}")
                 else:
                     if found_local_and_google:
