@@ -54,17 +54,25 @@ class RCloneCommands:
 
     @staticmethod
     def exists_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[int]:
+        print(f"exists_command/a")
         command = [RCloneInstallation.executable_path(), "ls", source]
+        print(f"exists_command/b")
         if isinstance(config, str) and config:
             command += ["--config", config]
+        print(f"exists_command/c")
         try:
             # Example output: "  1234 some_file.fastq" where 1234 is file size.
             # Unfortunately if the given source (file) does not exist the return
             # code is 0; though if the bucket does not exist then return code is 1.
             # So even if return code is 0 (implying bucket is OK) it still might
             # not be OK; will regard any output as an indication that it is OK.
+            print(f"exists_command/d")
+            print(command)
+            print(f"exists_command/e")
             return RCloneCommands._run_okay(command, some_output_required=True)
         except Exception as e:
+            print(f"exists_command/f")
+            print(e)
             if raise_exception is True:
                 raise e
         return False

@@ -51,9 +51,13 @@ class RCloneConfig(AbstractBaseClass):
         If this object does not have  a bucket associated with it then returns None;
         otherwise returns True if that bucket exists or False if it does not (or some other problem).
         """
+        print(f"bucket_exists/a")
         if not (bucket := self.bucket):
+            print(f"bucket_exists/b")
             return None
+        print(f"bucket_exists/c")
         with self.config_file() as config_file:
+            print(f"bucket_exists/d")
             return RCloneCommands.exists_command(source=f"{self.name}:{bucket}", config=config_file)
 
     @property
