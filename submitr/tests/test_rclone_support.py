@@ -66,8 +66,8 @@ def setup_module():
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
         secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
         session_token = os.environ.get("AWS_SESSION_TOKEN", None)
-        print(f"xyzzy/[{_hash(access_key_id)}]")
-        print(f"xyzzy/[{_hash(secret_access_key)}]")
+        print(f"xyzzy/c:[{_hash(access_key_id)}]")
+        print(f"xyzzy/d:[{_hash(secret_access_key)}]")
         if access_key_id and secret_access_key:
             with open(amazon_credentials_file_path, "w") as f:
                 f.write(f"[default]\n")
@@ -84,13 +84,20 @@ def setup_module():
 
     if GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
         if service_account_json_string := os.environ.get("GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON"):
-            print(f"xyzzy/[{_hash(service_account_json_string)}]")
+            print(f"xyzzy/e:[{_hash(service_account_json_string)}]")
             service_account_json = json.loads(service_account_json_string)
+            print(f"xyzzy/f")
             google_service_account_file_path = create_temporary_file_name(suffix=".json")
+            print(f"xyzzy/g")
             with open(google_service_account_file_path, "w") as f:
+                print(f"xyzzy/h")
                 json.dump(service_account_json, f)
+                print(f"xyzzy/i")
             os.chmod(google_service_account_file_path, 0o600)  # for security
+            print(f"xyzzy/j")
             GOOGLE_SERVICE_ACCOUNT_FILE_PATH = google_service_account_file_path
+            print(f"xyzzy/k")
+            print(f"xyzzy/l:[{GOOGLE_SERVICE_ACCOUNT_FILE_PATH}]")
     if not (GOOGLE_SERVICE_ACCOUNT_FILE_PATH and
             os.path.isfile(normalize_path(GOOGLE_SERVICE_ACCOUNT_FILE_PATH, expand_home=True))):
         print("No Google credentials file defined. Skippping this test module: test_rclone_support")
@@ -194,19 +201,25 @@ def test_all():
 
 def initial_setup_and_sanity_checking(env_amazon: TestEnvAmazon, env_google: TestEnvGoogle) -> None:
 
-    print("xyzzy/initial_setup_and_sanity_checking")
+    print("xyzzy/a/initial_setup_and_sanity_checking")
     AwsCredentials.remove_credentials_from_environment_variables()
+    print("xyzzy/b/initial_setup_and_sanity_checking")
     assert os.environ.get("AWS_DEFAULT_REGION", None) is None
     assert os.environ.get("AWS_ACCESS_KEY_ID", None) is None
     assert os.environ.get("AWS_SECRET_ACCESS_KEY", None) is None
     assert os.environ.get("AWS_SESSION_TOKEN", None) is None
+    print("xyzzy/c/initial_setup_and_sanity_checking")
 
     s3 = env_amazon.s3_non_rclone()
+    print("xyzzy/d/initial_setup_and_sanity_checking")
     assert s3.bucket_exists(env_amazon.bucket) is True
+    print("xyzzy/e/initial_setup_and_sanity_checking")
 
     credentials_google = env_google.credentials()
+    print("xyzzy/f/initial_setup_and_sanity_checking")
     assert os.path.isfile(credentials_google.service_account_file)
     gcs = env_google.gcs_non_rclone()
+    print("xyzzy/g/initial_setup_and_sanity_checking")
     assert gcs.bucket_exists(env_google.bucket) is True
     print("xyzzy/initial_setup_and_sanity_checking/end")
 
