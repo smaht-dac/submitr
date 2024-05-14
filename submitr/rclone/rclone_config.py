@@ -1,7 +1,6 @@
 from __future__ import annotations
 from abc import ABC as AbstractBaseClass, abstractproperty
 from contextlib import contextmanager
-import os
 from shutil import copy as copy_file
 from typing import List, Optional
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
