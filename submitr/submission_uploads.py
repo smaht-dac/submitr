@@ -89,8 +89,8 @@ def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
                 main_search_directory_recursively=main_search_directory_recursively,
                 other_search_directories=other_search_directories,
                 metadata_file=metadata_file,
-                config_google=config_google,
-                portal=portal, _recursive=True)
+                config_google=config_google, portal=portal,
+                review=review, review_only=review_only, _recursive=True)
 
         elif is_submission_object(item, portal):
             # Here a submission (i.e. non-validate-only IngestionSubmission) UUID was given (and was found).
@@ -142,8 +142,8 @@ def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
             main_search_directory_recursively=main_search_directory_recursively,
             other_search_directories=other_search_directories,
             metadata_file=metadata_file,
-            config_google=config_google,
-            portal=portal, _recursive=True)
+            config_google=config_google, portal=portal,
+            review=review, review_only=review_only, _recursive=True)
         if files_for_upload and files_for_upload[0].accession_name and (files_for_upload[0].accession_name != arg):
             PRINT(f"Accession ID found but wrong filename: {files_for_upload[0].accession_name} vs {arg}")
             return None

@@ -33,7 +33,7 @@ from dcicutils.submitr.progress_constants import PROGRESS_INGESTER, PROGRESS_LOA
 from dcicutils.submitr.ref_lookup_strategy import ref_lookup_strategy
 from submitr.base import DEFAULT_APP
 from submitr.exceptions import PortalPermissionError
-from submitr.file_for_upload import FileForUpload, FilesForUpload
+from submitr.file_for_upload import FilesForUpload
 from submitr.metadata_template import check_metadata_version, print_metadata_version_warning
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 from submitr.rclone import RCloneConfigGoogle
@@ -2494,36 +2494,11 @@ def _print_metadata_file_info(file: str, env: str,
             PRINT(f"References: {len(unchecked_refs)}")
             print_refs(unchecked_refs, max_output=max_output, output_file=output_file, verbose=verbose)
         if files is True:
-            def print_files(files: List[FileForUpload],
-                            max_output: int, output_file: str, verbose: bool = False) -> None:
-                def note_output():
-                    nonlocal max_output, output_file, noutput, printf, truncated
-                    noutput += 1
-                    if noutput >= max_output and output_file and not truncated:
-                        PRINT_STDOUT(f"+ Truncated results | See your output file for full listing: {output_file}")
-                        printf = PRINT_OUTPUT
-                        truncated = True
-                printf = PRINT
-                noutput = 0
-                truncated = False
-                for file_for_upload in files_for_upload:
-                    PRINT(f"- {file_for_upload.name} ({file_for_upload.type}) | "
-                          f"{'Found ...' if file_for_upload.found else 'Not found'}")
-                    if file_for_upload.found_local:
-                        if file_for_upload.found_locally_multiple:
-                            for index, path_local in enumerate(file_for_upload.path_local_multiple):
-                                PRINT(f"  Local file: {path_local}{' (ambiguous)' if index > 0 else ''}")
-                        else:
-                            PRINT(f"  Local file: {file_for_upload.path}")
-                        if file_for_upload.found_google:
-                            PRINT(f"  Google file: {file_for_upload.path_google}")
-                    note_output()
             files_for_upload = FilesForUpload.assemble(structured_data,
                                                        main_search_directory=upload_folder,
                                                        main_search_directory_recursively=subfolders,
                                                        config_google=rclone_config_google)
-            PRINT(f"Files: {len(files_for_upload)}")
-            print_files(files_for_upload, max_output=max_output, output_file=output_file, verbose=verbose)
+            FilesForUpload.review(files_for_upload, portal=portal, review_only=True, verbose=True, printf=PRINT)
     if not (refs is True):
         if not (files is True):
             PRINT("Note: Use --refs to view references; and --files to view files for upload.")

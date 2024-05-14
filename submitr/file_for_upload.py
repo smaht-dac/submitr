@@ -121,11 +121,11 @@ class FileForUpload:
 
     @property
     def from_local(self) -> bool:
-        return self.found_local and ((not self.found_google) or self._favor_local)
+        return self.found_local and ((not self.found_google) or self.favor_local)
 
     @property
     def from_google(self) -> bool:
-        return self.found_google and ((not self.found_local) or (not self._favor_local))
+        return self.found_google and ((not self.found_local) or (not self.favor_local))
 
     @property
     def found(self) -> bool:
@@ -134,26 +134,30 @@ class FileForUpload:
     @property
     def path(self) -> Optional[str]:
         if self.found_local:
-            return self.path_local if not self.found_google or self._favor_local else self.path_google
+            return self.path_local if not self.found_google or self.favor_local else self.path_google
         return self.path_google if self.found_google else None
 
     @property
     def display_path(self) -> Optional[str]:
         if self.found_local:
-            return self.path_local if not self.found_google or self._favor_local else self.display_path_google
+            return self.path_local if not self.found_google or self.favor_local else self.display_path_google
         return self.display_path_google if self.found_google else None
 
     @property
     def size(self) -> Optional[int]:
         if self.found_local:
-            return self.size_local if not self.found_google or self._favor_local else self.size_google
+            return self.size_local if not self.found_google or self.favor_local else self.size_google
         return self.size_google if self.found_google else None
 
     @property
     def checksum(self) -> Optional[str]:
         if self.found_local:
-            return self.checksum_local if not self.found_google or self._favor_local else self.checksum_google
+            return self.checksum_local if not self.found_google or self.favor_local else self.checksum_google
         return self.checksum_google if self.found_google else None
+
+    @property
+    def favor_local(self) -> bool:
+        return self._favor_local
 
     @property
     def ignore(self) -> bool:
@@ -232,9 +236,19 @@ class FileForUpload:
                verbose: bool = False, printf: Optional[Callable] = None) -> bool:
         if not callable(printf):
             printf = print
+        file_identifier = self.name
+        if self.uuid:
+            if self.accession:
+                file_identifier += f" ({self.uuid} | {self.accession})"
+            else:
+                file_identifier += f" ({self.uuid})"
+        elif self.accession:
+            file_identifier += f" ({self.accession})"
         if not self.found:
-            printf(f"WARNING: Cannot find file for upload: {self.name}"
-                   f" ({self.uuid}{f' | {self.accession}' if self.accession else ''})")
+            if review_only:
+                printf(f"- File for upload NOT FOUND: {file_identifier}")
+            else:
+                printf(f"WARNING: Cannot find file for upload: {file_identifier}")
             if isinstance(portal, Portal):
                 printf(f"- Use --directory to specify a directory where the file can be found.")
                 if not review_only:
@@ -244,22 +258,22 @@ class FileForUpload:
             return False
         elif self.found_local:
             if self.found_google:
-                printf(f"- File for upload found BOTH locally AND in Google Cloud Storage: {self.name}")
-                printf(f"  - Local: {self.path_local}")
+                printf(f"- File for upload found BOTH locally AND in Google Cloud Storage: {file_identifier}")
                 printf(f"  - Google Cloud Storage: {self.display_path_google}")
+                printf(f"  - Local: {self.path_local}")
                 if not review_only:
                     self._favor_local = not yes_or_no("  - Do you want to use the Google Cloud Storage version?")
-            if self.found_local_multiple and self._favor_local:
+            if self.found_local_multiple and self.favor_local:
                 # TODO: Could prompt for an option to choose one of them or something.
                 if not review_only:
                     indent = ""
                     printf(f"- WARNING: Ignoring file for upload"
-                           f" as multiple/ambiguous local instances found: {self.name}")
+                           f" as multiple/ambiguous local instances found: {file_identifier}")
                 else:
                     indent = "  " if self.found_google else ""
-                    printf(f"{indent}- Multiple/ambiguous instances of local file for upload found: {self.name}")
+                    printf(f"{indent}- File for upload AMBIGUITY (multiple local instances found): {file_identifier}")
                 for path_local in self.path_local_multiple:
-                    printf(f"{indent}  - {path_local}")
+                    printf(f"{indent}  - {path_local} ({format_size(get_file_size(path_local))})")
                 printf(f"{indent}  - Use --directory-only rather than --directory to not search recursively.")
                 if not review_only:
                     printf(f"  - Upload later with:"
@@ -267,11 +281,11 @@ class FileForUpload:
                 self._ignore = True
                 return False
             if verbose:
-                printf(f"- File for upload to AWS S3: {self.display_path} ({format_size(self.size)})")
+                printf(f"- File for upload: {self.display_path} ({format_size(self.size)})")
             return True
         elif self.found_google:
             if verbose:
-                printf(f"- File for upload to AWS S3 (from GCS):"
+                printf(f"- File for upload (from GCS):"
                        f" gs://{self.path_google} ({format_size(self.size_google)})")
             return True
 
@@ -336,7 +350,7 @@ class FilesForUpload:
         if files_for_upload:
             files_for_upload_missing = [file for file in files_for_upload if not file.found]
             files_for_upload_ambiguous = [file for file in files_for_upload if file.found_local_multiple]
-            message = f"Reviewing files for upload | Total: {len(files_for_upload)}"
+            message = f"Reviewing files for upload to AWS S3 | Total: {len(files_for_upload)}"
             if files_for_upload_missing:
                 message += f" | Missing: {len(files_for_upload_missing)}"
             if files_for_upload_ambiguous:
