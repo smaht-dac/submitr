@@ -74,8 +74,10 @@ def setup_module():
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
         secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
         session_token = os.environ.get("AWS_SESSION_TOKEN", None)
-        print(f"xyzzy/c:[{_hash(access_key_id)}]")
+        print(f"xyzzy/c:[{_hash(region)}]")
+        print(f"xyzzy/c2:[{_hash(access_key_id)}]")
         print(f"xyzzy/d:[{_hash(secret_access_key)}]")
+        print(f"xyzzy/d2:[{_hash(session_token)}]")
         if access_key_id and secret_access_key:
             with open(amazon_credentials_file_path, "w") as f:
                 f.write(f"[default]\n")
@@ -220,6 +222,8 @@ def initial_setup_and_sanity_checking(env_amazon: TestEnvAmazon, env_google: Tes
 
     s3 = env_amazon.s3_non_rclone()
     print("xyzzy/d/initial_setup_and_sanity_checking")
+    import pdb ; pdb.set_trace()  # noqa
+    pass
     assert s3.bucket_exists(env_amazon.bucket) is True
     print("xyzzy/e/initial_setup_and_sanity_checking")
 
