@@ -1,17 +1,20 @@
 from contextlib import contextmanager
 from enum import Enum
+import json
 import os
 from typing import Optional, Tuple
 from dcicutils.file_utils import are_files_equal, compute_file_md5, normalize_path
 from dcicutils.misc_utils import create_short_uuid
-from dcicutils.tmpfile_utils import temporary_directory, temporary_file, temporary_random_file
+from dcicutils.tmpfile_utils import (
+    create_temporary_file_name, remove_temporary_file,
+    temporary_directory, temporary_file, temporary_random_file)
 from submitr.rclone.rclone import RClone
 from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_config_amazon import AmazonCredentials, RCloneConfigAmazon
 from submitr.rclone.rclone_config_google import GoogleCredentials, RCloneConfigGoogle
 from submitr.rclone.rclone_utils import cloud_path
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsCredentials, AwsS3
-from submitr.rclone.testing.rclone_utils_for_testing_google import Gcs
+from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredentials, Gcs
 
 # Integration tests for RClone related functionality within smaht-submitr.
 # Need valid AWS credentials for (currently) smaht-wolf.
@@ -23,7 +26,11 @@ from submitr.rclone.testing.rclone_utils_for_testing_google import Gcs
 #   I.e. e.g. load AWS credentials from: ~/.aws_test.{environment-name}/credentials
 # - The Google service-account-file path.
 #   As exported from Google account.
-AMAZON_ENVIRONMENT_NAME = "smaht-wolf"
+
+AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES = True
+GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES = True
+
+AMAZON_CREDENTIALS_FILE_PATH = "~dmichaels/.aws_test.smaht-wolf/credentials"
 GOOGLE_SERVICE_ACCOUNT_FILE_PATH = "~dmichaels/.config/google-cloud/smaht-dac-617e0480d8e2.json"
 
 # These are slightly less likely to need updates for running locally:
@@ -32,6 +39,47 @@ AMAZON_KMS_KEY_ID = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"
 GOOGLE_ACCOUNT_NAME = "smaht-dac"
 GOOGLE_TEST_BUCKET_NAME = "smaht-submitr-rclone-testing"
 GOOGLE_LOCATION = "us-east1"
+
+
+def setup_module():
+    global AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES
+    global GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES
+    global AMAZON_CREDENTIALS_FILE_PATH
+    global GOOGLE_SERVICE_ACCOUNT_FILE_PATH
+    import pdb ; pdb.set_trace()  # noqa
+    if AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
+        AMAZON_CREDENTIALS_FILE_PATH = create_temporary_file_name()
+        region = os.environ.get("AWS_DEFAULT_REGION", None)
+        access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
+        secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
+        session_token = os.environ.get("AWS_SESSION_TOKEN", None)
+        with open(AMAZON_CREDENTIALS_FILE_PATH, "w") as f:
+            f.write(f"[default]\n")
+            f.write(f"aws_default_region={region}\n")
+            f.write(f"aws_access_key_id={access_key_id}\n")
+            f.write(f"aws_secret_access_key={secret_access_key}\n")
+            f.write(f"aws_session_token={session_token}\n")
+        print('xxxxxxxxxxxxxxxxxxxxxxxx')
+        print(AMAZON_CREDENTIALS_FILE_PATH)
+    if GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
+        service_account_json_string = os.environ.get("GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON")
+        service_account_json = json.loads(service_account_json_string)
+        GOOGLE_SERVICE_ACCOUNT_FILE_PATH = create_temporary_file_name(suffix=".json")
+        with open(GOOGLE_SERVICE_ACCOUNT_FILE_PATH, "w") as f:
+            json.dump(service_account_json, f)
+        os.chmod(GOOGLE_SERVICE_ACCOUNT_FILE_PATH, 0o600)  # for security
+        print('yxxxxxxxxxxxxxxxxxxxxxxx')
+        print(GOOGLE_SERVICE_ACCOUNT_FILE_PATH)
+
+
+def teardown_module():
+    import pdb ; pdb.set_trace()  # noqa
+    pass
+    if AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
+        remove_temporary_file(AMAZON_CREDENTIALS_FILE_PATH)
+    if GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
+        remove_temporary_file(GOOGLE_SERVICE_ACCOUNT_FILE_PATH)
+    pass
 
 
 class TestEnv:
@@ -67,20 +115,14 @@ class TestEnvAmazon(TestEnv):
         TEMPORARY_KEY_SPECIFIC = "temporary-key-specific"
 
     def __init__(self, use_cloud_subfolder_key: bool = False):
-        # Specifying the env name here (as smaht-wolf) will cause
-        # AwsCredentials to read from: ~/.aws_test.smaht-wolf/credentials
-        # In addition to the basic credentials (access_key_id, secret_access_key,
-        # optional session_token), this is also assumed to also contain the region.
-        # For the kms_key_id see ENCODED_S3_ENCRYPT_KEY_ID in AWS C4AppConfigSmahtWolf Secrets.
         super().__init__(use_cloud_subfolder_key=use_cloud_subfolder_key)
-        self.env = AMAZON_ENVIRONMENT_NAME
         self.kms_key_id = AMAZON_KMS_KEY_ID
         self.bucket = AMAZON_TEST_BUCKET_NAME
         self.main_credentials = self.credentials()
 
     def credentials(self, nokms: bool = False) -> AmazonCredentials:
         kms_key_id = None if nokms is True else self.kms_key_id
-        credentials = AwsCredentials.from_file(self.env, kms_key_id=kms_key_id)
+        credentials = AwsCredentials.from_file(AMAZON_CREDENTIALS_FILE_PATH, kms_key_id=kms_key_id)
         assert isinstance(credentials.region, str) and credentials.region
         assert isinstance(credentials.access_key_id, str) and credentials.access_key_id
         assert isinstance(credentials.secret_access_key, str) and credentials.secret_access_key
@@ -111,7 +153,7 @@ class TestEnvGoogle(TestEnv):
         self.bucket = GOOGLE_TEST_BUCKET_NAME
 
     def credentials(self) -> GoogleCredentials:
-        credentials = GoogleCredentials(location=self.location, service_account_file=self.service_account_file)
+        credentials = GcpCredentials.from_file(self.service_account_file, location=self.location)
         assert credentials.location == self.location
         assert credentials.service_account_file == normalize_path(self.service_account_file, expand_home=True)
         assert os.path.isfile(credentials.service_account_file)
@@ -518,10 +560,12 @@ def test_cloud_variations(use_cloud_subfolder_key: bool = False):
     test_rclone_amazon_to_google(env_amazon=env_amazon, env_google=env_google)
 
 
-def test():
+def test_all():
+    setup_module()
     test_cloud_variations(use_cloud_subfolder_key=True)
     test_cloud_variations(use_cloud_subfolder_key=False)
     test_rclone_local_to_local()
+    teardown_module()
 
 
-test()
+test_all()

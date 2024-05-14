@@ -184,21 +184,13 @@ class GoogleCredentials(RCloneCredentials):
             self._location = None
             self._service_account_file = None
 
-        if location := normalize_string(location):
-            self._location = location
         if service_account_file := normalize_path(service_account_file, expand_home=True):
             if not os.path.isfile(service_account_file):
                 raise Exception(f"GCS service account file not found: {service_account_file}")
             self._service_account_file = service_account_file
 
-    @property
-    def location(self) -> Optional[str]:
-        return self._location
-
-    @location.setter
-    def location(self, value: str) -> None:
-        if (value := normalize_string(value)) is not None:
-            self._location = value or None
+        if location := normalize_string(location):
+            self._location = location
 
     @property
     def service_account_file(self) -> Optional[str]:
@@ -208,6 +200,15 @@ class GoogleCredentials(RCloneCredentials):
     def service_account_file(self, value: str) -> None:
         if (value := normalize_path(value)) is not None:
             self._service_account_file = value or None
+
+    @property
+    def location(self) -> Optional[str]:
+        return self._location
+
+    @location.setter
+    def location(self, value: str) -> None:
+        if (value := normalize_string(value)) is not None:
+            self._location = value or None
 
     def __eq__(self, other: GoogleCredentials) -> bool:
         return ((self.location == other.location) and

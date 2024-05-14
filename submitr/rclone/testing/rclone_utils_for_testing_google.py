@@ -170,6 +170,9 @@ class Gcs:
 
 class GcpCredentials(GoogleCredentials):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     @staticmethod
     def from_file(service_account_file: str, location: Optional[str] = None) -> GoogleCredentials:
-        return GoogleCredentials(service_account_file=service_account_file, location=location)
+        return GcpCredentials(service_account_file=service_account_file, location=location)

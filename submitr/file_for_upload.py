@@ -292,10 +292,10 @@ class FileForUpload:
             else:
                 if found_local_and_google:
                     printf(f"  - Local: {self.path_local} ({format_size(self.size_local)})")
+                    if not review_only:
+                        self._favor_local = not yes_or_no("  - Do you want to use the Google Cloud Storage version?")
                 else:
                     printf(f"- File for upload: {self.path_local} ({format_size(self.size_local)})")
-                if not review_only:
-                    self._favor_local = not yes_or_no("  - Do you want to use the Google Cloud Storage version?")
 
             if not review_only and verbose:
                 printf(f"- File for upload: {self.display_path} ({format_size(self.size)})")
