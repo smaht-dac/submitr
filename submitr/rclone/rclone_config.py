@@ -79,7 +79,7 @@ class RCloneConfig(AbstractBaseClass):
     @contextmanager
     def config_file(self, persist: bool = False) -> str:
         with temporary_file(suffix=".conf") as temporary_config_file_name:
-            self.write_config_file_lines(temporary_config_file_name, self.config_lines)
+            self.write_config_file(temporary_config_file_name, self.config_lines)
             if persist is True:
                 persistent_config_file_name = create_temporary_file_name(suffix=".conf")
                 copy_file(temporary_config_file_name, persistent_config_file_name)
@@ -88,7 +88,7 @@ class RCloneConfig(AbstractBaseClass):
                 yield temporary_config_file_name
 
     @staticmethod
-    def write_config_file_lines(file: str, lines: List[str]) -> None:
+    def write_config_file(file: str, lines: List[str]) -> None:
         os.chmod(file, 0o600)  # for security
         if (file := normalize_string(file)) is None:
             return

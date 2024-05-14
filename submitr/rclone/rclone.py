@@ -51,7 +51,7 @@ class RClone(RCloneCommands, RCloneInstallation):
     @contextmanager
     def config_file(self, persist: bool = False) -> str:
         with temporary_file(suffix=".conf") as temporary_config_file_name:
-            RCloneConfig.write_config_file_lines(temporary_config_file_name, self.config_lines)
+            RCloneConfig.write_config_file(temporary_config_file_name, self.config_lines)
             if persist is True:
                 # This is just for dryrun for testing/troubleshooting.
                 persistent_config_file_name = create_temporary_file_name(suffix=".conf")
