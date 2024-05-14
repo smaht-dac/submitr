@@ -51,6 +51,7 @@ class RClone(RCloneCommands, RCloneInstallation):
     @contextmanager
     def config_file(self, persist: bool = False) -> str:
         with temporary_file(suffix=".conf") as temporary_config_file_name:
+            os.chmod(temporary_config_file_name, 0o600)  # for security
             RCloneConfig.write_config_file(temporary_config_file_name, self.config_lines)
             if persist is True:
                 # This is just for dryrun for testing/troubleshooting.
@@ -85,7 +86,6 @@ class RClone(RCloneCommands, RCloneInstallation):
         # - Using 'copy' when the cloud destination is a file gives error: "is a file not a directory".
         # - Using 'copyto' when the cloud destination is a "directory" creates a *file* of that name;
         #   along side the "directory" of the same name (which is odd and alomst certainly undesireble).
-        # - So we want to do if is_directory(destination) then 'copy' else 'copyto'.
         if isinstance(destination_config := self.destination, RCloneConfig):
             # Here a destination cloud configuration has been defined for this RClone object;
             # meaning we are copying to some cloud destination (and not to a local file destination).

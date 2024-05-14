@@ -89,7 +89,6 @@ class RCloneConfig(AbstractBaseClass):
 
     @staticmethod
     def write_config_file(file: str, lines: List[str]) -> None:
-        os.chmod(file, 0o600)  # for security
         if (file := normalize_string(file)) is None:
             return
         if not isinstance(lines, list) or not lines:
