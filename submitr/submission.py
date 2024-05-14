@@ -484,6 +484,7 @@ def _initiate_server_ingestion_process(
         is_server_validation: bool = False,
         is_resume_submission: bool = False,
         validation_ingestion_submission_object: Optional[dict] = None,
+        validate_remote_skip: bool = False,
         post_only: bool = False,
         patch_only: bool = False,
         autoadd: Optional[dict] = None,
@@ -509,6 +510,7 @@ def _initiate_server_ingestion_process(
 
     submission_post_data = {
         "validate_only": is_server_validation,
+        "validate_skip": validate_remote_skip,
         "post_only": post_only,
         "patch_only": patch_only,
         "ref_nocache": False,  # Do not do this server-side at all; only client-side for testing.
@@ -897,6 +899,7 @@ def submit_any_ingestion(ingestion_filename, *,
         portal=portal,
         ingestion_filename=ingestion_filename,
         is_server_validation=False,
+        validate_remote_skip=validate_remote_skip,
         validation_ingestion_submission_object=server_validation_response,
         consortia=app_args.get("consortia"),
         submission_centers=app_args.get("submission_centers"),
