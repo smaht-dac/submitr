@@ -1,6 +1,6 @@
 # Build for submitr
 
-name: CI
+name: INTEGRATION TESTS
 
 # Controls when the action will run. 
 on:
@@ -17,13 +17,13 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   build:
-    name: Test submitr with Python ${{ matrix.python_version }}
+    name: Run smaht-submitr integration tests with Python ${{ matrix.python_version }}
 
     # The type of runner that the job will run on
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python_version: [3.8, 3.9, 3.11]
+        python_version: [3.11]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -33,24 +33,16 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
 
-      - name: Install Deps
+      - name: BUILD
         run: |
-          make configure
-          
-      - name: Build
-        run: |
-          poetry install
-          poetry run flake8 submitr
+          make build
       
-      - name: CI
-        run: |
-          poetry run coverage run --source submitr -m pytest -vv -m "not integration"
-
-      - name: Coveralls
+      - name: INTEGRATION TESTS
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # For testing, use the oldest allowable version of Python to be sure we're not using features added later
-        if: ${{ matrix.python_version == '3.7' }}
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_KMS_KEY_ID: ${{ secrets.AWS_KMS_KEY_ID }}
+          GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON }}
         run: |
-          pip install coveralls
-          poetry run coveralls --service=github
+          make test-integration

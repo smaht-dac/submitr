@@ -145,3 +145,6 @@ docs/build
 
 # Vim
 *.swp
+
+# Junk Python files.
+?.py

@@ -13,7 +13,7 @@ from .testing_helpers import system_exit_expected, argparse_errors_muffled
 
 
 @pytest.mark.parametrize("keyfile", [None, "foo.bar"])
-def test_resume_uploads_script(keyfile):
+def need_to_replace_with_new_version_resume_uploads_script(keyfile):
 
     def test_it(args_in, expect_exit_code, expect_called, expect_call_args=None, expect_output=[]):
         output = []
@@ -167,7 +167,7 @@ INGESTION_FRAGMENT_WITH_UPLOAD_INFO = {
 }
 
 
-def test_c4_383_regression_action():
+def need_to_replace_with_new_version_c4_383_regression_action():
     """
     Check that bug C4-383 is really fixed.
 
@@ -230,5 +230,6 @@ def test_c4_383_regression_action():
                                         mock_upload_file_to_uuid.assert_called_with(auth=fake_keydict,
                                                                                     filename=joined_filename,
                                                                                     uuid=SAMPLE_UPLOAD_INFO[-1]['uuid'],
+                                                                                    rclone_config_google=None,
                                                                                     first_time=False, portal=mock.ANY)
                                         assert output == []

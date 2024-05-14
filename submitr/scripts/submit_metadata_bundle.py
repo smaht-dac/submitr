@@ -17,6 +17,7 @@ from ..submission import (
     _print_metadata_file_info,
     _pytesting
 )
+from submitr.rclone import RCloneConfigGoogle
 
 _HELP = f"""
 ===
@@ -54,6 +55,12 @@ OPTIONS:
   To specify a directory containing the files to upload; in addition
   to the default of using the directory containing the submitted file;
   this directory will be searched recursively.
+--rclone-google-source GOOGLE-CLOUD-STORAGE-SOURCE
+  A Google Cloud Storage (GCS) bucket or bucket/key (foldrer)
+  from where the upload file(s) should be read.
+--rclone-google-credentials GCS-SERVICE-ACCOUNT-FILE
+  GCS credentials to use for --rclone-google-source;
+  e.g. a path to a service account file.
 --output OUTPUT-FILE
   Writes all logging output to the specified file;
   and refrains from printing lengthy content to output/stdout.
@@ -218,6 +225,8 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
     parser.add_argument('--ping', action="store_true", help="Ping server.", default=False)
+    parser.add_argument('--rclone-google-source', help="Use rlcone to copy upload files from GCS.", default=None)
+    parser.add_argument('--rclone-google-credentials', help="GCS credentials (service account file).", default=None)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     directory_only = True
@@ -228,35 +237,29 @@ def main(simulated_args_for_testing=None):
         args.upload_folder = args.directory_only
         directory_only = True
 
-#   keys_file = args.keys or os.environ.get("SMAHT_KEYS")
-#   if keys_file:
-#       if not keys_file.endswith(".json"):
-#           PRINT(f"ERROR: The specified keys file is not a .json file: {keys_file}")
-#           exit(1)
-#       if not keys_file.endswith(".json") or not os.path.exists(keys_file):
-#           PRINT(f"ERROR: The --keys argument must be the name of an existing .json file: {keys_file}")
-#           exit(1)
-
     env_from_env = False
     if not args.env:
         args.env = os.environ.get("SMAHT_ENV")
         if args.env:
             env_from_env = True
 
+    config_google = RCloneConfigGoogle.from_command_args(args.rclone_google_source, args.rclone_google_credentials)
+
     if args.ping or (args.bundle_filename and args.bundle_filename.lower() == "ping"):
-        ping_okay = _ping(
-            env=args.env or os.environ.get("SMAHT_ENV"),
-            env_from_env=env_from_env,
-            server=args.server,
-            app=args.app,
-            keys_file=args.keys,
-            verbose=True)
-        if ping_okay:
-            PRINT("Ping success. Your connection appears to be OK.")
-            exit(0)
+        if args.env or os.environ.get("SMAHT_ENV"):
+            ping_okay = _ping(env=args.env or os.environ.get("SMAHT_ENV"), env_from_env=env_from_env,
+                              server=args.server, app=args.app, keys_file=args.keys, verbose=True)
+            if ping_okay:
+                PRINT("Portal connectivity appears to be OK ✓")
+            else:
+                PRINT("Portal connectivty appears to be problematic ✗")
         else:
-            PRINT("Ping failure. Your connection appears to be problematic.")
-            exit(1)
+            PRINT("No environment specified (via --env); skipping SMaHT Portal ping.")
+            ping_okay = True
+        ping_rclone_okay = None
+        if config_google:
+            ping_rclone_okay = config_google.verify_connectivity()
+        exit(0 if ping_okay is True and (ping_rclone_okay is not False) else 1)
 
     if args.consortia or (args.bundle_filename and args.bundle_filename.lower() == "consortia"):
         portal = _define_portal(env=args.env)
@@ -311,7 +314,12 @@ def main(simulated_args_for_testing=None):
             PRINT(f"File does not exist: {args.bundle_filename}")
             exit(1)
         _print_metadata_file_info(args.bundle_filename, env=args.env,
-                                  refs=args.refs, files=args.files, output_file=args.output, verbose=args.verbose)
+                                  refs=args.refs, files=args.files,
+                                  subfolders=not directory_only,
+                                  upload_folder=args.upload_folder,
+                                  rclone_config_google=config_google,
+                                  output_file=args.output,
+                                  verbose=args.verbose)
         exit(0)
 
     with script_catch_errors():
@@ -335,6 +343,7 @@ def main(simulated_args_for_testing=None):
                              post_only=args.post_only,
                              patch_only=args.patch_only,
                              submit=args.submit,
+                             rclone_config_google=config_google,
                              validate_local_only=args.validate_local_only,
                              validate_remote_only=args.validate_remote_only,
                              validate_local_skip=args.validate_local_skip,
