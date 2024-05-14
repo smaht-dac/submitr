@@ -17,6 +17,8 @@ from submitr.rclone.rclone_utils import cloud_path
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsCredentials, AwsS3
 from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredentials, Gcs
 
+pytestmark = pytest.mark.integration
+
 # Integration tests for RClone related functionality within smaht-submitr.
 # Need valid AWS credentials (currently for: smaht-wolf).
 # Need valid Google Cloud credentials (currently for: smaht-dac).
@@ -40,7 +42,7 @@ GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES = True
 AMAZON_CREDENTIALS_FILE_PATH = "~dmichaels/.aws_test.smaht-wolf/credentials"
 GOOGLE_SERVICE_ACCOUNT_FILE_PATH = "~dmichaels/.config/google-cloud/smaht-dac-617e0480d8e2.json"
 
-# These are slightly less likely to need updates for running locally:
+# These are slightly less likely to need updates for running locally (or in GA):
 AMAZON_TEST_BUCKET_NAME = "smaht-unit-testing-files"
 AMAZON_KMS_KEY_ID = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"
 GOOGLE_ACCOUNT_NAME = "smaht-dac"
