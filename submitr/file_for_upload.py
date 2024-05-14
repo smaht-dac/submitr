@@ -303,11 +303,10 @@ class FileForUpload:
             if not review_only and verbose:
                 printf(f"- File for upload: {self.display_path} ({format_size(self.size)})")
             return True
-
         elif self.found_google:
             if verbose:
-                printf(f"- File for upload (from GCS):"
-                       f" gs://{self.path_google} ({format_size(self.size_google)})")
+                printf(f"- File for upload (from Google Cloud Storage):"
+                       f" {self.display_path_google} ({format_size(self.size_google)})")
             return True
 
     def __str__(self) -> str:  # for troubleshooting only
