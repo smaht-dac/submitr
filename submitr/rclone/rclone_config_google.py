@@ -154,6 +154,8 @@ class RCloneConfigGoogle(RCloneConfig):
             printf(f"Google Cloud Storage project"
                    f"{f' ({self.project})' if self.project else ''}"
                    f" connectivity appears to be OK ✓")
+            if self.bucket_exists() is False:
+                printf(f"WARNING: Google Cloud Storage bucket NOT FOUND: {self.bucket}")
             return False
         else:
             printf(f"Google Cloud Storage project"

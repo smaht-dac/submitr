@@ -47,6 +47,12 @@ class RCloneConfig(AbstractBaseClass):
         if (value := cloud_path.normalize(value)) is not None:
             self._bucket = value or None
 
+    def bucket_exists(self) -> Optional[bool]:
+        if not (bucket := self.bucket):
+            return None
+        with self.config_file() as config_file:
+            return RCloneCommands.exists_command(source=f"{self.name}:{bucket}", config=config_file)
+
     @property
     def credentials(self) -> RCloneCredentials:
         return self._credentials
@@ -106,8 +112,7 @@ class RCloneConfig(AbstractBaseClass):
         # policies) we cannot use this. See submitr.s3_utils for special handling.
         if path := self.path(path):
             with self.config_file() as config_file:
-                return RCloneCommands.exists_command(
-                    source=f"{self.name}:{path}", config=config_file)
+                return RCloneCommands.exists_command(source=f"{self.name}:{path}", config=config_file)
         return False
 
     def file_size(self, path: str) -> Optional[int]:
@@ -117,8 +122,7 @@ class RCloneConfig(AbstractBaseClass):
         # policies) we cannot use this. See submitr.s3_utils for special handling.
         if path := self.path(path):
             with self.config_file() as config_file:
-                return RCloneCommands.size_command(
-                    source=f"{self.name}:{path}", config=config_file)
+                return RCloneCommands.size_command(source=f"{self.name}:{path}", config=config_file)
         return None
 
     def file_checksum(self, path: str) -> Optional[str]:
@@ -128,8 +132,7 @@ class RCloneConfig(AbstractBaseClass):
         # policies) we cannot use this. See submitr.s3_utils for special handling.
         if path := self.path(path):
             with self.config_file() as config_file:
-                return RCloneCommands.checksum_command(
-                    source=f"{self.name}:{path}", config=config_file)
+                return RCloneCommands.checksum_command(source=f"{self.name}:{path}", config=config_file)
 
     def ping(self) -> bool:
         # For some reason with this command we need the project_number in the config for Google.
