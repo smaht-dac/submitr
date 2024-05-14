@@ -39,6 +39,11 @@ class AwsS3:
     @property
     def client(self) -> BotoClient:
         if not self._client:
+            print(f"xyzzy/s3/client/a")
+            print(f"xyzzy/s3/client/a:[{_hash(self.credentials.region)}]")
+            print(f"xyzzy/s3/client/a:[{_hash(self.credentials.access_key_id)}]")
+            print(f"xyzzy/s3/client/a:[{_hash(self.credentials.secret_access_key)}]")
+            print(f"xyzzy/s3/client/a:[{_hash(self.credentials.session_token)}]")
             self._client = BotoClient(
                 "s3",
                 region_name=self.credentials.region,
@@ -371,3 +376,12 @@ class AwsCredentials(AmazonCredentials):
         os.environ.pop("AWS_ACCESS_KEY_ID", None)
         os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
         os.environ.pop("AWS_SESSION_TOKEN", None)
+
+
+def _hash(value: str) -> str:
+    import hashlib
+    if not isinstance(value, str):
+        return ""
+    md5 = hashlib.md5()
+    md5.update(value.encode("utf-8"))
+    return md5.hexdigest()
