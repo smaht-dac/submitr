@@ -84,7 +84,7 @@ def setup_module():
 
     if GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
         if service_account_json_string := os.environ.get("GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON"):
-            print("xyzzy/[{_hash(service_account_json_string)}]")
+            print(f"xyzzy/[{_hash(service_account_json_string)}]")
             service_account_json = json.loads(service_account_json_string)
             google_service_account_file_path = create_temporary_file_name(suffix=".json")
             with open(google_service_account_file_path, "w") as f:
