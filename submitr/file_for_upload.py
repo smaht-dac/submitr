@@ -234,8 +234,10 @@ class FileForUpload:
 
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,
                verbose: bool = False, printf: Optional[Callable] = None) -> bool:
+
         if not callable(printf):
             printf = print
+
         file_identifier = self.name
         if self.uuid:
             if self.accession:
@@ -244,6 +246,7 @@ class FileForUpload:
                 file_identifier += f" ({self.uuid})"
         elif self.accession:
             file_identifier += f" ({self.accession})"
+
         if not self.found:
             if review_only:
                 printf(f"- File for upload NOT FOUND: {file_identifier}")
@@ -256,13 +259,15 @@ class FileForUpload:
                            f" {self.resume_upload_command(env=portal.env if portal else None)}")
             self._ignore = True
             return False
-        elif self.found_local:
+
+        found_local_and_google = False
+
+        if self.found_local:
             if self.found_google:
+                found_local_and_google = True
                 printf(f"- File for upload found BOTH locally AND in Google Cloud Storage: {file_identifier}")
-                printf(f"  - Google Cloud Storage: {self.display_path_google}")
-                printf(f"  - Local: {self.path_local}")
-                if not review_only:
-                    self._favor_local = not yes_or_no("  - Do you want to use the Google Cloud Storage version?")
+                printf(f"  - Google Cloud Storage: {self.display_path_google}"
+                       f"{f' ({format_size(self.size_google)})' if self.size_google else ''}")
             if self.found_local_multiple and self.favor_local:
                 # TODO: Could prompt for an option to choose one of them or something.
                 if not review_only:
@@ -270,19 +275,35 @@ class FileForUpload:
                     printf(f"- WARNING: Ignoring file for upload"
                            f" as multiple/ambiguous local instances found: {file_identifier}")
                 else:
-                    indent = "  " if self.found_google else ""
-                    printf(f"{indent}- File for upload AMBIGUITY (multiple local instances found): {file_identifier}")
+                    if found_local_and_google:
+                        indent = "  "
+                        printf(f"{indent}- Local file AMBIGUITY (multiple local instances found): {file_identifier}")
+                    else:
+                        indent = ""
+                        printf(f"- File for upload AMBIGUITY (multiple local instances found): {file_identifier}")
                 for path_local in self.path_local_multiple:
                     printf(f"{indent}  - {path_local} ({format_size(get_file_size(path_local))})")
-                printf(f"{indent}  - Use --directory-only rather than --directory to not search recursively.")
+                printf(f"{indent}  - Use --directory-only rather than --directory to NOT search recursively.")
                 if not review_only:
-                    printf(f"  - Upload later with:"
-                           f" {self.resume_upload_command(env=portal.env if portal else None)}")
+                    if found_local_and_google:
+                        self._favor_local = not yes_or_no("  - Do you want to use the Google Cloud Storage version?")
+                    else:
+                        printf(f"  - Upload later with:"
+                               f" {self.resume_upload_command(env=portal.env if portal else None)}")
                 self._ignore = True
                 return False
-            if verbose:
+            else:
+                if found_local_and_google:
+                    printf(f"  - Local: {self.path_local} ({format_size(self.size_local)})")
+                else:
+                    printf(f"- File for upload: {self.path_local} ({format_size(self.size_local)})")
+                if not review_only:
+                    self._favor_local = not yes_or_no("  - Do you want to use the Google Cloud Storage version?")
+
+            if not review_only and verbose:
                 printf(f"- File for upload: {self.display_path} ({format_size(self.size)})")
             return True
+
         elif self.found_google:
             if verbose:
                 printf(f"- File for upload (from GCS):"
