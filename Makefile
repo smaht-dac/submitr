@@ -15,7 +15,7 @@ build:  # builds
 	poetry install
 
 test:
-	pytest -vv
+	pytest -m "not integration"
 
 test-integration:
 	# pytest -vv submitr/tests/test_rclone_support.py
