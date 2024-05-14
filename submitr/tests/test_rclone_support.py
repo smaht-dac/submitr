@@ -617,6 +617,8 @@ def _test_cloud_variations(use_cloud_subfolder_key: bool = False):
 
 
 def _hash(value: str) -> str:
+    if not isinstance(value, str):
+        return ""
     md5 = hashlib.md5()
     md5.update(value.encode("utf-8"))
     return md5.hexdigest()
