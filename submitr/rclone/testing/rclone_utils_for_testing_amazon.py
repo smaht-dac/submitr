@@ -110,10 +110,15 @@ class AwsS3:
             return False
 
     def bucket_exists(self, bucket: str, raise_exception: bool = True) -> bool:
+        print(f"xyzzy/s3/bucket_exists({bucket})")
         try:
+            print(f"xyzzy/s3/a/bucket_exists")
             self.client.head_bucket(Bucket=bucket)
+            print(f"xyzzy/s3/b/bucket_exists")
             return True
         except Exception as e:
+            print(f"xyzzy/s3/c/bucket_exists")
+            print(e)
             if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
                 return False
             if raise_exception is True:
