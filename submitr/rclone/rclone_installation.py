@@ -62,6 +62,8 @@ class RCloneInstallation:
                                    use_byte_size_for_rate=True) if progress else None
         def progress_callback(nbytes: int, nbytes_total: Optional[int] = None) -> bool:  # noqa
             nonlocal progress_bar
+            if not progress_bar:
+                return
             if not progress_bar.total and nbytes_total is not None:
                 progress_bar.set_total(nbytes_total)
             progress_bar.set_progress(nbytes)

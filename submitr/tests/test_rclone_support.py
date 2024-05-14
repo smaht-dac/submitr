@@ -17,6 +17,7 @@ from submitr.rclone.rclone_config_google import GoogleCredentials, RCloneConfigG
 from submitr.rclone.rclone_utils import cloud_path
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsCredentials, AwsS3
 from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredentials, Gcs
+from submitr.rclone.rclone_installation import RCloneInstallation
 
 pytestmark = pytest.mark.integration
 
@@ -58,7 +59,14 @@ def setup_module():
     global AMAZON_CREDENTIALS_FILE_PATH
     global GOOGLE_SERVICE_ACCOUNT_FILE_PATH
 
-    print("xyzzy/a")
+    print(f"xyzzy/a")
+    print(f"xyzzy/rclone/installed:[{RCloneInstallation.is_installed()}")
+    print(f"xyzzy/rclone/installdir:[{RCloneInstallation._smaht_submitr_app_directory()}")
+    print(f"xyzzy/rclone/installexe:[{RCloneInstallation.executable_path()}")
+    RCloneInstallation.install()
+    print(f"xyzzy/rclone/installed/now:[{RCloneInstallation.is_installed()}")
+    print(f"xyzzy/rclone/installexe/now:[{RCloneInstallation.executable_path()}")
+
     if AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
         print(f"xyzzy/b")
         amazon_credentials_file_path = create_temporary_file_name()
