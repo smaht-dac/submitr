@@ -43,13 +43,8 @@ jobs:
           poetry run flake8 submitr
       
       - name: CI
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_KMS_KEY_ID: ${{ secrets.AWS_KMS_KEY_ID }}
-          GOOGLE_CLOUD_SERVICE_ACCOUNT_SERVICE_JSON: ${{ secrets.GOOGLE_CLOUD_SERVICE_ACCOUNT_SERVICE_JSON }}
         run: |
-          poetry run coverage run --source submitr -m pytest -vv
+          poetry run coverage run --source submitr -m pytest -vv -m "not integration"
 
       - name: Coveralls
         env:
