@@ -222,8 +222,6 @@ def initial_setup_and_sanity_checking(env_amazon: TestEnvAmazon, env_google: Tes
 
     s3 = env_amazon.s3_non_rclone()
     print("xyzzy/d/initial_setup_and_sanity_checking")
-    import pdb ; pdb.set_trace()  # noqa
-    pass
     assert s3.bucket_exists(env_amazon.bucket) is True
     print("xyzzy/e/initial_setup_and_sanity_checking")
 
