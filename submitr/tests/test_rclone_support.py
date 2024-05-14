@@ -62,7 +62,7 @@ def setup_module():
     if AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
         print(f"xyzzy/b")
         amazon_credentials_file_path = create_temporary_file_name()
-        rAWS_ACCESS_KEY_IDegion = os.environ.get("AWS_DEFAULT_REGION", None)
+        region = os.environ.get("AWS_DEFAULT_REGION", None)
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
         secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
         session_token = os.environ.get("AWS_SESSION_TOKEN", None)
