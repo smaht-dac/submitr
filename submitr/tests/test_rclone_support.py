@@ -60,14 +60,14 @@ def setup_module():
 
     print("xyzzy/a")
     if AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
-        print("xyzzy/b")
+        print(f"xyzzy/b")
         amazon_credentials_file_path = create_temporary_file_name()
-        region = os.environ.get("AWS_DEFAULT_REGION", None)
+        rAWS_ACCESS_KEY_IDegion = os.environ.get("AWS_DEFAULT_REGION", None)
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
         secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
         session_token = os.environ.get("AWS_SESSION_TOKEN", None)
-        print("xyzzy/[{hash(access_key_id)}]")
-        print("xyzzy/[{hash(secret_access_key)}]")
+        print(f"xyzzy/[{hash(access_key_id)}]")
+        print(f"xyzzy/[{hash(secret_access_key)}]")
         if access_key_id and secret_access_key:
             with open(amazon_credentials_file_path, "w") as f:
                 f.write(f"[default]\n")
@@ -194,6 +194,7 @@ def test_all():
 
 def initial_setup_and_sanity_checking(env_amazon: TestEnvAmazon, env_google: TestEnvGoogle) -> None:
 
+    print("xyzzy/initial_setup_and_sanity_checking")
     AwsCredentials.remove_credentials_from_environment_variables()
     assert os.environ.get("AWS_DEFAULT_REGION", None) is None
     assert os.environ.get("AWS_ACCESS_KEY_ID", None) is None
@@ -207,6 +208,7 @@ def initial_setup_and_sanity_checking(env_amazon: TestEnvAmazon, env_google: Tes
     assert os.path.isfile(credentials_google.service_account_file)
     gcs = env_google.gcs_non_rclone()
     assert gcs.bucket_exists(env_google.bucket) is True
+    print("xyzzy/initial_setup_and_sanity_checking/end")
 
 
 def create_rclone_config_amazon(credentials: AmazonCredentials) -> RCloneConfig:
