@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from enum import Enum
+import hashlib
 import json
 import os
 import pytest
@@ -57,12 +58,16 @@ def setup_module():
     global AMAZON_CREDENTIALS_FILE_PATH
     global GOOGLE_SERVICE_ACCOUNT_FILE_PATH
 
+    print("xyzzy/a")
     if AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
+        print("xyzzy/b")
         amazon_credentials_file_path = create_temporary_file_name()
         region = os.environ.get("AWS_DEFAULT_REGION", None)
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
         secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
         session_token = os.environ.get("AWS_SESSION_TOKEN", None)
+        print("xyzzy/[{hash(access_key_id)}]")
+        print("xyzzy/[{hash(secret_access_key)}]")
         if access_key_id and secret_access_key:
             with open(amazon_credentials_file_path, "w") as f:
                 f.write(f"[default]\n")
@@ -79,6 +84,7 @@ def setup_module():
 
     if GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
         if service_account_json_string := os.environ.get("GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON"):
+            print("xyzzy/[{hash(service_account_json_string)}]")
             service_account_json = json.loads(service_account_json_string)
             google_service_account_file_path = create_temporary_file_name(suffix=".json")
             with open(google_service_account_file_path, "w") as f:
@@ -581,3 +587,9 @@ def _test_cloud_variations(use_cloud_subfolder_key: bool = False):
     _test_rclone_between_google_and_local(env_google=env_google)
     _test_rclone_google_to_amazon(env_amazon=env_amazon, env_google=env_google)
     _test_rclone_amazon_to_google(env_amazon=env_amazon, env_google=env_google)
+
+
+def _hash(value: str) -> str:
+    md5 = hashlib.md5()
+    md5.update(value.encode("utf-8"))
+    return md5.hexdigest()
