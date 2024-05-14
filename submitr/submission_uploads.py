@@ -154,7 +154,7 @@ def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
         return None
 
     if (review is True) and (_recursive is False):
-        FilesForUpload.review(files_for_upload, portal=portal, review_only=review_only, verbose=verbose)
+        FilesForUpload.review(files_for_upload, portal=portal, review_only=review_only, verbose=verbose, printf=PRINT)
     return files_for_upload
 
 
