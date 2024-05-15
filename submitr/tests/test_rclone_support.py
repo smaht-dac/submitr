@@ -495,6 +495,9 @@ def __test_rclone_google_to_amazon(env_amazon: EnvAmazon,
         # bucket specified within the RCloneConfigGoogle object (new: 2024-05-10).
         cleanup_amazon_file(env_amazon, env_amazon.bucket, key_amazon)
         rclone_config_amazon.bucket = env_amazon.bucket
+        assert rclone_config_amazon.bucket == env_amazon.bucket
+        assert rclone_config_amazon.path("testing-path-function") == f"{env_amazon.bucket}/testing-path-function"
+        assert rclone_config_amazon.path_exists(key_amazon) is False
         if cloud_path.has_separator(key_amazon):
             # If we are uploading to a key which has a slash (i.e. a folder-like key) then we
             # will specify the key explicitly, otherwise it will use just the basename of the

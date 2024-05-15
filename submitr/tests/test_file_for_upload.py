@@ -1,22 +1,21 @@
 import os
+import pytest
 import tempfile
 from dcicutils.file_utils import create_random_file, compute_file_md5, get_file_size, normalize_path
 from dcicutils.misc_utils import create_uuid
-from dcicutils.tmpfile_utils import remove_temporary_directory, temporary_directory
+from dcicutils.tmpfile_utils import (
+    is_temporary_directory, remove_temporary_directory, temporary_directory, temporary_file)
 from submitr.file_for_upload import FilesForUpload
-from submitr.rclone import RCloneConfigGoogle
+from submitr.rclone import AmazonCredentials, GoogleCredentials, RCloneConfigAmazon, RCloneConfigGoogle
 from unittest.mock import patch as mock_patch
 
 TMPDIR = None
-TMPDIR_AMAZON = None
-TMPDIR_GOOGLE = None
+RANDOM_TMPFILE_SIZE = 2048
 
 
 def setup_module():
-    global TMPDIR, TMPDIR_AMAZON, TMPDIR_GOOGLE
+    global TMPDIR
     TMPDIR = tempfile.mkdtemp()
-    TMPDIR_AMAZON = os.path.join(TMPDIR, "amazon") ; os.makedirs(TMPDIR_AMAZON, exist_ok=True)  # noqa
-    TMPDIR_GOOGLE = os.path.join(TMPDIR, "google") ; os.makedirs(TMPDIR_GOOGLE, exist_ok=True)  # noqa
 
 
 def teardown_module():
@@ -24,39 +23,62 @@ def teardown_module():
     remove_temporary_directory(TMPDIR)
 
 
-class Mock_RCloneConfigGoogle(RCloneConfigGoogle):
-    # Use the file system, within a temporary directory (global TMPDIR), to simulate Google Cloud Storage.
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def path_exists(self, path):
-        return os.path.isfile(path)
-
-    def file_size(self, file):
-        get_file_size(file)
-
-    def file_checksum(self, file):
-        return compute_file_md5(file)
-
-    def create_files_for_testing(self, files):
-        global TMPDIR_GOOGLE
-        if isinstance(files, list):
+class Mock_CloudStorage:
+    # We simply use the file system, within a temporary directory, via global
+    # TMPDIR (above), to simulate/mock AWS S3 and Google Cloud Storage (GCS).
+    def __init__(self, subdir):  # noqa
+        global TMPDIR
+        assert isinstance(TMPDIR, str) and TMPDIR and is_temporary_directory(TMPDIR)
+        assert isinstance(subdir, str) and subdir
+        self._tmpdir = os.path.join(TMPDIR, subdir)
+        os.makedirs(self._tmpdir, exist_ok=True)
+        assert is_temporary_directory(self._tmpdir)
+    def path_exists(self, path):  # noqa
+        return os.path.isfile(path) if (path := self._realpath(path)) else None
+    def file_size(self, file):  # noqa
+        return get_file_size(file) if (self.path_exists(file) and (file := self._realpath(file))) else None
+    def file_checksum(self, file):  # noqa
+        return compute_file_md5(file) if (self.path_exists(file) and (file := self._realpath(file))) else None
+    def _realpath(self, path=None):  # noqa
+        return os.path.join(self._tmpdir, path) if (path := super().path(path)) else None
+    def _create_files_for_testing(self, files):  # noqa
+        if isinstance(files, str):
+            self._create_file_for_testing(files)
+        elif isinstance(files, list):
             for file in files:
-                if not (file := normalize_path(file)):
-                    continue
-                if file.startswith(os.path.sep) and not (file := file[1:]):
-                    continue
-                import pdb ; pdb.set_trace()  # noqa
-                file = os.path.join(TMPDIR_GOOGLE, file)
+                self._create_file_for_testing(file)
+    def _create_file_for_testing(self, file):  # noqa
+        if (file := normalize_path(file)) and (not file.startswith(os.path.sep) or (file := file[1:])):
+            if file := self._realpath(file):
                 if file_directory := os.path.dirname(file):
                     os.makedirs(file_directory, exist_ok=True)
-                create_random_file(file)
+                create_random_file(file, nbytes=RANDOM_TMPFILE_SIZE)
+    def _clear_files(self):  # noqa
+        assert is_temporary_directory(self._tmpdir)
+        remove_temporary_directory(self._tmpdir)
+        os.makedirs(self._tmpdir, exist_ok=True)
+        assert is_temporary_directory(self._tmpdir)
+
+
+
+class Mock_RCloneConfigAmazon(Mock_CloudStorage, RCloneConfigAmazon):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(subdir="amazon")
+        super(RCloneConfigAmazon, self).__init__(*args, **kwargs)
+
+
+class Mock_RCloneConfigGoogle(Mock_CloudStorage, RCloneConfigGoogle):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(subdir="google")
+        super(RCloneConfigGoogle, self).__init__(*args, **kwargs)
 
 
 def test_file_for_upload_b():
 
     with temporary_directory() as tmpdir:
-        config_google = Mock_RCloneConfigGoogle("asdf")
+        config_google = Mock_RCloneConfigGoogle()
         # assert config_google.path_exists("dummy") is True
 
     with mock_patch("submitr.rclone.RCloneConfigGoogle") as MockedRCloneConfigGoogle:
@@ -161,3 +183,60 @@ def test_file_for_upload_a():
         assert ffu[1].path_google is None
         assert ffu[1].ignore is False
         assert ffu[1].resume_upload_command(env="some_env") == f"resume-uploads --env some_env {upload_file_b_uuid}"
+
+
+@pytest.mark.parametrize("cloud_storage_args", [(Mock_RCloneConfigAmazon, AmazonCredentials),
+                                                (Mock_RCloneConfigGoogle, GoogleCredentials)])
+def test_mock_cloud_storage(cloud_storage_args):
+    cloud_storage_class = cloud_storage_args[0]
+    credentials_class = cloud_storage_args[1]
+    def internal_test(bucket):
+        nonlocal cloud_storage_class, credentials_class
+        amazon = cloud_storage_class(credentials_class(), bucket=bucket)
+        amazon._create_files_for_testing(["abc.fastq", "def/ghi.json"])
+        assert amazon.path("some-file") == f"{bucket}/some-file" if bucket else "some-file"
+        assert amazon.path_exists("abc.fastq") is True
+        assert amazon.file_size("abc.fastq") == RANDOM_TMPFILE_SIZE
+        assert amazon.file_checksum("abc.fastq") == compute_file_md5(amazon._realpath("abc.fastq"))
+        assert amazon.path_exists("def/ghi.json") is True
+        assert amazon.file_size("def/ghi.json") == RANDOM_TMPFILE_SIZE
+        assert amazon.file_checksum("def/ghi.json") == compute_file_md5(amazon._realpath("def/ghi.json"))
+        assert amazon.path_exists("does-not-exists.json") is False
+        amazon._clear_files()
+        assert amazon.path_exists("abc.fastq") is False
+        assert amazon.path_exists("def/ghi.json") is False
+        amazon._create_file_for_testing("xyzzy/foobar/does-exist.json")
+        assert amazon.path_exists("xyzzy/foobar/does-exist.json") is True
+    internal_test(bucket="some-bucket")
+    internal_test(bucket=None)
+
+
+def test_amazon_credentials_object():
+    region = "some-region"
+    access_key_id = "some-access-key-id"
+    secret_access_key = "some-secret-access-key"
+    session_token = "some-session-token"
+    kms_key_id = "some-kms-key-id"
+    credentials = AmazonCredentials(
+        region=region,
+        access_key_id=access_key_id,
+        secret_access_key=secret_access_key,
+        session_token=session_token,
+        kms_key_id=kms_key_id)
+    assert credentials.region == region
+    assert credentials.access_key_id == access_key_id
+    assert credentials.secret_access_key == secret_access_key
+    assert credentials.session_token == session_token
+    assert credentials.kms_key_id == kms_key_id
+
+
+def test_google_credentials_object():
+    location = "some-location"
+    service_account_file = "some-service-account-file-does-not-exist.json"
+    with pytest.raises(Exception):
+        # No service account file found.
+        GoogleCredentials(service_account_file=service_account_file, location=location)
+    with temporary_file(suffix=".json") as service_account_file:
+        credentials = GoogleCredentials(service_account_file=service_account_file, location=location)
+        assert credentials.location == location
+        assert credentials.service_account_file == service_account_file
