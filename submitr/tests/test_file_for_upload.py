@@ -81,7 +81,8 @@ class Mock_RCloneConfigGoogle(Mock_CloudStorage, RCloneConfigGoogle):
 
 class Mock_LocalStorage(Mock_CloudStorage):
 
-    # Might as well use it also for easy local file system test file setup for convenience.
+    # Might as well also use Mock_CloudStorage for easy
+    # local file system test file setup for convenience.
     def __init__(self, *args, **kwargs):
         super().__init__(subdir="local")
 
@@ -197,6 +198,18 @@ def test_file_for_upload_b():
                                     main_search_directory_recursively=False)
     assert ffunr[0].found is True
     assert ffunr[1].found is False
+
+    filesystem._clear_files()
+    ffu = FilesForUpload.assemble(files,
+                                  main_search_directory=filesystem._root(),
+                                  main_search_directory_recursively=True)
+    for ff in ffu:
+        assert ff.found is False
+        assert ff.found_local is False
+        assert ff.found_local_multiple is False
+        assert ff.from_local is False
+        assert ff.found_google is False
+        assert ff.from_google is False
 
 
 def test_file_for_upload_c():
