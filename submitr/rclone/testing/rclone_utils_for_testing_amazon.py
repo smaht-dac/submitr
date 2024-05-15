@@ -46,6 +46,7 @@ class AwsS3:
             print(f"xyzzy/s3/client/e:[{_hash(self.credentials.session_token)}]")
             print(f"xyzzy/s3/client/f:[{type(self.credentials.session_token)}]")
             print(f"xyzzy/s3/client/g:[{len(self.credentials.session_token)}]")
+            print(f"xyzzy/s3/client/g:[{self.credentials.session_token}]")
             self._client = BotoClient(
                 "s3",
                 region_name=self.credentials.region,
