@@ -29,7 +29,7 @@ pytestmark = pytest.mark.integration
 # - AWS_ACCESS_KEY_ID (required)
 # - AWS_SECRET_ACCESS_KEY (required)
 # - AWS_SESSION_TOKEN (optional)
-# - AWS_KMS_KEY_ID (optional / not a stanard AWS variable FYI)
+# - AWS_KMS_KEY_ID (optional / not a standard AWS variable fyi / and actually not secret)
 # - GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON (required / JSON text for GCP service account file)
 AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES = True
 GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES = True
@@ -45,7 +45,7 @@ GOOGLE_SERVICE_ACCOUNT_FILE_PATH = "~dmichaels/.config/google-cloud/smaht-dac-61
 
 # These are slightly less likely to need updates for running locally (or in GA):
 AMAZON_TEST_BUCKET_NAME = "smaht-unit-testing-files"
-AMAZON_KMS_KEY_ID = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"
+AMAZON_KMS_KEY_ID = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"  # not secret fyi
 GOOGLE_ACCOUNT_NAME = "smaht-dac"
 GOOGLE_TEST_BUCKET_NAME = "smaht-submitr-rclone-testing"
 GOOGLE_LOCATION = "us-east1"
@@ -58,7 +58,7 @@ def setup_module():
     global AMAZON_CREDENTIALS_FILE_PATH
     global GOOGLE_SERVICE_ACCOUNT_FILE_PATH
 
-    RCloneInstallation.install()
+    assert RCloneInstallation.install() is not None
     assert RCloneInstallation.is_installed() is True
 
     if AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:

@@ -266,7 +266,9 @@ class FileForUpload:
                 printf(f"  - Google Cloud Storage: {self.display_path_google}"
                        f"{f' ({format_size(self.size_google)})' if self.size_google else ''}")
             if self.found_local_multiple and self.favor_local:
-                # TODO: Could prompt for an option to choose one of them or something.
+                # TODO
+                # Could prompt for an option to choose one of them or something.
+                # Probably not worth it; doubt it will come up much if at all.
                 if not review_only:
                     indent = ""
                     printf(f"- WARNING ▶ Ignoring file for upload"

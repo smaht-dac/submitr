@@ -366,12 +366,3 @@ class AwsCredentials(AmazonCredentials):
         os.environ.pop("AWS_ACCESS_KEY_ID", None)
         os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
         os.environ.pop("AWS_SESSION_TOKEN", None)
-
-
-def _hash(value: str) -> str:
-    import hashlib
-    if not isinstance(value, str) or not value:
-        return ""
-    md5 = hashlib.md5()
-    md5.update(value.encode("utf-8"))
-    return md5.hexdigest()

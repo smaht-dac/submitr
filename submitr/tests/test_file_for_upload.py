@@ -27,7 +27,6 @@ class Mock_RCloneConfigGoogle(RCloneConfigGoogle):
         return Mock_RCloneConfigGoogle(file)
 
     def __init__(self, file):
-        # tmpdir = TMPDIR if TMPDIR else "/tmp"
         self._file = file
 
     def path_exists(self, path):
