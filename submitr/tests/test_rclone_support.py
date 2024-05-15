@@ -1,6 +1,5 @@
 from contextlib import contextmanager
 from enum import Enum
-import hashlib
 import json
 import os
 import pytest
