@@ -4,7 +4,6 @@ from datetime import datetime
 from functools import lru_cache
 import io
 from json import dumps as json_dumps, loads as json_loads
-import hashlib
 import os
 from pathlib import Path
 import pkg_resources
@@ -13,8 +12,10 @@ import requests
 from signal import signal, SIGINT
 import string
 from typing import Any, Callable, List, Optional, Tuple
-from dcicutils.misc_utils import PRINT, str_to_bool
 from dcicutils.datetime_utils import format_datetime, parse_datetime
+from dcicutils.function_cache_decorator import function_cache
+from dcicutils.misc_utils import PRINT, str_to_bool
+from dcicutils.structured_data import Portal
 
 
 ERASE_LINE = "\033[K"
@@ -110,91 +111,6 @@ def format_path(path: str) -> str:
     if isinstance(path, str) and os.path.isabs(path) and path.startswith(os.path.expanduser("~")):
         path = "~/" + Path(path).relative_to(Path.home()).as_posix()
     return path
-
-
-def get_file_size(file: str) -> int:
-    try:
-        return os.path.getsize(file) if isinstance(file, str) else ""
-    except Exception:
-        return -1
-
-
-def get_file_modified_datetime(file: str) -> str:
-    try:
-        return format_datetime(datetime.fromtimestamp(os.path.getmtime(file)))
-    except Exception:
-        return ""
-
-
-def get_file_checksum(file: str) -> str:
-    return get_file_md5_like_aws_s3_etag(file)
-
-
-def get_file_md5(file: str) -> str:
-    if not isinstance(file, str):
-        return ""
-    try:
-        md5 = hashlib.md5()
-        with open(file, "rb") as file:
-            for chunk in iter(lambda: file.read(4096), b""):
-                md5.update(chunk)
-        return md5.hexdigest()
-    except Exception:
-        return ""
-
-
-def get_file_md5_like_aws_s3_etag(file: str) -> Optional[str]:
-    try:
-        with io.open(file, "rb") as f:
-            return _get_file_md5_like_aws_s3_etag(f)
-    except Exception:
-        return None
-
-
-def _get_file_md5_like_aws_s3_etag(f: io.BufferedReader) -> str:
-    """
-    Returns the AWS S3 "Etag" for the given file; this value is md5-like but
-    not the same as a normal md5. We use this to compare that a file in S3
-    appears to be the exact the same file as a local file. Adapted from:
-    https://stackoverflow.com/questions/75723647/calculate-md5-from-aws-s3-etag
-    """
-    MULTIPART_THRESHOLD = 8388608
-    MULTIPART_CHUNKSIZE = 8388608
-    # BUFFER_SIZE = 1048576
-    # Verify some assumptions are correct
-    # assert(MULTIPART_CHUNKSIZE >= MULTIPART_THRESHOLD)
-    # assert((MULTIPART_THRESHOLD % BUFFER_SIZE) == 0)
-    # assert((MULTIPART_CHUNKSIZE % BUFFER_SIZE) == 0)
-    hash = hashlib.md5()
-    read = 0
-    chunks = None
-    while True:
-        # Read some from stdin, if we're at the end, stop reading
-        bits = f.read(1048576)
-        if len(bits) == 0:
-            break
-        read += len(bits)
-        hash.update(bits)
-        if chunks is None:
-            # We're handling a multi-part upload, so switch to calculating
-            # hashes of each chunk
-            if read >= MULTIPART_THRESHOLD:
-                chunks = b''
-        if chunks is not None:
-            if (read % MULTIPART_CHUNKSIZE) == 0:
-                # Dont with a chunk, add it to the list of hashes to hash later
-                chunks += hash.digest()
-                hash = hashlib.md5()
-    if chunks is None:
-        # Normal upload, just output the MD5 hash
-        etag = hash.hexdigest()
-    else:
-        # Multipart upload, need to output the hash of the hashes
-        if (read % MULTIPART_CHUNKSIZE) != 0:
-            # Add the last part if we have a partial chunk
-            chunks += hash.digest()
-        etag = hashlib.md5(chunks).hexdigest() + "-" + str(len(chunks) // 16)
-    return etag
 
 
 def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Callable]] = None,
@@ -304,3 +220,8 @@ def catch_interrupt(on_interrupt: Optional[Callable] = None):
         yield
     finally:
         signal(SIGINT, previous_interrupt_handler)
+
+
+@function_cache(serialize_key=True)
+def get_health_page(key: dict) -> dict:
+    return Portal(key).get_health().json()

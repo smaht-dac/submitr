@@ -1,16 +1,47 @@
-import boto3
+from base64 import b64decode as base64_decode
+# import boto3
+from boto3 import client as BotoClient
 from collections import namedtuple
-import os
 import threading
-import time
+from time import time as current_timestamp
 from typing import Callable, Optional
 from dcicutils.command_utils import yes_or_no
+from dcicutils.file_utils import compute_file_md5
 from dcicutils.misc_utils import format_duration, format_size
 from dcicutils.progress_bar import ProgressBar
-from submitr.utils import (
-    get_file_md5_like_aws_s3_etag, get_s3_bucket_and_key_from_s3_uri, format_datetime
-)
+from submitr.file_for_upload import FileForUpload
+from submitr.rclone import RClone, RCloneConfigAmazon, cloud_path
+from submitr.utils import get_s3_bucket_and_key_from_s3_uri, format_datetime
 
+# Module to upload a given file, with the given AWS credentials to AWS S3.
+# Displays progress bar and other info; checks if file already exists; verifies
+# upload; catches interrupts; et cetera. Circa May 2024 added support for upload,
+# or transfer rather, from Google Cloud Storage (GCS) directly to S3 via rclone.
+
+# Notes on checksums:
+#
+# Our primary use of checksums is to tell the user, in the case that the destination file
+# in S3 already exists, if the source and destination files appear to be the same or not.
+#
+# For large files we can get ONLY the etag from AWS S3 and ONLY the md5 from Google Cloud Storage (GCS).
+# So comparing checksums when uploading from GCS to AWS (our only current cloud-to-cloud use-case)
+# is not so straightforward. Further, though we have not yet encountered this, it is a plausible
+# assumption that under some circumstance, e.g. multi-part upload, even getting an md5 from GCS will
+# be impossible. So, we just tell the user in this case that a reasonable comparison cannot be made.
+#
+# WRT the "rclone hashsum md5" command, it seems unreliable for S3 (it seems to just return
+# the etag which generally seems to be the same as md5 for smaller files); so we do not use it;
+# this rclone command does seem to be reliable for GCS (modulo the above comment about multi-parts).
+# And actually in any case, for our use case, where we use Portal-generated temporary AWS credentials
+# for the AWS S3 upload, which have policies only for s3:PutObject ans s3:GetObject, we cannot use
+# rclone hashsum because it requires additionally s3:ListBucket; so we don't (and we don't) want to
+# change this then rclone hashsum is not really a viable option to get the checksum of and AWS S3 key.
+#
+# Given all this, we will get the md5 of the file to be uploaded to S3 and store it as metadata on
+# the uploaded S3 file/object. For local file uploads we just compute this md5 directly. For files
+# being uploaded from GCS we (trust and) take/use the md5 value stored in GCS for the file/object.
+# Then when we need the md5 of an already existing file in S3 we read this metadata rather than
+# using rclone (or boto3 for that matter) to do it.
 
 # This is to control whether or not we first prompt the user to take the time
 # to do a checksum on the local file to see if it appears to be exactly the
@@ -18,29 +49,22 @@ from submitr.utils import (
 _BIG_FILE_SIZE = 1024 * 1024 * 500  # 500 MB
 
 
-# Uploads the given file with the given AWS credentials to AWS S3.
-# Displays progress bar and other info; checks if file already
-# exists; verifies upload; catches interrupts; et cetera.
-def upload_file_to_aws_s3(file: str, s3_uri: str,
-                          file_checksum: Optional[str] = None,
+def upload_file_to_aws_s3(file: FileForUpload,
+                          s3_uri: str,
                           aws_credentials: Optional[dict] = None,
                           aws_kms_key_id: Optional[str] = None,
                           print_progress: bool = True,
                           print_preamble: bool = True,
                           verify_upload: bool = True,
                           catch_interrupt: bool = True,
-                          print_function: Optional[Callable] = print) -> bool:
+                          printf: Optional[Callable] = print) -> bool:
 
-    if not isinstance(file, str) or not file or not isinstance(s3_uri, str) or not s3_uri:
-        return False
-    if not os.path.exists(file):
+    if not (isinstance(file, FileForUpload) and file.found and isinstance(s3_uri, str) and s3_uri):
         return False
 
     s3_bucket, s3_key = get_s3_bucket_and_key_from_s3_uri(s3_uri)
     if not s3_bucket or not s3_key:
         return False
-
-    file_size = os.path.getsize(file)
 
     if isinstance(aws_credentials, dict):
         aws_credentials = {
@@ -51,27 +75,56 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         }
     else:
         aws_credentials = {}
-    if aws_kms_key_id:
-        aws_extra_args = {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": aws_kms_key_id}
-    else:
-        aws_extra_args = {}
 
     print_progress = print_progress is True
     print_preamble = print_preamble is True
     verify_upload = verify_upload is True
     catch_interrupt = catch_interrupt is True
-    printf = print_function if callable(print_function) else print
+    if not callable(printf):
+        printf = print
 
-    def define_upload_file_callback() -> None:
+    if file.from_local:
+        rclone = None
+        file_size = file.size_local
+        file_checksum = None
+        file_checksum_timestamp = None
+
+    elif file.from_google:
+        rclone_config_google = file.config_google
+        rclone_amazon_config = RCloneConfigAmazon(region=aws_credentials.get("region_name"),
+                                                  access_key_id=aws_credentials.get("aws_access_key_id"),
+                                                  secret_access_key=aws_credentials.get("aws_secret_access_key"),
+                                                  session_token=aws_credentials.get("aws_session_token"),
+                                                  kms_key_id=aws_kms_key_id)
+        rclone = RClone(source=rclone_config_google, destination=rclone_amazon_config)
+        if not rclone_config_google.path_exists(file.name):
+            printf(f"ERROR: Cannot find Google Cloud Storage object: {file.path_google}")
+            return False
+        file_size = file.size_google
+        file_checksum = None
+        # Note that it is known to be the case that calling rclone hashsum to get the checksum
+        # of a file in Google Cloud Storage (GCS) merely retrieves the checksum from GCS,
+        # which had previously been computed/stored by GCS for the file within GCS.
+        file_checksum = rclone_config_google.file_checksum(file.name)
+        file_checksum_timestamp = current_timestamp()
+
+    else:
+        raise Exception("File for upload not found; should not happen at this point!")
+
+    def define_upload_file_callback(progress_total_nbytes: bool = False) -> None:
         nonlocal file_size
 
         def upload_file_callback_internal(nbytes_chunk: int) -> None:  # noqa
             # The execution of this may be in any number of child threads due to the way upload_fileobj
             # works; we do not create the progress bar until the upload actually starts because if we
             # do we get some initial bar output file.
-            nonlocal started, file_size, nbytes_transferred, ncallbacks, upload_done, bar
+            nonlocal started, file, file_size, nbytes_transferred, ncallbacks, upload_done, bar, progress_total_nbytes
             ncallbacks += 1
-            nbytes_transferred += nbytes_chunk
+            if progress_total_nbytes is True:
+                if (nbytes_transferred := nbytes_chunk) > file_size:
+                    nbytes_transferred = file_size
+            else:
+                nbytes_transferred += nbytes_chunk
             # We do not use bar.increment_progress(nbytes_chunk) but rather set the total work
             # done (bar.set_total) so far to nbytes_transferred, so that counts add up right when
             # interrupted; during interrupt handling (outside in caller/main-thread) this callback
@@ -80,8 +133,8 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
             # still needs to be called so it takes.
             bar.set_progress(nbytes_transferred)
             if nbytes_transferred >= file_size:
-                duration = time.time() - started
-                upload_done = (f"Upload complete: {os.path.basename(file)}"
+                duration = current_timestamp() - started
+                upload_done = (f"Upload complete: {file.name}"
                                f" | {format_size(nbytes_transferred)} in {format_duration(duration)}"
                                f" | {format_size(nbytes_transferred / duration)} per second ◀")
 
@@ -121,7 +174,7 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
                           interrupt_message="upload",
                           tidy_output_hack=True)
 
-        started = time.time()
+        started = current_timestamp()
         nbytes_transferred = 0
         ncallbacks = 0
         upload_done = None
@@ -135,88 +188,169 @@ def upload_file_to_aws_s3(file: str, s3_uri: str,
         nonlocal aws_credentials, s3_bucket, s3_key
         try:
             # Note that we do not need to use any KMS key for head_object.
-            s3 = boto3.client("s3", **aws_credentials)
-            s3_file_head = s3.head_object(Bucket=s3_bucket, Key=s3_key)
-            if (s3_file_etag := s3_file_head["ETag"]) and s3_file_etag.startswith('"') and s3_file_etag.endswith('"'):
-                s3_file_etag = s3_file_etag[1:-1]
-            return {
-                "modified": format_datetime(s3_file_head["LastModified"]),
-                "size": s3_file_head["ContentLength"],
-                "checksum": s3_file_etag
+            s3 = BotoClient("s3", **aws_credentials)
+            if not isinstance(s3_file_head := s3.head_object(Bucket=s3_bucket, Key=s3_key), dict):
+                return None
+            result = {
+                "modified": format_datetime(s3_file_head.get("LastModified")),
+                "size": s3_file_head.get("ContentLength")
             }
+            # Try getting the md5 that we ourselves wrote if/when uploading via this module.
+            if isinstance(s3_file_metadata := s3_file_head.get("Metadata"), dict):
+                if isinstance(s3_file_md5 := s3_file_metadata.get("md5"), str):
+                    result["md5"] = s3_file_md5
+                    if isinstance(s3_file_md5_timestamp := s3_file_metadata.get("md5-timestamp"), str):
+                        result["md5_timestamp"] = s3_file_md5_timestamp
+                    if isinstance(s3_file_md5_source := s3_file_metadata.get("md5-source"), str):
+                        result["md5_source"] = s3_file_md5_source
+            # As a backup check if there is an md5 written directly by rclone copy.
+            if not result.get("md5") and isinstance(s3_file_metadata, dict):
+                if s3_file_md5 := s3_file_metadata.get("md5chksum"):
+                    result["md5"] = base64_decode(s3_file_md5).hex()
+                    if isinstance(s3_file_md5_timestamp := s3_file_metadata.get("mtime"), str):
+                        result["md5_timestamp"] = s3_file_md5_timestamp
+            if not result.get("md5") and isinstance(s3_file_metadata := s3_file_head.get("ResponseMetadata"), dict):
+                if isinstance(s3_file_http_headers := s3_file_metadata.get("HTTPHeaders"), dict):
+                    if isinstance(s3_file_md5 := s3_file_http_headers.get("x-amz-meta-md5chksum"), str):
+                        result["md5"] = base64_decode(s3_file_md5).hex()
+                        if isinstance(s3_file_md5_timestamp := s3_file_http_headers.get("x-amz-meta-mtime"), str):
+                            result["md5_timestamp"] = s3_file_md5_timestamp
+            # Just for completeness and FYI get get the etag (not actually needed/used right now).
+            if isinstance(s3_file_etag := s3_file_head.get("ETag", ""), str):
+                result["etag"] = s3_file_etag.strip("\"")
+            return result
         except Exception:
             # Ignore error for now because (1) verification usage not absolutely necessary,
             # and (2) portal permission change for this not yet deployed everywhere.
             return None
 
     def verify_with_any_already_uploaded_file() -> None:
-        nonlocal file, file_size, file_checksum
+        nonlocal file, file_size, file_checksum, file_checksum_timestamp
         if existing_file_info := get_uploaded_file_info():
+            existing_file_modified = existing_file_info["modified"]
+            existing_file_size = existing_file_info["size"]
+            existing_file_md5 = existing_file_info.get("md5")  # might not be set
             # The file we are uploading already exists in S3.
             printf(f"WARNING: This file already exists in AWS S3:"
-                   f" {format_size(existing_file_info['size'])} | {existing_file_info['modified']}")
-            if files_appear_to_be_the_same := (existing_file_info["size"] == file_size):
+                   f" {format_size(existing_file_size)} | {existing_file_modified}")
+            if files_appear_to_be_the_same := (existing_file_size == file_size):
                 # File sizes are the same. See if these files appear to be the same according
                 # to their checksums; but if it is a big file prompt the user first to check.
                 if file_checksum:
                     compare_checksums = True
-                elif not (compare_checksums := existing_file_info["size"] < _BIG_FILE_SIZE):
-                    if yes_or_no("Do you want to see if these files appear to be exactly the same?"):
+                elif not (compare_checksums := existing_file_size <= _BIG_FILE_SIZE):
+                    if yes_or_no("Do you want to see if these files appear to be exactly the same (via checksum)?"):
                         compare_checksums = True
                     else:
-                        files_appear_to_be_the_same = None
+                        files_appear_to_be_the_same = None  # sic: neither True nor False (see below)
                 if compare_checksums:
                     if not file_checksum:
-                        file_checksum = get_file_md5_like_aws_s3_etag(file)
-                    if file_checksum != existing_file_info["checksum"]:
-                        files_appear_to_be_the_same = False
-                        file_difference = f" | checksum: {file_checksum} vs {existing_file_info['checksum']}"
+                        # Here only for local file; for GCS we got the checksum up front (above).
+                        file_checksum = compute_file_md5(file.path_local)
+                        file_checksum_timestamp = current_timestamp()
+                    if existing_file_md5:
+                        if file_checksum != existing_file_md5:
+                            files_appear_to_be_the_same = False
+                            file_difference = f" | checksum: {file_checksum} vs {existing_file_md5}"
             else:
-                file_difference = f" | size: {file_size} vs {existing_file_info['size']}"
+                file_difference = f" | size: {file_size} vs {existing_file_size}"
             if files_appear_to_be_the_same is False:
                 printf(f"These files appear to be different{file_difference}")
             elif files_appear_to_be_the_same is True:
-                printf(f"These files appear to be the same | checksum: {existing_file_info['checksum']}")
+                if not existing_file_md5:
+                    printf(f"These files are the same size; but checksums not available for further comparison.")
+                else:
+                    printf(f"These files appear to be the same | checksum: {existing_file_md5}")
             if not yes_or_no("Do you want to continue with this upload anyways?"):
-                printf(f"Skipping upload of {os.path.basename(file)} ({format_size(file_size)}) to: {s3_uri}")
+                printf(f"Skipping upload of {file.name} ({format_size(file_size)}) to: {s3_uri}")
                 return False
         return True
 
     def verify_uploaded_file() -> bool:
-        nonlocal file_size
+        nonlocal file, file_size
         if file_info := get_uploaded_file_info():
-            printf(f"Verifying upload: {os.path.basename(file)} ... ", end="")
+            printf(f"Verifying upload: {file.name} ... ", end="")
             if file_info["size"] != file_size:
                 printf(f"WARNING: File size mismatch ▶ {file_size} vs {file_info['size']}")
                 return False
-            if file_checksum and file_info["checksum"] and file_checksum != file_info["checksum"]:
-                printf(f"WARNING: File checksum mismatch ▶ {file_checksum} vs {file_info['checksum']}")
+            if file_checksum and file_info.get("md5") and (file_checksum != file_info["md5"]):
+                printf(f"WARNING: File checksum mismatch ▶ {file_checksum} vs {file_info['md5']}")
                 return False
             printf("OK")
             return True
         return False
 
+    def create_metadata_for_uploading_file() -> dict:
+        nonlocal aws_credentials, s3_bucket, s3_key, file_checksum, file_checksum_timestamp
+        try:
+            s3 = BotoClient("s3", **aws_credentials)
+            if isinstance(s3_file_head := s3.head_object(Bucket=s3_bucket, Key=s3_key), dict):
+                if isinstance(metadata := s3_file_head.get("Metadata"), dict):
+                    if file_checksum:
+                        metadata["md5"] = file_checksum
+                        metadata["md5-timestamp"] = str(file_checksum_timestamp)
+                        metadata["md5-source"] = "google-cloud-storage" if file.found_google else "file-system"
+                    return metadata
+        except Exception:
+            pass
+        return {}
+
+    def update_metadata_for_uploaded_file() -> bool:
+        # Only need in the GCS case, as this metadata is set (via ExtraArgs) on the actual upload for S3.
+        nonlocal aws_credentials, s3_bucket, s3_key
+        if metadata := create_metadata_for_uploading_file():
+            try:
+                s3 = BotoClient("s3", **aws_credentials)
+                s3.copy_object(Bucket=s3_bucket, Key=s3_key,
+                               CopySource={"Bucket": s3_bucket, "Key": s3_key},
+                               Metadata=metadata, MetadataDirective="REPLACE")
+                return True
+            except Exception:
+                pass
+        return False
+
     if print_preamble:
-        printf(f"Uploading {os.path.basename(file)} ({format_size(file_size)}) to: {s3_uri}")
+        printf(f"▶ Upload: {file.name} ({format_size(file.size)}) ...")
+        printf(f"  - From: {file.display_path}")
+        printf(f"  -   To: {s3_uri}")
 
     if verify_upload and not verify_with_any_already_uploaded_file():
         return False
 
-    upload_file_callback = define_upload_file_callback()
-
+    metadata = create_metadata_for_uploading_file()
     upload_aborted = False
-    s3 = boto3.client("s3", **aws_credentials)
-    with open(file, "rb") as f:
+
+    if rclone:
+        upload_file_callback = define_upload_file_callback(progress_total_nbytes=True)
         try:
-            if aws_extra_args:
-                s3.upload_fileobj(f, s3_bucket, s3_key,
-                                  ExtraArgs=aws_extra_args,
-                                  Callback=upload_file_callback.function)
-            else:
-                s3.upload_fileobj(f, s3_bucket, s3_key, Callback=upload_file_callback.function)
+            # Note that the source is just file.name, which is just the base name of the file,
+            # from the metadata file); the bucket (or bucket/path; whatever was passed in via
+            # --rclone-google-source) is stored in RCloneConfigGoogle (from file.config_google),
+            # and RClone.copy (which has this RCloneConfigGoogle, by virtue of RClone being
+            # created with it as a source), resolves/expands this to the full Google path name.
+            rclone.copy(file.name, cloud_path.join(s3_bucket, s3_key), progress=upload_file_callback.function)
+            update_metadata_for_uploaded_file()
         except Exception:
-            printf(f"Upload ABORTED: {file} ◀")
+            printf(f"Upload ABORTED: {file.path_google} ◀")  # TODO: test
             upload_aborted = True
+            pass
+    else:
+        upload_file_callback = define_upload_file_callback(progress_total_nbytes=False)
+        s3 = BotoClient("s3", **aws_credentials)
+        aws_extra_args = {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": aws_kms_key_id} if aws_kms_key_id else {}
+        if metadata:
+            aws_extra_args["Metadata"] = metadata
+        with open(file.path_local, "rb") as f:
+            try:
+                if aws_extra_args:
+                    s3.upload_fileobj(f, s3_bucket, s3_key,
+                                      ExtraArgs=aws_extra_args,
+                                      Callback=upload_file_callback.function)
+                else:
+                    s3.upload_fileobj(f, s3_bucket, s3_key, Callback=upload_file_callback.function)
+            except Exception:
+                printf(f"Upload ABORTED: {file.path_local} ◀")
+                upload_aborted = True
 
     upload_file_callback.done()
 

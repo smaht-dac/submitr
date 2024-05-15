@@ -9,7 +9,7 @@ import re
 import sys
 import time
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple
-import yaml
+from typing_extensions import Literal
 
 # get_env_real_url would rely on env_utils
 # from dcicutils.env_utils import get_env_real_url
@@ -17,33 +17,29 @@ from dcicutils.command_utils import yes_or_no
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 from dcicutils.data_readers import Excel
 from dcicutils.datetime_utils import format_datetime
-from dcicutils.file_utils import search_for_file
-from dcicutils.function_cache_decorator import function_cache
+from dcicutils.file_utils import (
+       compute_file_etag, compute_file_md5,
+       get_file_modified_datetime, get_file_size
+)
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
     environ_bool, format_duration, format_size,
-    is_uuid, url_path_join, ignorable, normalize_spaces, remove_prefix
+    is_uuid, url_path_join, normalize_spaces
 )
 from dcicutils.progress_bar import ProgressBar
-from dcicutils.s3_utils import HealthPageKey
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
 from dcicutils.structured_data import Portal, StructuredDataSet
 from dcicutils.submitr.progress_constants import PROGRESS_INGESTER, PROGRESS_LOADXL, PROGRESS_PARSE
 from dcicutils.submitr.ref_lookup_strategy import ref_lookup_strategy
-from typing_extensions import Literal
-from urllib.parse import urlparse
 from submitr.base import DEFAULT_APP
 from submitr.exceptions import PortalPermissionError
+from submitr.file_for_upload import FilesForUpload
 from submitr.metadata_template import check_metadata_version, print_metadata_version_warning
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
+from submitr.rclone import RCloneConfigGoogle
 from submitr.scripts.cli_utils import get_version
-from submitr.s3_utils import upload_file_to_aws_s3
-from submitr.utils import (
-    format_path,
-    get_file_checksum, get_file_md5, get_file_md5_like_aws_s3_etag,
-    get_file_modified_datetime, get_file_size, get_s3_bucket_and_key_from_s3_uri,
-    is_excel_file_name, print_boxed, keyword_as_title, tobool
-)
+from submitr.submission_uploads import do_any_uploads
+from submitr.utils import format_path, get_health_page, is_excel_file_name, print_boxed, tobool
 
 
 def set_output_file(output_file):
@@ -387,85 +383,6 @@ ATTEMPTS_BEFORE_TIMEOUT = 100
 ATTEMPTS_BEFORE_TIMEOUT = 4
 
 
-def _get_section(res, section):
-    """
-    Given a description of an ingestion submission, returns a section name within that ingestion.
-
-    :param res: the description of an ingestion submission as a python dictionary that represents JSON data
-    :param section: the name of a section to find either in the toplevel or in additional_data.
-    :return: the section's content
-    """
-
-    return res.get(section) or res.get('additional_data', {}).get(section)
-
-
-def _show_section(res, section, caveat_outcome=None, portal=None):
-    """
-    Shows a given named section from a description of an ingestion submission.
-
-    The caveat is used when there has been an error and should be a phrase that describes the fact that output
-    shown is only up to the point of the caveat situation. Instead of a "My Heading" header the output will be
-    "My Heading (prior to <caveat>)."
-
-    :param res: the description of an ingestion submission as a python dictionary that represents JSON data
-    :param section: the name of a section to find either in the toplevel or in additional_data.
-    :param caveat_outcome: a phrase describing some caveat on the output
-    """
-
-    section_data = _get_section(res, section)
-    if caveat_outcome and not section_data:
-        # In the case of non-success, be brief unless there's data to show.
-        return
-    if caveat_outcome:
-        caveat = " (prior to %s)" % caveat_outcome
-    else:
-        caveat = ""
-    if not section_data:
-        return
-    SHOW("\n----- %s%s -----" % (keyword_as_title(section), caveat))
-    if isinstance(section_data, dict):
-        if file := section_data.get("file"):
-            PRINT(f"File: {file}")
-        if s3_file := section_data.get("s3_file"):
-            PRINT(f"S3 File: {s3_file}")
-        if details := section_data.get("details"):
-            PRINT(f"Details: {details}")
-        for item in section_data:
-            if isinstance(section_data[item], list) and section_data[item]:
-                issue_prefix = ""
-                if item == "reader":
-                    PRINT(f"Parser Warnings:")
-                    issue_prefix = "WARNING: "
-                elif item == "validation":
-                    PRINT(f"Validation Errors:")
-                    issue_prefix = "ERROR: "
-                elif item == "ref":
-                    PRINT(f"Reference (linkTo) Errors:")
-                    issue_prefix = "ERROR: "
-                elif item == "errors":
-                    PRINT(f"Other Errors:")
-                    issue_prefix = "ERROR: "
-                else:
-                    continue
-                for issue in section_data[item]:
-                    if isinstance(issue, dict):
-                        PRINT(f"- {issue_prefix}{_format_issue(issue, file)}")
-                    elif isinstance(issue, str):
-                        PRINT(f"- {issue_prefix}{issue}")
-    elif isinstance(section_data, list):
-        if section == "upload_info":
-            for info in section_data:
-                if isinstance(info, dict) and info.get("filename") and (uuid := info.get("uuid")):
-                    upload_file_accession_name, upload_file_type = _get_upload_file_info(portal, uuid)
-                    info["target"] = upload_file_accession_name
-                    info["type"] = upload_file_type
-            PRINT(yaml.dump(section_data))
-        else:
-            [SHOW(line) for line in section_data]
-    else:  # We don't expect this, but such should be shown as-is, mostly to see what it is.
-        SHOW(section_data)
-
-
 def _ingestion_submission_item_url(server, uuid):
     # Note that we use datastore=database for quicker feedback.
     return url_path_join(server, "ingestion-submissions", uuid) + "?format=json&datastore=database"
@@ -483,8 +400,8 @@ def _initiate_server_ingestion_process(
         add_submission_center: Optional[str] = None,
         is_server_validation: bool = False,
         is_resume_submission: bool = False,
-        validation_ingestion_submission_object: Optional[dict] = None,
         validate_remote_skip: bool = False,
+        validation_ingestion_submission_object: Optional[dict] = None,
         post_only: bool = False,
         patch_only: bool = False,
         autoadd: Optional[dict] = None,
@@ -517,7 +434,7 @@ def _initiate_server_ingestion_process(
         "autoadd": json.dumps(autoadd),
         "ingestion_directory": os.path.dirname(ingestion_filename) if ingestion_filename else None,
         "datafile_size": datafile_size or get_file_size(ingestion_filename),
-        "datafile_checksum": datafile_checksum or get_file_checksum(ingestion_filename),
+        "datafile_checksum": datafile_checksum or compute_file_md5(ingestion_filename),
         "submitr_version": get_version(),
         "user": json.dumps(user) if user else None
     }
@@ -686,6 +603,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          subfolders=False,
                          submission_protocol=DEFAULT_SUBMISSION_PROTOCOL,
                          submit=False,
+                         rclone_config_google=None,
                          validate_local_only=False,
                          validate_remote_only=False,
                          validate_local_skip=False,
@@ -757,6 +675,7 @@ def submit_any_ingestion(ingestion_filename, *,
         exit(1)
 
     user_record = _get_user_record(portal.server, auth=portal.key_pair, quiet=json_only and not verbose)
+
     # Nevermind: Too confusing for both testing and general usage
     # to have different behaviours for admin and non-admin users.
     # is_admin_user = _is_admin_user(user_record)
@@ -814,6 +733,9 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if verbose:
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
+
+    if rclone_config_google:
+        rclone_config_google.verify_connectivity()
 
     if not noversion:
         check_metadata_version(ingestion_filename, portal=portal)
@@ -873,6 +795,7 @@ def submit_any_ingestion(ingestion_filename, *,
                 validation_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
                 show_details=show_details, report=False, messages=True,
                 validation=True,
+                rclone_config_google=rclone_config_google,
                 nofiles=True, noprogress=noprogress, timeout=timeout,
                 verbose=verbose, debug=debug, debug_sleep=debug_sleep)
 
@@ -887,6 +810,14 @@ def submit_any_ingestion(ingestion_filename, *,
               f" {'--validate-local-only' if validate_local_only else '--validate-remote-skip'}).")
 
     if validation:
+        do_any_uploads(structured_data,
+                       metadata_file=ingestion_filename,
+                       main_search_directory=upload_folder,
+                       main_search_directory_recursively=subfolders,
+                       config_google=rclone_config_google,
+                       portal=portal,
+                       verbose=True,
+                       review_only=True)
         exit(0)
 
     # Server submission.
@@ -918,6 +849,7 @@ def submit_any_ingestion(ingestion_filename, *,
     submission_done, submission_status, submission_response = _monitor_ingestion_process(
             submission_uuid, portal.server, portal.env, app=portal.app, keys_file=portal.keys_file,
             show_details=show_details, report=False, messages=True,
+            rclone_config_google=rclone_config_google,
             validation=False,
             nofiles=True, noprogress=noprogress, timeout=timeout,
             verbose=verbose, debug=debug, debug_sleep=debug_sleep)
@@ -929,13 +861,13 @@ def submit_any_ingestion(ingestion_filename, *,
 
     # Now that submission has successfully complete, review the files to upload and then do it.
 
-    if structured_data:
-        _review_upload_files(structured_data, ingestion_filename,
-                             validation=validation, directory=upload_folder, recursive=subfolders)
-
-    do_any_uploads(submission_response, keydict=portal.key, ingestion_filename=ingestion_filename,
-                   upload_folder=upload_folder, no_query=no_query,
-                   subfolders=subfolders, portal=portal)
+    do_any_uploads(submission_response,
+                   metadata_file=ingestion_filename,
+                   main_search_directory=upload_folder,
+                   main_search_directory_recursively=subfolders,
+                   config_google=rclone_config_google,
+                   portal=portal,
+                   verbose=verbose)
 
 
 def _get_recent_submissions(portal: Portal, count: int = 30, name: Optional[str] = None) -> List[dict]:
@@ -1033,6 +965,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                                check_submission_script: bool = False,
                                upload_directory: Optional[str] = None,
                                upload_directory_recursive: bool = False,
+                               rclone_config_google: Optional[RCloneConfigGoogle] = None,
                                timeout: Optional[int] = None,
                                verbose: bool = False, debug: bool = False,
                                note: Optional[str] = None,
@@ -1196,13 +1129,18 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         SHOW(f"Use this command to check its status: {command_summary}")
 
     if not (uuid_metadata := portal.get_metadata(uuid, raise_exception=False)):
-        message = f"Submission ID not found: {uuid}" if uuid != "dummy" else "No submission ID specified."
-        message += "\nSome recent submission IDs below. Use list-submissions to view more."
-        if _print_recent_submissions(portal, message=message, count=4):
-            if check_submission_script:
-                exit(1)
-            return
-        raise Exception(f"Cannot find object given uuid: {uuid}")
+        found_non_suffixed_uuid = False
+        if (dot := uuid.find(".")) > 0:
+            if uuid_metadata := portal.get_metadata(uuid := uuid[:dot], raise_exception=False):
+                found_non_suffixed_uuid = True
+        if not found_non_suffixed_uuid:
+            message = f"Submission ID not found: {uuid}" if uuid != "dummy" else "No submission ID specified."
+            message += "\nSome recent submission IDs below. Use list-submissions to view more."
+            if _print_recent_submissions(portal, message=message, count=4):
+                if check_submission_script:
+                    exit(1)
+                return
+            raise Exception(f"Cannot find object given uuid: {uuid}")
     if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
         if portal.is_schema_file_type(uuid_metadata):
             _print_upload_file_summary(portal, uuid_metadata)
@@ -1354,8 +1292,12 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         if submission_status != "success":
             exit(1)
         PRINT("Submission complete!")
-        do_any_uploads(submission_response, keydict=portal.key,
-                       upload_folder=upload_directory, subfolders=upload_directory_recursive, portal=portal)
+        do_any_uploads(submission_response,
+                       main_search_directory=upload_directory,
+                       main_search_directory_recursively=upload_directory_recursive,
+                       config_google=rclone_config_google,
+                       portal=portal,
+                       verbose=verbose)
         return
 
     if check_submission_script or verbose or debug:  # or not validation
@@ -1507,31 +1449,6 @@ def _summarize_submission(uuid: str, app: str, server: Optional[str] = None, env
     else:  # unsatisfying, but not worth raising an error
         command_summary = f"check-submission {uuid}"
     return command_summary
-
-
-def compute_s3_submission_post_data(ingestion_filename, ingestion_post_result, **other_args):
-    uuid = ingestion_post_result['uuid']
-    at_id = ingestion_post_result['@id']
-    accession = ingestion_post_result.get('accession')  # maybe not always there?
-    upload_credentials = ingestion_post_result['upload_credentials']
-    upload_urlstring = upload_credentials['upload_url']
-    upload_url = urlparse(upload_urlstring)
-    upload_key = upload_credentials['key']
-    upload_bucket = upload_url.netloc
-    # Possible sanity check, probably not needed...
-    # check_true(upload_key == remove_prefix('/', upload_url.path, required=True),
-    #            message=f"The upload_key, {upload_key!r}, did not match path of {upload_url}.")
-    submission_post_data = {
-        'datafile_uuid': uuid,
-        'datafile_accession': accession,
-        'datafile_@id': at_id,
-        'datafile_url': upload_urlstring,
-        'datafile_bucket': upload_bucket,
-        'datafile_key': upload_key,
-        'datafile_source_filename': os.path.basename(ingestion_filename),
-        **other_args  # validate_remote_only, and any of institution, project, lab, or award that caller gave us
-    }
-    return submission_post_data
 
 
 def _print_submission_summary(portal: Portal, result: dict,
@@ -1784,62 +1701,6 @@ def _format_submission_centers(submission_centers: Optional[List[dict]]) -> Opti
     return result
 
 
-def _show_upload_info(uuid, server=None, env=None, keydict=None, app: str = None,
-                      show_primary_result=True,
-                      show_validation_output=True,
-                      show_processing_status=True,
-                      show_datafile_url=True,
-                      show_details=True):
-    """
-    Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
-    about uploading your data and then later are ready to do that upload.
-
-    :param uuid: a string guid that identifies the ingestion submission
-    :param server: the server to upload to
-    :param env: the portal environment to upload to
-    :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
-    :param app: the name of the app to use
-        e.g., affects whether to expect --lab, --award, --institution, --project, --consortium or --submission_center
-        and whether to use .fourfront-keys.json, .cgap-keys.json, or .smaht-keys.json
-    :param show_primary_result: bool controls whether the primary result is shown
-    :param show_validation_output: bool controls whether to show output resulting from validation checks
-    :param show_processing_status: bool controls whether to show the current processing status
-    :param show_datafile_url: bool controls whether to show the datafile_url parameter from the parameters.
-    :param show_details: bool controls whether to show the details from the results file in S3.
-    """
-
-    if app is None:  # Better to pass explicitly, but some legacy situations might require this to default
-        app = DEFAULT_APP
-
-    portal = _define_portal(key=keydict, env=env, server=server, app=app, report=True)
-
-    if not (uuid_metadata := portal.get_metadata(uuid)):
-        raise Exception(f"Cannot find object given uuid: {uuid}")
-
-    if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
-        undesired_type = portal.get_schema_type(uuid_metadata)
-        raise Exception(f"Given ID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
-
-    url = _ingestion_submission_item_url(portal.server, uuid)
-    response = portal.get(url)
-    response.raise_for_status()
-    res = response.json()
-    _show_upload_result(res,
-                        show_primary_result=show_primary_result,
-                        show_validation_output=show_validation_output,
-                        show_processing_status=show_processing_status,
-                        show_datafile_url=show_datafile_url,
-                        show_details=show_details,
-                        portal=portal)
-    if show_details:
-        metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
-        _show_detailed_results(uuid, metadata_bundles_bucket)
-
-    if not _pytesting():
-        PRINT("")
-        _print_submission_summary(portal, res)
-
-
 @lru_cache(maxsize=256)
 def _get_upload_file_info(portal: Portal, uuid: str) -> Tuple[Optional[str], Optional[str]]:
     try:
@@ -1857,136 +1718,10 @@ def _get_upload_file_info(portal: Portal, uuid: str) -> Tuple[Optional[str], Opt
         return None
 
 
-def _show_upload_result(result,
-                        show_primary_result=True,
-                        show_validation_output=True,
-                        show_processing_status=True,
-                        show_datafile_url=True,
-                        show_details=True,
-                        portal=None):
-
-    if show_primary_result:
-        if _get_section(result, 'upload_info'):
-            _show_section(result, 'upload_info', portal=portal)
-        else:
-            SHOW("Uploads: None")
-
-    # New March 2023 ...
-
-    if show_validation_output and _get_section(result, 'validation_output'):
-        _show_section(result, 'validation_output')
-
-    if show_processing_status and result.get('processing_status'):
-        SHOW("\n----- Processing Status -----")
-        state = result['processing_status'].get('state')
-        if state:
-            SHOW(f"State: {state.title()}")
-        outcome = result['processing_status'].get('outcome')
-        if outcome:
-            SHOW(f"Outcome: {outcome.title()}")
-        progress = result['processing_status'].get('progress')
-        if progress:
-            SHOW(f"Progress: {progress.title()}")
-
-    if show_datafile_url and result.get('parameters'):
-        datafile_url = result['parameters'].get('datafile_url')
-        if datafile_url:
-            SHOW("----- DataFile URL -----")
-            SHOW(datafile_url)
-
-
-def do_any_uploads(res, keydict, upload_folder=None, ingestion_filename=None,
-                   no_query=False, subfolders=False, portal=None):
-
-    def display_file_info(upload_file_info: dict) -> None:
-        nonlocal upload_folder, subfolders
-        file = upload_file_info.get("filename")
-        file_uuid = upload_file_info.get("uuid")
-        if file:
-            if file_paths := search_for_file(file, location=upload_folder, recursive=subfolders):
-                if len(file_paths) == 1:
-                    PRINT(f"File to upload to AWS S3: {format_path(file_paths[0])}"
-                          f" ({format_size(get_file_size(file_paths[0]))})")
-                    return True
-                else:
-                    PRINT(f"No upload attempted for file {file} because multiple"
-                          f" copies were found in folder {upload_folder}: {', '.join(file_paths)}.")
-                    return False
-            PRINT(f"WARNING: Cannot find file to upload to AWS S3: {format_path(file)} ({file_uuid})")
-        return False
-
-    upload_info = _get_section(res, 'upload_info')
-    if not upload_folder:
-        if ingestion_directory := res.get("parameters", {}).get("ingestion_directory"):
-            if os.path.isdir(ingestion_directory):
-                upload_folder = ingestion_directory
-    if not upload_folder and ingestion_filename:
-        if ingestion_directory := os.path.dirname(ingestion_filename):
-            upload_folder = ingestion_directory
-    resume_upload_commands = []
-    resume_upload_commands_missing = []
-    noupload = False
-    if upload_info:
-        files_to_upload = []
-        for upload_file_info in upload_info:
-            if display_file_info(upload_file_info):
-                files_to_upload.append(upload_file_info)
-                if portal:
-                    resume_upload_commands.append(f"resume-uploads --env {portal.env} {upload_file_info.get('uuid')}")
-            elif portal:
-                resume_upload_commands_missing.append(
-                    f"resume-uploads --env {portal.env} {upload_file_info.get('uuid')}")
-        if len(files_to_upload) == 0:
-            return
-        if no_query:
-            do_uploads(files_to_upload, auth=keydict, no_query=no_query, folder=upload_folder,
-                       subfolders=subfolders, portal=portal)
-        else:
-            message = ("Upload this file?" if len(files_to_upload) == 1
-                       else f"Upload these {len(files_to_upload)} files?")
-            if yes_or_no(message):
-                do_uploads(files_to_upload, auth=keydict,
-                           no_query=no_query, folder=upload_folder,
-                           subfolders=subfolders, portal=portal)
-            else:
-                noupload = True
-                SHOW("No uploads attempted.")
-                if resume_upload_commands:
-                    resume_upload_commands += resume_upload_commands_missing
-                    nresume_upload_commands = len(resume_upload_commands)
-                    if yes_or_no(f"Do you want to see the resume-uploads"
-                                 f" command{'s' if nresume_upload_commands != 1 else ''} to use to"
-                                 f" upload {'these' if nresume_upload_commands != 1 else 'this'} separately?"):
-                        for resume_upload_command in resume_upload_commands:
-                            PRINT(f"▶ {resume_upload_command}")
-    if not noupload and resume_upload_commands_missing:
-        nresume_upload_commands_missing = len(resume_upload_commands_missing)
-        PRINT(f"There {'were' if nresume_upload_commands_missing != 1 else 'was'}"
-              f" {nresume_upload_commands_missing} missing"
-              f" file{'s' if nresume_upload_commands_missing != 1 else ''} as mentioned above.")
-        if yes_or_no(f"Do you want to see the resume-uploads"
-                     f" command{'s' if nresume_upload_commands_missing != 1 else ''}"
-                     f" to use to upload {'these' if nresume_upload_commands_missing != 1 else 'this'} separately?"):
-            for resume_upload_command_missing in resume_upload_commands_missing:
-                PRINT(f"▶ {resume_upload_command_missing}")
-
-
 def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=None,
                    upload_folder=None, no_query=False, subfolders=False,
-                   output_file=None, app=None, keys_file=None, env_from_env=False):
-    """
-    Uploads the files associated with a given ingestion submission. This is useful if you answered "no" to the query
-    about uploading your data and then later are ready to do that upload.
-
-    :param uuid: a string guid that identifies the ingestion submission
-    :param server: the server to upload to
-    :param env: the portal environment to upload to
-    :param bundle_filename: the bundle file to be uploaded
-    :param keydict: keydict-style auth, a dictionary of 'key', 'secret', and 'server'
-    :param upload_folder: folder in which to find files to upload (default: same as ingestion_filename)
-    :param no_query: bool to suppress requests for user input
-    :param subfolders: bool to search subdirectories within upload_folder for files
-    """
+                   rclone_config_google=None,
+                   output_file=None, app=None, keys_file=None, env_from_env=False, verbose=False):
 
     if output_file:
         global PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW
@@ -1995,428 +1730,24 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     portal = _define_portal(key=keydict, keys_file=keys_file, env=env,
                             server=server, app=app, env_from_env=env_from_env,
                             report=True, note="Resuming File Upload")
+    if rclone_config_google:
+        rclone_config_google.verify_connectivity()
 
-    if not (response := portal.get_metadata(uuid, raise_exception=False)):
-        if accession_id := _extract_accession_id(uuid):
-            if not (response := portal.get_metadata(accession_id)):
-                raise Exception(f"Given accession ID not found: {accession_id}")
-            if (display_title := response.get("display_title")) and not (uuid == display_title):
-                raise Exception(f"Accession ID found but wrong filename: {accession_id} vs {uuid}")
-            uuid = accession_id
-        else:
-            raise Exception(f"Given ID not found: {uuid}")
-
-    if not portal.is_schema_type(response, INGESTION_SUBMISSION_TYPE_NAME):
-
-        # Subsume function of upload-item-data into resume-uploads for convenience.
-        if portal.is_schema_file_type(response):
-            _upload_item_data(item_filename=uuid, uuid=None, server=portal.server,
-                              env=portal.env, directory=upload_folder, recursive=subfolders,
-                              no_query=no_query, app=app, report=False)
-            return
-
-        undesired_type = portal.get_schema_type(response)
-        raise Exception(f"Given ID is not an {INGESTION_SUBMISSION_TYPE_NAME} type: {uuid} ({undesired_type})")
-
-    if submission_parameters := response.get("parameters", {}):
-        if tobool(submission_parameters.get("validate_only")):
-            PRINT(f"This submission ID ({uuid}) is for a validation not an actual submission.")
-            if submission_uuid := submission_parameters.get("submission_uuid"):
-                PRINT(f"▶ Perhaps you meant to use the submission ID"
-                      f" associated with this: {submission_uuid}")  # noqa
-            exit(1)
-
-    do_any_uploads(response,
-                   keydict=portal.key,
-                   ingestion_filename=bundle_filename,
-                   upload_folder=upload_folder,
-                   no_query=no_query,
-                   subfolders=subfolders,
-                   portal=portal)
-
-
-@function_cache(serialize_key=True)
-def _get_health_page(key: dict) -> dict:
-    return Portal(key).get_health().json()
+    do_any_uploads(uuid,
+                   metadata_file=bundle_filename,
+                   main_search_directory=upload_folder,
+                   main_search_directory_recursively=subfolders,
+                   config_google=rclone_config_google,
+                   portal=portal,
+                   verbose=verbose)
 
 
 def get_metadata_bundles_bucket_from_health_path(key: dict) -> str:
-    return _get_health_page(key=key).get("metadata_bundles_bucket")
-
-
-def get_s3_encrypt_key_id_from_health_page(auth):
-    try:
-        return _get_health_page(key=auth).get(HealthPageKey.S3_ENCRYPT_KEY_ID)
-    except Exception:  # pragma: no cover
-        # We don't actually unit test this section because _get_health_page realistically always returns
-        # a dictionary, and so health.get(...) always succeeds, possibly returning None, which should
-        # already be tested. Returning None here amounts to the same and needs no extra unit testing.
-        # The presence of this error clause is largely pro forma and probably not really needed.
-        return None
-
-
-def get_s3_encrypt_key_id(*, upload_credentials, auth):
-    if 's3_encrypt_key_id' in upload_credentials:
-        s3_encrypt_key_id = upload_credentials.get('s3_encrypt_key_id')
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f"Extracted s3_encrypt_key_id from upload_credentials: {s3_encrypt_key_id}")
-    else:
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f"No s3_encrypt_key_id entry found in upload_credentials.")
-            PRINT(f"Fetching s3_encrypt_key_id from health page.")
-        s3_encrypt_key_id = get_s3_encrypt_key_id_from_health_page(auth)
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f" =id=> {s3_encrypt_key_id!r}")
-    return s3_encrypt_key_id
-
-
-def execute_prearranged_upload(path, upload_credentials, auth=None):
-    """
-    This performs a file upload using special credentials received from ff_utils.patch_metadata.
-
-    :param path: the name of a local file to upload
-    :param upload_credentials: a dictionary of credentials to be used for the upload,
-        containing the keys 'AccessKeyId', 'SecretAccessKey', 'SessionToken', and 'upload_url'.
-    :param auth: auth info in the form of a dictionary containing 'key', 'secret', and 'server',
-        and possibly other useful information such as an encryption key id.
-    """
-
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        PRINT(f"Upload credentials contain {conjoined_list(list(upload_credentials.keys()))}.")
-    try:
-        s3_uri = upload_credentials["upload_url"]
-        aws_credentials = {
-            "AWS_ACCESS_KEY_ID": upload_credentials["AccessKeyId"],
-            "AWS_SECRET_ACCESS_KEY": upload_credentials["SecretAccessKey"],
-            "AWS_SECURITY_TOKEN": upload_credentials["SessionToken"]
-        }
-        aws_kms_key_id = get_s3_encrypt_key_id(upload_credentials=upload_credentials, auth=auth)
-    except Exception as e:
-        raise ValueError("Upload specification is not in good form. %s: %s" % (e.__class__.__name__, e))
-
-    upload_file_to_aws_s3(file=path,
-                          s3_uri=s3_uri,
-                          aws_credentials=aws_credentials,
-                          aws_kms_key_id=aws_kms_key_id,
-                          print_progress=True,
-                          print_function=PRINT,
-                          verify_upload=True,
-                          catch_interrupt=True)
-
-
-def _running_on_windows_native():
-    return os.name == 'nt'
-
-
-def compute_file_post_data(filename, context_attributes):
-    file_basename = os.path.basename(filename)
-    _, ext = os.path.splitext(file_basename)  # could probably get a nicer error message if file in bad format
-    file_format = remove_prefix('.', ext, required=True)
-    return {
-        'filename': file_basename,
-        'file_format': file_format,
-        **{attr: val for attr, val in context_attributes.items() if val}
-    }
-
-
-def upload_file_to_new_uuid(filename, schema_name, auth, **context_attributes):
-    """
-    Upload file to a target environment.
-
-    :param filename: the name of a file to upload.
-    :param schema_name: the schema_name to use when creating a new file item whose content is to be uploaded.
-    :param auth: auth info in the form of a dictionary containing 'key', 'secret', and 'server'.
-    :returns: item metadata dict or None
-    """
-
-    post_item = compute_file_post_data(filename=filename, context_attributes=context_attributes)
-
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        SHOW("Creating FileOther type object ...")
-    response = Portal(auth).post_metadata(object_type=schema_name, data=post_item)
-    if DEBUG_PROTOCOL:  # pragma: no cover
-        type_object_message = f" {response.get('@graph', [{'uuid': 'not-found'}])[0].get('uuid', 'not-found')}"
-        SHOW(f"Created FileOther type object: {type_object_message}")
-
-    metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
-                                                                           method='POST', schema_name=schema_name,
-                                                                           filename=filename, payload_data=post_item)
-
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
-
-    return metadata
-
-
-def upload_file_to_uuid(filename, uuid, auth, first_time=False, portal=None):
-    """
-    Upload file to a target environment.
-
-    :param filename: the name of a file to upload.
-    :param uuid: the item into which the filename is to be uploaded.
-    :param auth: auth info in the form of a dictionary containing 'key', 'secret', and 'server'.
-    :returns: item metadata dict or None
-    """
-    metadata = None
-    ignorable(metadata)  # PyCharm might need this if it worries it isn't set below
-
-    # filename here should not include path
-    patch_data = {'filename': os.path.basename(filename)}
-
-    response = Portal(auth).patch_metadata(object_id=uuid, data=patch_data)
-
-    metadata, upload_credentials = extract_metadata_and_upload_credentials(response,
-                                                                           method='PATCH', uuid=uuid,
-                                                                           filename=filename,
-                                                                           payload_data=patch_data,
-                                                                           portal=portal)
-
-    if first_time:
-        if upload_url := upload_credentials.get('upload_url'):
-            s3_bucket, _ = get_s3_bucket_and_key_from_s3_uri(upload_url)
-            if s3_bucket:
-                # This assumes all files are going to the same bucket;
-                # which I think is a pretty solid assumption.
-                PRINT(f"Upload file destination AWS S3 bucket: {s3_bucket}")
-    execute_prearranged_upload(filename, upload_credentials=upload_credentials, auth=auth)
-
-    return metadata
-
-
-def extract_metadata_and_upload_credentials(response, filename, method, payload_data,
-                                            uuid=None, schema_name=None, portal=None):
-    try:
-        [metadata] = response['@graph']
-        upload_credentials = metadata['upload_credentials']
-    except Exception as e:
-        if DEBUG_PROTOCOL:  # pragma: no cover
-            PRINT(f"Problem trying to {method} to get upload credentials.")
-            PRINT(f" payload_data={payload_data}")
-            if uuid:
-                PRINT(f" uuid={uuid}")
-            if schema_name:
-                PRINT(f" schema_name={schema_name}")
-            PRINT(f" response={response}")
-            PRINT(f"Got error {type(e)}: {e}")
-        file_status = None
-        if portal and uuid:
-            try:
-                file_status = portal.get_metadata(uuid).get("status")
-            except Exception:
-                pass
-        message = f"Unable to obtain upload credentials for file {filename}."
-        if file_status:
-            message += f" File status: {file_status}"
-        raise RuntimeError(message)
-    return metadata, upload_credentials
+    return get_health_page(key=key).get("metadata_bundles_bucket")
 
 
 # This can be set to True in unusual situations, but normally will be False to avoid unnecessary querying.
 SUBMITR_SELECTIVE_UPLOADS = environ_bool("SUBMITR_SELECTIVE_UPLOADS")
-
-
-def do_uploads(upload_spec_list, auth, folder=None, no_query=False, subfolders=False, portal=None):
-    """
-    Uploads the files mentioned in the give upload_spec_list.
-
-    If any files have associated extra files, upload those as well.
-
-    :param upload_spec_list: a list of upload_spec dictionaries, each of the form {'filename': ..., 'uuid': ...},
-        representing uploads to be formed.
-    :param auth: a dictionary-form auth spec, of the form {'key': ..., 'secret': ..., 'server': ...}
-        representing destination and credentials.
-    :param folder: a string naming a folder in which to find the filenames to be uploaded.
-    :param no_query: bool to suppress requests for user input
-    :param subfolders: bool to search subdirectories within upload_folder for files
-    :return: None
-    """
-    folder = folder or os.path.curdir
-    if subfolders:
-        folder = os.path.join(folder, '**')
-    first_time = True
-    for upload_spec in upload_spec_list:
-        file_name = upload_spec["filename"]
-        if not (file_paths := search_for_file(file_name, location=folder, recursive=subfolders)) or len(file_paths) > 1:
-            if len(file_paths) > 1:
-                SHOW(f"No upload attempted for file {file_name} because multiple copies"
-                     f" were found in folder {folder}: {', '.join(file_paths)}.")
-            else:
-                SHOW(f"Upload file not found: {file_name}")
-            continue
-        file_path = file_paths[0]
-        uuid = upload_spec['uuid']
-        uploader_wrapper = UploadMessageWrapper(uuid, no_query=no_query)
-        wrapped_upload_file_to_uuid = uploader_wrapper.wrap_upload_function(
-            upload_file_to_uuid, file_path
-        )
-        file_metadata = wrapped_upload_file_to_uuid(
-            filename=file_path, uuid=uuid, auth=auth, first_time=first_time, portal=portal
-        )
-        if file_metadata:
-            extra_files_credentials = file_metadata.get("extra_files_creds", [])
-            if extra_files_credentials:
-                _upload_extra_files(
-                    extra_files_credentials,
-                    uploader_wrapper,
-                    folder,
-                    auth,
-                    recursive=subfolders,
-                )
-        first_time = False
-
-
-class UploadMessageWrapper:
-    """Class to provide consistent queries/messages to user when
-    uploading file(s) to given File UUID.
-    """
-
-    def __init__(self, uuid, no_query=False):
-        """Initialize instance for given UUID
-
-        :param uuid: UUID of File item for uploads
-        :param no_query: Whether to suppress asking for user
-            confirmation prior to upload
-        """
-        self.uuid = uuid
-        self.no_query = no_query
-
-    def wrap_upload_function(self, function, file_name):
-        """Wrap upload given function with messages conerning upload.
-
-        :param function: Upload function to wrap
-        :param file_name: File to upload
-        :returns: Wrapped function
-        """
-        def wrapper(*args, **kwargs):
-            result = None
-            perform_upload = True
-            if not self.no_query:
-                if (
-                    SUBMITR_SELECTIVE_UPLOADS
-                    and not yes_or_no(f"Upload {file_name}?")
-                ):
-                    SHOW("OK, not uploading it.")
-                    perform_upload = False
-            if perform_upload:
-                try:
-                    result = function(*args, **kwargs)
-                except Exception as e:
-                    SHOW("%s: %s" % (e.__class__.__name__, e))
-            return result
-        return wrapper
-
-
-def _upload_extra_files(
-    credentials, uploader_wrapper, folder, auth, recursive=False
-):
-    """Attempt upload of all extra files.
-
-    Similar to "do_uploads", search for each file and then call a
-    wrapped upload function. Here, since extra files do not correspond
-    to Items on the portal, no need to PATCH an Item to retrieve AWS
-    credentials; they are directly passed in from the parent File's
-    metadata.
-
-    :param credentials: AWS credentials dictionary
-    :param uploader_wrapper: UploadMessageWrapper instance
-    :param folder: Directory to search for files
-    :param auth: a portal authorization tuple
-    :param recursive: Whether to search subdirectories for file
-    """
-    for extra_file_item in credentials:
-        extra_file_name = extra_file_item.get("filename")
-        extra_file_credentials = extra_file_item.get("upload_credentials")
-        if not extra_file_name or not extra_file_credentials:
-            continue
-        if (not (extra_file_paths := search_for_file(extra_file_name, location=folder,
-                                                     recursive=recursive)) or len(extra_file_paths) > 1):
-            if len(extra_file_paths) > 1:
-                SHOW(f"No upload attempted for file {extra_file_name} because multiple"
-                     f" copies were found in folder {folder}: {', '.join(extra_file_paths)}.")
-            else:
-                SHOW(f"Upload file not found: {extra_file_name}")
-            continue
-        extra_file_path = extra_file_paths[0]
-        wrapped_execute_prearranged_upload = uploader_wrapper.wrap_upload_function(
-            execute_prearranged_upload, extra_file_path
-        )
-        wrapped_execute_prearranged_upload(extra_file_path, extra_file_credentials, auth=auth)
-
-
-def _upload_item_data(item_filename, uuid, server, env, directory=None, recursive=False,
-                      no_query=False, app=None, report=True):
-    """
-    Given a part_filename, uploads that filename to the Item specified by uuid on the given server.
-
-    Only one of server or env may be specified.
-
-    :param item_filename: the name of a file to be uploaded
-    :param uuid: the UUID of the Item with which the uploaded data is to be associated
-    :param server: the server to upload to (where the Item is defined)
-    :param env: the portal environment to upload to (where the Item is defined)
-    :param no_query: bool to suppress requests for user input
-    :return:
-    """
-
-    # Allow the given "file name" to be uuid for submitted File object, or associated accession
-    # ID (e.g. SMAFIP2PIEDG), or the (S3) accession ID based file name (e.g. SMAFIP2PIEDG.fastq).
-    if not uuid:
-        if is_uuid(item_filename) or _is_accession_id(item_filename):
-            uuid = item_filename
-            item_filename = None
-        elif accession_id := _extract_accession_id(item_filename):
-            uuid = accession_id
-            item_filename = None
-
-    portal = _define_portal(env=env, server=server, app=app, report=report)
-
-    if not (uuid_metadata := portal.get_metadata(uuid)):
-        raise Exception(f"Cannot find object given uuid: {uuid}")
-
-    if not portal.is_schema_file_type(uuid_metadata):
-        undesired_type = portal.get_schema_type(uuid_metadata)
-        raise Exception(f"Given uuid is not a file type: {uuid} ({undesired_type})")
-
-    if not item_filename:
-        if not (item_filename := uuid_metadata.get("filename")):
-            raise Exception(f"Cannot determine file name: {uuid}")
-
-    if not (item_filename_found := search_for_file(item_filename, location=directory,
-                                                   recursive=recursive, single=True)):
-        raise Exception(f"File not found: {item_filename}")
-    else:
-        PRINT(f"File to upload to AWS S3: {format_path(item_filename_found)}")
-        item_filename = item_filename_found
-
-    if not no_query:
-        file_size = format_size(get_file_size(item_filename))
-        if not yes_or_no(f"Upload {format_path(item_filename)} ({file_size}) to {server}?"):
-            SHOW("Aborting submission.")
-            exit(1)
-
-    upload_file_to_uuid(filename=item_filename, uuid=uuid, auth=portal.key, portal=portal)
-
-
-def _show_detailed_results(uuid: str, metadata_bundles_bucket: str) -> None:
-
-    PRINT(f"----- Detailed Info -----")
-
-    submission_results_location, submission_results = _fetch_submission_results(metadata_bundles_bucket, uuid)
-    exception_results_location, exception_results = _fetch_exception_results(metadata_bundles_bucket, uuid)
-
-    if not submission_results and not exception_results:
-        PRINT(f"Neither submission nor exception results found!")
-        PRINT(f"-> {submission_results_location}")
-        PRINT(f"-> {exception_results_location}")
-        return
-
-    if submission_results:
-        PRINT(f"From: {submission_results_location}")
-        PRINT(yaml.dump(submission_results))
-
-    if exception_results:
-        PRINT("Exception during schema ingestion processing:")
-        PRINT(f"From: {exception_results_location}")
-        PRINT(exception_results)
 
 
 def _fetch_submission_results(metadata_bundles_bucket: str, uuid: str) -> Optional[Tuple[str, dict]]:
@@ -2580,10 +1911,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
             PRINT_STDOUT("Use the --output FILE option to write errors to a file.")
         exit(1)
 
-    # They don't want to present upload file info on validate, only on submit.
-    # _review_upload_files(structured_data, ingestion_filename,
-    #                      validation=validation, directory=upload_folder, recursive=subfolders)
-
     if verbose:
         _print_structured_data_verbose(portal, structured_data, ingestion_filename, upload_folder=upload_folder,
                                        recursive=subfolders, validation=validation, verbose=verbose)
@@ -2602,40 +1929,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         exit(0 if validation_okay else 1)
 
     return structured_data
-
-
-def _review_upload_files(structured_data: StructuredDataSet, ingestion_filename: str, validation: bool = False,
-                         directory: Optional[str] = None, recursive: bool = False) -> None:
-
-    nfiles_found, file_validation_errors = _validate_files(structured_data, ingestion_filename,
-                                                           upload_folder=directory, recursive=recursive)
-    if file_validation_errors:
-        nfiles = len(file_validation_errors)
-        if nfiles_found > 0:
-            PRINT(f"WARNING: There {'is' if nfiles == 1 else 'are'} {nfiles}"
-                  f" file{'' if nfiles == 1 else 's'} referenced which are missing.")
-        else:
-            PRINT(f"WARNING: All {nfiles} file{'' if nfiles == 1 else 's'} are missing.")
-        if not (show_missing_files := (nfiles <= 3)):
-            show_missing_files = yes_or_no(f"Do you want to see a list of these {nfiles}"
-                                           f" missing file{'' if nfiles == 1 else 's'}?")
-        if show_missing_files:
-            for error in sorted(file_validation_errors):
-                PRINT(f"- {error}")
-        if nfiles_found == 0:
-            PRINT("No files found for upload.")
-            exit(1)
-        if not validation:
-            if not yes_or_no(f"Do you want to continue even with"
-                             f" {'this' if nfiles == 1 else 'these'} missing file{'' if nfiles == 1 else 's'}?"):
-                exit(1)
-        else:
-            PRINT(f"Continuing even with {'this' if nfiles == 1 else 'these'}"
-                  f" missing file{'' if nfiles == 1 else 's'} as noted above.")
-    if nfiles_found > 0:
-        PRINT(f"Files referenced for upload (and which exist): {nfiles_found}")
-    elif not file_validation_errors:
-        PRINT("No files to upload were referenced.")
 
 
 def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str,
@@ -2764,18 +2057,6 @@ def _format_reference_errors(ref_errors: List[dict], verbose: bool = False, debu
     return errors
 
 
-def _validate_files(structured_data: StructuredDataSet, ingestion_filename: str,
-                    upload_folder: str, recursive: bool) -> Tuple[int, List[str]]:
-    file_validation_errors = []
-    if files := structured_data.upload_files_located(location=[upload_folder,
-                                                               os.path.dirname(ingestion_filename) or "."],
-                                                     recursive=recursive):
-        if files_not_found := [file for file in files if not file.get("path")]:
-            for file in sorted(files_not_found, key=lambda key: key.get("file")):
-                file_validation_errors.append(f"{file.get('file')} -> File not found ({file.get('type')})")
-    return len(files) - len(file_validation_errors), sorted(file_validation_errors)
-
-
 def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> List[str]:
     # TODO: Move this more specific "pre" validation checking to dcicutils.structured_data.
     # Just for nicer more specific (non-jsonschema) error messages for common problems.
@@ -2812,14 +2093,16 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
         PRINT_OUTPUT(f"\n> Parser warnings:")
         for reader_warning in reader_warnings:
             PRINT_OUTPUT(f"  - {_format_issue(reader_warning, ingestion_filename)}")
-    PRINT_OUTPUT(f"\n> Types submitting:")
-    for type_name in sorted(structured_data.data):
-        PRINT_OUTPUT(f"  - {type_name}: {len(structured_data.data[type_name])}"
-                     f" object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
+    if structured_data.data:
+        PRINT_OUTPUT(f"\n> Types submitting:")
+        for type_name in sorted(structured_data.data):
+            PRINT_OUTPUT(f"  - {type_name}: {len(structured_data.data[type_name])}"
+                         f" object{'s' if len(structured_data.data[type_name]) != 1 else ''}")
     if resolved_refs := structured_data.resolved_refs:
         PRINT_OUTPUT(f"\n> Resolved object (linkTo) references:")
         for resolved_ref in sorted(resolved_refs):
             PRINT_OUTPUT(f"  - {resolved_ref}")
+    # TODO: replace with FilesForUpload
     if files := structured_data.upload_files_located(location=[upload_folder,
                                                                os.path.dirname(ingestion_filename) or "."],
                                                      recursive=recursive):
@@ -3153,23 +2436,11 @@ def _get_submission_centers(portal: Portal) -> List[str]:
     return results
 
 
-def _is_accession_id(value: str) -> bool:
-    # See smaht-portal/.../schema_formats.py
-    return isinstance(value, str) and re.match(r"^SMA[1-9A-Z]{9}$", value) is not None
-    # return isinstance(value, str) and re.match(r"^[A-Z0-9]{12}$", value) is not None
-
-
-def _extract_accession_id(value: str) -> Optional[str]:
-    if isinstance(value, str):
-        if value.endswith(".gz"):
-            value = value[:-3]
-        value, _ = os.path.splitext(value)
-        if _is_accession_id(value):
-            return value
-
-
 def _print_metadata_file_info(file: str, env: str,
                               refs: bool = False, files: bool = False,
+                              upload_folder: Optional[str] = None,
+                              subfolders: bool = False,
+                              rclone_config_google: Optional[RCloneConfigGoogle] = None,
                               output_file: Optional[str] = None,
                               verbose: bool = False) -> None:
     if output_file:
@@ -3179,9 +2450,9 @@ def _print_metadata_file_info(file: str, env: str,
         PRINT(f"Size: {format_size(size)} ({size})")
     if modified := get_file_modified_datetime(file):
         PRINT(f"Modified: {modified}")
-    if md5 := get_file_md5(file):
+    if md5 := compute_file_md5(file):
         PRINT(f"MD5: {md5}")
-    if (etag := get_file_md5_like_aws_s3_etag(file)) and etag != md5:
+    if (etag := compute_file_etag(file)) and etag != md5:
         PRINT(f"S3 ETag: {etag}")
     sheet_lines = []
     if is_excel_file_name(file):
@@ -3223,23 +2494,11 @@ def _print_metadata_file_info(file: str, env: str,
             PRINT(f"References: {len(unchecked_refs)}")
             print_refs(unchecked_refs, max_output=max_output, output_file=output_file, verbose=verbose)
         if files is True:
-            def print_files(files: List[dict], max_output: int, output_file: str, verbose: bool = False) -> None:
-                def note_output():
-                    nonlocal max_output, output_file, noutput, printf, truncated
-                    noutput += 1
-                    if noutput >= max_output and output_file and not truncated:
-                        PRINT_STDOUT(f"+ Truncated results | See your output file for full listing: {output_file}")
-                        printf = PRINT_OUTPUT
-                        truncated = True
-                printf = PRINT
-                noutput = 0
-                truncated = False
-                for file in sorted(files, key=lambda file: file["file"]):
-                    printf(f"- {file['file']} ({file['type']})")
-                    note_output()
-            upload_files = structured_data.upload_files
-            PRINT(f"Files: {len(upload_files)}")
-            print_files(upload_files, max_output=max_output, output_file=output_file, verbose=verbose)
+            files_for_upload = FilesForUpload.assemble(structured_data,
+                                                       main_search_directory=upload_folder,
+                                                       main_search_directory_recursively=subfolders,
+                                                       config_google=rclone_config_google)
+            FilesForUpload.review(files_for_upload, portal=portal, review_only=True, verbose=True, printf=PRINT)
     if not (refs is True):
         if not (files is True):
             PRINT("Note: Use --refs to view references; and --files to view files for upload.")

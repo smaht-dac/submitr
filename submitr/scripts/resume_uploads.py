@@ -1,9 +1,10 @@
 import os
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
-from .cli_utils import CustomArgumentParser
-from ..base import DEFAULT_APP
-from ..submission import resume_uploads
+from submitr.base import DEFAULT_APP
+from submitr.rclone import RCloneConfigGoogle
+from submitr.submission import resume_uploads
+from submitr.scripts.cli_utils import CustomArgumentParser
 
 
 _HELP = f"""
@@ -76,7 +77,10 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--directory', help="Directory of the upload files.")
     parser.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
     parser.add_argument('--upload_folder', help="Synonym for --directory.")
+    parser.add_argument('--rclone-google-source', help="Use rlcone to copy upload files from GCS.", default=None)
+    parser.add_argument('--rclone-google-credentials', help="GCS credentials (service account file).", default=None)
     parser.add_argument('--output', help="Output file for results.", default=False)
+    parser.add_argument('--verbose', action="store_true", default=False)
     parser.add_argument('--yes', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
     args = parser.parse_args(args=simulated_args_for_testing)
@@ -117,6 +121,8 @@ def main(simulated_args_for_testing=None):
         PRINT(f"Specified upload directory not found: {args.upload_folder}")
         exit(1)
 
+    config_google = RCloneConfigGoogle.from_command_args(args.rclone_google_source, args.rclone_google_credentials)
+
     env_from_env = False
     if not args.env:
         args.env = os.environ.get("SMAHT_ENV")
@@ -134,8 +140,10 @@ def main(simulated_args_for_testing=None):
                        upload_folder=args.upload_folder,
                        no_query=args.yes,
                        subfolders=not directory_only,
+                       rclone_config_google=config_google,
                        output_file=args.output,
-                       app=args.app)
+                       app=args.app,
+                       verbose=args.verbose)
 
 
 if __name__ == '__main__':
