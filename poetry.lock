@@ -68,17 +68,17 @@ requests = ">=0.14.0"
 
 [[package]]
 name = "awscli"
-version = "1.32.99"
+version = "1.32.105"
 description = "Universal Command Line Environment for AWS."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "awscli-1.32.99-py3-none-any.whl", hash = "sha256:23cf12da832472cd979efb12f86a4455e4366f6065a40ff9c821a351bdf7f09e"},
-    {file = "awscli-1.32.99.tar.gz", hash = "sha256:4ff59f69c5faf1d469905e259296c65a858dd564f8e8fa5a8f502b213d8b438e"},
+    {file = "awscli-1.32.105-py3-none-any.whl", hash = "sha256:46820755a670fe585767eaf9b131474e5edd9a8de6478f4fcacff65e2d41b780"},
+    {file = "awscli-1.32.105.tar.gz", hash = "sha256:560126f736ff71844b0a89809a77fb275319af82f18ae6678cfa9c1c5ee1d24c"},
 ]
 
 [package.dependencies]
-botocore = "1.34.99"
+botocore = "1.34.105"
 colorama = ">=0.2.5,<0.4.7"
 docutils = ">=0.10,<0.17"
 PyYAML = ">=3.10,<6.1"
@@ -125,17 +125,17 @@ lxml = ["lxml"]
 
 [[package]]
 name = "boto3"
-version = "1.34.99"
+version = "1.34.105"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.34.99-py3-none-any.whl", hash = "sha256:b54084d000483b578757df03ce39a819fbba47071c9aa98611beb8806bcecd45"},
-    {file = "boto3-1.34.99.tar.gz", hash = "sha256:6f600b3fe0bda53476395c902d9af5a47294c93ec52a9cdc2b926a9dc705ce79"},
+    {file = "boto3-1.34.105-py3-none-any.whl", hash = "sha256:b633e8fbf7145bdb995ce68a27d096bb89fd393185b0e773418d81cd78db5a03"},
+    {file = "boto3-1.34.105.tar.gz", hash = "sha256:f2c11635be0de7b7c06eb606ece1add125e02d6ed521592294a0a21af09af135"},
 ]
 
 [package.dependencies]
-botocore = ">=1.34.99,<1.35.0"
+botocore = ">=1.34.105,<1.35.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -144,13 +144,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.34.99"
+version = "1.34.105"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.34.99-py3-none-any.whl", hash = "sha256:18c68bdeb0ffb73290912b0c96204fc36d3128f00a00b5cdc35ac34d66225f1c"},
-    {file = "botocore-1.34.99.tar.gz", hash = "sha256:cafe569e2136cb33cb0e5dd32fb1c0e1503ddc1413d3be215df8ddf05e69137a"},
+    {file = "botocore-1.34.105-py3-none-any.whl", hash = "sha256:a459d060b541beecb50681e6e8a39313cca981e146a59ba7c5229d62f631a016"},
+    {file = "botocore-1.34.105.tar.gz", hash = "sha256:727d5d3e800ac8b705fca6e19b6fefa1e728a81d62a712df9bd32ed0117c740b"},
 ]
 
 [package.dependencies]
@@ -707,13 +707,13 @@ grpcio-gcp = ["grpcio-gcp (>=0.2.2,<1.0.dev0)"]
 
 [[package]]
 name = "google-api-python-client"
-version = "2.127.0"
+version = "2.129.0"
 description = "Google API Client Library for Python"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "google-api-python-client-2.127.0.tar.gz", hash = "sha256:bbb51b0fbccdf40e536c26341e372d7800f09afebb53103bbcc94e08f14b523b"},
-    {file = "google_api_python_client-2.127.0-py2.py3-none-any.whl", hash = "sha256:d01c70c7840ec37888aa02b1aea5d9baba4c1701e268d1a0251640afd56e5e90"},
+    {file = "google-api-python-client-2.129.0.tar.gz", hash = "sha256:984cc8cc8eb4923468b1926d2b8effc5b459a4dda3c845896eb87c153b28ef84"},
+    {file = "google_api_python_client-2.129.0-py2.py3-none-any.whl", hash = "sha256:d50f7e2dfdbb7fc2732f6a0cba1c54d7bb676390679526c6bb628c901e43ec86"},
 ]
 
 [package.dependencies]
@@ -2550,4 +2550,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0,<3.13"
-content-hash = "7a405f020c45c716cc45ca4e3149832e1b4624f3374b5ea322b9b7ff6c649271"
+content-hash = "99818fc66b4bc23294c90496535275ed05c4fea854b9b532436555dcf85c7a9d"
