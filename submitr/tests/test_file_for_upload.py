@@ -7,7 +7,6 @@ from dcicutils.tmpfile_utils import (
     is_temporary_directory, remove_temporary_directory, temporary_directory, temporary_file)
 from submitr.file_for_upload import FilesForUpload
 from submitr.rclone import AmazonCredentials, GoogleCredentials, RCloneConfigAmazon, RCloneConfigGoogle
-from unittest.mock import patch as mock_patch
 
 TMPDIR = None
 RANDOM_TMPFILE_SIZE = 2048
@@ -74,56 +73,6 @@ class Mock_RCloneConfigGoogle(Mock_CloudStorage, RCloneConfigGoogle):
         super(RCloneConfigGoogle, self).__init__(*args, **kwargs)
 
 
-def test_file_for_upload_b():
-
-    with temporary_directory() as tmpdir:
-        config_google = Mock_RCloneConfigGoogle()
-        # assert config_google.path_exists("dummy") is True
-
-    with mock_patch("submitr.rclone.RCloneConfigGoogle") as MockedRCloneConfigGoogle:
-        with temporary_directory() as tmpdir:
-
-            config_google = MockedRCloneConfigGoogle.return_value
-            config_google.path_exists.return_value = True
-            config_google.file_size.return_value = 1023
-            assert config_google.path_exists("dummy") is True
-            assert config_google.file_size("dummy") == 1023
-
-            upload_file_a = os.path.join(tmpdir, "some_file_a.fastq")
-            upload_file_b = os.path.join(tmpdir, "some_file_b.fastq")
-            upload_file_a_uuid = create_uuid()
-            upload_file_b_uuid = create_uuid()
-
-            files = [{"filename": upload_file_a, "uuid": upload_file_a_uuid},
-                     {"filename": upload_file_b, "uuid": upload_file_b_uuid}]
-            ffu = FilesForUpload.assemble(files,
-                                          main_search_directory=tmpdir,
-                                          main_search_directory_recursively=True,
-                                          config_google=config_google)
-            print(ffu)
-            # assert ffu[0].found_google is True
-
-    config_google = RCloneConfigGoogle()
-    with mock_patch.object(RCloneConfigGoogle, "path_exists") as mocked_config_path_google_exists:
-        with temporary_directory() as tmpdir:
-            mocked_config_path_google_exists.return_value = True
-            assert config_google.path_exists("dummy") is True
-
-            upload_file_a = os.path.join(tmpdir, "some_file_a.fastq")
-            upload_file_b = os.path.join(tmpdir, "some_file_b.fastq")
-            upload_file_a_uuid = create_uuid()
-            upload_file_b_uuid = create_uuid()
-
-            files = [{"filename": upload_file_a, "uuid": upload_file_a_uuid},
-                     {"filename": upload_file_b, "uuid": upload_file_b_uuid}]
-            ffu = FilesForUpload.assemble(files,
-                                          main_search_directory=tmpdir,
-                                          main_search_directory_recursively=True,
-                                          config_google=config_google)
-            # assert ffu[0].found_google is True
-        pass
-
-
 def test_file_for_upload_a():
 
     with temporary_directory() as tmpdir:
@@ -182,6 +131,10 @@ def test_file_for_upload_a():
         assert ffu[1].path_google is None
         assert ffu[1].ignore is False
         assert ffu[1].resume_upload_command(env="some_env") == f"resume-uploads --env some_env {upload_file_b_uuid}"
+
+
+def test_file_for_upload_b():
+    pass
 
 
 @pytest.mark.parametrize("cloud_storage_args", [(Mock_RCloneConfigAmazon, AmazonCredentials),
