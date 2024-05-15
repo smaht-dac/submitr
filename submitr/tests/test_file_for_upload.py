@@ -38,14 +38,20 @@ class Mock_CloudStorage:
         return get_file_size(file) if (self.path_exists(file) and (file := self._realpath(file))) else None
     def file_checksum(self, file):  # noqa
         return compute_file_md5(file) if (self.path_exists(file) and (file := self._realpath(file))) else None
-    def _realpath(self, path=None):  # noqa
-        return os.path.join(self._tmpdir, path) if (path := super().path(path)) else None
-    def _create_files_for_testing(self, files):  # noqa
-        if isinstance(files, str):
-            self._create_file_for_testing(files)
-        elif isinstance(files, list):
-            for file in files:
-                self._create_file_for_testing(file)
+    def _realpath(self, path):  # noqa
+        if isinstance(self, (RCloneConfigAmazon, RCloneConfigGoogle)):
+            return os.path.join(self._tmpdir, path) if (path := super().path(path)) else None
+        return os.path.join(self._tmpdir, path) if (path := normalize_path(path)) else None
+    def _root(self):  # noqa
+        return self._tmpdir
+    def _create_files_for_testing(self, *args):  # noqa
+        for arg in args:
+            if isinstance(arg, str):
+                self._create_file_for_testing(arg)
+            elif isinstance(arg, (list, tuple)):
+                for file in arg:
+                    if isinstance(file, str):
+                        self._create_files_for_testing(file)
     def _create_file_for_testing(self, file):  # noqa
         if (file := normalize_path(file)) and (not file.startswith(os.path.sep) or (file := file[1:])):
             if file := self._realpath(file):
@@ -71,6 +77,13 @@ class Mock_RCloneConfigGoogle(Mock_CloudStorage, RCloneConfigGoogle):
     def __init__(self, *args, **kwargs):
         super().__init__(subdir="google")
         super(RCloneConfigGoogle, self).__init__(*args, **kwargs)
+
+
+class Mock_LocalStorage(Mock_CloudStorage):
+
+    # Might as well use it also for easy local file system test file setup for convenience.
+    def __init__(self, *args, **kwargs):
+        super().__init__(subdir="local")
 
 
 def test_file_for_upload_a():
@@ -134,6 +147,48 @@ def test_file_for_upload_a():
 
 
 def test_file_for_upload_b():
+
+    filesystem = Mock_LocalStorage()
+    filesystem._create_files_for_testing(file_a := "some_file_for_upload_one.fastq",
+                                         file_b := "abc/some_file_for_upload_two.bam")
+    files = [{"filename": file_a, "uuid": create_uuid()},
+             {"filename": file_b, "uuid": create_uuid()}]
+
+    ffu = FilesForUpload.assemble(files,
+                                  main_search_directory=filesystem._root(),
+                                  main_search_directory_recursively=True)
+    for ffui, ff in enumerate(ffu):
+        assert ff.name == os.path.basename(files[ffui]["filename"])
+        assert ff.found is True
+        assert ff.path == os.path.join(filesystem._root(), files[ffui]["filename"])
+        assert ff.display_path == os.path.join(filesystem._root(), files[ffui]["filename"])
+        assert ff.uuid == files[ffui]["uuid"]
+        assert ff.size == RANDOM_TMPFILE_SIZE
+        assert ff.checksum == compute_file_md5(ff.path)
+        assert ff.found_local is True
+        assert ff.found_local_multiple is False
+        assert ff.from_local is True
+        assert ff.favor_local is True
+        assert ff.ignore is False
+        assert ff.path_local == os.path.join(filesystem._root(), files[ffui]["filename"])
+        assert ff.path_local_multiple is None
+        assert ff.size_local == RANDOM_TMPFILE_SIZE
+        assert ff.checksum_local == compute_file_md5(ff.path)
+        assert ff.found_google is False
+        assert ff.from_google is False
+        assert ff.path_google is None
+        assert ff.display_path_google is None
+        assert ff.size_google is None
+        assert ff.checksum_google is None
+
+    ffunr = FilesForUpload.assemble(files,
+                                    main_search_directory=filesystem._root(),
+                                    main_search_directory_recursively=False)
+    assert ffunr[0].found is True
+    assert ffunr[1].found is False
+
+
+def test_file_for_upload_c():
     pass
 
 
