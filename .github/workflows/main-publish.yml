@@ -1,6 +1,6 @@
 # PyPi publish for submitr
 
-name: publish 
+name: PUBLISH 
 
 # Controls when the action will run. 
 on:
@@ -29,11 +29,11 @@ jobs:
           # For publication, we're not testing anything, so use latest allowable version of Python
           python-version: 3.9
 
-      - name: Build
+      - name: BUILD
         run: |
           make build
 
-      - name: Publish
+      - name: PUBLISH
         env:
           PYPI_USER: ${{ secrets.PYPI_USER }}
           PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}

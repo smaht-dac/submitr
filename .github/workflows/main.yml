@@ -17,7 +17,7 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   build:
-    name: Test submitr with Python ${{ matrix.python_version }}
+    name: TEST WITH PYTHON ${{ matrix.python_version }}
 
     # The type of runner that the job will run on
     runs-on: ubuntu-22.04
@@ -33,11 +33,11 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
 
-      - name: Install Deps
+      - name: INSTALL DEPENDENCIES
         run: |
           make configure
           
-      - name: Build
+      - name: BUILD
         run: |
           poetry install
           poetry run flake8 submitr
@@ -46,7 +46,7 @@ jobs:
         run: |
           poetry run coverage run --source submitr -m pytest -vv -m "not integration"
 
-      - name: Coveralls
+      - name: COVERALLS
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # For testing, use the oldest allowable version of Python to be sure we're not using features added later
