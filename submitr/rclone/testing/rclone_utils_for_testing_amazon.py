@@ -40,10 +40,10 @@ class AwsS3:
     def client(self) -> BotoClient:
         if not self._client:
             print(f"xyzzy/s3/client/a")
-            print(f"xyzzy/s3/client/a:[{_hash(self.credentials.region)}]")
-            print(f"xyzzy/s3/client/a:[{_hash(self.credentials.access_key_id)}]")
-            print(f"xyzzy/s3/client/a:[{_hash(self.credentials.secret_access_key)}]")
-            print(f"xyzzy/s3/client/a:[{_hash(self.credentials.session_token)}]")
+            print(f"xyzzy/s3/client/b:[{_hash(self.credentials.region)}]")
+            print(f"xyzzy/s3/client/c:[{_hash(self.credentials.access_key_id)}]")
+            print(f"xyzzy/s3/client/d:[{_hash(self.credentials.secret_access_key)}]")
+            print(f"xyzzy/s3/client/e:[{_hash(self.credentials.session_token)}]")
             self._client = BotoClient(
                 "s3",
                 region_name=self.credentials.region,
@@ -380,7 +380,7 @@ class AwsCredentials(AmazonCredentials):
 
 def _hash(value: str) -> str:
     import hashlib
-    if not isinstance(value, str):
+    if not isinstance(value, str) or not value:
         return ""
     md5 = hashlib.md5()
     md5.update(value.encode("utf-8"))
