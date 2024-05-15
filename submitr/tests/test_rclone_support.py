@@ -83,10 +83,10 @@ def setup_module():
         if access_key_id and secret_access_key:
             with open(amazon_credentials_file_path, "w") as f:
                 f.write(f"[default]\n")
-                f.write(f"aws_default_region={region}\n")
+                f.write(f"aws_default_region={region}\n") else None
                 f.write(f"aws_access_key_id={access_key_id}\n")
                 f.write(f"aws_secret_access_key={secret_access_key}\n")
-                f.write(f"aws_session_token={session_token}\n")
+                f.write(f"aws_session_token={session_token}\n") if session_token else None
             os.chmod(amazon_credentials_file_path, 0o600)  # for security
             AMAZON_CREDENTIALS_FILE_PATH = amazon_credentials_file_path
     if not (AMAZON_CREDENTIALS_FILE_PATH and
