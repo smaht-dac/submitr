@@ -49,7 +49,7 @@ include = [
 python = ">=3.8.0,<3.13"
 awscli = ">=1.32.105"
 boto3 = "^1.34.105"
-dcicutils = "^8.8.4.1b30"
+dcicutils = "^8.8.4.1b31"
 PyYAML = "^6.0.1"
 requests = "^2.31.0"
 googleapi = "^0.1.0"
