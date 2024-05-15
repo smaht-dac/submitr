@@ -43,8 +43,8 @@ class RCloneInstallation:
         Downloads the rclone executable from the Web into the application specific directory for smaht-submitr.
         - On MacOS this directory: is: ~/Library/Application Support/edu.harvard.hms/smaht-submitr
         - On Linux this directory is: ~/.local/share/edu.harvard.hms/smaht-submitr
-        - On Windows this directory is: %USERPROFILE%\AppData\Local\edu.harvard.hms\smaht-submitr  # noqa
-        Returns a the path to the downloaded executable file. FYI see: https://rclone.org/downloads
+        - On Windows this directory is: %USERPROFILE%\\AppData\\Local\\edu.harvard.hms\\smaht-submitr
+        Returns a the path to the downloaded executable file. FYI see: https://rclone.org/downloads  # noqa
     
         For example (on MacOS) we basically do the equivalent of something like this:
         - TMPDIR=/tmp/some-temporary-directory ; rm -rf $TMPDIR ; mkdir -p $TMPDIR
