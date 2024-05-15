@@ -96,7 +96,7 @@ class FileForUpload:
         self._size_google = None
         self._checksum_google = None
         self._google_inaccessible = False
-        self._favor_local = True
+        self._favor_local = None
         self._ignore = False
 
     @property
@@ -121,11 +121,15 @@ class FileForUpload:
 
     @property
     def from_local(self) -> bool:
-        return self.found_local and ((not self.found_google) or self.favor_local)
+        # Possible for this to return False if the file was found locally but was also found
+        # in Google Cloud Storage, and the favor_local property is None, meaning the review
+        # function has not yet been called, which resolves favor_local to True or False.
+        return self.found_local and ((not self.found_google) or (self.favor_local is True))
 
     @property
     def from_google(self) -> bool:
-        return self.found_google and ((not self.found_local) or (not self.favor_local))
+        # Same exact comment as from_local above applies here.
+        return self.found_google and ((not self.found_local) or (self.favor_local is False))
 
     @property
     def found(self) -> bool:
@@ -133,31 +137,23 @@ class FileForUpload:
 
     @property
     def path(self) -> Optional[str]:
-        if self.found_local:
-            return self.path_local if not self.found_google or self.favor_local else self.path_google
-        return self.path_google if self.found_google else None
+        return self.path_local if self.from_local else (self.path_google if self.from_google else None)
 
     @property
     def display_path(self) -> Optional[str]:
-        if self.found_local:
-            return self.path_local if not self.found_google or self.favor_local else self.display_path_google
-        return self.display_path_google if self.found_google else None
+        return self.path_local if self.from_local else (self.display_path_google if self.from_google else None)
 
     @property
     def size(self) -> Optional[int]:
-        if self.found_local:
-            return self.size_local if not self.found_google or self.favor_local else self.size_google
-        return self.size_google if self.found_google else None
+        return self.size_local if self.from_local else (self.size_google if self.from_google else None)
 
     @property
     def checksum(self) -> Optional[str]:
-        if self.found_local:
-            return self.checksum_local if not self.found_google or self.favor_local else self.checksum_google
-        return self.checksum_google if self.found_google else None
+        return self.checksum_local if self.from_local else (self.checksum_google if self.from_google else None)
 
     @property
-    def favor_local(self) -> bool:
-        return self._favor_local
+    def favor_local(self) -> Optional[bool]:
+        return self._favor_local if self.found_google else True
 
     @property
     def ignore(self) -> bool:
@@ -234,6 +230,13 @@ class FileForUpload:
 
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,
                verbose: bool = False, printf: Optional[Callable] = None) -> bool:
+        """
+        Reviews, possibly confirming interactively the file for upload. If the file
+        was found both locally (on the filesystem) and in Google Cloud Storage, we
+        will prompt the user as to which they want to use. If the file is found
+        locally multiple times (due to recursive directory search) then gives a
+        warning and skips (return False). Otherwise just returns True.
+        """
 
         if not callable(printf):
             printf = print
@@ -265,10 +268,11 @@ class FileForUpload:
                 printf(f"- File for upload found BOTH locally AND in Google Cloud Storage: {file_identifier}")
                 printf(f"  - Google Cloud Storage: {self.display_path_google}"
                        f"{f' ({format_size(self.size_google)})' if self.size_google else ''}")
-            if self.found_local_multiple and self.favor_local:
-                # TODO
-                # Could prompt for an option to choose one of them or something.
-                # Probably not worth it; doubt it will come up much if at all.
+            if self.found_local_multiple and (not self.found_google or self._favor_local is True):
+                # Here there are multiple local files found (due to recursive directory lookup),
+                # and there was either no Google file found or if there was we are favoring local.
+                # Could prompt the user to choose which of the multiple local files to use or
+                # something; but probably not worth it; doubt it will come up much if at all.
                 if not review_only:
                     indent = ""
                     printf(f"- WARNING ▶ Ignoring file for upload"

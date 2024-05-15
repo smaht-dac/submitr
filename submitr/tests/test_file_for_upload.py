@@ -6,7 +6,7 @@ from dcicutils.misc_utils import create_uuid
 from dcicutils.tmpfile_utils import (
     is_temporary_directory, remove_temporary_directory, temporary_directory, temporary_file)
 from submitr.file_for_upload import FilesForUpload
-from submitr.rclone import AmazonCredentials, GoogleCredentials, RCloneConfigAmazon, RCloneConfigGoogle
+from submitr.rclone import AmazonCredentials, GoogleCredentials, RCloneConfig, RCloneConfigAmazon, RCloneConfigGoogle
 
 TMPDIR = None
 RANDOM_TMPFILE_SIZE = 2048
@@ -39,7 +39,7 @@ class Mock_CloudStorage:
     def file_checksum(self, file):  # noqa
         return compute_file_md5(file) if (self.path_exists(file) and (file := self._realpath(file))) else None
     def _realpath(self, path):  # noqa
-        if isinstance(self, (RCloneConfigAmazon, RCloneConfigGoogle)):
+        if isinstance(self, RCloneConfig):
             return os.path.join(self._tmpdir, path) if (path := super().path(path)) else None
         return os.path.join(self._tmpdir, path) if (path := normalize_path(path)) else None
     def _root(self):  # noqa
@@ -213,7 +213,27 @@ def test_file_for_upload_b():
 
 
 def test_file_for_upload_c():
-    pass
+
+    file_one = "some_big_file_one.fastq"
+    file_two = "some_big_file_two.fastq"
+
+    filesystem = Mock_LocalStorage()
+    filesystem._create_files_for_testing(file_one, file_two)
+
+    bucket_google = "smaht-submitr-rclone-testing"
+    rclone_google = Mock_RCloneConfigGoogle(GoogleCredentials(), bucket=bucket_google)
+    rclone_google._create_files_for_testing(file_one)
+    assert rclone_google.bucket == bucket_google
+    assert rclone_google.path_exists(file_one) is True
+    assert rclone_google.path_exists(f"{file_one}-nope") is False
+
+    files = [{"file": file_one, "type": "ReferenceFile"},
+             {"file": file_two, "type": "UnalignedReads"}]
+    ffu = FilesForUpload.assemble(files,
+                                  main_search_directory=filesystem._root(),
+                                  config_google=rclone_google)
+    # TODO ...
+    assert len(ffu) == 2
 
 
 @pytest.mark.parametrize("cloud_storage_args", [(Mock_RCloneConfigAmazon, AmazonCredentials),
