@@ -74,6 +74,8 @@ def setup_module():
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
         secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
         session_token = os.environ.get("AWS_SESSION_TOKEN", None)
+        if session_token:
+            print(f"xyzzy/SHOULD-NOT-HAPPEN")
         print(f"xyzzy/c:[{_hash(region)}]")
         print(f"xyzzy/c2:[{_hash(access_key_id)}]")
         print(f"xyzzy/d:[{_hash(secret_access_key)}]")
@@ -620,3 +622,8 @@ def _hash(value: str) -> str:
     md5 = hashlib.md5()
     md5.update(value.encode("utf-8"))
     return md5.hexdigest()
+
+# print(f"[{_hash('us-east-1')}]")
+# print(f"[{_hash(os.environ.get('AWS_ACCESS_KEY_ID'))}]")
+# print(f"[{_hash(os.environ.get('AWS_SECRET_ACCESS_KEY'))}]")
+# print(f"[{_hash(os.environ.get('GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON'))}]")
