@@ -181,6 +181,17 @@ def test_file_for_upload_b():
         assert ff.size_google is None
         assert ff.checksum_google is None
 
+    filesystem._create_files_for_testing("some/sub/dir/some_file_for_upload_one.fastq")
+    ffu = FilesForUpload.assemble(files,
+                                  main_search_directory=filesystem._root(),
+                                  main_search_directory_recursively=True)
+    assert ffu[0].found is True
+    assert ffu[0].found_local is True
+    assert ffu[0].found_local_multiple is True  # duplicate added above there
+    assert ffu[1].found is True
+    assert ffu[1].found_local is True
+    assert ffu[1].found_local_multiple is False
+
     ffunr = FilesForUpload.assemble(files,
                                     main_search_directory=filesystem._root(),
                                     main_search_directory_recursively=False)
