@@ -148,3 +148,4 @@ docs/build
 
 # Junk Python files.
 ?.py
+.tmp/

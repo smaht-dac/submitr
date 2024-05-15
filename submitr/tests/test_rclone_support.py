@@ -586,16 +586,3 @@ def _test_cloud_variations(use_cloud_subfolder_key: bool = False):
     _test_rclone_between_google_and_local(env_google=env_google)
     _test_rclone_google_to_amazon(env_amazon=env_amazon, env_google=env_google)
     _test_rclone_amazon_to_google(env_amazon=env_amazon, env_google=env_google)
-
-
-def _hash(value: str) -> str:
-    if not isinstance(value, str):
-        return ""
-    md5 = hashlib.md5()
-    md5.update(value.encode("utf-8"))
-    return md5.hexdigest()
-
-# print(f"[{_hash('us-east-1')}]")
-# print(f"[{_hash(os.environ.get('AWS_ACCESS_KEY_ID'))}]")
-# print(f"[{_hash(os.environ.get('AWS_SECRET_ACCESS_KEY'))}]")
-# print(f"[{_hash(os.environ.get('GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON'))}]")
