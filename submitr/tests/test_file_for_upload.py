@@ -60,7 +60,6 @@ class Mock_CloudStorage:
         assert is_temporary_directory(self._tmpdir)
 
 
-
 class Mock_RCloneConfigAmazon(Mock_CloudStorage, RCloneConfigAmazon):
 
     def __init__(self, *args, **kwargs):
@@ -190,7 +189,7 @@ def test_file_for_upload_a():
 def test_mock_cloud_storage(cloud_storage_args):
     cloud_storage_class = cloud_storage_args[0]
     credentials_class = cloud_storage_args[1]
-    def internal_test(bucket):
+    def internal_test(bucket):  # noqa
         nonlocal cloud_storage_class, credentials_class
         amazon = cloud_storage_class(credentials_class(), bucket=bucket)
         amazon._create_files_for_testing(["abc.fastq", "def/ghi.json"])
