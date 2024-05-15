@@ -110,16 +110,6 @@ exclude_lines = [
   "pragma: no cover"
 ]
 
-[tool.pytest.ini_options]
-filterwarnings = [
-    "ignore:pkg_resources is deprecated as an API:DeprecationWarning",
-    "ignore:.*DeprecationWarning.*Deprecated call to.*pkg_resources.declare_namespace.*"
-]
-markers = [
-  "static: a test that tests the static form of code, not its runtime functionality",
-  "integration: integration tests"
-]
-
 
 [build-system]
 
