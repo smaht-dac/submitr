@@ -40,8 +40,8 @@ GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES = True
 #   I.e. e.g. load AWS credentials from: ~/.aws_test.{environment-name}/credentials
 # - The Google service-account-file path.
 #   As exported from Google account.
-AMAZON_CREDENTIALS_FILE_PATH = "~dmichaels/.aws_test.smaht-wolf/credentials"
-GOOGLE_SERVICE_ACCOUNT_FILE_PATH = "~dmichaels/.config/google-cloud/smaht-dac-617e0480d8e2.json"
+AMAZON_CREDENTIALS_FILE_PATH = "~/.aws_test.smaht-test/credentials"
+GOOGLE_SERVICE_ACCOUNT_FILE_PATH = "~/.config/google-cloud/smaht-dac-617e0480d8e2.json"
 
 # These are slightly less likely to need updates for running locally (or in GA):
 AMAZON_TEST_BUCKET_NAME = "smaht-unit-testing-files"
