@@ -92,6 +92,6 @@ class RCloneInstallation:
         Returns the application specific directory for smaht-submitr:
         - On MacOS this directory: is: ~/Library/Application Support/edu.harvard.hms/smaht-submitr
         - On Linux this directory is: ~/.local/share/edu.harvard.hms/smaht-submitr
-        - On Windows this directory is: %USERPROFILE%\AppData\Local\edu.harvard.hms\smaht-submitr  # noqa
+        - On Windows this directory is: %USERPROFILE%\\AppData\\Local\\edu.harvard.hms\\smaht-submitr
         """
         return os.path.join(get_app_specific_directory(), "edu.harvard.hms", "smaht-submitr")
