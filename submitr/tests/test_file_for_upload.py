@@ -1,6 +1,6 @@
 import os
 import tempfile
-from dcicutils.file_utils import create_random_file, get_file_size, compute_file_md5
+from dcicutils.file_utils import create_random_file, compute_file_md5, get_file_size, normalize_path
 from dcicutils.misc_utils import create_uuid
 from dcicutils.tmpfile_utils import remove_temporary_directory, temporary_directory
 from submitr.file_for_upload import FilesForUpload
@@ -8,11 +8,15 @@ from submitr.rclone import RCloneConfigGoogle
 from unittest.mock import patch as mock_patch
 
 TMPDIR = None
+TMPDIR_AMAZON = None
+TMPDIR_GOOGLE = None
 
 
 def setup_module():
-    global TMPDIR
+    global TMPDIR, TMPDIR_AMAZON, TMPDIR_GOOGLE
     TMPDIR = tempfile.mkdtemp()
+    TMPDIR_AMAZON = os.path.join(TMPDIR, "amazon") ; os.makedirs(TMPDIR_AMAZON, exist_ok=True)  # noqa
+    TMPDIR_GOOGLE = os.path.join(TMPDIR, "google") ; os.makedirs(TMPDIR_GOOGLE, exist_ok=True)  # noqa
 
 
 def teardown_module():
@@ -21,13 +25,9 @@ def teardown_module():
 
 
 class Mock_RCloneConfigGoogle(RCloneConfigGoogle):
-
-    @staticmethod
-    def create_for_testing(self, file):
-        return Mock_RCloneConfigGoogle(file)
-
-    def __init__(self, file):
-        self._file = file
+    # Use the file system, within a temporary directory (global TMPDIR), to simulate Google Cloud Storage.
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def path_exists(self, path):
         return os.path.isfile(path)
@@ -37,6 +37,20 @@ class Mock_RCloneConfigGoogle(RCloneConfigGoogle):
 
     def file_checksum(self, file):
         return compute_file_md5(file)
+
+    def create_files_for_testing(self, files):
+        global TMPDIR_GOOGLE
+        if isinstance(files, list):
+            for file in files:
+                if not (file := normalize_path(file)):
+                    continue
+                if file.startswith(os.path.sep) and not (file := file[1:]):
+                    continue
+                import pdb ; pdb.set_trace()  # noqa
+                file = os.path.join(TMPDIR_GOOGLE, file)
+                if file_directory := os.path.dirname(file):
+                    os.makedirs(file_directory, exist_ok=True)
+                create_random_file(file)
 
 
 def test_file_for_upload_b():
