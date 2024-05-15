@@ -77,9 +77,9 @@ def setup_module():
         if session_token:
             print(f"xyzzy/SHOULD-NOT-HAPPEN")
         print(f"xyzzy/c:[{_hash(region)}]")
-        print(f"xyzzy/c2:[{_hash(access_key_id)}]")
-        print(f"xyzzy/d:[{_hash(secret_access_key)}]")
-        print(f"xyzzy/d2:[{_hash(session_token)}]")
+        print(f"xyzzy/d2:[{_hash(access_key_id)}]")
+        print(f"xyzzy/e:[{_hash(secret_access_key)}]")
+        print(f"xyzzy/f:[{_hash(session_token)}]")
         if access_key_id and secret_access_key:
             with open(amazon_credentials_file_path, "w") as f:
                 f.write(f"[default]\n")
