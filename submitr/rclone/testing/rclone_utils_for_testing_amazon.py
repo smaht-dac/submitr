@@ -39,11 +39,6 @@ class AwsS3:
     @property
     def client(self) -> BotoClient:
         if not self._client:
-            print(f"xyzzy/s3/client/a")
-            print(f"xyzzy/s3/client/b:[{_hash(self.credentials.region)}]")
-            print(f"xyzzy/s3/client/c:[{_hash(self.credentials.access_key_id)}]")
-            print(f"xyzzy/s3/client/d:[{_hash(self.credentials.secret_access_key)}]")
-            print(f"xyzzy/s3/client/e:[{_hash(self.credentials.session_token)}]")
             self._client = BotoClient(
                 "s3",
                 region_name=self.credentials.region,
@@ -115,15 +110,10 @@ class AwsS3:
             return False
 
     def bucket_exists(self, bucket: str, raise_exception: bool = True) -> bool:
-        print(f"xyzzy/s3/bucket_exists({bucket})")
         try:
-            print(f"xyzzy/s3/a/bucket_exists")
             self.client.head_bucket(Bucket=bucket)
-            print(f"xyzzy/s3/b/bucket_exists")
             return True
         except Exception as e:
-            print(f"xyzzy/s3/c/bucket_exists")
-            print(e)
             if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
                 return False
             if raise_exception is True:
