@@ -60,7 +60,7 @@ def setup_module():
     global GOOGLE_SERVICE_ACCOUNT_FILE_PATH
 
     RCloneInstallation.install()
-    assert RCloneInstallation.is_install() is True
+    assert RCloneInstallation.is_installed() is True
 
     if AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
         amazon_credentials_file_path = create_temporary_file_name()

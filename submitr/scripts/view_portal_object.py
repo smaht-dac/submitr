@@ -160,6 +160,7 @@ def main():
     if args.schema:
         if args.post:
             if post_data := _read_json_from_file(args.post):
+                import pdb ; pdb.set_trace()  # noqa
                 if args.verbose:
                     _print(f"POSTing data from file ({args.post}) as type: {args.uuid}")
                 portal.post_metadata(args.uuid, post_data)
