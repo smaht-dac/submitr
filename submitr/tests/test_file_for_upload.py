@@ -158,6 +158,7 @@ def test_file_for_upload_b():
     ffu = FilesForUpload.assemble(files,
                                   main_search_directory=filesystem._root(),
                                   main_search_directory_recursively=True)
+    assert len(ffu) == 2
     for ffui, ff in enumerate(ffu):
         assert ff.name == os.path.basename(files[ffui]["filename"])
         assert ff.found is True
@@ -186,6 +187,7 @@ def test_file_for_upload_b():
     ffu = FilesForUpload.assemble(files,
                                   main_search_directory=filesystem._root(),
                                   main_search_directory_recursively=True)
+    assert len(ffu) == 2
     assert ffu[0].found is True
     assert ffu[0].found_local is True
     assert ffu[0].found_local_multiple is True  # duplicate added above there
@@ -196,6 +198,7 @@ def test_file_for_upload_b():
     ffunr = FilesForUpload.assemble(files,
                                     main_search_directory=filesystem._root(),
                                     main_search_directory_recursively=False)
+    assert len(ffunr) == 2
     assert ffunr[0].found is True
     assert ffunr[1].found is False
 
@@ -203,6 +206,7 @@ def test_file_for_upload_b():
     ffu = FilesForUpload.assemble(files,
                                   main_search_directory=filesystem._root(),
                                   main_search_directory_recursively=True)
+    assert len(ffu) == 2
     for ff in ffu:
         assert ff.found is False
         assert ff.found_local is False
@@ -214,8 +218,9 @@ def test_file_for_upload_b():
 
 def test_file_for_upload_c():
 
+    subdir = "some-subdir"
     file_one = "some_big_file_one.fastq"
-    file_two = "some_big_file_two.fastq"
+    file_two = os.path.join(subdir, "some_big_file_two.fastq")
 
     filesystem = Mock_LocalStorage()
     filesystem._create_files_for_testing(file_one, file_two)
@@ -231,9 +236,33 @@ def test_file_for_upload_c():
              {"file": file_two, "type": "UnalignedReads"}]
     ffu = FilesForUpload.assemble(files,
                                   main_search_directory=filesystem._root(),
+                                  main_search_directory_recursively=False,
+                                  other_search_directories=os.path.join(filesystem._root(), subdir),
                                   config_google=rclone_google)
-    # TODO ...
     assert len(ffu) == 2
+    assert ffu[0].name == os.path.basename(file_one)
+    assert ffu[0].type == "ReferenceFile"
+    assert ffu[0].uuid is None
+    assert ffu[0].found is True
+    assert ffu[0].found_local is True
+    assert ffu[0].found_local_multiple is False
+    assert ffu[0].found_google is True
+    assert ffu[0].from_local is False  # because ambiguous between local and Google
+    assert ffu[0].from_google is False  # because ambiguous between local and Google
+    assert ffu[0]._favor_local is None
+    ffu[0]._favor_local = True  # normally set in FileForUpdate.review - resolves above ambiguity
+    assert ffu[0].from_local is True
+    assert ffu[0].from_google is False
+    ffu[0]._favor_local = False  # normally set in FileForUpdate.review - resolves above ambiguity
+    assert ffu[0].from_local is False
+    assert ffu[0].from_google is True
+    assert ffu[1].name == os.path.basename(file_two)
+    assert ffu[1].type == "UnalignedReads"
+    assert ffu[1].uuid is None
+    assert ffu[1].found is True
+    assert ffu[1].found_local is True
+    assert ffu[1].found_local_multiple is False
+    assert ffu[1].found_google is False
 
 
 @pytest.mark.parametrize("cloud_storage_args", [(Mock_RCloneAmazon, AmazonCredentials),

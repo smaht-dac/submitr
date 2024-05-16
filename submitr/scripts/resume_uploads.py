@@ -87,6 +87,10 @@ def main(simulated_args_for_testing=None):
 
     directory_only = True
     if args.directory:
+        if args.directory_only:
+            PRINT("May not specify both --directory and --directory-only")
+            exit(1)
+        args.upload_folder = args.directory
         args.upload_folder = args.directory
         directory_only = False
     if args.directory_only:

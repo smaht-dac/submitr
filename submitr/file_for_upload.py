@@ -23,7 +23,7 @@ class FileForUpload:
                  uuid: Optional[str] = None,
                  main_search_directory: Optional[Union[str, pathlib.Path]] = None,
                  main_search_directory_recursively: bool = False,
-                 other_search_directories: Optional[List[Union[str, pathlib.Path]]] = None,
+                 other_search_directories: Optional[Union[List[Union[str, pathlib.Path]], str, pathlib.Path]] = None,
                  config_google: Optional[RCloneGoogle] = None) -> Optional[FileForUpload]:
 
         # Given file can be a dictionary (from structured_data.upload_files) like:
@@ -68,6 +68,8 @@ class FileForUpload:
             # where (if recursive is specified) we will flag any multiple file instances found.
             # In practice these other directories are the directory containing
             # the submission file, and the current directory.
+            if isinstance(other_search_directories, str) and other_search_directories:
+                other_search_directories = [other_search_directories]
             if (not main_search_directory and
                 not isinstance(other_search_directories, list) or not other_search_directories):  # noqa
                 # Only if no main search directory is specifed do we default the other search
