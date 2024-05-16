@@ -35,19 +35,20 @@ class RCloneCommands:
                 if " " in command[0]:
                     command[0] = f"\"{command[0]}\""
                 return " ".join(command)
-            DEBUG(f"RCLONE COPY COMMAND: [{' '.join(command)}]")
+            DEBUG(f"RCLONE-COPY-COMMAND: {' '.join(command)}")
             process = subprocess.Popen(command, universal_newlines=True,
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             if return_output is True:
                 lines = []
             for line in process.stdout:
-                DEBUG(f"RCLONE COPY OUTPUT: [{line.strip()}]")
+                DEBUG(f"RCLONE-COPY-OUTPUT: {normalize_string(line)}")
                 if progress and (nbytes := RCloneCommands._parse_rclone_progress_bytes(line)):
                     progress(nbytes)
                 if (return_output is True) and (line := normalize_string(line)):
                     lines.append(line)
             process.stdout.close()
             result = process.wait()
+            DEBUG(f"RCLONE-COPY-RESULT: {process.returncode}")
             result = True if (result == 0) else False
             return result if not (return_output is True) else (result, lines)
         except Exception as e:
@@ -138,10 +139,10 @@ class RCloneCommands:
 
     @staticmethod
     def _execute(command: List[str]) -> subprocess.CompletedProcess:
-        DEBUG(f"RCLONE COMMAND: [{' '.join(command)}")
+        DEBUG(f"RCLONE-COMMAND: {' '.join(command)}")
         result = subprocess.run(command, capture_output=True, universal_newlines=True)
-        DEBUG(f"RCLONE COMMAND RESULT: [{result.returncode}]")
-        DEBUG(f"RCLONE COMMAND OUTPUT: [{normalize_string(result.stdout)}]")
+        DEBUG(f"RCLONE-COMMAND-OUTPUT: {normalize_string(result.stdout)}")
+        DEBUG(f"RCLONE-COMMAND-RESULT: {result.returncode}")
         return result
 
     _RCLONE_PROGRESS_UNITS = {"KiB": 2**10, "MiB": 2**20, "GiB": 2**30, "TiB": 2**40, "PiB": 2**50, "B": 1}
