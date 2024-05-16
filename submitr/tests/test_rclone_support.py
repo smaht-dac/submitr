@@ -241,6 +241,7 @@ def create_rclone_config_amazon(credentials: AmazonCredentials) -> RCloneConfig:
 
 def create_rclone_config_google(credentials: GoogleCredentials, env_google: EnvGoogle) -> RCloneConfig:
     config = RCloneGoogle(credentials)
+    # Google credentials can be None on a GCE instance.
     assert config.credentials == credentials
     if credentials:
         assert config.location == credentials.location
