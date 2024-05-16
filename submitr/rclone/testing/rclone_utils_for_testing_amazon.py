@@ -341,6 +341,8 @@ class AwsCredentials(AmazonCredentials):
                                  section.get("secret_access_key", None))
             session_token = (section.get("aws_session_token", None) or
                              section.get("session_token", None))
+            if not (access_key_id and secret_access_key):
+                return None
             return AwsCredentials(region=region,
                                   access_key_id=access_key_id,
                                   secret_access_key=secret_access_key,
@@ -348,7 +350,7 @@ class AwsCredentials(AmazonCredentials):
                                   kms_key_id=kms_key_id)
         except Exception:
             pass
-        return AwsCredentials()
+        return None
 
     @staticmethod
     def from_environment_variables() -> Optional[AwsCredentials]:

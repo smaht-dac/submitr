@@ -179,7 +179,7 @@ class GcpCredentials(GoogleCredentials):
 
     @staticmethod
     def from_file(service_account_file: str, location: Optional[str] = None) -> Optional[GoogleCredentials]:
-        if not (service_account_file := normalize_path(service_account_file)):
+        if not (service_account_file := normalize_path(service_account_file, expand_home=True)):
             return None
         if not os.path.isfile(service_account_file):
             return None
