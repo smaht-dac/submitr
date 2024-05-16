@@ -47,8 +47,8 @@ def main() -> None:
             if not RCloneConfigGoogle.is_google_compute_engine():
                 usage("No GCP credentials specified.")
             elif args.verbose:
-                print(f"Running from Google Cloud Engine:"
-                      f" {RCloneConfigGoogle._get_project_name_if_google_compute_engine()}.")
+                google_project = RCloneConfigGoogle._get_project_name_if_google_compute_engine()
+                print(f"Running from Google Cloud Engine{f' : {google_project} ✓' if google_project else '.'}")
         source_config = RCloneConfigGoogle(credentials_google)
     else:
         source = args.source
