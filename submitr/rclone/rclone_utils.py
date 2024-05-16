@@ -47,6 +47,7 @@ class cloud_path:
 
     @staticmethod
     def basename(value: str) -> str:
+        # Returns the basename of the given cloud path (just like os.path.basename).
         if not (value := cloud_path.normalize(value)):
             return ""
         return os.path.basename(cloud_path.to_file_path(value))
