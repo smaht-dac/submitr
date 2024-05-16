@@ -22,17 +22,16 @@ class RCloneGoogle(RCloneConfig):
                  bucket: Optional[str] = None) -> None:
 
         if isinstance(credentials_or_config, RCloneGoogle):
+            credentials = GoogleCredentials(credentials=credentials_or_config.credentials, location=location)
             name = normalize_string(name) or credentials_or_config.name
             bucket = cloud_path.normalize(bucket) or credentials_or_config.bucket
-            credentials = credentials_or_config.credentials
         elif isinstance(credentials_or_config, GoogleCredentials):
-            credentials = credentials_or_config
+            credentials = GoogleCredentials(credentials=credentials_or_config, location=location)
+        elif service_account_file := normalize_path(service_account_file):
+            credentials = GoogleCredentials(service_account_file=service_account_file, location=location)
         else:
+            # No credentials allowed/works when running on a GCE instance.
             credentials = None
-        if credentials:
-            credentials = GoogleCredentials(credentials=credentials,
-                                            location=location,
-                                            service_account_file=service_account_file)
         super().__init__(name=name, bucket=bucket, credentials=credentials)
         self._project = None
 
@@ -144,8 +143,6 @@ class RCloneGoogle(RCloneConfig):
             exit(1)
         if not isinstance(rclone_google_credentials, str):
             rclone_google_credentials = None
-        if not callable(printf):
-            printf = print
         if rclone_google_credentials and not os.path.isfile(rclone_google_credentials):
             printf(f"ERROR: Google service account file does not exist: {rclone_google_credentials}")
             exit(1)
@@ -164,7 +161,7 @@ class RCloneGoogle(RCloneConfig):
             return False
         else:
             printf(f"Google Cloud Storage project"
-                   f"{f' ({self.project()})' if self.project() else ''}"
+                   f"{f' ({self.project})' if self.project else ''}"
                    f" connectivity appears to be problematic ✗")
             return True
 
