@@ -22,7 +22,10 @@ class RCloneGoogle(RCloneConfig):
                  bucket: Optional[str] = None) -> None:
 
         if isinstance(credentials_or_config, RCloneGoogle):
-            credentials = GoogleCredentials(credentials=credentials_or_config.credentials, location=location)
+            if isinstance(credentials_or_config.credentials, GoogleCredentials):
+                credentials = GoogleCredentials(credentials=credentials_or_config.credentials, location=location)
+            else:
+                credentials = None
             name = normalize_string(name) or credentials_or_config.name
             bucket = cloud_path.normalize(bucket) or credentials_or_config.bucket
         elif isinstance(credentials_or_config, GoogleCredentials):
