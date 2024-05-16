@@ -232,6 +232,7 @@ def create_rclone_config_google(credentials: GoogleCredentials, env_google: EnvG
     assert config.service_account_file == credentials.service_account_file
     assert RCloneConfigGoogle(config) == config  # checking equals override
     assert RCloneConfigGoogle(config, bucket="mismatch") != config  # checking equals override
+    import pdb ; pdb.set_trace()  # noqa
     assert config.project == env_google.project_id
     return config
 

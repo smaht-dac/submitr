@@ -95,14 +95,16 @@ class RCloneConfigGoogle(RCloneConfig):
         except Exception:
             pass
         # If no service account file specified then maybe we are on a GCE instance.
-        return RCloneConfigGoogle._get_project_name_assuming_google_compute_engine
+        if project := RCloneConfigGoogle._get_project_name_if_google_compute_engine():
+            self._project = project
+            return self._project
 
     @staticmethod
     def is_google_compute_engine() -> Optional[str]:
-        return RCloneConfigGoogle._get_project_name_assuming_google_compute_engine() is not None
+        return RCloneConfigGoogle._get_project_name_if_google_compute_engine() is not None
 
     @staticmethod
-    def _get_project_name_assuming_google_compute_engine() -> Optional[str]:
+    def _get_project_name_if_google_compute_engine() -> Optional[str]:
         """
         Returns the name of the Google Compute Engine (GCE) that this code is running on,
         if indeed we are running on a GCE instance; otherwise None.
