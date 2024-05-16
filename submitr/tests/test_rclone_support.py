@@ -91,12 +91,12 @@ def setup_module():
             GOOGLE_SERVICE_ACCOUNT_FILE_PATH = google_service_account_file_path
     if not (GOOGLE_SERVICE_ACCOUNT_FILE_PATH and
             os.path.isfile(normalize_path(GOOGLE_SERVICE_ACCOUNT_FILE_PATH, expand_home=True))):
-        if RCloneConfigGoogle.is_google_compute_engine():
-            # Credentials are implicit on a GCE.
-            GOOGLE_SERVICE_ACCOUNT_FILE_PATH = None
-        else:
+        if not RCloneConfigGoogle.is_google_compute_engine():
             print("No Google credentials file defined. Skippping this test module: test_rclone_support")
             pytest.skip()
+            return
+        # Credentials are implicit on a GCE.
+        GOOGLE_SERVICE_ACCOUNT_FILE_PATH = None
 
 
 def teardown_module():

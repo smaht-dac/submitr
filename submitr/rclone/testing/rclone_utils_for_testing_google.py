@@ -5,7 +5,7 @@ import os
 from typing import List, Optional
 from dcicutils.file_utils import are_files_equal, normalize_path
 from dcicutils.tmpfile_utils import temporary_file
-from submitr.rclone.rclone_config_google import GoogleCredentials
+from submitr.rclone.rclone_config_google import GoogleCredentials, RCloneConfigGoogle
 from submitr.rclone.rclone_utils import cloud_path
 
 
@@ -29,7 +29,10 @@ class Gcs:
     @property
     def client(self) -> GcsClient:
         if not self._client:
-            self._client = GcsClient.from_service_account_json(self.credentials.service_account_file)
+            if not RCloneConfigGoogle.is_google_compute_engine():
+                self._client = GcsClient.from_service_account_json(self.credentials.service_account_file)
+            else:
+                self._client = GcsClient()
         return self._client
 
     def upload_file(self, file: str, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> bool:
