@@ -111,7 +111,7 @@ class RCloneConfig(AbstractBaseClass):
         # N.B. For AWS S3 rclone ls requires policies s3:GetObject and s3:ListBucket
         # for the bucket/key. So for our main use case (using Portal-granted temporary
         # credentials to copy to AWS S3, which only have s3:PutObject and s3:GetObject
-        # policies) we cannot use this. See submitr.s3_utils for special handling.
+        # policies) this will NOT work. See submitr.s3_upload for special handling.
         if path := self.path(path):
             with self.config_file() as config_file:
                 return RCloneCommands.exists_command(source=f"{self.name}:{path}", config=config_file)
@@ -121,7 +121,7 @@ class RCloneConfig(AbstractBaseClass):
         # N.B. For AWS S3 rclone size requires policies s3:GetObject and s3:ListBucket
         # for the bucket/key. So for our main use case (using Portal-granted temporary
         # credentials to copy to AWS S3, which only have s3:PutObject and s3:GetObject
-        # policies) we cannot use this. See submitr.s3_utils for special handling.
+        # policies) this will NOT work. See submitr.s3_upload for special handling.
         if path := self.path(path):
             with self.config_file() as config_file:
                 return RCloneCommands.size_command(source=f"{self.name}:{path}", config=config_file)
@@ -131,7 +131,7 @@ class RCloneConfig(AbstractBaseClass):
         # N.B. For AWS S3 rclone hashsum requires policies s3:GetObject and s3:ListBucket
         # for the bucket/key. So for our main use case (using Portal-granted temporary
         # credentials to copy to AWS S3, which only have s3:PutObject and s3:GetObject
-        # policies) we cannot use this. See submitr.s3_utils for special handling.
+        # policies) this will NOT work. See submitr.s3_upload for special handling.
         if path := self.path(path):
             with self.config_file() as config_file:
                 return RCloneCommands.checksum_command(source=f"{self.name}:{path}", config=config_file)

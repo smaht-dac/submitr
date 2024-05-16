@@ -8,7 +8,7 @@ from dcicutils.structured_data import Portal, StructuredDataSet
 from submitr.file_for_upload import FileForUpload, FilesForUpload
 from submitr.output import PRINT
 from submitr.rclone import RCloneConfigGoogle
-from submitr.s3_utils import upload_file_to_aws_s3
+from submitr.s3_upload import upload_file_to_aws_s3
 from submitr.utils import tobool
 
 

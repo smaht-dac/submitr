@@ -45,7 +45,7 @@ from submitr.utils import get_s3_bucket_and_key_from_s3_uri, format_datetime
 
 # This is to control whether or not we first prompt the user to take the time
 # to do a checksum on the local file to see if it appears to be exactly the
-# the same as an already exisiting file in AWS S3.
+# the same (based on size) as an already exisiting file in AWS S3.
 _BIG_FILE_SIZE = 1024 * 1024 * 500  # 500 MB
 
 
