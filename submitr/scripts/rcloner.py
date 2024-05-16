@@ -18,7 +18,8 @@ def main() -> None:
     args = args.parse_args()
 
     if args.amazon:
-        credentials_amazon = AwsCredentials.from_file(args.amazon)
+        if not (credentials_amazon := AwsCredentials.from_file(args.amazon)):
+            print(f"Cannot create AWS credentials from specified value: {args.amazon}")
     else:
         credentials_amazon = AwsCredentials.from_environment_variables()
 
@@ -34,7 +35,11 @@ def main() -> None:
             credentials_amazon = credentials_amazon.generate_temporary_credentials(bucket=bucket, key=key,
                                                                                    kms_key_id=args.kms)
 
-    credentials_google = GcpCredentials.from_file(args.google) if args.google else None
+    if args.google:
+        if not (credentials_google := GcpCredentials.from_file(args.google)):
+            print(f"Cannot create GCS credentials from specified value: {args.google}")
+    else:
+        credentials_google = None
 
     if args.source.lower().startswith("s3://"):
         source = args.source[5:]
