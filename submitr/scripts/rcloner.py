@@ -19,7 +19,7 @@ def main() -> None:
 
     if args.amazon:
         if not (credentials_amazon := AwsCredentials.from_file(args.amazon)):
-            print(f"Cannot create AWS credentials from specified value: {args.amazon}")
+            usage(f"Cannot create AWS credentials from specified value: {args.amazon}")
     else:
         credentials_amazon = AwsCredentials.from_environment_variables()
 
@@ -29,7 +29,7 @@ def main() -> None:
             credentials_amazon = credentials_amazon.generate_temporary_credentials(kms_key_id=args.kms)
         else:
             if not cloud_path.has_separator(args.temporary_credentials):
-                print("Given temporary credentials argument must be of the form: bucket/key")
+                usage("Given temporary credentials argument must be of the form: bucket/key")
             bucket = cloud_path.bucket(args.temporary_credentials)
             key = cloud_path.key(args.temporary_credentials)
             credentials_amazon = credentials_amazon.generate_temporary_credentials(bucket=bucket, key=key,
@@ -37,7 +37,7 @@ def main() -> None:
 
     if args.google:
         if not (credentials_google := GcpCredentials.from_file(args.google)):
-            print(f"Cannot create GCS credentials from specified value: {args.google}")
+            usage(f"Cannot create GCS credentials from specified value: {args.google}")
     else:
         credentials_google = None
 
