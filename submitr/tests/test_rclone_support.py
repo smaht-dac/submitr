@@ -179,10 +179,10 @@ class EnvGoogle(Env):
 
     def credentials(self) -> GoogleCredentials:
         credentials = GcpCredentials.from_file(self.service_account_file, location=self.location)
+        assert credentials.location == self.location
         if not RCloneConfigGoogle.is_google_compute_engine():
-            assert credentials.location == self.location
             assert credentials.service_account_file == normalize_path(self.service_account_file, expand_home=True)
-        assert os.path.isfile(credentials.service_account_file)
+            assert os.path.isfile(credentials.service_account_file)
         return credentials
 
     def gcs_non_rclone(self):
