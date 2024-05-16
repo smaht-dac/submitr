@@ -23,6 +23,7 @@ def main() -> None:
         credentials_amazon = AwsCredentials.from_environment_variables()
 
     if args.temporary_credentials:
+        # Use temporary AWS credentials like from SMaHT Portal.
         if args.temporary_credentials is True:
             credentials_amazon = credentials_amazon.generate_temporary_credentials(kms_key_id=args.kms)
         else:
