@@ -320,12 +320,13 @@ class AwsCredentials(AmazonCredentials):
         if not credentials_section:
             credentials_section = "default"
         try:
-            credentials_file = os.path.expanduser(credentials_file)
+            credentials_file = normalize_path(credentials_file, expand_home=True)
             if not os.path.isfile(credentials_file):
                 if os.path.isdir(credentials_file):
                     credentials_file = os.path.join(credentials_file, "credentials")
                 else:
                     credentials_file = os.path.join("~", f".aws_test.{credentials_file}", "credentials")
+                    credentials_file = normalize_path(credentials_file, expand_home=True)
                 if not os.path.isfile(credentials_file):
                     return None
             config = configparser.ConfigParser()
