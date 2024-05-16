@@ -85,7 +85,11 @@ def main() -> None:
         exit(0)
     else:
         access_denied = len([line for line in output if "accessdenied" in line.lower().replace(" ", "")]) > 0
-        print(f"ERROR: {'Access Denied' if access_denied else ''}", end="")
+        if access_denied:
+            print(f"ERROR: {'Access Denied' if access_denied else ''}", end="")
+        else:
+            print(f"ERROR", end="")
+            args.verbose = True
         if args.verbose:
             print(f" ▶ rclone output below ...")
             for line in output:
