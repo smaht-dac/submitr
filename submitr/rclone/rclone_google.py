@@ -12,16 +12,16 @@ from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.rclone.rclone_utils import cloud_path
 
 
-class RCloneConfigGoogle(RCloneConfig):
+class RCloneGoogle(RCloneConfig):
 
     def __init__(self,
-                 credentials_or_config: Optional[Union[GoogleCredentials, RCloneConfigGoogle]] = None,
+                 credentials_or_config: Optional[Union[GoogleCredentials, RCloneGoogle]] = None,
                  service_account_file: Optional[str] = None,
                  location: Optional[str] = None,  # analagous to AWS region
                  name: Optional[str] = None,
                  bucket: Optional[str] = None) -> None:
 
-        if isinstance(credentials_or_config, RCloneConfigGoogle):
+        if isinstance(credentials_or_config, RCloneGoogle):
             name = normalize_string(name) or credentials_or_config.name
             bucket = cloud_path.normalize(bucket) or credentials_or_config.bucket
             credentials = credentials_or_config.credentials
@@ -95,13 +95,13 @@ class RCloneConfigGoogle(RCloneConfig):
         except Exception:
             pass
         # If no service account file specified then maybe we are on a GCE instance.
-        if project := RCloneConfigGoogle._get_project_name_if_google_compute_engine():
+        if project := RCloneGoogle._get_project_name_if_google_compute_engine():
             self._project = project
             return self._project
 
     @staticmethod
     def is_google_compute_engine() -> Optional[str]:
-        return RCloneConfigGoogle._get_project_name_if_google_compute_engine() is not None
+        return RCloneGoogle._get_project_name_if_google_compute_engine() is not None
 
     @staticmethod
     def _get_project_name_if_google_compute_engine() -> Optional[str]:
@@ -128,7 +128,7 @@ class RCloneConfigGoogle(RCloneConfig):
     def from_command_args(rclone_google_source: Optional[str],
                           rclone_google_credentials: Optional[str] = None,
                           verify_installation: bool = True,
-                          printf: Optional[Callable] = None) -> Optional[RCloneConfigGoogle]:
+                          printf: Optional[Callable] = None) -> Optional[RCloneGoogle]:
         """
         Assumed to be called at the start of command-line utility (i.e. e.g. submit-metadata-bundle).
         """
@@ -147,7 +147,7 @@ class RCloneConfigGoogle(RCloneConfig):
             printf(f"ERROR: Google service account file does not exist: {rclone_google_credentials}")
             exit(1)
         # TODO: Allow "location" to be passed in (?); not in service account file.
-        return RCloneConfigGoogle(service_account_file=rclone_google_credentials, bucket=rclone_google_source)
+        return RCloneGoogle(service_account_file=rclone_google_credentials, bucket=rclone_google_source)
 
     def verify_connectivity(self, printf: Optional[Callable] = None) -> bool:
         if not callable(printf):
@@ -165,10 +165,10 @@ class RCloneConfigGoogle(RCloneConfig):
                    f" connectivity appears to be problematic ✗")
             return True
 
-    def __eq__(self, other: RCloneConfigGoogle) -> bool:
-        return isinstance(other, RCloneConfigGoogle) and super().__eq__(other)
+    def __eq__(self, other: RCloneGoogle) -> bool:
+        return isinstance(other, RCloneGoogle) and super().__eq__(other)
 
-    def __ne__(self, other: RCloneConfigGoogle) -> bool:
+    def __ne__(self, other: RCloneGoogle) -> bool:
         return not self.__eq__(other)
 
 

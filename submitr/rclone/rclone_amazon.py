@@ -6,10 +6,10 @@ from submitr.rclone.rclone_config import RCloneConfig, RCloneCredentials
 from submitr.rclone.rclone_utils import cloud_path
 
 
-class RCloneConfigAmazon(RCloneConfig):
+class RCloneAmazon(RCloneConfig):
 
     def __init__(self,
-                 credentials_or_config: Optional[Union[AmazonCredentials, RCloneConfigAmazon]] = None,
+                 credentials_or_config: Optional[Union[AmazonCredentials, RCloneAmazon]] = None,
                  region: Optional[str] = None,
                  access_key_id: Optional[str] = None,
                  secret_access_key: Optional[str] = None,
@@ -18,7 +18,7 @@ class RCloneConfigAmazon(RCloneConfig):
                  name: Optional[str] = None,
                  bucket: Optional[str] = None) -> None:
 
-        if isinstance(credentials_or_config, RCloneConfigAmazon):
+        if isinstance(credentials_or_config, RCloneAmazon):
             name = normalize_string(name) or credentials_or_config.name
             bucket = cloud_path.normalize(bucket) or credentials_or_config.bucket
             credentials = credentials_or_config.credentials
@@ -94,10 +94,10 @@ class RCloneConfigAmazon(RCloneConfig):
     def kms_key_id(self, value: str) -> None:
         self._credentials.kms_key_id = value
 
-    def __eq__(self, other: RCloneConfigAmazon) -> bool:
-        return isinstance(other, RCloneConfigAmazon) and super().__eq__(other)
+    def __eq__(self, other: RCloneAmazon) -> bool:
+        return isinstance(other, RCloneAmazon) and super().__eq__(other)
 
-    def __ne__(self, other: RCloneConfigAmazon) -> bool:
+    def __ne__(self, other: RCloneAmazon) -> bool:
         return not self.__eq__(other)
 
 

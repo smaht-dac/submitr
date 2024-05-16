@@ -17,7 +17,7 @@ from ..submission import (
     _print_metadata_file_info,
     _pytesting
 )
-from submitr.rclone import RCloneConfigGoogle
+from submitr.rclone import RCloneGoogle
 
 _HELP = f"""
 ===
@@ -243,7 +243,7 @@ def main(simulated_args_for_testing=None):
         if args.env:
             env_from_env = True
 
-    config_google = RCloneConfigGoogle.from_command_args(args.rclone_google_source, args.rclone_google_credentials)
+    config_google = RCloneGoogle.from_command_args(args.rclone_google_source, args.rclone_google_credentials)
 
     if args.ping or (args.bundle_filename and args.bundle_filename.lower() == "ping"):
         if args.env or os.environ.get("SMAHT_ENV"):
@@ -317,7 +317,7 @@ def main(simulated_args_for_testing=None):
                                   refs=args.refs, files=args.files,
                                   subfolders=not directory_only,
                                   upload_folder=args.upload_folder,
-                                  rclone_config_google=config_google,
+                                  rclone_google=config_google,
                                   output_file=args.output,
                                   verbose=args.verbose)
         exit(0)
@@ -343,7 +343,7 @@ def main(simulated_args_for_testing=None):
                              post_only=args.post_only,
                              patch_only=args.patch_only,
                              submit=args.submit,
-                             rclone_config_google=config_google,
+                             rclone_google=config_google,
                              validate_local_only=args.validate_local_only,
                              validate_remote_only=args.validate_remote_only,
                              validate_local_skip=args.validate_local_skip,

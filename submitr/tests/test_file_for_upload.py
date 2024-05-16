@@ -6,7 +6,7 @@ from dcicutils.misc_utils import create_uuid
 from dcicutils.tmpfile_utils import (
     is_temporary_directory, remove_temporary_directory, temporary_directory, temporary_file)
 from submitr.file_for_upload import FilesForUpload
-from submitr.rclone import AmazonCredentials, GoogleCredentials, RCloneConfig, RCloneConfigAmazon, RCloneConfigGoogle
+from submitr.rclone import AmazonCredentials, GoogleCredentials, RCloneConfig, RCloneAmazon, RCloneGoogle
 
 TMPDIR = None
 RANDOM_TMPFILE_SIZE = 2048
@@ -65,18 +65,18 @@ class Mock_CloudStorage:
         assert is_temporary_directory(self._tmpdir)
 
 
-class Mock_RCloneConfigAmazon(Mock_CloudStorage, RCloneConfigAmazon):
+class Mock_RCloneAmazon(Mock_CloudStorage, RCloneAmazon):
 
     def __init__(self, *args, **kwargs):
         super().__init__(subdir="amazon")
-        super(RCloneConfigAmazon, self).__init__(*args, **kwargs)
+        super(RCloneAmazon, self).__init__(*args, **kwargs)
 
 
-class Mock_RCloneConfigGoogle(Mock_CloudStorage, RCloneConfigGoogle):
+class Mock_RCloneGoogle(Mock_CloudStorage, RCloneGoogle):
 
     def __init__(self, *args, **kwargs):
         super().__init__(subdir="google")
-        super(RCloneConfigGoogle, self).__init__(*args, **kwargs)
+        super(RCloneGoogle, self).__init__(*args, **kwargs)
 
 
 class Mock_LocalStorage(Mock_CloudStorage):
@@ -221,7 +221,7 @@ def test_file_for_upload_c():
     filesystem._create_files_for_testing(file_one, file_two)
 
     bucket_google = "smaht-submitr-rclone-testing"
-    rclone_google = Mock_RCloneConfigGoogle(GoogleCredentials(), bucket=bucket_google)
+    rclone_google = Mock_RCloneGoogle(GoogleCredentials(), bucket=bucket_google)
     rclone_google._create_files_for_testing(file_one)
     assert rclone_google.bucket == bucket_google
     assert rclone_google.path_exists(file_one) is True
@@ -236,8 +236,8 @@ def test_file_for_upload_c():
     assert len(ffu) == 2
 
 
-@pytest.mark.parametrize("cloud_storage_args", [(Mock_RCloneConfigAmazon, AmazonCredentials),
-                                                (Mock_RCloneConfigGoogle, GoogleCredentials)])
+@pytest.mark.parametrize("cloud_storage_args", [(Mock_RCloneAmazon, AmazonCredentials),
+                                                (Mock_RCloneGoogle, GoogleCredentials)])
 def test_mock_cloud_storage(cloud_storage_args):
     cloud_storage_class = cloud_storage_args[0]
     credentials_class = cloud_storage_args[1]

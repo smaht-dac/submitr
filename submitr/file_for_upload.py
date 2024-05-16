@@ -6,7 +6,7 @@ from dcicutils.command_utils import yes_or_no
 from dcicutils.file_utils import compute_file_md5, get_file_size, normalize_path, search_for_file
 from dcicutils.misc_utils import format_size, normalize_string
 from dcicutils.structured_data import Portal, StructuredDataSet
-from submitr.rclone import RCloneConfigGoogle
+from submitr.rclone import RCloneGoogle
 
 # Unified the logic for looking for files to upload (to AWS S3), and storing
 # related info; whether or not the file is coming from the local file system
@@ -24,7 +24,7 @@ class FileForUpload:
                  main_search_directory: Optional[Union[str, pathlib.Path]] = None,
                  main_search_directory_recursively: bool = False,
                  other_search_directories: Optional[List[Union[str, pathlib.Path]]] = None,
-                 config_google: Optional[RCloneConfigGoogle] = None) -> Optional[FileForUpload]:
+                 config_google: Optional[RCloneGoogle] = None) -> Optional[FileForUpload]:
 
         # Given file can be a dictionary (from structured_data.upload_files) like:
         # {"type": "ReferenceFile", "file": "first_file.fastq"}
@@ -91,7 +91,7 @@ class FileForUpload:
         self._accession_name = normalize_string(accession_name) or None
         self._size_local = None
         self._checksum_local = None
-        self._config_google = config_google if isinstance(config_google, RCloneConfigGoogle) else None
+        self._config_google = config_google if isinstance(config_google, RCloneGoogle) else None
         self._path_google = None
         self._size_google = None
         self._checksum_google = None
@@ -192,7 +192,7 @@ class FileForUpload:
         return self._checksum_local
 
     @property
-    def config_google(self) -> Optional[RCloneConfigGoogle]:
+    def config_google(self) -> Optional[RCloneGoogle]:
         return self._config_google
 
     @property
@@ -338,7 +338,7 @@ class FilesForUpload:
                  main_search_directory: Optional[Union[str, pathlib.Path]] = None,
                  main_search_directory_recursively: bool = False,
                  other_search_directories: Optional[List[Union[str, pathlib.Path]]] = None,
-                 config_google: Optional[RCloneConfigGoogle] = None) -> List[FileForUpload]:
+                 config_google: Optional[RCloneGoogle] = None) -> List[FileForUpload]:
 
         if isinstance(files, StructuredDataSet):
             files = files.upload_files

@@ -10,7 +10,7 @@ from dcicutils.file_utils import compute_file_md5
 from dcicutils.misc_utils import format_duration, format_size
 from dcicutils.progress_bar import ProgressBar
 from submitr.file_for_upload import FileForUpload
-from submitr.rclone import RCloner, RCloneConfigAmazon, cloud_path
+from submitr.rclone import RCloner, RCloneAmazon, cloud_path
 from submitr.utils import get_s3_bucket_and_key_from_s3_uri, format_datetime
 
 # Module to upload a given file, with the given AWS credentials to AWS S3.
@@ -90,14 +90,14 @@ def upload_file_to_aws_s3(file: FileForUpload,
         file_checksum_timestamp = None
 
     elif file.from_google:
-        rclone_config_google = file.config_google
-        rclone_amazon_config = RCloneConfigAmazon(region=aws_credentials.get("region_name"),
-                                                  access_key_id=aws_credentials.get("aws_access_key_id"),
-                                                  secret_access_key=aws_credentials.get("aws_secret_access_key"),
-                                                  session_token=aws_credentials.get("aws_session_token"),
-                                                  kms_key_id=aws_kms_key_id)
-        rcloner = RCloner(source=rclone_config_google, destination=rclone_amazon_config)
-        if not rclone_config_google.path_exists(file.name):
+        rclone_google = file.config_google
+        rclone_amazon_config = RCloneAmazon(region=aws_credentials.get("region_name"),
+                                            access_key_id=aws_credentials.get("aws_access_key_id"),
+                                            secret_access_key=aws_credentials.get("aws_secret_access_key"),
+                                            session_token=aws_credentials.get("aws_session_token"),
+                                            kms_key_id=aws_kms_key_id)
+        rcloner = RCloner(source=rclone_google, destination=rclone_amazon_config)
+        if not rclone_google.path_exists(file.name):
             printf(f"ERROR: Cannot find Google Cloud Storage object: {file.path_google}")
             return False
         file_size = file.size_google
@@ -105,7 +105,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         # Note that it is known to be the case that calling rclone hashsum to get the checksum
         # of a file in Google Cloud Storage (GCS) merely retrieves the checksum from GCS,
         # which had previously been computed/stored by GCS for the file within GCS.
-        file_checksum = rclone_config_google.file_checksum(file.name)
+        file_checksum = rclone_google.file_checksum(file.name)
         file_checksum_timestamp = current_timestamp()
 
     else:
@@ -325,8 +325,8 @@ def upload_file_to_aws_s3(file: FileForUpload,
         try:
             # Note that the source is just file.name, which is just the base name of the file,
             # from the metadata file); the bucket (or bucket/path; whatever was passed in via
-            # --rclone-google-source) is stored in RCloneConfigGoogle (from file.config_google),
-            # and RCloner.copy (which has this RCloneConfigGoogle, by virtue of RCloner being
+            # --rclone-google-source) is stored in RCloneGoogle (from file.config_google),
+            # and RCloner.copy (which has this RCloneGoogle, by virtue of RCloner being
             # created with it as a source), resolves/expands this to the full Google path name.
             rcloner.copy(file.name, cloud_path.join(s3_bucket, s3_key), progress=upload_file_callback.function)
             update_metadata_for_uploaded_file()

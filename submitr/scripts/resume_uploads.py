@@ -2,7 +2,7 @@ import os
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
 from submitr.base import DEFAULT_APP
-from submitr.rclone import RCloneConfigGoogle
+from submitr.rclone import RCloneGoogle
 from submitr.submission import resume_uploads
 from submitr.scripts.cli_utils import CustomArgumentParser
 
@@ -121,7 +121,7 @@ def main(simulated_args_for_testing=None):
         PRINT(f"Specified upload directory not found: {args.upload_folder}")
         exit(1)
 
-    config_google = RCloneConfigGoogle.from_command_args(args.rclone_google_source, args.rclone_google_credentials)
+    config_google = RCloneGoogle.from_command_args(args.rclone_google_source, args.rclone_google_credentials)
 
     env_from_env = False
     if not args.env:
@@ -140,7 +140,7 @@ def main(simulated_args_for_testing=None):
                        upload_folder=args.upload_folder,
                        no_query=args.yes,
                        subfolders=not directory_only,
-                       rclone_config_google=config_google,
+                       rclone_google=config_google,
                        output_file=args.output,
                        app=args.app,
                        verbose=args.verbose)

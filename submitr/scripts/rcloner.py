@@ -1,5 +1,5 @@
 import argparse
-from submitr.rclone import RCloner, RCloneConfigAmazon, RCloneConfigGoogle, cloud_path
+from submitr.rclone import RCloner, RCloneAmazon, RCloneGoogle, cloud_path
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsCredentials
 from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredentials
 
@@ -45,16 +45,16 @@ def main() -> None:
         source = args.source[5:]
         if not credentials_amazon:
             usage("No AWS credentials specified or found (in environment).")
-        source_config = RCloneConfigAmazon(credentials_amazon)
+        source_config = RCloneAmazon(credentials_amazon)
     elif args.source.lower().startswith("gs://"):
         source = args.source[5:]
         if not credentials_google:
-            if not RCloneConfigGoogle.is_google_compute_engine():
+            if not RCloneGoogle.is_google_compute_engine():
                 usage("No GCP credentials specified.")
             elif args.verbose:
-                google_project = RCloneConfigGoogle._get_project_name_if_google_compute_engine()
+                google_project = RCloneGoogle._get_project_name_if_google_compute_engine()
                 print(f"Running from Google Cloud Engine{f': {google_project} ✓' if google_project else '.'}")
-        source_config = RCloneConfigGoogle(credentials_google)
+        source_config = RCloneGoogle(credentials_google)
     else:
         source = args.source
         source_config = None
@@ -63,16 +63,16 @@ def main() -> None:
         destination = args.destination[5:]
         if not credentials_amazon:
             usage("No AWS credentials specified or found (in environment).")
-        destination_config = RCloneConfigAmazon(credentials_amazon)
+        destination_config = RCloneAmazon(credentials_amazon)
     elif args.destination.lower().startswith("gs://"):
         destination = args.destination[5:]
         if not credentials_google:
-            if not RCloneConfigGoogle.is_google_compute_engine():
+            if not RCloneGoogle.is_google_compute_engine():
                 usage("No GCP credentials specified.")
             elif args.verbose:
-                google_project = RCloneConfigGoogle._get_project_name_if_google_compute_engine()
+                google_project = RCloneGoogle._get_project_name_if_google_compute_engine()
                 print(f"Running from Google Cloud Engine{f': {google_project} ✓' if google_project else '.'}")
-        destination_config = RCloneConfigGoogle(credentials_google)
+        destination_config = RCloneGoogle(credentials_google)
     else:
         destination = args.destination
         destination_config = None

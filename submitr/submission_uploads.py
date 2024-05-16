@@ -7,7 +7,7 @@ from dcicutils.s3_utils import HealthPageKey
 from dcicutils.structured_data import Portal, StructuredDataSet
 from submitr.file_for_upload import FileForUpload, FilesForUpload
 from submitr.output import PRINT
-from submitr.rclone import RCloneConfigGoogle
+from submitr.rclone import RCloneGoogle
 from submitr.s3_upload import upload_file_to_aws_s3
 from submitr.utils import tobool
 
@@ -16,7 +16,7 @@ def do_any_uploads(arg: Union[str, dict, StructuredDataSet],
                    metadata_file: Optional[str] = None,
                    main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
                    main_search_directory_recursively: bool = False,
-                   config_google: Optional[RCloneConfigGoogle] = None,
+                   config_google: Optional[RCloneGoogle] = None,
                    portal: Optional[Portal] = None,
                    review_only: bool = False,
                    verbose: bool = False) -> None:
@@ -40,7 +40,7 @@ def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
                               main_search_directory_recursively: bool = False,
                               other_search_directories: Optional[List[Union[str, pathlib.PosixPath]]] = None,
                               metadata_file: Optional[str] = None,
-                              config_google: Optional[RCloneConfigGoogle] = None,
+                              config_google: Optional[RCloneGoogle] = None,
                               portal: Optional[Portal] = None,
                               review: bool = True,
                               review_only: bool = True,

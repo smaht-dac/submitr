@@ -5,7 +5,7 @@ import os
 from typing import List, Optional
 from dcicutils.file_utils import are_files_equal, normalize_path
 from dcicutils.tmpfile_utils import temporary_file
-from submitr.rclone.rclone_config_google import GoogleCredentials, RCloneConfigGoogle
+from submitr.rclone.rclone_google import GoogleCredentials, RCloneGoogle
 from submitr.rclone.rclone_utils import cloud_path
 
 
@@ -29,7 +29,7 @@ class Gcs:
     @property
     def client(self) -> GcsClient:
         if not self._client:
-            if not RCloneConfigGoogle.is_google_compute_engine():
+            if not RCloneGoogle.is_google_compute_engine():
                 self._client = GcsClient.from_service_account_json(self.credentials.service_account_file)
             else:
                 # Credentials are implicit on a GCE.
