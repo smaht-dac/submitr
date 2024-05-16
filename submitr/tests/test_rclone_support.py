@@ -179,8 +179,9 @@ class EnvGoogle(Env):
 
     def credentials(self) -> GoogleCredentials:
         credentials = GcpCredentials.from_file(self.service_account_file, location=self.location)
-        assert credentials.location == self.location
-        if not RCloneGoogle.is_google_compute_engine():
+        assert (credentials is not None) or RCloneGoogle.is_google_compute_engine()
+        if credentials is not None:
+            assert credentials.location == self.location
             assert credentials.service_account_file == normalize_path(self.service_account_file, expand_home=True)
             assert os.path.isfile(credentials.service_account_file)
         return credentials
@@ -190,9 +191,24 @@ class EnvGoogle(Env):
 
 
 def test_all():
+    # TODO
+    # Split the _test function into separate real test_ functions;
+    # originally developed as non-pytest module.
     _test_cloud_variations(use_cloud_subfolder_key=True)
     _test_cloud_variations(use_cloud_subfolder_key=False)
     _test_rclone_local_to_local()
+
+
+def _test_cloud_variations(use_cloud_subfolder_key: bool = False):
+
+    env_amazon = EnvAmazon(use_cloud_subfolder_key=use_cloud_subfolder_key)
+    env_google = EnvGoogle(use_cloud_subfolder_key=use_cloud_subfolder_key)
+    initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
+    _test_utils_for_testing(env_amazon=env_amazon)
+    _test_rclone_between_amazon_and_local(env_amazon=env_amazon)
+    _test_rclone_between_google_and_local(env_google=env_google)
+    _test_rclone_google_to_amazon(env_amazon=env_amazon, env_google=env_google)
+    _test_rclone_amazon_to_google(env_amazon=env_amazon, env_google=env_google)
 
 
 def initial_setup_and_sanity_checking(env_amazon: EnvAmazon, env_google: EnvGoogle) -> None:
@@ -203,14 +219,12 @@ def initial_setup_and_sanity_checking(env_amazon: EnvAmazon, env_google: EnvGoog
     assert os.environ.get("AWS_SECRET_ACCESS_KEY", None) is None
     assert os.environ.get("AWS_SESSION_TOKEN", None) is None
 
-    s3 = env_amazon.s3_non_rclone()
-    assert s3.bucket_exists(env_amazon.bucket) is True
+    assert env_amazon.s3_non_rclone().bucket_exists(env_amazon.bucket) is True
 
     credentials_google = env_google.credentials()
     if not RCloneGoogle.is_google_compute_engine():
         assert os.path.isfile(credentials_google.service_account_file)
-    gcs = env_google.gcs_non_rclone()
-    assert gcs.bucket_exists(env_google.bucket) is True
+    assert env_google.gcs_non_rclone().bucket_exists(env_google.bucket) is True
 
 
 def create_rclone_config_amazon(credentials: AmazonCredentials) -> RCloneConfig:
@@ -585,13 +599,20 @@ def _test_rclone_local_to_local() -> None:
                                    os.path.join(tmp_destination_directory, os.path.basename(tmp_test_file_path)))
 
 
-def _test_cloud_variations(use_cloud_subfolder_key: bool = False):
+def _todo_test_rclone_google_to_amazon_more() -> None:
+    pass
 
-    env_amazon = EnvAmazon(use_cloud_subfolder_key=use_cloud_subfolder_key)
-    env_google = EnvGoogle(use_cloud_subfolder_key=use_cloud_subfolder_key)
+    """
+    env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
+    env_google = EnvGoogle(use_cloud_subfolder_key=True)
     initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
-    _test_utils_for_testing(env_amazon=env_amazon)
-    _test_rclone_between_amazon_and_local(env_amazon=env_amazon)
-    _test_rclone_between_google_and_local(env_google=env_google)
-    _test_rclone_google_to_amazon(env_amazon=env_amazon, env_google=env_google)
-    _test_rclone_amazon_to_google(env_amazon=env_amazon, env_google=env_google)
+
+    credentials_google = env_google.credentials()
+    rclone_google = RCloneGoogle(credentials)
+
+    rclone_google = create_rclone_config_google(credentials_google, env_google)
+    with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        key_google = env_google.file_name_to_key_name(tmp_test_file_name)
+        rcloner = create_rclone(destination=rclone_amazon)
+        rcloner.copy(tmp_test_file_path, cloud_path.join(env_amazon.bucket, key_amazon))
+    """
