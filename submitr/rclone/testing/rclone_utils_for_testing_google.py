@@ -32,6 +32,7 @@ class Gcs:
             if not RCloneConfigGoogle.is_google_compute_engine():
                 self._client = GcsClient.from_service_account_json(self.credentials.service_account_file)
             else:
+                # Credentials are implicit on a GCE.
                 self._client = GcsClient()
         return self._client
 
