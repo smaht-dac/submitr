@@ -91,8 +91,12 @@ def setup_module():
             GOOGLE_SERVICE_ACCOUNT_FILE_PATH = google_service_account_file_path
     if not (GOOGLE_SERVICE_ACCOUNT_FILE_PATH and
             os.path.isfile(normalize_path(GOOGLE_SERVICE_ACCOUNT_FILE_PATH, expand_home=True))):
-        print("No Google credentials file defined. Skippping this test module: test_rclone_support")
-        pytest.skip()
+        if RCloneConfigGoogle.is_google_compute_engine():
+            # Credentials are implicit on a GCE.
+            GOOGLE_SERVICE_ACCOUNT_FILE_PATH = None
+        else:
+            print("No Google credentials file defined. Skippping this test module: test_rclone_support")
+            pytest.skip()
 
 
 def teardown_module():
@@ -175,8 +179,9 @@ class EnvGoogle(Env):
 
     def credentials(self) -> GoogleCredentials:
         credentials = GcpCredentials.from_file(self.service_account_file, location=self.location)
-        assert credentials.location == self.location
-        assert credentials.service_account_file == normalize_path(self.service_account_file, expand_home=True)
+        if not RCloneConfigGoogle.is_google_compute_engine():
+            assert credentials.location == self.location
+            assert credentials.service_account_file == normalize_path(self.service_account_file, expand_home=True)
         assert os.path.isfile(credentials.service_account_file)
         return credentials
 
@@ -202,7 +207,8 @@ def initial_setup_and_sanity_checking(env_amazon: EnvAmazon, env_google: EnvGoog
     assert s3.bucket_exists(env_amazon.bucket) is True
 
     credentials_google = env_google.credentials()
-    assert os.path.isfile(credentials_google.service_account_file)
+    if not RCloneConfigGoogle.is_google_compute_engine():
+        assert os.path.isfile(credentials_google.service_account_file)
     gcs = env_google.gcs_non_rclone()
     assert gcs.bucket_exists(env_google.bucket) is True
 
