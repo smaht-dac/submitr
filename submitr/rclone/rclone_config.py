@@ -20,7 +20,7 @@ class RCloneConfig(AbstractBaseClass):
         # Here we allow not just a bucket name but any "path", such as they are (i.e. path-like),
         # beginning with a bucket name, within the cloud (S3, GCP) storage system. If set then
         # this will be prepended (via cloud_path.path/join) to any path which is operated upon,
-        # e.g. for the path_exists, file_size, file_checksum, and RClone.copy functions.
+        # e.g. for the path_exists, file_size, file_checksum, and RCloner.copy functions.
         self._bucket = cloud_path.normalize(bucket)
 
     @property

@@ -1,5 +1,5 @@
 import argparse
-from submitr.rclone import RClone, RCloneConfigAmazon, RCloneConfigGoogle, cloud_path
+from submitr.rclone import RCloner, RCloneConfigAmazon, RCloneConfigGoogle, cloud_path
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsCredentials
 from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredentials
 
@@ -77,7 +77,7 @@ def main() -> None:
         destination = args.destination
         destination_config = None
 
-    rclone = RClone(source=source_config, destination=destination_config)
+    rclone = RCloner(source=source_config, destination=destination_config)
     result, output = rclone.copy(source, destination, return_output=True)
     if result is True:
         print("OK", end="")

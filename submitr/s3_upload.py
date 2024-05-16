@@ -10,7 +10,7 @@ from dcicutils.file_utils import compute_file_md5
 from dcicutils.misc_utils import format_duration, format_size
 from dcicutils.progress_bar import ProgressBar
 from submitr.file_for_upload import FileForUpload
-from submitr.rclone import RClone, RCloneConfigAmazon, cloud_path
+from submitr.rclone import RCloner, RCloneConfigAmazon, cloud_path
 from submitr.utils import get_s3_bucket_and_key_from_s3_uri, format_datetime
 
 # Module to upload a given file, with the given AWS credentials to AWS S3.
@@ -96,7 +96,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
                                                   secret_access_key=aws_credentials.get("aws_secret_access_key"),
                                                   session_token=aws_credentials.get("aws_session_token"),
                                                   kms_key_id=aws_kms_key_id)
-        rclone = RClone(source=rclone_config_google, destination=rclone_amazon_config)
+        rclone = RCloner(source=rclone_config_google, destination=rclone_amazon_config)
         if not rclone_config_google.path_exists(file.name):
             printf(f"ERROR: Cannot find Google Cloud Storage object: {file.path_google}")
             return False
@@ -326,7 +326,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
             # Note that the source is just file.name, which is just the base name of the file,
             # from the metadata file); the bucket (or bucket/path; whatever was passed in via
             # --rclone-google-source) is stored in RCloneConfigGoogle (from file.config_google),
-            # and RClone.copy (which has this RCloneConfigGoogle, by virtue of RClone being
+            # and RCloner.copy (which has this RCloneConfigGoogle, by virtue of RCloner being
             # created with it as a source), resolves/expands this to the full Google path name.
             rclone.copy(file.name, cloud_path.join(s3_bucket, s3_key), progress=upload_file_callback.function)
             update_metadata_for_uploaded_file()

@@ -9,7 +9,7 @@ from dcicutils.misc_utils import create_short_uuid
 from dcicutils.tmpfile_utils import (
     create_temporary_file_name, remove_temporary_file,
     temporary_directory, temporary_file, temporary_random_file)
-from submitr.rclone.rclone import RClone
+from submitr.rclone.rcloner import RCloner
 from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_config_amazon import AmazonCredentials, RCloneConfigAmazon
 from submitr.rclone.rclone_config_google import GoogleCredentials, RCloneConfigGoogle
@@ -20,7 +20,7 @@ from submitr.rclone.rclone_installation import RCloneInstallation
 
 pytestmark = pytest.mark.integration
 
-# Integration tests for RClone related functionality within smaht-submitr.
+# Integration tests for RCloner related functionality within smaht-submitr.
 # Need valid AWS credentials (currently for: smaht-wolf).
 # Need valid Google Cloud credentials (currently for: smaht-dac).
 # With these to variables set to True to default to getting credentials
@@ -236,8 +236,8 @@ def create_rclone_config_google(credentials: GoogleCredentials, env_google: EnvG
     return config
 
 
-def create_rclone(source: Optional[RCloneConfig] = None, destination: Optional[RCloneConfig] = None) -> RClone:
-    rclone = RClone(source=source, destination=destination)
+def create_rclone(source: Optional[RCloneConfig] = None, destination: Optional[RCloneConfig] = None) -> RCloner:
+    rclone = RCloner(source=source, destination=destination)
     assert rclone.source == source
     assert rclone.destination == destination
     return rclone
@@ -275,8 +275,8 @@ def cleanup_google_file(env_google: EnvGoogle, bucket: str, key: str) -> None:
 def _test_utils_for_testing(env_amazon: EnvAmazon) -> None:
 
     # First of all, test the test code, i.e. the Amazon/Google code which uploads,
-    # downloads, verifies, et cetera - WITHOUT using RClone - in furtherance of the
-    # testing of the various RClone features.
+    # downloads, verifies, et cetera - WITHOUT using RCloner - in furtherance of the
+    # testing of the various RCloner features.
 
     credentials = env_amazon.credentials()
     _test_utils_for_testing_amazon(env_amazon=env_amazon, credentials=credentials)
@@ -363,7 +363,7 @@ def __test_rclone_between_amazon_and_local(env_amazon: EnvAmazon,
         else:
             credentials_amazon = env_amazon.credentials(nokms=nokms)
         config = create_rclone_config_amazon(credentials_amazon)
-        # Upload the local test file to AWS S3 using RClone;
+        # Upload the local test file to AWS S3 using RCloner;
         # we upload tmp_test_file_path to the key (tmp_test_file_name) key in env_amazon.bucket.
         rclone = create_rclone(destination=config)
         if cloud_path.has_separator(key_amazon):
@@ -374,10 +374,11 @@ def __test_rclone_between_amazon_and_local(env_amazon: EnvAmazon,
             assert rclone.copy(tmp_test_file_path, cloud_path.join(env_amazon.bucket, key_amazon)) is True
         else:
             assert rclone.copy(tmp_test_file_path, env_amazon.bucket, copyto=False) is True
-        # Sanity check the uploaded file using non-RClone methods (via AwS3 which uses boto3).
+        # Sanity check the uploaded file using non-rclone methods (via AwS3 which uses boto3).
         sanity_check_amazon_file(env_amazon, credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
-        # Now try to download the test file (which was uploaded above to AWS S3 using RClone) to the local file system
-        # using RClone; use the same RClone configuration as for upload, but as the source rather than the destination.
+        # Now try to download the test file (which was uploaded above to AWS S3 using RCloner)
+        # to the local file system using RCloner; use the same RCloner configuration as for
+        # upload, but as the source rather than the destination.
         rclone = create_rclone(source=config)
         with temporary_directory() as tmp_download_directory:
             rclone.copy(cloud_path.join(env_amazon.bucket, key_amazon), tmp_download_directory, copyto=False)
@@ -394,7 +395,7 @@ def _test_rclone_between_google_and_local(env_google: EnvGoogle) -> None:
         key_google = env_google.file_name_to_key_name(tmp_test_file_name)
         # Here we have a local test file to upload to Google Cloud Storage.
         rclone = create_rclone(destination=config)
-        # Upload the local test file to Google Cloud Storage using RClone; we upload
+        # Upload the local test file to Google Cloud Storage using RCloner; we upload
         # tmp_test_file_path to the key (tmp_test_file_name) key in env_google.bucket.
         if cloud_path.has_separator(key_google):
             # If we are uploading to a key which has a slash (i.e. a folder-like key) then we
@@ -404,10 +405,10 @@ def _test_rclone_between_google_and_local(env_google: EnvGoogle) -> None:
             rclone.copy(tmp_test_file_path, cloud_path.join(env_google.bucket, key_google))
         else:
             rclone.copy(tmp_test_file_path, env_google.bucket, copyto=False)
-        # Sanity check the uploaded file using non-RClone methods (via Gcs which uses google.cloud.storage).
+        # Sanity check the uploaded file using non-rclone methods (via Gcs which uses google.cloud.storage).
         sanity_check_google_file(env_google, credentials, env_google.bucket, key_google, tmp_test_file_path)
-        # Now try to download the uploaded test file in Google Cloud Storage using RClone;
-        # use the same RClone configuration as for upload but as the source rather than destination.
+        # Now try to download the uploaded test file in Google Cloud Storage using RCloner;
+        # use the same RCloner configuration as for upload but as the source rather than destination.
         rclone = create_rclone(source=config)
         with temporary_directory() as tmp_download_directory:
             rclone.copy(cloud_path.join(env_google.bucket, key_google), tmp_download_directory, copyto=False)
@@ -460,8 +461,8 @@ def __test_rclone_google_to_amazon(env_amazon: EnvAmazon,
             credentials_amazon = env_amazon.credentials(nokms=nokms)
         rclone_config_amazon = create_rclone_config_amazon(credentials_amazon)
         # Here we have a local test file to upload to Google Cloud Storage;
-        # which we will then copy directly to AWS S3 via RClone.
-        # So first upload our local test file to Google Cloud Storage (via RClone - why not).
+        # which we will then copy directly to AWS S3 via RCloner.
+        # So first upload our local test file to Google Cloud Storage (via RCloner - why not).
         rclone = create_rclone(destination=rclone_config_google)
         if cloud_path.has_separator(key_google):
             # If we are uploading to a key which has a slash (i.e. a folder-like key) then we
@@ -535,8 +536,8 @@ def _test_rclone_amazon_to_google(env_amazon: EnvAmazon, env_google: EnvGoogle) 
         key_amazon = env_amazon.file_name_to_key_name(tmp_test_file_name)
         key_google = env_google.file_name_to_key_name(tmp_test_file_name)
         # Here we have a local test file to upload to AWS S3;
-        # which we will then copy directly to Google Cloud Storage via RClone.
-        # So first upload our local test file to AWS S3 (via RClone - why not).
+        # which we will then copy directly to Google Cloud Storage via RCloner.
+        # So first upload our local test file to AWS S3 (via RCloner - why not).
         rclone = create_rclone(destination=rclone_config_amazon)
         if cloud_path.has_separator(key_google):
             rclone.copy(tmp_test_file_path, cloud_path.join(env_amazon.bucket, key_amazon))
@@ -576,10 +577,10 @@ def _test_rclone_local_to_local() -> None:
     # support the degenerate case of local file to file copy via rclone.
     with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         with temporary_file() as tmp_destination_file:
-            RClone().copy(tmp_test_file_path, tmp_destination_file)
+            RCloner().copy(tmp_test_file_path, tmp_destination_file)
             assert are_files_equal(tmp_test_file_path, tmp_destination_file)
         with temporary_directory() as tmp_destination_directory:
-            RClone().copy(tmp_test_file_path, tmp_destination_directory, copyto=False)
+            RCloner().copy(tmp_test_file_path, tmp_destination_directory, copyto=False)
             assert are_files_equal(tmp_test_file_path,
                                    os.path.join(tmp_destination_directory, os.path.basename(tmp_test_file_path)))
 
