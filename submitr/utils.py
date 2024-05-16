@@ -227,6 +227,10 @@ def get_health_page(key: dict) -> dict:
     return Portal(key).get_health().json()
 
 
+def DEBUGGING():
+    return isinstance(debug := os.environ.get("SMAHT_DEBUG"), str) and (debug.lower() == "true" or debug == "1")
+
+
 def DEBUG(*args, **kwargs):
-    if isinstance(debug := os.environ.get("SMAHT_DEBUG"), str) and (debug.lower() == "true" or debug == "1"):
+    if DEBUGGING():
         PRINT(*args, **kwargs)
