@@ -29,14 +29,15 @@ class RCloneGoogle(RCloneConfig):
             credentials = credentials_or_config
         else:
             credentials = None
-        credentials = GoogleCredentials(credentials=credentials,
-                                        location=location,
-                                        service_account_file=service_account_file)
+        if credentials:
+            credentials = GoogleCredentials(credentials=credentials,
+                                            location=location,
+                                            service_account_file=service_account_file)
         super().__init__(name=name, bucket=bucket, credentials=credentials)
         self._project = None
 
     @property
-    def credentials(self) -> GoogleCredentials:
+    def credentials(self) -> Optional[GoogleCredentials]:
         return super().credentials
 
     @credentials.setter
@@ -62,19 +63,21 @@ class RCloneGoogle(RCloneConfig):
 
     @property
     def location(self) -> Optional[str]:
-        return self._credentials.location
+        return self.credentials.location if self.credentials else None
 
     @location.setter
     def location(self, value: str) -> None:
-        self._credentials.location = value
+        if self.credentials:
+            self.credentials.location = value
 
     @property
     def service_account_file(self) -> Optional[str]:
-        return self._credentials.service_account_file
+        return self.credentials.service_account_file if self.credentials else None
 
     @service_account_file.setter
     def service_account_file(self, value: str) -> None:
-        self._credentials.service_account_file = value
+        if self.credentials:
+            self.credentials.service_account_file = value
 
     @property
     def project(self) -> Optional[str]:
