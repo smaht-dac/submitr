@@ -168,10 +168,10 @@ class RCloneGoogle(RCloneConfig):
                    f" connectivity appears to be problematic ✗")
             return True
 
-    def __eq__(self, other: RCloneGoogle) -> bool:
+    def __eq__(self, other: Optional[RCloneGoogle]) -> bool:
         return isinstance(other, RCloneGoogle) and super().__eq__(other)
 
-    def __ne__(self, other: RCloneGoogle) -> bool:
+    def __ne__(self, other: Optional[RCloneGoogle]) -> bool:
         return not self.__eq__(other)
 
 
@@ -215,9 +215,10 @@ class GoogleCredentials(RCloneCredentials):
         if (value := normalize_string(value)) is not None:
             self._location = value or None
 
-    def __eq__(self, other: GoogleCredentials) -> bool:
-        return ((self.location == other.location) and
+    def __eq__(self, other: Optional[GoogleCredentials]) -> bool:
+        return (isinstance(other, GoogleCredentials) and
+                (self.location == other.location) and
                 (self.service_account_file == other.service_account_file))
 
-    def __ne__(self, other: GoogleCredentials) -> bool:
+    def __ne__(self, other: Optional[GoogleCredentials]) -> bool:
         return not self.__eq__(other)

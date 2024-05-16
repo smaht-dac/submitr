@@ -94,10 +94,10 @@ class RCloneAmazon(RCloneConfig):
     def kms_key_id(self, value: str) -> None:
         self._credentials.kms_key_id = value
 
-    def __eq__(self, other: RCloneAmazon) -> bool:
+    def __eq__(self, other: Optional[RCloneAmazon]) -> bool:
         return isinstance(other, RCloneAmazon) and super().__eq__(other)
 
-    def __ne__(self, other: RCloneAmazon) -> bool:
+    def __ne__(self, other: Optional[RCloneAmazon]) -> bool:
         return not self.__eq__(other)
 
 
@@ -197,12 +197,13 @@ class AmazonCredentials(RCloneCredentials):
                 pass
         return self._account_number
 
-    def __eq__(self, other: AmazonCredentials) -> bool:
-        return ((self.region == other.region) and
+    def __eq__(self, other: Optional[AmazonCredentials]) -> bool:
+        return (isinstance(other, AmazonCredentials) and
+                (self.region == other.region) and
                 (self.access_key_id == other.access_key_id) and
                 (self.secret_access_key == other.secret_access_key) and
                 (self.session_token == other.session_token) and
                 (self.kms_key_id == other.kms_key_id))
 
-    def __ne__(self, other: AmazonCredentials) -> bool:
-        return self.__eq__(other)
+    def __ne__(self, other: Optional[AmazonCredentials]) -> bool:
+        return not self.__eq__(other)

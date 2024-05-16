@@ -141,13 +141,13 @@ class RCloneConfig(AbstractBaseClass):
         with self.config_file() as config_file:
             return RCloneCommands.ping_command(source=f"{self.name}:", config=config_file)
 
-    def __eq__(self, other: RCloneConfig) -> bool:
+    def __eq__(self, other: Optional[RCloneConfig]) -> bool:
         return (isinstance(other, RCloneConfig) and
                 (self.name == other.name) and
                 (self.bucket == other.bucket) and
                 (self.credentials == other.credentials))
 
-    def __ne__(self, other: RCloneConfig) -> bool:
+    def __ne__(self, other: Optional[RCloneConfig]) -> bool:
         return not self.__eq__(other)
 
 
