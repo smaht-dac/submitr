@@ -9,6 +9,7 @@ from submitr.rclone.rclone_amazon import RCloneAmazon
 from submitr.rclone.rclone_commands import RCloneCommands
 from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.rclone.rclone_utils import cloud_path
+from submitr.utils import DEBUGGING
 
 
 class RCloner(RCloneCommands, RCloneInstallation):
@@ -53,7 +54,7 @@ class RCloner(RCloneCommands, RCloneInstallation):
         with temporary_file(suffix=".conf") as temporary_config_file_name:
             os.chmod(temporary_config_file_name, 0o600)  # for security
             RCloneConfig.write_config_file(temporary_config_file_name, self.config_lines)
-            if persist is True:
+            if (persist is True) or DEBUGGING():
                 # This is just for dryrun for testing/troubleshooting.
                 persistent_config_file_name = create_temporary_file_name(suffix=".conf")
                 copy_file(temporary_config_file_name, persistent_config_file_name)

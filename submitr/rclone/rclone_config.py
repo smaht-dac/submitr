@@ -1,12 +1,14 @@
 from __future__ import annotations
 from abc import ABC as AbstractBaseClass, abstractproperty
 from contextlib import contextmanager
+import os
 from shutil import copy as copy_file
 from typing import List, Optional
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 from dcicutils.misc_utils import create_uuid, normalize_string
 from submitr.rclone.rclone_commands import RCloneCommands
 from submitr.rclone.rclone_utils import cloud_path
+from submitr.utils import DEBUGGING
 
 
 class RCloneConfig(AbstractBaseClass):
@@ -82,10 +84,12 @@ class RCloneConfig(AbstractBaseClass):
     @contextmanager
     def config_file(self, persist: bool = False) -> str:
         with temporary_file(suffix=".conf") as temporary_config_file_name:
+            os.chmod(temporary_config_file_name, 0o600)  # for security
             self.write_config_file(temporary_config_file_name, self.config_lines)
-            if persist is True:
+            if (persist is True) or DEBUGGING():
                 persistent_config_file_name = create_temporary_file_name(suffix=".conf")
                 copy_file(temporary_config_file_name, persistent_config_file_name)
+                os.chmod(persistent_config_file_name, 0o600)  # for security
                 yield persistent_config_file_name
             else:
                 yield temporary_config_file_name
