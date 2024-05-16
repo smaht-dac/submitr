@@ -77,8 +77,8 @@ def main() -> None:
         destination = args.destination
         destination_config = None
 
-    rclone = RCloner(source=source_config, destination=destination_config)
-    result, output = rclone.copy(source, destination, return_output=True)
+    rcloner = RCloner(source=source_config, destination=destination_config)
+    result, output = rcloner.copy(source, destination, return_output=True)
     if result is True:
         print("OK", end="")
         if args.verbose:

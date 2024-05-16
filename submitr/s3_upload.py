@@ -84,7 +84,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         printf = print
 
     if file.from_local:
-        rclone = None
+        rcloner = None
         file_size = file.size_local
         file_checksum = None
         file_checksum_timestamp = None
@@ -96,7 +96,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
                                                   secret_access_key=aws_credentials.get("aws_secret_access_key"),
                                                   session_token=aws_credentials.get("aws_session_token"),
                                                   kms_key_id=aws_kms_key_id)
-        rclone = RCloner(source=rclone_config_google, destination=rclone_amazon_config)
+        rcloner = RCloner(source=rclone_config_google, destination=rclone_amazon_config)
         if not rclone_config_google.path_exists(file.name):
             printf(f"ERROR: Cannot find Google Cloud Storage object: {file.path_google}")
             return False
@@ -320,7 +320,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
     metadata = create_metadata_for_uploading_file()
     upload_aborted = False
 
-    if rclone:
+    if rcloner:
         upload_file_callback = define_upload_file_callback(progress_total_nbytes=True)
         try:
             # Note that the source is just file.name, which is just the base name of the file,
@@ -328,7 +328,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
             # --rclone-google-source) is stored in RCloneConfigGoogle (from file.config_google),
             # and RCloner.copy (which has this RCloneConfigGoogle, by virtue of RCloner being
             # created with it as a source), resolves/expands this to the full Google path name.
-            rclone.copy(file.name, cloud_path.join(s3_bucket, s3_key), progress=upload_file_callback.function)
+            rcloner.copy(file.name, cloud_path.join(s3_bucket, s3_key), progress=upload_file_callback.function)
             update_metadata_for_uploaded_file()
         except Exception:
             printf(f"Upload ABORTED: {file.path_google} ◀")  # TODO: test
