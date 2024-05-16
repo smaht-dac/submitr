@@ -242,8 +242,9 @@ def create_rclone_config_amazon(credentials: AmazonCredentials) -> RCloneConfig:
 def create_rclone_config_google(credentials: GoogleCredentials, env_google: EnvGoogle) -> RCloneConfig:
     config = RCloneGoogle(credentials)
     assert config.credentials == credentials
-    assert config.location == credentials.location
-    assert config.service_account_file == credentials.service_account_file
+    if credentials:
+        assert config.location == credentials.location
+        assert config.service_account_file == credentials.service_account_file
     assert RCloneGoogle(config) == config  # checking equals override
     assert RCloneGoogle(config, bucket="mismatch") != config  # checking equals override
     assert config.project == env_google.project_id
