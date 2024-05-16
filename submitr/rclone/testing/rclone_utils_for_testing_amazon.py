@@ -326,6 +326,8 @@ class AwsCredentials(AmazonCredentials):
                     credentials_file = os.path.join(credentials_file, "credentials")
                 else:
                     credentials_file = os.path.join("~", f".aws_test.{credentials_file}", "credentials")
+                if not os.path.isfile(credentials_file):
+                    return None
             config = configparser.ConfigParser()
             config.read(os.path.expanduser(credentials_file))
             section = config[credentials_section]
