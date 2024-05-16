@@ -34,8 +34,7 @@ def main() -> None:
             credentials_amazon = credentials_amazon.generate_temporary_credentials(bucket=bucket, key=key,
                                                                                    kms_key_id=args.kms)
 
-    if args.google:
-        credentials_google = GcpCredentials.from_file(args.google)
+    credentials_google = GcpCredentials.from_file(args.google) if args.google else None
 
     if args.source.lower().startswith("s3://"):
         source = args.source[5:]
@@ -45,7 +44,11 @@ def main() -> None:
     elif args.source.lower().startswith("gs://"):
         source = args.source[5:]
         if not credentials_google:
-            usage("No GCP credentials specified.")
+            if not RCloneConfigGoogle.is_google_compute_engine():
+                usage("No GCP credentials specified.")
+            elif args.verbose:
+                print(f"Running from Google Cloud Engine:"
+                      f" {RCloneConfigGoogle._get_project_name_if_google_compute_engine}.")
         source_config = RCloneConfigGoogle(credentials_google)
     else:
         source = args.source
