@@ -225,3 +225,8 @@ def catch_interrupt(on_interrupt: Optional[Callable] = None):
 @function_cache(serialize_key=True)
 def get_health_page(key: dict) -> dict:
     return Portal(key).get_health().json()
+
+
+def DEBUG(*args, **kwargs):
+    if isinstance(debug := os.environ.get("SMAHT_DEBUG"), str) and (debug.lower() == "true" or debug == "1"):
+        PRINT(*args, **kwargs)
