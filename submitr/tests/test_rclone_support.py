@@ -629,7 +629,6 @@ def test_rclone_google_to_amazon_more() -> None:
     rcloner = RCloner(destination=rclone_google)
     # Note that the second destination argument to RCloner.copy can be
     # unspecified meaning that it will be the *bucket* ("bucket" - can be
-    # bucket plus sub-folder) associated with the destination RCloneGoogle object.
     assert rcloner.copy_to_bucket(os.path.join(filesystem.root, file_one)) is True
     assert env_google.gcs_non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == filesize
     assert env_google.gcs_non_rclone().file_size(bucket_google, os.path.basename(file_one)) == filesize
@@ -686,13 +685,16 @@ def test_rclone_google_to_amazon_more() -> None:
     upload_file_to_aws_s3(file=files_for_upload[0],
                           s3_uri=s3_uri,
                           aws_credentials=credentials_amazon.to_dictionary())
+    assert env_amazon.s3_non_rclone().file_exists(env_amazon.bucket, s3_key) is True
     assert env_amazon.s3_non_rclone().file_size(env_amazon.bucket, s3_key) == filesize
+    assert (env_amazon.s3_non_rclone().file_checksum(env_amazon.bucket, s3_key) ==
+            compute_file_md5(os.path.join(filesystem.root, file_one)))
     s3_key_metadata = get_s3_key_metadata(credentials_amazon.to_dictionary(environment_names=False),
                                           env_amazon.bucket, s3_key)
     assert isinstance(s3_key_metadata, dict)
-    # TODO more asserts on metadata ...
-    # Cleanup.
-    assert env_amazon.s3_non_rclone().file_size(env_amazon.bucket, s3_key) == filesize
+    assert s3_key_metadata["size"] == filesize
+    assert s3_key_metadata["md5"] == compute_file_md5(os.path.join(filesystem.root, file_one))
+    assert s3_key_metadata["md5_source"] == "google-cloud-storage"
     assert env_amazon.s3_non_rclone().delete_file(env_amazon.bucket, s3_key)
     assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, files_for_upload[0].name)
 
