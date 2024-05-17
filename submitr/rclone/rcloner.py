@@ -173,3 +173,11 @@ class RCloner(RCloneCommands, RCloneInstallation):
                                                copyto=copyto,
                                                progress=progress, dryrun=dryrun,
                                                return_output=return_output)
+
+    def copy_to_bucket(self, *args, **kwargs) -> Union[bool, Tuple[bool, List[str]]]:
+        kwargs["copyto"] = False
+        return self.copy(*args, **kwargs)
+
+    def copy_to_key(self, *args, **kwargs) -> Union[bool, Tuple[bool, List[str]]]:
+        kwargs["copyto"] = True
+        return self.copy(*args, **kwargs)

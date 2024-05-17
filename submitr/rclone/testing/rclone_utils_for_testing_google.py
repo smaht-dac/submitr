@@ -85,7 +85,11 @@ class Gcs:
                 raise e
             return False
 
-    def delete_file(self, bucket: str, key: str, check: bool = False, raise_exception: bool = True) -> bool:
+    def delete_file(self, bucket: str, key: Optional[str] = None,
+                    check: bool = False, raise_exception: bool = True) -> bool:
+        bucket, key = cloud_path.bucket_and_key(bucket, key)
+        if not bucket or not key:
+            return False
         try:
             if not (check is True) or self.file_exists(bucket, key):
                 self.client.get_bucket(bucket).blob(key).delete()

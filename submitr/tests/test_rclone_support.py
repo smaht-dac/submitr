@@ -623,13 +623,15 @@ def test_rclone_google_to_amazon_more() -> None:
     filesystem.create_files(file_one, nbytes=filesize)
     # env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
     env_google = EnvGoogle(use_cloud_subfolder_key=True)
-    bucket_google = env_google.bucket
+    bucket_google = f"{env_google.bucket}/test-{create_short_uuid(31)}"
     credentials_google = env_google.credentials()
     rclone_google = RCloneGoogle(credentials_google, bucket=bucket_google)
     rcloner = RCloner(destination=rclone_google)
-    # Note that the second destination argument to RCloner.copy can be unspecified
-    # meaning that it will be the *bucket* associated with the destination RCloneGoogle object.
-    assert rcloner.copy(os.path.join(filesystem.root, file_one)) is True
+    # Note that the second destination argument to RCloner.copy can be
+    # unspecified meaning that it will be the *bucket* ("bucket" - can be
+    # bucket plus sub-folder) associated with the destination RCloneGoogle object.
+#   assert rcloner.copy(os.path.join(filesystem.root, file_one)) is True
+    assert rcloner.copy_to_bucket(os.path.join(filesystem.root, file_one)) is True
     assert env_google.gcs_non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == filesize
     assert env_google.gcs_non_rclone().file_size(bucket_google, os.path.basename(file_one)) == filesize
     files = [{"filename": file_one},
@@ -667,7 +669,7 @@ def test_rclone_google_to_amazon_more() -> None:
     assert files_for_upload[0].favor_local is False
     assert files_for_upload[0].from_local is False
     assert files_for_upload[0].from_google is True
-    assert files_for_upload[0].path == cloud_path.join(env_google.bucket, files_for_upload[0].name)
+    assert files_for_upload[0].path == cloud_path.join(rclone_google.bucket, files_for_upload[0].name)
     assert files_for_upload[0].size == filesize
     assert len(files_for_upload[0].checksum) > 0
 
@@ -689,6 +691,11 @@ def test_rclone_google_to_amazon_more() -> None:
     s3_key_metadata = get_s3_key_metadata(credentials_amazon.to_dictionary(environment_names=False),
                                           env_amazon.bucket, s3_key)
     assert isinstance(s3_key_metadata, dict)
+    # TODO more asserts on metadata ...
+    # Cleanup.
+    assert env_amazon.s3_non_rclone().file_size(env_amazon.bucket, s3_key) == filesize
+    assert env_amazon.s3_non_rclone().delete_file(env_amazon.bucket, s3_key)
+    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, files_for_upload[0].name)
 
 
 def test_rclone_local_to_google_copy_to_bucket() -> None:
