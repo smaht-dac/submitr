@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 from submitr.utils import format_datetime
 
 
-def get_s3_key_metadata(aws_credentials: dict, s3_bucket: str, s3_key: str) -> Optional[dict]:
+def get_s3_key_metadata(aws_credentials: dict, s3_bucket: str, s3_key: str, strings: bool = False) -> Optional[dict]:
     if not (isinstance(aws_credentials, dict) and
             isinstance(aws_credentials.get("aws_access_key_id"), str) and
             isinstance(aws_credentials.get("aws_secret_access_key"), str) and
@@ -17,9 +17,12 @@ def get_s3_key_metadata(aws_credentials: dict, s3_bucket: str, s3_key: str) -> O
         s3 = BotoClient("s3", **aws_credentials)
         if not isinstance(s3_file_head := s3.head_object(Bucket=s3_bucket, Key=s3_key), dict):
             return None
+        size = s3_file_head.get("ContentLength")
         result = {
             "modified": format_datetime(s3_file_head.get("LastModified")),
-            "size": s3_file_head.get("ContentLength")
+            # Converting size to string because we need strings for metadata update
+            # in s3_upload.upload_file_to_aws_s3.update_metadata_for_uploaded_file.
+            "size": str(size) if strings is True else size
         }
         # Try getting the md5 that we ourselves wrote if/when uploading via this module.
         if isinstance(s3_file_metadata := s3_file_head.get("Metadata"), dict):

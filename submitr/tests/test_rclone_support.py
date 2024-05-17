@@ -693,6 +693,7 @@ def test_rclone_google_to_amazon_more() -> None:
                                           env_amazon.bucket, s3_key)
     assert isinstance(s3_key_metadata, dict)
     assert s3_key_metadata["size"] == filesize
+    assert s3_key_metadata["size"] == filesize
     assert s3_key_metadata["md5"] == compute_file_md5(os.path.join(filesystem.root, file_one))
     assert s3_key_metadata["md5_source"] == "google-cloud-storage"
     assert env_amazon.s3_non_rclone().delete_file(env_amazon.bucket, s3_key)

@@ -182,9 +182,9 @@ def upload_file_to_aws_s3(file: FileForUpload,
         upload_file_callback_type = namedtuple("upload_file_callback", ["function", "done", "abort_upload"])
         return upload_file_callback_type(upload_file_callback, done, abort_upload)
 
-    def get_uploaded_file_info() -> Optional[dict]:
+    def get_uploaded_file_info(strings: bool = False) -> Optional[dict]:
         nonlocal aws_credentials, s3_bucket, s3_key
-        return get_s3_key_metadata(aws_credentials, s3_bucket, s3_key)
+        return get_s3_key_metadata(aws_credentials, s3_bucket, s3_key, strings=strings)
 
     def verify_with_any_already_uploaded_file() -> None:
         nonlocal file, file_size, file_checksum, file_checksum_timestamp
@@ -230,39 +230,31 @@ def upload_file_to_aws_s3(file: FileForUpload,
 
     def verify_uploaded_file() -> bool:
         nonlocal file, file_size
-        if file_info := get_uploaded_file_info():
-            printf(f"Verifying upload: {file.name} ... ", end="")
-            if file_info["size"] != file_size:
-                printf(f"WARNING: File size mismatch ▶ {file_size} vs {file_info['size']}")
-                return False
-            if file_checksum and file_info.get("md5") and (file_checksum != file_info["md5"]):
-                printf(f"WARNING: File checksum mismatch ▶ {file_checksum} vs {file_info['md5']}")
-                return False
-            printf("OK")
-            return True
+        try:
+            if file_info := get_uploaded_file_info():
+                printf(f"Verifying upload: {file.name} ... ", end="")
+                if file_info["size"] != file_size:
+                    printf(f"WARNING: File size mismatch ▶ {file_size} vs {file_info['size']}")
+                    return False
+                if file_checksum and file_info.get("md5") and (file_checksum != file_info["md5"]):
+                    printf(f"WARNING: File checksum mismatch ▶ {file_checksum} vs {file_info['md5']}")
+                    return False
+                printf("OK")
+                return True
+        except Exception:
+            pass
+        printf(f"WARNING: Could not verify upload: {file.name}")
         return False
 
     def create_metadata_for_uploading_file() -> dict:
-        nonlocal aws_credentials, s3_bucket, s3_key, file, file_checksum, file_checksum_timestamp
-        if metadata := get_s3_key_metadata(aws_credentials, s3_bucket, s3_key):
+        nonlocal file, file_checksum, file_checksum_timestamp
+        if metadata := get_uploaded_file_info(strings=True):
             if file_checksum:
                 metadata["md5"] = file_checksum
                 metadata["md5-timestamp"] = str(file_checksum_timestamp)
                 metadata["md5-source"] = "google-cloud-storage" if file.found_google else "file-system"
             return metadata
         return {}
-#       try:
-#           s3 = BotoClient("s3", **aws_credentials)
-#           if isinstance(s3_file_head := s3.head_object(Bucket=s3_bucket, Key=s3_key), dict):
-#               if isinstance(metadata := s3_file_head.get("Metadata"), dict):
-#                   if file_checksum:
-#                       metadata["md5"] = file_checksum
-#                       metadata["md5-timestamp"] = str(file_checksum_timestamp)
-#                       metadata["md5-source"] = "google-cloud-storage" if file.found_google else "file-system"
-#                   return metadata
-#       except Exception:
-#           pass
-#       return {}
 
     def update_metadata_for_uploaded_file() -> bool:
         # Only need in the GCS case, as this metadata is set (via ExtraArgs) on the actual upload for S3.
@@ -286,9 +278,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
     if verify_upload and not verify_with_any_already_uploaded_file():
         return False
 
-    metadata = create_metadata_for_uploading_file()
     upload_aborted = False
-
     if rcloner:
         upload_file_callback = define_upload_file_callback(progress_total_nbytes=True)
         try:
@@ -298,6 +288,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
             # and RCloner.copy (which has this RCloneGoogle, by virtue of RCloner being
             # created with it as a source), resolves/expands this to the full Google path name.
             rcloner.copy_to_key(file.name, cloud_path.join(s3_bucket, s3_key), progress=upload_file_callback.function)
+            # Unlike non-rlone (boto) based copy, we have to set the metadata separately, after rlcone copy.
             update_metadata_for_uploaded_file()
         except Exception:
             printf(f"Upload ABORTED: {file.path_google} ◀")  # TODO: test
@@ -307,7 +298,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         upload_file_callback = define_upload_file_callback(progress_total_nbytes=False)
         s3 = BotoClient("s3", **aws_credentials)
         aws_extra_args = {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": aws_kms_key_id} if aws_kms_key_id else {}
-        if metadata:
+        if metadata := create_metadata_for_uploading_file():
             aws_extra_args["Metadata"] = metadata
         with open(file.path_local, "rb") as f:
             try:
