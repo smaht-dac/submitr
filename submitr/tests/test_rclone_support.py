@@ -669,11 +669,46 @@ def test_rclone_google_to_amazon_more() -> None:
     assert files_for_upload[0].path == cloud_path.join(env_google.bucket, files_for_upload[0].name)
     assert files_for_upload[0].size == 1234
     assert len(files_for_upload[0].checksum) > 0
+    # TODO
 
+
+def test_rclone_local_to_google_copy_to_bucket() -> None:
     # Just an aside (ran across while testing); make sure copyto=False works for sub-folder.
+    env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
+    env_google = EnvGoogle(use_cloud_subfolder_key=True)
+    initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
+    filesystem = Mock_LocalStorage()
+    filesystem.create_files(file_one := "subdir/test_file_one.fastq", nbytes=1234)
     bucket_google = cloud_path.join(env_google.bucket, "825c5f58-543a-47c6-a505-55a7b94b29c4")
+    credentials_google = env_google.credentials()
     rclone_google = RCloneGoogle(credentials_google, bucket=bucket_google)
     rcloner = RCloner(destination=rclone_google)
     assert rcloner.copy(os.path.join(filesystem.root, file_one), copyto=False) is True
+#   assert env_google.gcs_non_rclone().file_exists(cloud_path.join(bucket_google, os.path.basename(file_one))) is True
+#   assert env_google.gcs_non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == 1234
     assert env_google.gcs_non_rclone().file_exists(cloud_path.join(bucket_google, os.path.basename(file_one))) is True
+    assert env_google.gcs_non_rclone().file_exists(bucket_google, os.path.basename(file_one)) is True
     assert env_google.gcs_non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == 1234
+    assert env_google.gcs_non_rclone().file_size(bucket_google, os.path.basename(file_one)) == 1234
+    assert (env_google.gcs_non_rclone().file_checksum(cloud_path.join(bucket_google, os.path.basename(file_one))) ==
+            compute_file_md5(os.path.join(filesystem.root, file_one)))
+
+
+def test_rclone_local_to_amazon_copy_to_bucket() -> None:
+    # Just an aside (ran across while testing); make sure copyto=False works for sub-folder.
+    env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
+    env_google = EnvGoogle(use_cloud_subfolder_key=True)
+    initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
+    filesystem = Mock_LocalStorage()
+    filesystem.create_files(file_one := "subdir/test_file_one.fastq", nbytes=1234)
+    bucket_amazon = cloud_path.join(env_amazon.bucket, "825c5f58-543a-47c6-a505-55a7b94b29c4")
+    credentials_amazon = env_amazon.credentials()
+    rclone_amazon = RCloneAmazon(credentials_amazon, bucket=bucket_amazon)
+    rcloner = RCloner(destination=rclone_amazon)
+    assert rcloner.copy(os.path.join(filesystem.root, file_one), copyto=False) is True
+    assert env_amazon.s3_non_rclone().file_exists(cloud_path.join(bucket_amazon, os.path.basename(file_one))) is True
+    assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, os.path.basename(file_one)) is True
+    assert env_amazon.s3_non_rclone().file_size(cloud_path.join(bucket_amazon, os.path.basename(file_one))) == 1234
+    assert env_amazon.s3_non_rclone().file_size(bucket_amazon, os.path.basename(file_one)) == 1234
+    assert (env_amazon.s3_non_rclone().file_checksum(cloud_path.join(bucket_amazon, os.path.basename(file_one))) ==
+            compute_file_md5(os.path.join(filesystem.root, file_one)))

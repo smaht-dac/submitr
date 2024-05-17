@@ -76,15 +76,11 @@ class cloud_path:
 
     @staticmethod
     def bucket_and_key(bucket: str, key: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
-        if not (bucket := cloud_path.normalize(bucket)):
+        if not (bucket_and_key := cloud_path.join(bucket, key)):
             return None, None
-        if not (key := cloud_path.normalize(key)):
-            if cloud_path.has_separator(bucket):
-                key = cloud_path.key(bucket)
-                bucket = cloud_path.bucket(bucket)
-                return bucket, key
-            else:
-                return None, None
-        if cloud_path.has_separator(bucket):
-            return None, None
-        return bucket, key
+        if cloud_path.has_separator(bucket_and_key):
+            bucket = cloud_path.bucket(bucket_and_key)
+            key = cloud_path.key(bucket_and_key)
+            return bucket, key
+        else:
+            return bucket_and_key, None
