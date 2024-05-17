@@ -37,8 +37,17 @@ jobs:
         run: |
           make build
       
+      # The integration tests actually talk to AWS S3 and Google Cloud Storage (GCS);
+      # both "directly" (via Python boto3 and google.cloud.storage) and via rclone.
+      # The access credentials are defined by the environment variables described below.
       - name: INTEGRATION TESTS
         env:
+          # These are setup in GitHub as "secrets". The AWS access key values are currently
+          # May 2024, for the special user test-integration-user in the smaht-wolf account;
+          # the access key was created on 2024-05-15. The Google value is the JSON from the
+          # service account file exported from the HMS Google account for the smaht-dac project;
+          # the service account email is ga4-service-account@smaht-dac.iam.gserviceaccount.com;
+          # its key ID is b488dd9cfde6b59b1aa347aabd9add86c7ff9057; it was created on 2024-04-28.
           AWS_DEFAULT_REGION: us-east-1
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

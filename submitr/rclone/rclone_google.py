@@ -90,6 +90,28 @@ class RCloneGoogle(RCloneConfig):
             self._project = project
             return self._project
 
+    def verify_connectivity(self, printf: Optional[Callable] = None) -> bool:
+        if not callable(printf):
+            printf = print
+        if self.ping():
+            printf(f"Google Cloud Storage project"
+                   f"{f' ({self.project})' if self.project else ''}"
+                   f" connectivity appears to be OK ✓")
+            if self.bucket_exists() is False:
+                printf(f"WARNING: Google Cloud Storage bucket NOT FOUND: {self.bucket}")
+            return False
+        else:
+            printf(f"Google Cloud Storage project"
+                   f"{f' ({self.project})' if self.project else ''}"
+                   f" connectivity appears to be problematic ✗")
+            return True
+
+    def __eq__(self, other: Optional[RCloneGoogle]) -> bool:
+        return isinstance(other, RCloneGoogle) and super().__eq__(other)
+
+    def __ne__(self, other: Optional[RCloneGoogle]) -> bool:
+        return not self.__eq__(other)
+
     @staticmethod
     def is_google_compute_engine() -> Optional[str]:
         return RCloneGoogle._get_project_name_if_google_compute_engine() is not None
@@ -118,10 +140,15 @@ class RCloneGoogle(RCloneConfig):
     @staticmethod
     def from_command_args(rclone_google_source: Optional[str],
                           rclone_google_credentials: Optional[str] = None,
+                          rclone_google_location: Optional[str] = None,
                           verify_installation: bool = True,
                           printf: Optional[Callable] = None) -> Optional[RCloneGoogle]:
         """
         Assumed to be called at the start of command-line utility (i.e. e.g. submit-metadata-bundle).
+        The rclone_google_source should be the Google bucket (or bucket/sub-folder is also allowed),
+        where the files to be copied can be found. The rclone_google_credentials should be the full path
+        to the Google (GCP) service account file; or this can be omitted if running on a GCE instance.
+        The rclone_google_location is the location (aka region) to be used for the copy.
         """
         if not isinstance(rclone_google_source, str) or not rclone_google_source:
             return None
@@ -135,30 +162,9 @@ class RCloneGoogle(RCloneConfig):
         if rclone_google_credentials and not os.path.isfile(rclone_google_credentials):
             printf(f"ERROR: Google service account file does not exist: {rclone_google_credentials}")
             exit(1)
-        # TODO: Allow "location" to be passed in (?); not in service account file.
-        return RCloneGoogle(service_account_file=rclone_google_credentials, bucket=rclone_google_source)
-
-    def verify_connectivity(self, printf: Optional[Callable] = None) -> bool:
-        if not callable(printf):
-            printf = print
-        if self.ping():
-            printf(f"Google Cloud Storage project"
-                   f"{f' ({self.project})' if self.project else ''}"
-                   f" connectivity appears to be OK ✓")
-            if self.bucket_exists() is False:
-                printf(f"WARNING: Google Cloud Storage bucket NOT FOUND: {self.bucket}")
-            return False
-        else:
-            printf(f"Google Cloud Storage project"
-                   f"{f' ({self.project})' if self.project else ''}"
-                   f" connectivity appears to be problematic ✗")
-            return True
-
-    def __eq__(self, other: Optional[RCloneGoogle]) -> bool:
-        return isinstance(other, RCloneGoogle) and super().__eq__(other)
-
-    def __ne__(self, other: Optional[RCloneGoogle]) -> bool:
-        return not self.__eq__(other)
+        return RCloneGoogle(service_account_file=rclone_google_credentials,
+                            location=rclone_google_location,
+                            bucket=rclone_google_source)
 
 
 class GoogleCredentials(RCloneCredentials):
@@ -175,7 +181,6 @@ class GoogleCredentials(RCloneCredentials):
             self._location = None
             self._service_account_file = None
 
-        # TODO: maybe exception if no service-account-file AND not running on GCE.
         if service_account_file := normalize_path(service_account_file, expand_home=True):
             if not os.path.isfile(service_account_file):
                 raise Exception(f"GoogleCredentials service account file not found: {service_account_file}")

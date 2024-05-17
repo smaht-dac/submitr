@@ -50,11 +50,15 @@ def main() -> None:
         source = args.source[5:]
         if not credentials_google:
             if not RCloneGoogle.is_google_compute_engine():
+                # No Google credentials AND NOT running on a GCE instance.
                 usage("No GCP credentials specified.")
-            elif args.verbose:
-                google_project = RCloneGoogle._get_project_name_if_google_compute_engine()
-                print(f"Running from Google Cloud Engine{f': {google_project} ✓' if google_project else '.'}")
-        source_config = RCloneGoogle(credentials_google)
+            # OK to create RCloneGoogle with no credentials on a GCE instance.
+            source_config = RCloneGoogle()
+            if args.verbose:
+                google_project = source_config.project
+                print(f"Running from Google Cloud Engine (GCE){f': {google_project} ✓' if google_project else '.'}")
+        else:
+            source_config = RCloneGoogle(credentials_google)
     else:
         source = args.source
         source_config = None
@@ -68,11 +72,15 @@ def main() -> None:
         destination = args.destination[5:]
         if not credentials_google:
             if not RCloneGoogle.is_google_compute_engine():
+                # No Google credentials AND NOT running on a GCE instance.
                 usage("No GCP credentials specified.")
-            elif args.verbose:
-                google_project = RCloneGoogle._get_project_name_if_google_compute_engine()
-                print(f"Running from Google Cloud Engine{f': {google_project} ✓' if google_project else '.'}")
-        destination_config = RCloneGoogle(credentials_google)
+            # OK to create RCloneGoogle with no credentials on a GCE instance.
+            destination_config = RCloneGoogle()
+            if args.verbose:
+                google_project = destination_config.project
+                print(f"Running from Google Cloud Engine (GCE){f': {google_project} ✓' if google_project else '.'}")
+        else:
+            destination_config = RCloneGoogle(credentials_google)
     else:
         destination = args.destination
         destination_config = None

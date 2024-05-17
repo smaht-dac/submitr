@@ -56,11 +56,14 @@ OPTIONS:
   to the default of using the directory containing the submitted file;
   this directory will be searched recursively.
 --rclone-google-source GOOGLE-CLOUD-STORAGE-SOURCE
-  A Google Cloud Storage (GCS) bucket or bucket/key (foldrer)
-  from where the upload file(s) should be read.
+  A Google Cloud Storage (GCS) bucket or bucket/sub-folder
+  from where the upload file(s) should be copied.
 --rclone-google-credentials GCS-SERVICE-ACCOUNT-FILE
   GCS credentials to use for --rclone-google-source;
-  e.g. a path to a service account file.
+  e.g. full path to your GCP service account file.
+  May be omitted if running on a GCE instance.
+--rclone-google-location LOCATION
+  The Google Cloud Storage (GCS) location (aka "region").
 --output OUTPUT-FILE
   Writes all logging output to the specified file;
   and refrains from printing lengthy content to output/stdout.
@@ -227,6 +230,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--ping', action="store_true", help="Ping server.", default=False)
     parser.add_argument('--rclone-google-source', help="Use rlcone to copy upload files from GCS.", default=None)
     parser.add_argument('--rclone-google-credentials', help="GCS credentials (service account file).", default=None)
+    parser.add_argument('--rclone-google-location', help="GCS location (aka region).", default=None)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     directory_only = True
@@ -246,7 +250,9 @@ def main(simulated_args_for_testing=None):
         if args.env:
             env_from_env = True
 
-    config_google = RCloneGoogle.from_command_args(args.rclone_google_source, args.rclone_google_credentials)
+    config_google = RCloneGoogle.from_command_args(args.rclone_google_source,
+                                                   args.rclone_google_credentials,
+                                                   args.rclone_google_location)
 
     if args.ping or (args.bundle_filename and args.bundle_filename.lower() == "ping"):
         if args.env or os.environ.get("SMAHT_ENV"):
