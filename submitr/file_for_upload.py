@@ -68,12 +68,12 @@ class FileForUpload:
             # where (if recursive is specified) we will flag any multiple file instances found.
             # In practice these other directories are the directory containing
             # the submission file, and the current directory.
-            if isinstance(other_search_directories, str) and other_search_directories:
+            if isinstance(other_search_directories, (str, pathlib.Path)) and other_search_directories:
                 other_search_directories = [other_search_directories]
             if (not main_search_directory and
                 not isinstance(other_search_directories, list) or not other_search_directories):  # noqa
-                # Only if no main search directory is specifed do we default the other search
-                # directories to the current directory (.), if it is not otherwise specified.
+                # Only if no main search directory is specifed do we make the default for other
+                # search directories the current directory (.), iff it is not otherwise specified.
                 other_search_directories = ["."]
             if isinstance(other_search_directories, list) and other_search_directories:
                 # Actually, other_search_directories can also be just a str and/or Path.
@@ -253,7 +253,7 @@ class FileForUpload:
             file_identifier += f" ({self.accession})"
 
         if not self.found:
-            printf(f"- WARNING ▶ File for upload NOT FOUND: {file_identifier}")
+            printf(f"- WARNING: File for upload NOT FOUND: {file_identifier}")
             if isinstance(portal, Portal):
                 printf(f"  - Use --directory to specify a directory where the file can be found.")
                 if not review_only:
@@ -277,7 +277,7 @@ class FileForUpload:
                 # something; but probably not worth it; doubt it will come up much if at all.
                 if not review_only:
                     indent = ""
-                    printf(f"- WARNING ▶ Ignoring file for upload"
+                    printf(f"- WARNING: Ignoring file for upload"
                            f" as multiple/ambiguous local instances found: {file_identifier}")
                 else:
                     if found_local_and_google:

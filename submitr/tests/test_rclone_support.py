@@ -9,6 +9,7 @@ from dcicutils.misc_utils import create_short_uuid
 from dcicutils.tmpfile_utils import (
     create_temporary_file_name, remove_temporary_file,
     temporary_directory, temporary_file, temporary_random_file)
+from submitr.files_for_upload import FilesForUpload
 from submitr.rclone.rcloner import RCloner
 from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_amazon import AmazonCredentials, RCloneAmazon
@@ -615,7 +616,7 @@ def _test_rclone_local_to_local() -> None:
 
 def test_rclone_google_to_amazon_more() -> None:
     filesystem = Mock_LocalStorage()
-    file_one = "test_file_one.fastq"
+    file_one = "subdir/test_file_one.fastq"
     filesystem.create_files(file_one, nbytes=123456)
     env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
     env_google = EnvGoogle(use_cloud_subfolder_key=True)
@@ -624,3 +625,6 @@ def test_rclone_google_to_amazon_more() -> None:
     rclone_google = RCloneGoogle(credentials_google)
     rcloner = RCloner(destination=rclone_google)
     assert rcloner.copy is not None  # TODO ...
+    files = [{"filename": file_one},
+             {}]
+    FilesForUpload.assemble(files)

@@ -745,6 +745,7 @@ def submit_any_ingestion(ingestion_filename, *,
                                             validation=validation,
                                             validate_local_only=validate_local_only,
                                             autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
+                                            rclone_google=rclone_google,
                                             exit_immediately_on_errors=exit_immediately_on_errors,
                                             ref_nocache=ref_nocache, output_file=output_file, noprogress=noprogress,
                                             noanalyze=noanalyze, json_only=json_only, verbose_json=verbose_json,
@@ -1778,8 +1779,9 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
 
 def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional[dict] = None,
                       validation: bool = False, validate_local_only: bool = False,
-                      upload_folder: Optional[str] = None,
-                      subfolders: bool = False, exit_immediately_on_errors: bool = False,
+                      upload_folder: Optional[str] = None, subfolders: bool = False,
+                      rclone_google: Optional[RCloneGoogle] = None,
+                      exit_immediately_on_errors: bool = False,
                       ref_nocache: bool = False, output_file: Optional[str] = None,
                       noanalyze: bool = False, json_only: bool = False, noprogress: bool = False,
                       verbose_json: bool = False, verbose: bool = False, quiet: bool = False,
@@ -1901,7 +1903,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     elif exit_immediately_on_errors:
         if verbose:
             _print_structured_data_verbose(portal, structured_data, ingestion_filename, upload_folder=upload_folder,
-                                           recursive=subfolders, validation=validation, noanalyze=True, verbose=verbose)
+                                           recursive=subfolders, rclone_google=rclone_google,
+                                           validation=validation, noanalyze=True, verbose=verbose)
         if output_file:
             PRINT_STDOUT(f"Exiting with preliminary validation errors; see your output file: {output_file}")
         else:
@@ -1912,8 +1915,10 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         exit(1)
 
     if verbose:
-        _print_structured_data_verbose(portal, structured_data, ingestion_filename, upload_folder=upload_folder,
-                                       recursive=subfolders, validation=validation, verbose=verbose)
+        _print_structured_data_verbose(portal, structured_data, ingestion_filename,
+                                       upload_folder=upload_folder, recursive=subfolders,
+                                       rclone_google=rclone_google,
+                                       validation=validation, verbose=verbose)
     elif not quiet:
         if not noanalyze:
             _print_structured_data_status(portal, structured_data, validation=validation,
@@ -2087,7 +2092,9 @@ def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> Lis
 
 
 def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDataSet, ingestion_filename: str,
-                                   upload_folder: str, recursive: bool, validation: bool = False,
+                                   upload_folder: str, recursive: bool,
+                                   rclone_google: Optional[RCloneGoogle] = None,
+                                   validation: bool = False,
                                    noanalyze: bool = False, noprogress: bool = False, verbose: bool = False) -> None:
     if (reader_warnings := structured_data.reader_warnings):
         PRINT_OUTPUT(f"\n> Parser warnings:")
@@ -2102,20 +2109,14 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
         PRINT_OUTPUT(f"\n> Resolved object (linkTo) references:")
         for resolved_ref in sorted(resolved_refs):
             PRINT_OUTPUT(f"  - {resolved_ref}")
-    # TODO: replace with FilesForUpload
-    if files := structured_data.upload_files_located(location=[upload_folder,
-                                                               os.path.dirname(ingestion_filename) or "."],
-                                                     recursive=recursive):
-        printed_header = False
-        if files_found := [file for file in files if file.get("path")]:
-            for file in files_found:
-                path = file.get("path")
-                if not printed_header:
-                    PRINT_OUTPUT(f"\n> Resolved file references:")
-                    printed_header = True
-                PRINT_OUTPUT(f"  - {file.get('type')}: {file.get('file')} -> {path}"
-                             f" [{format_size(get_file_size(path))}]")
-    PRINT_OUTPUT()
+    files_for_upload = FilesForUpload.assemble(structured_data.upload_files,
+                                               main_search_directory=upload_folder,
+                                               main_search_directory_recursively=recursive,
+                                               config_google=rclone_google)
+    if files_for_upload:
+        PRINT_OUTPUT()
+        FilesForUpload.review(files_for_upload, review_only=True, verbose=verbose)
+        PRINT_OUTPUT()
     if not noanalyze:
         _print_structured_data_status(portal, structured_data,
                                       validation=validation,

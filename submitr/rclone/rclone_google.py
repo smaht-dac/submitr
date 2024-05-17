@@ -25,6 +25,7 @@ class RCloneGoogle(RCloneConfig):
             if isinstance(credentials_or_config.credentials, GoogleCredentials):
                 credentials = GoogleCredentials(credentials=credentials_or_config.credentials, location=location)
             else:
+                # No credentials allowed/works when running on a GCE instance.
                 credentials = None
             name = normalize_string(name) or credentials_or_config.name
             bucket = cloud_path.normalize(bucket) or credentials_or_config.bucket
