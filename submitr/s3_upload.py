@@ -328,7 +328,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
             # --rclone-google-source) is stored in RCloneGoogle (from file.config_google),
             # and RCloner.copy (which has this RCloneGoogle, by virtue of RCloner being
             # created with it as a source), resolves/expands this to the full Google path name.
-            rcloner.copy(file.name, cloud_path.join(s3_bucket, s3_key), progress=upload_file_callback.function)
+            rcloner.copy_to_key(file.name, cloud_path.join(s3_bucket, s3_key), progress=upload_file_callback.function)
             update_metadata_for_uploaded_file()
         except Exception:
             printf(f"Upload ABORTED: {file.path_google} ◀")  # TODO: test
