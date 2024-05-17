@@ -627,12 +627,10 @@ def test_rclone_do_any_uploads() -> None:
     rcloner = RCloner(destination=rclone_google)
     assert rcloner.copy_to_key(filesystem.path(file_one), key_google := "target.fastq") is True
     assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is True
+    assert env_google.gcs_non_rclone().file_size(rclone_google.bucket, key_google) == RANDOM_TMPFILE_SIZE
     assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, key_google) is True
     assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is False
-    assert env_google
-    assert files
-    assert do_any_uploads
-    assert RANDOM_TMPFILE_SIZE
+    # TODO
     return
     do_any_uploads(files,
                    metadata_file=metadata_file,
@@ -751,7 +749,8 @@ def test_rclone_local_to_google_copy_to_bucket() -> None:
     assert env_google.gcs_non_rclone().file_size(bucket_google, os.path.basename(file_one)) == filesize
     assert (env_google.gcs_non_rclone().file_checksum(cloud_path.join(bucket_google, os.path.basename(file_one))) ==
             compute_file_md5(os.path.join(filesystem.root, file_one)))
-    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, os.path.basename(file_one))
+    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, os.path.basename(file_one)) is True
+    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, os.path.basename(file_one)) is False
 
 
 def test_rclone_local_to_amazon_copy_to_bucket() -> None:
@@ -773,4 +772,5 @@ def test_rclone_local_to_amazon_copy_to_bucket() -> None:
     assert env_amazon.s3_non_rclone().file_size(bucket_amazon, os.path.basename(file_one)) == filesize
     assert (env_amazon.s3_non_rclone().file_checksum(cloud_path.join(bucket_amazon, os.path.basename(file_one))) ==
             compute_file_md5(os.path.join(filesystem.root, file_one)))
-    assert env_amazon.s3_non_rclone().delete_file(bucket_amazon, os.path.basename(file_one))
+    assert env_amazon.s3_non_rclone().delete_file(bucket_amazon, os.path.basename(file_one)) is True
+    assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, os.path.basename(file_one)) is False
