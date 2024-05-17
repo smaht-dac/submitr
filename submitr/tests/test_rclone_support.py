@@ -630,21 +630,20 @@ def test_rclone_do_any_uploads() -> None:
     assert env_google.gcs_non_rclone().file_size(rclone_google.bucket, key_google) == RANDOM_TMPFILE_SIZE
     assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, key_google) is True
     assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is False
-    # TODO
     return
+    # TODO
+    # To call do_any_uploads we need a Portal object which needs mock its get_schema_type, is_schema_type,
+    # is_schema_file_type functions; no need to mock get_metadata, patch_metadata, get_health, which are also
+    # called from submission_uploads module, so long as we don't pass a IngestionSubmission UUID to do_any_uploads,
+    # but rather pass files dictionary; and also need to mock submission_uploads.generate_credentials_for_upload.
     do_any_uploads(files,
                    metadata_file=metadata_file,
                    main_search_directory=filesystem.root,
                    main_search_directory_recursively=True,
-                   config_google=rclone_google)
-#   do_any_uploads(arg: Union[str, dict, StructuredDataSet],
-#                  metadata_file: Optional[str] = None,
-#                  main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
-#                  main_search_directory_recursively: bool = False,
-#                  config_google: Optional[RCloneGoogle] = None,
-#                  portal: Optional[Portal] = None,
-#                  review_only: bool = False,
-#                  verbose: bool = False) -> None:
+                   config_google=rclone_google,
+                   portal=None,  # TODO
+                   review_only=False,
+                   verbose=False)
 
 
 def test_rclone_upload_file_to_aws_s3() -> None:
