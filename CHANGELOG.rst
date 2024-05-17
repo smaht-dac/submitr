@@ -10,7 +10,7 @@ Change Log
 =====
 
 * 2024-05-14/dmichaels/PR-10
-* Added rclone support.
+* Added rclone support; most relevant code in submitr/rclone directory. 
 * Added metadata_template.py module with goal of checking the user's metadata
   file with the latest HMS DBMI metadata template and giving a warning if the
   version appears to be out of date. Also new convenience command to export and
