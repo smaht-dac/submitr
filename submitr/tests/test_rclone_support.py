@@ -9,7 +9,7 @@ from dcicutils.misc_utils import create_short_uuid
 from dcicutils.tmpfile_utils import (
     create_temporary_file_name, remove_temporary_file,
     temporary_directory, temporary_file, temporary_random_file)
-from submitr.files_for_upload import FilesForUpload
+from submitr.file_for_upload import FilesForUpload
 from submitr.rclone.rcloner import RCloner
 from submitr.rclone.rclone_config import RCloneConfig
 from submitr.rclone.rclone_amazon import AmazonCredentials, RCloneAmazon
