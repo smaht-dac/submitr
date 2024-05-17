@@ -1,5 +1,6 @@
-from re import compile as re_compile, escape as re_escape
 import os
+from re import compile as re_compile, escape as re_escape
+from typing import Optional, Tuple
 
 
 class cloud_path:
@@ -72,3 +73,18 @@ class cloud_path:
             if (separator_index := value.find(cloud_path.separator)) > 0:
                 return value[separator_index + 1:]
         return ""
+
+    @staticmethod
+    def bucket_and_key(bucket: str, key: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
+        if not (bucket := cloud_path.normalize(bucket)):
+            return None, None
+        if not (key := cloud_path.normalize(key)):
+            if cloud_path.has_separator(bucket):
+                key = cloud_path.key(bucket)
+                bucket = cloud_path.bucket(bucket)
+                return bucket, key
+            else:
+                return None, None
+        if cloud_path.has_separator(bucket):
+            return None, None
+        return bucket, key

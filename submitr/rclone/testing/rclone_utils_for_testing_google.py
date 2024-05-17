@@ -105,7 +105,10 @@ class Gcs:
                 raise e
             return False
 
-    def file_exists(self, bucket: str, key: str, raise_exception: bool = True) -> bool:
+    def file_exists(self, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> bool:
+        bucket, key = cloud_path.bucket_and_key(bucket, key)
+        if not bucket or not key:
+            return None
         try:
             if not (bucket := cloud_path.normalize(bucket)):
                 return False
@@ -117,7 +120,10 @@ class Gcs:
                 raise e
             return False
 
-    def file_equals(self, bucket: str, key: str, file: str, raise_exception: bool = True) -> bool:
+    def file_equals(self, file: str, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> bool:
+        bucket, key = cloud_path.bucket_and_key(bucket, key)
+        if not bucket or not key or not isinstance(file, str) or not file:
+            return False
         try:
             with temporary_file() as temporary_downloaded_file_name:
                 if self.download_file(bucket, key, temporary_downloaded_file_name):
@@ -127,12 +133,11 @@ class Gcs:
                 raise e
         return False
 
-    def file_size(self, bucket: str, key: str, raise_exception: bool = True) -> Optional[int]:
+    def file_size(self, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> Optional[int]:
+        bucket, key = cloud_path.bucket_and_key(bucket, key)
+        if not bucket or not key:
+            return None
         try:
-            if not (bucket := cloud_path.normalize(bucket)):
-                return None
-            if not (key := cloud_path.normalize(key)):
-                return None
             # Using list_blobs with the exact key as prefix because when just
             # using the blob directly the size is None; for some reason.
             # return self.client.get_bucket(bucket).blob(key).size
@@ -143,10 +148,9 @@ class Gcs:
                 raise e
             return None
 
-    def file_checksum(self, bucket: str, key: str, raise_exception: bool = True) -> Optional[str]:
-        if not (bucket := cloud_path.normalize(bucket)):
-            return None
-        if not (key := cloud_path.normalize(key)):
+    def file_checksum(self, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> Optional[str]:
+        bucket, key = cloud_path.bucket_and_key(bucket, key)
+        if not bucket or not key:
             return None
         try:
             # Using list_blobs with the exact key as prefix because when just

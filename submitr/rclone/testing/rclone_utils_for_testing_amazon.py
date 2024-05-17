@@ -114,12 +114,18 @@ class AwsS3:
                 raise e
             return False
 
-    def file_exists(self, bucket: str, key: str, raise_exception: bool = True) -> bool:
+    def file_exists(self, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> bool:
+        bucket, key = cloud_path.bucket_and_key(bucket, key)
+        if not bucket or not key:
+            return False
         if self._file_head(bucket, key, raise_exception=raise_exception):
             return True
         return False
 
-    def file_equals(self, bucket: str, key: str, file: str, raise_exception: bool = True) -> bool:
+    def file_equals(self, file: str, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> bool:
+        bucket, key = cloud_path.bucket_and_key(bucket, key)
+        if not bucket or not key:
+            return None
         try:
             with temporary_file() as temporary_downloaded_file_name:
                 if self.download_file(bucket, key, temporary_downloaded_file_name):
@@ -131,18 +137,24 @@ class AwsS3:
                 raise e
         return False
 
-    def file_size(self, bucket: str, key: str, raise_exception: bool = True) -> Optional[int]:
+    def file_size(self, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> Optional[int]:
+        bucket, key = cloud_path.bucket_and_key(bucket, key)
+        if not bucket or not key:
+            return None
         if file_head := self._file_head(bucket, key, raise_exception=raise_exception):
             return file_head.get("ContentLength", None)
         return None
 
-    def file_checksum(self, bucket: str, key: str, raise_exception: bool = True) -> Optional[str]:
+    def file_checksum(self, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> Optional[str]:
         # N.B. When using rclone to copy a file to AWS S3, it writes checksum (md5) for the file
         # to the metadata associated with the target key; it seems to put it in two places, in
         # x-amz-meta-md5chksum in the HTTPHeaders and also in md5chksum in the Metadata; see below.
         # But this is (possibly/plausibly) only for smaller sized files; see rclone.py for more
         # comments on checksums; in any case this code here is only for testing and is fine for
         # our purposes of testing the basic functioning of the rclone copy/copyto commands.
+        bucket, key = cloud_path.bucket_and_key(bucket, key)
+        if not bucket or not key:
+            return None
         if file_head := self._file_head(bucket, key, raise_exception=raise_exception):
             if isinstance(md5 := file_head.get("Metadata", {}).get("md5chksum"), str):
                 return base64_decode(md5).hex()
@@ -152,8 +164,11 @@ class AwsS3:
             return file_head.get("ETag").strip("\"")
         return None
 
-    def file_kms_encrypted(self, bucket: str, key: str,
+    def file_kms_encrypted(self, bucket: str, key: Optional[str] = None,
                            kms_key_id: Optional[str] = None, raise_exception: bool = True) -> bool:
+        bucket, key = cloud_path.bucket_and_key(bucket, key)
+        if not bucket or not key:
+            return None
         if file_head := self._file_head(bucket, key, raise_exception=raise_exception):
             if file_kms_key_id := file_head.get("SSEKMSKeyId"):
                 if isinstance(kms_key_id, str) and (kms_key_id := kms_key_id.strip()):
