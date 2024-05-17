@@ -23,7 +23,7 @@ class AwsS3:
         return AwsS3(*args, **kwargs)
 
     def __init__(self, credentials: AmazonCredentials) -> None:
-        self._credentials = AmazonCredentials(credentials)
+        self._credentials = credentials
         self._client = None
 
     @property
@@ -231,11 +231,10 @@ class AwsS3:
         if deny:
             statements.append({"Effect": "Deny", "Action": actions, "NotResource": resources})
         policy = {"Version": "2012-10-17", "Statement": statements}
-        credentials = AwsS3._generate_temporary_credentials(generating_credentials=self.credentials,
-                                                            policy=policy,
-                                                            kms_key_id=kms_key_id,
-                                                            duration=duration)
-        return AmazonCredentials(credentials) if credentials else None
+        return AwsS3._generate_temporary_credentials(generating_credentials=self.credentials,
+                                                     policy=policy,
+                                                     kms_key_id=kms_key_id,
+                                                     duration=duration)
 
     def _generate_temporary_credentials(generating_credentials: AmazonCredentials,
                                         policy: Optional[dict] = None,

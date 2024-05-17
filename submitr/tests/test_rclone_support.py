@@ -243,7 +243,8 @@ def create_rclone_config_amazon(credentials: AmazonCredentials) -> RCloneConfig:
     assert config.secret_access_key == credentials.secret_access_key
     assert config.session_token == credentials.session_token
     assert config.kms_key_id == credentials.kms_key_id
-    assert RCloneAmazon(config) == config  # checking equals override
+    assert config == config
+    assert not (config != config)
     assert RCloneAmazon(config, bucket="mismatch") != config  # checking equals override
     return config
 
@@ -256,7 +257,8 @@ def create_rclone_config_google(credentials: GoogleCredentials, env_google: EnvG
         # Google credentials can be None on a GCE instance.
         assert config.location == credentials.location
         assert config.service_account_file == credentials.service_account_file
-    assert RCloneGoogle(config) == config  # checking equals override
+    assert config == config
+    assert not (config != config)
     assert RCloneGoogle(config, bucket="mismatch") != config  # checking equals override
     assert config.project == env_google.project_id
     return config

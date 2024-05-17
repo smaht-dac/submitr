@@ -14,7 +14,7 @@ from submitr.rclone.rclone_utils import cloud_path
 class Gcs:
 
     def __init__(self, credentials: GoogleCredentials) -> None:
-        self._credentials = GoogleCredentials(credentials)
+        self._credentials = credentials
         self._client = None
 
     @property
