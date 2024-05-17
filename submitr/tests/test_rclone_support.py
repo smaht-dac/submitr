@@ -613,7 +613,8 @@ def _test_rclone_local_to_local() -> None:
 
 def test_rclone_google_to_amazon_more() -> None:
     filesystem = Mock_LocalStorage()
-    filesystem.create_files("test_file_one.fastq")
+    file_one = "test_file_one.fastq"
+    filesystem.create_files(file_one, nbytes=123456)
     env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
     env_google = EnvGoogle(use_cloud_subfolder_key=True)
     initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)

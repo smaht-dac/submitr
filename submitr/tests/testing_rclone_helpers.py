@@ -41,20 +41,22 @@ class Mock_CloudStorage:
         return os.path.join(self._tmpdir, path) if (path := normalize_path(path)) else None
     def _root(self):  # noqa
         return self._tmpdir
-    def _create_files_for_testing(self, *args):  # noqa
+    def _create_files_for_testing(self, *args, **kwargs):  # noqa
         for arg in args:
             if isinstance(arg, str):
-                self._create_file_for_testing(arg)
+                self._create_file_for_testing(arg, nbytes=kwargs.get("nbytes"))
             elif isinstance(arg, (list, tuple)):
                 for file in arg:
                     if isinstance(file, str):
-                        self._create_files_for_testing(file)
-    def _create_file_for_testing(self, file):  # noqa
+                        self._create_files_for_testing(file, nbytes=kwargs.get("nbytes"))
+    def _create_file_for_testing(self, file, nbytes=None):  # noqa
+        if not isinstance(nbytes, int) or nbytes < 0:
+            nbytes = RANDOM_TMPFILE_SIZE
         if (file := normalize_path(file)) and (not file.startswith(os.path.sep) or (file := file[1:])):
             if file := self._realpath(file):
                 if file_directory := os.path.dirname(file):
                     os.makedirs(file_directory, exist_ok=True)
-                create_random_file(file, nbytes=RANDOM_TMPFILE_SIZE)
+                create_random_file(file, nbytes=nbytes)
     def _clear_files(self):  # noqa
         assert is_temporary_directory(self._tmpdir)
         remove_temporary_directory(self._tmpdir)
@@ -77,7 +79,6 @@ class Mock_RCloneGoogle(Mock_CloudStorage, RCloneGoogle):
 
 
 class Mock_LocalStorage(Mock_CloudStorage):
-
     # Might as well also use Mock_CloudStorage for easy
     # local file system test file setup for convenience.
     def __init__(self, *args, **kwargs):
