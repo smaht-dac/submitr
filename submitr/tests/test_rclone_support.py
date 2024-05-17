@@ -630,7 +630,6 @@ def test_rclone_google_to_amazon_more() -> None:
     # Note that the second destination argument to RCloner.copy can be
     # unspecified meaning that it will be the *bucket* ("bucket" - can be
     # bucket plus sub-folder) associated with the destination RCloneGoogle object.
-#   assert rcloner.copy(os.path.join(filesystem.root, file_one)) is True
     assert rcloner.copy_to_bucket(os.path.join(filesystem.root, file_one)) is True
     assert env_google.gcs_non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == filesize
     assert env_google.gcs_non_rclone().file_size(bucket_google, os.path.basename(file_one)) == filesize
@@ -710,13 +709,14 @@ def test_rclone_local_to_google_copy_to_bucket() -> None:
     credentials_google = env_google.credentials()
     rclone_google = RCloneGoogle(credentials_google, bucket=bucket_google)
     rcloner = RCloner(destination=rclone_google)
-    assert rcloner.copy(os.path.join(filesystem.root, file_one), copyto=False) is True
+    assert rcloner.copy_to_bucket(os.path.join(filesystem.root, file_one)) is True
     assert env_google.gcs_non_rclone().file_exists(cloud_path.join(bucket_google, os.path.basename(file_one))) is True
     assert env_google.gcs_non_rclone().file_exists(bucket_google, os.path.basename(file_one)) is True
     assert env_google.gcs_non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == filesize
     assert env_google.gcs_non_rclone().file_size(bucket_google, os.path.basename(file_one)) == filesize
     assert (env_google.gcs_non_rclone().file_checksum(cloud_path.join(bucket_google, os.path.basename(file_one))) ==
             compute_file_md5(os.path.join(filesystem.root, file_one)))
+    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, os.path.basename(file_one))
 
 
 def test_rclone_local_to_amazon_copy_to_bucket() -> None:
@@ -731,10 +731,11 @@ def test_rclone_local_to_amazon_copy_to_bucket() -> None:
     credentials_amazon = env_amazon.credentials()
     rclone_amazon = RCloneAmazon(credentials_amazon, bucket=bucket_amazon)
     rcloner = RCloner(destination=rclone_amazon)
-    assert rcloner.copy(os.path.join(filesystem.root, file_one), copyto=False) is True
+    assert rcloner.copy_to_bucket(os.path.join(filesystem.root, file_one)) is True
     assert env_amazon.s3_non_rclone().file_exists(cloud_path.join(bucket_amazon, os.path.basename(file_one))) is True
     assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, os.path.basename(file_one)) is True
     assert env_amazon.s3_non_rclone().file_size(cloud_path.join(bucket_amazon, os.path.basename(file_one))) == filesize
     assert env_amazon.s3_non_rclone().file_size(bucket_amazon, os.path.basename(file_one)) == filesize
     assert (env_amazon.s3_non_rclone().file_checksum(cloud_path.join(bucket_amazon, os.path.basename(file_one))) ==
             compute_file_md5(os.path.join(filesystem.root, file_one)))
+    assert env_amazon.s3_non_rclone().delete_file(bucket_amazon, os.path.basename(file_one))
