@@ -107,14 +107,15 @@ def setup_module():
         # Google credentials can be None on a GCE instance; i.e. no service account file needed.
         GOOGLE_SERVICE_ACCOUNT_FILE_PATH = None
 
+    initial_setup_and_sanity_checking(env_amazon=EnvAmazon(), env_google=EnvGoogle())
+
 
 def teardown_module():
-    rclone_teardown_module()
     if AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
         remove_temporary_file(AMAZON_CREDENTIALS_FILE_PATH)
     if GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
         remove_temporary_file(GOOGLE_SERVICE_ACCOUNT_FILE_PATH)
-    pass
+    rclone_teardown_module()
 
 
 class Env:
@@ -213,7 +214,7 @@ def _test_cloud_variations(use_cloud_subfolder_key: bool = False):
 
     env_amazon = EnvAmazon(use_cloud_subfolder_key=use_cloud_subfolder_key)
     env_google = EnvGoogle(use_cloud_subfolder_key=use_cloud_subfolder_key)
-    initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
+    # initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
     _test_utils_for_testing(env_amazon=env_amazon)
     _test_rclone_between_amazon_and_local(env_amazon=env_amazon)
     _test_rclone_between_google_and_local(env_google=env_google)
@@ -619,9 +620,9 @@ def test_rclone_google_to_amazon_more() -> None:
     file_one = "subdir/test_file_one.fastq"
     file_two = "test_file_two.fastq"
     filesystem.create_files(file_one, nbytes=1234)
-    env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
+    # env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
     env_google = EnvGoogle(use_cloud_subfolder_key=True)
-    initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
+    # initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
     bucket_google = env_google.bucket
     credentials_google = env_google.credentials()
     rclone_google = RCloneGoogle(credentials_google, bucket=bucket_google)
@@ -674,9 +675,9 @@ def test_rclone_google_to_amazon_more() -> None:
 
 def test_rclone_local_to_google_copy_to_bucket() -> None:
     # Just an aside (ran across while testing); make sure copyto=False works for sub-folder.
-    env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
+    # env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
     env_google = EnvGoogle(use_cloud_subfolder_key=True)
-    initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
+    # initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
     filesystem = Mock_LocalStorage()
     filesystem.create_files(file_one := "subdir/test_file_one.fastq", nbytes=1234)
     bucket_google = cloud_path.join(env_google.bucket, "825c5f58-543a-47c6-a505-55a7b94b29c4")
@@ -697,8 +698,8 @@ def test_rclone_local_to_google_copy_to_bucket() -> None:
 def test_rclone_local_to_amazon_copy_to_bucket() -> None:
     # Just an aside (ran across while testing); make sure copyto=False works for sub-folder.
     env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
-    env_google = EnvGoogle(use_cloud_subfolder_key=True)
-    initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
+    # env_google = EnvGoogle(use_cloud_subfolder_key=True)
+    # initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
     filesystem = Mock_LocalStorage()
     filesystem.create_files(file_one := "subdir/test_file_one.fastq", nbytes=1234)
     bucket_amazon = cloud_path.join(env_amazon.bucket, "825c5f58-543a-47c6-a505-55a7b94b29c4")
