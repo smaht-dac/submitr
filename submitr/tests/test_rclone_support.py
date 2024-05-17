@@ -17,8 +17,14 @@ from submitr.rclone.rclone_utils import cloud_path
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsCredentials, AwsS3
 from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredentials, Gcs
 from submitr.rclone.rclone_installation import RCloneInstallation
+from submitr.tests.testing_rclone_helpers import (
+    setup_module as rclone_setup_module,
+    teardown_module as rclone_teardown_module,
+    Mock_LocalStorage)
+
 
 pytestmark = pytest.mark.integration
+
 
 # Integration tests for RCloner related functionality within smaht-submitr.
 # Need valid AWS credentials (currently for: smaht-wolf).
@@ -52,6 +58,8 @@ GOOGLE_LOCATION = "us-east1"
 
 
 def setup_module():
+
+    rclone_setup_module()
 
     global AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES
     global GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES
@@ -95,11 +103,12 @@ def setup_module():
             print("No Google credentials file defined. Skippping this test module: test_rclone_support")
             pytest.skip()
             return
-        # Credentials are implicit on a GCE.
+        # Google credentials can be None on a GCE instance; i.e. no service account file needed.
         GOOGLE_SERVICE_ACCOUNT_FILE_PATH = None
 
 
 def teardown_module():
+    rclone_teardown_module()
     if AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
         remove_temporary_file(AMAZON_CREDENTIALS_FILE_PATH)
     if GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
@@ -244,6 +253,7 @@ def create_rclone_config_google(credentials: GoogleCredentials, env_google: EnvG
     # Google credentials can be None on a GCE instance.
     assert config.credentials == credentials
     if credentials:
+        # Google credentials can be None on a GCE instance.
         assert config.location == credentials.location
         assert config.service_account_file == credentials.service_account_file
     assert RCloneGoogle(config) == config  # checking equals override
@@ -601,20 +611,13 @@ def _test_rclone_local_to_local() -> None:
                                    os.path.join(tmp_destination_directory, os.path.basename(tmp_test_file_path)))
 
 
-def _todo_test_rclone_google_to_amazon_more() -> None:
-    pass
-
-    """
+def test_rclone_google_to_amazon_more() -> None:
+    filesystem = Mock_LocalStorage()
+    filesystem.create_files("test_file_one.fastq")
     env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
     env_google = EnvGoogle(use_cloud_subfolder_key=True)
     initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
-
     credentials_google = env_google.credentials()
-    rclone_google = RCloneGoogle(credentials)
-
-    rclone_google = create_rclone_config_google(credentials_google, env_google)
-    with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
-        key_google = env_google.file_name_to_key_name(tmp_test_file_name)
-        rcloner = create_rclone(destination=rclone_amazon)
-        rcloner.copy(tmp_test_file_path, cloud_path.join(env_amazon.bucket, key_amazon))
-    """
+    rclone_google = RCloneGoogle(credentials_google)
+    rcloner = RCloner(destination=rclone_google)
+    assert rcloner.copy is not None  # TODO ...
