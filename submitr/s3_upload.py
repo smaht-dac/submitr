@@ -1,5 +1,3 @@
-from base64 import b64decode as base64_decode
-# import boto3
 from boto3 import client as BotoClient
 from collections import namedtuple
 import threading
@@ -11,7 +9,7 @@ from dcicutils.misc_utils import format_duration, format_size
 from dcicutils.progress_bar import ProgressBar
 from submitr.file_for_upload import FileForUpload
 from submitr.rclone import RCloner, RCloneAmazon, cloud_path
-from submitr.utils import get_s3_bucket_and_key_from_s3_uri, format_datetime
+from submitr.s3_utils import get_s3_bucket_and_key_from_s3_uri, get_s3_key_metadata
 
 # Module to upload a given file, with the given AWS credentials to AWS S3.
 # Displays progress bar and other info; checks if file already exists; verifies
@@ -186,43 +184,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
 
     def get_uploaded_file_info() -> Optional[dict]:
         nonlocal aws_credentials, s3_bucket, s3_key
-        try:
-            # Note that we do not need to use any KMS key for head_object.
-            s3 = BotoClient("s3", **aws_credentials)
-            if not isinstance(s3_file_head := s3.head_object(Bucket=s3_bucket, Key=s3_key), dict):
-                return None
-            result = {
-                "modified": format_datetime(s3_file_head.get("LastModified")),
-                "size": s3_file_head.get("ContentLength")
-            }
-            # Try getting the md5 that we ourselves wrote if/when uploading via this module.
-            if isinstance(s3_file_metadata := s3_file_head.get("Metadata"), dict):
-                if isinstance(s3_file_md5 := s3_file_metadata.get("md5"), str):
-                    result["md5"] = s3_file_md5
-                    if isinstance(s3_file_md5_timestamp := s3_file_metadata.get("md5-timestamp"), str):
-                        result["md5_timestamp"] = s3_file_md5_timestamp
-                    if isinstance(s3_file_md5_source := s3_file_metadata.get("md5-source"), str):
-                        result["md5_source"] = s3_file_md5_source
-            # As a backup check if there is an md5 written directly by rclone copy.
-            if not result.get("md5") and isinstance(s3_file_metadata, dict):
-                if s3_file_md5 := s3_file_metadata.get("md5chksum"):
-                    result["md5"] = base64_decode(s3_file_md5).hex()
-                    if isinstance(s3_file_md5_timestamp := s3_file_metadata.get("mtime"), str):
-                        result["md5_timestamp"] = s3_file_md5_timestamp
-            if not result.get("md5") and isinstance(s3_file_metadata := s3_file_head.get("ResponseMetadata"), dict):
-                if isinstance(s3_file_http_headers := s3_file_metadata.get("HTTPHeaders"), dict):
-                    if isinstance(s3_file_md5 := s3_file_http_headers.get("x-amz-meta-md5chksum"), str):
-                        result["md5"] = base64_decode(s3_file_md5).hex()
-                        if isinstance(s3_file_md5_timestamp := s3_file_http_headers.get("x-amz-meta-mtime"), str):
-                            result["md5_timestamp"] = s3_file_md5_timestamp
-            # Just for completeness and FYI get get the etag (not actually needed/used right now).
-            if isinstance(s3_file_etag := s3_file_head.get("ETag", ""), str):
-                result["etag"] = s3_file_etag.strip("\"")
-            return result
-        except Exception:
-            # Ignore error for now because (1) verification usage not absolutely necessary,
-            # and (2) portal permission change for this not yet deployed everywhere.
-            return None
+        return get_s3_key_metadata(aws_credentials, s3_bucket, s3_key)
 
     def verify_with_any_already_uploaded_file() -> None:
         nonlocal file, file_size, file_checksum, file_checksum_timestamp
@@ -281,19 +243,26 @@ def upload_file_to_aws_s3(file: FileForUpload,
         return False
 
     def create_metadata_for_uploading_file() -> dict:
-        nonlocal aws_credentials, s3_bucket, s3_key, file_checksum, file_checksum_timestamp
-        try:
-            s3 = BotoClient("s3", **aws_credentials)
-            if isinstance(s3_file_head := s3.head_object(Bucket=s3_bucket, Key=s3_key), dict):
-                if isinstance(metadata := s3_file_head.get("Metadata"), dict):
-                    if file_checksum:
-                        metadata["md5"] = file_checksum
-                        metadata["md5-timestamp"] = str(file_checksum_timestamp)
-                        metadata["md5-source"] = "google-cloud-storage" if file.found_google else "file-system"
-                    return metadata
-        except Exception:
-            pass
+        nonlocal aws_credentials, s3_bucket, s3_key, file, file_checksum, file_checksum_timestamp
+        if metadata := get_s3_key_metadata(aws_credentials, s3_bucket, s3_key):
+            if file_checksum:
+                metadata["md5"] = file_checksum
+                metadata["md5-timestamp"] = str(file_checksum_timestamp)
+                metadata["md5-source"] = "google-cloud-storage" if file.found_google else "file-system"
+            return metadata
         return {}
+#       try:
+#           s3 = BotoClient("s3", **aws_credentials)
+#           if isinstance(s3_file_head := s3.head_object(Bucket=s3_bucket, Key=s3_key), dict):
+#               if isinstance(metadata := s3_file_head.get("Metadata"), dict):
+#                   if file_checksum:
+#                       metadata["md5"] = file_checksum
+#                       metadata["md5-timestamp"] = str(file_checksum_timestamp)
+#                       metadata["md5-source"] = "google-cloud-storage" if file.found_google else "file-system"
+#                   return metadata
+#       except Exception:
+#           pass
+#       return {}
 
     def update_metadata_for_uploaded_file() -> bool:
         # Only need in the GCS case, as this metadata is set (via ExtraArgs) on the actual upload for S3.

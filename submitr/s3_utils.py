@@ -1,6 +1,7 @@
 from base64 import b64decode as base64_decode
 from boto3 import client as BotoClient
-from typing import Optional
+import re
+from typing import Optional, Tuple
 from submitr.utils import format_datetime
 
 
@@ -48,3 +49,9 @@ def get_s3_key_metadata(aws_credentials: dict, s3_bucket: str, s3_key: str) -> O
         # Ignore error for now because (1) verification usage not absolutely necessary,
         # and (2) portal permission change for this not yet deployed everywhere.
         return None
+
+
+def get_s3_bucket_and_key_from_s3_uri(uri: str) -> Tuple[str, str]:
+    if match := re.match(r"s3://([^/]+)/(.+)", uri):
+        return (match.group(1), match.group(2))
+    return None, None

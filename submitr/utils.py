@@ -7,7 +7,6 @@ from json import dumps as json_dumps, loads as json_loads
 import os
 from pathlib import Path
 import pkg_resources
-import re
 import requests
 from signal import signal, SIGINT
 import string
@@ -87,12 +86,6 @@ class FakeResponse:
     def raise_for_status(self):
         if self.status_code >= 300:
             raise Exception(f"{self} raised for status.")
-
-
-def get_s3_bucket_and_key_from_s3_uri(uri: str) -> Tuple[str, str]:
-    if match := re.match(r"s3://([^/]+)/(.+)", uri):
-        return (match.group(1), match.group(2))
-    return None, None
 
 
 def tobool(value: Any, fallback: bool = False) -> bool:
