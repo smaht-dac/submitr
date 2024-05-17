@@ -21,11 +21,6 @@ class Gcs:
     def credentials(self) -> GoogleCredentials:
         return self._credentials
 
-    @credentials.setter
-    def credentials(self, value: GoogleCredentials) -> None:
-        if isinstance(value, GoogleCredentials) and value != self._credentials:
-            self._credentials = value
-
     @property
     def client(self) -> GcsClient:
         if not self._client:

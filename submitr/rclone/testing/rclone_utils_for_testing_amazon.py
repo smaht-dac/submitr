@@ -30,12 +30,6 @@ class AwsS3:
     def credentials(self) -> AmazonCredentials:
         return self._credentials
 
-    @credentials.setter
-    def credentials(self, value: AmazonCredentials) -> None:
-        if isinstance(value, AmazonCredentials) and value != self._credentials:
-            self._credentials = value
-            self._client = None
-
     @property
     def client(self) -> BotoClient:
         if not self._client:

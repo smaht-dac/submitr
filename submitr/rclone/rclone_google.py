@@ -42,11 +42,6 @@ class RCloneGoogle(RCloneConfig):
     def credentials(self) -> Optional[GoogleCredentials]:
         return super().credentials
 
-    @credentials.setter
-    def credentials(self, value: GoogleCredentials) -> None:
-        if isinstance(value, GoogleCredentials):
-            super().credentials = value
-
     @property
     def config(self) -> dict:
         # The bucket_policy_only=true option indicates that rclone should enforce a bucket-only access policy,
@@ -67,19 +62,9 @@ class RCloneGoogle(RCloneConfig):
     def location(self) -> Optional[str]:
         return self.credentials.location if self.credentials else None
 
-    @location.setter
-    def location(self, value: str) -> None:
-        if self.credentials:
-            self.credentials.location = value
-
     @property
     def service_account_file(self) -> Optional[str]:
         return self.credentials.service_account_file if self.credentials else None
-
-    @service_account_file.setter
-    def service_account_file(self, value: str) -> None:
-        if self.credentials:
-            self.credentials.service_account_file = value
 
     @property
     def project(self) -> Optional[str]:
@@ -189,9 +174,10 @@ class GoogleCredentials(RCloneCredentials):
             self._location = None
             self._service_account_file = None
 
+        # TODO: maybe exception if no service-account-file AND not running on GCE.
         if service_account_file := normalize_path(service_account_file, expand_home=True):
             if not os.path.isfile(service_account_file):
-                raise Exception(f"GCS service account file not found: {service_account_file}")
+                raise Exception(f"GoogleCredentials service account file not found: {service_account_file}")
             self._service_account_file = service_account_file
 
         if location := normalize_string(location):
@@ -201,19 +187,9 @@ class GoogleCredentials(RCloneCredentials):
     def service_account_file(self) -> Optional[str]:
         return self._service_account_file
 
-    @service_account_file.setter
-    def service_account_file(self, value: str) -> None:
-        if (value := normalize_path(value)) is not None:
-            self._service_account_file = value or None
-
     @property
     def location(self) -> Optional[str]:
         return self._location
-
-    @location.setter
-    def location(self, value: str) -> None:
-        if (value := normalize_string(value)) is not None:
-            self._location = value or None
 
     def __eq__(self, other: Optional[GoogleCredentials]) -> bool:
         return (isinstance(other, GoogleCredentials) and

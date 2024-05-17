@@ -38,11 +38,6 @@ class RCloneAmazon(RCloneConfig):
     def credentials(self) -> AmazonCredentials:
         return super().credentials
 
-    @credentials.setter
-    def credentials(self, value: AmazonCredentials) -> None:
-        if isinstance(value, AmazonCredentials):
-            super().credentials = value
-
     @property
     def config(self) -> dict:
         return create_dict(provider="AWS",
@@ -58,41 +53,21 @@ class RCloneAmazon(RCloneConfig):
     def region(self) -> Optional[str]:
         return self._credentials.region
 
-    @region.setter
-    def region(self, value: str) -> None:
-        self._credentials.region = value
-
     @property
     def access_key_id(self) -> Optional[str]:
         return self._credentials.access_key_id
-
-    @access_key_id.setter
-    def access_key_id(self, value: str) -> None:
-        self._credentials.access_key_id = value
 
     @property
     def secret_access_key(self) -> Optional[str]:
         return self._credentials.secret_access_key
 
-    @secret_access_key.setter
-    def secret_access_key(self, value: str) -> None:
-        self._credentials.secret_access_key = value
-
     @property
     def session_token(self) -> Optional[str]:
         return self._credentials.session_token
 
-    @session_token.setter
-    def session_token(self, value: str) -> None:
-        self._credentials.session_token = value
-
     @property
     def kms_key_id(self) -> Optional[str]:
         return self._credentials.kms_key_id
-
-    @kms_key_id.setter
-    def kms_key_id(self, value: str) -> None:
-        self._credentials.kms_key_id = value
 
     def __eq__(self, other: Optional[RCloneAmazon]) -> bool:
         return isinstance(other, RCloneAmazon) and super().__eq__(other)
@@ -141,46 +116,21 @@ class AmazonCredentials(RCloneCredentials):
     def region(self) -> Optional[str]:
         return self._region
 
-    @region.setter
-    def region(self, value: Optional[str]) -> None:
-        if (value := normalize_string(value)) is not None:
-            self._region = value or None
-
     @property
     def access_key_id(self) -> Optional[str]:
         return self._access_key_id
-
-    @access_key_id.setter
-    def access_key_id(self, value: Optional[str]) -> None:
-        if (value := normalize_string(value)) is not None:
-            self._access_key_id = value or None
 
     @property
     def secret_access_key(self) -> Optional[str]:
         return self._secret_access_key
 
-    @secret_access_key.setter
-    def secret_access_key(self, value: Optional[str]) -> None:
-        if (value := normalize_string(value)) is not None:
-            self._secret_access_key = value or None
-
     @property
     def session_token(self) -> Optional[str]:
         return self._session_token
 
-    @session_token.setter
-    def session_token(self, value: Optional[str]) -> None:
-        if (value := normalize_string(value)) is not None:
-            self._session_token = value or None
-
     @property
     def kms_key_id(self) -> Optional[str]:
         return self._kms_key_id
-
-    @kms_key_id.setter
-    def kms_key_id(self, value: Optional[str]) -> None:
-        if (value := normalize_string(value)) is not None:
-            self._kms_key_id = value or None
 
     @property
     def account_number(self) -> Optional[str]:
