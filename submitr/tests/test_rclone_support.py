@@ -632,5 +632,23 @@ def test_rclone_google_to_amazon_more() -> None:
     env_google.gcs_non_rclone().file_size(env_google.bucket, os.path.basename(file_one)) == 1234
     files = [{"filename": file_one},
              {"filename": file_two}]
-    files_for_upload = FilesForUpload.assemble(files)
+    files_for_upload = FilesForUpload.assemble(files,
+                                               main_search_directory=filesystem.root,
+                                               main_search_directory_recursively=True,
+                                               config_google=rclone_google)
     assert len(files_for_upload) == 2
+    assert files_for_upload[0].found is True
+    assert files_for_upload[0].found_local is True
+    assert files_for_upload[0].found_google is True
+    assert files_for_upload[0].path_local == os.path.join(filesystem.root, file_one)
+    assert files_for_upload[0].size_local == 1234
+    assert files_for_upload[0].path_google == cloud_path.join(env_google.bucket, files_for_upload[0].name)
+    assert files_for_upload[0].size_google == 1234
+    # Found both locally and in Google; ambiguous, as favor_local starts as None;
+    # so these return False/None; favor_local normally gets resolved in review function.
+    assert files_for_upload[0].favor_local is None
+    assert files_for_upload[0].from_local is False
+    assert files_for_upload[0].from_google is False
+    assert files_for_upload[0].path is None
+    assert files_for_upload[0].size is None
+    assert files_for_upload[0].checksum is None
