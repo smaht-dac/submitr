@@ -622,14 +622,15 @@ def test_rclone_google_to_amazon_more() -> None:
     env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
     env_google = EnvGoogle(use_cloud_subfolder_key=True)
     initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
+    bucket_google = env_google.bucket
     credentials_google = env_google.credentials()
-    rclone_google = RCloneGoogle(credentials_google, bucket=env_google.bucket)
+    rclone_google = RCloneGoogle(credentials_google, bucket=bucket_google)
     rcloner = RCloner(destination=rclone_google)
     # Note that the second destination argument to RCloner.copy can be unspecified
-    # meaning that it will be the bucket associated with the destination RCloneGoogle object.
-    rcloner.copy(os.path.join(filesystem.root, file_one))
-    env_google.gcs_non_rclone().file_size(cloud_path.join(env_google.bucket, os.path.basename(file_one))) == 1234
-    env_google.gcs_non_rclone().file_size(env_google.bucket, os.path.basename(file_one)) == 1234
+    # meaning that it will be the *bucket* associated with the destination RCloneGoogle object.
+    assert rcloner.copy(os.path.join(filesystem.root, file_one)) is True
+    assert env_google.gcs_non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == 1234
+    assert env_google.gcs_non_rclone().file_size(bucket_google, os.path.basename(file_one)) == 1234
     files = [{"filename": file_one},
              {"filename": file_two}]
     files_for_upload = FilesForUpload.assemble(files,
@@ -642,8 +643,10 @@ def test_rclone_google_to_amazon_more() -> None:
     assert files_for_upload[0].found_google is True
     assert files_for_upload[0].path_local == os.path.join(filesystem.root, file_one)
     assert files_for_upload[0].size_local == 1234
-    assert files_for_upload[0].path_google == cloud_path.join(env_google.bucket, files_for_upload[0].name)
+    assert len(files_for_upload[0].checksum_local) > 0
+    assert files_for_upload[0].path_google == cloud_path.join(bucket_google, files_for_upload[0].name)
     assert files_for_upload[0].size_google == 1234
+    assert len(files_for_upload[0].checksum_google) > 0
     # Found both locally and in Google; ambiguous, as favor_local starts as None;
     # so these return False/None; favor_local normally gets resolved in review function.
     assert files_for_upload[0].favor_local is None
@@ -652,3 +655,25 @@ def test_rclone_google_to_amazon_more() -> None:
     assert files_for_upload[0].path is None
     assert files_for_upload[0].size is None
     assert files_for_upload[0].checksum is None
+    files_for_upload[0]._favor_local = True  # normally resolved by FileForUpload.review
+    assert files_for_upload[0].favor_local is True
+    assert files_for_upload[0].from_local is True
+    assert files_for_upload[0].from_google is False
+    assert files_for_upload[0].path == os.path.join(filesystem.root, file_one)
+    assert files_for_upload[0].size == 1234
+    assert len(files_for_upload[0].checksum) > 0
+    files_for_upload[0]._favor_local = False  # normally resolved by FileForUpload.review
+    assert files_for_upload[0].favor_local is False
+    assert files_for_upload[0].from_local is False
+    assert files_for_upload[0].from_google is True
+    assert files_for_upload[0].path == cloud_path.join(env_google.bucket, files_for_upload[0].name)
+    assert files_for_upload[0].size == 1234
+    assert len(files_for_upload[0].checksum) > 0
+
+    # Just an aside (ran across while testing); make sure copyto=False works for sub-folder.
+    bucket_google = cloud_path.join(env_google.bucket, "825c5f58-543a-47c6-a505-55a7b94b29c4")
+    rclone_google = RCloneGoogle(credentials_google, bucket=bucket_google)
+    rcloner = RCloner(destination=rclone_google)
+    assert rcloner.copy(os.path.join(filesystem.root, file_one), copyto=False) is True
+    assert env_google.gcs_non_rclone().file_exists(cloud_path.join(bucket_google, os.path.basename(file_one))) is True
+    assert env_google.gcs_non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == 1234

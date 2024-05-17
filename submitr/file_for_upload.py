@@ -221,13 +221,17 @@ class FileForUpload:
     @property
     def size_google(self) -> Optional[int]:
         if self._size_google is None:
-            _ = self.path_google  # Initialize Google related info.
+            _ = self.path_google  # Initializes size as part of checking existence.
         return self._size_google
 
     @property
     def checksum_google(self) -> Optional[str]:
         if self._checksum_google is None:
-            _ = self.path_google  # Initialize Google related info.
+            if (config_google := self.config_google) and (not self._google_inaccessible):
+                if checksum_google := config_google.file_checksum(self.name):
+                    self._checksum_google = checksum_google
+                else:
+                    self._google_inaccessible = True
         return self._checksum_google
 
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,
