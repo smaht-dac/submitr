@@ -83,6 +83,7 @@ class Mock_LocalStorage(Mock_CloudStorage):
     # local file system test file setup for convenience.
     def __init__(self, *args, **kwargs):
         super().__init__(subdir="local")
+        self.create_files(*args, **kwargs)
     def create_files(self, *args, **kwargs):  # noqa
         super()._create_files_for_testing(*args, **kwargs)
     def create_file(self, *args, **kwargs):  # noqa
@@ -90,3 +91,5 @@ class Mock_LocalStorage(Mock_CloudStorage):
     @property  # noqa
     def root(self):
         return super()._root()
+    def path(self, path):  # noqa
+        return os.path.join(self.root, path) if (path := normalize_path(path)) else None

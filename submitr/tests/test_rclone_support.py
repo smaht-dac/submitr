@@ -5,7 +5,7 @@ import os
 import pytest
 from typing import Optional, Tuple
 from dcicutils.file_utils import are_files_equal, compute_file_md5, normalize_path
-from dcicutils.misc_utils import create_short_uuid
+from dcicutils.misc_utils import create_short_uuid, create_uuid
 from dcicutils.tmpfile_utils import (
     create_temporary_file_name, remove_temporary_file,
     temporary_directory, temporary_file, temporary_random_file)
@@ -20,8 +20,10 @@ from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredential
 from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.s3_upload import upload_file_to_aws_s3
 from submitr.s3_utils import get_s3_key_metadata
+from submitr.submission_uploads import do_any_uploads
 from submitr.tests.testing_rclone_helpers import (
-    setup_module as rclone_setup_module, teardown_module as rclone_teardown_module, Mock_LocalStorage)
+    setup_module as rclone_setup_module, teardown_module as rclone_teardown_module,
+    Mock_LocalStorage, RANDOM_TMPFILE_SIZE)
 
 
 pytestmark = pytest.mark.integration
@@ -614,26 +616,55 @@ def _test_rclone_local_to_local() -> None:
                                    os.path.join(tmp_destination_directory, os.path.basename(tmp_test_file_path)))
 
 
-def test_rclone_google_to_amazon_more() -> None:
-
-    filesize = 1235
+def test_rclone_do_any_uploads() -> None:
     filesystem = Mock_LocalStorage()
-    file_one = "subdir/test_file_one.fastq"
-    file_two = "test_file_two.fastq"
-    filesystem.create_files(file_one, nbytes=filesize)
-    # env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
-    env_google = EnvGoogle(use_cloud_subfolder_key=True)
+    filesystem.create_files(file_one := "subdir/test_file_one.fastq",
+                            file_two := "test_file_two.fastq",
+                            metadata_file := "metadata_file.xlsx")
+    files = [{"filename": file_one}, {"filename": file_two}]
+    env_google = EnvGoogle()
+    rclone_google = RCloneGoogle(env_google.credentials(), bucket=f"{env_google.bucket}/test-{create_uuid()}")
+    rcloner = RCloner(destination=rclone_google)
+    import pdb ; pdb.set_trace()  # noqa
+    assert rcloner.copy_to_key(filesystem.path(file_one), key_google := "target.fastq") is True
+    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is True
+    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, key_google) is True
+    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is False
+    assert env_google
+    assert files
+    assert do_any_uploads
+    assert RANDOM_TMPFILE_SIZE
+    return
+    do_any_uploads(files,
+                   metadata_file=metadata_file,
+                   main_search_directory=filesystem.root,
+                   main_search_directory_recursively=True,
+                   config_google=rclone_google)
+#   do_any_uploads(arg: Union[str, dict, StructuredDataSet],
+#                  metadata_file: Optional[str] = None,
+#                  main_search_directory: Optional[Union[str, pathlib.PosixPath]] = None,
+#                  main_search_directory_recursively: bool = False,
+#                  config_google: Optional[RCloneGoogle] = None,
+#                  portal: Optional[Portal] = None,
+#                  review_only: bool = False,
+#                  verbose: bool = False) -> None:
+
+
+def test_rclone_upload_file_to_aws_s3() -> None:
+
+    filesystem = Mock_LocalStorage(file_one := "subdir/test_file_one.fastq",
+                                   file_two := "test_file_two.fastq",
+                                   nbytes=(filesize := 1235))
+    env_google = EnvGoogle()
     bucket_google = f"{env_google.bucket}/test-{create_short_uuid(31)}"
-    credentials_google = env_google.credentials()
-    rclone_google = RCloneGoogle(credentials_google, bucket=bucket_google)
+    rclone_google = RCloneGoogle(env_google.credentials(), bucket=bucket_google)
     rcloner = RCloner(destination=rclone_google)
     # Note that the second destination argument to RCloner.copy can be
     # unspecified meaning that it will be the *bucket* ("bucket" - can be
     assert rcloner.copy_to_bucket(os.path.join(filesystem.root, file_one)) is True
     assert env_google.gcs_non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == filesize
     assert env_google.gcs_non_rclone().file_size(bucket_google, os.path.basename(file_one)) == filesize
-    files = [{"filename": file_one},
-             {"filename": file_two}]
+    files = [{"filename": file_one}, {"filename": file_two}]
     files_for_upload = FilesForUpload.assemble(files,
                                                main_search_directory=filesystem.root,
                                                main_search_directory_recursively=True,
@@ -696,14 +727,16 @@ def test_rclone_google_to_amazon_more() -> None:
     assert s3_key_metadata["size"] == filesize
     assert s3_key_metadata["md5"] == compute_file_md5(os.path.join(filesystem.root, file_one))
     assert s3_key_metadata["md5_source"] == "google-cloud-storage"
-    assert env_amazon.s3_non_rclone().delete_file(env_amazon.bucket, s3_key)
-    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, files_for_upload[0].name)
+    assert env_amazon.s3_non_rclone().delete_file(env_amazon.bucket, s3_key) is True
+    assert env_amazon.s3_non_rclone().file_exists(env_amazon.bucket, s3_key) is False
+    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, files_for_upload[0].name) is True
+    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, files_for_upload[0].name) is False
 
 
 def test_rclone_local_to_google_copy_to_bucket() -> None:
     # Just an aside (ran across while testing); make sure copyto=False works for sub-folder.
     filesize = 1234
-    env_google = EnvGoogle(use_cloud_subfolder_key=True)
+    env_google = EnvGoogle()
     filesystem = Mock_LocalStorage()
     filesystem.create_files(file_one := "subdir/test_file_one.fastq", nbytes=filesize)
     # Bucket is really "bucket" - bucket plus optional sub-folder, which RCloneConfig is designed to handle.
@@ -725,7 +758,7 @@ def test_rclone_local_to_google_copy_to_bucket() -> None:
 def test_rclone_local_to_amazon_copy_to_bucket() -> None:
     # Just an aside (ran across while testing); make sure copyto=False works for sub-folder.
     filesize = 1236
-    env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
+    env_amazon = EnvAmazon()
     filesystem = Mock_LocalStorage()
     filesystem.create_files(file_one := "subdir/test_file_one.fastq", nbytes=filesize)
     # Bucket is really "bucket" - bucket plus optional sub-folder, which RCloneConfig is designed to handle.
