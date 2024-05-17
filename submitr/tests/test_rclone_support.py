@@ -623,6 +623,7 @@ def test_rclone_do_any_uploads() -> None:
                             metadata_file := "metadata_file.xlsx")
     files = [{"filename": file_one}, {"filename": file_two}]
     env_google = EnvGoogle()
+    env_amazon = EnvAmazon()
     rclone_google = RCloneGoogle(env_google.credentials(), bucket=f"{env_google.bucket}/test-{create_uuid()}")
     rcloner = RCloner(destination=rclone_google)
     assert rcloner.copy_to_key(filesystem.path(file_one), key_google := "target.fastq") is True
@@ -630,7 +631,14 @@ def test_rclone_do_any_uploads() -> None:
     assert env_google.gcs_non_rclone().file_size(rclone_google.bucket, key_google) == RANDOM_TMPFILE_SIZE
     assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, key_google) is True
     assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is False
-    return
+    bucket_amazon = f"{env_amazon.bucket}/test-{create_uuid()}"
+    key_amazon = f"SMA-{create_uuid()}.fastq"
+    credentials_for_upload = env_amazon.temporary_credentials(bucket_amazon, key_amazon)
+    assert credentials_for_upload
+
+    def mock_generate_credentials_for_upload(file, uuid, portal):
+        pass
+
     # TODO
     # To call do_any_uploads we need a Portal object which needs mock its get_schema_type, is_schema_type,
     # is_schema_file_type functions; no need to mock get_metadata, patch_metadata, get_health, which are also
