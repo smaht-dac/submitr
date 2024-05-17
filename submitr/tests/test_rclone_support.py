@@ -617,7 +617,8 @@ def _test_rclone_local_to_local() -> None:
 def test_rclone_google_to_amazon_more() -> None:
     filesystem = Mock_LocalStorage()
     file_one = "subdir/test_file_one.fastq"
-    filesystem.create_files(file_one, nbytes=123456)
+    file_two = "test_file_two.fastq"
+    filesystem.create_files(file_one, nbytes=1234)
     env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
     env_google = EnvGoogle(use_cloud_subfolder_key=True)
     initial_setup_and_sanity_checking(env_amazon=env_amazon, env_google=env_google)
@@ -626,5 +627,6 @@ def test_rclone_google_to_amazon_more() -> None:
     rcloner = RCloner(destination=rclone_google)
     assert rcloner.copy is not None  # TODO ...
     files = [{"filename": file_one},
-             {}]
-    FilesForUpload.assemble(files)
+             {"filename": file_two}]
+    files_for_upload = FilesForUpload.assemble(files)
+    assert files_for_upload is not None  # TODO
