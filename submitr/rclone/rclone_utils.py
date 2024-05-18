@@ -76,6 +76,9 @@ class cloud_path:
 
     @staticmethod
     def bucket_and_key(bucket: str, key: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
+        if isinstance(bucket, str):
+            if bucket.lower().startswith("s3://") or bucket.lower().startswith("gs://"):
+                bucket = bucket[5:]
         if not (bucket_and_key := cloud_path.join(bucket, key)):
             return None, None
         if cloud_path.has_separator(bucket_and_key):

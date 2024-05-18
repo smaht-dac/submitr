@@ -772,11 +772,14 @@ def test_rclone_do_any_uploads() -> None:
     assert env_google.gcs_non_rclone().file_size(rclone_google.bucket, key_google) == RANDOM_TMPFILE_SIZE
     # TODO: Wrong - both files going to the same key in S3 ...
 
-    def mock_generate_credentials_for_upload():
-        nonlocal env_amazon
+    uploaded_uris_amazon = []
+
+    def mocked_generate_credentials_for_upload(file, uuid, portal):
+        nonlocal env_amazon, uploaded_uris_amazon
         bucket_amazon = f"{env_amazon.bucket}/test-{create_uuid()}"
         key_amazon = f"SMA-{create_uuid()}.fastq"
         aws_s3_uri = f"s3://{bucket_amazon}/{key_amazon}"
+        uploaded_uris_amazon.append(aws_s3_uri)
         aws_credentials = env_amazon.temporary_credentials(bucket_amazon,
                                                            key_amazon).to_dictionary(environment_names=True)
         aws_kms_key_id = AMAZON_KMS_KEY_ID
@@ -789,21 +792,25 @@ def test_rclone_do_any_uploads() -> None:
     # but rather pass files dictionary; and also need to mock submission_uploads.generate_credentials_for_upload.
     # Alternatively, easier, is just provide a StructuredDataSet with a simple upload_files property which is an
     # list of dictionary with file names.
-    with mock_patch("submitr.submission_uploads.generate_credentials_for_upload",
-                    return_value=mock_generate_credentials_for_upload()):
+    with (mock_patch("submitr.submission_uploads.generate_credentials_for_upload") as mock_generate_credentials_for_upload,  # noqa
+          mock_patch("submitr.submission_uploads.yes_or_no", return_value="yes")):
         ingestion_submission_object = load_test_data_json("ingestion_submission")  # noqa/xyzzy
-        # do_any_uploads(ingestion_submission_object,
-        #                metadata_file=metadata_file,
-        #                main_search_directory=os.path.join(filesystem.root, test_file_subdirectory),
-        #                main_search_directory_recursively=True,
-        #                config_google=rclone_google,
-        #                portal=Mock_Portal(),
-        #                review_only=False,
-        #                verbose=False)
-        # assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, key_amazon) is True
+        mock_generate_credentials_for_upload.side_effect = mocked_generate_credentials_for_upload
+        do_any_uploads(ingestion_submission_object,
+                       metadata_file=metadata_file,
+                       main_search_directory=os.path.join(filesystem.root, test_file_subdirectory),
+                       main_search_directory_recursively=True,
+                       config_google=rclone_google,
+                       portal=Mock_Portal(),
+                       review_only=False,
+                       verbose=False)
 
-    # Cleanup (TODO: move to bottom after fleshing out more of tests here).
+    for uploaded_uri_amazon in uploaded_uris_amazon:
+        bucket_amazon, key_amazon = cloud_path.bucket_and_key(uploaded_uri_amazon)
+        assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, key_amazon) is True
+        assert env_amazon.s3_non_rclone().delete_file(bucket_amazon, key_amazon) is True
+        assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, key_amazon) is False
+
+    # Cleanup.
     assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, key_google) is True
     assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is False
-    # assert env_amazon.s3_non_rclone().delete_file(bucket_amazon, key_amazon) is True
-    # assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, key_amazon) is False
