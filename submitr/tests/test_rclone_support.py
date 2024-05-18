@@ -22,10 +22,10 @@ from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.s3_upload import upload_file_to_aws_s3
 from submitr.s3_utils import get_s3_key_metadata
 import submitr.submission_uploads  # noqa
-from submitr.submission_uploads import do_any_uploads
-from submitr.tests.testing_rclone_helpers import (
+from submitr.submission_uploads import do_any_uploads  # noqa/xyzzy
+from submitr.tests.testing_rclone_helpers import (  # noqa/xyzzy
     setup_module as rclone_setup_module, teardown_module as rclone_teardown_module,
-    Mock_LocalStorage, RANDOM_TMPFILE_SIZE)
+    load_test_data_json, Mock_LocalStorage, Mock_Portal, RANDOM_TMPFILE_SIZE)
 
 
 pytestmark = pytest.mark.integration
@@ -618,50 +618,50 @@ def _test_rclone_local_to_local() -> None:
                                    os.path.join(tmp_destination_directory, os.path.basename(tmp_test_file_path)))
 
 
-def test_rclone_do_any_uploads() -> None:
-    filesystem = Mock_LocalStorage()
-    filesystem.create_files(file_one := "subdir/test_file_one.fastq",
-                            file_two := "test_file_two.fastq",
-                            metadata_file := "metadata_file.xlsx")
-    files = [{"filename": file_one}, {"filename": file_two}]
+def test_rclone_local_to_google_copy_to_bucket() -> None:
+    # Just an aside (ran across while testing); make sure copyto=False works for sub-folder.
+    filesize = 1234
     env_google = EnvGoogle()
-    env_amazon = EnvAmazon()
-    rclone_google = RCloneGoogle(env_google.credentials(), bucket=f"{env_google.bucket}/test-{create_uuid()}")
+    filesystem = Mock_LocalStorage()
+    filesystem.create_files(file_one := "subdir/test_file_one.fastq", nbytes=filesize)
+    # Bucket is really "bucket" - bucket plus optional sub-folder, which RCloneConfig is designed to handle.
+    subfolder = f"test-{create_uuid()}"
+    bucket_google = cloud_path.join(env_google.bucket, subfolder)
+    credentials_google = env_google.credentials()
+    rclone_google = RCloneGoogle(credentials_google, bucket=bucket_google)
     rcloner = RCloner(destination=rclone_google)
-    assert rcloner.copy_to_key(filesystem.path(file_one), key_google := "target.fastq") is True
-    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is True
-    assert env_google.gcs_non_rclone().file_size(rclone_google.bucket, key_google) == RANDOM_TMPFILE_SIZE
+    assert rcloner.copy_to_bucket(os.path.join(filesystem.root, file_one)) is True
+    assert env_google.gcs_non_rclone().file_exists(cloud_path.join(bucket_google, os.path.basename(file_one))) is True
+    assert env_google.gcs_non_rclone().file_exists(bucket_google, os.path.basename(file_one)) is True
+    assert env_google.gcs_non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == filesize
+    assert env_google.gcs_non_rclone().file_size(bucket_google, os.path.basename(file_one)) == filesize
+    assert (env_google.gcs_non_rclone().file_checksum(cloud_path.join(bucket_google, os.path.basename(file_one))) ==
+            compute_file_md5(os.path.join(filesystem.root, file_one)))
+    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, os.path.basename(file_one)) is True
+    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, os.path.basename(file_one)) is False
 
-    def mock_generate_credentials_for_upload():
-        nonlocal env_amazon
-        bucket_amazon = f"{env_amazon.bucket}/test-{create_uuid()}"
-        key_amazon = f"SMA-{create_uuid()}.fastq"
-        aws_s3_uri = f"s3://{bucket_amazon}/{key_amazon}"
-        aws_credentials = env_amazon.temporary_credentials(bucket_amazon,
-                                                           key_amazon).to_dictionary(environment_names=True)
-        aws_kms_key_id = AMAZON_KMS_KEY_ID
-        return aws_s3_uri, aws_credentials, aws_kms_key_id
 
-    # Cleanup (TODO: move to bottom after fleshing out more of tests here).
-    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, key_google) is True
-    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is False
-
-    # TODO
-    # To call do_any_uploads we need a Portal object which needs mock its get_schema_type, is_schema_type,
-    # is_schema_file_type functions; no need to mock get_metadata, patch_metadata, get_health, which are also
-    # called from submission_uploads module, so long as we don't pass a IngestionSubmission UUID to do_any_uploads,
-    # but rather pass files dictionary; and also need to mock submission_uploads.generate_credentials_for_upload.
-    with mock_patch("submitr.submission_uploads.generate_credentials_for_upload",
-                    return_value=mock_generate_credentials_for_upload()):
-        return  # TODO ...
-        do_any_uploads(files,
-                       metadata_file=metadata_file,
-                       main_search_directory=filesystem.root,
-                       main_search_directory_recursively=True,
-                       config_google=rclone_google,
-                       portal=None,  # TODO
-                       review_only=False,
-                       verbose=False)
+def test_rclone_local_to_amazon_copy_to_bucket() -> None:
+    # Just an aside (ran across while testing); make sure copyto=False works for sub-folder.
+    filesize = 1236
+    env_amazon = EnvAmazon()
+    filesystem = Mock_LocalStorage()
+    filesystem.create_files(file_one := "subdir/test_file_one.fastq", nbytes=filesize)
+    # Bucket is really "bucket" - bucket plus optional sub-folder, which RCloneConfig is designed to handle.
+    subfolder = f"test-{create_uuid()}"
+    bucket_amazon = cloud_path.join(env_amazon.bucket, subfolder)
+    credentials_amazon = env_amazon.credentials()
+    rclone_amazon = RCloneAmazon(credentials_amazon, bucket=bucket_amazon)
+    rcloner = RCloner(destination=rclone_amazon)
+    assert rcloner.copy_to_bucket(os.path.join(filesystem.root, file_one)) is True
+    assert env_amazon.s3_non_rclone().file_exists(cloud_path.join(bucket_amazon, os.path.basename(file_one))) is True
+    assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, os.path.basename(file_one)) is True
+    assert env_amazon.s3_non_rclone().file_size(cloud_path.join(bucket_amazon, os.path.basename(file_one))) == filesize
+    assert env_amazon.s3_non_rclone().file_size(bucket_amazon, os.path.basename(file_one)) == filesize
+    assert (env_amazon.s3_non_rclone().file_checksum(cloud_path.join(bucket_amazon, os.path.basename(file_one))) ==
+            compute_file_md5(os.path.join(filesystem.root, file_one)))
+    assert env_amazon.s3_non_rclone().delete_file(bucket_amazon, os.path.basename(file_one)) is True
+    assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, os.path.basename(file_one)) is False
 
 
 def test_rclone_upload_file_to_aws_s3() -> None:
@@ -756,47 +756,54 @@ def test_rclone_upload_file_to_aws_s3() -> None:
     assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, files_for_upload[0].name) is False
 
 
-def test_rclone_local_to_google_copy_to_bucket() -> None:
-    # Just an aside (ran across while testing); make sure copyto=False works for sub-folder.
-    filesize = 1234
+def test_rclone_do_any_uploads() -> None:
+    filesystem = Mock_LocalStorage()
+    metadata_file = "metadata_file.xlsx"
+    test_file_subdirectory = "subdir"
+    test_file_one = "test_file_one.fastq"
+    test_file_two = "test_file_two.fastq"
+    filesystem.create_files(file_one := os.path.join(test_file_subdirectory, test_file_one), metadata_file)
     env_google = EnvGoogle()
-    filesystem = Mock_LocalStorage()
-    filesystem.create_files(file_one := "subdir/test_file_one.fastq", nbytes=filesize)
-    # Bucket is really "bucket" - bucket plus optional sub-folder, which RCloneConfig is designed to handle.
-    subfolder = f"test-{create_uuid()}"
-    bucket_google = cloud_path.join(env_google.bucket, subfolder)
-    credentials_google = env_google.credentials()
-    rclone_google = RCloneGoogle(credentials_google, bucket=bucket_google)
-    rcloner = RCloner(destination=rclone_google)
-    assert rcloner.copy_to_bucket(os.path.join(filesystem.root, file_one)) is True
-    assert env_google.gcs_non_rclone().file_exists(cloud_path.join(bucket_google, os.path.basename(file_one))) is True
-    assert env_google.gcs_non_rclone().file_exists(bucket_google, os.path.basename(file_one)) is True
-    assert env_google.gcs_non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == filesize
-    assert env_google.gcs_non_rclone().file_size(bucket_google, os.path.basename(file_one)) == filesize
-    assert (env_google.gcs_non_rclone().file_checksum(cloud_path.join(bucket_google, os.path.basename(file_one))) ==
-            compute_file_md5(os.path.join(filesystem.root, file_one)))
-    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, os.path.basename(file_one)) is True
-    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, os.path.basename(file_one)) is False
-
-
-def test_rclone_local_to_amazon_copy_to_bucket() -> None:
-    # Just an aside (ran across while testing); make sure copyto=False works for sub-folder.
-    filesize = 1236
     env_amazon = EnvAmazon()
-    filesystem = Mock_LocalStorage()
-    filesystem.create_files(file_one := "subdir/test_file_one.fastq", nbytes=filesize)
-    # Bucket is really "bucket" - bucket plus optional sub-folder, which RCloneConfig is designed to handle.
-    subfolder = f"test-{create_uuid()}"
-    bucket_amazon = cloud_path.join(env_amazon.bucket, subfolder)
-    credentials_amazon = env_amazon.credentials()
-    rclone_amazon = RCloneAmazon(credentials_amazon, bucket=bucket_amazon)
-    rcloner = RCloner(destination=rclone_amazon)
-    assert rcloner.copy_to_bucket(os.path.join(filesystem.root, file_one)) is True
-    assert env_amazon.s3_non_rclone().file_exists(cloud_path.join(bucket_amazon, os.path.basename(file_one))) is True
-    assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, os.path.basename(file_one)) is True
-    assert env_amazon.s3_non_rclone().file_size(cloud_path.join(bucket_amazon, os.path.basename(file_one))) == filesize
-    assert env_amazon.s3_non_rclone().file_size(bucket_amazon, os.path.basename(file_one)) == filesize
-    assert (env_amazon.s3_non_rclone().file_checksum(cloud_path.join(bucket_amazon, os.path.basename(file_one))) ==
-            compute_file_md5(os.path.join(filesystem.root, file_one)))
-    assert env_amazon.s3_non_rclone().delete_file(bucket_amazon, os.path.basename(file_one)) is True
-    assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, os.path.basename(file_one)) is False
+    rclone_google = RCloneGoogle(env_google.credentials(), bucket=f"{env_google.bucket}/test-{create_uuid()}")
+    rcloner = RCloner(destination=rclone_google)
+    assert rcloner.copy_to_key(filesystem.path(file_one), key_google := test_file_two) is True
+    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is True
+    assert env_google.gcs_non_rclone().file_size(rclone_google.bucket, key_google) == RANDOM_TMPFILE_SIZE
+    # TODO: Wrong - both files going to the same key in S3 ...
+
+    def mock_generate_credentials_for_upload():
+        nonlocal env_amazon
+        bucket_amazon = f"{env_amazon.bucket}/test-{create_uuid()}"
+        key_amazon = f"SMA-{create_uuid()}.fastq"
+        aws_s3_uri = f"s3://{bucket_amazon}/{key_amazon}"
+        aws_credentials = env_amazon.temporary_credentials(bucket_amazon,
+                                                           key_amazon).to_dictionary(environment_names=True)
+        aws_kms_key_id = AMAZON_KMS_KEY_ID
+        return aws_s3_uri, aws_credentials, aws_kms_key_id
+
+    # TODO
+    # To call do_any_uploads we need a Portal object which needs mock its get_schema_type, is_schema_type,
+    # is_schema_file_type functions; no need to mock get_metadata, patch_metadata, get_health, which are also
+    # called from submission_uploads module, so long as we don't pass a IngestionSubmission UUID to do_any_uploads,
+    # but rather pass files dictionary; and also need to mock submission_uploads.generate_credentials_for_upload.
+    # Alternatively, easier, is just provide a StructuredDataSet with a simple upload_files property which is an
+    # list of dictionary with file names.
+    with mock_patch("submitr.submission_uploads.generate_credentials_for_upload",
+                    return_value=mock_generate_credentials_for_upload()):
+        ingestion_submission_object = load_test_data_json("ingestion_submission")  # noqa/xyzzy
+        # do_any_uploads(ingestion_submission_object,
+        #                metadata_file=metadata_file,
+        #                main_search_directory=os.path.join(filesystem.root, test_file_subdirectory),
+        #                main_search_directory_recursively=True,
+        #                config_google=rclone_google,
+        #                portal=Mock_Portal(),
+        #                review_only=False,
+        #                verbose=False)
+        # assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, key_amazon) is True
+
+    # Cleanup (TODO: move to bottom after fleshing out more of tests here).
+    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, key_google) is True
+    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is False
+    # assert env_amazon.s3_non_rclone().delete_file(bucket_amazon, key_amazon) is True
+    # assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, key_amazon) is False

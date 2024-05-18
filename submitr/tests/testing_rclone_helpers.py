@@ -1,6 +1,8 @@
+import json
 import os
 import tempfile
 from dcicutils.file_utils import create_random_file, compute_file_md5, get_file_size, normalize_path
+from dcicutils.structured_data import Portal
 from dcicutils.tmpfile_utils import (
     is_temporary_directory, remove_temporary_directory)
 from submitr.rclone import RCloneConfig, RCloneAmazon, RCloneGoogle
@@ -93,3 +95,25 @@ class Mock_LocalStorage(Mock_CloudStorage):
         return super()._root()
     def path(self, path):  # noqa
         return os.path.join(self.root, path) if (path := normalize_path(path)) else None
+
+
+class Mock_Portal(Portal):
+    # Designed to handle calls to get_schemas, get_schema, get_schema_type, is_schema_type, is_schema_file_type.
+    # which can all be done be simply overriding get_schemas which reads a static/snapshot (2024-05-18) copy
+    # of the schemas as returned by the /profiles/ (trailing slash required there btw) endpoint.
+    def __init__(self):  # noqa
+        dummy_key = {"key": "dummy", "secret": "dummy"}
+        super().__init__(dummy_key)
+        self._schemas = None
+    def get_schemas(self) -> dict:  # noqa
+        if not self._schemas:
+            self._schemas = load_test_data_json("profiles")
+        return self._schemas
+
+
+def load_test_data_json(file):
+    this_directory = os.path.dirname(os.path.abspath(__file__))
+    test_data_directory = os.path.join(this_directory, "data")
+    test_data_file = os.path.join(test_data_directory, file if file.endswith(".json") else f"{file}.json")
+    with open(test_data_file, "r") as f:
+        return json.load(f)
