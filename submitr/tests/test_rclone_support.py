@@ -679,10 +679,10 @@ def test_rclone_upload_file_to_aws_s3() -> None:
     assert files_for_upload[0].found_google is True
     assert files_for_upload[0].path_local == os.path.join(filesystem.root, file_one)
     assert files_for_upload[0].size_local == filesize
-    assert len(files_for_upload[0].checksum_local) > 0
+    assert files_for_upload[0].checksum_local == compute_file_md5(os.path.join(filesystem.root, file_one))
     assert files_for_upload[0].path_google == cloud_path.join(bucket_google, files_for_upload[0].name)
     assert files_for_upload[0].size_google == filesize
-    assert len(files_for_upload[0].checksum_google) > 0
+    assert files_for_upload[0].checksum_google == compute_file_md5(os.path.join(filesystem.root, file_one))
     # Found both locally and in Google; ambiguous, as favor_local starts as None;
     # so these return False/None; favor_local normally gets resolved in review function.
     assert files_for_upload[0].favor_local is None
@@ -704,7 +704,16 @@ def test_rclone_upload_file_to_aws_s3() -> None:
     assert files_for_upload[0].from_google is True
     assert files_for_upload[0].path == cloud_path.join(rclone_google.bucket, files_for_upload[0].name)
     assert files_for_upload[0].size == filesize
-    assert len(files_for_upload[0].checksum) > 0
+    assert files_for_upload[0].checksum == compute_file_md5(os.path.join(filesystem.root, file_one))
+    assert files_for_upload[1].found is True
+    assert files_for_upload[1].found_local is True
+    assert files_for_upload[1].found_google is False
+    assert files_for_upload[1].favor_local is True
+    assert files_for_upload[1].from_local is True
+    assert files_for_upload[1].from_google is False
+    assert files_for_upload[1].path == os.path.join(filesystem.root, file_two)
+    assert files_for_upload[1].size == filesize
+    assert files_for_upload[1].checksum == compute_file_md5(os.path.join(filesystem.root, file_two))
 
     env_amazon = EnvAmazon()
     s3_key = f"test-{create_uuid()}/SMAFIPIGC8NG.fastq"
