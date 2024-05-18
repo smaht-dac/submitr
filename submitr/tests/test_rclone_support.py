@@ -642,6 +642,10 @@ def test_rclone_do_any_uploads() -> None:
         aws_kms_key_id = AMAZON_KMS_KEY_ID
         return aws_s3_uri, aws_credentials, aws_kms_key_id
 
+    # Cleanup (TODO: move to bottom after fleshing out more of tests here).
+    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, key_google) is True
+    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is False
+
     # TODO
     # To call do_any_uploads we need a Portal object which needs mock its get_schema_type, is_schema_type,
     # is_schema_file_type functions; no need to mock get_metadata, patch_metadata, get_health, which are also
@@ -658,10 +662,6 @@ def test_rclone_do_any_uploads() -> None:
                        portal=None,  # TODO
                        review_only=False,
                        verbose=False)
-
-    # Cleanup.
-    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, key_google) is True
-    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is False
 
 
 def test_rclone_upload_file_to_aws_s3() -> None:

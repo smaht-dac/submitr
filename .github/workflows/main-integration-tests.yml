@@ -42,7 +42,7 @@ jobs:
       # The access credentials are defined by the environment variables described below.
       - name: INTEGRATION TESTS
         env:
-          # These are setup in GitHub as "secrets". The AWS access key values are currently
+          # These are setup in GitHub as "secrets". The AWS access key values are currently,
           # May 2024, for the special user test-integration-user in the smaht-wolf account;
           # the access key was created on 2024-05-15. The Google value is the JSON from the
           # service account file exported from the HMS Google account for the smaht-dac project;
