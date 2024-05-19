@@ -105,7 +105,11 @@ class RCloneConfig(AbstractBaseClass):
                 f.write(f"{line}\n")
 
     def path(self, path: str) -> Optional[str]:
-        if isinstance(path, str) or path is None:
+        if path is None:
+            path = ""
+        if isinstance(path, str):
+            if path.lower()[0:5] in ["gs://", "s3://"]:
+                path = path[5:]
             # Sic: Not cloud_path.normalize above as, so long as the given path
             # is a string or None allow, it to be joined with any defined bucket.
             return cloud_path.join(self.bucket, path)
