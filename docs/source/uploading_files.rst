@@ -89,7 +89,8 @@ only a small portion of the data ever actually travels through your machine at a
 
 And no need to worry about the details of rclone - its installation, and usage, and whatnot -
 the smaht-submitr tools automatically installs and hides the details of its workings from you.
-To take advantage of this you merely need to specificy a couple of command-line options, for example::
+To take advantage of this you merely need to specificy a couple of command-line options,
+specifially ``--rclone-google-source`` and ``--rclone-google-credentials``, for example::
 
     submit-metadata-bundle your-metadata.xlsx --submit \
         --rclone-google-source your-gcs-bucket \
