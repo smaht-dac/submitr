@@ -167,9 +167,9 @@ def setup_module():
     assert RCloneInstallation.is_installed() is True
 
     if is_github_actions_context():
-        print("\Running in GitHub Actions")
+        print("\nRunning in GitHub Actions")
     else:
-        print("\Not running in GitHub Actions")
+        print("\nNot running in GitHub Actions")
 
     if is_github_actions_context():
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
