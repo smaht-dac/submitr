@@ -170,6 +170,10 @@ def setup_module():
         print("\nRunning in GitHub Actions")
     else:
         print("\nNot running in GitHub Actions")
+    if RCloneGoogle.is_google_compute_engine():
+        print("Running on a Google Compute Engine")
+    else:
+        print("Not running on a Google Compute Engine")
 
     if is_github_actions_context():
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
