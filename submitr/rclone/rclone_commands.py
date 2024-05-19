@@ -15,14 +15,37 @@ class RCloneCommands:
                      destination_s3: bool = False,
                      return_output: bool = False,
                      raise_exception: bool = False) -> Union[bool, Tuple[bool, List[str]]]:
-        command = [RCloneInstallation.executable_path(),
-                   "copyto" if copyto is True else "copy", "--progress", "--ignore-times"]
-        # The rclone --ignore-times option forces copy even if the file seems
-        # not to have have changed, presumably based on something like a checksum.
+        command = [RCloneInstallation.executable_path(), "copyto" if copyto is True else "copy"]
+        #
+        # Notes on rclone options:
+        #
+        # --progress
+        #   This enables real-time command-line progress output, which we
+        #   parse to allow us to give our own feedback via dcicutils.progress_bar.
+        #
+        # --ignore-times
+        #   This forces a copy even if the file seems not to have have changed,
+        #   presumably based on something like a checksum.
+        #
+        # --s3-no-check-bucket option obviates need for s3:CreateBucket in credentials policy.
+        #   This obviates need for s3:CreateBucket in our AWS S3 credentials policy.
+        #   See encoded_core.types.file.external_creds function.
+        #
+        # --s3-no-head-object
+        #   This obviates need for s3:ListBucket in our AWS S3 credentials policy.
+        #   See encoded_core.types.file.external_creds function.
+        #
+        # --ignore-size
+        #   This is necessary because since we are using --s3-no-head-object rclone (evidently)
+        #   cannot get the size (i.e. via s3.head_object) of the target AWS S3 file, and so
+        #   without this we get an rclone error like below, and it retries (bad) up to 3 times:
+        #   ERROR: SMAFIQ81LMQZ.fastq: corrupted on transfer: sizes differ 2147483648 vs 0
+        #   ERROR: Attempt 1/3 failed with 1 errors and: corrupted on transfer: sizes differ 2147483648 vs 0
+        #
+        command += ["--progress"]
         command += ["--ignore-times"]
+        command += ["--ignore-size"]
         if destination_s3:
-            # The rclone --s3-no-check-bucket option obviates need for s3:CreateBucket in credentials policy.
-            # The rclone --s3-no-head-object option obviates need for s3:ListBucket in credentials policy.
             command += ["--s3-no-check-bucket", "--s3-no-head-object"]
         if isinstance(config, str) and config:
             command += ["--config", config]
