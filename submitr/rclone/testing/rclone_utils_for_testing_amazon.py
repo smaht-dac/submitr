@@ -337,7 +337,7 @@ class AwsCredentials(AmazonCredentials):
 
     @staticmethod
     def from_file(credentials_file: str, credentials_section: str = None,
-                  kms_key_id: Optional[str] = None) -> Optional[AwsCredentials]:
+                  region: Optional[str] = None, kms_key_id: Optional[str] = None) -> Optional[AwsCredentials]:
         if not credentials_section:
             credentials_section = "default"
         try:
@@ -353,7 +353,8 @@ class AwsCredentials(AmazonCredentials):
             config = configparser.ConfigParser()
             config.read(os.path.expanduser(credentials_file))
             section = config[credentials_section]
-            region = (section.get("region", None) or
+            region = (normalize_string(region) or
+                      section.get("region", None) or
                       section.get("region_name", None) or
                       section.get("aws_default_region", None))
             access_key_id = (section.get("aws_access_key_id", None) or

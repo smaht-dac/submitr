@@ -31,35 +31,44 @@ from submitr.tests.testing_rclone_helpers import (  # noqa/xyzzy
 pytestmark = pytest.mark.integration
 
 
-# Integration tests for RCloner related functionality within smaht-submitr.
-# Need valid AWS credentials (currently for: smaht-wolf).
-# Need valid Google Cloud credentials (currently for: smaht-dac).
-# With these to variables set to True to default to getting credentials
-# from environment variables (as is done in GA), these are the environment
-# variables that need to be set:
-# - AWS_ACCESS_KEY_ID (required)
-# - AWS_SECRET_ACCESS_KEY (required)
-# - AWS_SESSION_TOKEN (optional)
-# - AWS_KMS_KEY_ID (optional / not a standard AWS variable fyi / and actually not secret)
-# - GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON (required / JSON text for GCP service account file)
-AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES = True
-GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES = True
+# This integration test actually talks to AWS S3 and Google Cloud Storage (GCS);
+# both directly (via Python boto3 and google.cloud.storage) and via rclone.
+# The access credentials are defined by the variables as described below.
 
-# If environment variables are not set for credentials (as the should be in GA)
-# then these are two things likely needing updates for running locally:
-# - The AWS environment-name (per use_test_creds).
-#   I.e. e.g. load AWS credentials from: ~/.aws_test.{environment-name}/credentials
-# - The Google service-account-file path.
-#   As exported from Google account.
+# If running from within GitHub actions these environment variables assumed to be
+# setup; via .github/workflows/main-integration-tests.yml file and GitHub secrets.
+#
+# These are setup in GitHub as "secrets". The AWS access key values are currently,
+# May 2024, for the special user test-integration-user in the smaht-wolf account;
+# the access key was created on 2024-05-15. The Google value is the JSON from the
+# service account file exported from the HMS Google account for the smaht-dac project;
+# the service account email is ga4-service-account@smaht-dac.iam.gserviceaccount.com;
+# its key ID is b488dd9cfde6b59b1aa347aabd9add86c7ff9057; it was created on 2024-04-28.
+#
+# - AWS_ACCESS_KEY_ID
+# - AWS_SECRET_ACCESS_KEY
+# - GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON
+
+# If NOT running from within GitHub actions (i.e. locally) these variables assumed to be setup.
+#
+# - AMAZON_CREDENTIALS_FILE_PATH
+#   Full path to your AWS credentials file (e.g. ~/.aws_test.smaht-wolf/credentials).
+# - GOOGLE_SERVICE_ACCOUNT_FILE_PATH
+#   Full path to GCP credential "service account file" exported from Google account.
 AMAZON_CREDENTIALS_FILE_PATH = "~/.aws_test.smaht-test/credentials"
 GOOGLE_SERVICE_ACCOUNT_FILE_PATH = "~/.config/google-cloud/smaht-dac-617e0480d8e2.json"
 
-# These are slightly less likely to need updates for running locally (or in GA):
+# These credentials related values are less likely to need updating and are thus hard-coded here.
 AMAZON_TEST_BUCKET_NAME = "smaht-unit-testing-files"
+AMAZON_REGION = "us-east-1"
 AMAZON_KMS_KEY_ID = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"  # not secret fyi
-GOOGLE_ACCOUNT_NAME = "smaht-dac"
 GOOGLE_TEST_BUCKET_NAME = "smaht-submitr-rclone-testing"
 GOOGLE_LOCATION = "us-east1"
+
+
+def is_github_actions_context():
+    # Returns True iff we are running within GitHub Actions.
+    return "GITHUB_ACTIONS" in os.environ
 
 
 class Env:
@@ -96,17 +105,19 @@ class EnvAmazon(Env):
 
     def __init__(self, use_cloud_subfolder_key: bool = False):
         super().__init__(use_cloud_subfolder_key=use_cloud_subfolder_key)
-        self.kms_key_id = AMAZON_KMS_KEY_ID
+        self.credentials_file = AMAZON_CREDENTIALS_FILE_PATH
         self.bucket = AMAZON_TEST_BUCKET_NAME
+        self.region = AMAZON_REGION
+        self.kms_key_id = AMAZON_KMS_KEY_ID
         self.main_credentials = self.credentials()
 
     def credentials(self, nokms: bool = False) -> AmazonCredentials:
-        kms_key_id = None if nokms is True else self.kms_key_id
-        credentials = AwsCredentials.from_file(AMAZON_CREDENTIALS_FILE_PATH, kms_key_id=kms_key_id)
+        credentials = AwsCredentials.from_file(self.credentials_file,
+                                               region=self.region,
+                                               kms_key_id=None if nokms is True else self.kms_key_id)
         assert isinstance(credentials.region, str) and credentials.region
         assert isinstance(credentials.access_key_id, str) and credentials.access_key_id
         assert isinstance(credentials.secret_access_key, str) and credentials.secret_access_key
-        assert credentials.kms_key_id == (None if nokms is True else self.kms_key_id)
         return credentials
 
     def temporary_credentials(self,
@@ -127,10 +138,10 @@ class EnvGoogle(Env):
 
     def __init__(self, use_cloud_subfolder_key: bool = False):
         super().__init__(use_cloud_subfolder_key=use_cloud_subfolder_key)
-        self.location = GOOGLE_LOCATION
         self.service_account_file = GOOGLE_SERVICE_ACCOUNT_FILE_PATH
-        self.project_id = GOOGLE_ACCOUNT_NAME
         self.bucket = GOOGLE_TEST_BUCKET_NAME
+        self.location = GOOGLE_LOCATION
+        self.main_credentials = self.credentials()
 
     def credentials(self) -> GoogleCredentials:
         credentials = GcpCredentials.from_file(self.service_account_file, location=self.location)
@@ -142,65 +153,78 @@ class EnvGoogle(Env):
         return credentials
 
     def gcs_non_rclone(self):
-        return Gcs(self.credentials())
+        return Gcs(self.main_credentials)
 
 
 def setup_module():
 
     rclone_setup_module()
 
-    global AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES
-    global GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES
     global AMAZON_CREDENTIALS_FILE_PATH
     global GOOGLE_SERVICE_ACCOUNT_FILE_PATH
 
     assert RCloneInstallation.install() is not None
     assert RCloneInstallation.is_installed() is True
 
-    if AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
-        amazon_credentials_file_path = create_temporary_file_name()
-        region = os.environ.get("AWS_DEFAULT_REGION", None)
+    if is_github_actions_context():
+        print("Running in GitHub Actions")
+    else:
+        print("Not running in GitHub Actions")
+
+    if is_github_actions_context():
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
         secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
         session_token = os.environ.get("AWS_SESSION_TOKEN", None)
-        if access_key_id and secret_access_key:
-            with open(amazon_credentials_file_path, "w") as f:
-                f.write(f"[default]\n")
-                f.write(f"aws_default_region={region}\n") if region else None
-                f.write(f"aws_access_key_id={access_key_id}\n")
-                f.write(f"aws_secret_access_key={secret_access_key}\n")
-                f.write(f"aws_session_token={session_token}\n") if session_token else None
-            os.chmod(amazon_credentials_file_path, 0o600)  # for security
-            AMAZON_CREDENTIALS_FILE_PATH = amazon_credentials_file_path
-    if not (AMAZON_CREDENTIALS_FILE_PATH and
-            os.path.isfile(normalize_path(AMAZON_CREDENTIALS_FILE_PATH, expand_home=True))):
-        print("No Amazon credentials file defined. Skippping this test module: test_rclone_support")
-        pytest.skip()
+        if not (access_key_id and secret_access_key):
+            pytest.fail("Integration test setup error: AWS acesss keys not defined!")
+        AMAZON_CREDENTIALS_FILE_PATH = create_temporary_file_name()
+        with open(AMAZON_CREDENTIALS_FILE_PATH, "w") as f:
+            f.write(f"[default]\n")
+            f.write(f"aws_access_key_id={access_key_id}\n")
+            f.write(f"aws_secret_access_key={secret_access_key}\n")
+            f.write(f"aws_session_token={session_token}\n") if session_token else None
+        os.chmod(AMAZON_CREDENTIALS_FILE_PATH, 0o600)  # for security
+        print(f"Amazon Credentials:")
+        print(f"- AWS_ACCESS_KEY_ID: {access_key_id}")
+        print(f"- AWS_SECRET_ACCESS_KEY: {len(secret_access_key) * '*'}")
+        print(f"- AMAZON_CREDENTIALS_FILE_PATH: {AMAZON_CREDENTIALS_FILE_PATH}")
+    else:
+        if not (AMAZON_CREDENTIALS_FILE_PATH and
+                os.path.isfile(normalize_path(AMAZON_CREDENTIALS_FILE_PATH, expand_home=True))):
+            pytest.fail("No Amazon credentials file defined. Skippping this test module: test_rclone_support")
+        print(f"Amazon Credentials:")
+        print(f"- AMAZON_CREDENTIALS_FILE_PATH: {AMAZON_CREDENTIALS_FILE_PATH}")
 
-    if GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
-        if service_account_json_string := os.environ.get("GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON"):
-            service_account_json = json.loads(service_account_json_string)
-            google_service_account_file_path = create_temporary_file_name(suffix=".json")
-            with open(google_service_account_file_path, "w") as f:
-                json.dump(service_account_json, f)
-            os.chmod(google_service_account_file_path, 0o600)  # for security
-            GOOGLE_SERVICE_ACCOUNT_FILE_PATH = google_service_account_file_path
-    if not (GOOGLE_SERVICE_ACCOUNT_FILE_PATH and
-            os.path.isfile(normalize_path(GOOGLE_SERVICE_ACCOUNT_FILE_PATH, expand_home=True))):
-        if not RCloneGoogle.is_google_compute_engine():
-            print("No Google credentials file defined. Skippping this test module: test_rclone_support")
-            pytest.skip()
-            return
-        # Google credentials can be None on a GCE instance; i.e. no service account file needed.
-        GOOGLE_SERVICE_ACCOUNT_FILE_PATH = None
+    if is_github_actions_context():
+        if not (service_account_json_string := os.environ.get("GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON")):
+            pytest.fail("Integration test setup error: Google credentials defined!")
+        service_account_json = json.loads(service_account_json_string)
+        google_service_account_file_path = create_temporary_file_name(suffix=".json")
+        with open(google_service_account_file_path, "w") as f:
+            json.dump(service_account_json, f)
+        os.chmod(google_service_account_file_path, 0o600)  # for security
+        GOOGLE_SERVICE_ACCOUNT_FILE_PATH = google_service_account_file_path
+        print(f"Google Credentials:")
+        print(f"- GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON: {len(service_account_json_string) * '*'}")
+        print(f"- GOOGLE_SERVICE_ACCOUNT_FILE_PATH: {GOOGLE_SERVICE_ACCOUNT_FILE_PATH}")
+    else:
+        if not (GOOGLE_SERVICE_ACCOUNT_FILE_PATH and
+                os.path.isfile(normalize_path(GOOGLE_SERVICE_ACCOUNT_FILE_PATH, expand_home=True))):
+            if not RCloneGoogle.is_google_compute_engine():
+                print("No Google credentials file defined. Skippping this test module: test_rclone_support")
+                pytest.skip()
+                return
+            # Google credentials can be None on a GCE instance; i.e. no service account file needed.
+            GOOGLE_SERVICE_ACCOUNT_FILE_PATH = None
+        print(f"Google Credentials:")
+        print(f"- GOOGLE_SERVICE_ACCOUNT_FILE_PATH: {GOOGLE_SERVICE_ACCOUNT_FILE_PATH}")
 
     initial_setup_and_sanity_checking(env_amazon=EnvAmazon(), env_google=EnvGoogle())
 
 
 def teardown_module():
-    if AMAZON_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
+    if is_github_actions_context:
         remove_temporary_file(AMAZON_CREDENTIALS_FILE_PATH)
-    if GOOGLE_CREDENTIALS_FROM_ENVIRONMENT_VARIABLES:
         remove_temporary_file(GOOGLE_SERVICE_ACCOUNT_FILE_PATH)
     rclone_teardown_module()
 
@@ -265,7 +289,6 @@ def create_rclone_config_google(credentials: GoogleCredentials, env_google: EnvG
     assert config == config
     assert not (config != config)
     assert RCloneGoogle(config, bucket="mismatch") != config  # checking equals override
-    assert config.project == env_google.project_id
     return config
 
 

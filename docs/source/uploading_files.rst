@@ -77,13 +77,13 @@ for uploading many files or larger files.
 Uploading from Google Cloud Storeage
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If your data files are stored in Google Cloud Storage (GCS), we support the ability to upload,
+If your data files reside in Google Cloud Storage (GCS), we support the ability to upload,
 or more precisely, `transfer` files directly from GCS to AWS S3. The smaht-submitr command-line
-tools (``submit-metadata-bundle`` and ``resume-uploads``) accomplish this by leveraging a third-party
-software called :toplink:`rclone <https://rclone.org>`.
+tools (``submit-metadata-bundle`` and ``resume-uploads``) accomplish this by leveraging
+third-party open source software called :toplink:`rclone <https://rclone.org>`.
 
-The advantage of this is that you needn't have download the entire data file to your local
-machine, which well may not have enough disk space. The rclone facility transfers the data
+The advantage of this is that you needn't download the entire data file to your local
+machine, which may well not have enough disk space. The rclone facility transfers the data
 file from GCS to AWS S3 by way of your machine, i.e. using it as an intermediary, so that
 only a small portion of the data ever actually travels through your machine at a time.
 
@@ -108,7 +108,7 @@ Similar tools exist for :toplink:`Google Cloud Storage <https://en.wikipedia.org
 and :toplink:`Microsoft Azure <https://en.wikipedia.org/wiki/Microsoft_Azure>`.
 
 .. caution::
-    If you are working on a :toplink:`Mac M1 <https://en.wikipedia.org/wiki/Apple_M1>` or :toplink:`M2 <https://en.wikipedia.org/wiki/Apple_M2>` system (i.e. using the :toplink:`ARM <https://en.wikipedia.org/wiki/ARM_architecture_family>`-based chip), you may encounter problems
+    If you are working on a :toplink:`Mac M1 <https://en.wikipedia.org/wiki/Apple_M1>`, :toplink:`M2 <https://en.wikipedia.org/wiki/Apple_M2>`, or :toplink:`M3 <https://en.wikipedia.org/wiki/Apple_M3>` system (i.e. using the :toplink:`ARM <https://en.wikipedia.org/wiki/ARM_architecture_family>`-based chip), you may encounter problems
     using these kinds of mounting tools. More guidance about this will (hopefully) be forthcoming.
 
 Running Submission Remotely
