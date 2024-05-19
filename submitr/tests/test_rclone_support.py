@@ -770,7 +770,6 @@ def test_rclone_do_any_uploads() -> None:
     assert rcloner.copy_to_key(filesystem.path(file_one), key_google := test_file_two) is True
     assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is True
     assert env_google.gcs_non_rclone().file_size(rclone_google.bucket, key_google) == RANDOM_TMPFILE_SIZE
-    # TODO: Wrong - both files going to the same key in S3 ...
 
     uploaded_uris_amazon = []
 

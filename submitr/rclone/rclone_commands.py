@@ -145,6 +145,7 @@ class RCloneCommands:
         DEBUG(f"RCLONE-COMMAND-RESULT: {result.returncode}")
         return result
 
+    # All this parsing stuff is so that we can use our dcicutils.progress_bar with the rclone copy.
     _RCLONE_PROGRESS_UNITS = {"KiB": 2**10, "MiB": 2**20, "GiB": 2**30, "TiB": 2**40, "PiB": 2**50, "B": 1}
     _RCLONE_PROGRESS_PATTERN = rf".*Transferred:\s*(\d+(?:\.\d+)?)\s*({'|'.join(_RCLONE_PROGRESS_UNITS.keys())}).*"
     _RCLONE_PROGRESS_REGEX = re.compile(_RCLONE_PROGRESS_PATTERN)

@@ -60,12 +60,12 @@ class RCloneGoogle(RCloneConfig):
             return RCloneCommands.ping_command(source=f"{self.name}:", config=config_file, args=args)
 
     @property
-    def location(self) -> Optional[str]:
-        return self.credentials.location if self.credentials else None
-
-    @property
     def service_account_file(self) -> Optional[str]:
         return self.credentials.service_account_file if self.credentials else None
+
+    @property
+    def location(self) -> Optional[str]:
+        return self.credentials.location if self.credentials else None
 
     @property
     def project(self) -> Optional[str]:
