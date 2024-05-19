@@ -1,6 +1,9 @@
 from __future__ import annotations
 from boto3 import client as BotoClient
-from typing import Optional, Union
+import configparser
+import os
+from typing import Optional, Tuple, Union
+from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, normalize_string
 from submitr.rclone.rclone_config import RCloneConfig, RCloneCredentials
 from submitr.rclone.rclone_utils import cloud_path
@@ -9,7 +12,7 @@ from submitr.rclone.rclone_utils import cloud_path
 class RCloneAmazon(RCloneConfig):
 
     def __init__(self,
-                 credentials_or_config: Optional[Union[AmazonCredentials, RCloneAmazon]] = None,
+                 credentials_or_config: Optional[Union[AmazonCredentials, RCloneAmazon, str]] = None,
                  region: Optional[str] = None,
                  access_key_id: Optional[str] = None,
                  secret_access_key: Optional[str] = None,
@@ -24,6 +27,9 @@ class RCloneAmazon(RCloneConfig):
             credentials = credentials_or_config.credentials
         elif isinstance(credentials_or_config, AmazonCredentials):
             credentials = credentials_or_config
+        elif (isinstance(credentials_or_config, str) and
+              (credentials_file := normalize_path(credentials_or_config, expand_home=True))):
+            credentials = credentials_file
         else:
             credentials = None
         credentials = AmazonCredentials(credentials=credentials,
@@ -79,7 +85,7 @@ class RCloneAmazon(RCloneConfig):
 class AmazonCredentials(RCloneCredentials):
 
     def __init__(self,
-                 credentials: Optional[AmazonCredentials] = None,
+                 credentials: Optional[AmazonCredentials, str] = None,
                  region: Optional[str] = None,
                  access_key_id: Optional[str] = None,
                  secret_access_key: Optional[str] = None,
@@ -93,6 +99,15 @@ class AmazonCredentials(RCloneCredentials):
             self._session_token = credentials.session_token
             self._kms_key_id = credentials.kms_key_id
             self._account_number = credentials._account_number  # sic underscore
+        elif isinstance(credentials, str) and (credentials := normalize_path(credentials, expand_home=True)):
+            region, access_key_id, secret_access_key, session_token = (
+                AmazonCredentials._read_credentials_file(credentials))
+            self._region = region
+            self._access_key_id = access_key_id
+            self._secret_access_key = secret_access_key
+            self._session_token = session_token
+            self._kms_key_id = None
+            self._account_number = None
         else:
             self._region = None
             self._access_key_id = None
@@ -157,3 +172,23 @@ class AmazonCredentials(RCloneCredentials):
 
     def __ne__(self, other: Optional[AmazonCredentials]) -> bool:
         return not self.__eq__(other)
+
+    @staticmethod
+    def _read_credentials_file(credentials_file: str,
+                               credentials_section: Optional[str] = None) -> Tuple[Optional[str], Optional[str],
+                                                                                   Optional[str], Optional[str]]:
+        if not credentials_section:
+            credentials_section = "default"
+        config = configparser.ConfigParser()
+        config.read(os.path.expanduser(credentials_file))
+        section = config[credentials_section]
+        region = (section.get("region", None) or
+                  section.get("region_name", None) or
+                  section.get("aws_default_region", None))
+        access_key_id = (section.get("aws_access_key_id", None) or
+                         section.get("access_key_id", None))
+        secret_access_key = (section.get("aws_secret_access_key", None) or
+                             section.get("secret_access_key", None))
+        session_token = (section.get("aws_session_token", None) or
+                         section.get("session_token", None))
+        return region, access_key_id, secret_access_key, session_token

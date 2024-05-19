@@ -15,7 +15,7 @@ from submitr.rclone.rclone_utils import cloud_path
 class RCloneGoogle(RCloneConfig):
 
     def __init__(self,
-                 credentials_or_config: Optional[Union[GoogleCredentials, RCloneGoogle]] = None,
+                 credentials_or_config: Optional[Union[GoogleCredentials, RCloneGoogle, str]] = None,
                  service_account_file: Optional[str] = None,
                  location: Optional[str] = None,  # analagous to AWS region
                  name: Optional[str] = None,
@@ -32,6 +32,9 @@ class RCloneGoogle(RCloneConfig):
         elif isinstance(credentials_or_config, GoogleCredentials):
             credentials = GoogleCredentials(credentials=credentials_or_config, location=location)
         elif service_account_file := normalize_path(service_account_file):
+            credentials = GoogleCredentials(service_account_file=service_account_file, location=location)
+        elif (isinstance(credentials_or_config, str) and
+              (service_account_file := normalize_path(credentials_or_config, expand_home=True))):
             credentials = GoogleCredentials(service_account_file=service_account_file, location=location)
         else:
             # No credentials allowed/works when running on a GCE instance.
@@ -170,7 +173,7 @@ class RCloneGoogle(RCloneConfig):
 class GoogleCredentials(RCloneCredentials):
 
     def __init__(self,
-                 credentials: Optional[GoogleCredentials] = None,
+                 credentials: Optional[GoogleCredentials, str] = None,
                  service_account_file: Optional[str] = None,
                  location: Optional[str] = None) -> None:
 
@@ -182,6 +185,10 @@ class GoogleCredentials(RCloneCredentials):
             self._service_account_file = None
 
         if service_account_file := normalize_path(service_account_file, expand_home=True):
+            if not os.path.isfile(service_account_file):
+                raise Exception(f"GoogleCredentials service account file not found: {service_account_file}")
+            self._service_account_file = service_account_file
+        elif (isinstance(credentials, str) and (service_account_file := normalize_path(credentials, expand_home=True))):
             if not os.path.isfile(service_account_file):
                 raise Exception(f"GoogleCredentials service account file not found: {service_account_file}")
             self._service_account_file = service_account_file
