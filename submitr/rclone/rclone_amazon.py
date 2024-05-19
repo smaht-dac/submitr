@@ -1,7 +1,6 @@
 from __future__ import annotations
 from boto3 import client as BotoClient
 import configparser
-import os
 from typing import Optional, Tuple, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, normalize_string
@@ -177,11 +176,17 @@ class AmazonCredentials(RCloneCredentials):
     def _read_credentials_file(credentials_file: str,
                                credentials_section: Optional[str] = None) -> Tuple[Optional[str], Optional[str],
                                                                                    Optional[str], Optional[str]]:
-        if not credentials_section:
-            credentials_section = "default"
         config = configparser.ConfigParser()
-        config.read(os.path.expanduser(credentials_file))
-        section = config[credentials_section]
+        try:
+            config.read(normalize_path(credentials_file, expand_home=True))
+        except Exception:
+            return None, None, None, None
+        if credentials_section := normalize_string(credentials_section):
+            section = config[credentials_section]
+        elif len(config.sections()) > 0:
+            section = config[config.sections()[0]]
+        else:
+            return None, None, None, None
         region = (section.get("region", None) or
                   section.get("region_name", None) or
                   section.get("aws_default_region", None))
