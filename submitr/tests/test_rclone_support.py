@@ -167,9 +167,9 @@ def setup_module():
     assert RCloneInstallation.is_installed() is True
 
     if is_github_actions_context():
-        print("Running in GitHub Actions")
+        print("\Running in GitHub Actions")
     else:
-        print("Not running in GitHub Actions")
+        print("\Not running in GitHub Actions")
 
     if is_github_actions_context():
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
@@ -185,7 +185,7 @@ def setup_module():
             f.write(f"aws_session_token={session_token}\n") if session_token else None
         os.chmod(AMAZON_CREDENTIALS_FILE_PATH, 0o600)  # for security
         print(f"Amazon Credentials:")
-        print(f"- AWS_ACCESS_KEY_ID: {access_key_id}")
+        print(f"- AWS_ACCESS_KEY_ID: {len(access_key_id) * '*'}")
         print(f"- AWS_SECRET_ACCESS_KEY: {len(secret_access_key) * '*'}")
         print(f"- AMAZON_CREDENTIALS_FILE_PATH: {AMAZON_CREDENTIALS_FILE_PATH}")
     else:
