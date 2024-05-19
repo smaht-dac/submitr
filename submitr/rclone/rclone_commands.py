@@ -42,6 +42,8 @@ class RCloneCommands:
         #   ERROR: SMAFIQ81LMQZ.fastq: corrupted on transfer: sizes differ 2147483648 vs 0
         #   ERROR: Attempt 1/3 failed with 1 errors and: corrupted on transfer: sizes differ 2147483648 vs 0
         #
+        # FYI: https://forum.rclone.org/t/copy-to-scality-s3-corrupted-on-transfer-sizes-differ-xxx-vs-0/43281/3
+        #
         command += ["--progress"]
         command += ["--ignore-times"]
         command += ["--ignore-size"]
