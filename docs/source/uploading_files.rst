@@ -4,9 +4,9 @@ Uploading Files
 
 As mentioned previously (in the `Usage <usage.html>`_ section),
 after ``submit-metadata-bundle`` processes the main submitted metadata file,
-it will (after prompting) upload any files referenced within the submission metadata file.
+it will (after prompting) upload, to AWS S3, any files referenced within the submission metadata file.
 
-These files should reside in the same directory as your submission file.
+These files should reside on you local file-system in the same directory as your submission file.
 Or, if they do not, then you must specify the directory where these files can be found, like this::
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files>
@@ -28,7 +28,7 @@ You can resume execution with the upload part by doing::
    resume-uploads --env <environment-name> <uuid>
 
 where the ``<uuid>`` argument is the UUID (e.g. ``0ad28518-2755-40b5-af51-036042dd099d``) for the submission which should
-have been displayed in the output of the ``submit-metadata-bundle`` command (e.g. see `screenshot <usage.html#example-screenshots>`_);
+have been displayed in the output of the ``submit-metadata-bundle`` command (e.g. see `screenshot <usage.html#screenshots>`_);
 this will upload `all` of the files references for the given submission UUID.
 
 Or, you can upload `individual` files referenced in the original submission separately by doing::
@@ -39,7 +39,7 @@ where the ``<referenced-file-uuid>`` argument is the UUID for the individual fil
 the :toplink:`accession <https://en.wikipedia.org/wiki/Accession_number_(bioinformatics)>` ID (e.g. ``SMAURL8WB1ZS``)
 or accession ID based file name (e.g. ``SMAURL8WB1ZS.fastq``) of the referenced file.
 This UUID, and accession ID and accession ID based file name, is included in the output of ``submit-metadata-bundle``;
-specifically in the **Upload Info** section of that output (e.g. see `screenshot <usage.html#example-screenshots>`_).
+specifically in the **Upload Info** section of that output (e.g. see `screenshot <usage.html#screenshots>`_).
 
 For both of these commands above, you will be asked to confirm if you would like to continue with the stated action.
 If you would like to skip these prompts so the commands can be run by a
@@ -59,7 +59,7 @@ you need to consider other options for uploading such files.
 Upoading Files Locally
 ~~~~~~~~~~~~~~~~~~~~~~
 
-This option works well for uploading a small number
+This default option works well for uploading a small number
 of files or files of small size. Files can be
 transferred to your local computer from Cloud storage
 or a computing cluster in several ways.
@@ -73,6 +73,28 @@ on your local computer to store the files to upload.
 As such files can be rather large, we recommend performing
 the upload from a Cloud or cluster instance
 for uploading many files or larger files.
+
+Uploading from Google Cloud Storeage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If your data files are stored in Google Cloud Storage (GCS), we support the ability to upload,
+or more precisely, `transfer` files directly from GCS to AWS S3. The smaht-submitr command-line
+tools (``submit-metadata-bundle`` and ``resume-uploads``) accomplish this by leveraging a third-party
+software called :toplink:`rclone <https://rclone.org>`.
+
+The advantage of this is that you needn't have download the entire data file to your local
+machine, which well may not have enough disk space. The rclone facility transfers the data
+file from GCS to AWS S3 by way of your machine, i.e. using it as an intermediary, so that
+only a small portion of the data ever actually travels through your machine at a time.
+
+And no need to worry about the details of rclone - its installation, and usage, and whatnot -
+the smaht-submitr tools automatically installs and hides the details of its workings from you.
+To take advantage of this you merely need to specificy a couple of command-line options, for example::
+
+    submit-metadata-bundle your-metadata.xlsx --submit \
+        --rclone-google-source your-gcs-bucket \
+        --rclone-google-credentials your-gcp-service-account-file
+
 
 Mounting AWS S3 Files 
 ~~~~~~~~~~~~~~~~~~~~~
