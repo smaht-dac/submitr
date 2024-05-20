@@ -1,4 +1,5 @@
 from __future__ import annotations
+from functools import lru_cache
 import os
 import pathlib
 from typing import Callable, List, Optional, Union
@@ -241,6 +242,18 @@ class FileForUpload:
                     self._google_inaccessible = True
         return self._checksum_google
 
+    def get_destination(self, portal: Portal) -> Optional[str]:
+        if not self.uuid or not isinstance(portal, Portal):
+            return None
+        try:
+            if not (accession := get_file_accession(self.uuid, portal)):
+                return None
+            if not (file_upload_bucket := get_file_upload_bucket(portal)):
+                return None
+            return f"s3://{file_upload_bucket}/{accession}"
+        except Exception:
+            return None
+
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,
                verbose: bool = False, printf: Optional[Callable] = None) -> bool:
         """
@@ -263,6 +276,8 @@ class FileForUpload:
         elif self.accession:
             file_identifier += f" ({self.accession})"
 
+        # TODO: Report the destination too ...
+        _ = self.get_destination(portal)
         if self.found_local:
             found_both_local_and_google = False
             if self.found_google:
@@ -398,3 +413,23 @@ class FilesForUpload:
                                                   verbose=verbose, printf=printf):
                         result = False
         return result
+
+
+@lru_cache(maxsize=1)
+def get_file_upload_bucket(portal: Portal) -> Optional[str]:
+    if not isinstance(portal, Portal):
+        return None
+    try:
+        return portal.get_health().json()["file_upload_bucket"]
+    except Exception:
+        return None
+
+
+@lru_cache(maxsize=1)
+def get_file_accession(uuid: str, portal: Portal) -> Optional[str]:
+    if not isinstance(uuid, str) or not uuid or not isinstance(portal, Portal):
+        return None
+    try:
+        return portal.get_metadata(uuid)['accession']
+    except Exception:
+        return None
