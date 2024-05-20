@@ -137,11 +137,12 @@ def main_info(args, credentials_amazon, credentials_google):
         size = rclone_amazon.file_size(args.source)
         checksum = rclone_amazon.file_checksum(args.source)
         # TODO
-        # Added RCloneConfig lsjson access point to get modified date ...
+        # Add RCloneConfig lsjson access point to get modified date,
+        # and might as well change path_exists and file_size to use this same call.
         # [{"Path":"SMAFITXIG8HS.fastq","Name":"SMAFITXIG8HS.fastq",
         #   "Size":14,"MimeType":"binary/octet-stream",
         #    "ModTime":"2024-05-09T16:58:30.606505622-04:00",
-        #    "IsDir":false,"Tier":"STANDARD"}]  # noqa
+        #    "IsDir":false,"Tier":"STANDARD"}]
         import pdb ; pdb.set_trace()  # noqa
         _ = rclone_amazon.path_exists(args.source)
         print(f"Size: {format_size(size)}")
