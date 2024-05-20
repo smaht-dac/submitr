@@ -143,7 +143,6 @@ def main_info(args, credentials_amazon, credentials_google):
         #   "Size":14,"MimeType":"binary/octet-stream",
         #    "ModTime":"2024-05-09T16:58:30.606505622-04:00",
         #    "IsDir":false,"Tier":"STANDARD"}]
-        import pdb ; pdb.set_trace()  # noqa
         _ = rclone_amazon.path_exists(args.source)
         print(f"Size: {format_size(size)}")
         print(f"Checksum: {checksum}")
