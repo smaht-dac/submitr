@@ -2112,6 +2112,7 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
     files_for_upload = FilesForUpload.assemble(structured_data.upload_files,
                                                main_search_directory=upload_folder,
                                                main_search_directory_recursively=recursive,
+                                               other_search_directories=[ingestion_filename, os.path.curdir],
                                                config_google=rclone_google)
     if files_for_upload:
         PRINT_OUTPUT()
@@ -2498,6 +2499,7 @@ def _print_metadata_file_info(file: str, env: str,
             files_for_upload = FilesForUpload.assemble(structured_data,
                                                        main_search_directory=upload_folder,
                                                        main_search_directory_recursively=subfolders,
+                                                       other_search_directories=[file, os.path.curdir],
                                                        config_google=rclone_google)
             FilesForUpload.review(files_for_upload, portal=portal, review_only=True, verbose=True, printf=PRINT)
     if not (refs is True):
