@@ -125,7 +125,8 @@ class FileForUpload:
     def from_local(self) -> bool:
         # Possible for this to return False if the file was found locally but was also found
         # in Google Cloud Storage, and the favor_local property is None, meaning the review
-        # function has not yet been called, which resolves favor_local to True or False.
+        # function has not yet been called, which resolves favor_local to True or False; in
+        # which case (if found both locally and in Google) from_google would also return False.
         return self.found_local and ((not self.found_google) or (self.favor_local is True))
 
     @property
@@ -155,7 +156,13 @@ class FileForUpload:
 
     @property
     def favor_local(self) -> Optional[bool]:
-        return self._favor_local if self.found_google else True
+        if self._favor_local in (True, False):
+            return self._favor_local
+        if self.found_local:
+            if self.found_google:
+                return None
+            return True
+        return False
 
     @property
     def ignore(self) -> bool:
@@ -256,27 +263,17 @@ class FileForUpload:
         elif self.accession:
             file_identifier += f" ({self.accession})"
 
-        if not self.found:
-            printf(f"- WARNING: File for upload NOT FOUND: {file_identifier}")
-            if isinstance(portal, Portal):
-                printf(f"  - Use --directory to specify a directory where the file can be found.")
-                if not review_only:
-                    printf(f"  - Upload later with:"
-                           f" {self.resume_upload_command(env=portal.env if portal else None)}")
-            self._ignore = True
-            return False
-
-        found_local_and_google = False
-
         if self.found_local:
+            found_both_local_and_google = False
             if self.found_google:
-                found_local_and_google = True
+                found_both_local_and_google = True
                 printf(f"- File for upload found BOTH locally AND in Google Cloud Storage: {file_identifier}")
                 printf(f"  - Google Cloud Storage: {self.display_path_google}"
                        f"{f' ({format_size(self.size_google)})' if self.size_google else ''}")
-            if self.found_local_multiple and (not self.found_google or self._favor_local is True):
+            if self.found_local_multiple and (not self.found_google or (self._favor_local is True)):
                 # Here there are multiple local files found (due to recursive directory lookup),
-                # and there was either no Google file found or if there was we are favoring local.
+                # and there was either no Google file found or if there was but we are favoring local.
+                # For this case (multiple/ambiguous local files) return False and ignore this file.
                 # Could prompt the user to choose which of the multiple local files to use or
                 # something; but probably not worth it; doubt it will come up much if at all.
                 if not review_only:
@@ -284,7 +281,7 @@ class FileForUpload:
                     printf(f"- WARNING: Ignoring file for upload"
                            f" as multiple/ambiguous local instances found: {file_identifier}")
                 else:
-                    if found_local_and_google:
+                    if found_both_local_and_google:
                         indent = "  "
                         printf(f"{indent}- Local file AMBIGUITY (multiple local instances found): {file_identifier}")
                     else:
@@ -294,29 +291,38 @@ class FileForUpload:
                     printf(f"{indent}  - {path_local} ({format_size(get_file_size(path_local))})")
                 printf(f"{indent}  - Use --directory-only rather than --directory to NOT search recursively.")
                 if not review_only:
-                    if found_local_and_google:
-                        self._favor_local = not yes_or_no("  - Do you want to use the Google Cloud Storage version?")
+                    if found_both_local_and_google:
+                        self._favor_local = (
+                            not yes_or_no("  - Do you want to use the Google Cloud Storage (GCS) version?"))
                     else:
                         printf(f"  - Upload later with:"
                                f" {self.resume_upload_command(env=portal.env if portal else None)}")
                 self._ignore = True
                 return False
             else:
-                if found_local_and_google:
+                if found_both_local_and_google:
                     printf(f"  - Local: {self.path_local} ({format_size(self.size_local)})")
                     if not review_only:
-                        self._favor_local = not yes_or_no("  - Do you want to use the Google Cloud Storage version?")
+                        self._favor_local = (
+                            not yes_or_no("  - Do you want to use the Google Cloud Storage (GCS) version?"))
                 else:
                     printf(f"- File for upload: {self.path_local} ({format_size(self.size_local)})")
+            return True
 
-            if not review_only and verbose:
-                printf(f"- File for upload: {self.display_path} ({format_size(self.size)})")
-            return True
         elif self.found_google:
-            if verbose:
-                printf(f"- File for upload (from Google Cloud Storage):"
-                       f" {self.display_path_google} ({format_size(self.size_google)})")
+            printf(f"- File for upload from Google Cloud Storage (GCS):"
+                   f" {self.display_path_google} ({format_size(self.size_google)})")
             return True
+
+        else:  # I.e. not self.found is True
+            printf(f"- WARNING: File for upload NOT FOUND: {file_identifier}")
+            if isinstance(portal, Portal):
+                printf(f"  - Use --directory to specify a directory where the file can be found.")
+                if not review_only:
+                    printf(f"  - Upload later with:"
+                           f" {self.resume_upload_command(env=portal.env if portal else None)}")
+            self._ignore = True
+            return False
 
     def __str__(self) -> str:  # for troubleshooting only
         return (
