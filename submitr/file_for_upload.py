@@ -305,6 +305,7 @@ class FileForUpload:
                     if not review_only:
                         self._favor_local = (
                             not yes_or_no("  - Do you want to use the Google Cloud Storage (GCS) version?"))
+                        printf(f"- File for upload: {self.display_path} ({format_size(self.size)})")
                 else:
                     printf(f"- File for upload: {self.path_local} ({format_size(self.size_local)})")
             return True
