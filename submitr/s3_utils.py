@@ -29,21 +29,21 @@ def get_s3_key_metadata(aws_credentials: dict, s3_bucket: str, s3_key: str, stri
             if isinstance(s3_file_md5 := s3_file_metadata.get("md5"), str):
                 result["md5"] = s3_file_md5
                 if isinstance(s3_file_md5_timestamp := s3_file_metadata.get("md5-timestamp"), str):
-                    result["md5_timestamp"] = s3_file_md5_timestamp
+                    result["md5-timestamp"] = s3_file_md5_timestamp
                 if isinstance(s3_file_md5_source := s3_file_metadata.get("md5-source"), str):
-                    result["md5_source"] = s3_file_md5_source
+                    result["md5-source"] = s3_file_md5_source
         # As a backup check if there is an md5 written directly by rclone copy.
         if not result.get("md5") and isinstance(s3_file_metadata, dict):
             if s3_file_md5 := s3_file_metadata.get("md5chksum"):
                 result["md5"] = base64_decode(s3_file_md5).hex()
                 if isinstance(s3_file_md5_timestamp := s3_file_metadata.get("mtime"), str):
-                    result["md5_timestamp"] = s3_file_md5_timestamp
+                    result["md5-timestamp"] = s3_file_md5_timestamp
         if not result.get("md5") and isinstance(s3_file_metadata := s3_file_head.get("ResponseMetadata"), dict):
             if isinstance(s3_file_http_headers := s3_file_metadata.get("HTTPHeaders"), dict):
                 if isinstance(s3_file_md5 := s3_file_http_headers.get("x-amz-meta-md5chksum"), str):
                     result["md5"] = base64_decode(s3_file_md5).hex()
                     if isinstance(s3_file_md5_timestamp := s3_file_http_headers.get("x-amz-meta-mtime"), str):
-                        result["md5_timestamp"] = s3_file_md5_timestamp
+                        result["md5-timestamp"] = s3_file_md5_timestamp
         # Just for completeness and FYI get get the etag (not actually needed/used right now).
         if isinstance(s3_file_etag := s3_file_head.get("ETag", ""), str):
             result["etag"] = s3_file_etag.strip("\"")

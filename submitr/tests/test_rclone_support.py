@@ -776,7 +776,7 @@ def test_rclone_upload_file_to_aws_s3() -> None:
     assert s3_key_metadata["size"] == filesize
     assert s3_key_metadata["size"] == filesize
     assert s3_key_metadata["md5"] == compute_file_md5(os.path.join(filesystem.root, file_one))
-    assert s3_key_metadata["md5_source"] == "google-cloud-storage"
+    assert s3_key_metadata["md5-source"] == "google-cloud-storage"
     assert env_amazon.s3_non_rclone().delete_file(env_amazon.bucket, s3_key) is True
     assert env_amazon.s3_non_rclone().file_exists(env_amazon.bucket, s3_key) is False
     assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, files_for_upload[0].name) is True

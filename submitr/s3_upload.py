@@ -73,6 +73,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         }
     else:
         aws_credentials = {}
+    aws_kms_args = {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": aws_kms_key_id} if aws_kms_key_id else {}
 
     print_progress = print_progress is True
     print_preamble = print_preamble is True
@@ -262,9 +263,14 @@ def upload_file_to_aws_s3(file: FileForUpload,
         if metadata := create_metadata_for_uploading_file():
             try:
                 s3 = BotoClient("s3", **aws_credentials)
+                # N.B. The aws_kms_args (with the KMS Key ID info) is needed on this copy_object even
+                # though it it only being used to update the S3 object/key metadata; failure to do this
+                # was not causing problems on our test bucket (smaht-unit-testing-files) but on a real
+                # bucket (e.g. smaht-wolf-application-files) is errors out with: An error occurred
+                # (AccessDenied) when calling the CopyObject operation: Access Denied.
                 s3.copy_object(Bucket=s3_bucket, Key=s3_key,
                                CopySource={"Bucket": s3_bucket, "Key": s3_key},
-                               Metadata=metadata, MetadataDirective="REPLACE")
+                               Metadata=metadata, MetadataDirective="REPLACE", **aws_kms_args)
                 return True
             except Exception:
                 pass
@@ -297,7 +303,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
     else:
         upload_file_callback = define_upload_file_callback(progress_total_nbytes=False)
         s3 = BotoClient("s3", **aws_credentials)
-        aws_extra_args = {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": aws_kms_key_id} if aws_kms_key_id else {}
+        aws_extra_args = {**aws_kms_args}
         if metadata := create_metadata_for_uploading_file():
             aws_extra_args["Metadata"] = metadata
         with open(file.path_local, "rb") as f:
