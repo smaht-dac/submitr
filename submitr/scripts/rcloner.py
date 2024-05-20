@@ -2,20 +2,25 @@ import argparse
 from submitr.rclone import RCloner, RCloneAmazon, RCloneGoogle, cloud_path
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsCredentials
 from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredentials
+from dcicutils.misc_utils import format_size
 
 # Little command-line utility to interactively test out rclone support code in smaht-submitr.
 
 
 def main() -> None:
     args = argparse.ArgumentParser(description="Test utility for rclone support in smaht-submitr.")
+    args.add_argument("action", help="Action: copy or info.")
     args.add_argument("source", help="Source file or cloud bucket/key.")
-    args.add_argument("destination", help="Destination file/directory or cloud bucket/key.")
+    args.add_argument("destination", nargs="?", help="Destination file/directory or cloud bucket/key.")
     args.add_argument("--amazon", help="AWS environment; for ~/.aws_test.{env}/credentials file.")
     args.add_argument("--google", help="Amazon or Google configuration file.")
     args.add_argument("--kms", help="Amazon KMS key ID.")
     args.add_argument("--temporary-credentials", "-tc", nargs="?", help="Amazon KMS key ID.", const=True)
     args.add_argument("--verbose", action="store_true", help="Verbose output.", default=False)
     args = args.parse_args()
+
+    copy = (args.action.lower() == "copy")
+    info = (args.action.lower() == "info")
 
     if args.amazon:
         if not (credentials_amazon := AwsCredentials.from_file(args.amazon)):
@@ -40,6 +45,20 @@ def main() -> None:
             usage(f"Cannot create GCS credentials from specified value: {args.google}")
     else:
         credentials_google = None
+
+    if info:
+        if args.destination:
+            usage("Only argument file argument allowed with info.")
+        exit(main_info(args, credentials_amazon, credentials_google))
+    elif copy:
+        if not args.destination:
+            usage("Destination required for copy.")
+        exit(main_copy(args, credentials_amazon, credentials_google))
+    else:
+        usage("Must specify copy or info.")
+
+
+def main_copy(args, credentials_amazon, credentials_google):
 
     if args.source.lower().startswith("s3://"):
         source = args.source[5:]
@@ -110,6 +129,25 @@ def main() -> None:
         else:
             print()
         exit(1)
+
+
+def main_info(args, credentials_amazon, credentials_google):
+    if args.source.lower().startswith("s3://"):
+        rclone_amazon = RCloneAmazon(credentials_amazon)
+        size = rclone_amazon.file_size(args.source)
+        checksum = rclone_amazon.file_checksum(args.source)
+        # TODO
+        # Added RCloneConfig lsjson access point to get modified date ...
+        # [{"Path":"SMAFITXIG8HS.fastq","Name":"SMAFITXIG8HS.fastq",
+        #   "Size":14,"MimeType":"binary/octet-stream",
+        #    "ModTime":"2024-05-09T16:58:30.606505622-04:00",
+        #    "IsDir":false,"Tier":"STANDARD"}]  # noqa
+        import pdb ; pdb.set_trace()  # noqa
+        _ = rclone_amazon.path_exists(args.source)
+        print(f"Size: {format_size(size)}")
+        print(f"Checksum: {checksum}")
+        pass
+    pass
 
 
 def usage(message: str) -> None:
