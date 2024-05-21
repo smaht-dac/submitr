@@ -30,11 +30,13 @@ class RCloneCommands:
         #
         # --s3-no-check-bucket option obviates need for s3:CreateBucket in credentials policy.
         #   This obviates need for s3:CreateBucket in our AWS S3 credentials policy.
-        #   See encoded_core.types.file.external_creds function.
+        #   See encoded_core.types.file.external_creds function; and see also testing module
+        #   submitr.rclone.testing.rclone_utils_for_testing_amazon.AwsS3.generate_temporary_credentials.
         #
         # --s3-no-head-object
         #   This obviates need for s3:ListBucket in our AWS S3 credentials policy.
-        #   See encoded_core.types.file.external_creds function.
+        #   See encoded_core.types.file.external_creds function; and see also testing module
+        #   submitr.rclone.testing.rclone_utils_for_testing_amazon.AwsS3.generate_temporary_credentials.
         #
         # --ignore-size
         #   This is necessary because since we are using --s3-no-head-object rclone (evidently)
@@ -42,6 +44,11 @@ class RCloneCommands:
         #   without this we get an rclone error like below, and it retries (bad) up to 3 times:
         #   ERROR: SMAFIQ81LMQZ.fastq: corrupted on transfer: sizes differ 2147483648 vs 0
         #   ERROR: Attempt 1/3 failed with 1 errors and: corrupted on transfer: sizes differ 2147483648 vs 0
+        #
+        # --header-upload
+        #   This is to set the metadata for an uploaded (AWS S3) object. Note we need to included any
+        #   existing metaadata on the object, if it already exists, otherwise it will get blown away;
+        #   this is done in the s3_upload module..
         #
         # FYI: https://forum.rclone.org/t/copy-to-scality-s3-corrupted-on-transfer-sizes-differ-xxx-vs-0/43281/3
         #
