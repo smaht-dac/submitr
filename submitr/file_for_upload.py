@@ -1,10 +1,10 @@
 from __future__ import annotations
-from functools import lru_cache
 import os
 import pathlib
 from typing import Callable, List, Optional, Tuple, Union
 from dcicutils.command_utils import yes_or_no
 from dcicutils.file_utils import compute_file_md5, get_file_size, normalize_path, search_for_file
+from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import format_size, normalize_string
 from dcicutils.structured_data import Portal, StructuredDataSet
 from submitr.rclone import RCloneGoogle
@@ -422,7 +422,7 @@ class FilesForUpload:
         return result
 
 
-@lru_cache(maxsize=1)
+@function_cache(maxsize=1)
 def get_file_upload_bucket(portal: Portal) -> Optional[str]:
     if not isinstance(portal, Portal):
         return None
@@ -432,7 +432,7 @@ def get_file_upload_bucket(portal: Portal) -> Optional[str]:
         return None
 
 
-@lru_cache(maxsize=1)
+@function_cache(maxsize=2048)
 def get_file_accession_info(uuid: str, portal: Portal) -> Tuple[Optional[str], Optional[str]]:
     if not isinstance(uuid, str) or not uuid or not isinstance(portal, Portal):
         return None, None
@@ -441,11 +441,22 @@ def get_file_accession_info(uuid: str, portal: Portal) -> Tuple[Optional[str], O
         if file_object := portal.get_metadata(uuid):
             accession = file_object.get("accession")
             accession_file_name = None
-            if file_format_uuid := file_object.get("file_format", {}).get("uuid"):
-                if file_format_object := portal.get_metadata(file_format_uuid):
-                    if file_extension := file_format_object.get("standard_file_extension"):
-                        accession_file_name = f"{accession}.{file_extension}"
+            if file_extension := get_file_extension(file_object, portal):
+                accession_file_name = f"{accession}.{file_extension}"
             return accession, accession_file_name
     except Exception:
         pass
     return None, None
+
+
+@function_cache(maxsize=64, serialize_key=True)
+def get_file_extension(file_format_uuid_or_file_object: Union[str, dict], portal: Portal) -> Optional[str]:
+    if isinstance(file_format_uuid_or_file_object, dict):
+        if not (file_format_uuid := file_format_uuid_or_file_object.get("file_format", {}).get("uuid")):
+            return None
+    elif isinstance(file_format_uuid_or_file_object, str):
+        file_format_uuid = file_format_uuid_or_file_object
+    if file_format_uuid and (file_format_object := portal.get_metadata(file_format_uuid)):
+        if file_extension := file_format_object.get("standard_file_extension"):
+            return file_extension
+    return None

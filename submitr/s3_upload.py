@@ -190,44 +190,52 @@ def upload_file_to_aws_s3(file: FileForUpload,
 
     def verify_with_any_already_uploaded_file() -> None:
         nonlocal file, file_size, file_checksum, file_checksum_timestamp
-        if existing_file_info := get_uploaded_file_info():
-            existing_file_modified = existing_file_info["modified"]
-            existing_file_size = existing_file_info["size"]
-            existing_file_md5 = existing_file_info.get("md5")  # might not be set
-            # The file we are uploading already exists in S3.
-            printf(f"WARNING: This file already exists in AWS S3:"
-                   f" {format_size(existing_file_size)} | {existing_file_modified}")
-            if files_appear_to_be_the_same := (existing_file_size == file_size):
-                # File sizes are the same. See if these files appear to be the same according
-                # to their checksums; but if it is a big file prompt the user first to check.
-                if file_checksum:
+        if not (existing_file_info := get_uploaded_file_info()):
+            if not file_checksum and file.from_local:
+                # TODO
+                # Should we prompt to get checksum (or local file to upload),
+                # to be used to set for the target S3 object/key metadata, if the
+                # file is big (like we do below, if the file already exists in S3).
+                file_checksum = compute_file_md5(file.path_local)
+                file_checksum_timestamp = current_timestamp()
+            return True
+        existing_file_modified = existing_file_info["modified"]
+        existing_file_size = existing_file_info["size"]
+        existing_file_md5 = existing_file_info.get("md5")  # might not be set
+        # The file we are uploading already exists in S3.
+        printf(f"WARNING: This file already exists in AWS S3:"
+               f" {format_size(existing_file_size)} | {existing_file_modified}")
+        if files_appear_to_be_the_same := (existing_file_size == file_size):
+            # File sizes are the same. See if these files appear to be the same according
+            # to their checksums; but if it is a big file prompt the user first to check.
+            if file_checksum:
+                compare_checksums = True
+            elif not (compare_checksums := existing_file_size <= _BIG_FILE_SIZE):
+                if yes_or_no("Do you want to see if these files appear to be exactly the same (via checksum)?"):
                     compare_checksums = True
-                elif not (compare_checksums := existing_file_size <= _BIG_FILE_SIZE):
-                    if yes_or_no("Do you want to see if these files appear to be exactly the same (via checksum)?"):
-                        compare_checksums = True
-                    else:
-                        files_appear_to_be_the_same = None  # sic: neither True nor False (see below)
-                if compare_checksums:
-                    if not file_checksum:
-                        # Here only for local file; for GCS we got the checksum up front (above).
-                        file_checksum = compute_file_md5(file.path_local)
-                        file_checksum_timestamp = current_timestamp()
-                    if existing_file_md5:
-                        if file_checksum != existing_file_md5:
-                            files_appear_to_be_the_same = False
-                            file_difference = f" | checksum: {file_checksum} vs {existing_file_md5}"
-            else:
-                file_difference = f" | size: {file_size} vs {existing_file_size}"
-            if files_appear_to_be_the_same is False:
-                printf(f"These files appear to be different{file_difference}")
-            elif files_appear_to_be_the_same is True:
-                if not existing_file_md5:
-                    printf(f"These files are the same size; but checksums not available for further comparison.")
                 else:
-                    printf(f"These files appear to be the same | checksum: {existing_file_md5}")
-            if not yes_or_no("Do you want to continue with this upload anyways?"):
-                printf(f"Skipping upload of {file.name} ({format_size(file_size)}) to: {s3_uri}")
-                return False
+                    files_appear_to_be_the_same = None  # sic: neither True nor False (see below)
+            if compare_checksums:
+                if not file_checksum and file.from_local:
+                    # Here only for local file; for GCS we got the checksum up front (above).
+                    file_checksum = compute_file_md5(file.path_local)
+                    file_checksum_timestamp = current_timestamp()
+                if existing_file_md5:
+                    if file_checksum != existing_file_md5:
+                        files_appear_to_be_the_same = False
+                        file_difference = f" | checksum: {file_checksum} vs {existing_file_md5}"
+        else:
+            file_difference = f" | size: {file_size} vs {existing_file_size}"
+        if files_appear_to_be_the_same is False:
+            printf(f"These files appear to be different{file_difference}")
+        elif files_appear_to_be_the_same is True:
+            if not existing_file_md5:
+                printf(f"These files are the same size; but checksums not available for further comparison.")
+            else:
+                printf(f"These files appear to be the same | checksum: {existing_file_md5}")
+        if not yes_or_no("Do you want to continue with this upload anyways?"):
+            printf(f"Skipping upload of {file.name} ({format_size(file_size)}) to: {s3_uri}")
+            return False
         return True
 
     def verify_uploaded_file() -> bool:
@@ -257,25 +265,6 @@ def upload_file_to_aws_s3(file: FileForUpload,
             metadata["md5-timestamp"] = str(file_checksum_timestamp)
             metadata["md5-source"] = "google-cloud-storage" if file.found_google else "file-system"
         return metadata
-
-    def obsolete_update_metadata_for_uploaded_file() -> bool:
-        # Only need in the GCS case, as this metadata is set (via ExtraArgs) on the actual upload for S3.
-        nonlocal aws_credentials, s3_bucket, s3_key
-        if metadata := create_metadata_for_uploading_file():
-            try:
-                s3 = BotoClient("s3", **aws_credentials)
-                # N.B. The aws_kms_args (with the KMS Key ID info) is needed on this copy_object even
-                # though it it only being used to update the S3 object/key metadata; failure to do this
-                # was not causing problems on our test bucket (smaht-unit-testing-files) but on a real
-                # bucket (e.g. smaht-wolf-application-files) is errors out with: An error occurred
-                # (AccessDenied) when calling the CopyObject operation: Access Denied.
-                s3.copy_object(Bucket=s3_bucket, Key=s3_key,
-                               CopySource={"Bucket": s3_bucket, "Key": s3_key},
-                               Metadata=metadata, MetadataDirective="REPLACE", **aws_kms_args)
-                return True
-            except Exception:
-                pass
-        return False
 
     if print_preamble:
         printf(f"▶ Upload: {file.name} ({format_size(file.size)}) ...")
