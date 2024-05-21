@@ -2,7 +2,7 @@ from __future__ import annotations
 from functools import lru_cache
 import os
 import pathlib
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional, Tuple, Union
 from dcicutils.command_utils import yes_or_no
 from dcicutils.file_utils import compute_file_md5, get_file_size, normalize_path, search_for_file
 from dcicutils.misc_utils import format_size, normalize_string
@@ -245,14 +245,15 @@ class FileForUpload:
     def get_destination(self, portal: Portal) -> Optional[str]:
         if not self.uuid or not isinstance(portal, Portal):
             return None
-        try:
-            if not (accession := get_file_accession(self.uuid, portal)):
-                return None
-            if not (file_upload_bucket := get_file_upload_bucket(portal)):
-                return None
-            return f"s3://{file_upload_bucket}/{accession}"
-        except Exception:
+        if not (file_upload_bucket := get_file_upload_bucket(portal)):
             return None
+        accession, accession_file_name = get_file_accession_info(self.uuid, portal)
+        if accession:
+            self._accession = accession
+        if accession_file_name:
+            self._accession_name = accession_file_name
+            return f"s3://{file_upload_bucket}/{self.uuid}/{accession_file_name}"
+        return None
 
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,
                verbose: bool = False, printf: Optional[Callable] = None) -> bool:
@@ -276,8 +277,8 @@ class FileForUpload:
         elif self.accession:
             file_identifier += f" ({self.accession})"
 
-        # TODO: Report the destination too ...
-        _ = self.get_destination(portal)
+        # TODO: Idunno might make more sense to do this in assemble.
+        destination = self.get_destination(portal)
         if self.found_local:
             found_both_local_and_google = False
             if self.found_google:
@@ -321,13 +322,19 @@ class FileForUpload:
                         self._favor_local = (
                             not yes_or_no("  - Do you want to use the Google Cloud Storage (GCS) version?"))
                         printf(f"- File for upload: {self.display_path} ({format_size(self.size)})")
+                        if destination:
+                            printf(f"- AWS destination: {destination}")
                 else:
                     printf(f"- File for upload: {self.path_local} ({format_size(self.size_local)})")
+                    if destination:
+                        printf(f"- AWS destination: {destination}")
             return True
 
         elif self.found_google:
             printf(f"- File for upload from Google Cloud Storage (GCS):"
                    f" {self.display_path_google} ({format_size(self.size_google)})")
+            if destination:
+                printf(f"- AWS destination: {destination}")
             return True
 
         else:  # I.e. not self.found is True
@@ -426,10 +433,19 @@ def get_file_upload_bucket(portal: Portal) -> Optional[str]:
 
 
 @lru_cache(maxsize=1)
-def get_file_accession(uuid: str, portal: Portal) -> Optional[str]:
+def get_file_accession_info(uuid: str, portal: Portal) -> Tuple[Optional[str], Optional[str]]:
     if not isinstance(uuid, str) or not uuid or not isinstance(portal, Portal):
-        return None
+        return None, None
     try:
-        return portal.get_metadata(uuid)['accession']
+        file_extension = None
+        if file_object := portal.get_metadata(uuid):
+            accession = file_object.get("accession")
+            accession_file_name = None
+            if file_format_uuid := file_object.get("file_format", {}).get("uuid"):
+                if file_format_object := portal.get_metadata(file_format_uuid):
+                    if file_extension := file_format_object.get("standard_file_extension"):
+                        accession_file_name = f"{accession}.{file_extension}"
+            return accession, accession_file_name
     except Exception:
-        return None
+        pass
+    return None, None
