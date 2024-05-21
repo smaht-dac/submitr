@@ -134,8 +134,9 @@ def upload_file_to_aws_s3(file: FileForUpload,
             if nbytes_transferred >= file_size:
                 duration = current_timestamp() - started
                 upload_done = (f"Upload complete: {file.name}"
-                               f" | {format_size(nbytes_transferred)} in {format_duration(duration)}"
-                               f" | {format_size(nbytes_transferred / duration)} per second ◀")
+                               f" | {format_size(nbytes_transferred)} in {format_duration(duration)}")
+                if nbytes_transferred > 1024:
+                    upload_done += f" | {format_size(nbytes_transferred / duration)} per second ◀"
 
         def upload_file_callback(nbytes_chunk: int) -> None:  # noqa
             nonlocal threads_aborted, thread_lock, should_abort
