@@ -323,18 +323,18 @@ class FileForUpload:
                             not yes_or_no("  - Do you want to use the Google Cloud Storage (GCS) version?"))
                         printf(f"- File for upload: {self.display_path} ({format_size(self.size)})")
                         if destination:
-                            printf(f"- AWS destination: {destination}")
+                            printf(f"  AWS destination: {destination}")
                 else:
                     printf(f"- File for upload: {self.path_local} ({format_size(self.size_local)})")
                     if destination:
-                        printf(f"- AWS destination: {destination}")
+                        printf(f"  AWS destination: {destination}")
             return True
 
         elif self.found_google:
             printf(f"- File for upload from Google Cloud Storage (GCS):"
                    f" {self.display_path_google} ({format_size(self.size_google)})")
             if destination:
-                printf(f"- AWS destination: {destination}")
+                printf(f"  AWS destination: {destination}")
             return True
 
         else:  # I.e. not self.found is True
