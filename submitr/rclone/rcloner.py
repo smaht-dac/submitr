@@ -63,7 +63,8 @@ class RCloner(RCloneCommands, RCloneInstallation):
             else:
                 yield temporary_config_file_name
 
-    def copy(self, source: str, destination: Optional[str] = None, progress: Optional[Callable] = None,
+    def copy(self, source: str, destination: Optional[str] = None,
+             metadata: Optional[Callable] = None, progress: Optional[Callable] = None,
              directories: bool = False, dryrun: bool = False, copyto: bool = True,
              return_output: bool = False, raise_exception: bool = True) -> Union[bool, Tuple[bool, List[str]]]:
         """
@@ -104,7 +105,7 @@ class RCloner(RCloneCommands, RCloneInstallation):
                     return RCloneCommands.copy_command(command_args,
                                                        config=source_and_destination_config_file,
                                                        copyto=copyto, destination_s3=destination_s3,
-                                                       progress=progress, dryrun=dryrun,
+                                                       metadata=metadata, progress=progress, dryrun=dryrun,
                                                        return_output=return_output)
             else:
                 # Here only a destination config cloud configuration has been defined for this RCloner
@@ -126,7 +127,7 @@ class RCloner(RCloneCommands, RCloneInstallation):
                     return RCloneCommands.copy_command(command_args,
                                                        config=destination_config_file,
                                                        copyto=copyto, destination_s3=destination_s3,
-                                                       progress=progress, dryrun=dryrun,
+                                                       metadata=metadata, progress=progress, dryrun=dryrun,
                                                        return_output=return_output)
         elif isinstance(source_config := self.source, RCloneConfig):
             # Here only a source cloud configuration has been defined for this RCloner object;

@@ -10,6 +10,7 @@ class RCloneCommands:
 
     @staticmethod
     def copy_command(args: List[str], config: Optional[str] = None, copyto: bool = False,
+                     metadata: Optional[Callable] = None,
                      progress: Optional[Callable] = None,
                      dryrun: bool = False,
                      destination_s3: bool = False,
@@ -49,6 +50,10 @@ class RCloneCommands:
         command += ["--ignore-size"]
         if destination_s3:
             command += ["--s3-no-check-bucket", "--s3-no-head-object"]
+            if isinstance(metadata, dict):
+                for metadata_key in metadata:
+                    metadata_value = metadata[metadata_key]
+                    command += ["--header-upload", f"X-Amz-Meta-{metadata_key}: {metadata_value}"]
         if isinstance(config, str) and config:
             command += ["--config", config]
         if isinstance(args, list):

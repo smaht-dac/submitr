@@ -249,15 +249,15 @@ def upload_file_to_aws_s3(file: FileForUpload,
 
     def create_metadata_for_uploading_file() -> dict:
         nonlocal file, file_checksum, file_checksum_timestamp
-        if metadata := get_uploaded_file_info(strings=True):
-            if file_checksum:
-                metadata["md5"] = file_checksum
-                metadata["md5-timestamp"] = str(file_checksum_timestamp)
-                metadata["md5-source"] = "google-cloud-storage" if file.found_google else "file-system"
-            return metadata
-        return {}
+        if not (metadata := get_uploaded_file_info(strings=True)):
+            metadata = {}
+        if file_checksum:
+            metadata["md5"] = file_checksum
+            metadata["md5-timestamp"] = str(file_checksum_timestamp)
+            metadata["md5-source"] = "google-cloud-storage" if file.found_google else "file-system"
+        return metadata
 
-    def update_metadata_for_uploaded_file() -> bool:
+    def obsolete_update_metadata_for_uploaded_file() -> bool:
         # Only need in the GCS case, as this metadata is set (via ExtraArgs) on the actual upload for S3.
         nonlocal aws_credentials, s3_bucket, s3_key
         if metadata := create_metadata_for_uploading_file():
@@ -288,14 +288,19 @@ def upload_file_to_aws_s3(file: FileForUpload,
     if rcloner:
         upload_file_callback = define_upload_file_callback(progress_total_nbytes=True)
         try:
+            # Create metadata to set via rclone; as witt boto3.s3 based uploads we need
+            # to include all of the existing metatadata too, otherwise it will get blown away.
+            # Just FYI: previously, before we knew about the --header-upload option to
+            # rclone, we'd set the metadata for rclone based copies after-the-fact via
+            # boto3.s3.copy_object, but this fails for files more than 5GB in size.
+            metadata = create_metadata_for_uploading_file()
             # Note that the source is just file.name, which is just the base name of the file,
             # from the metadata file); the bucket (or bucket/path; whatever was passed in via
             # --rclone-google-source) is stored in RCloneGoogle (from file.config_google),
             # and RCloner.copy (which has this RCloneGoogle, by virtue of RCloner being
             # created with it as a source), resolves/expands this to the full Google path name.
-            rcloner.copy_to_key(file.name, cloud_path.join(s3_bucket, s3_key), progress=upload_file_callback.function)
-            # Unlike non-rlone (boto) based copy, we have to set the metadata separately, after rlcone copy.
-            update_metadata_for_uploaded_file()
+            rcloner.copy_to_key(file.name, cloud_path.join(s3_bucket, s3_key),
+                                metadata=metadata, progress=upload_file_callback.function)
         except Exception:
             printf(f"Upload ABORTED: {file.path_google} ◀")  # TODO: test
             upload_aborted = True
