@@ -2496,12 +2496,12 @@ def _print_metadata_file_info(file: str, env: str,
             unchecked_refs = structured_data.unchecked_refs
             PRINT(f"References: {len(unchecked_refs)}")
             print_refs(unchecked_refs, max_output=max_output, output_file=output_file, verbose=verbose)
-            if structured_data.portal and (unresolved_external_refs :=
+            if structured_data.portal and (unresolved_refs :=
                                            [ref for ref in unchecked_refs
-                                            if not structured_data.portal.ref_exists_internally(ref.get("path"))]):
-                if unresolved_external_refs:
-                    PRINT(f"Unresolved External References: {len(unresolved_external_refs)}")
-                    print_refs(unresolved_external_refs, max_output=max_output,
+                                            if not structured_data.portal.ref_exists(ref.get("path"))]):
+                if unresolved_refs:
+                    PRINT(f"Unresolved External References: {len(unresolved_refs)}")
+                    print_refs(unresolved_refs, max_output=max_output,
                                output_file=output_file, verbose=verbose)
         if files is True:
             files_for_upload = FilesForUpload.assemble(structured_data,

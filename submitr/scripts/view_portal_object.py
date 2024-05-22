@@ -159,6 +159,8 @@ def main():
 
     if args.schema:
         if args.post:
+            import pdb ; pdb.set_trace()  # noqa
+            pass
             if post_data := _read_json_from_file(args.post):
                 if args.verbose:
                     _print(f"POSTing data from file ({args.post}) as type: {args.uuid}")
