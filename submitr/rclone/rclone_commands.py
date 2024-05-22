@@ -139,6 +139,9 @@ class RCloneCommands:
             command += ["--config", config]
         try:
             # Example output: "e0807de443b152ff44d6668959460064  some_file.fastq"
+            # TODO
+            # Figure out why not checksum sometimes for example with:
+            # s3://smaht-wolf-application-files/098fcb63-09ed-45fa-8247-c547c609965b/SMAFIF5DIQ11.gtf
             for line in RCloneCommands._run(command):
                 if len(line_components := line.split()) > 0 and line_components[0]:
                     checksum = line_components[0]
