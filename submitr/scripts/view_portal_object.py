@@ -159,12 +159,15 @@ def main():
 
     if args.schema:
         if args.post:
-            import pdb ; pdb.set_trace()  # noqa
-            pass
             if post_data := _read_json_from_file(args.post):
                 if args.verbose:
                     _print(f"POSTing data from file ({args.post}) as type: {args.uuid}")
-                portal.post_metadata(args.uuid, post_data)
+                if isinstance(post_data, dict):
+                    post_data = [post_data]
+                elif not isinstance(post_data, list):
+                    _print(f"POST data neither list nor dictionary: {args.post}")
+                for item in post_data:
+                    portal.post_metadata(args.uuid, item)
                 if args.verbose:
                     _print(f"Done POSTing data from file ({args.post}) as type: {args.uuid}")
         schema, schema_name = _get_schema(portal, args.uuid)
@@ -186,7 +189,12 @@ def main():
         if patch_data := _read_json_from_file(args.patch):
             if args.verbose:
                 _print(f"PATCHing data from file ({args.patch}) for object: {args.uuid}")
-            portal.patch_metadata(args.uuid, patch_data)
+            if isinstance(patch_data, dict):
+                patch_data = [patch_data]
+            elif not isinstance(patch_data, list):
+                _print(f"PATCH data neither list nor dictionary: {args.patch}")
+            for item in patch_data:
+                portal.patch_metadata(args.uuid, item)
             if args.verbose:
                 _print(f"Done PATCHing data from file ({args.patch}) as type: {args.uuid}")
             return
