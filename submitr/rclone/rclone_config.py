@@ -1,11 +1,13 @@
 from __future__ import annotations
 from abc import ABC as AbstractBaseClass, abstractproperty
 from contextlib import contextmanager
+from datetime import datetime
 import os
 from shutil import copy as copy_file
-from typing import List, Optional
-from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
+from typing import List, Optional, Union
+from dcicutils.datetime_utils import parse_datetime
 from dcicutils.misc_utils import create_uuid, normalize_string
+from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 from submitr.rclone.rclone_commands import RCloneCommands
 from submitr.rclone.rclone_utils import cloud_path
 from submitr.utils import DEBUGGING
@@ -143,6 +145,17 @@ class RCloneConfig(AbstractBaseClass):
         if path := self.path(path):
             with self.config_file() as config_file:
                 return RCloneCommands.checksum_command(source=f"{self.name}:{path}", config=config_file)
+
+    def file_modified(self, path: str, formatted: bool = False) -> Optional[Union[datetime, str]]:
+        if info := self.file_info(path):
+            if not (formatted is True):
+                return parse_datetime(info.get("modified"))
+            return info.get("modified")
+
+    def file_info(self, path: str) -> Optional[str]:
+        if path := self.path(path):
+            with self.config_file() as config_file:
+                return RCloneCommands.info_command(source=f"{self.name}:{path}", config=config_file)
 
     def ping(self) -> bool:
         # For some reason with this command we need the project_number in the config for Google.

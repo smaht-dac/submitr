@@ -1,6 +1,8 @@
+import json
 import re
 import subprocess
 from typing import Callable, List, Optional, Tuple, Union
+from dcicutils.datetime_utils import format_datetime, parse_datetime
 from dcicutils.misc_utils import normalize_string
 from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.utils import DEBUG
@@ -147,6 +149,46 @@ class RCloneCommands:
         return None
 
     @staticmethod
+    def info_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[dict]:
+        command = [RCloneInstallation.executable_path(), "lsjson", "--stat", "--metadata", source]
+        if isinstance(config, str) and config:
+            command += ["--config", config]
+        try:
+            # Example output:
+            # {
+            #     "Path": "SMAFIWTTIQXD.fastq",
+            #     "Name": "SMAFIWTTIQXD.fastq",
+            #     "Size": 107374182400,
+            #     "MimeType": "text/plain",
+            #     "ModTime": "2024-05-20T22:09:51.636000000-04:00",
+            #     "IsDir": false,
+            #     "Tier": "STANDARD",
+            #     "Metadata": {
+            #         "btime": "2024-05-21T15:21:12Z",
+            #         "content-type": "text/plain",
+            #         "etag": "cac82084c62847e6acbb22211cff9fd8-9310",
+            #         "md5": "e65fced4c4a5f37d63154802fe04e71e",
+            #         "md5-source": "google-cloud-storage",
+            #         "md5-timestamp": "1716304863.026897",
+            #         "modified": "2024-05-21 09:14:27 EDT",
+            #         "mtime": "2024-05-20T22:09:51.636-04:00",
+            #         "size": "107374182400",
+            #         "tier": "STANDARD"
+            #     }
+            # }
+            result = RCloneCommands._run(command)
+            result = json.loads("".join(result))
+            name = result["Name"]
+            size = result["Size"]
+            metadata = {"metadata": result["Metadata"]} if "Metadata" in result else {}
+            modified = format_datetime(parse_datetime(result["ModTime"]))
+            return {"name": name, "size": size, "modified": modified, **metadata}
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+        return None
+
+    @staticmethod
     def ping_command(source: str, config: Optional[str] = None, args: Optional[List[str]] = None) -> bool:
         # Use the rclone lsd command as proxy for a "ping".
         command = [RCloneInstallation.executable_path(), "lsd", source]
@@ -170,7 +212,7 @@ class RCloneCommands:
     def _run_okay(command: List[str], some_output_required: bool = False) -> bool:
         result = RCloneCommands._execute(command)
         if result.returncode == 0:
-            if not (some_output_required is True) or (len(result.stdout) > 0):
+            if (not (some_output_required is True)) or (len(result.stdout) > 0):
                 return True
         return False
 

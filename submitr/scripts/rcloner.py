@@ -12,8 +12,8 @@ def main() -> None:
     args.add_argument("action", help="Action: copy or info.")
     args.add_argument("source", help="Source file or cloud bucket/key.")
     args.add_argument("destination", nargs="?", help="Destination file/directory or cloud bucket/key.")
-    args.add_argument("--amazon", help="AWS environment; for ~/.aws_test.{env}/credentials file.")
-    args.add_argument("--google", help="Amazon or Google configuration file.")
+    args.add_argument("--amazon", "-aws", help="AWS environment; for ~/.aws_test.{env}/credentials file.")
+    args.add_argument("--google", "-gcs", help="Amazon or Google configuration file.")
     args.add_argument("--kms", help="Amazon KMS key ID.")
     args.add_argument("--temporary-credentials", "-tc", nargs="?", help="Amazon KMS key ID.", const=True)
     args.add_argument("--verbose", action="store_true", help="Verbose output.", default=False)
@@ -47,8 +47,6 @@ def main() -> None:
         credentials_google = None
 
     if info:
-        if args.destination:
-            usage("Only argument file argument allowed with info.")
         exit(main_info(args, credentials_amazon, credentials_google))
     elif copy:
         if not args.destination:
@@ -132,22 +130,54 @@ def main_copy(args, credentials_amazon, credentials_google):
 
 
 def main_info(args, credentials_amazon, credentials_google):
-    if args.source.lower().startswith("s3://"):
-        rclone_amazon = RCloneAmazon(credentials_amazon)
-        size = rclone_amazon.file_size(args.source)
-        checksum = rclone_amazon.file_checksum(args.source)
-        # TODO
-        # Add RCloneConfig lsjson access point to get modified date,
-        # and might as well change path_exists and file_size to use this same call.
-        # [{"Path":"SMAFITXIG8HS.fastq","Name":"SMAFITXIG8HS.fastq",
-        #   "Size":14,"MimeType":"binary/octet-stream",
-        #    "ModTime":"2024-05-09T16:58:30.606505622-04:00",
-        #    "IsDir":false,"Tier":"STANDARD"}]
-        _ = rclone_amazon.path_exists(args.source)
-        print(f"Size: {format_size(size)}")
-        print(f"Checksum: {checksum}")
-        pass
-    pass
+    if not args.source and not args.destination:
+        return
+    if args.source:
+        print_info(args.source, credentials_amazon, credentials_google)
+    if args.destination:
+        print_info(args.destination, credentials_amazon, credentials_google)
+    print("")
+
+
+def print_info(target, credentials_amazon, credentials_google):
+    if not target:
+        return
+    if target.lower().startswith("s3://"):
+        if not credentials_amazon:
+            usage(f"No AWS credentials specified for: {target}")
+        print("")
+        print(f"AWS S3 Target: {target}")
+        print_info_via_rclone(target, RCloneAmazon(credentials_amazon))
+    elif target.lower().startswith("gs://"):
+        if not credentials_google:
+            usage(f"No GCS credentials specified for: {target}")
+        print("")
+        print(f"GCS Target: {target}")
+        print_info_via_rclone(target, RCloneGoogle(credentials_google))
+
+
+def print_info_via_rclone(target, rclone_config):
+    size = rclone_config.file_size(target)
+    checksum = rclone_config.file_checksum(target)
+    modified = rclone_config.file_modified(target, formatted=True)
+    # TODO
+    # Add RCloneConfig lsjson access point to get modified date,
+    # and might as well change path_exists and file_size to use this same call.
+    # [{"Path":"SMAFITXIG8HS.fastq","Name":"SMAFITXIG8HS.fastq",
+    #   "Size":14,"MimeType":"binary/octet-stream",
+    #    "ModTime":"2024-05-09T16:58:30.606505622-04:00",
+    #    "IsDir":false,"Tier":"STANDARD"}]
+    formatted_size = format_size(size)
+    print(f"Bucket: {cloud_path.bucket(target)}")
+    print(f"Key: {cloud_path.key(target)}")
+    print(f"Size: {format_size(size)}{f' ({size} bytes)' if '.' in formatted_size else ''}")
+    print(f"Modified: {modified}")
+    print(f"Checksum: {checksum}")
+    if info := rclone_config.file_info(target):
+        if metadata := info.get("metadata"):
+            print(f"Metadata ({len(metadata)}):")
+            for key in {key: metadata[key] for key in sorted(metadata)}:
+                print(f"- {key}: {metadata[key]}")
 
 
 def usage(message: str) -> None:
