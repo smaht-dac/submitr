@@ -109,6 +109,7 @@ def main():
     parser.add_argument("--yaml", action="store_true", required=False, default=False, help="YAML output.")
     parser.add_argument("--copy", "-c", action="store_true", required=False, default=False,
                         help="Copy object data to clipboard.")
+    parser.add_argument("--indent", required=False, default=False, help="Indent output.", type=int)
     parser.add_argument("--details", action="store_true", required=False, default=False, help="Detailed output.")
     parser.add_argument("--more-details", action="store_true", required=False, default=False,
                         help="More detailed output.")
@@ -216,7 +217,19 @@ def main():
     if args.yaml:
         _print(yaml.dump(data))
     else:
-        _print(json.dumps(data, default=str, indent=4))
+        if args.indent > 0:
+            _print(_format_json_with_indent(data, indent=args.indent))
+        else:
+            _print(json.dumps(data, default=str, indent=4))
+
+
+def _format_json_with_indent(value: dict, indent: int = 0) -> Optional[str]:
+    if isinstance(value, dict):
+        result = json.dumps(value, indent=4)
+        if indent > 0:
+            result = f"{indent * ' '}{result}"
+            result = result.replace("\n", f"\n{indent * ' '}")
+        return result
 
 
 def _create_portal(ini: str, env: Optional[str] = None,
