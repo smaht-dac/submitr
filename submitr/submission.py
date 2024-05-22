@@ -1867,6 +1867,13 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                         ref_lookup_strategy=ref_lookup_strategy,
                                         ref_lookup_nocache=ref_nocache,
+                                        # The remove_empty_objects_from_lists options to StructuredDataSet
+                                        # was added 2024-05-22 to handle empty object within arrays,
+                                        # for example bcm_formatted_hapmapmix.xlsx/CellCultureMixture/components.
+                                        # it is defaulted to True but set it here to True for emphasis; this also
+                                        # will lead to an error if there is a non-empty object following an empty one;
+                                        # i.e. this is really remove empty trailing object from arrays.
+                                        remove_empty_objects_from_lists=True,
                                         progress=None if noprogress else define_progress_callback(debug=debug),
                                         debug_sleep=debug_sleep)
     structured_data.load_file(ingestion_filename)
@@ -2462,7 +2469,7 @@ def _print_metadata_file_info(file: str, env: str,
         nrows_total = 0
         for sheet_name in sorted(excel.sheet_names):
             nrows = excel.sheet_reader(sheet_name).nrows
-            sheet_lines.append(f"- Sheet: {sheet_name} ▶ Rows: {nrows}")
+            sheet_lines.append(f"- Sheet: {sheet_name} | Rows: {nrows}")
             nrows_total += nrows
         sheet_lines = "\n" + "\n".join(sheet_lines)
         PRINT(f"Sheets: {excel.nsheets} | Rows: {nrows_total}{sheet_lines}")

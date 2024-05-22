@@ -86,10 +86,6 @@ For any issues please contact SMaHT DAC: smhelp@hms-dbmi.atlassian.net
 _HELP_ADVANCED = _HELP.strip() + f"""
 ADVANCED OPTIONS:
 ===
---validate-only
-  Same as --validate with slightly different command interaction.
-  Performs ONLY, but BOTH client-side (local) and
-  server-side (remote) validation only WITHOUT submitting.
 --validate-remote-only
   Performs ONLY server-side (remote) validation WITHOUT submitting.
 --validate-local-only
@@ -170,8 +166,6 @@ def main(simulated_args_for_testing=None):
                         help="Actually submit the metadata for ingestion..", default=False)
     parser.add_argument('--validate', action="store_true",
                         help="Perform both client-side and server-side validation first.", default=False)
-    parser.add_argument('--validate-only', action="store_true",
-                        help="Same as --validate.", default=False)
     parser.add_argument('--validate-local-only', action="store_true",
                         help="Validate submitted data locally only (on client-side).")
     parser.add_argument('--validate-remote-only', action="store_true",
@@ -399,7 +393,7 @@ def _setup_validate_related_options(args: argparse.Namespace):
         return
 
     if args.submit:
-        if args.validate or args.validate_only or args.validate_local_only or args.validate_remote_only:
+        if args.validate or args.validate_local_only or args.validate_remote_only:
             PRINT(f"May not specify both --submit AND validate options.")
             exit(1)
         if args.json_only:
@@ -407,7 +401,7 @@ def _setup_validate_related_options(args: argparse.Namespace):
             exit(1)
 
     if not args.submit:
-        if not (args.validate or args.validate_only or args.validate_local_only or args.validate_remote_only):
+        if not (args.validate or args.validate_local_only or args.validate_remote_only):
             if not args.json_only and not _pytesting():
                 PRINT(f"Must specify either --validate or --submit options. Use --help for all options.")
                 exit(1)
@@ -427,7 +421,7 @@ def _setup_validate_related_options(args: argparse.Namespace):
         PRINT(f"May not specify both --validate-remote-only and --validate-remote-skip options.")
         exit(1)
 
-    if args.validate_local_skip and args.validate_remote_skip and (args.validate or args.validate_only):
+    if args.validate_local_skip and args.validate_remote_skip and args.validate:
         PRINT(f"May not specify both validation and not validation.")
         exit(1)
 
@@ -447,7 +441,6 @@ def _setup_validate_related_options(args: argparse.Namespace):
     # - args.validate_remote_skip
 
     delattr(args, "validate")
-    delattr(args, "validate_only")
 
 
 if __name__ == '__main__':

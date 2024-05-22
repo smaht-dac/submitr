@@ -193,7 +193,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         if not (existing_file_info := get_uploaded_file_info()):
             if not file_checksum and file.from_local:
                 # TODO
-                # Should we prompt to get checksum (or local file to upload),
+                # We should probably prompt to get checksum (or local file to upload),
                 # to be used to set for the target S3 object/key metadata, if the
                 # file is big (like we do below, if the file already exists in S3).
                 file_checksum = compute_file_md5(file.path_local)
@@ -292,7 +292,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
             rcloner.copy_to_key(file.name, cloud_path.join(s3_bucket, s3_key),
                                 metadata=metadata, progress=upload_file_callback.function)
         except Exception:
-            printf(f"Upload ABORTED: {file.path_google} ◀")  # TODO: test
+            printf(f"Upload ABORTED: {file.path_google} ◀")
             upload_aborted = True
             pass
     else:
