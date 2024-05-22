@@ -2473,7 +2473,8 @@ def _print_metadata_file_info(file: str, env: str,
         structured_data = StructuredDataSet(file, portal, norefs=True)
         if refs is True:
             def print_refs(refs: List[dict], max_output: int, output_file: str, verbose: bool = False) -> None:
-                def note_output():
+                nonlocal structured_data
+                def note_output():  # noqa
                     nonlocal max_output, output_file, noutput, printf, truncated
                     noutput += 1
                     if noutput >= max_output and output_file and not truncated:
@@ -2495,6 +2496,13 @@ def _print_metadata_file_info(file: str, env: str,
             unchecked_refs = structured_data.unchecked_refs
             PRINT(f"References: {len(unchecked_refs)}")
             print_refs(unchecked_refs, max_output=max_output, output_file=output_file, verbose=verbose)
+            if structured_data.portal and (unresolved_external_refs :=
+                                           [ref for ref in unchecked_refs
+                                            if not structured_data.portal.ref_exists_internally(ref.get("path"))]):
+                if unresolved_external_refs:
+                    PRINT(f"Unresolved External References: {len(unresolved_external_refs)}")
+                    print_refs(unresolved_external_refs, max_output=max_output,
+                               output_file=output_file, verbose=verbose)
         if files is True:
             files_for_upload = FilesForUpload.assemble(structured_data,
                                                        main_search_directory=upload_folder,

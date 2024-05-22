@@ -340,7 +340,7 @@ class FileForUpload:
         else:  # I.e. not self.found is True
             printf(f"- WARNING: File for upload NOT FOUND: {file_identifier}")
             if isinstance(portal, Portal):
-                printf(f"  - Use --directory to specify a directory where the file can be found.")
+                # printf(f"  - Use --directory to specify a directory where the file can be found.")
                 if not review_only:
                     printf(f"  - Upload later with:"
                            f" {self.resume_upload_command(env=portal.env if portal else None)}")
