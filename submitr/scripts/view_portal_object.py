@@ -57,6 +57,7 @@
 
 import argparse
 from functools import lru_cache
+import glob
 import io
 import json
 import pyperclip
@@ -82,7 +83,7 @@ _SCHEMAS_IGNORE_PROPERTIES = [
 def main():
 
     parser = argparse.ArgumentParser(description="View Portal object.")
-    parser.add_argument("uuid", type=str,
+    parser.add_argument("uuid", nargs="?", type=str,
                         help=f"The uuid (or path) of the object to fetch and view. ")
     parser.add_argument("--ini", type=str, required=False, default=None,
                         help=f"Name of the application .ini file.")
@@ -123,12 +124,17 @@ def main():
     portal = _create_portal(ini=args.ini, env=args.env or os.environ.get("SMAHT_ENV"),
                             server=args.server, app=args.app, verbose=args.verbose, debug=args.debug)
 
-    if args.uuid.lower() == "schemas" or args.uuid.lower() == "schema":
+    if not args.uuid:
+        if not (args.post and (os.path.isdir(args.post) or _is_schema_named_json_file_name(args.post))):
+            _print("UUID or schema or path required.")
+            exit(1)
+
+    if args.uuid and ((args.uuid.lower() == "schemas") or (args.uuid.lower() == "schema")):
         _print_all_schema_names(portal=portal, details=args.details,
                                 more_details=args.more_details, all=args.all,
                                 tree=args.tree, raw=args.raw, raw_yaml=args.yaml)
         return
-    elif args.uuid.lower() == "info":  # TODO: need word for what consortiums and submission centers are collectively
+    elif args.uuid and (args.uuid.lower() == "info"):
         if consortia := portal.get_metadata("/consortia?limit=1000"):
             _print("Known Consortia:")
             consortia = sorted(consortia.get("@graph", []), key=lambda key: key.get("identifier"))
@@ -171,6 +177,29 @@ def main():
                     portal.post_metadata(args.uuid, item)
                 if args.verbose:
                     _print(f"Done POSTing data from file ({args.post}) as type: {args.uuid}")
+            exit(0)
+        elif args.patch:
+            if patch_data := _read_json_from_file(args.patch):
+                if args.verbose:
+                    _print(f"PATCHing data from file ({args.patch}) as type: {args.uuid}")
+                if isinstance(patch_data, dict):
+                    patch_data = [patch_data]
+                elif not isinstance(patch_data, list):
+                    _print(f"PATCH data neither list nor dictionary: {args.patch}")
+                index = 0
+                for item in patch_data:
+                    index += 1
+                    if uuid := item.get("uuid"):
+                        path = uuid
+                    elif identifier := item.get("identifier"):
+                        path = identifier
+                    else:
+                        _print(f"Cannot find identifying value for PATCH item #{index}")
+                        continue
+                    portal.patch_metadata(f"/{args.uuid}/{path}", item)
+                if args.verbose:
+                    _print(f"Done PATCHing data from file ({args.patch}) as type: {args.uuid}")
+            exit(0)
         schema, schema_name = _get_schema(portal, args.uuid)
         if schema:
             if args.copy:
@@ -186,6 +215,15 @@ def main():
             _print_schema(schema, details=args.details, more_details=args.details,
                           all=args.all, raw=args.raw, raw_yaml=args.yaml)
             return
+    elif args.post:
+        import pdb ; pdb.set_trace()  # noqa
+        if os.path.isdir(args.post):
+            for file in glob.glob(os.path.join(args.post, "*.json")):
+                if schema_name := _get_schema_name_from_schema_named_json_file_name(portal, file):
+                    if post_data := _read_json_from_file(file):
+                        for item in post_data:
+                            portal.post_metadata(schema_name, item)
+                pass
     elif args.patch:
         if patch_data := _read_json_from_file(args.patch):
             if args.verbose:
@@ -292,7 +330,7 @@ def _get_schema(portal: Portal, name: str) -> Tuple[Optional[dict], Optional[str
     if portal and name and (name := name.replace("_", "").replace("-", "").strip().lower()):
         if schemas := _get_schemas(portal):
             for schema_name in schemas:
-                if schema_name.replace("_", "").replace("-", "").strip().lower() == name:
+                if schema_name.replace("_", "").replace("-", "").strip().lower() == name.lower():
                     return schemas[schema_name], schema_name
     return None, None
 
@@ -301,6 +339,30 @@ def _is_maybe_schema_name(value: str) -> bool:
     if value and not is_uuid(value) and not value.startswith("/"):
         return True
     return False
+
+
+def _is_schema_name(portal: Portal, value: str) -> bool:
+    try:
+        return _get_schema(portal, value)[0] is not None
+    except Exception:
+        return False
+
+
+def _is_schema_named_json_file_name(portal: Portal, value: str) -> bool:
+    try:
+        return value.endswith(".json") and _is_schema_name(portal, os.path.basename(value[:-5]))
+    except Exception:
+        return False
+
+
+def _get_schema_name_from_schema_named_json_file_name(portal: Portal, value: str) -> Optional[str]:
+    try:
+        if not value.endswith(".json"):
+            return None
+        _, schema_name = _get_schema(portal, os.path.basename(value[:-5]))
+        return schema_name
+    except Exception:
+        return False
 
 
 def _print_schema(schema: dict, details: bool = False, more_details: bool = False, all: bool = False,
