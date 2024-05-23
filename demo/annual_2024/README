@@ -25,6 +25,10 @@ Notes on demo file (bcm_formatted_hapmapmix.xlsx) for Annual Meeting in St. Loui
     > get-metadata-template <file-name-with-dot-xlsx-suffix>
   - View arbitrary portal object (for troubleshooting)
     > view-portal-object --env local <uuid-or-object-path>
+  - Use rclone to copy local file to Google (for testing/troubleshooting):
+    > rcloner copy <your-file> gs://smaht-submitr-rclone-testing -gcs ~/.config/google-cloud/smaht-dac-617e0480d8e2.json
+  - Use rclone to copy file from Google to (for testing/troubleshooting):
+    > rcloner copy gs://smaht-submitr-rclone-testing/<your-file> . -gcs ~/.config/google-cloud/smaht-dac-617e0480d8e2.json
 
 - File bcm_formatted_hapmapmix.xlsx from William Feng on 2024-05-21
   https://docs.google.com/spreadsheets/d/1qCm0bY-vG4a9uiaOvmKHZ12MvhmMKKRfEpgAm-7Hsh4/edit#gid=1645623888
