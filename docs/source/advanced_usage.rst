@@ -29,7 +29,7 @@ conform to the schema for their corresponding types.
 
 .. tip::
     To see an example of this JSON, if you have a Excel spreadsheet metadata file, you can invoke ``submit-metadata-bundle``
-    with that file with both the ``--validate-local-only`` and ``--verbose`` options;
+    with that file with the ``--json-only`` option;
     this will output the JSON for the spreadsheet as translated by ``smaht-submitr``.
 
 CSV Files
