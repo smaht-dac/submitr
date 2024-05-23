@@ -1,12 +1,36 @@
 Notes on demo file for Annual Meeting in St. Louis, June 2025
+
+- Some commands:
+  - Submit metadata:
+    - submit-metadata-bundle --env local --submit --directory files bcm_formatted_hapmapmix.xlsx
+  - Validate metadata:
+    - submit-metadata-bundle --env local --validate --directory files bcm_formatted_hapmapmix.xlsx
+  - Get metadata info:
+    - submit-metadata-bundle --env local --info --refs --files --directory files bcm_formatted_hapmapmix.xlsx
+  - Resume upload:
+    - resume-uploads --env local --directory files <submission-uuid-or-upload-file-uuid-or-accession>
+  - View known submission-centers/consortia:
+    - submit-metadata-bundle --env local --submission-centers --consortia
+  - List recent submissions:
+    - list-submissions --env local
+  - Get info on submission (or resume/start submission if the submission-uuid is for a validation):
+    - check-submission --env local <submission-uuid>
+  - Download latest HMS metadata template:
+    - get-metadata-template <file-name-with-dot-xlsx-suffix>
+  - View arbitrary portal object (for troubleshooting)
+    view-portal-object --env local <uuid-or-object-path>
+
 - File bcm_formatted_hapmapmix.xlsx from William Feng on 2024-05-21
   https://docs.google.com/spreadsheets/d/1qCm0bY-vG4a9uiaOvmKHZ12MvhmMKKRfEpgAm-7Hsh4/edit#gid=1645623888
   https://hms-dbmi.slack.com/archives/D05LSGRQYV7/p1716239277185859
+
 - Made some minor corrections to this spreadsheet locally
   - Removed blank row #3 in Sequencing sheet
   - Change values of target_read_length in Sequencing tab from '25-30 kb' and '15-20 kb' to 27500 and 17500
   - Changed all submission-center prefixes in submitted_id values to be DAC (previously mixture of BCM, MAYO, WASHU, USWC)
-- Created dependencies for this spreadsheet; placed in smaht-portal/src/encoded/tests/data/demo_inserts
+
+- Created dependencies for this spreadsheet;
+  placed in smaht-portal/src/encoded/tests/data/demo_inserts; also in deps directory here.
   /Assay/bulk_rna_seq
   /Assay/bulk_wgs_pcr_free
   /FileFormat/bam
@@ -30,7 +54,8 @@ Notes on demo file for Annual Meeting in St. Louis, June 2025
   /SubmissionCenter/bcm_gcc
   /SubmissionCenter/mayo_tdd
   /SubmissionCenter/washu_gcc
-- Created dummy files for referenced files to upload:
+
+- Created dummy files for referenced files to upload in the files directory here:
   222TWJLT4-1-IDUDI0055v2_S1_L001_R1_001.fastq.gz
   222TWJLT4-1-IDUDI0055v2_S1_L001_R2_001.fastq.gz
   222TWJLT4-1-IDUDI0056v2_S2_L001_R1_001.fastq.gz
