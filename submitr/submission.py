@@ -39,7 +39,7 @@ from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_f
 from submitr.rclone import RCloneGoogle
 from submitr.scripts.cli_utils import get_version
 from submitr.submission_uploads import do_any_uploads
-from submitr.utils import format_path, get_health_page, is_excel_file_name, print_boxed, tobool
+from submitr.utils import chars, format_path, get_health_page, is_excel_file_name, print_boxed, tobool
 
 
 def set_output_file(output_file):
@@ -127,7 +127,7 @@ def _get_user_record(server, auth, quiet=False):
     user_record = user_record_response.json()
     if not quiet:
         SHOW(f"Portal recognizes you as{' (admin)' if _is_admin_user(user_record) else ''}:"
-             f" {user_record['title']} ({user_record['contact_email']}) ✓")
+             f" {user_record['title']} ({user_record['contact_email']}) {chars.check}")
     return user_record
 
 
@@ -806,7 +806,7 @@ def submit_any_ingestion(ingestion_filename, *,
         if server_validation_status != "success":
             exit(1)
 
-        PRINT("Validation results (server): OK")
+        PRINT(f"Validation results (server): OK {chars.check}")
 
     else:
         server_validation_response = None
@@ -930,9 +930,9 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
             else:
                 line += f" [S]"
             if submission.get("processing_status", {}).get("outcome") == "success":
-                line += f" ✓"
+                line += f" {chars.check}"
             else:
-                line += f" ✗"
+                line += f" {chars.xmark}"
             lines.append(line)
             if details:
                 line_detail = ""
@@ -1062,7 +1062,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                         if loadxl_done is None and not ingester_done:
                             bar.reset_eta()
             done = False
-            message = f"▶ Pings: {nchecks_server}"
+            message = f"{chars.rarrow} Pings: {nchecks_server}"
             if ingester_done is not None:
                 message += " | Done"
                 bar.set_progress(bar.total)
@@ -1249,7 +1249,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 exit(1)
         if check_status != "success":
             exit(1)
-        PRINT("Validation results (server): OK")
+        PRINT(f"Validation results (server): OK {chars.check}")
         if not yes_or_no("Do you want to now continue with the submission for this metadata?"):
             PRINT("Exiting with no action.")
             exit(0)
@@ -1407,7 +1407,7 @@ def _format_server_error(error: str, indent: int = 0, debug: bool = False) -> st
         body = load_json_fuzzy(body)
         error = load_json_fuzzy(error)
         if path and message and error and body:
-            result = f"ERROR: {message} ▶ {path}"
+            result = f"ERROR: {message} {chars.rarrow} {path}"
             result += f"\n{format_json_with_indent(error, indent=indent)}"
             result += f"\n{format_json_with_indent(body, indent=indent)}"
             if not debug and error.get('title') and error.get('code') and error.get('description'):
@@ -1508,7 +1508,7 @@ def _print_submission_summary(portal: Portal, result: dict,
             lines.append(f"Submission File Info: {extra_file_info}")
         submitr_version = submission_parameters.get("submitr_version")
     if validation:
-        lines.append(f"Validation Only: Yes ◀ ◀ ◀")
+        lines.append(f"Validation Only: Yes {chars.larrow} {chars.larrow} {chars.larrow}")
         if submission_parameters and (associated_submission_uuid := submission_parameters.get("submission_uuid")):
             lines.append(f"Associated Submission ID: {associated_submission_uuid}")
     elif submission_parameters and (associated_validation_uuid := submission_parameters.get("validation_uuid")):
@@ -1531,7 +1531,7 @@ def _print_submission_summary(portal: Portal, result: dict,
         else:
             lines.append(f"Submitted By: {submitted_by}")
         if is_admin_user(result.get("submitted_by")) is True:
-            lines[len(lines) - 1] += " ▶ Admin"
+            lines[len(lines) - 1] += f" {chars.rarrow} Admin"
         # If more than one submission center print on separate line (only first one printed above).
         if len(submission_centers) > 1:
             submission_centers_line = ""
@@ -1845,7 +1845,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     bar.increment_progress(increment)
             elif not status.get(PROGRESS_PARSE.LOAD_DONE):
                 bar.increment_progress(increment)
-            message = f"▶ Rows: {nrows} | Parsed: {nrows_processed}"
+            message = f"{chars.rarrow} Rows: {nrows} | Parsed: {nrows_processed}"
             if nrefs_total > 0:
                 message += f" ‖ Refs: {nrefs_total}"
                 if nrefs_unresolved > 0:
@@ -1909,7 +1909,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     validation_okay = _validate_data(structured_data, portal, ingestion_filename,
                                      upload_folder, recursive=subfolders, verbose=verbose, debug=debug)
     if validation_okay:
-        PRINT("Validation results (preliminary): OK")
+        PRINT(f"Validation results (preliminary): OK {chars.check}")
     elif exit_immediately_on_errors:
         if verbose:
             _print_structured_data_verbose(portal, structured_data, ingestion_filename, upload_folder=upload_folder,
@@ -2183,7 +2183,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
             # nremaining = nobjects - nprocessed
             # duration_remaining = (nremaining / rate) if rate > 0 else 0
             message = (
-                f"▶ Items: {nobjects} | Checked: {ncreates + nupdates}"
+                f"{chars.rarrow} Items: {nobjects} | Checked: {ncreates + nupdates}"
                 f" ‖ Creates: {ncreates} | Updates: {nupdates} | Lookups: {nlookups}")
             bar.set_description(message)
         return progress_report
@@ -2533,7 +2533,7 @@ def _print_metadata_file_info(file: str, env: str,
         check_metadata_version(file, portal=portal, quiet=True))
     if this_metadata_template_version:
         if this_metadata_template_version == current_metadata_template_version:
-            PRINT(f"Based on the latest HMS metadata template: {current_metadata_template_version} ✓")
+            PRINT(f"Based on the latest HMS metadata template: {current_metadata_template_version} {chars.check}")
         else:
             print_metadata_version_warning(this_metadata_template_version, current_metadata_template_version)
 

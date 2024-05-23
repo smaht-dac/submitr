@@ -10,6 +10,7 @@ from dcicutils.progress_bar import ProgressBar
 from submitr.file_for_upload import FileForUpload
 from submitr.rclone import RCloner, RCloneAmazon, cloud_path
 from submitr.s3_utils import get_s3_bucket_and_key_from_s3_uri, get_s3_key_metadata
+from submitr.utils import chars
 
 # Module to upload a given file, with the given AWS credentials to AWS S3.
 # Displays progress bar and other info; checks if file already exists; verifies
@@ -136,7 +137,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
                 upload_done = (f"Upload complete: {file.name}"
                                f" | {format_size(nbytes_transferred)} in {format_duration(duration)}")
                 if nbytes_transferred > 1024:
-                    upload_done += f" | {format_size(nbytes_transferred / duration)} per second ◀"
+                    upload_done += f" | {format_size(nbytes_transferred / duration)} per second {chars.larrow}"
 
         def upload_file_callback(nbytes_chunk: int) -> None:  # noqa
             nonlocal threads_aborted, thread_lock, should_abort
@@ -166,7 +167,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
                 should_abort = True
             return False
 
-        bar = ProgressBar(file_size, "▶ Upload progress",
+        bar = ProgressBar(file_size, f"{chars.rarrow} Upload progress",
                           use_byte_size_for_rate=True,
                           catch_interrupt=catch_interrupt,
                           interrupt_stop=abort_upload,
@@ -244,12 +245,12 @@ def upload_file_to_aws_s3(file: FileForUpload,
             if file_info := get_uploaded_file_info():
                 printf(f"Verifying upload: {file.name} ... ", end="")
                 if file_info["size"] != file_size:
-                    printf(f"WARNING: File size mismatch ▶ {file_size} vs {file_info['size']}")
+                    printf(f"WARNING: File size mismatch {chars.rarrow} {file_size} vs {file_info['size']}")
                     return False
                 if file_checksum and file_info.get("md5") and (file_checksum != file_info["md5"]):
-                    printf(f"WARNING: File checksum mismatch ▶ {file_checksum} vs {file_info['md5']}")
+                    printf(f"WARNING: File checksum mismatch {chars.rarrow} {file_checksum} vs {file_info['md5']}")
                     return False
-                printf("OK")
+                printf(f"OK {chars.check}")
                 return True
         except Exception:
             pass
@@ -267,7 +268,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         return metadata
 
     if print_preamble:
-        printf(f"▶ Upload: {file.name} ({format_size(file.size)}) ...")
+        printf(f"{chars.rarrow} Upload: {file.name} ({format_size(file.size)}) ...")
         printf(f"  - From: {file.display_path}")
         printf(f"  -   To: {s3_uri}")
 
@@ -292,7 +293,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
             rcloner.copy_to_key(file.name, cloud_path.join(s3_bucket, s3_key),
                                 metadata=metadata, progress=upload_file_callback.function)
         except Exception:
-            printf(f"Upload ABORTED: {file.path_google} ◀")
+            printf(f"Upload ABORTED: {file.path_google} {chars.larrow}")
             upload_aborted = True
             pass
     else:
@@ -310,7 +311,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
                 else:
                     s3.upload_fileobj(f, s3_bucket, s3_key, Callback=upload_file_callback.function)
             except Exception:
-                printf(f"Upload ABORTED: {file.path_local} ◀")
+                printf(f"Upload ABORTED: {file.path_local} {chars.larrow}")
                 upload_aborted = True
 
     upload_file_callback.done()

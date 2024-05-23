@@ -10,6 +10,7 @@ from submitr.rclone.rclone_commands import RCloneCommands
 from submitr.rclone.rclone_config import RCloneConfig, RCloneCredentials
 from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.rclone.rclone_utils import cloud_path
+from submitr.utils import chars
 
 
 class RCloneGoogle(RCloneConfig):
@@ -99,14 +100,14 @@ class RCloneGoogle(RCloneConfig):
         if self.ping():
             printf(f"Google Cloud Storage project"
                    f"{f' ({self.project})' if self.project else ''}"
-                   f" connectivity appears to be OK ✓")
+                   f" connectivity appears to be OK {chars.check}")
             if self.bucket_exists() is False:
                 printf(f"WARNING: Google Cloud Storage bucket NOT FOUND: {self.bucket}")
             return False
         else:
             printf(f"Google Cloud Storage project"
                    f"{f' ({self.project})' if self.project else ''}"
-                   f" connectivity appears to be problematic ✗")
+                   f" connectivity appears to be problematic {chars.xmark}")
             return True
 
     def __eq__(self, other: Optional[RCloneGoogle]) -> bool:

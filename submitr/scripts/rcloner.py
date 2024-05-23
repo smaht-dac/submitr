@@ -1,8 +1,9 @@
 import argparse
+from dcicutils.misc_utils import format_size
+from dcicutils.utils import chars
 from submitr.rclone import RCloner, RCloneAmazon, RCloneGoogle, cloud_path
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsCredentials
 from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredentials
-from dcicutils.misc_utils import format_size
 
 # Little command-line utility to interactively test out rclone support code in smaht-submitr.
 
@@ -73,7 +74,8 @@ def main_copy(args, credentials_amazon, credentials_google):
             source_config = RCloneGoogle()
             if args.verbose:
                 google_project = source_config.project
-                print(f"Running from Google Cloud Engine (GCE){f': {google_project} ✓' if google_project else '.'}")
+                print(f"Running from Google Cloud Engine (GCE)"
+                      f"{f': {google_project} {chars.check}' if google_project else '.'}")
         else:
             source_config = RCloneGoogle(credentials_google)
     else:
@@ -95,7 +97,8 @@ def main_copy(args, credentials_amazon, credentials_google):
             destination_config = RCloneGoogle()
             if args.verbose:
                 google_project = destination_config.project
-                print(f"Running from Google Cloud Engine (GCE){f': {google_project} ✓' if google_project else '.'}")
+                print(f"Running from Google Cloud Engine (GCE)"
+                      f"{f': {google_project} {chars.check}' if google_project else '.'}")
         else:
             destination_config = RCloneGoogle(credentials_google)
     else:
@@ -107,7 +110,7 @@ def main_copy(args, credentials_amazon, credentials_google):
     if result is True:
         print("OK", end="")
         if args.verbose:
-            print(" ▶ rclone output below ...")
+            print(f" {chars.rarrow} rclone output below ...")
             for line in output:
                 print(line)
         else:
@@ -121,7 +124,7 @@ def main_copy(args, credentials_amazon, credentials_google):
             print(f"ERROR", end="")
             args.verbose = True
         if args.verbose:
-            print(f" ▶ rclone output below ...")
+            print(f" {chars.rarrow} rclone output below ...")
             for line in output:
                 print(line)
         else:

@@ -4,9 +4,9 @@ import os
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
 from .cli_utils import CustomArgumentParser
+from submitr.base import DEFAULT_APP
 from submitr.rclone import RCloneGoogle
-from ..base import DEFAULT_APP
-from ..submission import (
+from submitr.submission import (
     submit_any_ingestion,
     DEFAULT_INGESTION_TYPE,
     DEFAULT_SUBMISSION_PROTOCOL,
@@ -18,7 +18,7 @@ from ..submission import (
     _print_metadata_file_info,
     _pytesting
 )
-from ..utils import get_submission_center_code
+from submitr.utils import chars, get_submission_center_code
 
 _HELP = f"""
 ===
@@ -255,9 +255,9 @@ def main(simulated_args_for_testing=None):
             ping_okay = _ping(env=args.env or os.environ.get("SMAHT_ENV"), env_from_env=env_from_env,
                               server=args.server, app=args.app, keys_file=args.keys, verbose=True)
             if ping_okay:
-                PRINT("Portal connectivity appears to be OK ✓")
+                PRINT(f"Portal connectivity appears to be OK {chars.check}")
             else:
-                PRINT("Portal connectivty appears to be problematic ✗")
+                PRINT(f"Portal connectivty appears to be problematic {chars.xmark}")
         else:
             PRINT("No environment specified (via --env); skipping SMaHT Portal ping.")
             ping_okay = True

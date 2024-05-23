@@ -22,6 +22,13 @@ TIMESTAMP_PATTERN = "%H:%M:%S"
 TIMESTAMP_REGEXP = "[0-2][0-9]:[0-5][0-9]:[0-5][0-9]"
 
 
+class chars:
+    check = "✓"
+    xmark = "✗"
+    rarrow = "▶"
+    larrow = "◀"
+
+
 # Programmatic output will use 'show' so that debugging statements using regular 'print' are more easily found.
 def show(*args, with_time: bool = False, same_line: bool = False):
     """

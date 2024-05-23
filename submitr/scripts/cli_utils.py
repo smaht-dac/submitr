@@ -8,7 +8,7 @@ import webbrowser
 from typing import List, Optional, Union
 from dcicutils.command_utils import yes_or_no
 from dcicutils.misc_utils import PRINT
-from submitr.utils import get_version, get_most_recent_version_info, print_boxed
+from submitr.utils import chars, get_version, get_most_recent_version_info, print_boxed
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
@@ -77,7 +77,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
             nobsolete_options = 0
             for obsolete_option in self._obsolete_options:
                 if obsolete_option["option"] in sys.argv:
-                    PRINT(f"Obsolete option: {obsolete_option['option']} ▶ {obsolete_option['message']}")
+                    PRINT(f"Obsolete option: {obsolete_option['option']} {chars.rarrow} {obsolete_option['message']}")
                     nobsolete_options += 1
             if nobsolete_options > 0:
                 exit(1)
@@ -143,9 +143,9 @@ class CustomArgumentParser(argparse.ArgumentParser):
                 if not has_most_recent_version and most_recent_version_info.this_release_date:
                     lines += [
                         "===",
-                        f"▶ A more recent version is available ▶ See update command below:",
-                        f"▶ pip install {self.PACKAGE}=={most_recent_version_info.version}",
-                        f"▶ pip install {self.PACKAGE}=={most_recent_version_info.beta_version}"
+                        f"{chars.rarrow} A more recent version is available {chars.rarrow} See update command below:",
+                        f"{chars.rarrow} pip install {self.PACKAGE}=={most_recent_version_info.version}",
+                        f"{chars.rarrow} pip install {self.PACKAGE}=={most_recent_version_info.beta_version}"
                             if most_recent_version_info.beta_version else None,  # noqa
                     ]
                 lines += [
@@ -177,14 +177,14 @@ class CustomArgumentParser(argparse.ArgumentParser):
     def _get_version(self, with_most_recent_check_mark: bool = True) -> str:
         version = get_version(self._package)
         if with_most_recent_check_mark and (self._get_most_recent_version_info(version) is True):
-            version = f"✓ {version}"
+            version = f"{chars.check} {version}"
         return version
 
     @lru_cache(maxsize=1)
     def _get_most_recent_version_info(self, this_version: Optional[str] = None) -> Union[bool, str]:
         if not this_version:
             this_version = self._get_version()
-        if this_version.startswith("✓ "):
+        if this_version.startswith(f"{chars.check} "):
             this_version = this_version[2:]
         is_beta_version = ("a" in this_version or "b" in this_version)
         is_most_recent_version = False
@@ -194,7 +194,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
                 (most_recent_version_info.beta_version == this_version)):  # noqa
                 is_most_recent_version = True
         more_recent_version_message = (
-            f"{self._package or 'COMMAND'}: {this_version}{' ✓' if is_most_recent_version else ''}")
+            f"{self._package or 'COMMAND'}: {this_version}{f' {chars.check}' if is_most_recent_version else ''}")
         if is_most_recent_version:
             return True
         if is_beta_version and most_recent_version_info.beta_version:

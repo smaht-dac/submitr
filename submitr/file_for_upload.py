@@ -8,6 +8,7 @@ from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import format_size, normalize_string
 from dcicutils.structured_data import Portal, StructuredDataSet
 from submitr.rclone import RCloneGoogle
+from submitr.utils import chars
 
 # Unified the logic for looking for files to upload (to AWS S3), and storing
 # related info; whether or not the file is coming from the local file system
@@ -256,7 +257,7 @@ class FileForUpload:
         return None
 
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,
-               verbose: bool = False, printf: Optional[Callable] = None) -> bool:
+               last_in_list: bool = False, verbose: bool = False, printf: Optional[Callable] = None) -> bool:
         """
         Reviews, possibly confirming interactively the file for upload. If the file
         was found both locally (on the filesystem) and in Google Cloud Storage, we
@@ -337,13 +338,14 @@ class FileForUpload:
                 printf(f"  AWS destination: {destination}")
             return True
 
-        else:  # I.e. not self.found is True
-            printf(f"- WARNING: File for upload NOT FOUND: {file_identifier}")
+        else:  # I.e. self.found is False
+            printf(f"- WARNING: File NOT FOUND: {file_identifier} {chars.xmark}")
             if isinstance(portal, Portal):
-                # printf(f"  - Use --directory to specify a directory where the file can be found.")
                 if not review_only:
                     printf(f"  - Upload later with:"
                            f" {self.resume_upload_command(env=portal.env if portal else None)}")
+                elif last_in_list is True:
+                    printf(f"  - Use --directory to specify a directory where the file can be found.")
             self._ignore = True
             return False
 
@@ -414,11 +416,12 @@ class FilesForUpload:
             if files_for_upload_ambiguous:
                 message += f" | Ambiguous: {len(files_for_upload_ambiguous)}"
             printf(message)
-            for file_for_upload in files_for_upload:
-                if isinstance(file_for_upload, FileForUpload):
-                    if not file_for_upload.review(portal=portal, review_only=review_only,
-                                                  verbose=verbose, printf=printf):
-                        result = False
+            max_index = len(files_for_upload) - 1
+            for index, file_for_upload in enumerate(files_for_upload):
+                if not file_for_upload.review(portal=portal, review_only=review_only,
+                                              last_in_list=index == max_index,
+                                              verbose=verbose, printf=printf):
+                    result = False
         return result
 
 
