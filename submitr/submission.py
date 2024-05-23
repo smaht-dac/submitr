@@ -699,8 +699,6 @@ def submit_any_ingestion(ingestion_filename, *,
     metadata_bundles_bucket = get_metadata_bundles_bucket_from_health_path(key=portal.key)
     if not _do_app_arg_defaulting(app_args, user_record, portal, quiet=json_only and not verbose, verbose=verbose):
         pass
-    if not json_only:
-        PRINT(f"Submission file to {'validate' if validation else 'ingest'}: {format_path(ingestion_filename)}")
 
     autoadd = None
     if app_args and isinstance(submission_centers := app_args.get("submission_centers"), list):
@@ -729,7 +727,12 @@ def submit_any_ingestion(ingestion_filename, *,
             for known_submission_center in known_submission_centers:
                 PRINT(f"- {known_submission_center.get('name')} ({known_submission_center.get('uuid')})")
             exit(1)
-        add_submission_center = f"/submission-centers/{found_submission_centers[0]['uuid']}/"
+        # add_submission_center = f"/submission-centers/{found_submission_centers[0]['uuid']}/"
+        add_submission_center = found_submission_centers[0]["name"]
+        PRINT(f"Additional submission center: {add_submission_center}")
+
+    if not json_only:
+        PRINT(f"Submission file to {'validate' if validation else 'ingest'}: {format_path(ingestion_filename)}")
 
     if verbose:
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
@@ -1864,6 +1867,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if debug:
         PRINT("DEBUG: Starting client validation.")
 
+    import pdb ; pdb.set_trace()  # noqa
+    pass
     structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                         ref_lookup_strategy=ref_lookup_strategy,
                                         ref_lookup_nocache=ref_nocache,

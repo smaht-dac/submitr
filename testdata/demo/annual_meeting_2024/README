@@ -1,8 +1,11 @@
-Notes on demo file for Annual Meeting in St. Louis, June 2025.
+Notes on demo file for Annual Meeting in St. Louis, June 2025
 - File bcm_formatted_hapmapmix.xlsx from William Feng on 2024-05-21
   https://docs.google.com/spreadsheets/d/1qCm0bY-vG4a9uiaOvmKHZ12MvhmMKKRfEpgAm-7Hsh4/edit#gid=1645623888
   https://hms-dbmi.slack.com/archives/D05LSGRQYV7/p1716239277185859
-- Made some minor correction to that spreadsheet.
+- Made some minor corrections to this spreadsheet locally
+  - Removed blank row #3 in Sequencing sheet
+  - Change values of target_read_length in Sequencing tab from '25-30 kb' and '15-20 kb' to 27500 and 17500
+  - Changed all submission-center prefixes in submitted_id values to be DAC (previously mixture of BCM, MAYO, WASHU, USWC)
 - Created dependencies for this spreadsheet; placed in smaht-portal/src/encoded/tests/data/demo_inserts
   /Assay/bulk_rna_seq
   /Assay/bulk_wgs_pcr_free
@@ -27,3 +30,31 @@ Notes on demo file for Annual Meeting in St. Louis, June 2025.
   /SubmissionCenter/bcm_gcc
   /SubmissionCenter/mayo_tdd
   /SubmissionCenter/washu_gcc
+- Created dummy files for referenced files to upload:
+  222TWJLT4-1-IDUDI0055v2_S1_L001_R1_001.fastq.gz
+  222TWJLT4-1-IDUDI0055v2_S1_L001_R2_001.fastq.gz
+  222TWJLT4-1-IDUDI0056v2_S2_L001_R1_001.fastq.gz
+  222TWJLT4-1-IDUDI0056v2_S2_L001_R2_001.fastq.gz
+  222TWJLT4-1-IDUDI0057_S3_L001_R1_001.fastq.gz
+  222TWJLT4-1-IDUDI0057_S3_L001_R2_001.fastq.gz
+  222TWJLT4-1-IDUDI0059_S4_L001_R1_001.fastq.gz
+  222TWJLT4-1-IDUDI0059_S4_L001_R2_001.fastq.gz
+  222TWJLT4-2-IDUDI0055v2_S7_L002_R1_001.fastq.gz
+  222TWJLT4-2-IDUDI0055v2_S7_L002_R2_001.fastq.gz
+  222TWJLT4-2-IDUDI0056v2_S8_L002_R1_001.fastq.gz
+  222TWJLT4-2-IDUDI0056v2_S8_L002_R2_001.fastq.gz
+  222TWJLT4-2-IDUDI0057_S9_L002_R1_001.fastq.gz
+  222TWJLT4-2-IDUDI0057_S9_L002_R2_001.fastq.gz
+  222TWJLT4-2-IDUDI0059_S10_L002_R1_001.fastq.gz
+  222TWJLT4-2-IDUDI0059_S10_L002_R2_001.fastq.gz
+  m84059_240309_050225_s2.demux.bc2046--bc2046.bam
+  m84059_240309_070148_s3.demux.bc2046--bc2046.bam
+  m84059_240309_090129_s4.demux.bc2047--bc2047.bam
+  H7FJWDSXC-4-IDUDI0019_S111_L004_R1_001.fastq.gz
+  H7FJWDSXC-4-IDUDI0019_S111_L004_R2_001.fastq.gz
+  OWG_HAPMAP6_2_340983_1_SMaHT_bam_pass_nodup.fastq.gz
+  OWG_HAPMAP6_3_340984_1_SMaHT_bam_pass_nodup.fastq.gz
+  OWG_HAPMAP6_4_340982_1_SMaHT_bam_pass_nodup.fastq.gz
+  OWG_HAPMAP6_2_340983_1_SMaHT_bam_pass_nodup.bam
+  OWG_HAPMAP6_3_340984_1_SMaHT_bam_pass_nodup.bam
+  OWG_HAPMAP6_4_340982_1_SMaHT_bam_pass_nodup.bam

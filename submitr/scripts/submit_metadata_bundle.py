@@ -4,6 +4,7 @@ import os
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
 from .cli_utils import CustomArgumentParser
+from submitr.rclone import RCloneGoogle
 from ..base import DEFAULT_APP
 from ..submission import (
     submit_any_ingestion,
@@ -17,7 +18,7 @@ from ..submission import (
     _print_metadata_file_info,
     _pytesting
 )
-from submitr.rclone import RCloneGoogle
+from ..utils import get_submission_center_code
 
 _HELP = f"""
 ===
@@ -94,6 +95,7 @@ ADVANCED OPTIONS:
   Skips client-side (local) validation.
 --validate-remote-skip
   Skips server-side (remote) validation.
+  Only allowed for admin users.
 --noanalyze
   Skips analysis of parsed metadata WRT creates/updates.
 --patch-only
@@ -283,7 +285,10 @@ def main(simulated_args_for_testing=None):
         for submission_center in submission_centers:
             if ((submission_center_name := submission_center.get("name")) and
                 (submission_center_uuid := submission_center.get("uuid"))):  # noqa
-                PRINT(f"- {submission_center_name}: {submission_center_uuid}")
+                message = f"- {submission_center_name}: {submission_center_uuid}"
+                if submission_center_code := get_submission_center_code(submission_center):
+                    message += f" (submitted_id prefix: {submission_center_code}_)"
+                PRINT(message)
         exit(0)
 
     _setup_validate_related_options(args)

@@ -10,7 +10,7 @@ import pkg_resources
 import requests
 from signal import signal, SIGINT
 import string
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple, Union
 from dcicutils.datetime_utils import format_datetime, parse_datetime
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import PRINT, str_to_bool
@@ -141,6 +141,16 @@ def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Cal
 
 def is_excel_file_name(file_name: str) -> bool:
     return file_name.endswith(".xlsx") or file_name.endswith(".xls")
+
+
+def get_submission_center_code(submission_center: Union[dict, str]) -> str:
+    # See: smaht-portal/.../types/submitted_item.py
+    SUBMITTED_ID_SEPARATOR = "_"
+    if isinstance(submission_center, dict):
+        submission_center = submission_center.get("name")
+    if isinstance(submission_center, str):
+        if submission_center_split := submission_center.split(SUBMITTED_ID_SEPARATOR):
+            return submission_center_split[0].upper()
 
 
 @lru_cache(maxsize=1)
