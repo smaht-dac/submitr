@@ -1,0 +1,29 @@
+Notes on demo file for Annual Meeting in St. Louis, June 2025.
+- File bcm_formatted_hapmapmix.xlsx from William Feng on 2024-05-21
+  https://docs.google.com/spreadsheets/d/1qCm0bY-vG4a9uiaOvmKHZ12MvhmMKKRfEpgAm-7Hsh4/edit#gid=1645623888
+  https://hms-dbmi.slack.com/archives/D05LSGRQYV7/p1716239277185859
+- Made some minor correction to that spreadsheet.
+- Created dependencies for this spreadsheet; placed in smaht-portal/src/encoded/tests/data/demo_inserts
+  /Assay/bulk_rna_seq
+  /Assay/bulk_wgs_pcr_free
+  /FileFormat/bam
+  /FileFormat/bam_bai 
+  /FileFormat/bam_pbi
+  /FileFormat/fastq_gz
+  /Sequencer/illumina_novaseq_6000
+  /Sequencer/illumina_novaseq_x
+  /Sequencer/ont_promethion_24
+  /Sequencer/pacbio_revio_hifi
+  /Sequencing/BCM_SEQUENCING_NOVASEQX-400X
+  /Sequencing/BCM_SEQUENCING_ONT-100X
+  /Sequencing/BCM_SEQUENCING_PACBIO-100X
+  /Software/BCM_SOFTWARE_BCL2FASTQ2
+  /Software/BCM_SOFTWARE_DORADO
+  /Software/BCM_SOFTWARE_LIMA
+  /Software/BCM_SOFTWARE_MINKNOW
+  /Software/BCM_SOFTWARE_REVIO-ICS
+  /Software/BCM_SOFTWARE_SAMTOOLS
+  /Software/BCM_SOFTWARE_SMRTLINK
+  /SubmissionCenter/bcm_gcc
+  /SubmissionCenter/mayo_tdd
+  /SubmissionCenter/washu_gcc
