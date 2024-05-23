@@ -2,23 +2,29 @@ Notes on demo file for Annual Meeting in St. Louis, June 2025
 
 - Some commands:
   - Submit metadata:
-    - submit-metadata-bundle --env local --submit --directory files bcm_formatted_hapmapmix.xlsx
+    > submit-metadata-bundle --env local --submit --directory files bcm_formatted_hapmapmix.xlsx
   - Validate metadata:
-    - submit-metadata-bundle --env local --validate --directory files bcm_formatted_hapmapmix.xlsx
-  - Get metadata info:
-    - submit-metadata-bundle --env local --info --refs --files --directory files bcm_formatted_hapmapmix.xlsx
+    > submit-metadata-bundle --env local --validate --directory files bcm_formatted_hapmapmix.xlsx
+  - Submit metadata with rclone support (upload/transfer to S3 from Google if file is there):
+    > submit-metadata-bundle --env local --submit --directory files \
+      --rclone-google-source smaht-submitr-rclone-testing \
+      --rclone-google-credentials ~/.config/google-cloud/smaht-dac-617e0480d8e2.json bcm_formatted_hapmapmix.xlsx
   - Resume upload:
-    - resume-uploads --env local --directory files <submission-uuid-or-upload-file-uuid-or-accession>
+    > resume-uploads --env local --directory files <submission-uuid-or-upload-file-uuid-or-accession>
+  - Get metadata info:
+    > submit-metadata-bundle --env local --info --refs --files --directory files bcm_formatted_hapmapmix.xlsx
+  - Dump metadata as JSON:
+    > submit-metadata-bundle --env local --json-only bcm_formatted_hapmapmix.xlsx
   - View known submission-centers/consortia:
-    - submit-metadata-bundle --env local --submission-centers --consortia
+    > submit-metadata-bundle --env local --submission-centers --consortia
   - List recent submissions:
-    - list-submissions --env local
+    > list-submissions --env local
   - Get info on submission (or resume/start submission if the submission-uuid is for a validation):
-    - check-submission --env local <submission-uuid>
+    > check-submission --env local <submission-uuid>
   - Download latest HMS metadata template:
-    - get-metadata-template <file-name-with-dot-xlsx-suffix>
+    > get-metadata-template <file-name-with-dot-xlsx-suffix>
   - View arbitrary portal object (for troubleshooting)
-    view-portal-object --env local <uuid-or-object-path>
+    > view-portal-object --env local <uuid-or-object-path>
 
 - File bcm_formatted_hapmapmix.xlsx from William Feng on 2024-05-21
   https://docs.google.com/spreadsheets/d/1qCm0bY-vG4a9uiaOvmKHZ12MvhmMKKRfEpgAm-7Hsh4/edit#gid=1645623888
