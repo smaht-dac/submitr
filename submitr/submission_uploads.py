@@ -148,6 +148,16 @@ def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
             PRINT(f"Accession ID found but wrong filename: {files_for_upload[0].accession_name} vs {arg}")
             return None
 
+    elif (_recursive is False) and (file_uuid := lookup_file_uuid_by_file_name(arg, portal)):
+        files_for_upload = assemble_files_for_upload(
+            file_uuid,
+            main_search_directory=main_search_directory,
+            main_search_directory_recursively=main_search_directory_recursively,
+            other_search_directories=other_search_directories,
+            metadata_file=metadata_file,
+            config_google=config_google, portal=portal,
+            review=review, review_only=review_only, _recursive=True)
+
     else:
         # Here the given UUID (or accession ID) could not be found.
         PRINT(f"Cannot find the given submission type or file type or accession ID: {arg}")
@@ -303,4 +313,22 @@ def extract_accession_id(value: str) -> Optional[str]:
         value, _ = os.path.splitext(value)
         if is_accession_id(value):
             return value
+    return None
+
+
+def lookup_file_uuid_by_file_name(file_name: str, portal: Portal) -> Optional[dict]:
+    if isinstance(file_name, str) and file_name:
+        try:
+            if result := portal.get(f"/search/?filename={file_name}&type=File"):
+                if (result.status_code == 200) and (result := result.json()):
+                    if (result := result.get("@graph")) and (len(result) == 1) and (result := result[0]):
+                        return result.get("file_summary", {}).get("uuid")
+        except Exception:
+            pass
+    return None
+
+
+def lookup_file_metadata_by_file_name(file_name: str, portal: Portal) -> Optional[dict]:
+    if file_uuid := lookup_file_uuid_by_file_name(file_name, portal):
+        return portal.get_metadata(file_uuid, raise_exception=False)
     return None

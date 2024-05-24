@@ -38,7 +38,7 @@ from submitr.metadata_template import check_metadata_version, print_metadata_ver
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 from submitr.rclone import RCloneGoogle
 from submitr.scripts.cli_utils import get_version
-from submitr.submission_uploads import do_any_uploads
+from submitr.submission_uploads import do_any_uploads, lookup_file_metadata_by_file_name
 from submitr.utils import chars, format_path, get_health_page, is_excel_file_name, print_boxed, tobool
 
 
@@ -1132,7 +1132,8 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         SHOW(f"Your {'validation' if validation else 'submission'} is still running on the server: {uuid}")
         SHOW(f"Use this command to check its status: {command_summary}")
 
-    if not (uuid_metadata := portal.get_metadata(uuid, raise_exception=False)):
+    if (not (uuid_metadata := portal.get_metadata(uuid, raise_exception=False)) and
+        not (uuid_metadata := lookup_file_metadata_by_file_name(uuid, portal))):  # noqa
         found_non_suffixed_uuid = False
         if (dot := uuid.find(".")) > 0:
             if uuid_metadata := portal.get_metadata(uuid := uuid[:dot], raise_exception=False):
