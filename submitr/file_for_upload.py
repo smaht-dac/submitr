@@ -345,7 +345,7 @@ class FileForUpload:
                     printf(f"  - Upload later with:"
                            f" {self.resume_upload_command(env=portal.env if portal else None)}")
                 elif last_in_list is True:
-                    printf(f"  - Use --directory to specify a directory where the file can be found.")
+                    printf(f"  - Use --directory to specify a directory where the file(s) can be found.")
             self._ignore = True
             return False
 
