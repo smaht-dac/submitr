@@ -11,6 +11,7 @@ Change Log
 
 * 2024-05-14/dmichaels/PR-10
 * Added rclone support; most relevant code in submitr/rclone directory. 
+  A lot of refactoring of file upload related code for this (see files_for_upload.py)
 * Added metadata_template.py module with goal of checking the user's metadata
   file with the latest HMS DBMI metadata template and giving a warning if the
   version appears to be out of date. Also new convenience command to export and
@@ -28,6 +29,8 @@ Change Log
 * Fix for --validate-remote-skip option to pass validate_skip to ingester to
   skip the validation on submission which happens by default before the loadxl.
 * Added --files for use with --info to submit-metadata-bundle.
+* For file uploads, after asking the same yes/no question and getting the same response many
+  times in a row, ask if all subsequent such questions should automatically get the same answer.
 
 
 0.8.2

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 import io
 import os
@@ -6,7 +7,7 @@ import sys
 from typing import Callable, Optional, Tuple
 from dcicutils.command_utils import yes_or_no
 from dcicutils.misc_utils import PRINT as __PRINT
-from .utils import show as __show
+from submitr.utils import chars, show as __show
 
 # TODO: Cleanup this arbitrary differentiation between
 # print and show; but need to fix tests when this happens.
@@ -77,3 +78,68 @@ def get_version() -> str:
         return pkg_resources.get_distribution("smaht-submitr").version
     except Exception:
         return ""
+
+
+class Question:
+    """
+    Supports the asking the user (via stdin) a yes/no question, possibly repeatedly; and
+    after some maximum number times of the same answer in a row (consecutively), then asks
+    them if they want to automatically give that same answer to any/all subsequent questions.
+    Supports static/global list of such Question instances, hashed (only) by the question text.
+    """
+    _static_instances = {}
+
+    @staticmethod
+    def instance(question: Optional[str] = None,
+                 max: Optional[int] = None, printf: Optional[Callable] = None) -> Question:
+        question = question if isinstance(question, str) else ""
+        if not (instance := Question._static_instances.get(question)):
+            Question._static_instances[question] = (instance := Question(question, max=max, printf=printf))
+        return instance
+
+    @staticmethod
+    def yes(question: Optional[str] = None,
+            max: Optional[int] = None, printf: Optional[Callable] = None) -> bool:
+        return Question.instance(question, max=max, printf=printf).ask()
+
+    def __init__(self, question: Optional[str] = None,
+                 max: Optional[int] = None, printf: Optional[Callable] = None) -> None:
+        self._question = question if isinstance(question, str) else ""
+        self._max = max if isinstance(max, int) and max > 0 else None
+        self._print = printf if callable(printf) else print
+        self._yes_consecutive_count = 0
+        self._no_consecutive_count = 0
+        self._yes_automatic = False
+        self._no_automatic = False
+
+    def ask(self, question: Optional[str] = None) -> bool:
+
+        def question_automatic(value: str) -> bool:
+            nonlocal self
+            if yes_or_no(f"{chars.rarrow}{chars.rarrow}{chars.rarrow}"
+                         f" Do you want to answer {value} to all such questions?"
+                         f" {chars.larrow}{chars.larrow}{chars.larrow}"):
+                return True
+            self._yes_consecutive_count = 0
+            self._no_consecutive_count = 0
+
+        if self._yes_automatic:
+            return True
+        elif self._no_automatic:
+            return False
+        elif yes_or_no((question if isinstance(question, str) else "") or self._question or "Undefined question"):
+            self._yes_consecutive_count += 1
+            self._no_consecutive_count = 0
+            if (self._no_consecutive_count == 0) and self._max and (self._yes_consecutive_count >= self._max):
+                # Have reached the maximum number of consecutive YES answers; ask if YES to all subsequent.
+                if question_automatic("YES"):
+                    self._yes_automatic = True
+            return True
+        else:
+            self._no_consecutive_count += 1
+            self._yes_consecutive_count = 0
+            if (self._yes_consecutive_count == 0) and self._max and (self._no_consecutive_count >= self._max):
+                # Have reached the maximum number of consecutive NO answers; ask if NO to all subsequent.
+                if question_automatic("NO"):
+                    self._no_automatic = True
+            return False

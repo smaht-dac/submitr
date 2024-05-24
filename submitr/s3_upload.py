@@ -3,11 +3,11 @@ from collections import namedtuple
 import threading
 from time import time as current_timestamp
 from typing import Callable, Optional
-from dcicutils.command_utils import yes_or_no
 from dcicutils.file_utils import compute_file_md5
 from dcicutils.misc_utils import format_duration, format_size
 from dcicutils.progress_bar import ProgressBar
 from submitr.file_for_upload import FileForUpload
+from submitr.output import Question
 from submitr.rclone import RCloner, RCloneAmazon, cloud_path
 from submitr.s3_utils import get_s3_bucket_and_key_from_s3_uri, get_s3_key_metadata
 from submitr.utils import chars
@@ -190,7 +190,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         return get_s3_key_metadata(aws_credentials, s3_bucket, s3_key, strings=strings)
 
     def verify_with_any_already_uploaded_file() -> None:
-        nonlocal file, file_size, file_checksum, file_checksum_timestamp
+        nonlocal file, file_size, file_checksum, file_checksum_timestamp, printf
         if not (existing_file_info := get_uploaded_file_info()):
             if not file_checksum and file.from_local:
                 # TODO
@@ -212,7 +212,8 @@ def upload_file_to_aws_s3(file: FileForUpload,
             if file_checksum:
                 compare_checksums = True
             elif not (compare_checksums := existing_file_size <= _BIG_FILE_SIZE):
-                if yes_or_no("Do you want to see if these files appear to be exactly the same (via checksum)?"):
+                if Question.yes("Do you want to see if these files appear to be exactly the same (via checksum)?",
+                                max=3, printf=printf):
                     compare_checksums = True
                 else:
                     files_appear_to_be_the_same = None  # sic: neither True nor False (see below)
@@ -234,7 +235,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
                 printf(f"These files are the same size; but checksums not available for further comparison.")
             else:
                 printf(f"These files appear to be the same | checksum: {existing_file_md5}")
-        if not yes_or_no("Do you want to continue with this upload anyways?"):
+        if Question.yes("Do you want to continue with this upload anyways?", max=3, printf=printf):
             printf(f"Skipping upload of {file.name} ({format_size(file_size)}) to: {s3_uri}")
             return False
         return True
@@ -295,7 +296,6 @@ def upload_file_to_aws_s3(file: FileForUpload,
         except Exception:
             printf(f"Upload ABORTED: {file.path_google} {chars.larrow}")
             upload_aborted = True
-            pass
     else:
         upload_file_callback = define_upload_file_callback(progress_total_nbytes=False)
         s3 = BotoClient("s3", **aws_credentials)
