@@ -207,7 +207,7 @@ def upload_files(files: List[FileForUpload], portal: Portal) -> None:
     if yes_or_no(f"Ready to actually upload ({len(files)}) file{'s' if len(files) != 1 else ''}. Upload now?"):
         for file in files:
             upload_file(file, portal=portal)
-    PRINT("Upload proceess complete.")
+    PRINT("Upload process complete.")
 
 
 def upload_file(file: FileForUpload, portal: Portal) -> None:
