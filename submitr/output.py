@@ -82,9 +82,9 @@ def get_version() -> str:
 
 class Question:
     """
-    Supports the asking the user (via stdin) a yes/no question, possibly repeatedly; and
-    after some maximum number times of the same answer in a row (consecutively), then asks
-    them if they want to automatically give that same answer to any/all subsequent questions.
+    Supports asking the user (via stdin) a yes/no question, possibly repeatedly; and after
+    some maximum number times of the same answer in a row (consecutively), then asks them
+    if they want to automatically give that same answer to any/all subsequent questions.
     Supports static/global list of such Question instances, hashed (only) by the question text.
     """
     _static_instances = {}

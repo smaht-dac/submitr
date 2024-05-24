@@ -125,7 +125,7 @@ def main():
                             server=args.server, app=args.app, verbose=args.verbose, debug=args.debug)
 
     if not args.uuid:
-        if not (args.post and (os.path.isdir(args.post) or _is_schema_named_json_file_name(args.post))):
+        if not (args.post and (os.path.isdir(args.post) or _is_schema_named_json_file_name(portal, args.post))):
             _print("UUID or schema or path required.")
             exit(1)
 
@@ -222,7 +222,25 @@ def main():
                     if post_data := _read_json_from_file(file):
                         for item in post_data:
                             portal.post_metadata(schema_name, item)
-                pass
+        elif os.path.isfile(args.post):
+            if schema_name := _get_schema_name_from_schema_named_json_file_name(portal, args.post):
+                if post_data := _read_json_from_file(args.post):
+                    if isinstance(post_data, dict):
+                        portal.post_metadata(schema_name, post_data)
+                    elif isinstance(post_data, list):
+                        for item in post_data:
+                            portal.post_metadata(schema_name, item)
+                    pass
+                else:
+                    _print(f"No POST data found in file: {args.post}")
+                    exit(1)
+            else:
+                _print(f"POST data file is not a portal type and not type specified: {args.post}")
+                exit(1)
+        else:
+            _print(f"POST data file not found: {args.post}")
+            exit(1)
+        return
     elif args.patch:
         if patch_data := _read_json_from_file(args.patch):
             if args.verbose:
