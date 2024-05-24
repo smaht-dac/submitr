@@ -294,7 +294,7 @@ def main(simulated_args_for_testing=None):
     _setup_validate_related_options(args)
 
     if not args.bundle_filename:
-        PRINT("Missing submission file name.")
+        PRINT("Missing metadata file name.")
         exit(2)
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
@@ -378,7 +378,7 @@ def _sanity_check_submitted_file(file_name: str) -> bool:
     with a "-inserts" suffix. Returns True if passed sanity check otherwise False.
     """
     if not os.path.exists(file_name):
-        PRINT(f"ERROR: Submission file does not exist: {file_name}")
+        PRINT(f"ERROR: Metadata file does not exist: {file_name}")
         return False
 
     if file_name.endswith(".json"):

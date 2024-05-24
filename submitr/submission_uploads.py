@@ -203,9 +203,11 @@ def get_submission_object_upload_files(submission_item: dict, portal: Portal) ->
 def upload_files(files: List[FileForUpload], portal: Portal) -> None:
     if not isinstance(files, list) or not files or not (files := [file for file in files if not file.ignore]):
         PRINT("No files to upload.")
+        return
     if yes_or_no(f"Ready to actually upload ({len(files)}) file{'s' if len(files) != 1 else ''}. Upload now?"):
         for file in files:
             upload_file(file, portal=portal)
+    PRINT("Upload proceess complete.")
 
 
 def upload_file(file: FileForUpload, portal: Portal) -> None:

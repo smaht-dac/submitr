@@ -235,7 +235,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
                 printf(f"These files are the same size; but checksums not available for further comparison.")
             else:
                 printf(f"These files appear to be the same | checksum: {existing_file_md5}")
-        if Question.yes("Do you want to continue with this upload anyways?", max=3, printf=printf):
+        if not Question.yes("Do you want to continue with this upload anyways?", max=3, printf=printf):
             printf(f"Skipping upload of {file.name} ({format_size(file_size)}) to: {s3_uri}")
             return False
         return True

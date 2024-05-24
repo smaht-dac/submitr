@@ -216,7 +216,6 @@ def main():
                           all=args.all, raw=args.raw, raw_yaml=args.yaml)
             return
     elif args.post:
-        import pdb ; pdb.set_trace()  # noqa
         if os.path.isdir(args.post):
             for file in glob.glob(os.path.join(args.post, "*.json")):
                 if schema_name := _get_schema_name_from_schema_named_json_file_name(portal, file):

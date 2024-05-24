@@ -732,7 +732,7 @@ def submit_any_ingestion(ingestion_filename, *,
         PRINT(f"Additional submission center: {add_submission_center}")
 
     if not json_only:
-        PRINT(f"Submission file to {'validate' if validation else 'ingest'}: {format_path(ingestion_filename)}")
+        PRINT(f"Metadata file to {'validate' if validation else 'ingest'}: {format_path(ingestion_filename)}")
 
     if verbose:
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
@@ -1488,7 +1488,7 @@ def _print_submission_summary(portal: Portal, result: dict,
                 if validation_datafile := submission_parameters.get("validation_datafile"):
                     submission_file = validation_datafile
                     was_server_validation_timeout = True
-            lines.append(f"Submission File: {submission_file}")
+            lines.append(f"Metadata File: {submission_file}")
     if submission_uuid := result.get("uuid"):
         lines.append(f"{submission_type} ID: {submission_uuid}")
     if date_created := format_datetime(result.get("date_created"), verbose=True):
@@ -1505,7 +1505,7 @@ def _print_submission_summary(portal: Portal, result: dict,
                 extra_file_info += " | "
             extra_file_info += f"Checksum: {datafile_checksum}"
         if extra_file_info:
-            lines.append(f"Submission File Info: {extra_file_info}")
+            lines.append(f"Metadata File Info: {extra_file_info}")
         submitr_version = submission_parameters.get("submitr_version")
     if validation:
         lines.append(f"Validation Only: Yes {chars.larrow} {chars.larrow} {chars.larrow}")
@@ -1822,14 +1822,14 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                     bar.set_total(nrows)
                     if nsheets > 0:
                         PRINT(
-                            f"Parsing submission file which has{' only' if nsheets == 1 else ''}"
+                            f"Parsing metadata file which has{' only' if nsheets == 1 else ''}"
                             f" {nsheets} sheet{'s' if nsheets != 1 else ''} and a total of {nrows} rows.")
                     else:
-                        PRINT(f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''}.")
+                        PRINT(f"Parsing metadata file which has a total of {nrows} row{'s' if nrows != 1 else ''}.")
                 elif nsheets > 0:
-                    PRINT(f"Parsing submission file which has {nsheets} sheet{'s' if nsheets != 1 else ''}.")
+                    PRINT(f"Parsing metadata file which has {nsheets} sheet{'s' if nsheets != 1 else ''}.")
                 else:
-                    PRINT(f"Parsing submission file which has a total of {nrows} row{'s' if nrows != 1 else ''}.")
+                    PRINT(f"Parsing metadata file which has a total of {nrows} row{'s' if nrows != 1 else ''}.")
                 return
             elif status.get(PROGRESS_PARSE.LOAD_ITEM) or status.get(PROGRESS_PARSE.LOAD_DONE):
                 if not status.get(PROGRESS_PARSE.LOAD_DONE):
@@ -2160,7 +2160,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                 ntypes = status.get(PROGRESS_PARSE.ANALYZE_COUNT_TYPES)
                 nobjects = status.get(PROGRESS_PARSE.ANALYZE_COUNT_ITEMS)
                 bar.set_total(nobjects)
-                PRINT(f"Analyzing submission file which has {ntypes} type{'s' if ntypes != 1 else ''}"
+                PRINT(f"Analyzing metadata file which has {ntypes} type{'s' if ntypes != 1 else ''}"
                       f" and a total of {nobjects} item{'s' if nobjects != 1 else ''}.")
                 return
             elif status.get(PROGRESS_PARSE.ANALYZE_DONE):
