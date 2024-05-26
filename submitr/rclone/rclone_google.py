@@ -162,7 +162,9 @@ class RCloneGoogle(RCloneConfig):
             printf(f"ERROR: Cannot install rclone for some reason (contact support).")
             exit(1)
         if not isinstance(rclone_google_credentials, str):
-            rclone_google_credentials = None
+            if not (rclone_google_credentials := normalize_path(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"),
+                                                                expand_home=True)):
+                rclone_google_credentials = None
         if rclone_google_credentials and not os.path.isfile(rclone_google_credentials):
             printf(f"ERROR: Google service account file does not exist: {rclone_google_credentials}")
             exit(1)

@@ -65,9 +65,6 @@ OPTIONS:
   May be omitted if running on a GCE instance.
 --rclone-google-location LOCATION
   The Google Cloud Storage (GCS) location (aka "region").
---output OUTPUT-FILE
-  Writes all logging output to the specified file;
-  and refrains from printing lengthy content to output/stdout.
 --info
   Displays ONLY info about the specified metadata file; nothing else.
   Add --refs or --files to see (linkTo) references or (upload) files.
@@ -120,6 +117,9 @@ ADVANCED OPTIONS:
   Displays ONLY info about the specified metadata file; nothing else.
 --details
   Displays slightly more detailed output.
+--output OUTPUT-FILE
+  Writes all logging output to the specified file;
+  and refrains from printing lengthy content to output/stdout.
 --noprogress
   Do not print progress of (client-side) parsing/validation output.
 --timeout SECONDS
@@ -219,6 +219,8 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--files', action="store_true",
                         help="Outputs list of files from the metadata file; only with --info.", default=False)
     parser.add_argument('--output', help="Output file for results.", default=False)
+    parser.add_argument('--merge', action="store_true", help="Merge supplied metadata objects into existing ones.",
+                        default=False)
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--timeout', help="Wait timeout for server validation/submission.")
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
@@ -359,6 +361,7 @@ def main(simulated_args_for_testing=None):
                              noanalyze=args.noanalyze,
                              json_only=args.json_only,
                              ref_nocache=args.ref_nocache,
+                             merge=args.merge,
                              verbose_json=args.json,
                              verbose=args.verbose,
                              noversion=args.noversion,

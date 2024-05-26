@@ -405,6 +405,7 @@ def _initiate_server_ingestion_process(
         post_only: bool = False,
         patch_only: bool = False,
         autoadd: Optional[dict] = None,
+        merge: bool = False,
         datafile_size: Optional[Any] = None,
         datafile_checksum: Optional[Any] = None,
         user: Optional[dict] = None,
@@ -432,12 +433,15 @@ def _initiate_server_ingestion_process(
         "patch_only": patch_only,
         "ref_nocache": False,  # Do not do this server-side at all; only client-side for testing.
         "autoadd": json.dumps(autoadd),
+        "merge": merge,
         "ingestion_directory": os.path.dirname(ingestion_filename) if ingestion_filename else None,
         "datafile_size": datafile_size or get_file_size(ingestion_filename),
         "datafile_checksum": datafile_checksum or compute_file_md5(ingestion_filename),
         "submitr_version": get_version(),
         "user": json.dumps(user) if user else None
     }
+    import pdb ; pdb.set_trace()  # noqa
+    pass
 
     if validation_ingestion_submission_uuid:
         submission_post_data["validation_uuid"] = validation_ingestion_submission_uuid
@@ -615,6 +619,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          noanalyze=False,
                          json_only=False,
                          ref_nocache=False,
+                         merge=False,
                          verbose_json=False,
                          verbose=False,
                          noprogress=False,
@@ -749,6 +754,7 @@ def submit_any_ingestion(ingestion_filename, *,
                                             validate_local_only=validate_local_only,
                                             autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
                                             rclone_google=rclone_google,
+                                            merge=merge,
                                             exit_immediately_on_errors=exit_immediately_on_errors,
                                             ref_nocache=ref_nocache, output_file=output_file, noprogress=noprogress,
                                             noanalyze=noanalyze, json_only=json_only, verbose_json=verbose_json,
@@ -787,6 +793,7 @@ def submit_any_ingestion(ingestion_filename, *,
             post_only=post_only,
             patch_only=patch_only,
             autoadd=autoadd,
+            merge=merge,
             user={"uuid": user_record.get("uuid"),
                   "email": user_record.get("email"),
                   "name": user_record.get("display_title")} if user_record else None,
@@ -842,6 +849,7 @@ def submit_any_ingestion(ingestion_filename, *,
         post_only=post_only,
         patch_only=patch_only,
         autoadd=autoadd,
+        merge=merge,
         user={"uuid": user_record.get("uuid"),
               "email": user_record.get("email"),
               "name": user_record.get("display_title")} if user_record else None,
@@ -1282,6 +1290,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             consortia=consortia,
             submission_centers=submission_centers,
             autoadd=autoadd,
+            merge=check_parameters.get("merge"),
             datafile_size=check_parameters.get("datafile_size"),
             datafile_checksum=check_parameters.get("datafile_checksum"),
             user=user,
@@ -1786,7 +1795,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       upload_folder: Optional[str] = None, subfolders: bool = False,
                       rclone_google: Optional[RCloneGoogle] = None,
                       exit_immediately_on_errors: bool = False,
-                      ref_nocache: bool = False, output_file: Optional[str] = None,
+                      ref_nocache: bool = False, merge: bool = False, output_file: Optional[str] = None,
                       noanalyze: bool = False, json_only: bool = False, noprogress: bool = False,
                       verbose_json: bool = False, verbose: bool = False, quiet: bool = False,
                       debug: bool = False, debug_sleep: Optional[str] = None) -> StructuredDataSet:
@@ -1868,6 +1877,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if debug:
         PRINT("DEBUG: Starting client validation.")
 
+    import pdb ; pdb.set_trace()  # noqa
     structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                         ref_lookup_strategy=ref_lookup_strategy,
                                         ref_lookup_nocache=ref_nocache,
@@ -1878,6 +1888,9 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                         # will lead to an error if there is a non-empty object following an empty one;
                                         # i.e. this is really remove empty trailing object from arrays.
                                         remove_empty_objects_from_lists=True,
+                                        # If the --merge option is given then merge the
+                                        # given (i.e. e.g. spreasheet) object(s) into any existing ones.
+                                        merge=True,
                                         progress=None if noprogress else define_progress_callback(debug=debug),
                                         debug_sleep=debug_sleep)
     structured_data.load_file(ingestion_filename)
