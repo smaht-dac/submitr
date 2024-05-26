@@ -440,8 +440,6 @@ def _initiate_server_ingestion_process(
         "submitr_version": get_version(),
         "user": json.dumps(user) if user else None
     }
-    import pdb ; pdb.set_trace()  # noqa
-    pass
 
     if validation_ingestion_submission_uuid:
         submission_post_data["validation_uuid"] = validation_ingestion_submission_uuid
@@ -1877,7 +1875,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if debug:
         PRINT("DEBUG: Starting client validation.")
 
-    import pdb ; pdb.set_trace()  # noqa
     structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                         ref_lookup_strategy=ref_lookup_strategy,
                                         ref_lookup_nocache=ref_nocache,
