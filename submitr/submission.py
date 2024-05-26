@@ -1887,7 +1887,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                         remove_empty_objects_from_lists=True,
                                         # If the --merge option is given then merge the
                                         # given (i.e. e.g. spreasheet) object(s) into any existing ones.
-                                        merge=True,
+                                        merge=merge,
                                         progress=None if noprogress else define_progress_callback(debug=debug),
                                         debug_sleep=debug_sleep)
     structured_data.load_file(ingestion_filename)
