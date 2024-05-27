@@ -125,7 +125,8 @@ def main():
                             server=args.server, app=args.app, verbose=args.verbose, debug=args.debug)
 
     if not args.uuid:
-        if not (args.post and (os.path.isdir(args.post) or _is_schema_named_json_file_name(portal, args.post))):
+        if not ((args.post and (os.path.isdir(args.post) or _is_schema_named_json_file_name(portal, args.post))) or
+                (args.patch and (os.path.isdir(args.patch) or _is_schema_named_json_file_name(portal, args.patch)))):
             _print("UUID or schema or path required.")
             exit(1)
 
