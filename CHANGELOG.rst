@@ -31,6 +31,7 @@ Change Log
 * Added --files for use with --info to submit-metadata-bundle.
 * For file uploads, after asking the same yes/no question and getting the same response many
   times in a row, ask if all subsequent such questions should automatically get the same answer.
+* Removed ref_lookup_strategy references for structured_data; refactored/internalized in dcicutils.
 
 
 0.8.2

@@ -30,7 +30,7 @@ from dcicutils.progress_bar import ProgressBar
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
 from dcicutils.structured_data import Portal, StructuredDataSet
 from dcicutils.submitr.progress_constants import PROGRESS_INGESTER, PROGRESS_LOADXL, PROGRESS_PARSE
-from dcicutils.submitr.ref_lookup_strategy import ref_lookup_strategy
+# from dcicutils.submitr.ref_lookup_strategy import ref_lookup_strategy
 from submitr.base import DEFAULT_APP
 from submitr.exceptions import PortalPermissionError
 from submitr.file_for_upload import FilesForUpload
@@ -1876,7 +1876,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         PRINT("DEBUG: Starting client validation.")
 
     structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
-                                        ref_lookup_strategy=ref_lookup_strategy,
+                                        # ref_lookup_strategy=ref_lookup_strategy,
                                         ref_lookup_nocache=ref_nocache,
                                         # The remove_empty_objects_from_lists options to StructuredDataSet
                                         # was added 2024-05-22 to handle empty object within arrays,
