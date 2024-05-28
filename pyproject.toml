@@ -49,7 +49,7 @@ include = [
 python = ">=3.8.0,<3.13"
 awscli = ">=1.32.112"
 boto3 = "^1.34.112"
-dcicutils = "8.8.6.1b8"
+dcicutils = "8.8.6.1b11"
 PyYAML = "^6.0.1"
 requests = "^2.31.0"
 googleapi = "^0.1.0"
@@ -100,6 +100,7 @@ submit-genelist = "submitr.scripts.submit_genelist:main"
 submit-metadata-bundle = "submitr.scripts.submit_metadata_bundle:main"
 submit-ontology = "submitr.scripts.submit_ontology:main"
 upload-item-data = "submitr.scripts.upload_item_data:main"
+update-portal-object= "submitr.scripts.update_portal_object:main"
 view-portal-object= "submitr.scripts.view_portal_object:main"
 
 [tool.coverage.report]
