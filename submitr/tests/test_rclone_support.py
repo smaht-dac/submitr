@@ -59,7 +59,7 @@ pytestmark = pytest.mark.integration
 #   Full path to your AWS credentials file (e.g. ~/.aws_test.smaht-wolf/credentials).
 # - GOOGLE_SERVICE_ACCOUNT_FILE_PATH
 #   Full path to GCP credential "service account file" exported from Google account.
-AMAZON_CREDENTIALS_FILE_PATH = "~/.aws_test.smaht-test/credentialsx"
+AMAZON_CREDENTIALS_FILE_PATH = "~/.aws_test.smaht-test/credentials"
 GOOGLE_SERVICE_ACCOUNT_FILE_PATH = "~/.config/google-cloud/smaht-dac-617e0480d8e2.json"
 
 # These credentials related values are less likely to need updating and are thus hard-coded here.
