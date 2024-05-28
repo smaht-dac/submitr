@@ -59,19 +59,23 @@ pytestmark = pytest.mark.integration
 #   Full path to your AWS credentials file (e.g. ~/.aws_test.smaht-wolf/credentials).
 # - GOOGLE_SERVICE_ACCOUNT_FILE_PATH
 #   Full path to GCP credential "service account file" exported from Google account.
+
+# Set from setup_module() IFF running from within GitHub actions.
 AMAZON_CREDENTIALS_FILE_PATH = "~/.aws_test.smaht-test/credentials"
 GOOGLE_SERVICE_ACCOUNT_FILE_PATH = "~/.config/google-cloud/smaht-dac-617e0480d8e2.json"
 
-# These credentials related values are less likely to need updating and are thus hard-coded here.
+# Credentials related values less likely to need updating and hard-coded here.
 AMAZON_TEST_BUCKET_NAME = "smaht-unit-testing-files"
 AMAZON_REGION = "us-east-1"
-AMAZON_KMS_KEY_ID = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"  # not secret fyi
+AMAZON_KMS_KEY_ID = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"  # fyi: not a secret
 GOOGLE_TEST_BUCKET_NAME = "smaht-submitr-rclone-testing"
 GOOGLE_LOCATION = "us-east1"
 
-# Set from setup_module which pytest runs first.
+# Set from setup_module() which pytest runs first.
 RUNNING_FROM_WITHIN_GITHUB_ACTIONS = None
 RUNNING_ON_GOOGLE_COMPUTE_INSTANCE = None
+AMAZON_CREDENTIALS_ERROR = None
+GOOGLE_CREDENTIALS_ERROR = None
 
 
 def is_github_actions_context():
@@ -117,12 +121,22 @@ class EnvAmazon(Env):
         self.bucket = AMAZON_TEST_BUCKET_NAME
         self.region = AMAZON_REGION
         self.kms_key_id = AMAZON_KMS_KEY_ID
-        self.main_credentials = self.credentials()
+        self._main_credentials = None
+
+    @property
+    def main_credentials(self) -> AmazonCredentials:
+        if not self._main_credentials:
+            self._main_credentials = self.credentials()
+        return self._main_credentials
 
     def credentials(self, nokms: bool = False) -> AmazonCredentials:
         credentials = AwsCredentials.from_file(self.credentials_file,
                                                region=self.region,
                                                kms_key_id=None if nokms is True else self.kms_key_id)
+        if not credentials:
+            import pdb ; pdb.set_trace()  # noqa
+            pass
+        assert credentials is not None
         assert isinstance(credentials.region, str) and credentials.region
         assert isinstance(credentials.access_key_id, str) and credentials.access_key_id
         assert isinstance(credentials.secret_access_key, str) and credentials.secret_access_key
@@ -149,7 +163,13 @@ class EnvGoogle(Env):
         self.service_account_file = GOOGLE_SERVICE_ACCOUNT_FILE_PATH
         self.bucket = GOOGLE_TEST_BUCKET_NAME
         self.location = GOOGLE_LOCATION
-        self.main_credentials = self.credentials()
+        self._main_credentials = None
+
+    @property
+    def main_credentials(self) -> AmazonCredentials:
+        if not self._main_credentials:
+            self._main_credentials = self.credentials()
+        return self._main_credentials
 
     def credentials(self) -> GoogleCredentials:
         credentials = GcpCredentials.from_file(self.service_account_file, location=self.location)
@@ -164,24 +184,31 @@ class EnvGoogle(Env):
         return Gcs(self.main_credentials)
 
 
-def setup_module():
-
-    global AMAZON_CREDENTIALS_FILE_PATH
-    global GOOGLE_SERVICE_ACCOUNT_FILE_PATH
-    global RUNNING_FROM_WITHIN_GITHUB_ACTIONS
-    global RUNNING_ON_GOOGLE_COMPUTE_INSTANCE
-
-    RUNNING_FROM_WITHIN_GITHUB_ACTIONS = is_github_actions_context()
-    RUNNING_ON_GOOGLE_COMPUTE_INSTANCE = RCloneGoogle.is_google_compute_engine()
-
-    assert RCloneInstallation.install() is not None
-    assert RCloneInstallation.is_installed() is True
-
-    print()
+def print_integation_testing_context():
     print(f"Running from within GitHub Actions:"
           f" {'YES' if RUNNING_FROM_WITHIN_GITHUB_ACTIONS else 'NO'}")
     print(f"Running on a Google Compute Engine (GCE) instance:"
           f" {'YES' if RUNNING_ON_GOOGLE_COMPUTE_INSTANCE else 'NO'}")
+
+
+def setup_module():
+
+    global RUNNING_FROM_WITHIN_GITHUB_ACTIONS
+    global RUNNING_ON_GOOGLE_COMPUTE_INSTANCE
+
+    global AMAZON_CREDENTIALS_ERROR
+    global AMAZON_CREDENTIALS_FILE_PATH
+
+    global GOOGLE_CREDENTIALS_ERROR
+    global GOOGLE_SERVICE_ACCOUNT_FILE_PATH
+
+    RUNNING_FROM_WITHIN_GITHUB_ACTIONS = is_github_actions_context()
+    RUNNING_ON_GOOGLE_COMPUTE_INSTANCE = RCloneGoogle.is_google_compute_engine()
+
+    print_integation_testing_context()
+
+    assert RCloneInstallation.install() is not None
+    assert RCloneInstallation.is_installed() is True
 
     rclone_setup_module()
 
@@ -190,28 +217,28 @@ def setup_module():
         secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
         session_token = os.environ.get("AWS_SESSION_TOKEN", None)
         if not (access_key_id and secret_access_key):
+            AMAZON_CREDENTIALS_ERROR = "AWS acesss keys not defined!"
             pytest.fail("Integration test setup error: AWS acesss keys not defined!")
-        AMAZON_CREDENTIALS_FILE_PATH = create_temporary_file_name()
-        with open(AMAZON_CREDENTIALS_FILE_PATH, "w") as f:
-            f.write(f"[default]\n")
-            f.write(f"aws_access_key_id={access_key_id}\n")
-            f.write(f"aws_secret_access_key={secret_access_key}\n")
-            f.write(f"aws_session_token={session_token}\n") if session_token else None
-        os.chmod(AMAZON_CREDENTIALS_FILE_PATH, 0o600)  # for security
-        print(f"Amazon Credentials:")
-        print(f"- AWS_ACCESS_KEY_ID: {len(access_key_id) * '*'}")
-        print(f"- AWS_SECRET_ACCESS_KEY: {len(secret_access_key) * '*'}")
-        print(f"- AMAZON_CREDENTIALS_FILE_PATH: {AMAZON_CREDENTIALS_FILE_PATH}")
+        else:
+            AMAZON_CREDENTIALS_FILE_PATH = create_temporary_file_name()
+            with open(AMAZON_CREDENTIALS_FILE_PATH, "w") as f:
+                f.write(f"[default]\n")
+                f.write(f"aws_access_key_id={access_key_id}\n")
+                f.write(f"aws_secret_access_key={secret_access_key}\n")
+                f.write(f"aws_session_token={session_token}\n") if session_token else None
+            os.chmod(AMAZON_CREDENTIALS_FILE_PATH, 0o600)  # for security
+            print(f"Amazon Credentials:")
+            print(f"- AWS_ACCESS_KEY_ID: {access_key_id[:2]}{(len(access_key_id) - 2) * '*'}")
+            print(f"- AWS_SECRET_ACCESS_KEY: {len(secret_access_key) * '*'}")
+            print(f"- AMAZON_CREDENTIALS_FILE_PATH: {AMAZON_CREDENTIALS_FILE_PATH}")
     else:
         if not (AMAZON_CREDENTIALS_FILE_PATH and
                 os.path.isfile(normalize_path(AMAZON_CREDENTIALS_FILE_PATH, expand_home=True))):
-            pytest.fail("No Amazon credentials file defined. Skippping this test module: test_rclone_support")
-        print(f"Amazon Credentials:")
-        print(f"- AMAZON_CREDENTIALS_FILE_PATH: {AMAZON_CREDENTIALS_FILE_PATH}")
+            AMAZON_CREDENTIALS_ERROR = "No Amazon credentials file defined!"
 
     if RUNNING_FROM_WITHIN_GITHUB_ACTIONS:
         if not (service_account_json_string := os.environ.get("GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON")):
-            pytest.fail("Integration test setup error: Google credentials defined!")
+            pytest.fail("Integration test setup error: No Google credentials defined!")
         service_account_json = json.loads(service_account_json_string)
         google_service_account_file_path = create_temporary_file_name(suffix=".json")
         with open(google_service_account_file_path, "w") as f:
@@ -225,15 +252,17 @@ def setup_module():
         if not (GOOGLE_SERVICE_ACCOUNT_FILE_PATH and
                 os.path.isfile(normalize_path(GOOGLE_SERVICE_ACCOUNT_FILE_PATH, expand_home=True))):
             if not RCloneGoogle.is_google_compute_engine():
-                print("No Google credentials file defined. Skippping this test module: test_rclone_support")
-                pytest.skip()
-                return
-            # Google credentials can be None on a GCE instance; i.e. no service account file needed.
-            GOOGLE_SERVICE_ACCOUNT_FILE_PATH = None
-        print(f"Google Credentials:")
-        print(f"- GOOGLE_SERVICE_ACCOUNT_FILE_PATH: {GOOGLE_SERVICE_ACCOUNT_FILE_PATH}")
+                GOOGLE_CREDENTIALS_ERROR = "No Google credentials file defined!"
+            else:
+                # Google credentials can be None on a GCE instance; i.e. no service account file needed.
+                GOOGLE_SERVICE_ACCOUNT_FILE_PATH = None
 
-    initial_setup_and_sanity_checking(env_amazon=EnvAmazon(), env_google=EnvGoogle())
+    # Just make sure no interference from credentials not explicitly setup for testing.
+    AwsCredentials.remove_credentials_from_environment_variables()
+    assert os.environ.get("AWS_DEFAULT_REGION", None) is None
+    assert os.environ.get("AWS_ACCESS_KEY_ID", None) is None
+    assert os.environ.get("AWS_SECRET_ACCESS_KEY", None) is None
+    assert os.environ.get("AWS_SESSION_TOKEN", None) is None
 
 
 def teardown_module():
@@ -244,30 +273,75 @@ def teardown_module():
 
 
 def test_integration_testing_connectivity(capsys):
-    assert True is True
 
-    amazon = RCloneAmazon(EnvAmazon().credentials())
-    google = RCloneGoogle(EnvGoogle().credentials())
+    global AMAZON_CREDENTIALS_ERROR
+    global GOOGLE_CREDENTIALS_ERROR
+
+    def check_amazon_connectivity() -> bool:
+        def display_access_key_id(access_key_id: Optional[str]) -> str:  # noqa
+            if not (isinstance(access_key_id, str) and access_key_id):
+                return "<UNKNOWN!>"
+            if len(access_key_id) <= 5:
+                return len(access_key_id) * "*"
+            return (f"{amazon_credentials.access_key_id[:2]}"
+                    f"{(len(amazon_credentials.access_key_id) - 5) * '*'}"
+                    f"{amazon_credentials.access_key_id[-3:]}")
+        def display_credentials_file_path(credentials_file_path) -> str:  # noqa
+            if not (isinstance(credentials_file_path, str) and credentials_file_path):
+                return "<UNKNOWN!>"
+            return AMAZON_CREDENTIALS_FILE_PATH
+        if AMAZON_CREDENTIALS_ERROR:
+            print(f"Amazon connectivity for integration tests: ERROR {chars.xmark}")
+            print(f"- {AMAZON_CREDENTIALS_ERROR}")
+            if not RUNNING_FROM_WITHIN_GITHUB_ACTIONS:
+                print(f"- Confirm the location and contents of the file defined by the")
+                print(f"  AMAZON_CREDENTIALS_FILE_PATH variable in this module ({os.path.basename(__file__)})")
+
+            return False
+        else:
+            amazon_credentials = EnvAmazon().credentials()
+            amazon = RCloneAmazon(amazon_credentials)
+            if amazon.ping() is True:
+                print(f"Amazon connectivity for integration tests: OK {chars.check}")
+                print(f"- Amazon credentials file: {display_credentials_file_path(AMAZON_CREDENTIALS_FILE_PATH)}")
+                print(f"- Amazon credentials access key: {display_access_key_id(amazon_credentials.access_key_id)}")
+            else:
+                print(f"Amazon connectivity for integration tests: ERROR {chars.xmark}")
+            return True
+
+    def check_google_connectivity() -> bool:
+        if GOOGLE_CREDENTIALS_ERROR:
+            print(f"Google connectivity for integration tests: ERROR {chars.xmark}")
+            print(f"- {GOOGLE_CREDENTIALS_ERROR}")
+            if not RUNNING_FROM_WITHIN_GITHUB_ACTIONS:
+                print(f"- Confirm the location and contents of the file defined by the")
+                print(f"  GOOGLE_SERVICE_ACCOUNT_FILE_PATH variable in this module ({os.path.basename(__file__)})")
+            return False
+        google_credentials = EnvGoogle().credentials()
+        google = RCloneGoogle(google_credentials)
+        if (not GOOGLE_CREDENTIALS_ERROR) and (google.ping() is True):
+            print(f"Google connectivity for integration tests: OK {chars.check}")
+        else:
+            print(f"Google connectivity for integration tests: ERROR {chars.xmark}")
+        print(f"- Google credentials file: {GOOGLE_SERVICE_ACCOUNT_FILE_PATH}")
+        print(f"- Google credentials project: {google.project}")
+        return True
 
     with capsys.disabled():
-        # This context manager forces this output even without pytest -s option.
         print()
-        print(f"Checking Google connectivity for integration tests ..."
-              f" {f'OK {chars.check}' if google.ping() is True else f'ERROR {chars.xmark}'}")
-        print(f"Checking Amazon connectivity for integration tests ..."
-              f" {f'OK {chars.check}' if amazon.ping() is True else f'ERROR {chars.xmark}'}")
+        print_integation_testing_context()
+        amazon_okay = check_amazon_connectivity()
+        google_okay = check_google_connectivity()
 
+    if not (amazon_okay and google_okay):
+        return
 
-def initial_setup_and_sanity_checking(env_amazon: EnvAmazon, env_google: EnvGoogle) -> None:
+    # Check that buckets are setup.
 
-    AwsCredentials.remove_credentials_from_environment_variables()
-    assert os.environ.get("AWS_DEFAULT_REGION", None) is None
-    assert os.environ.get("AWS_ACCESS_KEY_ID", None) is None
-    assert os.environ.get("AWS_SECRET_ACCESS_KEY", None) is None
-    assert os.environ.get("AWS_SESSION_TOKEN", None) is None
-
+    env_amazon = EnvAmazon()
     assert env_amazon.s3_non_rclone().bucket_exists(env_amazon.bucket) is True
 
+    env_google = EnvGoogle()
     credentials_google = env_google.credentials()
     if not RCloneGoogle.is_google_compute_engine():
         assert os.path.isfile(credentials_google.service_account_file)
