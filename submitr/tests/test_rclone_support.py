@@ -26,8 +26,12 @@ from submitr.submission_uploads import do_any_uploads  # noqa/xyzzy
 from submitr.tests.testing_rclone_helpers import (  # noqa/xyzzy
     setup_module as rclone_setup_module, teardown_module as rclone_teardown_module,
     load_test_data_json, Mock_LocalStorage, Mock_Portal, RANDOM_TMPFILE_SIZE)
+from submitr.utils import chars
 
 
+# This marks this entire module as "integrtation" tests.
+# To run only integration tests:    pytest -m integration
+# To run all but integration tests: pytest -m "not integration"
 pytestmark = pytest.mark.integration
 
 
@@ -55,7 +59,7 @@ pytestmark = pytest.mark.integration
 #   Full path to your AWS credentials file (e.g. ~/.aws_test.smaht-wolf/credentials).
 # - GOOGLE_SERVICE_ACCOUNT_FILE_PATH
 #   Full path to GCP credential "service account file" exported from Google account.
-AMAZON_CREDENTIALS_FILE_PATH = "~/.aws_test.smaht-test/credentials"
+AMAZON_CREDENTIALS_FILE_PATH = "~/.aws_test.smaht-test/credentialsx"
 GOOGLE_SERVICE_ACCOUNT_FILE_PATH = "~/.config/google-cloud/smaht-dac-617e0480d8e2.json"
 
 # These credentials related values are less likely to need updating and are thus hard-coded here.
@@ -166,14 +170,11 @@ def setup_module():
     assert RCloneInstallation.install() is not None
     assert RCloneInstallation.is_installed() is True
 
-    if is_github_actions_context():
-        print("\nRunning in GitHub Actions")
-    else:
-        print("\nNot running in GitHub Actions")
-    if RCloneGoogle.is_google_compute_engine():
-        print("Running on a Google Compute Engine")
-    else:
-        print("Not running on a Google Compute Engine")
+    print()
+    print(f"Running from within GitHub Actions:"
+          f" {'YES' if is_github_actions_context() else 'NO'}")
+    print(f"Running on a Google Compute Engine (GCE) instance:"
+          f" {'YES' if RCloneGoogle.is_google_compute_engine() else 'NO'}")
 
     if is_github_actions_context():
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
@@ -231,6 +232,21 @@ def teardown_module():
         remove_temporary_file(AMAZON_CREDENTIALS_FILE_PATH)
         remove_temporary_file(GOOGLE_SERVICE_ACCOUNT_FILE_PATH)
     rclone_teardown_module()
+
+
+def test_integration_testing_connectivity(capsys):
+    assert True is True
+
+    amazon = RCloneAmazon(EnvAmazon().credentials())
+    google = RCloneGoogle(EnvGoogle().credentials())
+
+    with capsys.disabled():
+        # This context manager forces this output even without pytest -s option.
+        print()
+        print(f"Checking Google connectivity for integration tests ..."
+              f" {f'OK {chars.check}' if google.ping() is True else f'ERROR {chars.xmark}'}")
+        print(f"Checking Amazon connectivity for integration tests ..."
+              f" {f'OK {chars.check}' if amazon.ping() is True else f'ERROR {chars.xmark}'}")
 
 
 def initial_setup_and_sanity_checking(env_amazon: EnvAmazon, env_google: EnvGoogle) -> None:
