@@ -1,9 +1,10 @@
 # ------------------------------------------------------------------------------------------------------
 # Command-line utility to update (post, patch, upsert) portal objects for SMaHT/CGAP/Fourfront.
 # ------------------------------------------------------------------------------------------------------
-# Example command:
+# Example commands:
 # update-portal-object --post file_format.json
-# update-portal-object --post <directory-with-schema-named-json-files>
+# update-portal-object --upsert directory-with-schema-named-dot-json-files
+# update-portal-object --patch file-not-named-for-schema-name.json --schema UnalignedReads
 # --------------------------------------------------------------------------------------------------
 
 import argparse
@@ -14,9 +15,9 @@ import json
 import os
 import sys
 from typing import Callable, List, Optional, Tuple, Union
-from dcicutils.captured_output import captured_output, uncaptured_output
 from dcicutils.misc_utils import get_error_message, PRINT
 from dcicutils.portal_utils import Portal
+from dcicutils.command_utils import yes_or_no
 from dcicutils.common import ORCHESTRATED_APPS, APP_SMAHT
 
 
@@ -104,14 +105,21 @@ def main():
     parser.add_argument("--post", type=str, required=False, default=None, help="POST data.")
     parser.add_argument("--patch", type=str, required=False, default=None, help="PATCH data.")
     parser.add_argument("--upsert", type=str, required=False, default=None, help="Upsert data.")
+    parser.add_argument("--confirm", action="store_true", required=False, default=False, help="Confirm before action.")
     parser.add_argument("--verbose", action="store_true", required=False, default=False, help="Verbose output.")
     parser.add_argument("--quiet", action="store_true", required=False, default=False, help="Quiet output.")
     parser.add_argument("--debug", action="store_true", required=False, default=False, help="Debugging output.")
     args = parser.parse_args()
 
+    def usage(message: Optional[str] = None) -> None:
+        nonlocal parser
+        _print(message) if isinstance(message, str) else None
+        parser.print_help()
+        exit(1)
+
     if app := args.app:
         if (app not in ORCHESTRATED_APPS) and ((app := app.lower()) not in ORCHESTRATED_APPS):
-            _usage(f"Invalid app; must be one of: {', '.join(ORCHESTRATED_APPS)}")
+            usage(f"ERROR: Unknown app name; must be one of: {' | '.join(ORCHESTRATED_APPS)}")
     else:
         app = APP_SMAHT
 
@@ -120,40 +128,182 @@ def main():
     if explicit_schema_name := args.schema:
         schema, explicit_schema_name = _get_schema(portal, explicit_schema_name)
         if not schema:
-            _usage(f"Unknown schema name: {args.schema}")
+            usage(f"ERROR: Unknown schema name: {args.schema}")
+
+    if not (args.post or args.patch or args.upsert):
+        usage()
 
     if args.post:
         _post_or_patch_or_upsert(portal=portal,
                                  file_or_directory=args.post,
                                  explicit_schema_name=explicit_schema_name,
                                  update_function=_post_from_file,
-                                 verbose=args.verbose, quiet=args.quiet, debug=args.debug)
-
+                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet, debug=args.debug)
     if args.patch:
         _post_or_patch_or_upsert(portal=portal,
                                  file_or_directory=args.patch,
                                  explicit_schema_name=explicit_schema_name,
                                  update_function=_patch_from_file,
-                                 verbose=args.verbose, quiet=args.quiet, debug=args.debug)
-
+                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet, debug=args.debug)
     if args.upsert:
         _post_or_patch_or_upsert(portal=portal,
                                  file_or_directory=args.upsert,
                                  explicit_schema_name=explicit_schema_name,
                                  update_function=_upsert_from_file,
-                                 verbose=args.verbose, quiet=args.quiet, debug=args.debug)
+                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet, debug=args.debug)
+
+
+def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
+                             explicit_schema_name: str, update_function: Callable,
+                             confirm: bool = False, verbose: bool = False,
+                             quiet: bool = False, debug: bool = False) -> None:
+    if os.path.isdir(file_or_directory):
+        if ((files := glob.glob(os.path.join(file_or_directory, "*.json"))) and
+            (files_and_schemas := _file_names_to_ordered_file_and_schema_names(portal, files))):  # noqa
+            for file_and_schema in files_and_schemas:
+                if not (file := file_and_schema[0]):
+                    continue
+                if not (schema_name := file_and_schema[1]) and not (schema_name := explicit_schema_name):
+                    _print(f"ERROR: Schema cannot be inferred from file name and --schema not specified: {file}")
+                    continue
+                update_function(portal, file_and_schema[0], schema_name=schema_name,
+                                confirm=confirm, quiet=quiet, verbose=verbose, debug=debug)
+    elif os.path.isfile(file := file_or_directory):
+        if (not (schema_name := _get_schema_name_from_schema_named_json_file_name(portal, file)) and
+            not (schema_name := explicit_schema_name)):  # noqa
+            _print(f"ERROR: Schema cannot be inferred from file name and --schema not specified: {file}")
+            return
+        update_function(portal, file, schema_name=schema_name,
+                        quiet=quiet, verbose=verbose, debug=debug)
+    else:
+        _print(f"ERROR: Cannot find file or directory: {file_or_directory}")
+
+
+def _post_from_file(portal: Portal, file: str, schema_name: str,
+                    confirm: bool = False, verbose: bool = False,
+                    quiet: bool = False, debug: bool = False) -> bool:
+
+    def post_data(data: dict, index: int = 0) -> None:
+        nonlocal portal, file, schema_name, verbose, debug
+        if not (identifying_path := portal.get_identifying_path(data, portal_type=schema_name)):
+            _print(f"ERROR: Item for POST has no identifying property: {file} (#{index + 1})")
+            return
+        if portal.get_metadata(identifying_path, raise_exception=False):
+            _print(f"ERROR: Item for POST already exists: {identifying_path}")
+            return
+        if (confirm is True) and not yes_or_no(f"POST data for: {identifying_path} ?"):
+            return
+        if verbose:
+            _print(f"POST {schema_name} item: {identifying_path}")
+        try:
+            portal.post_metadata(schema_name, data)
+            if debug:
+                _print(f"DEBUG: POST {schema_name} item done: {identifying_path}")
+        except Exception as e:
+            _print(f"ERROR: Cannot POST {schema_name} item: {identifying_path}")
+            _print(get_error_message(e))
+            return
+
+    if not quiet:
+        _print(f"Processing POST file: {file}")
+    if data := _read_json_from_file(file):
+        if isinstance(data, dict):
+            post_data(data)
+        elif isinstance(data, list):
+            for index, item in enumerate(data):
+                post_data(item, index)
+        if debug:
+            _print(f"DEBUG: Processing POST file done: {file}")
+
+
+def _patch_from_file(portal: Portal, file: str, schema_name: str,
+                     confirm: bool = False, verbose: bool = False,
+                     quiet: bool = False, debug: bool = False) -> bool:
+
+    def patch_data(data: dict, index: int = 0) -> None:
+        nonlocal portal, file, schema_name, verbose, debug
+        if not (identifying_path := portal.get_identifying_path(data, portal_type=schema_name)):
+            _print(f"ERROR: Item for PATCH has no identifying property: {file} (#{index + 1})")
+            return
+        if not portal.get_metadata(identifying_path, raise_exception=False):
+            _print(f"ERROR: Item for PATCH does not already exist: {identifying_path}")
+            return
+        if (confirm is True) and not yes_or_no(f"PATCH data for: {identifying_path}"):
+            return
+        if verbose:
+            _print(f"PATCH {schema_name} item: {identifying_path}")
+        try:
+            portal.patch_metadata(identifying_path, data)
+            if debug:
+                _print(f"DEBUG: PATCH {schema_name} item OK: {identifying_path}")
+        except Exception as e:
+            _print(f"ERROR: Cannot PATCH {schema_name} item: {identifying_path}")
+            _print(e)
+            return
+
+    if not quiet:
+        _print(f"Processing PATCH file: {file}")
+    if data := _read_json_from_file(file):
+        if isinstance(data, dict):
+            patch_data(data)
+        elif isinstance(data, list):
+            for index, item in enumerate(data):
+                patch_data(item, index)
+        if debug:
+            _print(f"DEBUG: Processing PATCH file done: {file}")
+
+
+def _upsert_from_file(portal: Portal, file: str, schema_name: Optional[str] = None,
+                      confirm: bool = False, verbose: bool = False,
+                      quiet: bool = False, debug: bool = False) -> bool:
+
+    def upsert_data(data: dict, index: int = 0) -> None:
+        nonlocal portal, file, schema_name, verbose, debug
+        if not (identifying_path := portal.get_identifying_path(data, portal_type=schema_name)):
+            _print(f"ERROR: Item for UPSERT has no identifying property: {file} (#{index + 1})")
+            return
+        existing_item = portal.get_metadata(identifying_path, raise_exception=False)
+        try:
+            if not existing_item:
+                if (confirm is True) and not yes_or_no(f"POST data for: {identifying_path} ?"):
+                    return
+                if verbose:
+                    _print(f"POST {schema_name} item: {identifying_path}")
+                portal.post_metadata(schema_name, data)
+            else:
+                if (confirm is True) and not yes_or_no(f"PATCH data for: {identifying_path} ?"):
+                    return
+                if verbose:
+                    _print(f"PATCH {schema_name} item: {identifying_path}")
+                portal.patch_metadata(identifying_path, data)
+            if debug:
+                _print(f"DEBUG: UPSERT {schema_name} item OK: {identifying_path}")
+        except Exception as e:
+            _print(f"ERROR: Cannot UPSERT {schema_name} item: {identifying_path}")
+            _print(e)
+            return
+
+    if not quiet:
+        _print(f"Processing UPSERT file: {file}")
+    if data := _read_json_from_file(file):
+        if isinstance(data, dict):
+            upsert_data(data)
+        elif isinstance(data, list):
+            for index, item in enumerate(data):
+                upsert_data(item, index)
+        if debug:
+            _print(f"DEBUG: Processing UPSERT file done: {file}")
 
 
 def _create_portal(env: Optional[str] = None, app: Optional[str] = None,
                    verbose: bool = False, debug: bool = False) -> Optional[Portal]:
 
     env_from_environ = None
-    with captured_output(not debug):
-        if not env and (app == APP_SMAHT):
-            if env := os.environ.get(_SMAHT_ENV_ENVIRON_NAME):
-                env_from_environ = True
-        if not (portal := Portal(env, app=app) if env or app else None):
-            return None
+    if not env and (app == APP_SMAHT):
+        if env := os.environ.get(_SMAHT_ENV_ENVIRON_NAME):
+            env_from_environ = True
+    if not (portal := Portal(env, app=app) if env or app else None):
+        return None
     if verbose:
         if (env := portal.env) or (env := os.environ(_SMAHT_ENV_ENVIRON_NAME)):
             _print(f"Portal environment"
@@ -170,16 +320,15 @@ def _create_portal(env: Optional[str] = None, app: Optional[str] = None,
 def _read_json_from_file(file: str) -> Optional[dict]:
     try:
         if not os.path.exists(file):
-            _print(f"Cannot find file: {file}")
             return None
         with io.open(file, "r") as f:
             try:
                 return json.load(f)
             except Exception:
-                _print(f"Cannot load JSON from file: {file}")
+                _print(f"ERROR: Cannot load JSON from file: {file}")
                 return None
     except Exception:
-        _print(f"Cannot open file: {file}")
+        _print(f"ERROR: Cannot open file: {file}")
         return None
 
 
@@ -228,149 +377,9 @@ def _get_schema(portal: Portal, name: str) -> Tuple[Optional[dict], Optional[str
     return None, None
 
 
-def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
-                             explicit_schema_name: str, update_function: Callable,
-                             verbose: bool = False, quiet: bool = False, debug: bool = False) -> None:
-    if os.path.isdir(file_or_directory):
-        if ((files := glob.glob(os.path.join(file_or_directory, "*.json"))) and
-            (files_and_schemas := _file_names_to_ordered_file_and_schema_names(portal, files))):  # noqa
-            for file_and_schema in files_and_schemas:
-                if not (schema_name := file_and_schema[1]) and not (schema_name := explicit_schema_name):
-                    _print(f"ERROR: Schema cannot be inferred from file name"
-                           f" and --schema not specified: {file_or_directory}")
-                    continue
-                update_function(portal, file_and_schema[0], schema_name=schema_name,
-                                quiet=quiet, verbose=verbose, debug=debug)
-    elif os.path.isfile(file_or_directory):
-        if (not (schema_name := _get_schema_name_from_schema_named_json_file_name(portal, file_or_directory)) and
-            not (schema_name := explicit_schema_name)):  # noqa
-            _usage(f"No schema name specified for file: {file_or_directory}")
-        update_function(portal, file_or_directory, schema_name=schema_name,
-                        quiet=quiet, verbose=verbose, debug=debug)
-    else:
-        _print("Cannot find file or directory: {file_or_directory}")
-
-
-def _post_from_file(portal: Portal, file: str, schema_name: str,
-                    quiet: bool = False, verbose: bool = False, debug: bool = False) -> bool:
-
-    def post_data(data: dict, index: int = 0) -> None:
-        nonlocal portal, file, schema_name, verbose, debug
-        if not (identifying_path := portal.get_identifying_path(data, portal_type=schema_name)):
-            _print(f"ERROR: POST item has no identifying property: {file} (#{index + 1})")
-            return
-        if portal.get_metadata(identifying_path, raise_exception=False):
-            _print(f"ERROR: POST item already exists: {identifying_path}")
-            return
-        if verbose:
-            _print(f"POST {schema_name} item: {identifying_path}")
-        try:
-            portal.post_metadata(schema_name, data)
-            if debug:
-                _print(f"DEBUG: POST {schema_name} item done: {identifying_path}")
-        except Exception as e:
-            _print(f"ERROR: Cannot POST {schema_name} item: {identifying_path}")
-            _print(get_error_message(e))
-            return
-
-    if not quiet:
-        _print(f"Processing POST file: {file}")
-    if data := _read_json_from_file(file):
-        if isinstance(data, dict):
-            post_data(data)
-        elif isinstance(data, list):
-            for index, item in enumerate(data):
-                post_data(item, index)
-    if debug:
-        _print(f"DEBUG: Processing POST file done: {file}")
-
-
-def _patch_from_file(portal: Portal, file: str, schema_name: str,
-                     quiet: bool = False, verbose: bool = False, debug: bool = False) -> bool:
-
-    def patch_data(data: dict, index: int = 0) -> None:
-        nonlocal portal, file, schema_name, verbose, debug
-        if not (identifying_path := portal.get_identifying_path(data, portal_type=schema_name)):
-            _print(f"ERROR: PATCH item has no identifying property: {file} (#{index + 1})")
-            return
-        if not portal.get_metadata(identifying_path, raise_exception=False):
-            _print(f"ERROR: PATCH item does not already exist: {identifying_path}")
-            return
-        if verbose:
-            _print(f"PATCH {schema_name} item: {identifying_path}")
-        try:
-            portal.patch_metadata(identifying_path, data)
-            if debug:
-                _print(f"DEBUG: PATCH {schema_name} item OK: {identifying_path}")
-        except Exception as e:
-            _print(f"ERROR: Cannot PATCH {schema_name} item: {identifying_path}")
-            _print(e)
-            return
-
-    if not quiet:
-        _print(f"Processing PATCH file: {file}")
-    if data := _read_json_from_file(file):
-        if isinstance(data, dict):
-            patch_data(data)
-        elif isinstance(data, list):
-            for index, item in enumerate(data):
-                patch_data(item, index)
-    if debug:
-        _print(f"DEBUG: Processing PATCH file done: {file}")
-
-
-def _upsert_from_file(portal: Portal, file: str, schema_name: Optional[str] = None,
-                      quiet: bool = False, verbose: bool = False, debug: bool = False) -> bool:
-
-    def upsert_data(data: dict, index: int = 0) -> None:
-        nonlocal portal, file, schema_name, verbose, debug
-        if not (identifying_path := portal.get_identifying_path(data, portal_type=schema_name)):
-            _print(f"ERROR: UPSERT item has no identifying property: {file} (#{index + 1})")
-            return
-        existing_item = portal.get_metadata(identifying_path, raise_exception=False)
-        try:
-            if not existing_item:
-                if verbose:
-                    _print(f"POST {schema_name} item: {identifying_path}")
-                portal.post_metadata(schema_name, data)
-            else:
-                if verbose:
-                    _print(f"PATCH {schema_name} item: {identifying_path}")
-                portal.patch_metadata(identifying_path, data)
-            if debug:
-                _print(f"DEBUG: UPSERT {schema_name} item OK: {identifying_path}")
-        except Exception as e:
-            _print(f"ERROR: Cannot UPSERT {schema_name} item: {identifying_path}")
-            _print(e)
-            return
-
-    if not quiet:
-        _print(f"Processing UPSERT file: {file}")
-    if data := _read_json_from_file(file):
-        if isinstance(data, dict):
-            upsert_data(data)
-        elif isinstance(data, list):
-            for index, item in enumerate(data):
-                upsert_data(item, index)
-    if debug:
-        _print(f"DEBUG: Processing UPSERT file done: {file}")
-
-
-def _usage(message: Optional[str] = None) -> None:
-    _print(message) if isinstance(message, str) else None
-    exit(1)
-
-
 def _print(*args, **kwargs) -> None:
-    with uncaptured_output():
-        PRINT(*args, **kwargs)
+    PRINT(*args, **kwargs)
     sys.stdout.flush()
-
-
-def _exit(message: Optional[str] = None) -> None:
-    if message:
-        _print(f"ERROR: {message}")
-    exit(1)
 
 
 if __name__ == "__main__":

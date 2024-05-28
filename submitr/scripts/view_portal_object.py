@@ -57,7 +57,6 @@
 
 import argparse
 from functools import lru_cache
-import glob
 import io
 import json
 import pyperclip
@@ -99,10 +98,6 @@ def main():
                         help="Include all properties for schema usage.")
     parser.add_argument("--raw", action="store_true", required=False, default=False, help="Raw output.")
     parser.add_argument("--tree", action="store_true", required=False, default=False, help="Tree output for schemas.")
-    parser.add_argument("--post", type=str, required=False, default=None,
-                        help="POST data of the main arg type with data from file specified with this option.")
-    parser.add_argument("--patch", type=str, required=False, default=None,
-                        help="PATCH data of the main arg type with data from file specified with this option.")
     parser.add_argument("--database", action="store_true", required=False, default=False,
                         help="Read from database output.")
     parser.add_argument("--bool", action="store_true", required=False,
@@ -125,10 +120,8 @@ def main():
                             server=args.server, app=args.app, verbose=args.verbose, debug=args.debug)
 
     if not args.uuid:
-        if not ((args.post and (os.path.isdir(args.post) or _is_schema_named_json_file_name(portal, args.post))) or
-                (args.patch and (os.path.isdir(args.patch) or _is_schema_named_json_file_name(portal, args.patch)))):
-            _print("UUID or schema or path required.")
-            exit(1)
+        _print("UUID or schema or path required.")
+        exit(1)
 
     if args.uuid and ((args.uuid.lower() == "schemas") or (args.uuid.lower() == "schema")):
         _print_all_schema_names(portal=portal, details=args.details,
@@ -166,41 +159,6 @@ def main():
         args.schema = True
 
     if args.schema:
-        if args.post:
-            if post_data := _read_json_from_file(args.post):
-                if args.verbose:
-                    _print(f"POSTing data from file ({args.post}) as type: {args.uuid}")
-                if isinstance(post_data, dict):
-                    post_data = [post_data]
-                elif not isinstance(post_data, list):
-                    _print(f"POST data neither list nor dictionary: {args.post}")
-                for item in post_data:
-                    portal.post_metadata(args.uuid, item)
-                if args.verbose:
-                    _print(f"Done POSTing data from file ({args.post}) as type: {args.uuid}")
-            exit(0)
-        elif args.patch:
-            if patch_data := _read_json_from_file(args.patch):
-                if args.verbose:
-                    _print(f"PATCHing data from file ({args.patch}) as type: {args.uuid}")
-                if isinstance(patch_data, dict):
-                    patch_data = [patch_data]
-                elif not isinstance(patch_data, list):
-                    _print(f"PATCH data neither list nor dictionary: {args.patch}")
-                index = 0
-                for item in patch_data:
-                    index += 1
-                    if uuid := item.get("uuid"):
-                        path = uuid
-                    elif identifier := item.get("identifier"):
-                        path = identifier
-                    else:
-                        _print(f"Cannot find identifying value for PATCH item #{index}")
-                        continue
-                    portal.patch_metadata(f"/{args.uuid}/{path}", item)
-                if args.verbose:
-                    _print(f"Done PATCHing data from file ({args.patch}) as type: {args.uuid}")
-            exit(0)
         schema, schema_name = _get_schema(portal, args.uuid)
         if schema:
             if args.copy:
@@ -216,48 +174,6 @@ def main():
             _print_schema(schema, details=args.details, more_details=args.details,
                           all=args.all, raw=args.raw, raw_yaml=args.yaml)
             return
-    elif args.post:
-        if os.path.isdir(args.post):
-            for file in glob.glob(os.path.join(args.post, "*.json")):
-                if schema_name := _get_schema_name_from_schema_named_json_file_name(portal, file):
-                    if post_data := _read_json_from_file(file):
-                        for item in post_data:
-                            portal.post_metadata(schema_name, item)
-        elif os.path.isfile(args.post):
-            if schema_name := _get_schema_name_from_schema_named_json_file_name(portal, args.post):
-                if post_data := _read_json_from_file(args.post):
-                    if isinstance(post_data, dict):
-                        portal.post_metadata(schema_name, post_data)
-                    elif isinstance(post_data, list):
-                        for item in post_data:
-                            portal.post_metadata(schema_name, item)
-                    pass
-                else:
-                    _print(f"No POST data found in file: {args.post}")
-                    exit(1)
-            else:
-                _print(f"POST data file is not a portal type and not type specified: {args.post}")
-                exit(1)
-        else:
-            _print(f"POST data file not found: {args.post}")
-            exit(1)
-        return
-    elif args.patch:
-        if patch_data := _read_json_from_file(args.patch):
-            if args.verbose:
-                _print(f"PATCHing data from file ({args.patch}) for object: {args.uuid}")
-            if isinstance(patch_data, dict):
-                patch_data = [patch_data]
-            elif not isinstance(patch_data, list):
-                _print(f"PATCH data neither list nor dictionary: {args.patch}")
-            for item in patch_data:
-                portal.patch_metadata(args.uuid, item)
-            if args.verbose:
-                _print(f"Done PATCHing data from file ({args.patch}) as type: {args.uuid}")
-            return
-        else:
-            _print(f"No PATCH data found in file: {args.patch}")
-            exit(1)
 
     data = _get_portal_object(portal=portal, uuid=args.uuid, raw=args.raw,
                               database=args.database, check=args.bool, verbose=args.verbose)
