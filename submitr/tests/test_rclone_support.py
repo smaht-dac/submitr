@@ -69,6 +69,10 @@ AMAZON_KMS_KEY_ID = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"  # not secret fyi
 GOOGLE_TEST_BUCKET_NAME = "smaht-submitr-rclone-testing"
 GOOGLE_LOCATION = "us-east1"
 
+# Set from setup_module which pytest runs first.
+RUNNING_FROM_WITHIN_GITHUB_ACTIONS = None
+RUNNING_ON_GOOGLE_COMPUTE_INSTANCE = None
+
 
 def is_github_actions_context():
     # Returns True iff we are running within GitHub Actions.
@@ -162,21 +166,26 @@ class EnvGoogle(Env):
 
 def setup_module():
 
-    rclone_setup_module()
-
     global AMAZON_CREDENTIALS_FILE_PATH
     global GOOGLE_SERVICE_ACCOUNT_FILE_PATH
+    global RUNNING_FROM_WITHIN_GITHUB_ACTIONS
+    global RUNNING_ON_GOOGLE_COMPUTE_INSTANCE
+
+    RUNNING_FROM_WITHIN_GITHUB_ACTIONS = is_github_actions_context()
+    RUNNING_ON_GOOGLE_COMPUTE_INSTANCE = RCloneGoogle.is_google_compute_engine()
 
     assert RCloneInstallation.install() is not None
     assert RCloneInstallation.is_installed() is True
 
     print()
     print(f"Running from within GitHub Actions:"
-          f" {'YES' if is_github_actions_context() else 'NO'}")
+          f" {'YES' if RUNNING_FROM_WITHIN_GITHUB_ACTIONS else 'NO'}")
     print(f"Running on a Google Compute Engine (GCE) instance:"
-          f" {'YES' if RCloneGoogle.is_google_compute_engine() else 'NO'}")
+          f" {'YES' if RUNNING_ON_GOOGLE_COMPUTE_INSTANCE else 'NO'}")
 
-    if is_github_actions_context():
+    rclone_setup_module()
+
+    if RUNNING_FROM_WITHIN_GITHUB_ACTIONS:
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
         secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
         session_token = os.environ.get("AWS_SESSION_TOKEN", None)
@@ -200,7 +209,7 @@ def setup_module():
         print(f"Amazon Credentials:")
         print(f"- AMAZON_CREDENTIALS_FILE_PATH: {AMAZON_CREDENTIALS_FILE_PATH}")
 
-    if is_github_actions_context():
+    if RUNNING_FROM_WITHIN_GITHUB_ACTIONS:
         if not (service_account_json_string := os.environ.get("GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON")):
             pytest.fail("Integration test setup error: Google credentials defined!")
         service_account_json = json.loads(service_account_json_string)
