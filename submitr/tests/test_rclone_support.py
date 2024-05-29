@@ -32,7 +32,7 @@ from submitr.utils import chars
 # This marks this entire module as "integrtation" tests.
 # To run only integration tests:    pytest -m integration
 # To run all but integration tests: pytest -m "not integration"
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration]
 
 
 # This integration test actually talks to AWS S3 and Google Cloud Storage (GCS);
