@@ -105,8 +105,9 @@ def main_copy(args, credentials_amazon, credentials_google):
         destination = args.destination
         destination_config = None
 
+    copyto = not (destination_config and destination_config.directory_exists(destination))
     rcloner = RCloner(source=source_config, destination=destination_config)
-    result, output = rcloner.copy(source, destination, return_output=True)
+    result, output = rcloner.copy(source, destination, copyto=copyto, return_output=True)
     if result is True:
         print("OK", end="")
         if args.verbose:
