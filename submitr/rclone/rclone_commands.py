@@ -79,16 +79,23 @@ class RCloneCommands:
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             if return_output is True:
                 lines = []
+            output_indicates_success = False
             for line in process.stdout:
+                # For some reason if copying a non-existing file from GCS we do not get an explicit error
+                # from rclone, and even the return status code is 0 indicating success; the only thing it
+                # seems the differentiates a success from failure is the presence of "100%" in the output.
+                # i.e. e.g. a line like this: Transferred: 1 / 1, 100%
                 DEBUG(f"RCLONE-COPY-OUTPUT: {normalize_string(line)}")
                 if progress and (nbytes := RCloneCommands._parse_rclone_progress_bytes(line)):
                     progress(nbytes)
                 if (return_output is True) and (line := normalize_string(line)):
                     lines.append(line)
+                if isinstance(line, str) and "Transferred" in line and "100%" in line:
+                    output_indicates_success = True
             process.stdout.close()
             result = process.wait()
             DEBUG(f"RCLONE-COPY-RESULT: {process.returncode}")
-            result = True if (result == 0) else False
+            result = True if (result == 0) and output_indicates_success else False
             return result if not (return_output is True) else (result, lines)
         except Exception as e:
             if raise_exception is True:
