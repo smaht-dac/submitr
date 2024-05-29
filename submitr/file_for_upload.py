@@ -7,7 +7,7 @@ from dcicutils.file_utils import compute_file_md5, get_file_size, normalize_path
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import format_size, normalize_string
 from dcicutils.structured_data import Portal, StructuredDataSet
-from submitr.rclone import RCloneGoogle
+from submitr.rclone import RCloneGoogle, cloud_path
 from submitr.utils import chars
 
 # Unified the logic for looking for files to upload (to AWS S3), and storing
@@ -125,19 +125,32 @@ class FileForUpload:
 
     @property
     def from_local(self) -> bool:
-        # Possible for this to return False if the file was found locally but was also found
-        # in Google Cloud Storage, and the favor_local property is None, meaning the review
-        # function has not yet been called, which resolves favor_local to True or False; in
-        # which case (if found both locally and in Google) from_google would also return False.
+        """
+        Returns True iff the file this object represents is coming from the local filesystem,
+        otherwise False. However not that it is possible for this to return False if the file
+        was found locally but was also found in GCS, and the favor_local property is None, meaning
+        the review function has not yet been called, which resolves favor_local to True or False;
+        in which case (if found both locally and in Google) from_google would also return False.
+        """
         return self.found_local and ((not self.found_google) or (self.favor_local is True))
 
     @property
     def from_google(self) -> bool:
-        # Same exact comment as from_local above applies here.
+        """
+        Returns True iff the file this object represents is coming from GCS, otherwise False.
+        However not that it is possible for this to return False if the file was found locally
+        but was also found in GCS, and the favor_local property is None, meaning the review
+        function has not yet been called, which resolves favor_local to True or False; in
+        which case (if found both locally and in Google) from_google would also return False.
+        """
         return self.found_google and ((not self.found_local) or (self.favor_local is False))
 
     @property
     def found(self) -> bool:
+        """
+        Returns True iff the file this object represents was found either locally or in GCS,
+        otherwise returns False.
+        """
         return self.path_local is not None or self.path_google is not None
 
     @property
@@ -158,6 +171,12 @@ class FileForUpload:
 
     @property
     def favor_local(self) -> Optional[bool]:
+        """
+        Returns True if we are favoring a local file over one in GCS; if no file at all found in GCS
+        then naturally this returns True; otherwise if a GCS was found then this only returns True
+        or False after the review function has been called where which file we is resolved to favor
+        the local or the GCS file; before then this will return None in such a case.
+        """
         if self._favor_local in (True, False):
             return self._favor_local
         if self.found_local:
@@ -224,7 +243,7 @@ class FileForUpload:
     @property
     def display_path_google(self) -> Optional[str]:
         if path_google := self.path_google:
-            return f"gs://{path_google}"
+            return f"{cloud_path.google_prefix}{path_google}"
         return None
 
     @property
@@ -253,7 +272,7 @@ class FileForUpload:
             self._accession = accession
         if accession_file_name:
             self._accession_name = accession_file_name
-            return f"s3://{file_upload_bucket}/{self.uuid}/{accession_file_name}"
+            return f"{cloud_path.amazon_prefix}{file_upload_bucket}/{self.uuid}/{accession_file_name}"
         return None
 
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,

@@ -110,7 +110,7 @@ class RCloneConfig(AbstractBaseClass):
         if path is None:
             path = ""
         if isinstance(path, str):
-            if path.lower()[0:5] in ["gs://", "s3://"]:
+            if path.lower()[0:5] in [cloud_path.google_prefix, cloud_path.amazon_prefix]:
                 path = path[5:]
             # Sic: Not cloud_path.normalize above as, so long as the given path
             # is a string or None allow, it to be joined with any defined bucket.

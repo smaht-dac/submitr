@@ -59,12 +59,12 @@ def main() -> None:
 
 def main_copy(args, credentials_amazon, credentials_google):
 
-    if args.source.lower().startswith("s3://"):
+    if args.source.lower().startswith(cloud_path.amazon_prefix):
         source = args.source[5:]
         if not credentials_amazon:
             usage("No AWS credentials specified or found (in environment).")
         source_config = RCloneAmazon(credentials_amazon)
-    elif args.source.lower().startswith("gs://"):
+    elif args.source.lower().startswith(cloud_path.google_prefix):
         source = args.source[5:]
         if not credentials_google:
             if not RCloneGoogle.is_google_compute_engine():
@@ -82,12 +82,12 @@ def main_copy(args, credentials_amazon, credentials_google):
         source = args.source
         source_config = None
 
-    if args.destination.lower().startswith("s3://"):
+    if args.destination.lower().startswith(cloud_path.amazon_prefix):
         destination = args.destination[5:]
         if not credentials_amazon:
             usage("No AWS credentials specified or found (in environment).")
         destination_config = RCloneAmazon(credentials_amazon)
-    elif args.destination.lower().startswith("gs://"):
+    elif args.destination.lower().startswith(cloud_path.google_prefix):
         destination = args.destination[5:]
         if not credentials_google:
             if not RCloneGoogle.is_google_compute_engine():
@@ -146,13 +146,13 @@ def main_info(args, credentials_amazon, credentials_google):
 def print_info(target, credentials_amazon, credentials_google):
     if not target:
         return
-    if target.lower().startswith("s3://"):
+    if target.lower().startswith(cloud_path.amazon_prefix):
         if not credentials_amazon:
             usage(f"No AWS credentials specified for: {target}")
         print("")
         print(f"AWS S3 Target: {target}")
         print_info_via_rclone(target, RCloneAmazon(credentials_amazon))
-    elif target.lower().startswith("gs://"):
+    elif target.lower().startswith(cloud_path.google_prefix):
         if not credentials_google:
             usage(f"No GCS credentials specified for: {target}")
         print("")

@@ -6,12 +6,14 @@ from typing import Optional, Tuple
 class cloud_path:
 
     separator = "/"
+    google_prefix = "gs://"
+    amazon_prefix = "s3://"
 
     @staticmethod
     def normalize(value: str) -> str:
         if not isinstance(value, str):
             return ""
-        if value.lower().startswith("s3://") or value.lower().startswith("gs://"):
+        if value.lower().startswith(cloud_path.amazon_prefix) or value.lower().startswith(cloud_path.google_prefix):
             value = value[5:]
         regex = re_compile(rf"({re_escape(cloud_path.separator)})+")
         value = regex.sub(cloud_path.separator, value.strip())
