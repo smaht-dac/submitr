@@ -296,18 +296,19 @@ def test_integration_testing_connectivity(capsys):
             if not RUNNING_FROM_WITHIN_GITHUB_ACTIONS:
                 print(f"- Confirm the location and contents of the file defined by the")
                 print(f"  AMAZON_CREDENTIALS_FILE_PATH variable in this module ({os.path.basename(__file__)})")
-
             return False
         else:
             amazon_credentials = EnvAmazon().credentials()
             amazon = RCloneAmazon(amazon_credentials)
-            if amazon.ping() is True:
+            if (not AMAZON_CREDENTIALS_ERROR) and (amazon.ping() is True):
                 print(f"Amazon connectivity for integration tests: OK {chars.check}")
-                print(f"- Amazon credentials file: {display_credentials_file_path(AMAZON_CREDENTIALS_FILE_PATH)}")
-                print(f"- Amazon credentials access key: {display_access_key_id(amazon_credentials.access_key_id)}")
+                result = True
             else:
                 print(f"Amazon connectivity for integration tests: ERROR {chars.xmark}")
-            return True
+                result = False
+            print(f"- Amazon credentials file: {display_credentials_file_path(AMAZON_CREDENTIALS_FILE_PATH)}")
+            print(f"- Amazon credentials access key: {display_access_key_id(amazon_credentials.access_key_id)}")
+            return result
 
     def check_google_connectivity() -> bool:
         if GOOGLE_CREDENTIALS_ERROR:
@@ -320,12 +321,14 @@ def test_integration_testing_connectivity(capsys):
         google_credentials = EnvGoogle().credentials()
         google = RCloneGoogle(google_credentials)
         if (not GOOGLE_CREDENTIALS_ERROR) and (google.ping() is True):
+            result = False
             print(f"Google connectivity for integration tests: OK {chars.check}")
         else:
+            result = False
             print(f"Google connectivity for integration tests: ERROR {chars.xmark}")
         print(f"- Google credentials file: {GOOGLE_SERVICE_ACCOUNT_FILE_PATH}")
         print(f"- Google credentials project: {google.project}")
-        return True
+        return result
 
     with capsys.disabled():
         print()
