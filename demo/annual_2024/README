@@ -26,9 +26,11 @@ Notes on demo file (bcm_formatted_hapmapmix.xlsx) for Annual Meeting in St. Loui
   - View arbitrary portal object (for troubleshooting)
     > view-portal-object --env smaht-local <uuid-or-object-path>
   - Use rclone to copy smaht-local file to Google (for testing/troubleshooting):
-    > rcloner copy <your-file> gs://smaht-submitr-rclone-testing -gcs ~/.config/google-cloud/smaht-dac-617e0480d8e2.json
+    > rcloner copy <your-file> gs://smaht-submitr-rclone-testing/demo -gcs ~/.config/google-cloud/smaht-dac-617e0480d8e2.json
   - Use rclone to copy file from Google to (for testing/troubleshooting):
-    > rcloner copy gs://smaht-submitr-rclone-testing/<your-file> . -gcs ~/.config/google-cloud/smaht-dac-617e0480d8e2.json
+    > rcloner copy gs://smaht-submitr-rclone-testing/demo/<your-file> . -gcs ~/.config/google-cloud/smaht-dac-617e0480d8e2.json
+  - Use rclone to get info about a file in Google (for testing/troubleshooting):
+    > rcloner info gs://smaht-submitr-rclone-testing/demo/<some-file> . -gcs ~/.config/google-cloud/smaht-dac-617e0480d8e2.json
 
 - File bcm_formatted_hapmapmix.xlsx from William Feng on 2024-05-21
   https://docs.google.com/spreadsheets/d/1qCm0bY-vG4a9uiaOvmKHZ12MvhmMKKRfEpgAm-7Hsh4/edit#gid=1645623888
