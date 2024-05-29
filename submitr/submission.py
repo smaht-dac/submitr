@@ -2267,7 +2267,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                     message += " (no substantive diffs)"
                     PRINT(message)
                 else:
-                    message += " (substantive DIFFs below)"
+                    message += " (DIFFs below)"
                     PRINT(message)
                     for diff_path in object_info.diffs:
                         if (diff := object_info.diffs[diff_path]).creating_value:
