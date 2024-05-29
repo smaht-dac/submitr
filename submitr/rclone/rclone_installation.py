@@ -44,6 +44,7 @@ class RCloneInstallation:
         - On MacOS this directory: is: ~/Library/Application Support/edu.harvard.hms/smaht-submitr
         - On Linux this directory is: ~/.local/share/edu.harvard.hms/smaht-submitr
         - On Windows this directory is: %USERPROFILE%\\AppData\\Local\\edu.harvard.hms\\smaht-submitr
+          N.B. This has not yet been tested on Windows (only MacOS and Linux).
         Returns a the path to the downloaded executable file. FYI see: https://rclone.org/downloads  # noqa
     
         For example (on MacOS) we basically do the equivalent of something like this:
@@ -93,5 +94,6 @@ class RCloneInstallation:
         - On MacOS this directory: is: ~/Library/Application Support/edu.harvard.hms/smaht-submitr
         - On Linux this directory is: ~/.local/share/edu.harvard.hms/smaht-submitr
         - On Windows this directory is: %USERPROFILE%\\AppData\\Local\\edu.harvard.hms\\smaht-submitr
+          N.B. This has not yet been tested on Windows (only MacOS and Linux).
         """
         return os.path.join(get_app_specific_directory(), "edu.harvard.hms", "smaht-submitr")
