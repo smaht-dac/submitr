@@ -371,31 +371,31 @@ def _test_cloud_variations(use_cloud_subfolder_key: bool = False):
     _test_rclone_amazon_to_google(env_amazon=env_amazon, env_google=env_google)
 
 
-def create_rclone_config_amazon(credentials: AmazonCredentials) -> RCloneTarget:
-    config = RCloneAmazon(credentials)
-    assert config.credentials == credentials
-    assert config.access_key_id == credentials.access_key_id
-    assert config.secret_access_key == credentials.secret_access_key
-    assert config.session_token == credentials.session_token
-    assert config.kms_key_id == credentials.kms_key_id
-    assert config == config
-    assert not (config != config)
-    assert RCloneAmazon(config, bucket="mismatch") != config  # checking equals override
-    return config
+def create_rclone_target_amazon(credentials: AmazonCredentials) -> RCloneTarget:
+    target_amazon = RCloneAmazon(credentials)
+    assert target_amazon.credentials == credentials
+    assert target_amazon.access_key_id == credentials.access_key_id
+    assert target_amazon.secret_access_key == credentials.secret_access_key
+    assert target_amazon.session_token == credentials.session_token
+    assert target_amazon.kms_key_id == credentials.kms_key_id
+    assert target_amazon == target_amazon
+    assert not (target_amazon != target_amazon)
+    assert RCloneAmazon(target_amazon, bucket="mismatch") != target_amazon  # checking equals override
+    return target_amazon
 
 
-def create_rclone_config_google(credentials: GoogleCredentials, env_google: EnvGoogle) -> RCloneTarget:
-    config = RCloneGoogle(credentials)
+def create_rclone_target_google(credentials: GoogleCredentials, env_google: EnvGoogle) -> RCloneTarget:
+    target_google = RCloneGoogle(credentials)
     # Google credentials can be None on a GCE instance.
-    assert config.credentials == credentials
+    assert target_google.credentials == credentials
     if credentials:
         # Google credentials can be None on a GCE instance.
-        assert config.location == credentials.location
-        assert config.service_account_file == credentials.service_account_file
-    assert config == config
-    assert not (config != config)
-    assert RCloneGoogle(config, bucket="mismatch") != config  # checking equals override
-    return config
+        assert target_google.location == credentials.location
+        assert target_google.service_account_file == credentials.service_account_file
+    assert target_google == target_google
+    assert not (target_google != target_google)
+    assert RCloneGoogle(target_google, bucket="mismatch") != target_google  # checking equals override
+    return target_google
 
 
 def create_rclone(source: Optional[RCloneTarget] = None, destination: Optional[RCloneTarget] = None) -> RCloner:
@@ -524,10 +524,10 @@ def __test_rclone_between_amazon_and_local(env_amazon: EnvAmazon,
             credentials_amazon = env_amazon.temporary_credentials(bucket=env_amazon.bucket, key=key_amazon, nokms=nokms)
         else:
             credentials_amazon = env_amazon.credentials(nokms=nokms)
-        config = create_rclone_config_amazon(credentials_amazon)
+        target_amazon = create_rclone_target_amazon(credentials_amazon)
         # Upload the local test file to AWS S3 using RCloner;
         # we upload tmp_test_file_path to the key (tmp_test_file_name) key in env_amazon.bucket.
-        rcloner = create_rclone(destination=config)
+        rcloner = create_rclone(destination=target_amazon)
         if cloud_path.has_separator(key_amazon):
             # If we are uploading to a key which has a slash (i.e. a folder-like key) then we
             # will specify the key explicitly, otherwise it will use just the basename of the
@@ -541,7 +541,7 @@ def __test_rclone_between_amazon_and_local(env_amazon: EnvAmazon,
         # Now try to download the test file (which was uploaded above to AWS S3 using RCloner)
         # to the local file system using RCloner; use the same RCloner configuration as for
         # upload, but as the source rather than the destination.
-        rcloner = create_rclone(source=config)
+        rcloner = create_rclone(source=target_amazon)
         with temporary_directory() as tmp_download_directory:
             rcloner.copy(cloud_path.join(env_amazon.bucket, key_amazon), tmp_download_directory, copyto=False)
             assert are_files_equal(tmp_test_file_path,
@@ -552,11 +552,11 @@ def __test_rclone_between_amazon_and_local(env_amazon: EnvAmazon,
 
 def _test_rclone_between_google_and_local(env_google: EnvGoogle) -> None:
     credentials = env_google.credentials()
-    config = create_rclone_config_google(credentials, env_google)
+    target_google = create_rclone_target_google(credentials, env_google)
     with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         key_google = env_google.file_name_to_key_name(tmp_test_file_name)
         # Here we have a local test file to upload to Google Cloud Storage.
-        rcloner = create_rclone(destination=config)
+        rcloner = create_rclone(destination=target_google)
         # Upload the local test file to Google Cloud Storage using RCloner; we upload
         # tmp_test_file_path to the key (tmp_test_file_name) key in env_google.bucket.
         if cloud_path.has_separator(key_google):
@@ -571,7 +571,7 @@ def _test_rclone_between_google_and_local(env_google: EnvGoogle) -> None:
         sanity_check_google_file(env_google, credentials, env_google.bucket, key_google, tmp_test_file_path)
         # Now try to download the uploaded test file in Google Cloud Storage using RCloner;
         # use the same RCloner configuration as for upload but as the source rather than destination.
-        rcloner = create_rclone(source=config)
+        rcloner = create_rclone(source=target_google)
         with temporary_directory() as tmp_download_directory:
             rcloner.copy(cloud_path.join(env_google.bucket, key_google), tmp_download_directory, copyto=False)
             assert are_files_equal(tmp_test_file_path,
@@ -610,7 +610,7 @@ def __test_rclone_google_to_amazon(env_amazon: EnvAmazon,
                                    nokms: bool = False) -> None:
 
     credentials_google = env_google.credentials()
-    rclone_google = create_rclone_config_google(credentials_google, env_google)
+    rclone_google = create_rclone_target_google(credentials_google, env_google)
     # First upload a test file to Google Cloud Storage.
     with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         key_amazon = env_amazon.file_name_to_key_name(tmp_test_file_name)
@@ -621,7 +621,7 @@ def __test_rclone_google_to_amazon(env_amazon: EnvAmazon,
             credentials_amazon = env_amazon.temporary_credentials(bucket=env_amazon.bucket, key=key_amazon, nokms=nokms)
         else:
             credentials_amazon = env_amazon.credentials(nokms=nokms)
-        rclone_amazon = create_rclone_config_amazon(credentials_amazon)
+        rclone_amazon = create_rclone_target_amazon(credentials_amazon)
         # Here we have a local test file to upload to Google Cloud Storage;
         # which we will then copy directly to AWS S3 via RCloner.
         # So first upload our local test file to Google Cloud Storage (via RCloner - why not).
@@ -691,8 +691,8 @@ def __test_rclone_google_to_amazon(env_amazon: EnvAmazon,
 def _test_rclone_amazon_to_google(env_amazon: EnvAmazon, env_google: EnvGoogle) -> None:
     credentials_amazon = env_amazon.credentials()
     credentials_google = env_google.credentials()
-    rclone_amazon = create_rclone_config_amazon(credentials_amazon)
-    rclone_google = create_rclone_config_google(credentials_google, env_google)
+    rclone_amazon = create_rclone_target_amazon(credentials_amazon)
+    rclone_google = create_rclone_target_google(credentials_google, env_google)
     # First upload a test file to AWS S3.
     with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         key_amazon = env_amazon.file_name_to_key_name(tmp_test_file_name)
