@@ -743,7 +743,7 @@ def submit_any_ingestion(ingestion_filename, *,
     if rclone_google:
         rclone_google.verify_connectivity()
 
-    if not noversion:
+    if not noversion and not json_only:
         check_metadata_version(ingestion_filename, portal=portal)
 
     if not validate_remote_only and not validate_local_skip:
