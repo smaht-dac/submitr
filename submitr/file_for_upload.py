@@ -6,6 +6,7 @@ from dcicutils.command_utils import yes_or_no
 from dcicutils.file_utils import compute_file_md5, get_file_size, normalize_path, search_for_file
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import format_size, normalize_string
+from submitr.output import PRINT
 from dcicutils.structured_data import Portal, StructuredDataSet
 from submitr.rclone import RCloneGoogle, cloud_path
 from submitr.utils import chars
@@ -286,7 +287,7 @@ class FileForUpload:
         """
 
         if not callable(printf):
-            printf = print
+            printf = PRINT
 
         file_identifier = self.name
         if self.uuid:
@@ -424,7 +425,7 @@ class FilesForUpload:
         if not isinstance(files_for_upload, list):
             return False
         if not callable(printf):
-            printf = print
+            printf = PRINT
         result = True
         if files_for_upload:
             files_for_upload_missing = [file for file in files_for_upload if not file.found]

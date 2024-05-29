@@ -3,11 +3,11 @@ from collections import namedtuple
 import threading
 from time import time as current_timestamp
 from typing import Callable, Optional
+from dcicutils.command_utils import Question
 from dcicutils.file_utils import compute_file_md5
 from dcicutils.misc_utils import format_duration, format_size
 from dcicutils.progress_bar import ProgressBar
 from submitr.file_for_upload import FileForUpload
-from submitr.output import Question
 from submitr.rclone import RCloner, RCloneAmazon, cloud_path
 from submitr.s3_utils import get_s3_bucket_and_key_from_s3_uri, get_s3_key_metadata
 from submitr.utils import chars
