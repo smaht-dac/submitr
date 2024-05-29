@@ -1,9 +1,9 @@
 import argparse
 from dcicutils.misc_utils import format_size
-from dcicutils.utils import chars
 from submitr.rclone import RCloner, RCloneAmazon, RCloneGoogle, cloud_path
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsCredentials
 from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredentials
+from submitr.utils import chars
 
 # Little command-line utility to interactively test out rclone support code in smaht-submitr.
 
