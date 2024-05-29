@@ -4,11 +4,11 @@ import configparser
 from typing import Optional, Tuple, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, normalize_string
-from submitr.rclone.rclone_config import RCloneConfig, RCloneCredentials
+from submitr.rclone.rclone_target import RCloneTarget, RCloneCredentials
 from submitr.rclone.rclone_utils import cloud_path
 
 
-class RCloneAmazon(RCloneConfig):
+class RCloneAmazon(RCloneTarget):
 
     def __init__(self,
                  credentials_or_config: Optional[Union[AmazonCredentials, RCloneAmazon, str]] = None,

@@ -13,7 +13,7 @@ from submitr.rclone.rclone_utils import cloud_path
 from submitr.utils import DEBUGGING
 
 
-class RCloneConfig(AbstractBaseClass):
+class RCloneTarget(AbstractBaseClass):
 
     def __init__(self,
                  name: Optional[str] = None,
@@ -174,13 +174,13 @@ class RCloneConfig(AbstractBaseClass):
         with self.config_file() as config_file:
             return RCloneCommands.ping_command(source=f"{self.name}:", config=config_file)
 
-    def __eq__(self, other: Optional[RCloneConfig]) -> bool:
-        return (isinstance(other, RCloneConfig) and
+    def __eq__(self, other: Optional[RCloneTarget]) -> bool:
+        return (isinstance(other, RCloneTarget) and
                 (self.name == other.name) and
                 (self.bucket == other.bucket) and
                 (self.credentials == other.credentials))
 
-    def __ne__(self, other: Optional[RCloneConfig]) -> bool:
+    def __ne__(self, other: Optional[RCloneTarget]) -> bool:
         return not self.__eq__(other)
 
 

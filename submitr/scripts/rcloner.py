@@ -160,18 +160,11 @@ def print_info(target, credentials_amazon, credentials_google):
         print_info_via_rclone(target, RCloneGoogle(credentials_google))
 
 
-def print_info_via_rclone(target, rclone_config):
-    size = rclone_config.file_size(target)
-    checksum = rclone_config.file_checksum(target)
-    modified = rclone_config.file_modified(target, formatted=True)
-    directory = rclone_config.directory_exists(target) is True
-    # TODO
-    # Add RCloneConfig lsjson access point to get modified date,
-    # and might as well change path_exists and file_size to use this same call.
-    # [{"Path":"SMAFITXIG8HS.fastq","Name":"SMAFITXIG8HS.fastq",
-    #   "Size":14,"MimeType":"binary/octet-stream",
-    #    "ModTime":"2024-05-09T16:58:30.606505622-04:00",
-    #    "IsDir":false,"Tier":"STANDARD"}]
+def print_info_via_rclone(target, rclone_target):
+    size = rclone_target.file_size(target)
+    checksum = rclone_target.file_checksum(target)
+    modified = rclone_target.file_modified(target, formatted=True)
+    directory = rclone_target.directory_exists(target) is True
     formatted_size = format_size(size)
     print(f"Bucket: {cloud_path.bucket(target)}")
     print(f"Key: {cloud_path.key(target)}")
@@ -179,7 +172,7 @@ def print_info_via_rclone(target, rclone_config):
     print(f"Modified: {modified}")
     print(f"Checksum: {checksum}")
     print(f"Directory: {directory}")
-    if info := rclone_config.file_info(target):
+    if info := rclone_target.file_info(target):
         if metadata := info.get("metadata"):
             print(f"Metadata ({len(metadata)}):")
             for key in {key: metadata[key] for key in sorted(metadata)}:

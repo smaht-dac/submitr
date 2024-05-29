@@ -5,7 +5,7 @@ from dcicutils.file_utils import create_random_file, compute_file_md5, get_file_
 from dcicutils.structured_data import Portal
 from dcicutils.tmpfile_utils import (
     is_temporary_directory, remove_temporary_directory)
-from submitr.rclone import RCloneConfig, RCloneAmazon, RCloneGoogle
+from submitr.rclone import RCloneTarget, RCloneAmazon, RCloneGoogle
 
 TMPDIR = None
 RANDOM_TMPFILE_SIZE = 2048
@@ -38,7 +38,7 @@ class Mock_CloudStorage:
     def file_checksum(self, file):  # noqa
         return compute_file_md5(file) if (self.path_exists(file) and (file := self._realpath(file))) else None
     def _realpath(self, path):  # noqa
-        if isinstance(self, RCloneConfig):
+        if isinstance(self, RCloneTarget):
             return os.path.join(self._tmpdir, path) if (path := super().path(path)) else None
         return os.path.join(self._tmpdir, path) if (path := normalize_path(path)) else None
     def _root(self):  # noqa
