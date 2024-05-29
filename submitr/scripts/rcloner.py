@@ -163,6 +163,7 @@ def print_info_via_rclone(target, rclone_config):
     size = rclone_config.file_size(target)
     checksum = rclone_config.file_checksum(target)
     modified = rclone_config.file_modified(target, formatted=True)
+    directory = rclone_config.directory_exists(target) is True
     # TODO
     # Add RCloneConfig lsjson access point to get modified date,
     # and might as well change path_exists and file_size to use this same call.
@@ -176,6 +177,7 @@ def print_info_via_rclone(target, rclone_config):
     print(f"Size: {format_size(size)}{f' ({size} bytes)' if '.' in formatted_size else ''}")
     print(f"Modified: {modified}")
     print(f"Checksum: {checksum}")
+    print(f"Directory: {directory}")
     if info := rclone_config.file_info(target):
         if metadata := info.get("metadata"):
             print(f"Metadata ({len(metadata)}):")

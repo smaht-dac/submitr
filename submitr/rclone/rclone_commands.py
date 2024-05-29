@@ -113,6 +113,23 @@ class RCloneCommands:
         return False
 
     @staticmethod
+    def file_exists_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[bool]:
+        try:
+            return RCloneCommands.info_command(source, config=config,
+                                               raise_exception=raise_exception).get("directory") is False
+        except Exception:
+            return None
+
+    @staticmethod
+    def directory_exists_command(source: str, config: Optional[str] = None,
+                                 raise_exception: bool = False) -> Optional[bool]:
+        try:
+            return RCloneCommands.info_command(source, config=config,
+                                               raise_exception=raise_exception).get("directory") is True
+        except Exception:
+            return None
+
+    @staticmethod
     def size_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[int]:
         command = [RCloneInstallation.executable_path(), "size", source]
         if isinstance(config, str) and config:
@@ -185,7 +202,8 @@ class RCloneCommands:
             size = result["Size"]
             metadata = {"metadata": result["Metadata"]} if "Metadata" in result else {}
             modified = format_datetime(parse_datetime(result["ModTime"]))
-            return {"name": name, "size": size, "modified": modified, **metadata}
+            directory = result.get("IsDir") is True
+            return {"name": name, "size": size, "modified": modified, **metadata, "directory": directory}
         except Exception as e:
             if raise_exception is True:
                 raise e
