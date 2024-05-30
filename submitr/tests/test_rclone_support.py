@@ -133,9 +133,6 @@ class EnvAmazon(Env):
         credentials = AwsCredentials.from_file(self.credentials_file,
                                                region=self.region,
                                                kms_key_id=None if nokms is True else self.kms_key_id)
-        if not credentials:
-            import pdb ; pdb.set_trace()  # noqa
-            pass
         assert credentials is not None
         assert isinstance(credentials.region, str) and credentials.region
         assert isinstance(credentials.access_key_id, str) and credentials.access_key_id
