@@ -105,6 +105,8 @@ def main():
     parser.add_argument("--post", type=str, required=False, default=None, help="POST data.")
     parser.add_argument("--patch", type=str, required=False, default=None, help="PATCH data.")
     parser.add_argument("--upsert", type=str, required=False, default=None, help="Upsert data.")
+    parser.add_argument("--delete", type=str, required=False, default=None, help="Delete data.")
+    parser.add_argument("--purge", type=str, required=False, default=None, help="Purge data.")
     parser.add_argument("--confirm", action="store_true", required=False, default=False, help="Confirm before action.")
     parser.add_argument("--verbose", action="store_true", required=False, default=False, help="Verbose output.")
     parser.add_argument("--quiet", action="store_true", required=False, default=False, help="Quiet output.")
@@ -130,7 +132,7 @@ def main():
         if not schema:
             usage(f"ERROR: Unknown schema name: {args.schema}")
 
-    if not (args.post or args.patch or args.upsert):
+    if not (args.post or args.patch or args.upsert or args.delete or args.purge):
         usage()
 
     if args.post:
@@ -151,6 +153,14 @@ def main():
                                  explicit_schema_name=explicit_schema_name,
                                  update_function=_upsert_from_file,
                                  confirm=args.confirm, verbose=args.verbose, quiet=args.quiet, debug=args.debug)
+
+    if args.delete:
+        if yes_or_no(f"Do you really want to delete this item: {args.delete} ?"):
+            portal.delete_metadata(args.delete)
+
+    if args.purge:
+        if yes_or_no(f"Do you really want to purge this item: {args.purge} ?"):
+            portal.purge_metadata(args.purge)
 
 
 def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
