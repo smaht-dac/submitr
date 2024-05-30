@@ -8,7 +8,7 @@ import os
 import re
 import sys
 import time
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple
 from typing_extensions import Literal
 
 # get_env_real_url would rely on env_utils
@@ -18,8 +18,8 @@ from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 from dcicutils.data_readers import Excel
 from dcicutils.datetime_utils import format_datetime
 from dcicutils.file_utils import (
-       compute_file_etag, compute_file_md5,
-       get_file_modified_datetime, get_file_size
+   compute_file_etag, compute_file_md5,
+   get_file_modified_datetime, get_file_size
 )
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
@@ -30,7 +30,6 @@ from dcicutils.progress_bar import ProgressBar
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
 from dcicutils.structured_data import Portal, StructuredDataSet
 from dcicutils.submitr.progress_constants import PROGRESS_INGESTER, PROGRESS_LOADXL, PROGRESS_PARSE
-# from dcicutils.submitr.ref_lookup_strategy import ref_lookup_strategy
 from submitr.base import DEFAULT_APP
 from submitr.exceptions import PortalPermissionError
 from submitr.file_for_upload import FilesForUpload
@@ -38,7 +37,11 @@ from submitr.metadata_template import check_metadata_version, print_metadata_ver
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 from submitr.rclone import RCloneGoogle
 from submitr.scripts.cli_utils import get_version
-from submitr.submission_uploads import do_any_uploads, lookup_file_metadata_by_file_name
+from submitr.submission_uploads import (
+    do_any_uploads,
+    lookup_file_metadata_by_file_name,
+    lookup_ingestion_submission_from_upload_file
+)
 from submitr.utils import chars, format_path, get_health_page, is_excel_file_name, print_boxed, tobool
 
 
@@ -1676,6 +1679,7 @@ def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
         file_md5_content = None
     if file_md5_submitted == file_md5:
         file_md5_submitted = None
+    ingestion_submission_uuid = lookup_ingestion_submission_from_upload_file(portal, file_name)
     lines = [
         "===",
         "SMaHT Uploaded File [UUID]",
@@ -1693,6 +1697,7 @@ def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
         f"Checksum: {file_md5}" if file_md5 else None,
         f"Content Checksum: {file_md5_content}" if file_md5_content else None,
         f"Submitted Checksum: {file_md5_submitted}" if file_md5_submitted else None,
+        f"Associated Submission ID: {ingestion_submission_uuid}" if ingestion_submission_uuid else None,
         f"===",
         f"Submitted: {file_created} | {file_submitted_by}" if file_created and file_submitted_by else None,
         f"Modified: {file_modified} | {file_modified_by}" if file_modified and file_modified_by else None,
@@ -2457,32 +2462,6 @@ def _get_submission_centers(portal: Portal) -> List[str]:
                 (submission_center_uuid := submission_center.get("uuid"))):  # noqa
                 results.append({"name": submission_center_name, "uuid": submission_center_uuid})
     return results
-
-
-def _find_ingestion_submissions_from_upload_file(portal: Portal, filename: str,
-                                                 all: bool = False) -> Union[Optional[str], List[str]]:
-    """
-    This is just for check-submission when given a filename, which is a little out there,
-    but it can be convenient when testing/troubleshooting. So given a file name of a file
-    which was uploaded as a part of a submission, returns the ingestion-submission UUID,
-    if found, otherwise returns None.
-    """
-    all = [] if all is True else None
-    if isinstance(portal, Portal) and isinstance(filename, str) and filename:
-        try:
-            if ((ingestion_submissions := portal.get("/ingestion-submissions/?limit=1000").json()) and
-                (ingestion_submissions := ingestion_submissions["@graph"])):  # noqa
-                for ingestion_submission in ingestion_submissions:
-                    if upload_info := ingestion_submission.get("additional_data", {}).get("upload_info", {}):
-                        for upload_item in upload_info:
-                            if upload_item.get("filename") == filename:
-                                if ingestion_submission_uuid := ingestion_submission.get("uuid"):
-                                    if all is None:
-                                        return ingestion_submission_uuid
-                                    all.append(ingestion_submission_uuid)
-        except Exception:
-            pass
-    return None if all is None else all
 
 
 def _print_metadata_file_info(file: str, env: str,
