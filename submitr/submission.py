@@ -8,7 +8,7 @@ import os
 import re
 import sys
 import time
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple, Union
 from typing_extensions import Literal
 
 # get_env_real_url would rely on env_utils
@@ -2457,6 +2457,32 @@ def _get_submission_centers(portal: Portal) -> List[str]:
                 (submission_center_uuid := submission_center.get("uuid"))):  # noqa
                 results.append({"name": submission_center_name, "uuid": submission_center_uuid})
     return results
+
+
+def _find_ingestion_submissions_from_upload_file(portal: Portal, filename: str,
+                                                 all: bool = False) -> Union[Optional[str], List[str]]:
+    """
+    This is just for check-submission when given a filename, which is a little out there,
+    but it can be convenient when testing/troubleshooting. So given a file name of a file
+    which was uploaded as a part of a submission, returns the ingestion-submission UUID,
+    if found, otherwise returns None.
+    """
+    all = [] if all is True else None
+    if isinstance(portal, Portal) and isinstance(filename, str) and filename:
+        try:
+            if ((ingestion_submissions := portal.get("/ingestion-submissions/?limit=1000").json()) and
+                (ingestion_submissions := ingestion_submissions["@graph"])):  # noqa
+                for ingestion_submission in ingestion_submissions:
+                    if upload_info := ingestion_submission.get("additional_data", {}).get("upload_info", {}):
+                        for upload_item in upload_info:
+                            if upload_item.get("filename") == filename:
+                                if ingestion_submission_uuid := ingestion_submission.get("uuid"):
+                                    if all is None:
+                                        return ingestion_submission_uuid
+                                    all.append(ingestion_submission_uuid)
+        except Exception:
+            pass
+    return None if all is None else all
 
 
 def _print_metadata_file_info(file: str, env: str,
