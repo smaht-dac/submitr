@@ -329,8 +329,9 @@ def lookup_file_uuid_by_file_name(file_name: str, portal: Portal) -> Optional[di
 
 
 def lookup_file_metadata_by_file_name(file_name: str, portal: Portal) -> Optional[dict]:
-    if file_uuid := lookup_file_uuid_by_file_name(file_name, portal):
-        return portal.get_metadata(file_uuid, raise_exception=False)
+    if isinstance(file_name, str) and file_name and (file_name := os.path.basename(file_name)):
+        if file_uuid := lookup_file_uuid_by_file_name(file_name, portal):
+            return portal.get_metadata(file_uuid, raise_exception=False)
     return None
 
 
