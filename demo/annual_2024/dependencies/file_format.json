@@ -85,5 +85,25 @@
         ],
         "standard_file_extension": "bam",
         "uuid": "d13d06cf-218e-4f61-aaf0-91f226248b3c"
+    },
+    {
+        "status": "in review",
+        "consortia": [
+            "358aed10-9b9d-4e26-ab84-4bd162da182b"
+        ],
+        "identifier": "fastq",
+        "valid_item_types": [
+            "ReferenceFile",
+            "UnalignedReads",
+            "AlignedReads"
+        ],
+        "submission_centers": [
+            "9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "standard_file_extension": "fastq",
+        "other_allowed_extensions": [
+            "fq.gz"
+        ],
+        "uuid": "276d3f7c-f6e8-4d41-947b-ba1dfbd31148"
     }
 ]
