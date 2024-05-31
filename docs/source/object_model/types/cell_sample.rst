@@ -14,7 +14,7 @@ CellSample
     <a target="_blank" href="https://data.smaht.org/profiles/CellSample.json" style="color:black"><b><u>CellSample</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/CellSample.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     Its <b><a href='../type_hierarchy.html' style='color:black;'>parent</a></b> type is: <a href=sample.html><u>Sample</u></a>.
     
-    
+    Types <b>referencing</b> this type are: <a href='file_set.html'><u>FileSet</u></a>.
     Property names in <span style='color:red'><b>red</b></span> are
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;
     those in <span style='color:blue'><b>blue</b></span> are

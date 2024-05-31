@@ -74,27 +74,36 @@ As such files can be rather large, we recommend performing
 the upload from a Cloud or cluster instance
 for uploading many files or larger files.
 
-Uploading from Google Cloud Storeage
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Uploading from Google Cloud Storage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If your data files reside in Google Cloud Storage (GCS), we support the ability to upload,
 or more precisely, `transfer` files directly from GCS to AWS S3. The smaht-submitr command-line
 tools (``submit-metadata-bundle`` and ``resume-uploads``) accomplish this by leveraging
 third-party open source software called :toplink:`rclone <https://rclone.org>`.
 
-The advantage of this is that you needn't download the entire data file to your local
+.. tip::
+   You needn't worry about the details of rclone - its installation, usage, and whatnot - the ``smaht-submitr`` tools automatically installs and hides the details of its workings from you.
+
+The advantage of this is that you do not need to download the entire data file to your local
 machine, which may well not have enough disk space. The rclone facility transfers the data
 file from GCS to AWS S3 by way of your machine, i.e. using it as an intermediary, so that
 only a small portion of the data ever actually travels through your machine at a time.
 
-And no need to worry about the details of rclone - its installation, and usage, and whatnot -
-the smaht-submitr tools automatically installs and hides the details of its workings from you.
 To take advantage of this you merely need to specificy a couple of command-line options,
 specifially ``--rclone-google-source`` and ``--rclone-google-credentials``, for example::
 
     submit-metadata-bundle your-metadata.xlsx --submit \
         --rclone-google-source your-gcs-bucket \
         --rclone-google-credentials your-gcp-service-account-file
+
+The ``resume-uploads`` command support these same options.
+The value specified for the ``--rclone-google-source`` may be either just a GCS bucket name or
+
+To obtain the credentials file you need, via the Google Cloud console (in your browser), navigate to the ``IAM & Admin`` section, select ``Service Accounts``, click on your desired listed service account, and from there click the ``KEYS`` tab at the top, and then the ``ADD KEY`` and ``Create new key`` from the dropdown, and select ``JSON`` for the ``Key type`` and click the ``CREATE`` button. This will save a JSON file with your exported credentials to your download folder; and this is the file to specify with the ``--rclone-google-credentials`` option. (Note that for security, you should ``chmod 600`` on this file).
+
+.. tip::
+    If you happen to be running ``smaht-submitr`` on a Google Compute Engine (GCE) instance there is no need to specify the ``--rclone-google-credentials`` option as the credentials for the associated Google Cloud account are automatically and implicitly available and in force.
 
 
 Mounting AWS S3 Files 
