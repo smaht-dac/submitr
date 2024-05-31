@@ -12,8 +12,9 @@ Notes on demo file (bcm_formatted_hapmapmix.xlsx) for Annual Meeting in St. Loui
     > submit-metadata-bundle --env smaht-local --submit --directory files \
       --rclone-google-source smaht-submitr-rclone-testing/demo \
       --rclone-google-credentials ~/.config/google-cloud/smaht-dac-617e0480d8e2.json bcm_formatted_hapmapmix.xlsx
-    > Note this this file is currently (2024-05-29) in GCS:
+    > Note these files are currently (2024-05-31) in GCS:
       - gs://smaht-submitr-rclone-testing/demo/222TWJLT4-1-IDUDI0056v2_S2_L001_R2_001.fastq.gz
+      - gs://smaht-submitr-rclone-testing/demo/222TWJLT4-1-IDUDI0055v2_S1_L001_R2_001.fastq.gz
 
   - Resume upload:
     > resume-uploads --env smaht-local --directory files <submission-uuid-or-upload-file-uuid-or-accession>

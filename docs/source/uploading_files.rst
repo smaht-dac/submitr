@@ -90,6 +90,11 @@ machine, which may well not have enough disk space. The rclone facility transfer
 file from GCS to AWS S3 by way of your machine, i.e. using it as an intermediary, so that
 only a small portion of the data ever actually travels through your machine at a time.
 
+Another benefit of this method, if your files are already in GCS, is that the transfer
+of a file from GCS to AWS S3 is done in an interleaved fashion, so that it should be
+faster than first downloading the full file from GCS and then uploading it
+(our initial tests indicate an approximate 30% decrease in overall transfer time).
+
 To take advantage of this you merely need to specificy a couple of command-line options,
 specifially ``--rclone-google-source`` and ``--rclone-google-credentials``, for example::
 
