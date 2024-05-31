@@ -155,11 +155,18 @@ def main():
                                  confirm=args.confirm, verbose=args.verbose, quiet=args.quiet, debug=args.debug)
 
     if args.delete:
+        if not portal.get_metadata(args.delete, raise_exception=False):
+            _print(f"Cannot find given object: {args.delete}")
+            exit(1)
         if yes_or_no(f"Do you really want to delete this item: {args.delete} ?"):
             portal.delete_metadata(args.delete)
 
     if args.purge:
+        if not portal.get_metadata(args.purge, raise_exception=False):
+            _print(f"Cannot find given object: {args.purge}")
+            exit(1)
         if yes_or_no(f"Do you really want to purge this item: {args.purge} ?"):
+            portal.delete_metadata(args.purge)
             portal.purge_metadata(args.purge)
 
 
