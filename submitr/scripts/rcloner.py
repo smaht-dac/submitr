@@ -88,8 +88,9 @@ def main() -> None:
     if is_source_amazon or is_destination_amazon:
 
         credentials_amazon = None
-        if args.amazon_credentials:
-            if not (credentials_amazon := AwsCredentials.from_file(args.amazon_credentials)):
+        if ((amazon_credentials := args.amazon_credentials) or
+            (amazon_credentials := os.environ.get("AWS_SHARED_CREDENTIALS_FILE"))):
+            if not (credentials_amazon := AwsCredentials.from_file(amazon_credentials)):
                 usage(f"Cannot create AWS credentials from specified value: {args.amazon}")
         else:
             credentials_amazon = AwsCredentials.from_environment_variables()
@@ -150,9 +151,9 @@ def main() -> None:
             else:
                 credentials_destination_amazon = credentials_amazon
 
-    if is_source_google or is_destination_google:
-        if args.google_credentials:
-            if not (credentials_google := GcpCredentials.from_file(args.google_credentials)):
+        if ((google_credentials := args.google_credentials) or
+            (google_credentials := os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))):
+            if not (credentials_google := GcpCredentials.from_file(google_credentials)):
                 usage(f"Cannot create GCS credentials from specified value: {args.google}")
         elif RCloneGoogle.is_google_compute_engine():
             credentials_google = GcpCredentials()
