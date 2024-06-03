@@ -18,6 +18,14 @@ from submitr.rclone.rclone_utils import cloud_path
 
 class AwsS3:
 
+    # Added 2024-06-01 to accomodate S3-to-S3 copy via rclone when using temporary/session credentials, which
+    # require s3:ListBucket on the destination, for some reason. To make this work in real life this requires
+    # a change in encoded_core.types.file.external_creds. Note that we will thus allow s3:ListBucket on the
+    # destination bucket but for security we will also restrict it to a prefix condition which is exact name
+    # of the destination key; note that also with this S3-to-S3 rclone copy situation, for some reason,
+    # we cannot use --s3-no-head-object, but rather just --s3-no-head.
+    ALLOW_EXTRA_POLICY_FOR_RCLONE_S3_TO_S3 = True
+
     @staticmethod
     def create(*args, **kwargs) -> AwsS3:
         return AwsS3(*args, **kwargs)
@@ -168,6 +176,15 @@ class AwsS3:
             return file_head.get("ETag").strip("\"")
         return None
 
+    def file_metadata(self, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> Optional[dict]:
+        bucket, key = cloud_path.bucket_and_key(bucket, key)
+        if not bucket or not key:
+            return None
+        if file_head := self._file_head(bucket, key, raise_exception=raise_exception):
+            if isinstance(metadata := file_head.get("Metadata"), dict):
+                return metadata
+        return None
+
     def file_kms_encrypted(self, bucket: str, key: Optional[str] = None,
                            kms_key_id: Optional[str] = None, raise_exception: bool = True) -> bool:
         bucket, key = cloud_path.bucket_and_key(bucket, key)
@@ -218,6 +235,7 @@ class AwsS3:
                                        bucket: Optional[str] = None, key: Optional[str] = None,
                                        kms_key_id: Optional[str] = None,
                                        duration: Optional[Union[int, timedelta]] = None,
+                                       source: Optional[str] = None,
                                        readonly: bool = False) -> Optional[AmazonCredentials]:
         """
         Generates and returns temporary AWS credentials. The default duration of validity for
@@ -247,13 +265,24 @@ class AwsS3:
             # actions = actions + ["s3:PutObject", "s3:DeleteObject", "s3:CreateBucket"]
             actions = actions + ["s3:PutObject"]
         statements.append({"Effect": "Allow", "Action": actions, "Resource": resources})
+        if AwsS3.ALLOW_EXTRA_POLICY_FOR_RCLONE_S3_TO_S3:
+            if isinstance(bucket, str) and (bucket := bucket.strip()) and isinstance(key, str) and (key := key.strip()):
+                statements.append({"Effect": "Allow",
+                                   "Action": "s3:ListBucket",
+                                   "Resource": f"arn:aws:s3:::{bucket}",
+                                   "Condition": {"StringLike": {"s3:prefix": [f"{key}"]}}})  # NEW
         if deny:
             statements.append({"Effect": "Deny", "Action": actions, "NotResource": resources})
         policy = {"Version": "2012-10-17", "Statement": statements}
-        return AwsS3._generate_temporary_credentials(generating_credentials=self.credentials,
-                                                     policy=policy,
-                                                     kms_key_id=kms_key_id,
-                                                     duration=duration)
+        temporary_credentials = AwsS3._generate_temporary_credentials(generating_credentials=self.credentials,
+                                                                      policy=policy,
+                                                                      kms_key_id=kms_key_id,
+                                                                      duration=duration)
+        print(f"{statements}")
+        print(f"access_key_id = {temporary_credentials.access_key_id}")
+        print(f"secret_access_key = {temporary_credentials.secret_access_key}")
+        print(f"session_token = {temporary_credentials.session_token}")
+        return temporary_credentials
 
     def _generate_temporary_credentials(generating_credentials: AmazonCredentials,
                                         policy: Optional[dict] = None,

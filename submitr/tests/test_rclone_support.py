@@ -395,7 +395,7 @@ def create_rclone_target_google(credentials: GoogleCredentials, env_google: EnvG
     return target_google
 
 
-def create_rclone(source: Optional[RCloneTarget] = None, destination: Optional[RCloneTarget] = None) -> RCloner:
+def create_rcloner(source: Optional[RCloneTarget] = None, destination: Optional[RCloneTarget] = None) -> RCloner:
     rcloner = RCloner(source=source, destination=destination)
     assert rcloner.source == source
     assert rcloner.destination == destination
@@ -524,7 +524,7 @@ def __test_rclone_between_amazon_and_local(env_amazon: EnvAmazon,
         target_amazon = create_rclone_target_amazon(credentials_amazon)
         # Upload the local test file to AWS S3 using RCloner;
         # we upload tmp_test_file_path to the key (tmp_test_file_name) key in env_amazon.bucket.
-        rcloner = create_rclone(destination=target_amazon)
+        rcloner = create_rcloner(destination=target_amazon)
         if cloud_path.has_separator(key_amazon):
             # If we are uploading to a key which has a slash (i.e. a folder-like key) then we
             # will specify the key explicitly, otherwise it will use just the basename of the
@@ -538,7 +538,7 @@ def __test_rclone_between_amazon_and_local(env_amazon: EnvAmazon,
         # Now try to download the test file (which was uploaded above to AWS S3 using RCloner)
         # to the local file system using RCloner; use the same RCloner configuration as for
         # upload, but as the source rather than the destination.
-        rcloner = create_rclone(source=target_amazon)
+        rcloner = create_rcloner(source=target_amazon)
         with temporary_directory() as tmp_download_directory:
             rcloner.copy(cloud_path.join(env_amazon.bucket, key_amazon), tmp_download_directory, copyto=False)
             assert are_files_equal(tmp_test_file_path,
@@ -553,7 +553,7 @@ def _test_rclone_between_google_and_local(env_google: EnvGoogle) -> None:
     with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         key_google = env_google.file_name_to_key_name(tmp_test_file_name)
         # Here we have a local test file to upload to Google Cloud Storage.
-        rcloner = create_rclone(destination=target_google)
+        rcloner = create_rcloner(destination=target_google)
         # Upload the local test file to Google Cloud Storage using RCloner; we upload
         # tmp_test_file_path to the key (tmp_test_file_name) key in env_google.bucket.
         if cloud_path.has_separator(key_google):
@@ -568,7 +568,7 @@ def _test_rclone_between_google_and_local(env_google: EnvGoogle) -> None:
         sanity_check_google_file(env_google, credentials, env_google.bucket, key_google, tmp_test_file_path)
         # Now try to download the uploaded test file in Google Cloud Storage using RCloner;
         # use the same RCloner configuration as for upload but as the source rather than destination.
-        rcloner = create_rclone(source=target_google)
+        rcloner = create_rcloner(source=target_google)
         with temporary_directory() as tmp_download_directory:
             rcloner.copy(cloud_path.join(env_google.bucket, key_google), tmp_download_directory, copyto=False)
             assert are_files_equal(tmp_test_file_path,
@@ -622,7 +622,7 @@ def __test_rclone_google_to_amazon(env_amazon: EnvAmazon,
         # Here we have a local test file to upload to Google Cloud Storage;
         # which we will then copy directly to AWS S3 via RCloner.
         # So first upload our local test file to Google Cloud Storage (via RCloner - why not).
-        rcloner = create_rclone(destination=rclone_google)
+        rcloner = create_rcloner(destination=rclone_google)
         if cloud_path.has_separator(key_google):
             # If we are uploading to a key which has a slash (i.e. a folder-like key) then we
             # will specify the key explicitly, otherwise it will use just the basename of the
@@ -634,7 +634,7 @@ def __test_rclone_google_to_amazon(env_amazon: EnvAmazon,
         # Make sure it made it there.
         sanity_check_google_file(env_google, credentials_google, env_google.bucket, key_google, tmp_test_file_path)
         # Now try to copy directly from Google Cloud Storage to AWS S3 (THIS is really the MAIN event).
-        rcloner = create_rclone(source=rclone_google, destination=rclone_amazon)
+        rcloner = create_rcloner(source=rclone_google, destination=rclone_amazon)
         if cloud_path.has_separator(key_amazon):
             # If we are uploading to a key which has a slash (i.e. a folder-like key) then we
             # will specify the key explicitly, otherwise it will use just the basename of the
@@ -697,7 +697,7 @@ def _test_rclone_amazon_to_google(env_amazon: EnvAmazon, env_google: EnvGoogle) 
         # Here we have a local test file to upload to AWS S3;
         # which we will then copy directly to Google Cloud Storage via RCloner.
         # So first upload our local test file to AWS S3 (via RCloner - why not).
-        rcloner = create_rclone(destination=rclone_amazon)
+        rcloner = create_rcloner(destination=rclone_amazon)
         if cloud_path.has_separator(key_google):
             rcloner.copy(tmp_test_file_path, cloud_path.join(env_amazon.bucket, key_amazon))
         else:
@@ -705,7 +705,7 @@ def _test_rclone_amazon_to_google(env_amazon: EnvAmazon, env_google: EnvGoogle) 
         # Make sure it made it there.
         sanity_check_amazon_file(env_amazon, credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
         # Now try to copy directly from AWS S3 to Google Cloud Storage.
-        rcloner = create_rclone(source=rclone_amazon, destination=rclone_google)
+        rcloner = create_rcloner(source=rclone_amazon, destination=rclone_google)
         if cloud_path.has_separator(key_google):
             rcloner.copy(cloud_path.join(env_amazon.bucket, key_amazon),
                          cloud_path.join(env_google.bucket, key_google))
@@ -718,7 +718,7 @@ def _test_rclone_amazon_to_google(env_amazon: EnvAmazon, env_google: EnvGoogle) 
         # bucket specified within the RCloneGoogle object (new: 2024-05-10).
         cleanup_google_file(env_google, env_google.bucket, key_google)
         rclone_google.bucket = env_google.bucket
-        rcloner = create_rclone(source=rclone_amazon, destination=rclone_google)
+        rcloner = create_rcloner(source=rclone_amazon, destination=rclone_google)
         if cloud_path.has_separator(key_google):
             rcloner.copy(cloud_path.join(env_amazon.bucket, key_amazon), key_google)
         else:
@@ -788,6 +788,88 @@ def test_rclone_local_to_amazon_copy_to_bucket() -> None:
             compute_file_md5(os.path.join(filesystem.root, file_one)))
     assert env_amazon.s3_non_rclone().delete_file(bucket_amazon, os.path.basename(file_one)) is True
     assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, os.path.basename(file_one)) is False
+
+
+def test_rclone_amazon_to_amazon() -> None:
+    env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
+    credentials_amazon = env_amazon.credentials()
+    rclone_target_amazon = create_rclone_target_amazon(credentials_amazon)
+    bucket_amazon = env_amazon.bucket
+    with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        source_bucket_amazon = bucket_amazon
+        source_key_amazon = env_amazon.file_name_to_key_name(tmp_test_file_name)
+        rcloner = create_rcloner(destination=rclone_target_amazon)
+        rcloner.copy(tmp_test_file_path, cloud_path.join(source_bucket_amazon, source_key_amazon))
+        source_checksum = compute_file_md5(tmp_test_file_path)
+    source_amazon = cloud_path.join(source_bucket_amazon, source_key_amazon)
+    destination_bucket_amazon = bucket_amazon
+    destination_subfolder_amazon = f"test-{create_uuid()}"
+    destination_key_amazon = cloud_path.join(destination_subfolder_amazon, f"test-{create_uuid()}.txt")
+    destination_amazon = cloud_path.join(destination_bucket_amazon, destination_key_amazon)
+    destination_metadata_amazon = {"some-metadata-key": "some-metadata-value"}
+    source_target_amazon = create_rclone_target_amazon(credentials_amazon)
+    destination_target_amazon = create_rclone_target_amazon(credentials_amazon)
+    rcloner = create_rcloner(source=source_target_amazon, destination=destination_target_amazon)
+    rcloner.copy(source_amazon, destination_amazon, metadata=destination_metadata_amazon)
+    assert env_amazon.s3_non_rclone().file_size(destination_bucket_amazon,
+                                                destination_key_amazon) == RANDOM_TMPFILE_SIZE
+    assert env_amazon.s3_non_rclone().file_exists(destination_bucket_amazon, destination_key_amazon) is True
+    assert env_amazon.s3_non_rclone().file_checksum(destination_bucket_amazon,
+                                                    destination_key_amazon) == source_checksum
+    metadata = env_amazon.s3_non_rclone().file_metadata(destination_bucket_amazon, destination_key_amazon)
+    assert isinstance(metadata, dict) is True
+    assert metadata["some-metadata-key"] == "some-metadata-value"
+    # assert env_amazon.s3_non_rclone().directory_exists(destination_bucket_amazon,
+    #                                                    destination_subfolder_amazon) is True  # TODO IMPLEMENT MAYBE
+    # assert destination_target_amazon.directory_exists(cloud_path.join(destination_bucket_amazon,
+    #                                                                   destination_subfolder_amazon)) is True
+
+
+def test_rclone_amazon_to_amazon_using_temporary_credentials() -> None:
+    env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
+    credentials_amazon = env_amazon.credentials(nokms=True)
+    rclone_target_amazon = create_rclone_target_amazon(credentials_amazon)
+    bucket_amazon = env_amazon.bucket
+    with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        source_bucket_amazon = bucket_amazon
+        source_key_amazon = env_amazon.file_name_to_key_name(tmp_test_file_name)
+        rcloner = create_rcloner(destination=rclone_target_amazon)
+        rcloner.copy(tmp_test_file_path, cloud_path.join(source_bucket_amazon, source_key_amazon))
+        source_checksum = compute_file_md5(tmp_test_file_path)
+    source_amazon = cloud_path.join(source_bucket_amazon, source_key_amazon)
+    destination_bucket_amazon = bucket_amazon
+    destination_subfolder_amazon = f"test-{create_uuid()}"
+    destination_key_amazon = cloud_path.join(destination_subfolder_amazon, f"test-{create_uuid()}.txt")
+    destination_amazon = cloud_path.join(destination_bucket_amazon, destination_key_amazon)
+    destination_metadata_amazon = {"some-metadata-key": "some-metadata-value"}
+    # Now use temporary/session credentials to copy from s3 to s3 (ran into permission problems with rclone here).
+    temporary_credentials_amazon = env_amazon.temporary_credentials(destination_bucket_amazon,
+                                                                    destination_key_amazon, nokms=True)
+    source_target_amazon = create_rclone_target_amazon(credentials_amazon)
+    destination_target_amazon = create_rclone_target_amazon(temporary_credentials_amazon)
+    rcloner = create_rcloner(source=source_target_amazon, destination=destination_target_amazon)
+    rcloner.copy(source_amazon, destination_amazon, metadata=destination_metadata_amazon)
+    assert env_amazon.s3_non_rclone().file_size(destination_bucket_amazon,
+                                                destination_key_amazon) == RANDOM_TMPFILE_SIZE
+    assert env_amazon.s3_non_rclone().file_exists(destination_bucket_amazon, destination_key_amazon) is True
+    assert env_amazon.s3_non_rclone().file_checksum(destination_bucket_amazon,
+                                                    destination_key_amazon) == source_checksum
+    metadata = env_amazon.s3_non_rclone().file_metadata(destination_bucket_amazon, destination_key_amazon)
+    assert isinstance(metadata, dict) is True
+    assert metadata["some-metadata-key"] == "some-metadata-value"
+    #
+    # Note that this will not work because although the temporary credentials policy for the destination
+    # has a s3:ListBucket, which we need (for some reason) for S3-to-S3 copy, it is, for security reasons,
+    # limited to just keys with a prefix which is exactly the destination key; so we (rclone) cannot do a
+    # s3:ListBucket (which it evidently wants to do) on just the destination subfolder without the key.
+    #
+    # assert destination_target_amazon.directory_exists(cloud_path.join(destination_bucket_amazon,
+    #                                                                   destination_subfolder_amazon)) is True
+    #
+    # But we can do it with the main (non-temporary) credentials which we do just as an extra check.
+    # destination_target_with_main_credentials_amazon = create_rclone_target_amazon(credentials_amazon)
+    # assert destination_target_with_main_credentials_amazon.directory_exists(
+    #     cloud_path.join(destination_bucket_amazon, destination_subfolder_amazon)) is True
 
 
 def test_rclone_upload_file_to_aws_s3() -> None:

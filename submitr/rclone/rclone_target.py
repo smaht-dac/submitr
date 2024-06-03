@@ -133,12 +133,6 @@ class RCloneTarget(AbstractBaseClass):
                 return RCloneCommands.file_exists_command(source=f"{self.name}:{path}", config=config_file)
         return False
 
-    def directory_exists(self, path: str) -> Optional[bool]:
-        if path := self.path(path):
-            with self.config_file() as config_file:
-                return RCloneCommands.directory_exists_command(source=f"{self.name}:{path}", config=config_file)
-        return False
-
     def file_size(self, path: str) -> Optional[int]:
         # N.B. For AWS S3 rclone size requires policies s3:GetObject and s3:ListBucket
         # for the bucket/key. So for our main use case (using Portal-granted temporary

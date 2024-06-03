@@ -1,5 +1,7 @@
 from boto3 import client as BotoClient
 from collections import namedtuple
+import os
+import signal
 import threading
 from time import time as current_timestamp
 from typing import Callable, Optional
@@ -162,9 +164,14 @@ def upload_file_to_aws_s3(file: FileForUpload,
             if upload_done:
                 printf(upload_done)
         def abort_upload(bar: ProgressBar) -> bool:  # noqa
-            nonlocal should_abort
+            nonlocal should_abort, rclone_subprocess_info, upload_aborted
             with thread_lock:
                 should_abort = True
+            if rclone_subprocess_info and (rclone_subprocess_pid := rclone_subprocess_info.get("pid")):
+                os.killpg(os.getpgid(rclone_subprocess_pid), signal.SIGTERM)
+                # For some reason raising an exception here will not trigger
+                # the exception handler around the rcloner.upload_to_key call.
+                upload_aborted = True
             return False
 
         bar = ProgressBar(file_size, f"{chars.rarrow} Upload progress",
@@ -277,6 +284,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         return False
 
     upload_aborted = False
+    rclone_subprocess_info = {}
     if rcloner:
         upload_file_callback = define_upload_file_callback(progress_total_nbytes=True)
         try:
@@ -292,7 +300,10 @@ def upload_file_to_aws_s3(file: FileForUpload,
             # and RCloner.copy (which has this RCloneGoogle, by virtue of RCloner being
             # created with it as a source), resolves/expands this to the full Google path name.
             rcloner.copy_to_key(file.name, cloud_path.join(s3_bucket, s3_key),
-                                metadata=metadata, progress=upload_file_callback.function)
+                                metadata=metadata, progress=upload_file_callback.function,
+                                process_info=rclone_subprocess_info, raise_exception=True)
+            if upload_aborted:
+                printf(f"Upload ABORTED: {file.path_google} {chars.larrow}")
         except Exception:
             printf(f"Upload ABORTED: {file.path_google} {chars.larrow}")
             upload_aborted = True

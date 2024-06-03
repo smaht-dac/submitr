@@ -1,4 +1,5 @@
 from __future__ import annotations
+from google.cloud.storage import Client as GcsClient
 import io
 import json
 import os
@@ -176,7 +177,7 @@ class RCloneGoogle(RCloneTarget):
 class GoogleCredentials(RCloneCredentials):
 
     def __init__(self,
-                 credentials: Optional[GoogleCredentials, str] = None,
+                 credentials: Optional[Union[GoogleCredentials, str]] = None,
                  service_account_file: Optional[str] = None,
                  location: Optional[str] = None) -> None:
 
@@ -192,6 +193,7 @@ class GoogleCredentials(RCloneCredentials):
                 raise Exception(f"GoogleCredentials service account file not found: {service_account_file}")
             self._service_account_file = service_account_file
         elif (isinstance(credentials, str) and (service_account_file := normalize_path(credentials, expand_home=True))):
+            # For convenience also all first argument to be the service account file.
             if not os.path.isfile(service_account_file):
                 raise Exception(f"GoogleCredentials service account file not found: {service_account_file}")
             self._service_account_file = service_account_file
@@ -214,3 +216,14 @@ class GoogleCredentials(RCloneCredentials):
 
     def __ne__(self, other: Optional[GoogleCredentials]) -> bool:
         return not self.__eq__(other)
+
+    def ping(self) -> bool:
+        try:
+            if RCloneGoogle.is_google_compute_engine():
+                client = GcsClient()
+            else:
+                client = GcsClient.from_service_account_json(self.service_account_file)
+            _ = list(client.list_buckets())
+            return True
+        except Exception:
+            return False

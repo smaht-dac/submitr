@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from re import compile as re_compile, escape as re_escape
 from typing import Optional, Tuple
@@ -8,19 +9,23 @@ class cloud_path:
     separator = "/"
     google_prefix = "gs://"
     amazon_prefix = "s3://"
+    normalize_separator_regex = re_compile(rf"({re_escape(separator)})+")
 
     @staticmethod
-    def normalize(value: str) -> str:
-        if not isinstance(value, str):
+    def normalize(value: str, preserve_prefix: bool = False, preserve_suffix: bool = False) -> str:
+        if not (isinstance(value, str) and (value := value.strip())):
             return ""
-        if value.lower().startswith(cloud_path.amazon_prefix) or value.lower().startswith(cloud_path.google_prefix):
-            value = value[5:]
-        regex = re_compile(rf"({re_escape(cloud_path.separator)})+")
-        value = regex.sub(cloud_path.separator, value.strip())
+        if preserve_prefix is not True:
+            if (value_lower := value.lower()).startswith(cloud_path.amazon_prefix):
+                value = value[len(cloud_path.amazon_prefix):]
+            elif value_lower.startswith(cloud_path.google_prefix):
+                value = value[len(cloud_path.google_prefix):]
+        value = cloud_path.normalize_separator_regex.sub(cloud_path.separator, value)
         if value.startswith(cloud_path.separator):
             value = value[1:]
-        if value.endswith(cloud_path.separator):
-            value = value[:-1]
+        if preserve_suffix is not True:
+            if value.endswith(cloud_path.separator):
+                value = value[:-1]
         return value if value != "." else ""
 
     @staticmethod
@@ -52,7 +57,7 @@ class cloud_path:
 
     @staticmethod
     def basename(value: str) -> str:
-        # Returns the basename of the given cloud path (just like os.path.basename).
+        # Returns the basename of the given cloud path (like os.path.basename).
         if not (value := cloud_path.normalize(value)):
             return ""
         return os.path.basename(cloud_path.to_file_path(value))
@@ -88,3 +93,11 @@ class cloud_path:
             return bucket, key
         else:
             return bucket_and_key, None
+
+    @staticmethod
+    def is_amazon(path: str) -> bool:
+        return isinstance(path, str) and path.lower().startswith(cloud_path.amazon_prefix)
+
+    @staticmethod
+    def is_google(path: str) -> bool:
+        return isinstance(path, str) and path.lower().startswith(cloud_path.google_prefix)

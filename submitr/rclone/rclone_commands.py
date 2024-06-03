@@ -1,9 +1,11 @@
 import json
+import os
 import re
 import subprocess
 from typing import Callable, List, Optional, Tuple, Union
 from dcicutils.datetime_utils import format_datetime, parse_datetime
 from dcicutils.misc_utils import normalize_string
+from submitr.rclone.rclone_utils import cloud_path
 from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.utils import DEBUG
 
@@ -12,10 +14,12 @@ class RCloneCommands:
 
     @staticmethod
     def copy_command(args: List[str], config: Optional[str] = None, copyto: bool = False,
-                     metadata: Optional[Callable] = None,
+                     metadata: Optional[dict] = None,
                      progress: Optional[Callable] = None,
                      dryrun: bool = False,
+                     source_s3: bool = False,
                      destination_s3: bool = False,
+                     process_info: Optional[dict] = None,
                      return_output: bool = False,
                      raise_exception: bool = False) -> Union[bool, Tuple[bool, List[str]]]:
         command = [RCloneInstallation.executable_path(), "copyto" if copyto is True else "copy"]
@@ -54,11 +58,16 @@ class RCloneCommands:
         #
         # FYI: https://forum.rclone.org/t/copy-to-scality-s3-corrupted-on-transfer-sizes-differ-xxx-vs-0/43281/3
         #
-        command += ["--progress"]
-        command += ["--ignore-times"]
-        command += ["--ignore-size"]
+        command += ["--progress", "--ignore-times", "--ignore-size"]
         if destination_s3:
-            command += ["--s3-no-check-bucket", "--s3-no-head-object"]
+            command += ["--s3-no-check-bucket"]
+            if source_s3 is True:
+                # See else below; but we sill need --s3-no-head for S3 source.
+                command += ["--s3-no-head"]
+            else:
+                # For some reason if BOTH the source and destination are
+                # S3 then --s3-no-head-object prevents this from working.
+                command += ["--s3-no-head-object"]
             if isinstance(metadata, dict):
                 for metadata_key in metadata:
                     metadata_value = metadata[metadata_key]
@@ -75,8 +84,15 @@ class RCloneCommands:
                     command[0] = f"\"{command[0]}\""
                 return " ".join(command)
             DEBUG(f"RCLONE-COPY-COMMAND: {' '.join(command)}")
+            # Note the preexec_fn argument here, which is essential to ensure that a
+            # keyboard interrupt (CTRL-C), e.g. which we handle for file uploads ourselves
+            # in s3_upload, is not passed on to this rclone child subprocess thus killing it.
             process = subprocess.Popen(command, universal_newlines=True,
-                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                       preexec_fn=os.setsid)
+            if isinstance(process_info, dict):
+                process_info["process"] = process
+                process_info["pid"] = process.pid
             if return_output is True:
                 lines = []
             output_indicates_success = False
@@ -104,21 +120,30 @@ class RCloneCommands:
             return False if not (return_output is True) else (False, [])
 
     @staticmethod
-    def exists_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[int]:
-        command = [RCloneInstallation.executable_path(), "ls", source]
-        if isinstance(config, str) and config:
-            command += ["--config", config]
+    def exists_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[bool]:
+        # See comments at the top of the RCloneCommands.size_command function.
         try:
-            # Example output: "  1234 some_file.fastq" where 1234 is file size.
-            # Unfortunately if the given source (file) does not exist the return
-            # code is 0; though if the bucket does not exist then return code is 1.
-            # So even if return code is 0 (implying bucket is OK) it still might
-            # not be OK; will regard any output as an indication that it is OK.
-            return RCloneCommands._run_okay(command, some_output_required=True)
+            result = RCloneCommands.info_command(source, config=config, raise_exception=raise_exception)
+            return isinstance(result, dict) and result.get("name") == cloud_path.basename(source)
         except Exception as e:
             if raise_exception is True:
                 raise e
-        return False
+        if False:
+            # Obsolete; see above comments.
+            command = [RCloneInstallation.executable_path(), "ls", source]
+            if isinstance(config, str) and config:
+                command += ["--config", config]
+            try:
+                # Example output: "  1234 some_file.fastq" where 1234 is file size.
+                # Unfortunately if the given source (file) does not exist the return
+                # code is 0; though if the bucket does not exist then return code is 1.
+                # So even if return code is 0 (implying bucket is OK) it still might
+                # not be OK; will regard any output as an indication that it is OK.
+                return RCloneCommands._run_okay(command, some_output_required=True)
+            except Exception as e:
+                if raise_exception is True:
+                    raise e
+            return False
 
     @staticmethod
     def file_exists_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[bool]:
@@ -129,29 +154,35 @@ class RCloneCommands:
             return None
 
     @staticmethod
-    def directory_exists_command(source: str, config: Optional[str] = None,
-                                 raise_exception: bool = False) -> Optional[bool]:
+    def size_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[int]:
+        # Use the info_command (which does lsjson --stat) not only because it's a good central way to get
+        # size (and other) info, but when getting using rclone size on a key in a bucket with temporary
+        # credentials (which are targeted to a bucket/key) we need to have the s3:ListBucket policy on
+        # those credentials, but for the entire bucket; the trick we used to get S3-to-S3 copy to work,
+        # where we restricted the s3:ListBucket to a prefix condition set to the exact key, does not work;
+        # but that's with rclone size command (and even rclone ls fails as well); but using rclone lsjson,
+        # as the info_command does) is fine. This permission stuff with rclone and S3 is very finicky indeed.
         try:
-            return RCloneCommands.info_command(source, config=config,
-                                               raise_exception=raise_exception).get("directory") is True
+            result = RCloneCommands.info_command(source, config=config, raise_exception=raise_exception)
+            # N.B. Returns a size of -1 if file/key not found (at least for GCS).
+            return size if isinstance(result, dict) and (size := result.get("size")) and (size >= 0) else None
         except Exception:
             return None
-
-    @staticmethod
-    def size_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[int]:
-        command = [RCloneInstallation.executable_path(), "size", source]
-        if isinstance(config, str) and config:
-            command += ["--config", config]
-        try:
-            for line in RCloneCommands._run(command):
-                if line.lower().strip().replace(" ", "") == "totalobjects:1":
-                    found = True
-                elif (nbytes := RCloneCommands._parse_rclone_size_to_bytes(line)) is not None:
-                    return nbytes if found else None
-        except Exception as e:
-            if raise_exception is True:
-                raise e
-        return None
+        if False:
+            # Obsolete; see above comments.
+            command = [RCloneInstallation.executable_path(), "size", source]
+            if isinstance(config, str) and config:
+                command += ["--config", config]
+            try:
+                for line in RCloneCommands._run(command):
+                    if line.lower().strip().replace(" ", "") == "totalobjects:1":
+                        found = True
+                    elif (nbytes := RCloneCommands._parse_rclone_size_to_bytes(line)) is not None:
+                        return nbytes if found else None
+            except Exception as e:
+                if raise_exception is True:
+                    raise e
+            return None
 
     @staticmethod
     def checksum_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[str]:

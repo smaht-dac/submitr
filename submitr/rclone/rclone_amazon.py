@@ -84,7 +84,7 @@ class RCloneAmazon(RCloneTarget):
 class AmazonCredentials(RCloneCredentials):
 
     def __init__(self,
-                 credentials: Optional[AmazonCredentials, str] = None,
+                 credentials: Optional[Union[AmazonCredentials, str]] = None,
                  region: Optional[str] = None,
                  access_key_id: Optional[str] = None,
                  secret_access_key: Optional[str] = None,
@@ -197,3 +197,15 @@ class AmazonCredentials(RCloneCredentials):
         session_token = (section.get("aws_session_token", None) or
                          section.get("session_token", None))
         return region, access_key_id, secret_access_key, session_token
+
+    def ping(self) -> bool:
+        try:
+            sts = BotoClient("sts",
+                             region_name=self.region,
+                             aws_access_key_id=self.access_key_id,
+                             aws_secret_access_key=self.secret_access_key,
+                             aws_session_token=self.session_token)
+            _ = sts.get_caller_identity()
+            return True
+        except Exception:
+            return False

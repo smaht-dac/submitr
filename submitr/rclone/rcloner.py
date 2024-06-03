@@ -105,6 +105,7 @@ class RCloner(RCloneCommands, RCloneInstallation):
     def copy(self, source: str, destination: Optional[str] = None,
              metadata: Optional[Callable] = None, progress: Optional[Callable] = None,
              directories: bool = False, dryrun: bool = False, copyto: bool = True,
+             process_info: Optional[dict] = None,
              return_output: bool = False, raise_exception: bool = True) -> Union[bool, Tuple[bool, List[str]]]:
         """
         Uses rclone to copy the given source file to the given destination. All manner of variation is
@@ -126,7 +127,7 @@ class RCloner(RCloneCommands, RCloneInstallation):
         # Just FYI WRT copy/copyto:
         # - Using 'copy' when the cloud destination is a file gives error: "is a file not a directory".
         # - Using 'copyto' when the cloud destination is a "directory" creates a *file* of that name;
-        #   along side the "directory" of the same name (which is odd and alomst certainly undesireble).
+        #   along side the "directory" of the same name (which is odd and almost certainly unwanted).
         if isinstance(destination_config := self.destination, RCloneTarget):
             # Here a destination cloud configuration has been defined for this RCloner object;
             # meaning we are copying to some cloud destination (and not to a local file destination).
@@ -140,12 +141,16 @@ class RCloner(RCloneCommands, RCloneInstallation):
                     raise Exception(f"No cloud source specified.")
                 with self.config_file(persist=dryrun is True) as source_and_destination_config_file:  # noqa
                     command_args = [f"{source_config.name}:{source}", f"{destination_config.name}:{destination}"]
+                    source_s3 = isinstance(source_config, RCloneAmazon)
                     destination_s3 = isinstance(destination_config, RCloneAmazon)
                     return RCloneCommands.copy_command(command_args,
                                                        config=source_and_destination_config_file,
-                                                       copyto=copyto, destination_s3=destination_s3,
+                                                       copyto=copyto,
+                                                       source_s3=source_s3, destination_s3=destination_s3,
                                                        metadata=metadata, progress=progress, dryrun=dryrun,
-                                                       return_output=return_output)
+                                                       process_info=process_info,
+                                                       return_output=return_output,
+                                                       raise_exception=raise_exception)
             else:
                 # Here only a destination config cloud configuration has been defined for this RCloner
                 # object; meaning we are copying from a local file source to some cloud destination;
@@ -167,7 +172,9 @@ class RCloner(RCloneCommands, RCloneInstallation):
                                                        config=destination_config_file,
                                                        copyto=copyto, destination_s3=destination_s3,
                                                        metadata=metadata, progress=progress, dryrun=dryrun,
-                                                       return_output=return_output)
+                                                       process_info=process_info,
+                                                       return_output=return_output,
+                                                       raise_exception=raise_exception)
         elif isinstance(source_config := self.source, RCloneTarget):
             # Here only a source cloud configuration has been defined for this RCloner object;
             # meaning we are copying from some cloud source to a local file destination;
@@ -192,13 +199,16 @@ class RCloner(RCloneCommands, RCloneInstallation):
                     destination_directory = normalize_path(os.path.join(destination, os.path.dirname(key_as_file_path)))
                     os.makedirs(destination_directory, exist_ok=True)
                     destination = os.path.join(destination, key_as_file_path)
+            source_s3 = isinstance(source_config, RCloneAmazon)
             with source_config.config_file(persist=dryrun is True) as source_config_file:  # noqa
                 command_args = [f"{source_config.name}:{source}", destination]
                 return RCloneCommands.copy_command(command_args,
                                                    config=source_config_file,
-                                                   copyto=True,
+                                                   copyto=True, source_s3=source_s3,
                                                    progress=progress, dryrun=dryrun,
-                                                   return_output=return_output)
+                                                   process_info=process_info,
+                                                   return_output=return_output,
+                                                   raise_exception=raise_exception)
         else:
             # Here not source or destination cloud configuration has been defined for this RCloner;
             # object; meaning this is (degenerate case of a) simple local file to file copy.
@@ -212,7 +222,9 @@ class RCloner(RCloneCommands, RCloneInstallation):
             return RCloneCommands.copy_command(command_args,
                                                copyto=copyto,
                                                progress=progress, dryrun=dryrun,
-                                               return_output=return_output)
+                                               process_info=process_info,
+                                               return_output=return_output,
+                                               raise_exception=raise_exception)
 
     def copy_to_bucket(self, *args, **kwargs) -> Union[bool, Tuple[bool, List[str]]]:
         kwargs["copyto"] = False
