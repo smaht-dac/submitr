@@ -16,7 +16,7 @@ from submitr.rclone.rclone_target import RCloneTarget
 from submitr.rclone.rclone_amazon import AmazonCredentials, RCloneAmazon
 from submitr.rclone.rclone_google import GoogleCredentials, RCloneGoogle
 from submitr.rclone.rclone_utils import cloud_path
-from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsCredentials, AwsS3
+from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
 from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredentials, Gcs
 from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.s3_upload import upload_file_to_aws_s3
@@ -130,7 +130,7 @@ class EnvAmazon(Env):
         return self._main_credentials
 
     def credentials(self, nokms: bool = False) -> AmazonCredentials:
-        credentials = AwsCredentials.from_file(self.credentials_file,
+        credentials = AmazonCredentials.obtain(self.credentials_file,
                                                region=self.region,
                                                kms_key_id=None if nokms is True else self.kms_key_id)
         assert credentials is not None
@@ -255,7 +255,10 @@ def setup_module():
                 GOOGLE_SERVICE_ACCOUNT_FILE_PATH = None
 
     # Just make sure no interference from credentials not explicitly setup for testing.
-    AwsCredentials.remove_credentials_from_environment_variables()
+    os.environ.pop("AWS_DEFAULT_REGION", None)
+    os.environ.pop("AWS_ACCESS_KEY_ID", None)
+    os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
+    os.environ.pop("AWS_SESSION_TOKEN", None)
     assert os.environ.get("AWS_DEFAULT_REGION", None) is None
     assert os.environ.get("AWS_ACCESS_KEY_ID", None) is None
     assert os.environ.get("AWS_SECRET_ACCESS_KEY", None) is None

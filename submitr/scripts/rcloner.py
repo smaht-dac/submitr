@@ -11,7 +11,7 @@ from submitr.rclone import (
     RCloneTarget, RCloneAmazon, RCloneGoogle,
     RCloner, cloud_path
 )
-from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsCredentials
+from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
 from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredentials
 from submitr.utils import chars
 
@@ -85,13 +85,8 @@ def main() -> None:
 
     if is_source_amazon or is_destination_amazon:
 
-        credentials_amazon = None
-        if ((amazon_credentials := args.amazon_credentials) or
-            (amazon_credentials := os.environ.get("AWS_SHARED_CREDENTIALS_FILE"))):  # noqa
-            if not (credentials_amazon := AwsCredentials.from_file(amazon_credentials)):
-                usage(f"Cannot create AWS credentials from specified value: {args.amazon}")
-        elif not (credentials_amazon := AwsCredentials.from_environment_variables()):
-            usage(f"No AWS credentials specified.")
+        if not (credentials_amazon := AmazonCredentials.obtain(args.amazon_credentials)):
+            usage(f"Cannot find AWS credentials.")
         if not credentials_amazon.ping():
             usage(f"Given AWS credentials appear to be invalid.")
 
@@ -101,7 +96,7 @@ def main() -> None:
             if temporary_credentials_source_amazon == "-":
                 # Special case of untargeted (to any bucket/key) temporary credentials.
                 temporary_credentials_source_amazon = (
-                    credentials_amazon.generate_temporary_credentials(kms_key_id=args.kms))
+                    generate_amazon_temporary_credentials(credentials_amazon, kms_key_id=args.kms))
             elif temporary_credentials_source_amazon:
                 bucket = key = None
                 if temporary_credentials_source_amazon is True:
@@ -113,7 +108,8 @@ def main() -> None:
                     bucket, key = cloud_path.bucket_and_key(temporary_credentials_source_amazon)
                 if bucket:
                     temporary_credentials_source_amazon = (
-                        credentials_amazon.generate_temporary_credentials(bucket=bucket, key=key, kms_key_id=args.kms))
+                        generate_amazon_temporary_credentials(credentials_amazon,
+                                                              bucket=bucket, key=key, kms_key_id=args.kms))
                 else:
                     temporary_credentials_source_amazon = None
             if temporary_credentials_source_amazon:
@@ -127,7 +123,7 @@ def main() -> None:
             if temporary_credentials_destination_amazon == "-":
                 # Special case of untargeted (to any bucket/key) temporary credentials.
                 temporary_credentials_destination_amazon = (
-                    credentials_amazon.generate_temporary_credentials(kms_key_id=args.kms))
+                    generate_amazon_temporary_credentials(credentials_amazon, kms_key_id=args.kms))
             elif temporary_credentials_destination_amazon:
                 bucket = key = None
                 if temporary_credentials_destination_amazon is True:
@@ -139,7 +135,8 @@ def main() -> None:
                     bucket, key = cloud_path.bucket_and_key(temporary_credentials_destination_amazon)
                 if bucket:
                     temporary_credentials_destination_amazon = (
-                        credentials_amazon.generate_temporary_credentials(bucket=bucket, key=key, kms_key_id=args.kms))
+                        generate_amazon_temporary_credentials(credentials_amazon,
+                                                              bucket=bucket, key=key, kms_key_id=args.kms))
                 else:
                     temporary_credentials_destination_amazon = None
             if temporary_credentials_destination_amazon:
@@ -286,6 +283,11 @@ def main_info(source: str,
                    credentials_amazon=credentials_destination_amazon,
                    credentials_google=credentials_google)
     print("")
+
+
+def generate_amazon_temporary_credentials(amazon_credentials: AmazonCredentials,
+                                          *args, **kwargs) -> Optional[AmazonCredentials]:
+    return AwsS3(amazon_credentials).generate_temporary_credentials(*args, **kwargs) if amazon_credentials else None
 
 
 def print_info(target: str,
