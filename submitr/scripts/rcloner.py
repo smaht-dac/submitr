@@ -12,7 +12,6 @@ from submitr.rclone import (
     RCloner, cloud_path
 )
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
-from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredentials
 from submitr.utils import chars
 
 # Little command-line utility to interactively test out rclone support code in smaht-submitr.
@@ -147,10 +146,10 @@ def main() -> None:
     if is_source_google or is_destination_google:
         if ((google_credentials := args.google_credentials) or
             (google_credentials := os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))):  # noqa
-            if not (credentials_google := GcpCredentials.from_file(google_credentials)):
+            if not (credentials_google := GoogleCredentials.obtain(google_credentials)):
                 usage(f"Cannot create GCS credentials from specified value: {args.google}")
         elif RCloneGoogle.is_google_compute_engine():
-            credentials_google = GcpCredentials()
+            credentials_google = GoogleCredentials()
         else:
             usage("No GCP credentials specified.")
         if not credentials_google.ping():

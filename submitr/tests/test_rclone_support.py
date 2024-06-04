@@ -18,7 +18,7 @@ from submitr.rclone.rclone_amazon import RCloneAmazon
 from submitr.rclone.rclone_google import GoogleCredentials, RCloneGoogle
 from submitr.rclone.rclone_utils import cloud_path
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
-from submitr.rclone.testing.rclone_utils_for_testing_google import GcpCredentials, Gcs
+from submitr.rclone.testing.rclone_utils_for_testing_google import Gcs
 from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.s3_upload import upload_file_to_aws_s3
 from submitr.s3_utils import get_s3_key_metadata
@@ -170,7 +170,7 @@ class EnvGoogle(Env):
         return self._main_credentials
 
     def credentials(self) -> GoogleCredentials:
-        credentials = GcpCredentials.from_file(self.service_account_file, location=self.location)
+        credentials = GoogleCredentials.obtain(self.service_account_file, location=self.location)
         assert (credentials is not None) or RCloneGoogle.is_google_compute_engine()
         if credentials is not None:
             assert credentials.location == self.location

@@ -173,17 +173,3 @@ class Gcs:
                    count: Optional[int] = None, offset: Optional[int] = None,
                    raise_exception: bool = True) -> List[str]:
         pass  # NOT YET NEEDED
-
-
-class GcpCredentials(GoogleCredentials):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    @staticmethod
-    def from_file(service_account_file: str, location: Optional[str] = None) -> Optional[GoogleCredentials]:
-        if not (service_account_file := normalize_path(service_account_file, expand_home=True)):
-            return None
-        if not os.path.isfile(service_account_file):
-            return None
-        return GcpCredentials(service_account_file=service_account_file, location=location)
