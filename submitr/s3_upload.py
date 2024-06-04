@@ -92,14 +92,14 @@ def upload_file_to_aws_s3(file: FileForUpload,
         file_checksum_timestamp = None
 
     elif file.from_cloud:
-        rclone_google = file.cloud_store
-        rclone_amazon_config = RCloneAmazon(region=aws_credentials.get("region_name"),
-                                            access_key_id=aws_credentials.get("aws_access_key_id"),
-                                            secret_access_key=aws_credentials.get("aws_secret_access_key"),
-                                            session_token=aws_credentials.get("aws_session_token"),
-                                            kms_key_id=aws_kms_key_id)
-        rcloner = RCloner(source=rclone_google, destination=rclone_amazon_config)
-        if not rclone_google.path_exists(file.name):
+        source_cloud_store = file.cloud_store
+        destination_cloud_store = RCloneAmazon(region=aws_credentials.get("region_name"),
+                                               access_key_id=aws_credentials.get("aws_access_key_id"),
+                                               secret_access_key=aws_credentials.get("aws_secret_access_key"),
+                                               session_token=aws_credentials.get("aws_session_token"),
+                                               kms_key_id=aws_kms_key_id)
+        rcloner = RCloner(source=source_cloud_store, destination=destination_cloud_store)
+        if not source_cloud_store.path_exists(file.name):
             printf(f"ERROR: Cannot find Google Cloud Storage object: {file.path_cloud}")
             return False
         file_size = file.size_cloud
@@ -107,7 +107,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         # Note that it is known to be the case that calling rclone hashsum to get the checksum
         # of a file in Google Cloud Storage (GCS) merely retrieves the checksum from GCS,
         # which had previously been computed/stored by GCS for the file within GCS.
-        file_checksum = rclone_google.file_checksum(file.name)
+        file_checksum = source_cloud_store.file_checksum(file.name)
         file_checksum_timestamp = current_timestamp()
 
     else:
