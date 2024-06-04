@@ -62,11 +62,18 @@ class GoogleCredentials:
             return False
 
     @staticmethod
-    def obtain(service_account_file: str, location: Optional[str] = None) -> Optional[GoogleCredentials]:
-        if not (service_account_file := normalize_path(service_account_file, expand_home=True)):
-            return None
-        if not os.path.isfile(service_account_file):
-            return None
+    def obtain(service_account_file: Optional[str] = None,
+               location: Optional[str] = None,
+               ignore_environment: bool = False) -> Optional[GoogleCredentials]:
+
+        if service_account_file := normalize_path(service_account_file, expand_home=True):
+            if not os.path.isfile(service_account_file):
+                return None
+        elif ((ignore_environment is not True) and
+              (service_account_file :=
+               normalize_path(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"), expand_home=True))):
+            if not os.path.isfile(service_account_file):
+                return None
         return GoogleCredentials(service_account_file=service_account_file, location=location)
 
     @staticmethod

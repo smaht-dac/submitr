@@ -139,7 +139,7 @@ class AmazonCredentials:
                session_token: Optional[str] = None,
                kms_key_id: Optional[str] = None,
                credentials_section: Optional[str] = None,
-               ignore_environment_variables: bool = False) -> Optional[AmazonCredentials]:
+               ignore_environment: bool = False) -> Optional[AmazonCredentials]:
 
         aws_region = aws_access_key_id = aws_secret_access_key = aws_session_token = None
         if credentials_file := normalize_path(credentials_file, expand_home=True):
@@ -149,14 +149,14 @@ class AmazonCredentials:
                 return None
             aws_region, aws_access_key_id, aws_secret_access_key, aws_session_token = (
                 AmazonCredentials._read_credentials_file(credentials_file, credentials_section=credentials_section))
-        elif ((ignore_environment_variables is not True) and
+        elif ((ignore_environment is not True) and
               (credentials_file := normalize_path(
                   os.environ.get("AWS_SHARED_CREDENTIALS_FILE", os.environ.get("AWS_CONFIG_FILE")), expand_home=True))):
             if not os.path.isfile(credentials_file):
                 return None
             aws_region, aws_access_key_id, aws_secret_access_key, aws_session_token = (
                 AmazonCredentials._read_credentials_file(credentials_file, credentials_section=credentials_section))
-        elif ignore_environment_variables is not True:
+        elif ignore_environment is not True:
             aws_region, aws_access_key_id, aws_secret_access_key, aws_session_token = (
                 AmazonCredentials._read_environment_variables())
         if region := normalize_string(region):
