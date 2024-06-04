@@ -14,7 +14,8 @@ class RCloneAmazon(RCloneStore):
 
     prefix = cloud_path.amazon_prefix
     proper_name = "AWS S3"
-    display_proper_name = "Amazon S3"
+    proper_name_title = "Amazon S3"
+    proper_name_label = "s3-cloud-store"
 
     def __init__(self,
                  credentials_or_config: Optional[Union[AmazonCredentials, RCloneAmazon, str]] = None,

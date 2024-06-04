@@ -19,7 +19,7 @@ class RCloneStore(AbstractBaseClass):
     # i.e. RCloneAmazon (where it is "s3://"), and RCloneGoogle (where it is "gs://").
     prefix = None
     proper_name = None
-    display_proper_name = None
+    proper_name_title = None
 
     def __init__(self,
                  name: Optional[str] = None,

@@ -16,15 +16,15 @@ from submitr.utils import chars
 
 # Module to upload a given file, with the given AWS credentials to AWS S3.
 # Displays progress bar and other info; checks if file already exists; verifies
-# upload; catches interrupts; et cetera. Circa May 2024 added support for upload,
-# or transfer rather, from Google Cloud Storage (GCS) directly to S3 via rclone.
+# upload; catches interrupts; et cetera. Circa May 2024 added support for upload, or
+# transfer rather, from some cloud Storage (currently GCS or S3) directly to S3 via rclone.
 
 # Notes on checksums:
 #
 # Our primary use of checksums is to tell the user, in the case that the destination file
 # in S3 already exists, if the source and destination files appear to be the same or not.
 #
-# For large files we can get ONLY the etag from AWS S3 and ONLY the md5 from Google Cloud Storage (GCS).
+# For large files we can get ONLY the etag from AWS S3 and ONLY the md5 from cloud storage GCS/S3).
 # So comparing checksums when uploading from GCS to AWS (our only current cloud-to-cloud use-case)
 # is not so straightforward. Further, though we have not yet encountered this, it is a plausible
 # assumption that under some circumstance, e.g. multi-part upload, even getting an md5 from GCS will
@@ -100,12 +100,12 @@ def upload_file_to_aws_s3(file: FileForUpload,
                                                kms_key_id=aws_kms_key_id)
         rcloner = RCloner(source=source_cloud_store, destination=destination_cloud_store)
         if not source_cloud_store.path_exists(file.name):
-            printf(f"ERROR: Cannot find Google Cloud Storage object: {file.path_cloud}")
+            printf(f"ERROR: Cannot find the {source_cloud_store.proper_name} cloud storage object: {file.path_cloud}")
             return False
         file_size = file.size_cloud
         file_checksum = None
         # Note that it is known to be the case that calling rclone hashsum to get the checksum
-        # of a file in Google Cloud Storage (GCS) merely retrieves the checksum from GCS,
+        # of a file in cloud storage (GCS/S3) merely retrieves the checksum from GCS,
         # which had previously been computed/stored by GCS for the file within GCS.
         file_checksum = source_cloud_store.file_checksum(file.name)
         file_checksum_timestamp = current_timestamp()
@@ -272,7 +272,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         if file_checksum:
             metadata["md5"] = file_checksum
             metadata["md5-timestamp"] = str(file_checksum_timestamp)
-            metadata["md5-source"] = "google-cloud-storage" if file.found_cloud else "file-system"
+            metadata["md5-source"] = file.cloud_store.proper_name_label if file.found_cloud else "file-system"
         return metadata
 
     if print_preamble:
