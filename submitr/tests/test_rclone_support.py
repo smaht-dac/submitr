@@ -823,6 +823,8 @@ def test_rclone_amazon_to_amazon() -> None:
     #                                                    destination_subfolder_amazon) is True  # TODO IMPLEMENT MAYBE
     # assert destination_target_amazon.directory_exists(cloud_path.join(destination_bucket_amazon,
     #                                                                   destination_subfolder_amazon)) is True
+    assert env_amazon.s3_non_rclone().delete_file(source_amazon) is True
+    assert env_amazon.s3_non_rclone().delete_file(destination_amazon) is True
 
 
 def test_rclone_amazon_to_amazon_using_temporary_credentials() -> None:
@@ -870,6 +872,8 @@ def test_rclone_amazon_to_amazon_using_temporary_credentials() -> None:
     # destination_target_with_main_credentials_amazon = create_rclone_target_amazon(credentials_amazon)
     # assert destination_target_with_main_credentials_amazon.directory_exists(
     #     cloud_path.join(destination_bucket_amazon, destination_subfolder_amazon)) is True
+    assert env_amazon.s3_non_rclone().delete_file(source_amazon) is True
+    assert env_amazon.s3_non_rclone().delete_file(destination_amazon) is True
 
 
 def test_rclone_upload_file_to_aws_s3() -> None:
