@@ -5,7 +5,7 @@ from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
 from .cli_utils import CustomArgumentParser
 from submitr.base import DEFAULT_APP
-from submitr.rclone import RCloneGoogle
+from submitr.rclone import RCloneAmazon, RCloneGoogle, cloud_path
 from submitr.submission import (
     submit_any_ingestion,
     DEFAULT_INGESTION_TYPE,
@@ -248,9 +248,16 @@ def main(simulated_args_for_testing=None):
         if args.env:
             env_from_env = True
 
-    config_google = RCloneGoogle.from_command_args(args.rclone_google_source,
-                                                   args.rclone_google_credentials,
-                                                   args.rclone_google_location)
+    config_google = None
+    if cloud_path.is_amazon(args.rclone_google_source):
+        config_google = RCloneAmazon.from_command_args(args.rclone_google_source,
+                                                       args.rclone_google_credentials,
+                                                       args.rclone_google_location)
+        pass
+    elif cloud_path.is_google(args.rclone_google_source) or args.rclone_google_source:
+        config_google = RCloneGoogle.from_command_args(args.rclone_google_source,
+                                                       args.rclone_google_credentials,
+                                                       args.rclone_google_location)
 
     if args.ping or (args.bundle_filename and args.bundle_filename.lower() == "ping"):
         if args.env or os.environ.get("SMAHT_ENV"):

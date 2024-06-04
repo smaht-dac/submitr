@@ -34,7 +34,7 @@ def main() -> None:
                       help="Use Amazon temporary/session credentials for destination.", const=True, default=None)
     args.add_argument("--google-credentials", "-gcs", help="Amazon or Google configuration file.")
     args.add_argument("--kms", help="Amazon KMS key ID.", default=None)
-    args.add_argument("--progress", action="store_true", help="Show progress bar.", default=False)
+    args.add_argument("--noprogress", action="store_true", help="Do not show progress bar.", default=False)
     args.add_argument("--verbose", action="store_true", help="Verbose output.", default=False)
     args.add_argument("--debug", action="store_true", help="Debug output.", default=False)
     args = args.parse_args()
@@ -66,6 +66,7 @@ def main() -> None:
             usage("May not specify a folder/directory as a source; only single key/file allowed.")
         if not cloud_path.has_separator(cloud_path.normalize(args.source)):
             usage("May not specify just a bucket as a source; only single key/file allowed.")
+    copyto = True
     if is_destination_cloud:
         if args.destination.endswith(cloud_path.separator):
             # Special case to treat a destination ending
@@ -73,11 +74,8 @@ def main() -> None:
             # unless of course copyto is explicitly specified.
             if source_basename := cloud_path.basename(cloud_path.normalize(args.source)):
                 args.destination += source_basename
-                copyto = True
             else:
                 copyto = False
-        else:
-            copyto = True
 
     # Amazon credentials are split into source and destination
     # because we may specify either/both/none as temporary credentials.
@@ -92,9 +90,7 @@ def main() -> None:
             (amazon_credentials := os.environ.get("AWS_SHARED_CREDENTIALS_FILE"))):  # noqa
             if not (credentials_amazon := AwsCredentials.from_file(amazon_credentials)):
                 usage(f"Cannot create AWS credentials from specified value: {args.amazon}")
-        else:
-            credentials_amazon = AwsCredentials.from_environment_variables()
-        if not credentials_amazon.access_key_id:
+        elif not (credentials_amazon := AwsCredentials.from_environment_variables()):
             usage(f"No AWS credentials specified.")
         if not credentials_amazon.ping():
             usage(f"Given AWS credentials appear to be invalid.")
@@ -151,6 +147,7 @@ def main() -> None:
             else:
                 credentials_destination_amazon = credentials_amazon
 
+    if is_source_google or is_destination_google:
         if ((google_credentials := args.google_credentials) or
             (google_credentials := os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))):  # noqa
             if not (credentials_google := GcpCredentials.from_file(google_credentials)):
@@ -167,7 +164,7 @@ def main() -> None:
                        credentials_source_amazon=credentials_source_amazon,
                        credentials_destination_amazon=credentials_destination_amazon,
                        credentials_google=credentials_google,
-                       copyto=copyto, progress=args.progress, verbose=args.verbose))
+                       copyto=copyto, progress=not args.noprogress, verbose=args.verbose))
     elif info:
         exit(main_info(args.source, args.destination,
                        credentials_source_amazon=credentials_source_amazon,
@@ -246,8 +243,8 @@ def main_copy(source: str, destination: str,
     progress_callback = define_progress_callback(source_config, source) if progress is True else None
     rcloner = RCloner(source=source_config, destination=destination_config)
     result, output = rcloner.copy(source, destination, copyto=copyto,
-                                  progress=progress_callback.function,
-                                  process_info=progress_callback.process,
+                                  progress=progress_callback.function if progress_callback else None,
+                                  process_info=progress_callback.process if progress_callback else None,
                                   return_output=True)
     if result is True:
         print("OK", end="")

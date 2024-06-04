@@ -8,7 +8,7 @@ from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import format_size, normalize_string
 from submitr.output import PRINT
 from dcicutils.structured_data import Portal, StructuredDataSet
-from submitr.rclone import RCloneGoogle, cloud_path
+from submitr.rclone import RCloneAmazon, RCloneGoogle, cloud_path
 from submitr.utils import chars
 
 # Unified the logic for looking for files to upload (to AWS S3), and storing
@@ -96,7 +96,7 @@ class FileForUpload:
         self._accession_name = normalize_string(accession_name) or None
         self._size_local = None
         self._checksum_local = None
-        self._config_google = config_google if isinstance(config_google, RCloneGoogle) else None
+        self._config_google = config_google if isinstance(config_google, (RCloneAmazon, RCloneGoogle)) else None
         self._path_google = None
         self._size_google = None
         self._checksum_google = None

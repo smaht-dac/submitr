@@ -5,7 +5,6 @@ import subprocess
 from typing import Callable, List, Optional, Tuple, Union
 from dcicutils.datetime_utils import format_datetime, parse_datetime
 from dcicutils.misc_utils import normalize_string
-from submitr.rclone.rclone_utils import cloud_path
 from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.utils import DEBUG
 
@@ -121,29 +120,21 @@ class RCloneCommands:
 
     @staticmethod
     def exists_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[bool]:
-        # See comments at the top of the RCloneCommands.size_command function.
+        # Obsolete; see above comments.
+        command = [RCloneInstallation.executable_path(), "ls", source]
+        if isinstance(config, str) and config:
+            command += ["--config", config]
         try:
-            result = RCloneCommands.info_command(source, config=config, raise_exception=raise_exception)
-            return isinstance(result, dict) and result.get("name") == cloud_path.basename(source)
+            # Example output: "  1234 some_file.fastq" where 1234 is file size.
+            # Unfortunately if the given source (file) does not exist the return
+            # code is 0; though if the bucket does not exist then return code is 1.
+            # So even if return code is 0 (implying bucket is OK) it still might
+            # not be OK; will regard any output as an indication that it is OK.
+            return RCloneCommands._run_okay(command, some_output_required=True)
         except Exception as e:
             if raise_exception is True:
                 raise e
-        if False:
-            # Obsolete; see above comments.
-            command = [RCloneInstallation.executable_path(), "ls", source]
-            if isinstance(config, str) and config:
-                command += ["--config", config]
-            try:
-                # Example output: "  1234 some_file.fastq" where 1234 is file size.
-                # Unfortunately if the given source (file) does not exist the return
-                # code is 0; though if the bucket does not exist then return code is 1.
-                # So even if return code is 0 (implying bucket is OK) it still might
-                # not be OK; will regard any output as an indication that it is OK.
-                return RCloneCommands._run_okay(command, some_output_required=True)
-            except Exception as e:
-                if raise_exception is True:
-                    raise e
-            return False
+        return False
 
     @staticmethod
     def file_exists_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[bool]:

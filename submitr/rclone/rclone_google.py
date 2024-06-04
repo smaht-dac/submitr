@@ -8,8 +8,8 @@ from typing import Callable, Optional, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, normalize_string, PRINT
 from submitr.rclone.rclone_commands import RCloneCommands
-from submitr.rclone.rclone_target import RCloneTarget, RCloneCredentials
 from submitr.rclone.rclone_installation import RCloneInstallation
+from submitr.rclone.rclone_target import RCloneTarget, RCloneCredentials
 from submitr.rclone.rclone_utils import cloud_path
 from submitr.utils import chars
 
@@ -103,7 +103,7 @@ class RCloneGoogle(RCloneTarget):
                    f"{f' ({self.project})' if self.project else ''}"
                    f" connectivity appears to be OK {chars.check}")
             if self.bucket_exists() is False:
-                printf(f"WARNING: Google Cloud Storage bucket NOT FOUND: {self.bucket}")
+                printf(f"WARNING: Google Cloud Storage bucket/path NOT FOUND or EMPTY: {self.bucket}")
             return False
         else:
             printf(f"Google Cloud Storage project"

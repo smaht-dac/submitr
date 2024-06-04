@@ -52,8 +52,10 @@ class RCloneTarget(AbstractBaseClass):
 
     def bucket_exists(self) -> Optional[bool]:
         """
-        If this object does not have  a bucket associated with it then returns None;
+        If this object does not have a bucket associated with it then returns None;
         otherwise returns True if that bucket exists or False if it does not (or some other problem).
+        As noted in constructor, this "bucket" can actually be any path (which includes the bucket of course).
+        And NOTE: If the bucket/path is just a folder, this ONLY returns True if it contains something.
         """
         if not (bucket := self.bucket):
             return None
