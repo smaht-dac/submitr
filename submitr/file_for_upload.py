@@ -298,14 +298,15 @@ class FileForUpload:
         elif self.accession:
             file_identifier += f" ({self.accession})"
 
-        # TODO: Idunno might make more sense to do this in assemble.
+        # TODO: Might make more sense to do this in assemble.
         destination = self.get_destination(portal)
         if self.found_local:
             found_both_local_and_cloud = False
             if self.found_cloud:
                 found_both_local_and_cloud = True
-                printf(f"- File for upload found BOTH locally AND in TODO cloud storage: {file_identifier}")
-                printf(f"  - TODO cloud storage: {self.display_path_cloud}"
+                printf(f"- File for upload found BOTH locally"
+                       f" AND in {self.cloud_store.display_proper_name}: {file_identifier}")
+                printf(f"  - {self.cloud_store.proper_name} cloud storage: {self.display_path_cloud}"
                        f"{f' ({format_size(self.size_cloud)})' if self.size_cloud else ''}")
             if self.found_local_multiple and (not self.found_cloud or (self._favor_local is True)):
                 # Here there are multiple local files found (due to recursive directory lookup),
@@ -330,7 +331,7 @@ class FileForUpload:
                 if not review_only:
                     if found_both_local_and_cloud:
                         self._favor_local = (
-                            not yes_or_no("  - Do you want to use the TODO cloud storage version?"))
+                            not yes_or_no("  - Do you want to use the {self.cloud_store.proper_name} version?"))
                     else:
                         printf(f"  - Upload later with:"
                                f" {self.resume_upload_command(env=portal.env if portal else None)}")
@@ -338,10 +339,10 @@ class FileForUpload:
                 return False
             else:
                 if found_both_local_and_cloud:
-                    printf(f"  - Local: {self.path_local} ({format_size(self.size_local)})")
+                    printf(f"  - Local file: {self.path_local} ({format_size(self.size_local)})")
                     if not review_only:
                         self._favor_local = (
-                            not yes_or_no("  - Do you want to use the TODO cloud storage version?"))
+                            not yes_or_no("  - Do you want to use the {self.cloud_store.proper_name} version?"))
                         printf(f"- File for upload: {self.display_path} ({format_size(self.size)})")
                         if destination:
                             printf(f"  AWS destination: {destination}")
@@ -352,7 +353,7 @@ class FileForUpload:
             return True
 
         elif self.found_cloud:
-            printf(f"- File for upload from TODO cloud storage:"
+            printf(f"- File for upload from {self.cloud_store.display_proper_name}:"
                    f" {self.display_path_cloud} ({format_size(self.size_cloud)})")
             if destination:
                 printf(f"  AWS destination: {destination}")

@@ -18,6 +18,8 @@ class RCloneStore(AbstractBaseClass):
     # This prefix class variable is to be set by the classes derived from RCloneStore.
     # i.e. RCloneAmazon (where it is "s3://"), and RCloneGoogle (where it is "gs://").
     prefix = None
+    proper_name = None
+    display_proper_name = None
 
     def __init__(self,
                  name: Optional[str] = None,
