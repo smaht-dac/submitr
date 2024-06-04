@@ -13,7 +13,7 @@ from dcicutils.tmpfile_utils import (
 from submitr.file_for_upload import FilesForUpload
 from submitr.rclone.amazon_credentials import AmazonCredentials
 from submitr.rclone.rcloner import RCloner
-from submitr.rclone.rclone_target import RCloneTarget
+from submitr.rclone.rclone_store import RCloneStore
 from submitr.rclone.rclone_amazon import RCloneAmazon
 from submitr.rclone.rclone_google import GoogleCredentials, RCloneGoogle
 from submitr.rclone.rclone_utils import cloud_path
@@ -372,7 +372,7 @@ def _test_cloud_variations(use_cloud_subfolder_key: bool = False):
     _test_rclone_amazon_to_google(env_amazon=env_amazon, env_google=env_google)
 
 
-def create_rclone_target_amazon(credentials: AmazonCredentials) -> RCloneTarget:
+def create_rclone_target_amazon(credentials: AmazonCredentials) -> RCloneStore:
     target_amazon = RCloneAmazon(credentials)
     assert target_amazon.credentials == credentials
     assert target_amazon.access_key_id == credentials.access_key_id
@@ -385,7 +385,7 @@ def create_rclone_target_amazon(credentials: AmazonCredentials) -> RCloneTarget:
     return target_amazon
 
 
-def create_rclone_target_google(credentials: GoogleCredentials, env_google: EnvGoogle) -> RCloneTarget:
+def create_rclone_target_google(credentials: GoogleCredentials, env_google: EnvGoogle) -> RCloneStore:
     target_google = RCloneGoogle(credentials)
     # Google credentials can be None on a GCE instance.
     assert target_google.credentials == credentials
@@ -399,7 +399,7 @@ def create_rclone_target_google(credentials: GoogleCredentials, env_google: EnvG
     return target_google
 
 
-def create_rcloner(source: Optional[RCloneTarget] = None, destination: Optional[RCloneTarget] = None) -> RCloner:
+def create_rcloner(source: Optional[RCloneStore] = None, destination: Optional[RCloneStore] = None) -> RCloner:
     rcloner = RCloner(source=source, destination=destination)
     assert rcloner.source == source
     assert rcloner.destination == destination
@@ -650,13 +650,13 @@ def __test_rclone_google_to_amazon(env_amazon: EnvAmazon,
             rcloner.copy(cloud_path.join(env_google.bucket, key_google), env_amazon.bucket, copyto=False)
         # Sanity check the file in AWS S3 which was copied directly from Google Cloud Storage.
         sanity_check_amazon_file(env_amazon, credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
-        # Exercise the RCloneTarget rclone commands (path_exists, file_size, file_checksum) for Google file.
+        # Exercise the RCloneStore rclone commands (path_exists, file_size, file_checksum) for Google file.
         path_google = cloud_path.join(env_google.bucket, key_google)
         assert rclone_google.file_size(path_google) == Env.test_file_size
         assert rclone_google.path_exists(path_google) is True
         assert rclone_google.file_checksum(path_google) == compute_file_md5(tmp_test_file_path)
         assert rclone_google.ping() is True
-        # Exercise the RCloneTarget rclone commands (path_exists, file_size, file_checksum) for Amazon file.
+        # Exercise the RCloneStore rclone commands (path_exists, file_size, file_checksum) for Amazon file.
         assert env_amazon.s3_non_rclone().file_size(env_amazon.bucket, key_amazon) == Env.test_file_size
         assert env_amazon.s3_non_rclone().file_exists(env_amazon.bucket, key_amazon) is True
         assert (env_amazon.s3_non_rclone().file_checksum(env_amazon.bucket, key_amazon) ==
@@ -678,7 +678,7 @@ def __test_rclone_google_to_amazon(env_amazon: EnvAmazon,
             rcloner.copy(cloud_path.join(env_google.bucket, key_google), None, copyto=False)
         # Sanity check the file in AWS S3 which was copied directly from Google Cloud Storage.
         sanity_check_amazon_file(env_amazon, credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
-        # Re-exercise the RCloneTarget rclone commands (path_exists, file_size, file_checksum) for Amazon file.
+        # Re-exercise the RCloneStore rclone commands (path_exists, file_size, file_checksum) for Amazon file.
         assert env_amazon.s3_non_rclone().file_size(env_amazon.bucket, key_amazon) == Env.test_file_size
         assert env_amazon.s3_non_rclone().file_exists(env_amazon.bucket, key_amazon) is True
         assert (env_amazon.s3_non_rclone().file_checksum(env_amazon.bucket, key_amazon) ==
@@ -754,7 +754,7 @@ def test_rclone_local_to_google_copy_to_bucket() -> None:
     env_google = EnvGoogle()
     filesystem = Mock_LocalStorage()
     filesystem.create_files(file_one := "subdir/test_file_one.fastq", nbytes=filesize)
-    # Bucket is really "bucket" - bucket plus optional sub-folder, which RCloneTarget is designed to handle.
+    # Bucket is really "bucket" - bucket plus optional sub-folder, which RCloneStore is designed to handle.
     subfolder = f"test-{create_uuid()}"
     bucket_google = cloud_path.join(env_google.bucket, subfolder)
     credentials_google = env_google.credentials()
@@ -777,7 +777,7 @@ def test_rclone_local_to_amazon_copy_to_bucket() -> None:
     env_amazon = EnvAmazon()
     filesystem = Mock_LocalStorage()
     filesystem.create_files(file_one := "subdir/test_file_one.fastq", nbytes=filesize)
-    # Bucket is really "bucket" - bucket plus optional sub-folder, which RCloneTarget is designed to handle.
+    # Bucket is really "bucket" - bucket plus optional sub-folder, which RCloneStore is designed to handle.
     subfolder = f"test-{create_uuid()}"
     bucket_amazon = cloud_path.join(env_amazon.bucket, subfolder)
     credentials_amazon = env_amazon.credentials()

@@ -8,7 +8,7 @@ from dcicutils.misc_utils import format_size
 from dcicutils.progress_bar import ProgressBar
 from submitr.rclone import (
     AmazonCredentials, GoogleCredentials,
-    RCloneTarget, RCloneAmazon, RCloneGoogle,
+    RCloneStore, RCloneAmazon, RCloneGoogle,
     RCloner, cloud_path
 )
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
@@ -217,7 +217,7 @@ def main_copy(source: str, destination: str,
         else:
             destination_config = RCloneGoogle(credentials_google)
 
-    def define_progress_callback(source_target: RCloneTarget, source: str) -> None:
+    def define_progress_callback(source_target: RCloneStore, source: str) -> None:
         process_info = {}
         def interrupt_stop(bar: ProgressBar):  # noqa
             nonlocal process_info
@@ -309,18 +309,18 @@ def print_info(target: str,
         print_info_via_rclone(target, RCloneGoogle(credentials_google))
 
 
-def print_info_via_rclone(target: str, rclone_target: RCloneTarget) -> None:
+def print_info_via_rclone(target: str, rclone_store: RCloneStore) -> None:
 
-    size = rclone_target.file_size(target)
-    checksum = rclone_target.file_checksum(target)
-    modified = rclone_target.file_modified(target, formatted=True)
+    size = rclone_store.file_size(target)
+    checksum = rclone_store.file_checksum(target)
+    modified = rclone_store.file_modified(target, formatted=True)
     formatted_size = format_size(size)
     print(f"Bucket: {cloud_path.bucket(target)}")
     print(f"Key: {cloud_path.key(target)}")
     print(f"Size: {format_size(size)}{f' ({size} bytes)' if '.' in formatted_size else ''}")
     print(f"Modified: {modified}")
     print(f"Checksum: {checksum}")
-    if info := rclone_target.file_info(target):
+    if info := rclone_store.file_info(target):
         if metadata := info.get("metadata"):
             print(f"Metadata ({len(metadata)}):")
             for key in {key: metadata[key] for key in sorted(metadata)}:

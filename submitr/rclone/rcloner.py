@@ -4,7 +4,7 @@ from shutil import copy as copy_file
 from typing import Callable, List, Optional, Tuple, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
-from submitr.rclone.rclone_target import RCloneTarget
+from submitr.rclone.rclone_store import RCloneStore
 from submitr.rclone.rclone_amazon import RCloneAmazon
 from submitr.rclone.rclone_commands import RCloneCommands
 from submitr.rclone.rclone_installation import RCloneInstallation
@@ -13,7 +13,7 @@ from submitr.utils import DEBUGGING
 
 # Notes on the basic structure of this rclone support code.
 #
-# - rclone_target.RCloneTarget
+# - rclone_store.RCloneStore
 #   Abstract base class representing a cloud provider target (a source or a destination).
 #   The RCloneAmazon and RCloneGoogle classes are derived from this. Contains the credentials
 #   for accessing the specific cloud provider (AWS credentials file with access key info for
@@ -36,8 +36,8 @@ from submitr.utils import DEBUGGING
 # - rcloner.RCloneCommands
 #   Implementation of the lower-level rclone commands. These exec a sub-process to the
 #   rclone command; which itself can be installed via the rclone_installation module.
-#   The function here are called out to from RCloneTarget and RCloner. These use an
-#   rclone config file which is auto-generated (to a temporary file) by RCloneTarget.
+#   The function here are called out to from RCloneStore and RCloner. These use an
+#   rclone config file which is auto-generated (to a temporary file) by RCloneStore.
 #
 # - rclone_installation.RCloneInstallation
 #   Module to check for and actually install rclone automatically with little/no user
@@ -53,35 +53,35 @@ from submitr.utils import DEBUGGING
 
 class RCloner(RCloneCommands, RCloneInstallation):
 
-    def __init__(self, source: Optional[RCloneTarget] = None, destination: Optional[RCloneTarget] = None) -> None:
-        self._source_config = source if isinstance(source, RCloneTarget) else None
-        self._destination_config = destination if isinstance(destination, RCloneTarget) else None
+    def __init__(self, source: Optional[RCloneStore] = None, destination: Optional[RCloneStore] = None) -> None:
+        self._source_config = source if isinstance(source, RCloneStore) else None
+        self._destination_config = destination if isinstance(destination, RCloneStore) else None
 
     @property
-    def source(self) -> Optional[RCloneTarget]:
+    def source(self) -> Optional[RCloneStore]:
         return self._source_config
 
     @source.setter
-    def source(self, value: RCloneTarget) -> None:
-        if isinstance(value, RCloneTarget) or value is None:
+    def source(self, value: RCloneStore) -> None:
+        if isinstance(value, RCloneStore) or value is None:
             self._source_config = value
 
     @property
-    def destination(self) -> Optional[RCloneTarget]:
+    def destination(self) -> Optional[RCloneStore]:
         return self._destination_config
 
     @destination.setter
-    def destination(self, value: RCloneTarget) -> None:
-        if isinstance(value, RCloneTarget) or value is None:
+    def destination(self, value: RCloneStore) -> None:
+        if isinstance(value, RCloneStore) or value is None:
             self._destination_config = value
 
     @property
     def config_lines(self) -> List[str]:
         lines = []
-        if (isinstance(source := self.source, RCloneTarget) and
+        if (isinstance(source := self.source, RCloneStore) and
             isinstance(source_config_lines := source.config_lines, list)):  # noqa
             lines.extend(source_config_lines)
-        if (isinstance(destination_config := self.destination, RCloneTarget) and
+        if (isinstance(destination_config := self.destination, RCloneStore) and
             isinstance(destination_config_lines := destination_config.config_lines, list)):  # noqa
             if lines:
                 lines.append("")  # not necessary but sporting
@@ -92,7 +92,7 @@ class RCloner(RCloneCommands, RCloneInstallation):
     def config_file(self, persist: bool = False) -> str:
         with temporary_file(suffix=".conf") as temporary_config_file_name:
             os.chmod(temporary_config_file_name, 0o600)  # for security
-            RCloneTarget.write_config_file(temporary_config_file_name, self.config_lines)
+            RCloneStore.write_config_file(temporary_config_file_name, self.config_lines)
             if (persist is True) or DEBUGGING():
                 # This is just for dryrun for testing/troubleshooting.
                 persistent_config_file_name = create_temporary_file_name(suffix=".conf")
@@ -110,12 +110,12 @@ class RCloner(RCloneCommands, RCloneInstallation):
         """
         Uses rclone to copy the given source file to the given destination. All manner of variation is
         encapsulated within this simple statement. Depends on whether or not a source and/or destination
-        configuration (RCloneTarget) has been specified and whether or not a bucket is specified in the
+        configuration (RCloneStore) has been specified and whether or not a bucket is specified in the
         that configuration et cetera. If no configuration is specified then we assume the local file
         system is the source and/or destination. TODO: Expand on these notes.
 
         If self.source and/or self.destination is None then it means the the source and/or
-        destination arguments here refer to local files; i.e. when no RCloneTarget is
+        destination arguments here refer to local files; i.e. when no RCloneStore is
         specified we assume the (degenerate) case of local file.
 
         Note the we assume (by default) that the destination path is to a *file*, not a "directory" (such
@@ -128,12 +128,12 @@ class RCloner(RCloneCommands, RCloneInstallation):
         # - Using 'copy' when the cloud destination is a file gives error: "is a file not a directory".
         # - Using 'copyto' when the cloud destination is a "directory" creates a *file* of that name;
         #   along side the "directory" of the same name (which is odd and almost certainly unwanted).
-        if isinstance(destination_config := self.destination, RCloneTarget):
+        if isinstance(destination_config := self.destination, RCloneStore):
             # Here a destination cloud configuration has been defined for this RCloner object;
             # meaning we are copying to some cloud destination (and not to a local file destination).
             if not (destination := destination_config.path(destination)):
                 raise Exception(f"No cloud destination specified.")
-            if isinstance(source_config := self.source, RCloneTarget):
+            if isinstance(source_config := self.source, RCloneStore):
                 # Here both a source and destination cloud configuration have been defined for this RCloner
                 # object; meaning we are copying from one cloud source to another cloud destination; i.e. e.g.
                 # from either Amazon S3 or Google Cloud Storage to either Amazon S3 or Google Cloud Storage.
@@ -175,12 +175,12 @@ class RCloner(RCloneCommands, RCloneInstallation):
                                                        process_info=process_info,
                                                        return_output=return_output,
                                                        raise_exception=raise_exception)
-        elif isinstance(source_config := self.source, RCloneTarget):
+        elif isinstance(source_config := self.source, RCloneStore):
             # Here only a source cloud configuration has been defined for this RCloner object;
             # meaning we are copying from some cloud source to a local file destination;
             # i.e. e.g. from either Amazon S3 or Google Cloud Storage to a local file.
             if source_config.bucket:
-                # A path/bucket in the source RCloneTarget is nothing more than an alternative
+                # A path/bucket in the source RCloneStore is nothing more than an alternative
                 # way of manually placing it at the beginning of the given source argument.
                 source = cloud_path.join(source_config.bucket, source)
             if not (source := cloud_path.normalize(source)):

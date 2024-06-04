@@ -13,9 +13,9 @@ from submitr.rclone.rclone_utils import cloud_path
 from submitr.utils import DEBUGGING
 
 
-class RCloneTarget(AbstractBaseClass):
+class RCloneStore(AbstractBaseClass):
 
-    # This prefix class variable is to be set by the classes derived from RCloneTarget.
+    # This prefix class variable is to be set by the classes derived from RCloneStore.
     # i.e. RCloneAmazon (where it is "s3://"), and RCloneGoogle (where it is "gs://").
     prefix = None
 
@@ -179,11 +179,11 @@ class RCloneTarget(AbstractBaseClass):
         with self.config_file() as config_file:
             return RCloneCommands.ping_command(source=f"{self.name}:", config=config_file)
 
-    def __eq__(self, other: Optional[RCloneTarget]) -> bool:
-        return (isinstance(other, RCloneTarget) and
+    def __eq__(self, other: Optional[RCloneStore]) -> bool:
+        return (isinstance(other, RCloneStore) and
                 (self.name == other.name) and
                 (self.bucket == other.bucket) and
                 (self.credentials == other.credentials))
 
-    def __ne__(self, other: Optional[RCloneTarget]) -> bool:
+    def __ne__(self, other: Optional[RCloneStore]) -> bool:
         return not self.__eq__(other)

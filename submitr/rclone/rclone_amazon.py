@@ -5,12 +5,12 @@ from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, normalize_string, PRINT
 from submitr.rclone.amazon_credentials import AmazonCredentials
 from submitr.rclone.rclone_installation import RCloneInstallation
-from submitr.rclone.rclone_target import RCloneTarget
+from submitr.rclone.rclone_store import RCloneStore
 from submitr.rclone.rclone_utils import cloud_path
 from submitr.utils import chars
 
 
-class RCloneAmazon(RCloneTarget):
+class RCloneAmazon(RCloneStore):
 
     prefix = "s3://"
 
