@@ -68,8 +68,8 @@ def test_file_for_upload_a():
         assert ffu[0].path_local == upload_file_a
         assert ffu[0].path_local_multiple == [upload_file_a, upload_file_a_dup]
         assert ffu[0].size_local == upload_file_a_size
-        assert ffu[0].found_google is False
-        assert ffu[0].path_google is None
+        assert ffu[0].found_cloud is False
+        assert ffu[0].path_cloud is None
         assert ffu[0].ignore is False
         assert ffu[0].resume_upload_command(env="some_env") == f"resume-uploads --env some_env {upload_file_a_uuid}"
 
@@ -81,8 +81,8 @@ def test_file_for_upload_a():
         assert ffu[1].path_local == upload_file_b
         assert ffu[1].path_local_multiple is None
         assert ffu[1].size_local == upload_file_b_size
-        assert ffu[1].found_google is False
-        assert ffu[1].path_google is None
+        assert ffu[1].found_cloud is False
+        assert ffu[1].path_cloud is None
         assert ffu[1].ignore is False
         assert ffu[1].resume_upload_command(env="some_env") == f"resume-uploads --env some_env {upload_file_b_uuid}"
 
@@ -116,12 +116,12 @@ def test_file_for_upload_b():
         assert ff.path_local_multiple is None
         assert ff.size_local == RANDOM_TMPFILE_SIZE
         assert ff.checksum_local == compute_file_md5(ff.path)
-        assert ff.found_google is False
-        assert ff.from_google is False
-        assert ff.path_google is None
-        assert ff.display_path_google is None
-        assert ff.size_google is None
-        assert ff.checksum_google is None
+        assert ff.found_cloud is False
+        assert ff.from_cloud is False
+        assert ff.path_cloud is None
+        assert ff.display_path_cloud is None
+        assert ff.size_cloud is None
+        assert ff.checksum_cloud is None
 
     filesystem._create_files_for_testing("some/sub/dir/some_file_for_upload_one.fastq")
     ffu = FilesForUpload.assemble(files,
@@ -152,8 +152,8 @@ def test_file_for_upload_b():
         assert ff.found_local is False
         assert ff.found_local_multiple is False
         assert ff.from_local is False
-        assert ff.found_google is False
-        assert ff.from_google is False
+        assert ff.found_cloud is False
+        assert ff.from_cloud is False
 
 
 def test_file_for_upload_c():
@@ -178,7 +178,7 @@ def test_file_for_upload_c():
                                   main_search_directory=filesystem._root(),
                                   main_search_directory_recursively=False,
                                   other_search_directories=os.path.join(filesystem._root(), subdir),
-                                  config_google=rclone_google)
+                                  cloud_store=rclone_google)
     assert len(ffu) == 2
     assert ffu[0].name == os.path.basename(file_one)
     assert ffu[0].type == "ReferenceFile"
@@ -186,23 +186,23 @@ def test_file_for_upload_c():
     assert ffu[0].found is True
     assert ffu[0].found_local is True
     assert ffu[0].found_local_multiple is False
-    assert ffu[0].found_google is True
+    assert ffu[0].found_cloud is True
     assert ffu[0].from_local is False  # because ambiguous between local and Google
-    assert ffu[0].from_google is False  # because ambiguous between local and Google
+    assert ffu[0].from_cloud is False  # because ambiguous between local and Google
     assert ffu[0]._favor_local is None
     ffu[0]._favor_local = True  # normally set in FileForUpdate.review - resolves above ambiguity
     assert ffu[0].from_local is True
-    assert ffu[0].from_google is False
+    assert ffu[0].from_cloud is False
     ffu[0]._favor_local = False  # normally set in FileForUpdate.review - resolves above ambiguity
     assert ffu[0].from_local is False
-    assert ffu[0].from_google is True
+    assert ffu[0].from_cloud is True
     assert ffu[1].name == os.path.basename(file_two)
     assert ffu[1].type == "UnalignedReads"
     assert ffu[1].uuid is None
     assert ffu[1].found is True
     assert ffu[1].found_local is True
     assert ffu[1].found_local_multiple is False
-    assert ffu[1].found_google is False
+    assert ffu[1].found_cloud is False
 
 
 @pytest.mark.parametrize("cloud_storage_args", [(Mock_RCloneAmazon, AmazonCredentials),

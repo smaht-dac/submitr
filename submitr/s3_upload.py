@@ -91,8 +91,8 @@ def upload_file_to_aws_s3(file: FileForUpload,
         file_checksum = None
         file_checksum_timestamp = None
 
-    elif file.from_google:
-        rclone_google = file.config_google
+    elif file.from_cloud:
+        rclone_google = file.cloud_store
         rclone_amazon_config = RCloneAmazon(region=aws_credentials.get("region_name"),
                                             access_key_id=aws_credentials.get("aws_access_key_id"),
                                             secret_access_key=aws_credentials.get("aws_secret_access_key"),
@@ -100,9 +100,9 @@ def upload_file_to_aws_s3(file: FileForUpload,
                                             kms_key_id=aws_kms_key_id)
         rcloner = RCloner(source=rclone_google, destination=rclone_amazon_config)
         if not rclone_google.path_exists(file.name):
-            printf(f"ERROR: Cannot find Google Cloud Storage object: {file.path_google}")
+            printf(f"ERROR: Cannot find Google Cloud Storage object: {file.path_cloud}")
             return False
-        file_size = file.size_google
+        file_size = file.size_cloud
         file_checksum = None
         # Note that it is known to be the case that calling rclone hashsum to get the checksum
         # of a file in Google Cloud Storage (GCS) merely retrieves the checksum from GCS,
@@ -272,7 +272,7 @@ def upload_file_to_aws_s3(file: FileForUpload,
         if file_checksum:
             metadata["md5"] = file_checksum
             metadata["md5-timestamp"] = str(file_checksum_timestamp)
-            metadata["md5-source"] = "google-cloud-storage" if file.found_google else "file-system"
+            metadata["md5-source"] = "google-cloud-storage" if file.found_cloud else "file-system"
         return metadata
 
     if print_preamble:
@@ -296,16 +296,16 @@ def upload_file_to_aws_s3(file: FileForUpload,
             metadata = create_metadata_for_uploading_file()
             # Note that the source is just file.name, which is just the base name of the file,
             # from the metadata file); the bucket (or bucket/path; whatever was passed in via
-            # --rclone-google-source) is stored in RCloneGoogle (from file.config_google),
-            # and RCloner.copy (which has this RCloneGoogle, by virtue of RCloner being
+            # --rclone-google-source) is stored in RCloneStore (from file.cloud_store),
+            # and RCloner.copy (which has this RCloneStore, by virtue of RCloner being
             # created with it as a source), resolves/expands this to the full Google path name.
             rcloner.copy_to_key(file.name, cloud_path.join(s3_bucket, s3_key),
                                 metadata=metadata, progress=upload_file_callback.function,
                                 process_info=rclone_subprocess_info, raise_exception=True)
             if upload_aborted:
-                printf(f"Upload ABORTED: {file.path_google} {chars.larrow}")
+                printf(f"Upload ABORTED: {file.path_cloud} {chars.larrow}")
         except Exception:
-            printf(f"Upload ABORTED: {file.path_google} {chars.larrow}")
+            printf(f"Upload ABORTED: {file.path_cloud} {chars.larrow}")
             upload_aborted = True
     else:
         upload_file_callback = define_upload_file_callback(progress_total_nbytes=False)

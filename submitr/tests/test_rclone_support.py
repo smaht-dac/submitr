@@ -651,10 +651,10 @@ def __test_rclone_google_to_amazon(env_amazon: EnvAmazon,
         # Sanity check the file in AWS S3 which was copied directly from Google Cloud Storage.
         sanity_check_amazon_file(env_amazon, credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
         # Exercise the RCloneStore rclone commands (path_exists, file_size, file_checksum) for Google file.
-        path_google = cloud_path.join(env_google.bucket, key_google)
-        assert rclone_google.file_size(path_google) == Env.test_file_size
-        assert rclone_google.path_exists(path_google) is True
-        assert rclone_google.file_checksum(path_google) == compute_file_md5(tmp_test_file_path)
+        path_cloud = cloud_path.join(env_google.bucket, key_google)
+        assert rclone_google.file_size(path_cloud) == Env.test_file_size
+        assert rclone_google.path_exists(path_cloud) is True
+        assert rclone_google.file_checksum(path_cloud) == compute_file_md5(tmp_test_file_path)
         assert rclone_google.ping() is True
         # Exercise the RCloneStore rclone commands (path_exists, file_size, file_checksum) for Amazon file.
         assert env_amazon.s3_non_rclone().file_size(env_amazon.bucket, key_amazon) == Env.test_file_size
@@ -898,45 +898,45 @@ def test_rclone_upload_file_to_aws_s3() -> None:
     files_for_upload = FilesForUpload.assemble(files,
                                                main_search_directory=filesystem.root,
                                                main_search_directory_recursively=True,
-                                               config_google=rclone_google)
+                                               cloud_store=rclone_google)
     assert len(files_for_upload) == 2
     assert files_for_upload[0].found is True
     assert files_for_upload[0].found_local is True
-    assert files_for_upload[0].found_google is True
+    assert files_for_upload[0].found_cloud is True
     assert files_for_upload[0].path_local == os.path.join(filesystem.root, file_one)
     assert files_for_upload[0].size_local == filesize
     assert files_for_upload[0].checksum_local == compute_file_md5(os.path.join(filesystem.root, file_one))
-    assert files_for_upload[0].path_google == cloud_path.join(bucket_google, files_for_upload[0].name)
-    assert files_for_upload[0].size_google == filesize
-    assert files_for_upload[0].checksum_google == compute_file_md5(os.path.join(filesystem.root, file_one))
+    assert files_for_upload[0].path_cloud == cloud_path.join(bucket_google, files_for_upload[0].name)
+    assert files_for_upload[0].size_cloud == filesize
+    assert files_for_upload[0].checksum_cloud == compute_file_md5(os.path.join(filesystem.root, file_one))
     # Found both locally and in Google; ambiguous, as favor_local starts as None;
     # so these return False/None; favor_local normally gets resolved in review function.
     assert files_for_upload[0].favor_local is None
     assert files_for_upload[0].from_local is False
-    assert files_for_upload[0].from_google is False
+    assert files_for_upload[0].from_cloud is False
     assert files_for_upload[0].path is None
     assert files_for_upload[0].size is None
     assert files_for_upload[0].checksum is None
     files_for_upload[0]._favor_local = True  # normally resolved by FileForUpload.review
     assert files_for_upload[0].favor_local is True
     assert files_for_upload[0].from_local is True
-    assert files_for_upload[0].from_google is False
+    assert files_for_upload[0].from_cloud is False
     assert files_for_upload[0].path == os.path.join(filesystem.root, file_one)
     assert files_for_upload[0].size == filesize
     assert len(files_for_upload[0].checksum) > 0
     files_for_upload[0]._favor_local = False  # normally resolved by FileForUpload.review
     assert files_for_upload[0].favor_local is False
     assert files_for_upload[0].from_local is False
-    assert files_for_upload[0].from_google is True
+    assert files_for_upload[0].from_cloud is True
     assert files_for_upload[0].path == cloud_path.join(rclone_google.bucket, files_for_upload[0].name)
     assert files_for_upload[0].size == filesize
     assert files_for_upload[0].checksum == compute_file_md5(os.path.join(filesystem.root, file_one))
     assert files_for_upload[1].found is True
     assert files_for_upload[1].found_local is True
-    assert files_for_upload[1].found_google is False
+    assert files_for_upload[1].found_cloud is False
     assert files_for_upload[1].favor_local is True
     assert files_for_upload[1].from_local is True
-    assert files_for_upload[1].from_google is False
+    assert files_for_upload[1].from_cloud is False
     assert files_for_upload[1].path == os.path.join(filesystem.root, file_two)
     assert files_for_upload[1].size == filesize
     assert files_for_upload[1].checksum == compute_file_md5(os.path.join(filesystem.root, file_two))
@@ -1015,7 +1015,7 @@ def test_rclone_do_any_uploads() -> None:
                        metadata_file=metadata_file,
                        main_search_directory=os.path.join(filesystem.root, test_file_subdirectory),
                        main_search_directory_recursively=True,
-                       config_google=rclone_google,
+                       cloud_store=rclone_google,
                        portal=Mock_Portal(),
                        review_only=False,
                        verbose=False)

@@ -251,16 +251,16 @@ def main(simulated_args_for_testing=None):
         args.upload_folder = args.directory_only
         directory_only = True
 
-    config_google = None
+    cloud_store = None
     if cloud_path.is_amazon(args.rclone_google_source):
-        config_google = RCloneAmazon.from_command_args(args.rclone_google_source,
-                                                       args.rclone_google_credentials,
-                                                       args.rclone_google_location)
+        cloud_store = RCloneAmazon.from_command_args(args.rclone_google_source,
+                                                     args.rclone_google_credentials,
+                                                     args.rclone_google_location)
         pass
     elif cloud_path.is_google(args.rclone_google_source) or args.rclone_google_source:
-        config_google = RCloneGoogle.from_command_args(args.rclone_google_source,
-                                                       args.rclone_google_credentials,
-                                                       args.rclone_google_location)
+        cloud_store = RCloneGoogle.from_command_args(args.rclone_google_source,
+                                                     args.rclone_google_credentials,
+                                                     args.rclone_google_location)
 
     env_from_env = False
     if not args.env:
@@ -280,8 +280,8 @@ def main(simulated_args_for_testing=None):
             PRINT("No environment specified (via --env); skipping SMaHT Portal ping.")
             ping_okay = True
         ping_rclone_okay = None
-        if config_google:
-            ping_rclone_okay = config_google.verify_connectivity()
+        if cloud_store:
+            ping_rclone_okay = cloud_store.verify_connectivity()
         exit(0 if ping_okay is True and (ping_rclone_okay is not False) else 1)
 
     if args.consortia or (args.bundle_filename and args.bundle_filename.lower() == "consortia"):
@@ -343,7 +343,7 @@ def main(simulated_args_for_testing=None):
                                   refs=args.refs, files=args.files,
                                   subfolders=not directory_only,
                                   upload_folder=args.upload_folder,
-                                  rclone_google=config_google,
+                                  rclone_google=cloud_store,
                                   output_file=args.output,
                                   verbose=args.verbose)
         exit(0)
@@ -369,7 +369,7 @@ def main(simulated_args_for_testing=None):
                              post_only=args.post_only,
                              patch_only=args.patch_only,
                              submit=args.submit,
-                             rclone_google=config_google,
+                             rclone_google=cloud_store,
                              validate_local_only=args.validate_local_only,
                              validate_remote_only=args.validate_remote_only,
                              validate_local_skip=args.validate_local_skip,

@@ -826,7 +826,7 @@ def submit_any_ingestion(ingestion_filename, *,
                        metadata_file=ingestion_filename,
                        main_search_directory=upload_folder,
                        main_search_directory_recursively=subfolders,
-                       config_google=rclone_google,
+                       cloud_store=rclone_google,
                        portal=portal,
                        verbose=True,
                        review_only=True)
@@ -878,7 +878,7 @@ def submit_any_ingestion(ingestion_filename, *,
                    metadata_file=ingestion_filename,
                    main_search_directory=upload_folder,
                    main_search_directory_recursively=subfolders,
-                   config_google=rclone_google,
+                   cloud_store=rclone_google,
                    portal=portal,
                    verbose=verbose)
 
@@ -1310,7 +1310,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         do_any_uploads(submission_response,
                        main_search_directory=upload_directory,
                        main_search_directory_recursively=upload_directory_recursive,
-                       config_google=rclone_google,
+                       cloud_store=rclone_google,
                        portal=portal,
                        verbose=verbose)
         return
@@ -1754,7 +1754,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
                    metadata_file=bundle_filename,
                    main_search_directory=upload_folder,
                    main_search_directory_recursively=subfolders,
-                   config_google=rclone_google,
+                   cloud_store=rclone_google,
                    portal=portal,
                    verbose=verbose)
 
@@ -2139,7 +2139,7 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
                                                main_search_directory=upload_folder,
                                                main_search_directory_recursively=recursive,
                                                other_search_directories=[ingestion_filename, os.path.curdir],
-                                               config_google=rclone_google)
+                                               cloud_store=rclone_google)
     if files_for_upload:
         PRINT_OUTPUT()
         FilesForUpload.review(files_for_upload, review_only=True, verbose=verbose)
@@ -2534,7 +2534,7 @@ def _print_metadata_file_info(file: str, env: str,
                                                        main_search_directory=upload_folder,
                                                        main_search_directory_recursively=subfolders,
                                                        other_search_directories=[file, os.path.curdir],
-                                                       config_google=rclone_google)
+                                                       cloud_store=rclone_google)
             FilesForUpload.review(files_for_upload, portal=portal, review_only=True, verbose=True, printf=PRINT)
     if not (refs is True):
         if not (files is True):

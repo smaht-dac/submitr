@@ -13,7 +13,7 @@ from submitr.utils import chars
 
 # Unified the logic for looking for files to upload (to AWS S3), and storing
 # related info; whether or not the file is coming from the local file system
-# or from Google Cloud Storage (GCS), via rclone.
+# or from Cloud Storage (GCS or AWS S3), via rclone.
 
 
 class FileForUpload:
@@ -27,7 +27,7 @@ class FileForUpload:
                  main_search_directory: Optional[Union[str, pathlib.Path]] = None,
                  main_search_directory_recursively: bool = False,
                  other_search_directories: Optional[Union[List[Union[str, pathlib.Path]], str, pathlib.Path]] = None,
-                 config_google: Optional[RCloneStore] = None) -> Optional[FileForUpload]:
+                 cloud_store: Optional[RCloneStore] = None) -> Optional[FileForUpload]:
 
         # Given file can be a dictionary (from structured_data.upload_files) like:
         # {"type": "ReferenceFile", "file": "first_file.fastq"}
@@ -96,11 +96,11 @@ class FileForUpload:
         self._accession_name = normalize_string(accession_name) or None
         self._size_local = None
         self._checksum_local = None
-        self._config_google = config_google if isinstance(config_google, RCloneStore) else None
-        self._path_google = None
-        self._size_google = None
-        self._checksum_google = None
-        self._google_inaccessible = False
+        self._cloud_store = cloud_store if isinstance(cloud_store, RCloneStore) else None
+        self._path_cloud = None
+        self._size_cloud = None
+        self._checksum_cloud = None
+        self._cloud_inaccessible = False
         self._favor_local = None
         self._ignore = False
 
@@ -131,20 +131,20 @@ class FileForUpload:
         otherwise False. However not that it is possible for this to return False if the file
         was found locally but was also found in GCS, and the favor_local property is None, meaning
         the review function has not yet been called, which resolves favor_local to True or False;
-        in which case (if found both locally and in Google) from_google would also return False.
+        in which case (if found both locally and in the cloud) from_cloud would also return False.
         """
-        return self.found_local and ((not self.found_google) or (self.favor_local is True))
+        return self.found_local and ((not self.found_cloud) or (self.favor_local is True))
 
     @property
-    def from_google(self) -> bool:
+    def from_cloud(self) -> bool:
         """
         Returns True iff the file this object represents is coming from GCS, otherwise False.
         However not that it is possible for this to return False if the file was found locally
         but was also found in GCS, and the favor_local property is None, meaning the review
         function has not yet been called, which resolves favor_local to True or False; in
-        which case (if found both locally and in Google) from_google would also return False.
+        which case (if found both locally and in the cloud) from_cloud would also return False.
         """
-        return self.found_google and ((not self.found_local) or (self.favor_local is False))
+        return self.found_cloud and ((not self.found_local) or (self.favor_local is False))
 
     @property
     def found(self) -> bool:
@@ -152,23 +152,23 @@ class FileForUpload:
         Returns True iff the file this object represents was found either locally or in GCS,
         otherwise returns False.
         """
-        return self.path_local is not None or self.path_google is not None
+        return self.path_local is not None or self.path_cloud is not None
 
     @property
     def path(self) -> Optional[str]:
-        return self.path_local if self.from_local else (self.path_google if self.from_google else None)
+        return self.path_local if self.from_local else (self.path_cloud if self.from_cloud else None)
 
     @property
     def display_path(self) -> Optional[str]:
-        return self.path_local if self.from_local else (self.display_path_google if self.from_google else None)
+        return self.path_local if self.from_local else (self.display_path_cloud if self.from_cloud else None)
 
     @property
     def size(self) -> Optional[int]:
-        return self.size_local if self.from_local else (self.size_google if self.from_google else None)
+        return self.size_local if self.from_local else (self.size_cloud if self.from_cloud else None)
 
     @property
     def checksum(self) -> Optional[str]:
-        return self.checksum_local if self.from_local else (self.checksum_google if self.from_google else None)
+        return self.checksum_local if self.from_local else (self.checksum_cloud if self.from_cloud else None)
 
     @property
     def favor_local(self) -> Optional[bool]:
@@ -181,7 +181,7 @@ class FileForUpload:
         if self._favor_local in (True, False):
             return self._favor_local
         if self.found_local:
-            if self.found_google:
+            if self.found_cloud:
                 return None
             return True
         return False
@@ -223,45 +223,45 @@ class FileForUpload:
         return self._checksum_local
 
     @property
-    def config_google(self) -> Optional[RCloneStore]:
-        return self._config_google
+    def cloud_store(self) -> Optional[RCloneStore]:
+        return self._cloud_store
 
     @property
-    def found_google(self) -> bool:
-        return self.path_google is not None
+    def found_cloud(self) -> bool:
+        return self.path_cloud is not None
 
     @property
-    def path_google(self) -> Optional[str]:
-        if (self._path_google is None) and (config_google := self.config_google) and (not self._google_inaccessible):
-            # We use the obtaining of the Google Cloud Storage file size as a proxy for existence.
-            if (size_google := config_google.file_size(self.name)) is not None:
-                self._path_google = config_google.path(self.name)
-                self._size_google = size_google
+    def path_cloud(self) -> Optional[str]:
+        if (self._path_cloud is None) and (cloud_store := self.cloud_store) and (not self._cloud_inaccessible):
+            # We use the obtaining of the cloud file size as a proxy for existence.
+            if (size_cloud := cloud_store.file_size(self.name)) is not None:
+                self._path_cloud = cloud_store.path(self.name)
+                self._size_cloud = size_cloud
             else:
-                self._google_inaccessible = True
-        return self._path_google
+                self._cloud_inaccessible = True
+        return self._path_cloud
 
     @property
-    def display_path_google(self) -> Optional[str]:
-        if path_google := self.path_google:
-            return f"{cloud_path.google_prefix}{path_google}"
+    def display_path_cloud(self) -> Optional[str]:
+        if path_cloud := self.path_cloud:
+            return f"{cloud_path.google_prefix}{path_cloud}"
         return None
 
     @property
-    def size_google(self) -> Optional[int]:
-        if self._size_google is None:
-            _ = self.path_google  # Initializes size as part of checking existence.
-        return self._size_google
+    def size_cloud(self) -> Optional[int]:
+        if self._size_cloud is None:
+            _ = self.path_cloud  # Initializes size as part of checking existence.
+        return self._size_cloud
 
     @property
-    def checksum_google(self) -> Optional[str]:
-        if self._checksum_google is None:
-            if (config_google := self.config_google) and (not self._google_inaccessible):
-                if checksum_google := config_google.file_checksum(self.name):
-                    self._checksum_google = checksum_google
+    def checksum_cloud(self) -> Optional[str]:
+        if self._checksum_cloud is None:
+            if (cloud_store := self.cloud_store) and (not self._cloud_inaccessible):
+                if checksum_cloud := cloud_store.file_checksum(self.name):
+                    self._checksum_cloud = checksum_cloud
                 else:
-                    self._google_inaccessible = True
-        return self._checksum_google
+                    self._cloud_inaccessible = True
+        return self._checksum_cloud
 
     def get_destination(self, portal: Portal) -> Optional[str]:
         if not self.uuid or not isinstance(portal, Portal):
@@ -279,8 +279,8 @@ class FileForUpload:
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,
                last_in_list: bool = False, verbose: bool = False, printf: Optional[Callable] = None) -> bool:
         """
-        Reviews, possibly confirming interactively the file for upload. If the file
-        was found both locally (on the filesystem) and in Google Cloud Storage, we
+        Reviews, possibly confirming interactively the file for upload. If the
+        file was found both locally (on the filesystem) and in the cloud, we
         will prompt the user as to which they want to use. If the file is found
         locally multiple times (due to recursive directory search) then gives a
         warning and skips (return False). Otherwise just returns True.
@@ -301,15 +301,15 @@ class FileForUpload:
         # TODO: Idunno might make more sense to do this in assemble.
         destination = self.get_destination(portal)
         if self.found_local:
-            found_both_local_and_google = False
-            if self.found_google:
-                found_both_local_and_google = True
-                printf(f"- File for upload found BOTH locally AND in Google Cloud Storage: {file_identifier}")
-                printf(f"  - Google Cloud Storage: {self.display_path_google}"
-                       f"{f' ({format_size(self.size_google)})' if self.size_google else ''}")
-            if self.found_local_multiple and (not self.found_google or (self._favor_local is True)):
+            found_both_local_and_cloud = False
+            if self.found_cloud:
+                found_both_local_and_cloud = True
+                printf(f"- File for upload found BOTH locally AND in TODO cloud storage: {file_identifier}")
+                printf(f"  - TODO cloud storage: {self.display_path_cloud}"
+                       f"{f' ({format_size(self.size_cloud)})' if self.size_cloud else ''}")
+            if self.found_local_multiple and (not self.found_cloud or (self._favor_local is True)):
                 # Here there are multiple local files found (due to recursive directory lookup),
-                # and there was either no Google file found or if there was but we are favoring local.
+                # and there was either no cloud file found or if there was but we are favoring local.
                 # For this case (multiple/ambiguous local files) return False and ignore this file.
                 # Could prompt the user to choose which of the multiple local files to use or
                 # something; but probably not worth it; doubt it will come up much if at all.
@@ -318,7 +318,7 @@ class FileForUpload:
                     printf(f"- WARNING: Ignoring file for upload"
                            f" as multiple/ambiguous local instances found: {file_identifier}")
                 else:
-                    if found_both_local_and_google:
+                    if found_both_local_and_cloud:
                         indent = "  "
                         printf(f"{indent}- Local file AMBIGUITY (multiple local instances found): {file_identifier}")
                     else:
@@ -328,20 +328,20 @@ class FileForUpload:
                     printf(f"{indent}  - {path_local} ({format_size(get_file_size(path_local))})")
                 printf(f"{indent}  - Use --directory-only rather than --directory to NOT search recursively.")
                 if not review_only:
-                    if found_both_local_and_google:
+                    if found_both_local_and_cloud:
                         self._favor_local = (
-                            not yes_or_no("  - Do you want to use the Google Cloud Storage (GCS) version?"))
+                            not yes_or_no("  - Do you want to use the TODO cloud storage version?"))
                     else:
                         printf(f"  - Upload later with:"
                                f" {self.resume_upload_command(env=portal.env if portal else None)}")
                 self._ignore = True
                 return False
             else:
-                if found_both_local_and_google:
+                if found_both_local_and_cloud:
                     printf(f"  - Local: {self.path_local} ({format_size(self.size_local)})")
                     if not review_only:
                         self._favor_local = (
-                            not yes_or_no("  - Do you want to use the Google Cloud Storage (GCS) version?"))
+                            not yes_or_no("  - Do you want to use the TODO cloud storage version?"))
                         printf(f"- File for upload: {self.display_path} ({format_size(self.size)})")
                         if destination:
                             printf(f"  AWS destination: {destination}")
@@ -351,9 +351,9 @@ class FileForUpload:
                         printf(f"  AWS destination: {destination}")
             return True
 
-        elif self.found_google:
-            printf(f"- File for upload from Google Cloud Storage (GCS):"
-                   f" {self.display_path_google} ({format_size(self.size_google)})")
+        elif self.found_cloud:
+            printf(f"- File for upload from TODO cloud storage:"
+                   f" {self.display_path_cloud} ({format_size(self.size_cloud)})")
             if destination:
                 printf(f"  AWS destination: {destination}")
             return True
@@ -383,9 +383,9 @@ class FileForUpload:
             f"path_local={self.path_local}|"
             f"path_local_multiple={self.path_local_multiple}|"
             f"size_local={self.size_local}|"
-            f"found_google={self.found_google}|"
-            f"path_google={self.path_google}|"
-            f"size_google={self.size_google}")
+            f"found_cloud={self.found_cloud}|"
+            f"path_cloud={self.path_cloud}|"
+            f"size_cloud={self.size_cloud}")
 
 
 class FilesForUpload:
@@ -395,7 +395,7 @@ class FilesForUpload:
                  main_search_directory: Optional[Union[str, pathlib.Path]] = None,
                  main_search_directory_recursively: bool = False,
                  other_search_directories: Optional[List[Union[str, pathlib.Path]]] = None,
-                 config_google: Optional[RCloneStore] = None) -> List[FileForUpload]:
+                 cloud_store: Optional[RCloneStore] = None) -> List[FileForUpload]:
 
         if isinstance(files, StructuredDataSet):
             files = files.upload_files
@@ -411,7 +411,7 @@ class FilesForUpload:
                 main_search_directory=main_search_directory,
                 main_search_directory_recursively=main_search_directory_recursively,
                 other_search_directories=other_search_directories,
-                config_google=config_google)
+                cloud_store=cloud_store)
             if file_for_upload:
                 files_for_upload.append(file_for_upload)
         return files_for_upload

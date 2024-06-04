@@ -116,16 +116,16 @@ def main(simulated_args_for_testing=None):
         args.upload_folder = args.directory_only
         directory_only = True
 
-    config_google = None
+    cloud_store = None
     if cloud_path.is_amazon(args.rclone_google_source):
-        config_google = RCloneAmazon.from_command_args(args.rclone_google_source,
-                                                       args.rclone_google_credentials,
-                                                       args.rclone_google_location)
+        cloud_store = RCloneAmazon.from_command_args(args.rclone_google_source,
+                                                     args.rclone_google_credentials,
+                                                     args.rclone_google_location)
         pass
     elif cloud_path.is_google(args.rclone_google_source) or args.rclone_google_source:
-        config_google = RCloneGoogle.from_command_args(args.rclone_google_source,
-                                                       args.rclone_google_credentials,
-                                                       args.rclone_google_location)
+        cloud_store = RCloneGoogle.from_command_args(args.rclone_google_source,
+                                                     args.rclone_google_credentials,
+                                                     args.rclone_google_location)
 
     if args.yes:
         args.no_query = True
@@ -172,7 +172,7 @@ def main(simulated_args_for_testing=None):
                        upload_folder=args.upload_folder,
                        no_query=args.yes,
                        subfolders=not directory_only,
-                       rclone_google=config_google,
+                       rclone_google=cloud_store,
                        output_file=args.output,
                        app=args.app,
                        verbose=args.verbose)
