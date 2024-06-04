@@ -74,6 +74,8 @@ class GoogleCredentials:
                normalize_path(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"), expand_home=True))):
             if not os.path.isfile(service_account_file):
                 return None
+        else:
+            return None
         return GoogleCredentials(service_account_file=service_account_file, location=location)
 
     @staticmethod
