@@ -5,10 +5,9 @@ import requests
 from typing import Optional, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import normalize_string
-from submitr.rclone.rclone_target import RCloneCredentials
 
 
-class GoogleCredentials(RCloneCredentials):
+class GoogleCredentials:
 
     def __init__(self,
                  credentials: Optional[Union[GoogleCredentials, str]] = None,

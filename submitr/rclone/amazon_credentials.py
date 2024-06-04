@@ -5,10 +5,9 @@ import os
 from typing import Optional, Tuple, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import normalize_string
-from submitr.rclone.rclone_target import RCloneCredentials
 
 
-class AmazonCredentials(RCloneCredentials):
+class AmazonCredentials:
 
     def __init__(self,
                  credentials: Optional[Union[AmazonCredentials, str]] = None,

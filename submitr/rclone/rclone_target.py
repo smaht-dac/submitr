@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from datetime import datetime
 import os
 from shutil import copy as copy_file
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 from dcicutils.datetime_utils import parse_datetime
 from dcicutils.misc_utils import create_uuid, normalize_string
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
@@ -17,10 +17,10 @@ class RCloneTarget(AbstractBaseClass):
 
     def __init__(self,
                  name: Optional[str] = None,
-                 credentials: Optional[RCloneCredentials] = None,
+                 credentials: Optional[Any] = None,
                  bucket: Optional[str] = None) -> None:
         self._name = normalize_string(name) or create_uuid()
-        self._credentials = credentials if isinstance(credentials, RCloneCredentials) else None
+        self._credentials = credentials
         # Here we allow not just a bucket name but any "path", such as they are (i.e. path-like),
         # beginning with a bucket name, within the cloud (S3, GCP) storage system. If set then
         # this will be prepended (via cloud_path.path/join) to any path which is operated upon,
@@ -63,12 +63,12 @@ class RCloneTarget(AbstractBaseClass):
             return RCloneCommands.exists_command(source=f"{self.name}:{bucket}", config=config_file)
 
     @property
-    def credentials(self) -> RCloneCredentials:
+    def credentials(self) -> Optional[Any]:
         return self._credentials
 
     @credentials.setter
-    def credentials(self, value: RCloneCredentials) -> None:
-        if isinstance(value, RCloneCredentials):
+    def credentials(self, value: Optional[Any]) -> None:
+        if value:
             self._credentials = value
 
     @abstractproperty
@@ -178,7 +178,3 @@ class RCloneTarget(AbstractBaseClass):
 
     def __ne__(self, other: Optional[RCloneTarget]) -> bool:
         return not self.__eq__(other)
-
-
-class RCloneCredentials(AbstractBaseClass):
-    pass
