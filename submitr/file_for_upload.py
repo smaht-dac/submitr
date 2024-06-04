@@ -235,6 +235,8 @@ class FileForUpload:
         if (self._path_google is None) and (config_google := self.config_google) and (not self._google_inaccessible):
             # We use the obtaining of the Google Cloud Storage file size as a proxy for existence.
             if (size_google := config_google.file_size(self.name)) is not None:
+                import pdb ; pdb.set_trace()  # noqa
+                pass
                 self._path_google = config_google.path(self.name)
                 self._size_google = size_google
             else:

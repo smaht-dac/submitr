@@ -86,13 +86,23 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--directory', help="Directory of the upload files.")
     parser.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
     parser.add_argument('--upload_folder', help="Synonym for --directory.")
-    parser.add_argument('--rclone-google-source', help="Use rlcone to copy upload files from GCS.", default=None)
-    parser.add_argument('--rclone-google-credentials', help="GCS credentials (service account file).", default=None)
-    parser.add_argument('--rclone-google-location', help="GCS location (aka region).", default=None)
-    parser.add_argument('--output', help="Output file for results.", default=False)
+
     parser.add_argument('--verbose', action="store_true", default=False)
     parser.add_argument('--yes', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
+
+    parser.add_argument('--rclone-google-source', help="Use rlcone to copy upload files from GCS.", default=None)
+    parser.add_argument('--rclone-google-credentials', help="GCS credentials (service account file).", default=None)
+    parser.add_argument('--rclone-google-location', help="GCS location (aka region).", default=None)
+
+    # TODO: This are in progress; unifying rclone based Google/Amazon cloud source).
+    parser.add_argument('--source', help="Unification of --cloud-source and --directory.", default=None)
+    parser.add_argument('--cloud-source', help="GCS credentials (service account file).", default=None)
+    parser.add_argument('--cloud-credentials', help="GCS credentials (service account file).", default=None)
+    parser.add_argument('--cloud-region', help="Cloud location/region).", default=None)
+    parser.add_argument('--cloud-location', help="Synonym for --cloud-region .", default=None)
+    parser.add_argument('--output', help="Output file for results.", default=False)
+
     args = parser.parse_args(args=simulated_args_for_testing)
 
     directory_only = True
@@ -101,11 +111,21 @@ def main(simulated_args_for_testing=None):
             PRINT("May not specify both --directory and --directory-only")
             exit(1)
         args.upload_folder = args.directory
-        args.upload_folder = args.directory
         directory_only = False
     if args.directory_only:
         args.upload_folder = args.directory_only
         directory_only = True
+
+    config_google = None
+    if cloud_path.is_amazon(args.rclone_google_source):
+        config_google = RCloneAmazon.from_command_args(args.rclone_google_source,
+                                                       args.rclone_google_credentials,
+                                                       args.rclone_google_location)
+        pass
+    elif cloud_path.is_google(args.rclone_google_source) or args.rclone_google_source:
+        config_google = RCloneGoogle.from_command_args(args.rclone_google_source,
+                                                       args.rclone_google_credentials,
+                                                       args.rclone_google_location)
 
     if args.yes:
         args.no_query = True
@@ -134,17 +154,6 @@ def main(simulated_args_for_testing=None):
     if args.upload_folder and not os.path.isdir(args.upload_folder):
         PRINT(f"Specified upload directory not found: {args.upload_folder}")
         exit(1)
-
-    config_google = None
-    if cloud_path.is_amazon(args.rclone_google_source):
-        config_google = RCloneAmazon.from_command_args(args.rclone_google_source,
-                                                       args.rclone_google_credentials,
-                                                       args.rclone_google_location)
-        pass
-    else:
-        config_google = RCloneGoogle.from_command_args(args.rclone_google_source,
-                                                       args.rclone_google_credentials,
-                                                       args.rclone_google_location)
 
     env_from_env = False
     if not args.env:
