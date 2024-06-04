@@ -17,6 +17,8 @@ class AmazonCredentials:
                  session_token: Optional[str] = None,
                  kms_key_id: Optional[str] = None) -> None:
 
+        # A KMS Key ID is not technically part of AWS credentials;
+        # this is just a a convenient place to stash it.
         if isinstance(credentials, AmazonCredentials):
             self._region = credentials.region
             self._access_key_id = credentials.access_key_id
