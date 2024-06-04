@@ -9,7 +9,7 @@ from dcicutils.file_utils import are_files_equal, normalize_path
 from dcicutils.misc_utils import create_short_uuid, normalize_string
 from dcicutils.tmpfile_utils import temporary_file
 from dcicutils.datetime_utils import format_datetime
-from submitr.rclone.rclone_amazon import AmazonCredentials
+from submitr.rclone.amazon_credentials import AmazonCredentials
 from submitr.rclone.rclone_utils import cloud_path
 
 

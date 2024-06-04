@@ -11,9 +11,10 @@ from dcicutils.tmpfile_utils import (
     create_temporary_file_name, remove_temporary_file,
     temporary_directory, temporary_file, temporary_random_file)
 from submitr.file_for_upload import FilesForUpload
+from submitr.rclone.amazon_credentials import AmazonCredentials
 from submitr.rclone.rcloner import RCloner
 from submitr.rclone.rclone_target import RCloneTarget
-from submitr.rclone.rclone_amazon import AmazonCredentials, RCloneAmazon
+from submitr.rclone.rclone_amazon import RCloneAmazon
 from submitr.rclone.rclone_google import GoogleCredentials, RCloneGoogle
 from submitr.rclone.rclone_utils import cloud_path
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
