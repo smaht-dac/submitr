@@ -243,8 +243,8 @@ class FileForUpload:
 
     @property
     def display_path_cloud(self) -> Optional[str]:
-        if path_cloud := self.path_cloud:
-            return f"{cloud_path.google_prefix}{path_cloud}"
+        if (path_cloud := self.path_cloud) and (cloud_store := self.cloud_store):
+            return cloud_store.display_path(path_cloud)
         return None
 
     @property
