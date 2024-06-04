@@ -12,7 +12,7 @@ from submitr.utils import chars
 
 class RCloneAmazon(RCloneStore):
 
-    prefix = "s3://"
+    prefix = cloud_path.amazon_prefix
 
     def __init__(self,
                  credentials_or_config: Optional[Union[AmazonCredentials, RCloneAmazon, str]] = None,

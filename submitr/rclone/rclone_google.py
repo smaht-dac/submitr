@@ -15,7 +15,7 @@ from submitr.utils import chars
 
 class RCloneGoogle(RCloneStore):
 
-    prefix = "gs://"
+    prefix = cloud_path.google_prefix
 
     def __init__(self,
                  credentials_or_config: Optional[Union[GoogleCredentials, RCloneGoogle, str]] = None,
