@@ -90,7 +90,7 @@ class RCloneGoogle(RCloneTarget):
         except Exception:
             pass
         # If no service account file specified then maybe we are on a GCE instance.
-        if project := RCloneGoogle._get_project_name_if_google_compute_engine():
+        if project := GoogleCredentials._get_project_name_if_google_compute_engine():
             self._project = project
             return self._project
 
