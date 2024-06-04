@@ -12,6 +12,8 @@ from submitr.utils import chars
 
 class RCloneAmazon(RCloneTarget):
 
+    prefix = "s3://"
+
     def __init__(self,
                  credentials_or_config: Optional[Union[AmazonCredentials, RCloneAmazon, str]] = None,
                  region: Optional[str] = None,

@@ -15,6 +15,10 @@ from submitr.utils import DEBUGGING
 
 class RCloneTarget(AbstractBaseClass):
 
+    # This prefix class variable is to be set by the classes derived from RCloneTarget.
+    # i.e. RCloneAmazon (where it is "s3://"), and RCloneGoogle (where it is "gs://").
+    prefix = None
+
     def __init__(self,
                  name: Optional[str] = None,
                  credentials: Optional[Any] = None,
@@ -117,6 +121,11 @@ class RCloneTarget(AbstractBaseClass):
             # Sic: Not cloud_path.normalize above as, so long as the given path
             # is a string or None allow, it to be joined with any defined bucket.
             return cloud_path.join(self.bucket, path)
+        return None
+
+    def display_path(self, path: str) -> Optional[str]:
+        if path := self.path(path):
+            return f"{self.prefix}{path}"
         return None
 
     def path_exists(self, path: str) -> Optional[bool]:

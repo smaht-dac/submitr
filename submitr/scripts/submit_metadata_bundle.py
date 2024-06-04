@@ -230,7 +230,6 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--rclone-google-source', help="Use rlcone to copy upload files from GCS.", default=None)
     parser.add_argument('--rclone-google-credentials', help="GCS credentials (service account file).", default=None)
     parser.add_argument('--rclone-google-location', help="GCS location (aka region).", default=None)
-    parser.add_argument('--rclone-google-source', help="Use rlcone to copy upload files from GCS.", default=None)
 
     # TODO: This are in progress; unifying rclone based Google/Amazon cloud source).
     parser.add_argument('--source', help="Unification of --cloud-source and --directory.", default=None)
