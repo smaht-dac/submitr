@@ -159,7 +159,8 @@ class RCloner(RCloneCommands, RCloneInstallation):
                     raise Exception(f"No file source specified.")
                 elif not os.path.isfile(source):
                     raise Exception(f"Source file not found: {source}")
-                if not cloud_path.has_separator(destination):
+                # if not cloud_path.has_separator(destination): SEE BELOW
+                if cloud_path.is_folder(destination) or cloud_path.is_bucket_only(destination):
                     # If the destination has no path separator then (assume) it must be just the (root)
                     # bucket, meaning we want to do a copy rather than a copyto; though FYI not that in
                     # general we cannot (straightforwardly) tell if the destination is a sub-folder,

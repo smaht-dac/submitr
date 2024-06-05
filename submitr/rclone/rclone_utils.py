@@ -37,12 +37,12 @@ class cloud_path:
             pass
         path = ""
         for arg in args:
-            if isinstance(arg, list):  # TODO: this is stupid to allow this - get rid of it
-                if arg := cloud_path.join(*arg):
-                    if path:
-                        path += cloud_path.separator
-                    path += arg
-            elif arg := cloud_path.normalize(arg):
+            #           if isinstance(arg, list):  # TODO: this is stupid to allow this - get rid of it
+            #               if arg := cloud_path.join(*arg):
+            #                   if path:
+            #                       path += cloud_path.separator
+            #                   path += arg
+            if arg := cloud_path.normalize(arg):
                 if path:
                     path += cloud_path.separator
                 path += arg
