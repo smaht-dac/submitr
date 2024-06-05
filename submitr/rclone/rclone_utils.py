@@ -2,7 +2,7 @@ from __future__ import annotations
 import os
 from re import compile as re_compile, escape as re_escape
 from typing import Optional, Tuple
-# from submitr.rclone.rclone_store_registry import RCloneStoreRegistry
+from submitr.rclone.rclone_store_registry import RCloneStoreRegistry
 
 
 class cloud_path:
@@ -133,11 +133,6 @@ class cloud_path:
 
     @staticmethod
     def _remove_prefix(path: str) -> Tuple[str, Optional[str]]:
-        if not (isinstance(path, str) and (path := path.strip())):
-            return "", None
-        if (path_lower := path.lower()).startswith(cloud_path.amazon_prefix):
-            return path[len(cloud_path.amazon_prefix):], cloud_path.amazon_prefix
-        elif path_lower.startswith(cloud_path.google_prefix):
-            return path[len(cloud_path.google_prefix):], cloud_path.google_prefix
-        else:
-            return path, None
+        if cloud_store := RCloneStoreRegistry.lookup(path):
+            return path[len(cloud_store.prefix):], cloud_store.prefix
+        return path, None
