@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import ABC as AbstractBaseClass, abstractproperty
+import argparse
 from contextlib import contextmanager
 from datetime import datetime
 import os
@@ -28,10 +29,11 @@ class RCloneStore(AbstractBaseClass):
                  bucket: Optional[str] = None) -> None:
         self._name = normalize_string(name) or create_uuid()
         self._credentials = credentials
-        # Here we allow not just a bucket name but any "path", such as they are (i.e. path-like),
-        # beginning with a bucket name, within the cloud (S3, GCP) storage system. If set then
-        # this will be prepended (via cloud_path.path/join) to any path which is operated upon,
-        # e.g. for the path_exists, file_size, file_checksum, and RCloner.copy functions.
+        # For the bucket property we allow not ONLY a bucket name but ANY "path", such as
+        # they are (i.e. path-like) for cloud storage, i.e. a bucket name followed by an
+        # optional sub-folder, e.g. gs://bucket/sub-folder. If set then will be prepended,
+        # via cloud_path.path/join, to any path which is operated upon, e.g. for the
+        # path_exists, file_size, file_checksum, and RCloner.copy functions.
         self._bucket = cloud_path.normalize(bucket)
 
     @property
@@ -59,10 +61,16 @@ class RCloneStore(AbstractBaseClass):
 
     def bucket_exists(self) -> Optional[bool]:
         """
-        If this object does not have a bucket associated with it then returns None;
-        otherwise returns True if that bucket exists or False if it does not (or some other problem).
-        As noted in constructor, this "bucket" can actually be any path (which includes the bucket of course).
-        And NOTE: If the bucket/path is just a folder, this ONLY returns True if it contains something.
+        If this object does NOT have a bucket associated with it then returns None; otherwise returns True
+        if that bucket exists, or False if it does not exist OR if it is a KEY (or if there is some other
+        problem). As NOTED in the constructor, this "bucket" can actually be ANY path, which includes the
+        bucket (of course) and an optional sub-folder.
+
+        NOTE: If the bucket DOES contains a sub-folder, this ONLY returns True if it contains something,
+        i.e. some key, or another sub-folder et cetera which EVENTUALLY contains an actual key; but this
+        is fine for our purposes, where this function is (currently - in the RCloneStore implementations
+        of the verify_connectivity function) only used to check that a given cloud source (for files to
+        upload/transfer, i.e. via the --cloud-source option) exists.
         """
         if not (bucket := self.bucket):
             return None
@@ -199,33 +207,37 @@ class RCloneStore(AbstractBaseClass):
         return cls
 
     @staticmethod
-    def from_args(cloud_source: str,
+    def from_args(cloud_source: Union[str, argparse.Namespace],
                   cloud_credentials: Optional[str] = None,
                   cloud_location: Optional[str] = None,
                   verify_installation: bool = True,
                   verify_connectivity: bool = True,
+                  usage: Optional[Callable] = None,
                   printf: Optional[Callable] = None) -> Optional[RCloneStore]:
+        """
+        Generic function to create an instance/implementation for a RCloneStorei,
+        i.e. e.g. RCloneAmazon or RCloneGoogle, based on the given cloud_source
+        which should be qualified path, i.e. like s3://bucket/key or gs://bucket/key.
+        The cloud_credentials should be a path name to a credentials file (but FYI
+        note not necessary if GCS and running on a Google Compute Engine (GCE)).
+        """
 
-        # We could get fancy here and use decorators for RCloneAmazon and RCloneGoogle
-        # et cetera to programmaticaly get the specific RCloneStore instance based on the
-        # prefix of the cloud storage object specified; but at the moment doesn't seem worth it.
-        # TODO: Actually need to do the decorator thing if we don't want circular imports, or something else ...
-        # cloud_store = None
-        # if cloud_path.is_amazon(args.rclone_google_source):
-        #     cloud_store = RCloneAmazon.from_command_args(args.rclone_google_source,
-        #                                                  args.rclone_google_credentials,
-        #                                                  args.rclone_google_location)
-        # elif cloud_path.is_google(args.rclone_google_source) or args.rclone_google_source:
-        #     cloud_store = RCloneGoogle.from_command_args(args.rclone_google_source,
-        #                                                  args.rclone_google_credentials,
-        #                                                  args.rclone_google_location)
+        if isinstance(cloud_source, argparse.Namespace):
+            # Initialize from actual command-line arguments.
+            # Note the backward compatibility for the old/original --rclone-google-xyz options.
+            args = cloud_source
+            cloud_source = args.cloud_source or args.rclone_google_source
+            cloud_credentials = cloud_credentials or args.cloud_credentials or args.rclone_google_credentials
+            cloud_location = cloud_location or args.cloud_location or args.rclone_google_location
 
         if not (isinstance(cloud_source, str) and cloud_source):
             return None
+        if not callable(usage):
+            usage = PRINT
         if not callable(printf):
             printf = PRINT
         if (verify_installation is True) and not RCloneInstallation.verify_installation():
-            printf(f"ERROR: Cannot install rclone for some reason (contact support).")
+            usage(f"Cannot install rclone for some reason (contact support - sorry).")
             exit(1)
         for cloud_store_class in RCloneStore._registered_cloud_stores:
             if cloud_source.lower().startswith(cloud_store_class.prefix.lower()):
@@ -233,5 +245,7 @@ class RCloneStore(AbstractBaseClass):
                                                    cloud_credentials=cloud_credentials,
                                                    cloud_location=cloud_location,
                                                    verify_connectivity=verify_connectivity,
+                                                   usage=usage,
                                                    printf=printf)
+        usage("Unknown cloud source specified: {cloud_source}")
         return None

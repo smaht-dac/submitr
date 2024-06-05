@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
 from submitr.base import DEFAULT_APP
@@ -90,6 +91,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--verbose', action="store_true", default=False)
     parser.add_argument('--yes', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
+    parser.add_argument('--output', help="Output file for results.", default=False)
 
     parser.add_argument('--rclone-google-source', help="Use rlcone to copy upload files from GCS.", default=None)
     parser.add_argument('--rclone-google-credentials', help="GCS credentials (service account file).", default=None)
@@ -101,7 +103,6 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--cloud-credentials', help="GCS credentials (service account file).", default=None)
     parser.add_argument('--cloud-region', help="Cloud location/region).", default=None)
     parser.add_argument('--cloud-location', help="Synonym for --cloud-region .", default=None)
-    parser.add_argument('--output', help="Output file for results.", default=False)
 
     args = parser.parse_args(args=simulated_args_for_testing)
 
@@ -116,20 +117,7 @@ def main(simulated_args_for_testing=None):
         args.upload_folder = args.directory_only
         directory_only = True
 
-    cloud_store = RCloneStore.from_args(cloud_source=args.rclone_google_source,
-                                        cloud_credentials=args.rclone_google_credentials,
-                                        cloud_location=args.rclone_google_location,
-                                        printf=PRINT)
-#   cloud_store = None
-#   if cloud_path.is_amazon(args.rclone_google_source):
-#       cloud_store = RCloneAmazon.from_command_args(args.rclone_google_source,
-#                                                    args.rclone_google_credentials,
-#                                                    args.rclone_google_location)
-#       pass
-#   elif cloud_path.is_google(args.rclone_google_source) or args.rclone_google_source:
-#       cloud_store = RCloneGoogle.from_command_args(args.rclone_google_source,
-#                                                    args.rclone_google_credentials,
-#                                                    args.rclone_google_location)
+    cloud_store = RCloneStore.from_args(args, usage=usage, printf=PRINT)
 
     if args.yes:
         args.no_query = True
@@ -137,12 +125,6 @@ def main(simulated_args_for_testing=None):
     if not args.uuid:
         PRINT("Missing submission UUID or referenced file UUID or accession ID.")
         exit(2)
-
-#   keys_file = args.keys or os.environ.get("SMAHT_KEYS")
-#   if keys_file:
-#       if not keys_file.endswith(".json") or not os.path.exists(keys_file):
-#           PRINT(f"The --keys argument ({keys_file}) must be the name of an existing .json file.")
-#           exit(1)
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
         PRINT(f"Directory does not exist: {args.upload_folder}")
@@ -180,6 +162,12 @@ def main(simulated_args_for_testing=None):
                        output_file=args.output,
                        app=args.app,
                        verbose=args.verbose)
+
+
+def usage(message: Optional[str] = None) -> None:
+    if isinstance(message, str) and message:
+        PRINT(message)
+    exit(1)
 
 
 if __name__ == '__main__':

@@ -109,7 +109,9 @@ class RCloneGoogle(RCloneStore):
     def is_google_compute_engine() -> Optional[str]:
         return GoogleCredentials.is_google_compute_engine()
 
-    def verify_connectivity(self, printf: Optional[Callable] = None) -> bool:
+    def verify_connectivity(self, usage: Optional[Callable] = None, printf: Optional[Callable] = None) -> None:
+        if not callable(usage):
+            usage = print
         if not callable(printf):
             printf = print
         if self.ping():
@@ -118,12 +120,10 @@ class RCloneGoogle(RCloneStore):
                    f" connectivity appears to be OK {chars.check}")
             if self.bucket_exists() is False:
                 printf(f"WARNING: Google Cloud Storage bucket/path NOT FOUND or EMPTY: {self.bucket}")
-            return False
         else:
-            printf(f"{self.proper_name_title}"
-                   f"{f' (project: {self.project})' if self.project else ''}"
-                   f" connectivity appears to be problematic {chars.xmark}")
-            return True
+            usage(f"{self.proper_name_title}"
+                  f"{f' (project: {self.project})' if self.project else ''}"
+                  f" connectivity appears to be problematic {chars.xmark}")
 
     @classmethod
     def from_args(cls,
@@ -131,6 +131,7 @@ class RCloneGoogle(RCloneStore):
                   cloud_credentials: Optional[str],
                   cloud_location: Optional[str],
                   verify_connectivity: bool = True,
+                  usage: Optional[Callable] = None,
                   printf: Optional[Callable] = None) -> Optional[RCloneGoogle]:
         """
         Assumed to be called at the start of command-line utility (i.e. e.g. submit-metadata-bundle).
@@ -153,5 +154,5 @@ class RCloneGoogle(RCloneStore):
             exit(1)
         cloud_store = RCloneGoogle(cloud_credentials, location=cloud_location, bucket=cloud_source)
         if verify_connectivity is True:
-            cloud_store.verify_connectivity(printf=printf)
+            cloud_store.verify_connectivity(usage=usage, printf=printf)
         return cloud_store

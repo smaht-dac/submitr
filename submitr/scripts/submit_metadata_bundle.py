@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+from typing import Optional
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
 from .cli_utils import CustomArgumentParser
@@ -234,8 +235,7 @@ def main(simulated_args_for_testing=None):
     # TODO: This are in progress; unifying rclone based Google/Amazon cloud source).
     parser.add_argument('--cloud-source', help="GCS credentials (service account file).", default=None)
     parser.add_argument('--cloud-credentials', help="GCS credentials (service account file).", default=None)
-    parser.add_argument('--cloud-location', help="Cloud location/region.", default=None)
-    parser.add_argument('--cloud-region', help="Synonym for --cloud-location ", default=None)
+    parser.add_argument('--cloud-location', '--cloud-region', help="Cloud location/region.", default=None)
 
     args = parser.parse_args(args=simulated_args_for_testing)
 
@@ -250,20 +250,7 @@ def main(simulated_args_for_testing=None):
         args.upload_folder = args.directory_only
         directory_only = True
 
-    cloud_store = RCloneStore.from_args(cloud_source=args.rclone_google_source,
-                                        cloud_credentials=args.rclone_google_credentials,
-                                        cloud_location=args.rclone_google_location,
-                                        printf=PRINT)
-#   cloud_store = None
-#   if cloud_path.is_amazon(args.rclone_google_source):
-#       cloud_store = RCloneAmazon.from_command_args(args.rclone_google_source,
-#                                                    args.rclone_google_credentials,
-#                                                    args.rclone_google_location)
-#       pass
-#   elif cloud_path.is_google(args.rclone_google_source) or args.rclone_google_source:
-#       cloud_store = RCloneGoogle.from_command_args(args.rclone_google_source,
-#                                                    args.rclone_google_credentials,
-#                                                    args.rclone_google_location)
+    cloud_store = RCloneStore.from_args(args, usage=usage, printf=PRINT)
 
     env_from_env = False
     if not args.env:
@@ -468,6 +455,12 @@ def _setup_validate_related_options(args: argparse.Namespace):
     # - args.validate_remote_skip
 
     delattr(args, "validate")
+
+
+def usage(message: Optional[str] = None) -> None:
+    if isinstance(message, str) and message:
+        PRINT(message)
+    exit(1)
 
 
 if __name__ == '__main__':
