@@ -11,6 +11,7 @@ from submitr.rclone import (
     RCloneStore, RCloneAmazon, RCloneGoogle,
     RCloner, cloud_path
 )
+from submitr.rclone.rclone_store_registry import RCloneStoreRegistry
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
 from submitr.utils import chars
 
@@ -53,11 +54,11 @@ def main() -> None:
     else:
         usage("Must specify copy or info.")
 
-    is_source_amazon = cloud_path.is_amazon(args.source)
-    is_source_google = cloud_path.is_google(args.source)
+    is_source_amazon = is_amazon_path(args.source)
+    is_source_google = is_google_path(args.source)
     is_source_cloud = is_source_amazon or is_source_google
-    is_destination_amazon = cloud_path.is_amazon(args.destination)
-    is_destination_google = cloud_path.is_google(args.destination)
+    is_destination_amazon = is_amazon_path(args.destination)
+    is_destination_google = is_google_path(args.destination)
     is_destination_cloud = is_destination_amazon or is_destination_google
 
     if is_source_cloud:
@@ -177,12 +178,12 @@ def main_copy(source: str, destination: str,
               copyto: bool = True, progress: bool = False, verbose: bool = False) -> None:
 
     source_config = None
-    if cloud_path.is_amazon(source):
+    if is_amazon_path(source):
         source = cloud_path.normalize(source)
         if not credentials_source_amazon:
             usage("No AWS credentials specified or found (in environment).")
         source_config = RCloneAmazon(credentials_source_amazon)
-    elif cloud_path.is_google(source):
+    elif is_google_path(source):
         source = cloud_path.normalize(source)
         if not credentials_google:
             if not RCloneGoogle.is_google_compute_engine():
@@ -198,12 +199,12 @@ def main_copy(source: str, destination: str,
             source_config = RCloneGoogle(credentials_google)
 
     destination_config = None
-    if cloud_path.is_amazon(destination):
+    if is_amazon_path(destination):
         destination = cloud_path.normalize(destination)
         if not credentials_destination_amazon:
             usage("No AWS credentials specified or found (in environment).")
         destination_config = RCloneAmazon(credentials_destination_amazon)
-    elif cloud_path.is_google(destination):
+    elif is_google_path(destination):
         destination = cloud_path.normalize(destination)
         if not credentials_google:
             if not RCloneGoogle.is_google_compute_engine():
@@ -290,19 +291,27 @@ def generate_amazon_temporary_credentials(amazon_credentials: AmazonCredentials,
     return AwsS3(amazon_credentials).generate_temporary_credentials(*args, **kwargs) if amazon_credentials else None
 
 
+def is_amazon_path(path: str):
+    return RCloneStoreRegistry.lookup(path) == RCloneAmazon
+
+
+def is_google_path(path: str):
+    return RCloneStoreRegistry.lookup(path) == RCloneGoogle
+
+
 def print_info(target: str,
                credentials_amazon: Optional[AmazonCredentials],
                credentials_google: Optional[GoogleCredentials]) -> None:
 
     if not target:
         return
-    if cloud_path.is_amazon(target):
+    if is_amazon_path(target):
         if not credentials_amazon:
             usage(f"No AWS credentials specified for: {target}")
         print("")
         print(f"AWS S3 Target: {target}")
         print_info_via_rclone(target, RCloneAmazon(credentials_amazon))
-    elif cloud_path.is_google(target):
+    elif is_google_path(target):
         if not credentials_google:
             usage(f"No GCS credentials specified for: {target}")
         print("")

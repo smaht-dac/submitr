@@ -124,14 +124,6 @@ class cloud_path:
         return cloud_path.normalize(path, preserve_suffix=True).endswith(cloud_path.separator)
 
     @staticmethod
-    def is_amazon(path: str) -> bool:
-        return isinstance(path, str) and path.lower().startswith(cloud_path.amazon_prefix)
-
-    @staticmethod
-    def is_google(path: str) -> bool:
-        return isinstance(path, str) and path.lower().startswith(cloud_path.google_prefix)
-
-    @staticmethod
     def _remove_prefix(path: str) -> Tuple[str, Optional[str]]:
         if cloud_store := RCloneStoreRegistry.lookup(path):
             return path[len(cloud_store.prefix):], cloud_store.prefix
