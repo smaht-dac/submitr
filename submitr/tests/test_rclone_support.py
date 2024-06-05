@@ -816,10 +816,10 @@ def test_rclone_amazon_to_amazon() -> None:
     rcloner = create_rcloner(source=source_target_amazon, destination=destination_target_amazon)
     rcloner.copy(source_amazon, destination_amazon, metadata=destination_metadata_amazon)
     assert env_amazon.non_rclone().file_size(destination_bucket_amazon,
-                                                destination_key_amazon) == RANDOM_TMPFILE_SIZE
+                                             destination_key_amazon) == RANDOM_TMPFILE_SIZE
     assert env_amazon.non_rclone().file_exists(destination_bucket_amazon, destination_key_amazon) is True
     assert env_amazon.non_rclone().file_checksum(destination_bucket_amazon,
-                                                    destination_key_amazon) == source_checksum
+                                                 destination_key_amazon) == source_checksum
     metadata = env_amazon.non_rclone().file_metadata(destination_bucket_amazon, destination_key_amazon)
     assert isinstance(metadata, dict) is True
     assert metadata["some-metadata-key"] == "some-metadata-value"
@@ -856,10 +856,10 @@ def test_rclone_amazon_to_amazon_using_temporary_credentials() -> None:
     rcloner = create_rcloner(source=source_target_amazon, destination=destination_target_amazon)
     rcloner.copy(source_amazon, destination_amazon, metadata=destination_metadata_amazon)
     assert env_amazon.non_rclone().file_size(destination_bucket_amazon,
-                                                destination_key_amazon) == RANDOM_TMPFILE_SIZE
+                                             destination_key_amazon) == RANDOM_TMPFILE_SIZE
     assert env_amazon.non_rclone().file_exists(destination_bucket_amazon, destination_key_amazon) is True
     assert env_amazon.non_rclone().file_checksum(destination_bucket_amazon,
-                                                    destination_key_amazon) == source_checksum
+                                                 destination_key_amazon) == source_checksum
     metadata = env_amazon.non_rclone().file_metadata(destination_bucket_amazon, destination_key_amazon)
     assert isinstance(metadata, dict) is True
     assert metadata["some-metadata-key"] == "some-metadata-value"
@@ -1034,8 +1034,9 @@ def test_rclone_do_any_uploads() -> None:
 def test_rclone_store_bucket_exists_amazon() -> None:
     env_amazon = EnvAmazon()
     with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
-        amazon_store = RCloneAmazon(env_amazon.credentials)
-        assert env_amazon.non_rclone().create_folder(env_amazon.bucket, cloud_path.join("test-subfolder", "abc", "def")) is True
+        # amazon_store = RCloneAmazon(env_amazon.credentials)
+        folder = cloud_path.join("test-subfolder", "abc", "def")
+        assert env_amazon.non_rclone().create_folder(env_amazon.bucket, folder) is True
 
 
 def test_rclone_store_bucket_exists_google() -> None:
