@@ -107,7 +107,7 @@ class Gcs:
             return False
 
     def delete_file(self, bucket: str, key: Optional[str] = None,
-                    check: bool = False, raise_exception: bool = True) -> bool:
+                    check: bool = False, safe: bool = True, raise_exception: bool = True) -> bool:
         bucket, key = cloud_path.bucket_and_key(bucket, key)
         if not bucket or not key:
             return False
@@ -115,6 +115,36 @@ class Gcs:
             if not (check is True) or self.file_exists(bucket, key):
                 self.client.get_bucket(bucket).blob(key).delete()
                 return True
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+            return False
+
+    def delete_folders(self, bucket: str, folder: Optional[str] = None, raise_exception: bool = True) -> bool:
+        """
+        This delete ONLY folders, within the given folder (within the given bucket) not actual keys
+        and this is used ONLY for (integration) testing (see test_rclone_support.py), as is this entire
+        module, and is only used to CLEANUP after ourselves after each test. We delete ONLY folders for
+        safety, as we don't want this to be accidently (due to some errant testing bug) deleting real data.
+        Deleting a folder which contains a key does NOT cause the key to be deleted. And so it is up to
+        the caller (the integration tests) to explicitly delete any actual files/keys in the folder
+        first, and then call this to cleanup the folder and any sub-folders.
+        """
+        try:
+            if not (bucket := cloud_path.normalize(bucket)):
+                return False
+            if folder := cloud_path.normalize(folder):
+                bucket = cloud_path.join(bucket, folder)
+            bucket, folder = cloud_path.bucket_and_key(bucket)
+            if not folder:
+                return False
+            if not folder.endswith(cloud_path.separator):
+                folder += cloud_path.separator
+            for blob in self.client.get_bucket(bucket).list_blobs(prefix=folder):
+                if not blob.name.endswith(cloud_path.separator):
+                    continue
+                blob.delete()
+            return True
         except Exception as e:
             if raise_exception is True:
                 raise e

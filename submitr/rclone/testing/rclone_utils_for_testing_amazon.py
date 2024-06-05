@@ -52,10 +52,6 @@ class AwsS3:
         try:
             if not isinstance(file, str) or not file:
                 return False
-#           if not (bucket := cloud_path.normalize(bucket)):
-#               return False
-#           if not (key := cloud_path.normalize(key)):
-#               key = os.path.basename(file)
             bucket, key = cloud_path.bucket_and_key(bucket, key, preserve_suffix=True)
             if not bucket:
                 return False
@@ -134,6 +130,42 @@ class AwsS3:
             if not (check is True) or self.file_exists(bucket, key):
                 self.client.delete_object(Bucket=bucket, Key=key)
                 return True
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+            return False
+
+    def delete_folders(self, bucket: str, folder: Optional[str] = None, raise_exception: bool = True) -> bool:
+        """
+        This delete ONLY folders, within the given folder (within the given bucket) not actual keys
+        and this is used ONLY for (integration) testing (see test_rclone_support.py), as is this entire
+        module, and is only used to CLEANUP after ourselves after each test. We delete ONLY folders for
+        safety, as we don't want this to be accidently (due to some errant testing bug) deleting real data.
+        Deleting a folder which contains a key does NOT cause the key to be deleted. And so it is up to
+        the caller (the integration tests) to explicitly delete any actual files/keys in the folder
+        first, and then call this to cleanup the folder and any sub-folders.
+        """
+        try:
+            if not (bucket := cloud_path.normalize(bucket)):
+                return False
+            if folder := cloud_path.normalize(folder):
+                bucket = cloud_path.join(bucket, folder)
+            bucket, folder = cloud_path.bucket_and_key(bucket)
+            if not folder:
+                return False
+            if not folder.endswith(cloud_path.separator):
+                folder += cloud_path.separator
+            client = self.client
+            while True:
+                response = self.client.list_objects_v2(Bucket=bucket, Prefix=folder)
+                if contents := response.get("Contents"):
+                    for item in contents:
+                        key = item["Key"]
+                        client.delete_object(Bucket=bucket, Key=key)
+                if not (continuation_token := response.get("NextContinuationToken")):
+                    break
+                args["ContinuationToken"] = continuation_token
+            return True
         except Exception as e:
             if raise_exception is True:
                 raise e

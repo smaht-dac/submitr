@@ -1034,18 +1034,38 @@ def test_rclone_do_any_uploads() -> None:
 def test_rclone_store_bucket_exists_amazon() -> None:
     env_amazon = EnvAmazon()
     with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
-        # amazon_store = RCloneAmazon(env_amazon.credentials)
-        folder = cloud_path.join("test-subfolder", "abc", "def")
-        assert env_amazon.non_rclone().create_folder(env_amazon.bucket, folder) is True
+        base_subfolder_name = f"test-{create_uuid()}"
+        bucket_and_folder = cloud_path.join(env_amazon.bucket, base_subfolder_name, "test-abc", "test-def")
+        assert env_amazon.non_rclone().create_folder(bucket_and_folder) is True
+        amazon_store = RCloneAmazon(env_amazon.credentials(), bucket=bucket_and_folder)
+        # This returns False because (as described in the RCloneStore.bucket_exists doc),
+        # the sub-folder does not contain a key.
+        assert amazon_store.bucket_exists() is False
+        # Now copy an actual file to that sub-folder.
+        assert env_amazon.non_rclone().upload_file(tmp_test_file_path, bucket_and_folder + cloud_path.separator) is True
+        cloud_file_path = cloud_path.join(bucket_and_folder, tmp_test_file_name)
+        assert env_amazon.non_rclone().file_exists(cloud_file_path) is True
+        # And now this returns True.
+        assert amazon_store.bucket_exists() is True
+        assert env_amazon.non_rclone().delete_file(cloud_file_path) is True
+        assert env_amazon.non_rclone().delete_folders(env_amazon.bucket, base_subfolder_name) is True
 
 
 def test_rclone_store_bucket_exists_google() -> None:
     env_google = EnvGoogle()
     with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
-        bucket_and_folder = cloud_path.join(env_google.bucket, "test-subfolder", "abc", "def")
+        base_subfolder_name = f"test-{create_uuid()}"
+        bucket_and_folder = cloud_path.join(env_google.bucket, base_subfolder_name, "test-abc", "test-def")
         assert env_google.non_rclone().create_folder(bucket_and_folder) is True
-        google_store = RCloneGoogle(env_google.credentials, bucket=bucket_and_folder)
+        google_store = RCloneGoogle(env_google.credentials(), bucket=bucket_and_folder)
         # This returns False because (as described in the RCloneStore.bucket_exists doc),
         # the sub-folder does not contain a key.
         assert google_store.bucket_exists() is False
+        # Now copy an actual file to that sub-folder.
         assert env_google.non_rclone().upload_file(tmp_test_file_path, bucket_and_folder + cloud_path.separator) is True
+        cloud_file_path = cloud_path.join(bucket_and_folder, tmp_test_file_name)
+        assert env_google.non_rclone().file_exists(cloud_file_path) is True
+        # And now this returns True.
+        assert google_store.bucket_exists() is True
+        assert env_google.non_rclone().delete_file(cloud_file_path) is True
+        assert env_google.non_rclone().delete_folders(env_google.bucket, base_subfolder_name) is True
