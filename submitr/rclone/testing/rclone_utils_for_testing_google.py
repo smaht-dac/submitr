@@ -33,12 +33,15 @@ class Gcs:
 
     def upload_file(self, file: str, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> bool:
         try:
-            if not isinstance(file, str) or not file:
+            if not (isinstance(file, str) and file):
                 return False
-            if not (bucket := cloud_path.normalize(bucket)):
+            bucket, key = cloud_path.bucket_and_key(bucket, key, preserve_suffix=True)
+            if not bucket:
                 return False
-            if not (key := cloud_path.normalize(key)):
+            if not key:
                 key = os.path.basename(file)
+            elif key.endswith(cloud_path.separator):
+                key = cloud_path.join(key, os.path.basename(file))
             self.client.get_bucket(bucket).blob(key).upload_from_filename(file)
             return True
         except Exception as e:
@@ -46,7 +49,7 @@ class Gcs:
                 raise e
             return False
 
-    def download_file(self, bucket: str, key: str, file: str,
+    def download_file(self, file: str, bucket: str, key: str,
                       nodirectories: bool = False, raise_exception: bool = True) -> bool:
         try:
             if not (bucket := cloud_path.normalize(bucket)):
@@ -79,6 +82,24 @@ class Gcs:
                     file = os.path.join(file, key)
                 """
             self.client.get_bucket(bucket).blob(key).download_to_filename(file)
+            return True
+        except Exception as e:
+            if raise_exception is True:
+                raise e
+            return False
+
+    def create_folder(self, bucket: str, folder: Optional[str] = None, raise_exception: bool = True) -> bool:
+        try:
+            if not (bucket := cloud_path.normalize(bucket)):
+                return False
+            if folder := cloud_path.normalize(folder):
+                bucket = cloud_path.join(bucket, folder)
+            bucket, folder = cloud_path.bucket_and_key(bucket)
+            if not folder:
+                return False
+            if not folder.endswith(cloud_path.separator):
+                folder += cloud_path.separator
+            self.client.get_bucket(bucket).blob(folder).upload_from_string("")
             return True
         except Exception as e:
             if raise_exception is True:
@@ -130,7 +151,7 @@ class Gcs:
             return False
         try:
             with temporary_file() as temporary_downloaded_file_name:
-                if self.download_file(bucket, key, temporary_downloaded_file_name):
+                if self.download_file(temporary_downloaded_file_name, bucket, key):
                     return are_files_equal(file, temporary_downloaded_file_name)
         except Exception as e:
             if raise_exception is True:

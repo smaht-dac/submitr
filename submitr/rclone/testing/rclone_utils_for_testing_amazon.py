@@ -52,10 +52,17 @@ class AwsS3:
         try:
             if not isinstance(file, str) or not file:
                 return False
-            if not (bucket := cloud_path.normalize(bucket)):
+#           if not (bucket := cloud_path.normalize(bucket)):
+#               return False
+#           if not (key := cloud_path.normalize(key)):
+#               key = os.path.basename(file)
+            bucket, key = cloud_path.bucket_and_key(bucket, key, preserve_suffix=True)
+            if not bucket:
                 return False
-            if not (key := cloud_path.normalize(key)):
+            if not key:
                 key = os.path.basename(file)
+            elif key.endswith(cloud_path.separator):
+                key = cloud_path.join(key, os.path.basename(file))
             if kms_key_id := self.credentials.kms_key_id:
                 # Note that it is not necessary to use the KMS Key ID when downloading
                 # a file uploaded with a KMS Key ID, since this info is stored together
@@ -70,7 +77,7 @@ class AwsS3:
                 raise e
         return False
 
-    def download_file(self, bucket: str, key: str, file: str,
+    def download_file(self, file: str, bucket: str, key: str,
                       nodirectories: bool = False, raise_exception: bool = True) -> bool:
         try:
             if not (bucket := cloud_path.normalize(bucket)):
@@ -96,6 +103,24 @@ class AwsS3:
         except Exception as e:
             if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":
                 return False
+            if raise_exception is True:
+                raise e
+            return False
+
+    def create_folder(self, bucket: str, folder: Optional[str] = None, raise_exception: bool = True) -> bool:
+        try:
+            if not (bucket := cloud_path.normalize(bucket)):
+                return False
+            if folder := cloud_path.normalize(folder):
+                bucket = cloud_path.join(bucket, folder)
+            bucket, folder = cloud_path.bucket_and_key(bucket)
+            if not folder:
+                return False
+            if not folder.endswith(cloud_path.separator):
+                folder += cloud_path.separator
+            self.client.put_object(Bucket=bucket, Key=folder)
+            return True
+        except Exception as e:
             if raise_exception is True:
                 raise e
             return False
@@ -139,7 +164,7 @@ class AwsS3:
             return None
         try:
             with temporary_file() as temporary_downloaded_file_name:
-                if self.download_file(bucket, key, temporary_downloaded_file_name):
+                if self.download_file(temporary_downloaded_file_name, bucket, key):
                     return are_files_equal(file, temporary_downloaded_file_name)
         except Exception as e:
             if hasattr(e, "response") and e.response.get("Error", {}).get("Code") == "404":

@@ -143,14 +143,14 @@ class EnvAmazon(Env):
     def temporary_credentials(self,
                               bucket: Optional[str] = None, key: Optional[str] = None,
                               nokms: bool = False) -> AmazonCredentials:
-        s3 = self.s3_non_rclone()
+        s3 = self.non_rclone()
         kms_key_id = None if nokms else self.kms_key_id
         temporary_credentials = s3.generate_temporary_credentials(bucket=bucket, key=key, kms_key_id=kms_key_id)
         assert isinstance(temporary_credentials.session_token, str) and temporary_credentials.session_token
         assert temporary_credentials.kms_key_id == (None if nokms is True else self.kms_key_id)
         return temporary_credentials
 
-    def s3_non_rclone(self):
+    def non_rclone(self):
         return AwsS3(self.main_credentials)
 
 
@@ -178,7 +178,7 @@ class EnvGoogle(Env):
             assert os.path.isfile(credentials.service_account_file)
         return credentials
 
-    def gcs_non_rclone(self):
+    def non_rclone(self):
         return Gcs(self.main_credentials)
 
 
@@ -343,13 +343,13 @@ def test_integration_testing_connectivity(capsys):
     # Check that buckets are setup.
 
     env_amazon = EnvAmazon()
-    assert env_amazon.s3_non_rclone().bucket_exists(env_amazon.bucket) is True
+    assert env_amazon.non_rclone().bucket_exists(env_amazon.bucket) is True
 
     env_google = EnvGoogle()
     credentials_google = env_google.credentials()
     if not RCloneGoogle.is_google_compute_engine():
         assert os.path.isfile(credentials_google.service_account_file)
-    assert env_google.gcs_non_rclone().bucket_exists(env_google.bucket) is True
+    assert env_google.non_rclone().bucket_exists(env_google.bucket) is True
 
 
 def test_all():
@@ -408,7 +408,7 @@ def create_rcloner(source: Optional[RCloneStore] = None, destination: Optional[R
 
 def sanity_check_amazon_file(env_amazon: EnvAmazon,
                              credentials: AmazonCredentials, bucket: str, key: str, file: str) -> None:
-    s3 = env_amazon.s3_non_rclone()
+    s3 = env_amazon.non_rclone()
     assert s3.file_exists(bucket, key) is True
     assert s3.file_equals(file, bucket, key) is True
     if kms_key_id := credentials.kms_key_id:
@@ -418,19 +418,19 @@ def sanity_check_amazon_file(env_amazon: EnvAmazon,
 
 def sanity_check_google_file(env_google: EnvGoogle,
                              credentials: GoogleCredentials, bucket: str, key: str, file: str) -> None:
-    gcs = env_google.gcs_non_rclone()
+    gcs = env_google.non_rclone()
     assert gcs.file_exists(bucket, key) is True
     assert gcs.file_equals(file, bucket, key) is True
 
 
 def cleanup_amazon_file(env_amazon: EnvAmazon, bucket: str, key: str) -> None:
-    s3 = env_amazon.s3_non_rclone()
+    s3 = env_amazon.non_rclone()
     assert s3.delete_file(bucket, key) is True
     assert s3.file_exists(bucket, key) is False
 
 
 def cleanup_google_file(env_google: EnvGoogle, bucket: str, key: str) -> None:
-    gcs = env_google.gcs_non_rclone()
+    gcs = env_google.non_rclone()
     assert gcs.delete_file(bucket, key) is True
     assert gcs.file_exists(bucket, key) is False
 
@@ -454,7 +454,7 @@ def _test_utils_for_testing_amazon(env_amazon: EnvAmazon, credentials: AmazonCre
     assert isinstance(credentials.access_key_id, str) and credentials.access_key_id
     assert isinstance(credentials.secret_access_key, str) and credentials.secret_access_key
 
-    s3 = env_amazon.s3_non_rclone()
+    s3 = env_amazon.non_rclone()
 
     with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         key = env_amazon.file_name_to_key_name(tmp_test_file_name)
@@ -476,17 +476,17 @@ def _test_utils_for_testing_amazon(env_amazon: EnvAmazon, credentials: AmazonCre
         with temporary_random_file() as some_random_file_path:
             assert s3.file_equals(some_random_file_path, env_amazon.bucket, key) is False
         with temporary_file() as tmp_downloaded_file_path:
-            assert s3.download_file(env_amazon.bucket, key, tmp_downloaded_file_path) is True
-            assert s3.download_file(env_amazon.bucket, key, "/dev/null") is True
+            assert s3.download_file(tmp_downloaded_file_path, env_amazon.bucket, key) is True
+            assert s3.download_file("/dev/null", env_amazon.bucket, key) is True
             assert are_files_equal(tmp_test_file_path, tmp_downloaded_file_path) is True
             assert are_files_equal(tmp_test_file_path, "/dev/null") is False
         with temporary_directory() as tmp_download_directory:
-            assert s3.download_file(env_amazon.bucket, key, tmp_download_directory) is True
+            assert s3.download_file(tmp_download_directory, env_amazon.bucket, key) is True
             assert are_files_equal(tmp_test_file_path, f"{tmp_download_directory}/{key}") is True
         assert s3.delete_file(env_amazon.bucket, key) is True
         assert s3.file_exists(env_amazon.bucket, key) is False
         assert s3.file_equals("/dev/null", env_amazon.bucket, key) is False
-        assert s3.download_file(env_amazon.bucket, key, "/dev/null") is False
+        assert s3.download_file("/dev/null", env_amazon.bucket, key) is False
 
 
 def _test_rclone_between_amazon_and_local(env_amazon: EnvAmazon) -> None:
@@ -657,9 +657,9 @@ def __test_rclone_google_to_amazon(env_amazon: EnvAmazon,
         assert rclone_google.file_checksum(path_cloud) == compute_file_md5(tmp_test_file_path)
         assert rclone_google.ping() is True
         # Exercise the RCloneStore rclone commands (path_exists, file_size, file_checksum) for Amazon file.
-        assert env_amazon.s3_non_rclone().file_size(env_amazon.bucket, key_amazon) == Env.test_file_size
-        assert env_amazon.s3_non_rclone().file_exists(env_amazon.bucket, key_amazon) is True
-        assert (env_amazon.s3_non_rclone().file_checksum(env_amazon.bucket, key_amazon) ==
+        assert env_amazon.non_rclone().file_size(env_amazon.bucket, key_amazon) == Env.test_file_size
+        assert env_amazon.non_rclone().file_exists(env_amazon.bucket, key_amazon) is True
+        assert (env_amazon.non_rclone().file_checksum(env_amazon.bucket, key_amazon) ==
                 compute_file_md5(tmp_test_file_path))
         # Do the above copy again but this time with the destination
         # bucket specified within the RCloneGoogle object (new: 2024-05-10).
@@ -679,9 +679,9 @@ def __test_rclone_google_to_amazon(env_amazon: EnvAmazon,
         # Sanity check the file in AWS S3 which was copied directly from Google Cloud Storage.
         sanity_check_amazon_file(env_amazon, credentials_amazon, env_amazon.bucket, key_amazon, tmp_test_file_path)
         # Re-exercise the RCloneStore rclone commands (path_exists, file_size, file_checksum) for Amazon file.
-        assert env_amazon.s3_non_rclone().file_size(env_amazon.bucket, key_amazon) == Env.test_file_size
-        assert env_amazon.s3_non_rclone().file_exists(env_amazon.bucket, key_amazon) is True
-        assert (env_amazon.s3_non_rclone().file_checksum(env_amazon.bucket, key_amazon) ==
+        assert env_amazon.non_rclone().file_size(env_amazon.bucket, key_amazon) == Env.test_file_size
+        assert env_amazon.non_rclone().file_exists(env_amazon.bucket, key_amazon) is True
+        assert (env_amazon.non_rclone().file_checksum(env_amazon.bucket, key_amazon) ==
                 compute_file_md5(tmp_test_file_path))
         # Cleanup (delete) the test destination file in AWS S3.
         cleanup_amazon_file(env_amazon, env_amazon.bucket, key_amazon)
@@ -761,14 +761,14 @@ def test_rclone_local_to_google_copy_to_bucket() -> None:
     rclone_google = RCloneGoogle(credentials_google, bucket=bucket_google)
     rcloner = RCloner(destination=rclone_google)
     assert rcloner.copy_to_bucket(os.path.join(filesystem.root, file_one)) is True
-    assert env_google.gcs_non_rclone().file_exists(cloud_path.join(bucket_google, os.path.basename(file_one))) is True
-    assert env_google.gcs_non_rclone().file_exists(bucket_google, os.path.basename(file_one)) is True
-    assert env_google.gcs_non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == filesize
-    assert env_google.gcs_non_rclone().file_size(bucket_google, os.path.basename(file_one)) == filesize
-    assert (env_google.gcs_non_rclone().file_checksum(cloud_path.join(bucket_google, os.path.basename(file_one))) ==
+    assert env_google.non_rclone().file_exists(cloud_path.join(bucket_google, os.path.basename(file_one))) is True
+    assert env_google.non_rclone().file_exists(bucket_google, os.path.basename(file_one)) is True
+    assert env_google.non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == filesize
+    assert env_google.non_rclone().file_size(bucket_google, os.path.basename(file_one)) == filesize
+    assert (env_google.non_rclone().file_checksum(cloud_path.join(bucket_google, os.path.basename(file_one))) ==
             compute_file_md5(os.path.join(filesystem.root, file_one)))
-    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, os.path.basename(file_one)) is True
-    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, os.path.basename(file_one)) is False
+    assert env_google.non_rclone().delete_file(rclone_google.bucket, os.path.basename(file_one)) is True
+    assert env_google.non_rclone().file_exists(rclone_google.bucket, os.path.basename(file_one)) is False
 
 
 def test_rclone_local_to_amazon_copy_to_bucket() -> None:
@@ -784,14 +784,14 @@ def test_rclone_local_to_amazon_copy_to_bucket() -> None:
     rclone_amazon = RCloneAmazon(credentials_amazon, bucket=bucket_amazon)
     rcloner = RCloner(destination=rclone_amazon)
     assert rcloner.copy_to_bucket(os.path.join(filesystem.root, file_one)) is True
-    assert env_amazon.s3_non_rclone().file_exists(cloud_path.join(bucket_amazon, os.path.basename(file_one))) is True
-    assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, os.path.basename(file_one)) is True
-    assert env_amazon.s3_non_rclone().file_size(cloud_path.join(bucket_amazon, os.path.basename(file_one))) == filesize
-    assert env_amazon.s3_non_rclone().file_size(bucket_amazon, os.path.basename(file_one)) == filesize
-    assert (env_amazon.s3_non_rclone().file_checksum(cloud_path.join(bucket_amazon, os.path.basename(file_one))) ==
+    assert env_amazon.non_rclone().file_exists(cloud_path.join(bucket_amazon, os.path.basename(file_one))) is True
+    assert env_amazon.non_rclone().file_exists(bucket_amazon, os.path.basename(file_one)) is True
+    assert env_amazon.non_rclone().file_size(cloud_path.join(bucket_amazon, os.path.basename(file_one))) == filesize
+    assert env_amazon.non_rclone().file_size(bucket_amazon, os.path.basename(file_one)) == filesize
+    assert (env_amazon.non_rclone().file_checksum(cloud_path.join(bucket_amazon, os.path.basename(file_one))) ==
             compute_file_md5(os.path.join(filesystem.root, file_one)))
-    assert env_amazon.s3_non_rclone().delete_file(bucket_amazon, os.path.basename(file_one)) is True
-    assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, os.path.basename(file_one)) is False
+    assert env_amazon.non_rclone().delete_file(bucket_amazon, os.path.basename(file_one)) is True
+    assert env_amazon.non_rclone().file_exists(bucket_amazon, os.path.basename(file_one)) is False
 
 
 def test_rclone_amazon_to_amazon() -> None:
@@ -815,20 +815,20 @@ def test_rclone_amazon_to_amazon() -> None:
     destination_target_amazon = create_rclone_target_amazon(credentials_amazon)
     rcloner = create_rcloner(source=source_target_amazon, destination=destination_target_amazon)
     rcloner.copy(source_amazon, destination_amazon, metadata=destination_metadata_amazon)
-    assert env_amazon.s3_non_rclone().file_size(destination_bucket_amazon,
+    assert env_amazon.non_rclone().file_size(destination_bucket_amazon,
                                                 destination_key_amazon) == RANDOM_TMPFILE_SIZE
-    assert env_amazon.s3_non_rclone().file_exists(destination_bucket_amazon, destination_key_amazon) is True
-    assert env_amazon.s3_non_rclone().file_checksum(destination_bucket_amazon,
+    assert env_amazon.non_rclone().file_exists(destination_bucket_amazon, destination_key_amazon) is True
+    assert env_amazon.non_rclone().file_checksum(destination_bucket_amazon,
                                                     destination_key_amazon) == source_checksum
-    metadata = env_amazon.s3_non_rclone().file_metadata(destination_bucket_amazon, destination_key_amazon)
+    metadata = env_amazon.non_rclone().file_metadata(destination_bucket_amazon, destination_key_amazon)
     assert isinstance(metadata, dict) is True
     assert metadata["some-metadata-key"] == "some-metadata-value"
-    # assert env_amazon.s3_non_rclone().directory_exists(destination_bucket_amazon,
+    # assert env_amazon.non_rclone().directory_exists(destination_bucket_amazon,
     #                                                    destination_subfolder_amazon) is True  # TODO IMPLEMENT MAYBE
     # assert destination_target_amazon.directory_exists(cloud_path.join(destination_bucket_amazon,
     #                                                                   destination_subfolder_amazon)) is True
-    assert env_amazon.s3_non_rclone().delete_file(source_amazon) is True
-    assert env_amazon.s3_non_rclone().delete_file(destination_amazon) is True
+    assert env_amazon.non_rclone().delete_file(source_amazon) is True
+    assert env_amazon.non_rclone().delete_file(destination_amazon) is True
 
 
 def test_rclone_amazon_to_amazon_using_temporary_credentials() -> None:
@@ -855,12 +855,12 @@ def test_rclone_amazon_to_amazon_using_temporary_credentials() -> None:
     destination_target_amazon = create_rclone_target_amazon(temporary_credentials_amazon)
     rcloner = create_rcloner(source=source_target_amazon, destination=destination_target_amazon)
     rcloner.copy(source_amazon, destination_amazon, metadata=destination_metadata_amazon)
-    assert env_amazon.s3_non_rclone().file_size(destination_bucket_amazon,
+    assert env_amazon.non_rclone().file_size(destination_bucket_amazon,
                                                 destination_key_amazon) == RANDOM_TMPFILE_SIZE
-    assert env_amazon.s3_non_rclone().file_exists(destination_bucket_amazon, destination_key_amazon) is True
-    assert env_amazon.s3_non_rclone().file_checksum(destination_bucket_amazon,
+    assert env_amazon.non_rclone().file_exists(destination_bucket_amazon, destination_key_amazon) is True
+    assert env_amazon.non_rclone().file_checksum(destination_bucket_amazon,
                                                     destination_key_amazon) == source_checksum
-    metadata = env_amazon.s3_non_rclone().file_metadata(destination_bucket_amazon, destination_key_amazon)
+    metadata = env_amazon.non_rclone().file_metadata(destination_bucket_amazon, destination_key_amazon)
     assert isinstance(metadata, dict) is True
     assert metadata["some-metadata-key"] == "some-metadata-value"
     #
@@ -876,8 +876,8 @@ def test_rclone_amazon_to_amazon_using_temporary_credentials() -> None:
     # destination_target_with_main_credentials_amazon = create_rclone_target_amazon(credentials_amazon)
     # assert destination_target_with_main_credentials_amazon.directory_exists(
     #     cloud_path.join(destination_bucket_amazon, destination_subfolder_amazon)) is True
-    assert env_amazon.s3_non_rclone().delete_file(source_amazon) is True
-    assert env_amazon.s3_non_rclone().delete_file(destination_amazon) is True
+    assert env_amazon.non_rclone().delete_file(source_amazon) is True
+    assert env_amazon.non_rclone().delete_file(destination_amazon) is True
 
 
 def test_rclone_upload_file_to_aws_s3() -> None:
@@ -892,8 +892,8 @@ def test_rclone_upload_file_to_aws_s3() -> None:
     # Note that the second destination argument to RCloner.copy can be
     # unspecified meaning that it will be the *bucket* ("bucket" - can be
     assert rcloner.copy_to_bucket(os.path.join(filesystem.root, file_one)) is True
-    assert env_google.gcs_non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == filesize
-    assert env_google.gcs_non_rclone().file_size(bucket_google, os.path.basename(file_one)) == filesize
+    assert env_google.non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == filesize
+    assert env_google.non_rclone().file_size(bucket_google, os.path.basename(file_one)) == filesize
     files = [{"filename": file_one}, {"filename": file_two}]
     files_for_upload = FilesForUpload.assemble(files,
                                                main_search_directory=filesystem.root,
@@ -955,9 +955,9 @@ def test_rclone_upload_file_to_aws_s3() -> None:
     upload_file_to_aws_s3(file=files_for_upload[0],
                           s3_uri=s3_uri,
                           aws_credentials=credentials_amazon.to_dictionary(environment_names=True))
-    assert env_amazon.s3_non_rclone().file_exists(env_amazon.bucket, s3_key) is True
-    assert env_amazon.s3_non_rclone().file_size(env_amazon.bucket, s3_key) == filesize
-    assert (env_amazon.s3_non_rclone().file_checksum(env_amazon.bucket, s3_key) ==
+    assert env_amazon.non_rclone().file_exists(env_amazon.bucket, s3_key) is True
+    assert env_amazon.non_rclone().file_size(env_amazon.bucket, s3_key) == filesize
+    assert (env_amazon.non_rclone().file_checksum(env_amazon.bucket, s3_key) ==
             compute_file_md5(os.path.join(filesystem.root, file_one)))
     s3_key_metadata = get_s3_key_metadata(credentials_amazon.to_dictionary(environment_names=False),
                                           env_amazon.bucket, s3_key)
@@ -966,10 +966,10 @@ def test_rclone_upload_file_to_aws_s3() -> None:
     assert s3_key_metadata["size"] == filesize
     assert s3_key_metadata["md5"] == compute_file_md5(os.path.join(filesystem.root, file_one))
     assert s3_key_metadata["md5-source"] == "google-cloud-storage"
-    assert env_amazon.s3_non_rclone().delete_file(env_amazon.bucket, s3_key) is True
-    assert env_amazon.s3_non_rclone().file_exists(env_amazon.bucket, s3_key) is False
-    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, files_for_upload[0].name) is True
-    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, files_for_upload[0].name) is False
+    assert env_amazon.non_rclone().delete_file(env_amazon.bucket, s3_key) is True
+    assert env_amazon.non_rclone().file_exists(env_amazon.bucket, s3_key) is False
+    assert env_google.non_rclone().delete_file(rclone_google.bucket, files_for_upload[0].name) is True
+    assert env_google.non_rclone().file_exists(rclone_google.bucket, files_for_upload[0].name) is False
 
 
 def test_rclone_do_any_uploads() -> None:
@@ -984,8 +984,8 @@ def test_rclone_do_any_uploads() -> None:
     rclone_google = RCloneGoogle(env_google.credentials(), bucket=f"{env_google.bucket}/test-{create_uuid()}")
     rcloner = RCloner(destination=rclone_google)
     assert rcloner.copy_to_key(filesystem.path(file_one), key_google := test_file_two) is True
-    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is True
-    assert env_google.gcs_non_rclone().file_size(rclone_google.bucket, key_google) == RANDOM_TMPFILE_SIZE
+    assert env_google.non_rclone().file_exists(rclone_google.bucket, key_google) is True
+    assert env_google.non_rclone().file_size(rclone_google.bucket, key_google) == RANDOM_TMPFILE_SIZE
 
     uploaded_uris_amazon = []
 
@@ -1022,10 +1022,29 @@ def test_rclone_do_any_uploads() -> None:
 
     for uploaded_uri_amazon in uploaded_uris_amazon:
         bucket_amazon, key_amazon = cloud_path.bucket_and_key(uploaded_uri_amazon)
-        assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, key_amazon) is True
-        assert env_amazon.s3_non_rclone().delete_file(bucket_amazon, key_amazon) is True
-        assert env_amazon.s3_non_rclone().file_exists(bucket_amazon, key_amazon) is False
+        assert env_amazon.non_rclone().file_exists(bucket_amazon, key_amazon) is True
+        assert env_amazon.non_rclone().delete_file(bucket_amazon, key_amazon) is True
+        assert env_amazon.non_rclone().file_exists(bucket_amazon, key_amazon) is False
 
     # Cleanup.
-    assert env_google.gcs_non_rclone().delete_file(rclone_google.bucket, key_google) is True
-    assert env_google.gcs_non_rclone().file_exists(rclone_google.bucket, key_google) is False
+    assert env_google.non_rclone().delete_file(rclone_google.bucket, key_google) is True
+    assert env_google.non_rclone().file_exists(rclone_google.bucket, key_google) is False
+
+
+def test_rclone_store_bucket_exists_amazon() -> None:
+    env_amazon = EnvAmazon()
+    with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        amazon_store = RCloneAmazon(env_amazon.credentials)
+        assert env_amazon.non_rclone().create_folder(env_amazon.bucket, cloud_path.join("test-subfolder", "abc", "def")) is True
+
+
+def test_rclone_store_bucket_exists_google() -> None:
+    env_google = EnvGoogle()
+    with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        bucket_and_folder = cloud_path.join(env_google.bucket, "test-subfolder", "abc", "def")
+        assert env_google.non_rclone().create_folder(bucket_and_folder) is True
+        google_store = RCloneGoogle(env_google.credentials, bucket=bucket_and_folder)
+        # This returns False because (as described in the RCloneStore.bucket_exists doc),
+        # the sub-folder does not contain a key.
+        assert google_store.bucket_exists() is False
+        assert env_google.non_rclone().upload_file(tmp_test_file_path, bucket_and_folder + cloud_path.separator) is True

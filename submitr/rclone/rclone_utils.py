@@ -84,13 +84,23 @@ class cloud_path:
         return ""
 
     @staticmethod
-    def bucket_and_key(bucket: str, key: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
+    def bucket_and_key(bucket: str, key: Optional[str] = None,
+                       preserve_suffix: bool = False) -> Tuple[Optional[str], Optional[str]]:
+        if not (bucket := cloud_path.normalize(bucket, preserve_suffix=preserve_suffix)):
+            return None, None
+        if preserve_suffix is True:
+            key = cloud_path.normalize(key, preserve_suffix=True)
+            trailing_separator_bucket = isinstance(bucket, str) and bucket.endswith(cloud_path.separator)
+            trailing_separator_key = key.endswith(cloud_path.separator) if key else False
+            folder = trailing_separator_key or ((not key) and trailing_separator_bucket)
+        else:
+            folder = False
         if not (bucket_and_key := cloud_path.join(bucket, key)):
             return None, None
         if cloud_path.has_separator(bucket_and_key):
             bucket = cloud_path.bucket(bucket_and_key)
             key = cloud_path.key(bucket_and_key)
-            return bucket, key
+            return (bucket, key + cloud_path.separator) if folder else (bucket, key)
         else:
             return bucket_and_key, None
 
