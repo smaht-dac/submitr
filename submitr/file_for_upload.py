@@ -305,7 +305,8 @@ class FileForUpload:
             if self.found_cloud:
                 found_both_local_and_cloud = True
                 printf(f"- File for upload found BOTH locally"
-                       f" AND in {self.cloud_store.proper_name_title}: {file_identifier}")
+                       f" AND in {self.cloud_store.proper_name_title}"
+                       f" ({self.cloud_store.proper_name}): {file_identifier}")
                 printf(f"  - {self.cloud_store.proper_name} cloud storage: {self.display_path_cloud}"
                        f"{f' ({format_size(self.size_cloud)})' if self.size_cloud else ''}")
             if self.found_local_multiple and (not self.found_cloud or (self._favor_local is True)):
@@ -353,7 +354,7 @@ class FileForUpload:
             return True
 
         elif self.found_cloud:
-            printf(f"- File for upload from {self.cloud_store.proper_name_title}:"
+            printf(f"- File for upload from {self.cloud_store.proper_name_title} ({self.cloud_store.proper_name}):"
                    f" {self.display_path_cloud} ({format_size(self.size_cloud)})")
             if destination:
                 printf(f"  AWS destination: {destination}")
