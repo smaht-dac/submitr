@@ -11,6 +11,7 @@ from dcicutils.misc_utils import create_uuid, normalize_string, PRINT
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 from submitr.rclone.rclone_commands import RCloneCommands
 from submitr.rclone.rclone_installation import RCloneInstallation
+from submitr.rclone.rclone_store_registry import RCloneStoreRegistry
 from submitr.rclone.rclone_utils import cloud_path
 from submitr.utils import DEBUGGING
 
@@ -42,6 +43,7 @@ class RCloneStore(AbstractBaseClass):
             self._name = create_uuid()
         return self._name
 
+    # TODO: Get rid of setters; make immutable.
     @name.setter
     def name(self, value: Optional[str]) -> None:
         if (value := normalize_string(value)) is not None:
@@ -195,12 +197,9 @@ class RCloneStore(AbstractBaseClass):
     def __ne__(self, other: Optional[RCloneStore]) -> bool:
         return not self.__eq__(other)
 
-    _registered_cloud_stores = []
-
     @staticmethod
     def register(cls):
-        RCloneStore._registered_cloud_stores.append(cls)
-        return cls
+        return RCloneStoreRegistry.register(cls)
 
     @staticmethod
     def from_args(cloud_source: Union[str, argparse.Namespace],
@@ -235,13 +234,12 @@ class RCloneStore(AbstractBaseClass):
         if (verify_installation is True) and not RCloneInstallation.verify_installation():
             usage(f"Cannot install rclone for some reason (contact support - sorry).")
             exit(1)
-        for cloud_store_class in RCloneStore._registered_cloud_stores:
-            if cloud_source.lower().startswith(cloud_store_class.prefix.lower()):
-                return cloud_store_class.from_args(cloud_source=cloud_source,
-                                                   cloud_credentials=cloud_credentials,
-                                                   cloud_location=cloud_location,
-                                                   verify_connectivity=verify_connectivity,
-                                                   usage=usage,
-                                                   printf=printf)
+        if cloud_store_class := RCloneStoreRegistry.lookup(cloud_source):
+            return cloud_store_class.from_args(cloud_source=cloud_source,
+                                               cloud_credentials=cloud_credentials,
+                                               cloud_location=cloud_location,
+                                               verify_connectivity=verify_connectivity,
+                                               usage=usage,
+                                               printf=printf)
         usage("Unknown cloud source specified: {cloud_source}")
         return None

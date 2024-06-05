@@ -109,15 +109,17 @@ class RCloneGoogle(RCloneStore):
     def is_google_compute_engine() -> Optional[str]:
         return GoogleCredentials.is_google_compute_engine()
 
-    def verify_connectivity(self, usage: Optional[Callable] = None, printf: Optional[Callable] = None) -> None:
+    def verify_connectivity(self, quiet: bool = False,
+                            usage: Optional[Callable] = None, printf: Optional[Callable] = None) -> None:
         if not callable(usage):
             usage = print
         if not callable(printf):
             printf = print
         if self.ping():
-            printf(f"{self.proper_name_title}"
-                   f"{f' (project: {self.project})' if self.project else ''}"
-                   f" connectivity appears to be OK {chars.check}")
+            if quiet is not True:
+                printf(f"{self.proper_name_title}"
+                       f"{f' (project: {self.project})' if self.project else ''}"
+                       f" connectivity appears to be OK {chars.check}")
             if self.bucket_exists() is False:
                 printf(f"WARNING: Google Cloud Storage bucket/path NOT FOUND or EMPTY: {self.bucket}")
         else:
@@ -142,6 +144,8 @@ class RCloneGoogle(RCloneStore):
         """
         if not (isinstance(cloud_source, str) and cloud_source):  # should never happen
             return None
+        if not callable(usage):
+            usage = PRINT
         if not callable(printf):
             printf = PRINT
         if not (cloud_credentials := normalize_path(cloud_credentials, expand_home=True)):
@@ -151,8 +155,8 @@ class RCloneGoogle(RCloneStore):
                 return None
         if not os.path.isfile(cloud_credentials):
             printf(f"ERROR: Google service account file does not exist: {cloud_credentials}")
-            exit(1)
+            return None
         cloud_store = RCloneGoogle(cloud_credentials, location=cloud_location, bucket=cloud_source)
         if verify_connectivity is True:
-            cloud_store.verify_connectivity(usage=usage, printf=printf)
+            cloud_store.verify_connectivity(quiet=True, usage=usage, printf=printf)
         return cloud_store

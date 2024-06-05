@@ -87,13 +87,15 @@ class RCloneAmazon(RCloneStore):
     def __ne__(self, other: Optional[RCloneAmazon]) -> bool:
         return not self.__eq__(other)
 
-    def verify_connectivity(self, usage: Optional[Callable] = None, printf: Optional[Callable] = None) -> None:
+    def verify_connectivity(self, quiet: bool = False,
+                            usage: Optional[Callable] = None, printf: Optional[Callable] = None) -> None:
         if not callable(usage):
             usage = print
         if not callable(printf):
             printf = print
         if self.ping():
-            printf(f"{self.proper_name_title} connectivity appears to be OK {chars.check}")
+            if quiet is not True:
+                printf(f"{self.proper_name_title} connectivity appears to be OK {chars.check}")
             if self.bucket_exists() is False:
                 printf(f"WARNING: AWS S3 bucket/path NOT FOUND or EMPTY: {self.bucket}")
         else:
@@ -129,5 +131,5 @@ class RCloneAmazon(RCloneStore):
             return None
         cloud_store = RCloneAmazon(cloud_credentials, region=cloud_location, bucket=cloud_source)
         if verify_connectivity is True:
-            cloud_store.verify_connectivity(usage=usage)
+            cloud_store.verify_connectivity(quiet=True, usage=usage, printf=printf)
         return cloud_store
