@@ -241,5 +241,5 @@ class RCloneStore(AbstractBaseClass):
                                                verify_connectivity=verify_connectivity,
                                                usage=usage,
                                                printf=printf)
-        usage("Unknown cloud source specified: {cloud_source}")
+        usage(f"Unknown cloud source specified: {cloud_source}")
         return None
