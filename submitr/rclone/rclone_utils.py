@@ -15,24 +15,29 @@ class cloud_path:
     def normalize(value: str, preserve_prefix: bool = False, preserve_suffix: bool = False) -> str:
         if not (isinstance(value, str) and (value := value.strip())):
             return ""
-        if preserve_prefix is not True:
-            if (value_lower := value.lower()).startswith(cloud_path.amazon_prefix):
-                value = value[len(cloud_path.amazon_prefix):]
-            elif value_lower.startswith(cloud_path.google_prefix):
-                value = value[len(cloud_path.google_prefix):]
+        value, prefix = cloud_path._remove_prefix(value)
+        if not (preserve_prefix is True):
+            prefix = None
         value = cloud_path.normalize_separator_regex.sub(cloud_path.separator, value)
         if value.startswith(cloud_path.separator):
             value = value[1:]
         if preserve_suffix is not True:
             if value.endswith(cloud_path.separator):
                 value = value[:-1]
+        if prefix:
+            value = prefix + value
         return value if value != "." else ""
 
     @staticmethod
-    def join(*args) -> str:
+    def join(*args, preserve_prefix: bool = False) -> str:
+        prefix = None
+        if preserve_prefix is True:
+            if len(args) > 0:
+                _, prefix = cloud_path._remove_prefix(args[0])
+            pass
         path = ""
         for arg in args:
-            if isinstance(arg, list):
+            if isinstance(arg, list):  # TODO: this is stupid to allow this - get rid of it
                 if arg := cloud_path.join(*arg):
                     if path:
                         path += cloud_path.separator
@@ -41,6 +46,8 @@ class cloud_path:
                 if path:
                     path += cloud_path.separator
                 path += arg
+        if prefix:
+            path = prefix + path
         return path
 
     @staticmethod
@@ -105,9 +112,28 @@ class cloud_path:
             return bucket_and_key, None
 
     @staticmethod
+    def is_bucket_only(path: str) -> bool:
+        return not cloud_path.has_separator(cloud_path.normalize(path))
+
+    @staticmethod
+    def is_folder(path: str) -> bool:
+        return cloud_path.normalize(path, preserve_suffix=True).endswith(cloud_path.separator)
+
+    @staticmethod
     def is_amazon(path: str) -> bool:
         return isinstance(path, str) and path.lower().startswith(cloud_path.amazon_prefix)
 
     @staticmethod
     def is_google(path: str) -> bool:
         return isinstance(path, str) and path.lower().startswith(cloud_path.google_prefix)
+
+    @staticmethod
+    def _remove_prefix(path: str) -> Tuple[str, Optional[str]]:
+        if not (isinstance(path, str) and (path := path.strip())):
+            return "", None
+        if (path_lower := path.lower()).startswith(cloud_path.amazon_prefix):
+            return path[len(cloud_path.amazon_prefix):], cloud_path.amazon_prefix
+        elif path_lower.startswith(cloud_path.google_prefix):
+            return path[len(cloud_path.google_prefix):], cloud_path.google_prefix
+        else:
+            return path, None

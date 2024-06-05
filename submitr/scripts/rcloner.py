@@ -65,14 +65,15 @@ def main() -> None:
             usage("May not specify a folder/directory as a source; only single key/file allowed.")
         if not cloud_path.has_separator(cloud_path.normalize(args.source)):
             usage("May not specify just a bucket as a source; only single key/file allowed.")
+
     copyto = True
     if is_destination_cloud:
-        if args.destination.endswith(cloud_path.separator):
-            # Special case to treat a destination ending
-            # in a slash as a directory (as does aws s3 cp);
-            # unless of course copyto is explicitly specified.
-            if source_basename := cloud_path.basename(cloud_path.normalize(args.source)):
-                args.destination += source_basename
+        if cloud_path.is_folder(args.destination) or cloud_path.is_bucket_only(args.destination):
+            # Special case to treat a destination ending in a slash (or just a
+            # bucket destination by itself) as a directory (as does aws s3 cp).
+            if source_basename := (cloud_path.basename(cloud_path.normalize(args.source))
+                                   if is_source_cloud else os.path.basename(args.source)):
+                args.destination = cloud_path.join(args.destination, source_basename, preserve_prefix=True)
             else:
                 copyto = False
 
