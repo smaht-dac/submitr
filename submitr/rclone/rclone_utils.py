@@ -8,8 +8,6 @@ from submitr.rclone.rclone_store_registry import RCloneStoreRegistry
 class cloud_path:
 
     separator = "/"
-    google_prefix = "gs://"
-    amazon_prefix = "s3://"
     normalize_separator_regex = re_compile(rf"({re_escape(separator)})+")
 
     @staticmethod

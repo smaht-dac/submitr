@@ -12,7 +12,7 @@ from submitr.utils import chars
 @RCloneStore.register
 class RCloneAmazon(RCloneStore):
 
-    prefix = cloud_path.amazon_prefix
+    prefix = "s3://"
     proper_name = "AWS S3"
     proper_name_title = "Amazon S3"
     proper_name_label = "s3-cloud-store"

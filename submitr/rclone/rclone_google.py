@@ -15,7 +15,7 @@ from submitr.utils import chars
 @RCloneStore.register
 class RCloneGoogle(RCloneStore):
 
-    prefix = cloud_path.google_prefix
+    prefix = "gs://"
     proper_name = "GCS"
     proper_name_title = "Google Cloud Storage"
     proper_name_label = "google-cloud-storage"
