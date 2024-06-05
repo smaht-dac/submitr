@@ -6,9 +6,9 @@ from dcicutils.command_utils import yes_or_no
 from dcicutils.file_utils import compute_file_md5, get_file_size, normalize_path, search_for_file
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import format_size, normalize_string
-from submitr.output import PRINT
 from dcicutils.structured_data import Portal, StructuredDataSet
-from submitr.rclone import RCloneStore, cloud_path
+from submitr.output import PRINT
+from submitr.rclone import RCloneAmazon, RCloneStore
 from submitr.utils import chars
 
 # Unified the logic for looking for files to upload (to AWS S3), and storing
@@ -273,7 +273,7 @@ class FileForUpload:
             self._accession = accession
         if accession_file_name:
             self._accession_name = accession_file_name
-            return f"{cloud_path.amazon_prefix}{file_upload_bucket}/{self.uuid}/{accession_file_name}"
+            return f"{RCloneAmazon.prefix}{file_upload_bucket}/{self.uuid}/{accession_file_name}"
         return None
 
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,
