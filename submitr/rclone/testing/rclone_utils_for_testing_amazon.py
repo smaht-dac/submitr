@@ -156,8 +156,9 @@ class AwsS3:
             if not folder.endswith(cloud_path.separator):
                 folder += cloud_path.separator
             client = self.client
+            args = {"Prefix": folder}
             while True:
-                response = self.client.list_objects_v2(Bucket=bucket, Prefix=folder)
+                response = self.client.list_objects_v2(Bucket=bucket, **args)
                 if contents := response.get("Contents"):
                     for item in contents:
                         key = item["Key"]
