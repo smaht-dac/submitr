@@ -29,25 +29,28 @@ class cloud_path:
         return value if value != "." else ""
 
     @staticmethod
-    def join(*args, preserve_prefix: bool = False) -> str:
-        prefix = None
+    def join(*args, preserve_prefix: bool = False, preserve_suffix: bool = False) -> str:
+        prefix = suffix = None
         if preserve_prefix is True:
             if len(args) > 0:
                 _, prefix = cloud_path._remove_prefix(args[0])
             pass
+        if preserve_suffix is True:
+            for arg in reversed(args):
+                if isinstance(arg, str):
+                    if arg.strip().endswith(cloud_path.separator):
+                        suffix = True
+                    break
         path = ""
         for arg in args:
-            #           if isinstance(arg, list):  # TODO: this is stupid to allow this - get rid of it
-            #               if arg := cloud_path.join(*arg):
-            #                   if path:
-            #                       path += cloud_path.separator
-            #                   path += arg
             if arg := cloud_path.normalize(arg):
                 if path:
                     path += cloud_path.separator
                 path += arg
         if prefix:
             path = prefix + path
+        if suffix:
+            path = path + cloud_path.separator
         return path
 
     @staticmethod

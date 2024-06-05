@@ -123,18 +123,14 @@ class RCloneStore(AbstractBaseClass):
             for line in lines:
                 f.write(f"{line}\n")
 
-    def path(self, path: str) -> Optional[str]:
+    def path(self, path: Optional[str], preserve_prefix: bool = False, preserve_suffix: bool = False) -> Optional[str]:
         if path is None:
             path = ""
-        if isinstance(path, str):
-            if path.lower()[0:5] in [cloud_path.google_prefix, cloud_path.amazon_prefix]:
-                path = path[5:]
-            # Sic: Not cloud_path.normalize above as, so long as the given path
-            # is a string or None allow, it to be joined with any defined bucket.
-            return cloud_path.join(self.bucket, path)
-        return None
+        elif not isinstance(path, str):
+            return None
+        return cloud_path.join(self.bucket, path, preserve_prefix=preserve_prefix, preserve_suffix=preserve_suffix)
 
-    def display_path(self, path: str) -> Optional[str]:
+    def display_path(self, path: Optional[str]) -> Optional[str]:
         if path := self.path(path):
             return f"{self.prefix}{path}"
         return None
