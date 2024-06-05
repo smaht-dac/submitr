@@ -4,11 +4,12 @@ from contextlib import contextmanager
 from datetime import datetime
 import os
 from shutil import copy as copy_file
-from typing import Any, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 from dcicutils.datetime_utils import parse_datetime
-from dcicutils.misc_utils import create_uuid, normalize_string
+from dcicutils.misc_utils import create_uuid, normalize_string, PRINT
 from dcicutils.tmpfile_utils import create_temporary_file_name, temporary_file
 from submitr.rclone.rclone_commands import RCloneCommands
+from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.rclone.rclone_utils import cloud_path
 from submitr.utils import DEBUGGING
 
@@ -189,3 +190,48 @@ class RCloneStore(AbstractBaseClass):
 
     def __ne__(self, other: Optional[RCloneStore]) -> bool:
         return not self.__eq__(other)
+
+    _registered_cloud_stores = []
+
+    @staticmethod
+    def register(cls):
+        RCloneStore._registered_cloud_stores.append(cls)
+        return cls
+
+    @staticmethod
+    def from_args(cloud_source: str,
+                  cloud_credentials: Optional[str] = None,
+                  cloud_location: Optional[str] = None,
+                  verify_installation: bool = True,
+                  verify_connectivity: bool = True,
+                  printf: Optional[Callable] = None) -> Optional[RCloneStore]:
+
+        # We could get fancy here and use decorators for RCloneAmazon and RCloneGoogle
+        # et cetera to programmaticaly get the specific RCloneStore instance based on the
+        # prefix of the cloud storage object specified; but at the moment doesn't seem worth it.
+        # TODO: Actually need to do the decorator thing if we don't want circular imports, or something else ...
+        # cloud_store = None
+        # if cloud_path.is_amazon(args.rclone_google_source):
+        #     cloud_store = RCloneAmazon.from_command_args(args.rclone_google_source,
+        #                                                  args.rclone_google_credentials,
+        #                                                  args.rclone_google_location)
+        # elif cloud_path.is_google(args.rclone_google_source) or args.rclone_google_source:
+        #     cloud_store = RCloneGoogle.from_command_args(args.rclone_google_source,
+        #                                                  args.rclone_google_credentials,
+        #                                                  args.rclone_google_location)
+
+        if not (isinstance(cloud_source, str) and cloud_source):
+            return None
+        if not callable(printf):
+            printf = PRINT
+        if (verify_installation is True) and not RCloneInstallation.verify_installation():
+            printf(f"ERROR: Cannot install rclone for some reason (contact support).")
+            exit(1)
+        for cloud_store_class in RCloneStore._registered_cloud_stores:
+            if cloud_source.lower().startswith(cloud_store_class.prefix.lower()):
+                return cloud_store_class.from_args(cloud_source=cloud_source,
+                                                   cloud_credentials=cloud_credentials,
+                                                   cloud_location=cloud_location,
+                                                   verify_connectivity=verify_connectivity,
+                                                   printf=printf)
+        return None

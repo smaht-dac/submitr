@@ -7,18 +7,18 @@ from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, normalize_string, PRINT
 from submitr.rclone.google_credentials import GoogleCredentials
 from submitr.rclone.rclone_commands import RCloneCommands
-from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.rclone.rclone_store import RCloneStore
 from submitr.rclone.rclone_utils import cloud_path
 from submitr.utils import chars
 
 
+@RCloneStore.register
 class RCloneGoogle(RCloneStore):
 
     prefix = cloud_path.google_prefix
     proper_name = "GCS"
     proper_name_title = "Google Cloud Storage"
-    proper_name_label = "google-cloud-store"
+    proper_name_label = "google-cloud-storage"
 
     def __init__(self,
                  credentials_or_config: Optional[Union[GoogleCredentials, RCloneGoogle, str]] = None,
@@ -99,22 +99,6 @@ class RCloneGoogle(RCloneStore):
             self._project = project
             return self._project
 
-    def verify_connectivity(self, printf: Optional[Callable] = None) -> bool:
-        if not callable(printf):
-            printf = print
-        if self.ping():
-            printf(f"Google Cloud Storage project"
-                   f"{f' ({self.project})' if self.project else ''}"
-                   f" connectivity appears to be OK {chars.check}")
-            if self.bucket_exists() is False:
-                printf(f"WARNING: Google Cloud Storage bucket/path NOT FOUND or EMPTY: {self.bucket}")
-            return False
-        else:
-            printf(f"Google Cloud Storage project"
-                   f"{f' ({self.project})' if self.project else ''}"
-                   f" connectivity appears to be problematic {chars.xmark}")
-            return True
-
     def __eq__(self, other: Optional[RCloneGoogle]) -> bool:
         return isinstance(other, RCloneGoogle) and super().__eq__(other)
 
@@ -125,33 +109,49 @@ class RCloneGoogle(RCloneStore):
     def is_google_compute_engine() -> Optional[str]:
         return GoogleCredentials.is_google_compute_engine()
 
-    @staticmethod
-    def from_command_args(rclone_google_source: Optional[str],
-                          rclone_google_credentials: Optional[str] = None,
-                          rclone_google_location: Optional[str] = None,
-                          verify_installation: bool = True,
-                          printf: Optional[Callable] = None) -> Optional[RCloneGoogle]:
+    def verify_connectivity(self, printf: Optional[Callable] = None) -> bool:
+        if not callable(printf):
+            printf = print
+        if self.ping():
+            printf(f"{self.proper_name_title}"
+                   f"{f' (project: {self.project})' if self.project else ''}"
+                   f" connectivity appears to be OK {chars.check}")
+            if self.bucket_exists() is False:
+                printf(f"WARNING: Google Cloud Storage bucket/path NOT FOUND or EMPTY: {self.bucket}")
+            return False
+        else:
+            printf(f"{self.proper_name_title}"
+                   f"{f' (project: {self.project})' if self.project else ''}"
+                   f" connectivity appears to be problematic {chars.xmark}")
+            return True
+
+    @classmethod
+    def from_args(cls,
+                  cloud_source: str,
+                  cloud_credentials: Optional[str],
+                  cloud_location: Optional[str],
+                  verify_connectivity: bool = True,
+                  printf: Optional[Callable] = None) -> Optional[RCloneGoogle]:
         """
         Assumed to be called at the start of command-line utility (i.e. e.g. submit-metadata-bundle).
-        The rclone_google_source should be the Google bucket (or bucket/sub-folder is also allowed),
-        where the files to be copied can be found. The rclone_google_credentials should be the full path
+        The cloud_source should be the Google bucket (or bucket/sub-folder is also allowed),
+        where the files to be copied can be found. The cloud_credentials should be the full path
         to the Google (GCP) service account file; or this can be omitted if running on a GCE instance.
-        The rclone_google_location is the location (aka region) to be used for the copy.
+        The cloud_location is the location (aka region) to be used for the copy.
         """
-        if not isinstance(rclone_google_source, str) or not rclone_google_source:
+        if not (isinstance(cloud_source, str) and cloud_source):  # should never happen
             return None
         if not callable(printf):
             printf = PRINT
-        if not RCloneInstallation.verify_installation():
-            printf(f"ERROR: Cannot install rclone for some reason (contact support).")
+        if not (cloud_credentials := normalize_path(cloud_credentials, expand_home=True)):
+            if not (cloud_credentials := normalize_path(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"),
+                                                        expand_home=True)):
+                printf(f"ERROR: No Google service account file specified.")
+                return None
+        if not os.path.isfile(cloud_credentials):
+            printf(f"ERROR: Google service account file does not exist: {cloud_credentials}")
             exit(1)
-        if not isinstance(rclone_google_credentials, str):
-            if not (rclone_google_credentials := normalize_path(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"),
-                                                                expand_home=True)):
-                rclone_google_credentials = None
-        if rclone_google_credentials and not os.path.isfile(rclone_google_credentials):
-            printf(f"ERROR: Google service account file does not exist: {rclone_google_credentials}")
-            exit(1)
-        return RCloneGoogle(service_account_file=rclone_google_credentials,
-                            location=rclone_google_location,
-                            bucket=rclone_google_source)
+        cloud_store = RCloneGoogle(cloud_credentials, location=cloud_location, bucket=cloud_source)
+        if verify_connectivity is True:
+            cloud_store.verify_connectivity(printf=printf)
+        return cloud_store

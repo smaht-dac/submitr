@@ -5,7 +5,7 @@ from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
 from .cli_utils import CustomArgumentParser
 from submitr.base import DEFAULT_APP
-from submitr.rclone import RCloneAmazon, RCloneGoogle, cloud_path
+from submitr.rclone import RCloneStore
 from submitr.submission import (
     submit_any_ingestion,
     DEFAULT_INGESTION_TYPE,
@@ -232,11 +232,10 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--rclone-google-location', help="GCS location (aka region).", default=None)
 
     # TODO: This are in progress; unifying rclone based Google/Amazon cloud source).
-    parser.add_argument('--source', help="Unification of --cloud-source and --directory.", default=None)
     parser.add_argument('--cloud-source', help="GCS credentials (service account file).", default=None)
     parser.add_argument('--cloud-credentials', help="GCS credentials (service account file).", default=None)
-    parser.add_argument('--cloud-region', help="Cloud location/region).", default=None)
-    parser.add_argument('--cloud-location', help="Synonym for --cloud-region .", default=None)
+    parser.add_argument('--cloud-location', help="Cloud location/region.", default=None)
+    parser.add_argument('--cloud-region', help="Synonym for --cloud-location ", default=None)
 
     args = parser.parse_args(args=simulated_args_for_testing)
 
@@ -251,16 +250,20 @@ def main(simulated_args_for_testing=None):
         args.upload_folder = args.directory_only
         directory_only = True
 
-    cloud_store = None
-    if cloud_path.is_amazon(args.rclone_google_source):
-        cloud_store = RCloneAmazon.from_command_args(args.rclone_google_source,
-                                                     args.rclone_google_credentials,
-                                                     args.rclone_google_location)
-        pass
-    elif cloud_path.is_google(args.rclone_google_source) or args.rclone_google_source:
-        cloud_store = RCloneGoogle.from_command_args(args.rclone_google_source,
-                                                     args.rclone_google_credentials,
-                                                     args.rclone_google_location)
+    cloud_store = RCloneStore.from_args(cloud_source=args.rclone_google_source,
+                                        cloud_credentials=args.rclone_google_credentials,
+                                        cloud_location=args.rclone_google_location,
+                                        printf=PRINT)
+#   cloud_store = None
+#   if cloud_path.is_amazon(args.rclone_google_source):
+#       cloud_store = RCloneAmazon.from_command_args(args.rclone_google_source,
+#                                                    args.rclone_google_credentials,
+#                                                    args.rclone_google_location)
+#       pass
+#   elif cloud_path.is_google(args.rclone_google_source) or args.rclone_google_source:
+#       cloud_store = RCloneGoogle.from_command_args(args.rclone_google_source,
+#                                                    args.rclone_google_credentials,
+#                                                    args.rclone_google_location)
 
     env_from_env = False
     if not args.env:

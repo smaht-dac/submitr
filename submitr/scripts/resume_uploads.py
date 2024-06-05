@@ -2,7 +2,7 @@ import os
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
 from submitr.base import DEFAULT_APP
-from submitr.rclone import RCloneAmazon, RCloneGoogle, cloud_path
+from submitr.rclone import RCloneStore
 from submitr.submission import resume_uploads
 from submitr.scripts.cli_utils import CustomArgumentParser
 
@@ -116,16 +116,20 @@ def main(simulated_args_for_testing=None):
         args.upload_folder = args.directory_only
         directory_only = True
 
-    cloud_store = None
-    if cloud_path.is_amazon(args.rclone_google_source):
-        cloud_store = RCloneAmazon.from_command_args(args.rclone_google_source,
-                                                     args.rclone_google_credentials,
-                                                     args.rclone_google_location)
-        pass
-    elif cloud_path.is_google(args.rclone_google_source) or args.rclone_google_source:
-        cloud_store = RCloneGoogle.from_command_args(args.rclone_google_source,
-                                                     args.rclone_google_credentials,
-                                                     args.rclone_google_location)
+    cloud_store = RCloneStore.from_args(cloud_source=args.rclone_google_source,
+                                        cloud_credentials=args.rclone_google_credentials,
+                                        cloud_location=args.rclone_google_location,
+                                        printf=PRINT)
+#   cloud_store = None
+#   if cloud_path.is_amazon(args.rclone_google_source):
+#       cloud_store = RCloneAmazon.from_command_args(args.rclone_google_source,
+#                                                    args.rclone_google_credentials,
+#                                                    args.rclone_google_location)
+#       pass
+#   elif cloud_path.is_google(args.rclone_google_source) or args.rclone_google_source:
+#       cloud_store = RCloneGoogle.from_command_args(args.rclone_google_source,
+#                                                    args.rclone_google_credentials,
+#                                                    args.rclone_google_location)
 
     if args.yes:
         args.no_query = True

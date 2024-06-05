@@ -4,12 +4,12 @@ from typing import Callable, Optional, Union
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, normalize_string, PRINT
 from submitr.rclone.amazon_credentials import AmazonCredentials
-from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.rclone.rclone_store import RCloneStore
 from submitr.rclone.rclone_utils import cloud_path
 from submitr.utils import chars
 
 
+@RCloneStore.register
 class RCloneAmazon(RCloneStore):
 
     prefix = cloud_path.amazon_prefix
@@ -91,44 +91,41 @@ class RCloneAmazon(RCloneStore):
         if not callable(printf):
             printf = print
         if self.ping():
-            printf(f"Amazon Cloud Storage project"
-                   f" connectivity appears to be OK {chars.check}")
-                   # f"{f' ({self.project})' if self.project else ''}" # TODO  # noqa
+            printf(f"{self.proper_name_title} connectivity appears to be OK {chars.check}")
             if self.bucket_exists() is False:
                 printf(f"WARNING: AWS S3 bucket/path NOT FOUND or EMPTY: {self.bucket}")
             return False
         else:
-            printf(f"AWS S3 project"
-            #      f"{f' ({self.project})' if self.project else ''}" # TODO  # noqa
+            printf(f"{self.proper_name_title}"
                    f" connectivity appears to be problematic {chars.xmark}")
             return True
 
-    @staticmethod
-    def from_command_args(rclone_cloud_source: Optional[str],
-                          rclone_cloud_credentials: Optional[str] = None,
-                          rclone_cloud_location: Optional[str] = None,
-                          verify_installation: bool = True,
-                          printf: Optional[Callable] = None) -> Optional[RCloneAmazon]:
+    @classmethod
+    def from_args(cls,
+                  cloud_source: str,
+                  cloud_credentials: Optional[str],
+                  cloud_location: Optional[str],
+                  verify_connectivity: bool = True,
+                  printf: Optional[Callable] = None) -> Optional[RCloneAmazon]:
         """
         Assumed to be called at the start of command-line utility (i.e. e.g. submit-metadata-bundle).
-        The rclone_cloud_source should be the Amazon bucket (or bucket/sub-folder is also allowed),
-        where the files to be copied can be found. The rclone_cloud_credentials should be the full path to
-        the Amazon (AWS S3) credentiasl file. The rclone_cloud_location is the region to be used for the copy.
+        The cloud_source should be the Amazon bucket (or bucket/sub-folder is also allowed),
+        where the files to be copied can be found. The cloud_credentials should be the full path to
+        the Amazon (AWS S3) credentiasl file. The cloud_location is the region to be used for the copy.
         """
-        if not isinstance(rclone_cloud_source, str) or not rclone_cloud_source:
+        if not (isinstance(cloud_source, str) and cloud_source):  # should never happen
             return None
         if not callable(printf):
             printf = PRINT
-        if not RCloneInstallation.verify_installation():
-            printf(f"ERROR: Cannot install rclone for some reason (contact support).")
+        if not (cloud_credentials := normalize_path(cloud_credentials, expand_home=True)):
+            if not (cloud_credentials := normalize_path(os.environ.get("AWS_SHARED_CREDENTIALS_FILE"),
+                                                        expand_home=True)):
+                printf(f"ERROR: No Amazon credentials file specified.")
+                return None
+        if not os.path.isfile(cloud_credentials):
+            printf(f"ERROR: Amazon credentials file does not exist: {cloud_credentials}")
             exit(1)
-        if not isinstance(rclone_cloud_credentials, str):
-            if not (rclone_cloud_credentials := normalize_path(os.environ.get("AWS_SHARED_CREDENTIALS_FILE"),
-                                                               expand_home=True)):
-                rclone_cloud_credentials = None
-        if rclone_cloud_credentials and not os.path.isfile(rclone_cloud_credentials):
-            printf(f"ERROR: Amazon service account file does not exist: {rclone_cloud_credentials}")
-            exit(1)
-        return RCloneAmazon(rclone_cloud_credentials,
-                            region=rclone_cloud_location,
-                            bucket=rclone_cloud_source)
+        cloud_store = RCloneAmazon(cloud_credentials, region=cloud_location, bucket=cloud_source)
+        if verify_connectivity is True:
+            cloud_store.verify_connectivity(printf=printf)
+        return cloud_store
