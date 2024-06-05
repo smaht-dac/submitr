@@ -23,12 +23,12 @@ class GoogleCredentials:
 
         if service_account_file := normalize_path(service_account_file, expand_home=True):
             if not os.path.isfile(service_account_file):
-                raise Exception(f"GoogleCredentials service account file not found: {service_account_file}")
+                raise Exception(f"Google service account file not found: {service_account_file}")
             self._service_account_file = service_account_file
         elif (isinstance(credentials, str) and (service_account_file := normalize_path(credentials, expand_home=True))):
             # For convenience also all first argument to be the service account file.
             if not os.path.isfile(service_account_file):
-                raise Exception(f"GoogleCredentials service account file not found: {service_account_file}")
+                raise Exception(f"Google service account file not found: {service_account_file}")
             self._service_account_file = service_account_file
 
         if location := normalize_string(location):

@@ -29,6 +29,8 @@ class AmazonCredentials:
         elif credentials := normalize_path(credentials, expand_home=True):
             region, access_key_id, secret_access_key, session_token = (
                 AmazonCredentials._read_credentials_file(credentials))
+            if not access_key_id:
+                raise Exception(f"Amazon credentials cannot be loaded: {credentials}")
             self._region = region
             self._access_key_id = access_key_id
             self._secret_access_key = secret_access_key
