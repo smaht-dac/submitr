@@ -101,7 +101,7 @@ def main() -> None:
             elif temporary_credentials_source_amazon:
                 bucket = key = None
                 if temporary_credentials_source_amazon is True:
-                    # Default if no argument give for the -tcd option is to target
+                    # Default if no argument give for the -tcs option is to target
                     # the temporary credentials to the specified (S3) source bucket/key.
                     bucket, key = cloud_path.bucket_and_key(args.source)
                 else:

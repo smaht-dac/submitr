@@ -68,11 +68,13 @@ class RCloneStore(AbstractBaseClass):
         problem). As NOTED in the constructor, this "bucket" can actually be ANY path, which includes the
         bucket (of course) and an optional sub-folder.
 
-        NOTE: If the bucket DOES contains a sub-folder, this ONLY returns True if it contains something,
-        i.e. some key, or another sub-folder et cetera which EVENTUALLY contains an actual key; but this
-        is fine for our purposes, where this function is (currently - in the RCloneStore implementations
-        of the verify_connectivity function) only used to check that a given cloud source (for files to
-        upload/transfer, i.e. via the --cloud-source option) exists.
+        NOTE: If the bucket property for this cloud store object DOES contains a sub-folder, this ONLY
+        returns True if that bucket/sub-folder in the cloud contains something, i.e. some key, or another
+        sub-folder et cetera which EVENTUALLY contains some actual key; but this is fine for our purposes,
+        where this function is (currently - in the RCloneStore implementations of the verify_connectivity
+        function) used only to check that a given cloud source (for files to upload/transfer, i.e. via
+        the --cloud-source option) exists; in this case we expect an actual/specific source key to exist,
+        i.e.  since we do not handle/allow copying (from) and entire bucket/folder.
         """
         if not (bucket := self.bucket):
             return None
@@ -144,8 +146,8 @@ class RCloneStore(AbstractBaseClass):
     def is_path_folder_or_bucket_only(self, path: str) -> bool:
         """
         Returns True iff the give path, prefixed/joined with any bucket defined in this cloud
-        store object, represent either a folder or just a bucket; i.e. in practice this means
-        True is returned iff the path ends in a slash, or is a bucket with no susequent slashes.
+        store object, represents either a folder or just a bucket; i.e. iff this joined path
+        ends in a slash, or has no slashes; otherwise returns False.
         """
         if path := self.path(path, preserve_suffix=True):
             if cloud_path.is_folder(path) or cloud_path.is_bucket_only(path):
@@ -153,12 +155,22 @@ class RCloneStore(AbstractBaseClass):
         return False
 
     def is_path_bucket_only(self, path: str) -> bool:
+        """
+        Returns True iff the give path, prefixed/joined with any bucket defined
+        in this cloud store object, represents just a bucket; iff this joined
+        path has no slashes; otherwise returns False.
+        """
         if path := self.path(path, preserve_suffix=True):
             if cloud_path.is_bucket_only(path):
                 return True
         return False
 
     def is_path_folder(self, path: str) -> bool:
+        """
+        Returns True iff the give path, prefixed/joined with any bucket defined in this cloud
+        store object, represents a folder, i.e. iff this joined path ends in a slash;
+        otherwise returns False.
+        """
         if path := self.path(path, preserve_suffix=True):
             if cloud_path.is_folder(path):
                 return True
