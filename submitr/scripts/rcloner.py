@@ -59,13 +59,14 @@ def main() -> None:
     info = (action == "info")
 
     if copy:
-        if not args.source:
+        if not (source := args.source.strip()):
             usage(f"Must specify a source for copy.")
-        if not args.destination:
+        if not (destination := args.destination.strip()):
             usage(f"Must specify destination for copy.")
     elif info:
-        if not args.source:
+        if not (source := args.source.strip()):
             usage(f"Must specify a source for copy.")
+        destination = None
     else:
         usage("Must specify copy or info.")
 
