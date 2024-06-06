@@ -51,7 +51,9 @@ def main() -> None:
     args.add_argument("--google-credentials", "-gcs", help="Amazon or Google service account file.")
     args.add_argument("--google-credentials-source", "-gcss", help="Amazon or Google service account file.")
     args.add_argument("--google-credentials-destination", "-gcsd", help="Amazon or Google service account file.")
-    args.add_argument("--kms", help="Amazon KMS key ID.", default=None)
+    args.add_argument("--kms", help="Amazon KMS key ID for source and/or destination.", default=None)
+    args.add_argument("--kms-source", "-kmss", help="Amazon KMS key ID for source.", default=None)
+    args.add_argument("--kms-destination", "-kmsd", help="Amazon KMS key ID for destination.", default=None)
     args.add_argument("--noprogress", action="store_true", help="Do not show progress bar.", default=False)
     args.add_argument("--verbose", action="store_true", help="Verbose output.", default=False)
     args.add_argument("--debug", action="store_true", help="Debug output.", default=False)
@@ -124,8 +126,11 @@ def main() -> None:
 
         if not args.amazon_credentials_source:
             args.amazon_credentials_source = args.amazon_credentials
+        if not args.kms_source:
+            args.kms_source = args.kms
 
-        if not (credentials_source_amazon := AmazonCredentials.obtain(args.amazon_credentials_source)):
+        if not (credentials_source_amazon := AmazonCredentials.obtain(args.amazon_credentials_source,
+                                                                      kms_key_id=args.kms_source)):
             usage(f"Cannot find AWS credentials.")
         if not credentials_source_amazon.ping():
             usage(f"Given AWS credentials appear to be invalid.")
@@ -135,7 +140,7 @@ def main() -> None:
         if temporary_credentials_source_amazon == "-":
             # Special case of untargeted (to any bucket/key) temporary credentials.
             temporary_credentials_source_amazon = (
-                generate_amazon_temporary_credentials(credentials_source_amazon, kms_key_id=args.kms,
+                generate_amazon_temporary_credentials(credentials_source_amazon, kms_key_id=args.kms_source,
                                                       policy=credentials_source_policy_amazon))
         elif temporary_credentials_source_amazon:
             bucket = key = None
@@ -149,7 +154,7 @@ def main() -> None:
             if bucket:
                 temporary_credentials_source_amazon = (
                     generate_amazon_temporary_credentials(credentials_source_amazon,
-                                                          bucket=bucket, key=key, kms_key_id=args.kms,
+                                                          bucket=bucket, key=key, kms_key_id=args.kms_source,
                                                           policy=credentials_source_policy_amazon))
             else:
                 temporary_credentials_source_amazon = None
@@ -160,8 +165,11 @@ def main() -> None:
 
         if not args.amazon_credentials_destination:
             args.amazon_credentials_destination = args.amazon_credentials
+        if not args.kms_destination:
+            args.kms_destination = args.kms
 
-        if not (credentials_destination_amazon := AmazonCredentials.obtain(args.amazon_credentials_destination)):
+        if not (credentials_destination_amazon := AmazonCredentials.obtain(args.amazon_credentials_destination,
+                                                                           kms_key_id=args.kms_destination)):
             usage(f"Cannot find AWS credentials.")
         if not credentials_destination_amazon.ping():
             usage(f"Given AWS credentials appear to be invalid.")
@@ -171,7 +179,7 @@ def main() -> None:
         if temporary_credentials_destination_amazon == "-":
             # Special case of untargeted (to any bucket/key) temporary credentials.
             temporary_credentials_destination_amazon = (
-                generate_amazon_temporary_credentials(credentials_destination_amazon, kms_key_id=args.kms,
+                generate_amazon_temporary_credentials(credentials_destination_amazon, kms_key_id=args.kms_destination,
                                                       policy=credentials_destination_policy_amazon))
         elif temporary_credentials_destination_amazon:
             bucket = key = None
@@ -185,7 +193,7 @@ def main() -> None:
             if bucket:
                 temporary_credentials_destination_amazon = (
                     generate_amazon_temporary_credentials(credentials_destination_amazon,
-                                                          bucket=bucket, key=key, kms_key_id=args.kms,
+                                                          bucket=bucket, key=key, kms_key_id=args.kms_destination,
                                                           policy=credentials_destination_policy_amazon))
             else:
                 temporary_credentials_destination_amazon = None
