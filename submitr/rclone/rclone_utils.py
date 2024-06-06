@@ -101,21 +101,21 @@ class cloud_path:
             key = cloud_path.normalize(key, preserve_suffix=True)
             trailing_separator_bucket = isinstance(bucket, str) and bucket.endswith(cloud_path.separator)
             trailing_separator_key = key.endswith(cloud_path.separator) if key else False
-            folder = trailing_separator_key or ((not key) and trailing_separator_bucket)
+            is_folder = trailing_separator_key or ((not key) and trailing_separator_bucket)
         else:
-            folder = False
+            is_folder = False
         if not (bucket_and_key := cloud_path.join(bucket, key)):
             return None, None
-        if cloud_path.has_separator(bucket_and_key):
+        if cloud_path.separator in bucket_and_key:
             bucket = cloud_path.bucket(bucket_and_key)
             key = cloud_path.key(bucket_and_key)
-            return (bucket, key + cloud_path.separator) if folder else (bucket, key)
+            return (bucket, key + cloud_path.separator) if is_folder else (bucket, key)
         else:
             return bucket_and_key, None
 
     @staticmethod
     def is_bucket_only(path: str) -> bool:
-        return not cloud_path.has_separator(cloud_path.normalize(path))
+        return cloud_path.separator not in cloud_path.normalize(path)
 
     @staticmethod
     def is_folder(path: str) -> bool:
