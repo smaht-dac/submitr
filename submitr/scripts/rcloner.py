@@ -260,12 +260,12 @@ def main_copy(source: str, destination: str,
 
     source_config = None
     if is_amazon_path(source):
-        source = cloud_path.normalize(source)
+        source = cloud_path.normalize(source, preserve_prefix=True)
         if not credentials_source_amazon:
             usage("No AWS credentials specified or found (in environment).")
         source_config = RCloneAmazon(credentials_source_amazon)
     elif is_google_path(source):
-        source = cloud_path.normalize(source)
+        source = cloud_path.normalize(source, preserve_prefix=True)
         if not credentials_source_google:
             if not RCloneGoogle.is_google_compute_engine():
                 # No Google credentials AND NOT running on a GCE instance.
@@ -281,12 +281,12 @@ def main_copy(source: str, destination: str,
 
     destination_config = None
     if is_amazon_path(destination):
-        destination = cloud_path.normalize(destination)
+        destination = cloud_path.normalize(destination, preserve_prefix=True)
         if not credentials_destination_amazon:
             usage("No AWS credentials specified or found (in environment).")
         destination_config = RCloneAmazon(credentials_destination_amazon)
     elif is_google_path(destination):
-        destination = cloud_path.normalize(destination)
+        destination = cloud_path.normalize(destination, preserve_prefix=True)
         if not credentials_destination_google:
             if not RCloneGoogle.is_google_compute_engine():
                 # No Google credentials AND NOT running on a GCE instance.
@@ -323,6 +323,14 @@ def main_copy(source: str, destination: str,
     if verbose:
         print(f"Source: {source}")
         print(f"Destination: {destination}")
+        if isinstance(source_config, RCloneAmazon):
+            print_amazon_credentials_info(source_config, prefix="Source ")
+        elif isinstance(source_config, RCloneGoogle):
+            print_google_credentials_info(source_config, prefix="Source ")
+        if isinstance(destination_config, RCloneAmazon):
+            print_amazon_credentials_info(destination_config, prefix="Destination ")
+        elif isinstance(destination_config, RCloneGoogle):
+            print_google_credentials_info(destination_config, prefix="Destination ")
 
     if show_temporary_credentials_policy:
         if credentials_source_policy_amazon:
@@ -418,18 +426,21 @@ def print_info(target: str,
     if is_amazon_path(target):
         if not credentials_amazon:
             usage(f"No AWS credentials specified for: {target}")
-        print(f"AWS S3 Target: {target}")
-        print_info_via_rclone(target, RCloneAmazon(credentials_amazon))
+        print(f"AWS S3 target: {target}")
+        amazon = RCloneAmazon(credentials_amazon)
+        print_amazon_credentials_info(amazon)
         if show_temporary_credentials_policy:
             if credentials_policy_amazon:
                 print("AWS temporary credentials policy:")
                 print_amazon_temporary_credentials_policy(credentials_policy_amazon)
+        print_info_via_rclone(target, amazon)
     elif is_google_path(target):
         if not credentials_google:
             usage(f"No GCS credentials specified for: {target}")
-        print("")
-        print(f"GCS Target: {target}")
-        print_info_via_rclone(target, RCloneGoogle(credentials_google))
+        print(f"GCS target: {target}")
+        google = RCloneGoogle(credentials_google)
+        print_google_credentials_info(google)
+        print_info_via_rclone(target, google)
 
 
 def print_info_via_rclone(target: str, rclone_store: RCloneStore) -> None:
@@ -448,6 +459,21 @@ def print_info_via_rclone(target: str, rclone_store: RCloneStore) -> None:
             print(f"Metadata ({len(metadata)}):")
             for key in {key: metadata[key] for key in sorted(metadata)}:
                 print(f"- {key}: {metadata[key]}")
+
+
+def print_amazon_credentials_info(store: RCloneAmazon, prefix: Optional[str] = "") -> None:
+    if isinstance(store, RCloneAmazon) and store.credentials:
+        if store.credentials.credentials_file:
+            print(f"{prefix}AWS credentials file: {store.credentials.credentials_file}")
+        print(f"{prefix}AWS access key ID: {store.credentials.access_key_id}")
+
+
+def print_google_credentials_info(store: RCloneGoogle, prefix: Optional[str] = "") -> None:
+    if isinstance(store, RCloneGoogle) and store.credentials:
+        if store.credentials.service_account_file:
+            print(f"{prefix}GCS service account file: {store.credentials.service_account_file}")
+            if store.project:
+                print(f"{prefix}GCS project ID: {store.project}")
 
 
 def print_amazon_temporary_credentials_policy(policy: dict) -> None:

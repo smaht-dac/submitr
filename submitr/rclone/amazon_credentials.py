@@ -181,12 +181,13 @@ class AmazonCredentials:
             aws_session_token = session_token
         if not (aws_access_key_id and aws_secret_access_key):
             return None
-        return AmazonCredentials(
-             region=aws_region,
-             access_key_id=aws_access_key_id,
-             secret_access_key=aws_secret_access_key,
-             session_token=aws_session_token,
-             kms_key_id=kms_key_id)
+        credentials = AmazonCredentials(region=aws_region,
+                                        access_key_id=aws_access_key_id,
+                                        secret_access_key=aws_secret_access_key,
+                                        session_token=aws_session_token,
+                                        kms_key_id=kms_key_id)
+        credentials._credentials_file = credentials_file or None
+        return credentials
 
     @staticmethod
     def _read_credentials_file(credentials_file: str,
