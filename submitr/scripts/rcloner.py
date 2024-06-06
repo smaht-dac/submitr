@@ -2,6 +2,7 @@ import argparse
 from collections import namedtuple
 import os
 import signal
+import yaml
 from typing import Optional
 from dcicutils.file_utils import get_file_size
 from dcicutils.misc_utils import format_size
@@ -34,6 +35,8 @@ def main() -> None:
                       help="Use Amazon temporary/session credentials for source.", const=True, default=None)
     args.add_argument("--amazon-temporary-credentials-destination", "-tcd", nargs="?",
                       help="Use Amazon temporary/session credentials for destination.", const=True, default=None)
+    args.add_argument("--show-temporary-credentials-policy", "-tcp", action="store_true",
+                      help="Show temporary credentials policy.", default=False)
     args.add_argument("--google-credentials", "-gcs", help="Amazon or Google configuration file.")
     args.add_argument("--kms", help="Amazon KMS key ID.", default=None)
     args.add_argument("--noprogress", action="store_true", help="Do not show progress bar.", default=False)
@@ -42,7 +45,7 @@ def main() -> None:
     args = args.parse_args()
 
     if args.debug:
-        os.environ["SMAHT_DEBUG"] = True
+        os.environ["SMAHT_DEBUG"] = "true"
 
     action = args.action.lower()
     copy = (action == "copy") or (action == "cp")
@@ -72,6 +75,9 @@ def main() -> None:
         if not cloud_path.has_separator(cloud_path.normalize(args.source)):
             usage("May not specify just a bucket as a source; only single key/file allowed.")
 
+    if not is_source_cloud:
+        args.source = os.path.abspath(args.source)
+
     copyto = True
     if is_destination_cloud:
         if cloud_path.is_folder(args.destination) or cloud_path.is_bucket_only(args.destination):
@@ -82,12 +88,18 @@ def main() -> None:
                 args.destination = cloud_path.join(args.destination, source_basename, preserve_prefix=True)
             else:
                 copyto = False
+    else:
+        args.destination = os.path.abspath(args.destination)
 
     # Amazon credentials are split into source and destination
     # because we may specify either/both/none as temporary credentials.
     credentials_source_amazon = None
     credentials_destination_amazon = None
     credentials_google = None
+
+    # For AwS temporary credentials if requested, i.e. -tcs and/or -tcd.
+    credentials_source_policy_amazon = {}
+    credentials_destination_policy_amazon = {}
 
     if is_source_amazon or is_destination_amazon:
 
@@ -102,7 +114,8 @@ def main() -> None:
             if temporary_credentials_source_amazon == "-":
                 # Special case of untargeted (to any bucket/key) temporary credentials.
                 temporary_credentials_source_amazon = (
-                    generate_amazon_temporary_credentials(credentials_amazon, kms_key_id=args.kms))
+                    generate_amazon_temporary_credentials(credentials_amazon, kms_key_id=args.kms,
+                                                          policy=credentials_source_policy_amazon))
             elif temporary_credentials_source_amazon:
                 bucket = key = None
                 if temporary_credentials_source_amazon is True:
@@ -115,7 +128,8 @@ def main() -> None:
                 if bucket:
                     temporary_credentials_source_amazon = (
                         generate_amazon_temporary_credentials(credentials_amazon,
-                                                              bucket=bucket, key=key, kms_key_id=args.kms))
+                                                              bucket=bucket, key=key, kms_key_id=args.kms,
+                                                              policy=credentials_source_policy_amazon))
                 else:
                     temporary_credentials_source_amazon = None
             if temporary_credentials_source_amazon:
@@ -129,7 +143,8 @@ def main() -> None:
             if temporary_credentials_destination_amazon == "-":
                 # Special case of untargeted (to any bucket/key) temporary credentials.
                 temporary_credentials_destination_amazon = (
-                    generate_amazon_temporary_credentials(credentials_amazon, kms_key_id=args.kms))
+                    generate_amazon_temporary_credentials(credentials_amazon, kms_key_id=args.kms,
+                                                          policy=credentials_destination_policy_amazon))
             elif temporary_credentials_destination_amazon:
                 bucket = key = None
                 if temporary_credentials_destination_amazon is True:
@@ -142,7 +157,8 @@ def main() -> None:
                 if bucket:
                     temporary_credentials_destination_amazon = (
                         generate_amazon_temporary_credentials(credentials_amazon,
-                                                              bucket=bucket, key=key, kms_key_id=args.kms))
+                                                              bucket=bucket, key=key, kms_key_id=args.kms,
+                                                              policy=credentials_destination_policy_amazon))
                 else:
                     temporary_credentials_destination_amazon = None
             if temporary_credentials_destination_amazon:
@@ -166,8 +182,12 @@ def main() -> None:
         exit(main_copy(args.source, args.destination,
                        credentials_source_amazon=credentials_source_amazon,
                        credentials_destination_amazon=credentials_destination_amazon,
+                       credentials_source_policy_amazon=credentials_source_policy_amazon,
+                       credentials_destination_policy_amazon=credentials_destination_policy_amazon,
                        credentials_google=credentials_google,
-                       copyto=copyto, progress=not args.noprogress, verbose=args.verbose))
+                       copyto=copyto, progress=not args.noprogress,
+                       show_temporary_credentials_policy=args.show_temporary_credentials_policy,
+                       verbose=args.verbose, debug=args.debug))
     elif info:
         exit(main_info(args.source, args.destination,
                        credentials_source_amazon=credentials_source_amazon,
@@ -179,8 +199,12 @@ def main() -> None:
 def main_copy(source: str, destination: str,
               credentials_source_amazon: Optional[AmazonCredentials] = None,
               credentials_destination_amazon: Optional[AmazonCredentials] = None,
+              credentials_source_policy_amazon: Optional[dict] = None,
+              credentials_destination_policy_amazon: Optional[dict] = None,
               credentials_google: Optional[GoogleCredentials] = None,
-              copyto: bool = True, progress: bool = False, verbose: bool = False) -> None:
+              copyto: bool = True, progress: bool = False,
+              show_temporary_credentials_policy: bool = False,
+              verbose: bool = False, debug: bool = False) -> None:
 
     source_config = None
     if is_amazon_path(source):
@@ -243,15 +267,31 @@ def main_copy(source: str, destination: str,
         return namedtuple("progress_callback", ["function", "process"])(progress_callback, process_info)
         return progress_callback
 
+    if verbose:
+        print(f"Source: {source}")
+        print(f"Destination: {destination}")
+
+    if show_temporary_credentials_policy:
+        if credentials_source_policy_amazon:
+            print("AWS temporary source credentials policy:")
+            print_amazon_temporary_credentials_policy(credentials_source_policy_amazon)
+        if credentials_destination_policy_amazon:
+            print("AWS temporary destination credentials policy:")
+            print_amazon_temporary_credentials_policy(credentials_destination_policy_amazon)
+
     progress_callback = define_progress_callback(source_config, source) if progress is True else None
     rcloner = RCloner(source=source_config, destination=destination_config)
     result, output = rcloner.copy(source, destination, copyto=copyto,
                                   progress=progress_callback.function if progress_callback else None,
                                   process_info=progress_callback.process if progress_callback else None,
                                   return_output=True)
+    if progress:
+        print()
+
     if result is True:
-        print("OK", end="")
         if verbose:
+            print(f"OK")
+        if debug:
             print(f" {chars.rarrow} rclone output below ...")
             for line in output:
                 print(line)
@@ -264,7 +304,7 @@ def main_copy(source: str, destination: str,
             print(f"ERROR: {'Access Denied' if access_denied else ''}", end="")
         else:
             print(f"ERROR", end="")
-        if verbose:
+        if debug:
             print(f" {chars.rarrow} rclone output below ...")
             for line in output:
                 print(line)
@@ -288,7 +328,6 @@ def main_info(source: str,
         print_info(destination,
                    credentials_amazon=credentials_destination_amazon,
                    credentials_google=credentials_google)
-    print("")
 
 
 def generate_amazon_temporary_credentials(amazon_credentials: AmazonCredentials,
@@ -313,7 +352,6 @@ def print_info(target: str,
     if is_amazon_path(target):
         if not credentials_amazon:
             usage(f"No AWS credentials specified for: {target}")
-        print("")
         print(f"AWS S3 Target: {target}")
         print_info_via_rclone(target, RCloneAmazon(credentials_amazon))
     elif is_google_path(target):
@@ -340,6 +378,25 @@ def print_info_via_rclone(target: str, rclone_store: RCloneStore) -> None:
             print(f"Metadata ({len(metadata)}):")
             for key in {key: metadata[key] for key in sorted(metadata)}:
                 print(f"- {key}: {metadata[key]}")
+
+
+def print_amazon_temporary_credentials_policy(policy: dict) -> None:
+    # Statement:
+    # - Action:
+    #   - s3:GetObject
+    #   - s3:PutObject
+    #   Effect: Allow
+    #   Resource:
+    #   - arn:aws:s3:::smaht-unit-testing-files/test-folder/222TWJLT4-1-IDUDI0055v2_S1_L001_R2_001.fastq.gz
+    # - Action: s3:ListBucket
+    #   Condition:
+    #     StringLike:
+    #       s3:prefix:
+    #       - test-folder/222TWJLT4-1-IDUDI0055v2_S1_L001_R2_001.fastq.gz
+    #   Effect: Allow
+    #   Resource: arn:aws:s3:::smaht-unit-testing-files
+    # Version: '2012-10-17'
+    print(yaml.dump(policy).strip().replace("Statement:\n", ""))
 
 
 def usage(message: str) -> None:

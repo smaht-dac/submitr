@@ -293,7 +293,8 @@ class AwsS3:
                                        kms_key_id: Optional[str] = None,
                                        duration: Optional[Union[int, timedelta]] = None,
                                        source: Optional[str] = None,
-                                       readonly: bool = False) -> Optional[AmazonCredentials]:
+                                       readonly: bool = False,
+                                       policy: Optional[dict] = None) -> Optional[AmazonCredentials]:
         """
         Generates and returns temporary AWS credentials. The default duration of validity for
         the generated credential is one hour; this can be overridden by specifying the duration
@@ -301,6 +302,8 @@ class AwsS3:
         access (AmazonS3FullAccess); but if the readonly argument is True then this will be
         limited to readonly S3 access (AmazonS3ReadOnlyAccess). Passing bucket or bucket/key
         key argument/s will further limit access to just the specified bucket or bucket/key.
+        If the given policy argument is {} then it will be populated with the contents of the
+        AWS policy used to create the temporary credentials; this is for troubleshooting.
         """
         statements = []
         resources = ["*"] ; deny = False  # noqa
@@ -330,9 +333,12 @@ class AwsS3:
                                    "Condition": {"StringLike": {"s3:prefix": [f"{key}"]}}})  # NEW
         if deny:
             statements.append({"Effect": "Deny", "Action": actions, "NotResource": resources})
-        policy = {"Version": "2012-10-17", "Statement": statements}
+        aws_policy = {"Version": "2012-10-17", "Statement": statements}
+        if policy == {}:
+            policy.update(aws_policy)
+            del policy["Version"]
         temporary_credentials = AwsS3._generate_temporary_credentials(generating_credentials=self.credentials,
-                                                                      policy=policy,
+                                                                      policy=aws_policy,
                                                                       kms_key_id=kms_key_id,
                                                                       duration=duration)
         return temporary_credentials
