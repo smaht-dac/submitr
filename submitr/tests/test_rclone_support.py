@@ -1069,3 +1069,18 @@ def test_rclone_store_bucket_exists_google() -> None:
         assert google_store.bucket_exists() is True
         assert env_google.non_rclone().delete_file(cloud_file_path) is True
         assert env_google.non_rclone().delete_folders(env_google.bucket, base_subfolder_name) is True
+
+
+def test_rclone_copy_to_folder() -> None:
+    env_amazon = EnvAmazon()
+    with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
+        amazon_base_subfolder = f"test-{create_uuid()}"
+        amazon_subfolder = cloud_path.join(f"{amazon_base_subfolder}",
+                                           "test-abc", "test-def", "/", preserve_suffix=True)
+        amazon_bucket_and_folder = cloud_path.join(env_amazon.bucket, amazon_subfolder)
+        amazon_store = RCloneAmazon(env_amazon.credentials(), bucket=amazon_bucket_and_folder)
+        rcloner = RCloner(destination=amazon_store)
+        rcloner.copy(tmp_test_file_path, cloud_path.separator)
+        assert env_amazon.non_rclone().file_exists(cloud_path.join(amazon_bucket_and_folder,
+                                                                   tmp_test_file_name)) is True
+        assert env_amazon.non_rclone().delete_folders(env_amazon.bucket, amazon_base_subfolder) is True

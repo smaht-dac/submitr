@@ -125,17 +125,32 @@ class RCloneStore(AbstractBaseClass):
             for line in lines:
                 f.write(f"{line}\n")
 
-    def path(self, path: Optional[str], preserve_prefix: bool = False, preserve_suffix: bool = False) -> Optional[str]:
+    def path(self, path: Optional[str], preserve_suffix: bool = False) -> Optional[str]:
+        """
+        Returns the given path prefixed/joined with any bucket defined in this cloud store object.
+        If the preserve_suffix argument is True then any trailing slash will be preserved.
+        """
         if path is None:
             path = ""
         elif not isinstance(path, str):
             return None
-        return cloud_path.join(self.bucket, path, preserve_prefix=preserve_prefix, preserve_suffix=preserve_suffix)
+        return cloud_path.join(self.bucket, path, preserve_suffix=preserve_suffix)
 
     def display_path(self, path: Optional[str]) -> Optional[str]:
         if path := self.path(path):
             return f"{self.prefix}{path}"
         return None
+
+    def is_path_folder(self, path: str) -> bool:
+        """
+        Returns True iff the give path, prefixed/joined with any bucket defined in this cloud
+        store object, represent either a folder or just a bucket; i.e. in practice this means
+        True is returned iff the path ends in a slash, or is a bucket with no susequent slashes.
+        """
+        if path := self.path(path, preserve_suffix=True):
+            if cloud_path.is_folder(path) or cloud_path.is_bucket_only(path):
+                return True
+        return False
 
     def path_exists(self, path: str) -> Optional[bool]:
         # N.B. For AWS S3 rclone ls requires policies s3:GetObject and s3:ListBucket
