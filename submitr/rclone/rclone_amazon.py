@@ -2,10 +2,9 @@ from __future__ import annotations
 import os
 from typing import Callable, Optional, Union
 from dcicutils.file_utils import normalize_path
-from dcicutils.misc_utils import create_dict, normalize_string, PRINT
+from dcicutils.misc_utils import create_dict, PRINT
 from submitr.rclone.amazon_credentials import AmazonCredentials
 from submitr.rclone.rclone_store import RCloneStore
-from submitr.rclone.rclone_utils import cloud_path
 from submitr.utils import chars
 
 
@@ -18,7 +17,7 @@ class RCloneAmazon(RCloneStore):
     proper_name_label = "s3-cloud-store"
 
     def __init__(self,
-                 credentials_or_config: Optional[Union[AmazonCredentials, RCloneAmazon, str]] = None,
+                 credentials: Optional[Union[AmazonCredentials, str]] = None,
                  region: Optional[str] = None,
                  access_key_id: Optional[str] = None,
                  secret_access_key: Optional[str] = None,
@@ -27,16 +26,9 @@ class RCloneAmazon(RCloneStore):
                  name: Optional[str] = None,
                  bucket: Optional[str] = None) -> None:
 
-        if isinstance(credentials_or_config, RCloneAmazon):
-            name = normalize_string(name) or credentials_or_config.name
-            bucket = cloud_path.normalize(bucket) or credentials_or_config.bucket
-            credentials = credentials_or_config.credentials
-        elif isinstance(credentials_or_config, AmazonCredentials):
-            credentials = credentials_or_config
-        elif (isinstance(credentials_or_config, str) and
-              (credentials_file := normalize_path(credentials_or_config, expand_home=True))):
+        if isinstance(credentials, str) and (credentials_file := normalize_path(credentials, expand_home=True)):
             credentials = credentials_file
-        else:
+        elif not isinstance(credentials, AmazonCredentials):
             credentials = None
         credentials = AmazonCredentials(credentials=credentials,
                                         region=region,

@@ -4,11 +4,10 @@ import json
 import os
 from typing import Callable, Optional, Union
 from dcicutils.file_utils import normalize_path
-from dcicutils.misc_utils import create_dict, normalize_string, PRINT
+from dcicutils.misc_utils import create_dict, PRINT
 from submitr.rclone.google_credentials import GoogleCredentials
 from submitr.rclone.rclone_commands import RCloneCommands
 from submitr.rclone.rclone_store import RCloneStore
-from submitr.rclone.rclone_utils import cloud_path
 from submitr.utils import chars
 
 
@@ -21,26 +20,17 @@ class RCloneGoogle(RCloneStore):
     proper_name_label = "google-cloud-storage"
 
     def __init__(self,
-                 credentials_or_config: Optional[Union[GoogleCredentials, RCloneGoogle, str]] = None,
+                 credentials: Optional[Union[GoogleCredentials, str]] = None,
                  service_account_file: Optional[str] = None,
                  location: Optional[str] = None,  # analagous to AWS region
                  name: Optional[str] = None,
                  bucket: Optional[str] = None) -> None:
 
-        if isinstance(credentials_or_config, RCloneGoogle):
-            if isinstance(credentials_or_config.credentials, GoogleCredentials):
-                credentials = GoogleCredentials(credentials=credentials_or_config.credentials, location=location)
-            else:
-                # No credentials allowed/works when running on a GCE instance.
-                credentials = None
-            name = normalize_string(name) or credentials_or_config.name
-            bucket = cloud_path.normalize(bucket) or credentials_or_config.bucket
-        elif isinstance(credentials_or_config, GoogleCredentials):
-            credentials = GoogleCredentials(credentials=credentials_or_config, location=location)
-        elif service_account_file := normalize_path(service_account_file):
+        if isinstance(credentials, GoogleCredentials):
+            credentials = GoogleCredentials(credentials=credentials, location=location)
+        elif service_account_file := normalize_path(service_account_file, expand_home=True):
             credentials = GoogleCredentials(service_account_file=service_account_file, location=location)
-        elif (isinstance(credentials_or_config, str) and
-              (service_account_file := normalize_path(credentials_or_config, expand_home=True))):
+        elif (isinstance(credentials, str) and (service_account_file := normalize_path(credentials, expand_home=True))):
             credentials = GoogleCredentials(service_account_file=service_account_file, location=location)
         else:
             # No credentials allowed/works when running on a GCE instance.
