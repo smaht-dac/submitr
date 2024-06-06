@@ -236,11 +236,11 @@ class RCloner(RCloneCommands, RCloneInstallation):
                 raise Exception(f"No file source specified.")
             if not (destination := normalize_path(destination)):
                 raise Exception(f"No file destination specified.")
-            if not os.path.isdir(destination):
-                copyto = True
+            if os.path.isdir(destination):
+                destination = os.path.join(destination, cloud_path.basename(source))
             command_args = [source, destination]
             return RCloneCommands.copy_command(command_args,
-                                               copyto=copyto,
+                                               copyto=True,
                                                progress=progress, dryrun=dryrun,
                                                process_info=process_info,
                                                return_output=return_output,
