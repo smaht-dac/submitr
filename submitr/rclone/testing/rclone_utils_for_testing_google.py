@@ -49,8 +49,7 @@ class Gcs:
                 raise e
             return False
 
-    def download_file(self, file: str, bucket: str, key: str,
-                      nodirectories: bool = False, raise_exception: bool = True) -> bool:
+    def download_file(self, file: str, bucket: str, key: str, raise_exception: bool = True) -> bool:
         try:
             if not (bucket := cloud_path.normalize(bucket)):
                 return False
@@ -60,27 +59,12 @@ class Gcs:
                 return False
             if os.path.isdir(file):
                 if cloud_path.has_separator(key):
-                    if nodirectories is True:
-                        key_as_file_name = key.replace(cloud_path.separator, "_")
-                        file = os.path.join(file, key_as_file_name)
-                    else:
-                        key_as_file_path = cloud_path.to_file_path(key)
-                        directory = normalize_path(os.path.join(file, os.path.dirname(key_as_file_path)))
-                        os.makedirs(directory, exist_ok=True)
-                        file = os.path.join(directory, os.path.basename(key_as_file_path))
+                    key_as_file_path = cloud_path.to_file_path(key)
+                    directory = normalize_path(os.path.join(file, os.path.dirname(key_as_file_path)))
+                    os.makedirs(directory, exist_ok=True)
+                    file = os.path.join(directory, os.path.basename(key_as_file_path))
                 else:
                     file = os.path.join(file, key)
-                """
-                if cloud_path.has_separator(key):
-                    if nodirectories is True:
-                        file = os.path.join(file, key.replace(cloud_path.separator, "_"))
-                    else:
-                        directory = os.path.join(file, os.path.dirname(key.replace(cloud_path.separator, os.sep)))
-                        os.makedirs(directory, exist_ok=True)
-                        file = os.path.join(directory, os.path.basename(key.replace(cloud_path.separator, os.sep)))
-                else:
-                    file = os.path.join(file, key)
-                """
             self.client.get_bucket(bucket).blob(key).download_to_filename(file)
             return True
         except Exception as e:

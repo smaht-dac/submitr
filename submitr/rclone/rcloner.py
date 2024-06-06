@@ -106,11 +106,10 @@ class RCloner(RCloneCommands, RCloneInstallation):
             else:
                 yield temporary_config_file_name
 
-    def copy(self, source: str, destination: Optional[str] = None,
-             metadata: Optional[Callable] = None, progress: Optional[Callable] = None,
-             directories: bool = False, dryrun: bool = False, copyto: bool = True,
-             process_info: Optional[dict] = None,
-             return_output: bool = False, raise_exception: bool = True) -> Union[bool, Tuple[bool, List[str]]]:
+    def copy(self, source: str, destination: Optional[str] = None, metadata: Optional[Callable] = None,
+             progress: Optional[Callable] = None, dryrun: bool = False, copyto: bool = True,
+             process_info: Optional[dict] = None, return_output: bool = False,
+             raise_exception: bool = True) -> Union[bool, Tuple[bool, List[str]]]:
         """
         Uses rclone to copy the given source file to the given destination. All manner of variation is
         encapsulated within this simple statement. Depends on whether or not a source and/or destination
@@ -210,15 +209,8 @@ class RCloner(RCloneCommands, RCloneInstallation):
             if not (destination := normalize_path(destination)):
                 raise Exception(f"No file destination specified.")
             if os.path.isdir(destination):
-                if not (directories is True):
-                    # Normal/usually-desired case e.g.: cp s3://bucket/subfolder/file to destination/file
-                    destination = os.path.join(destination, cloud_path.basename(source))
-                else:
-                    # Unusual case e.g.: cp s3://bucket/subfolder/file to destination/subfolder/file
-                    key_as_file_path = cloud_path.to_file_path(cloud_path.key(source))
-                    destination_directory = normalize_path(os.path.join(destination, os.path.dirname(key_as_file_path)))
-                    os.makedirs(destination_directory, exist_ok=True)
-                    destination = os.path.join(destination, key_as_file_path)
+                # Normal/usually-desired case e.g.: cp s3://bucket/subfolder/file to destination/file
+                destination = os.path.join(destination, cloud_path.basename(source))
             source_s3 = isinstance(source_config, RCloneAmazon)
             with source_config.config_file(persist=dryrun is True) as source_config_file:  # noqa
                 command_args = [f"{source_config.name}:{source}", destination]
