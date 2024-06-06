@@ -345,7 +345,7 @@ def main_copy(source: str, destination: str,
         if verbose:
             print(f"OK")
         if debug:
-            print(f" {chars.rarrow} rclone output below ...")
+            print(f"DEBUG: rclone output below:")
             for line in output:
                 print(line)
         else:
@@ -358,7 +358,7 @@ def main_copy(source: str, destination: str,
         else:
             print(f"ERROR", end="")
         if debug:
-            print(f" {chars.rarrow} rclone output below ...")
+            print(f"DEBUG: rclone output below ...")
             for line in output:
                 print(line)
         else:
