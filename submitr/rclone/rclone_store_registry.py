@@ -33,8 +33,12 @@ class RCloneStoreRegistry:
 
     @staticmethod
     def _is_derived_from_rclone_store_class(cls) -> bool:
-        # We don't want to import RCloneStore here because we want it to import us,
-        # we need to do this sanity checking by name.
+        # The reason for this small madness here is that we don't want to import RCloneStore
+        # here because we want it to import us, so to get around circular dependencies we
+        # need to do this sanity checking by name. The real problem here is that the lower
+        # level rclone_utils.cloud_path class makes use of this registry, and technically
+        # it probably shouldn't and that would probably better be done within RCloneStore
+        # itself, and then we could obviate this stuff - TODO.
         for base in cls.__bases__:
             if base.__name__ == "RCloneStore" and base.__module__ == "submitr.rclone.rclone_store":
                 return True

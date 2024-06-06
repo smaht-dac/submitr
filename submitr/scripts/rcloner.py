@@ -35,7 +35,11 @@ def main() -> None:
     args.add_argument("destination", nargs="?",
                       help="Destination file/directory or cloud bucket/key.", default=None)
     args.add_argument("--amazon-credentials", "-aws",
-                      help="AWS environment; for ~/.aws_test.{env}/credentials file.", default=None)
+                      help="AWS credentials file for source and/or destination.", default=None)
+    args.add_argument("--amazon-credentials-source", "-awss",
+                      help="AWS credentials file for for source.", default=None)
+    args.add_argument("--amazon-credentials-destination", "-awsd",
+                      help="AWS credentials file for for destination.", default=None)
     args.add_argument("--amazon-temporary-credentials", "-tc", nargs="?",
                       help="Use Amazon temporary/session credentials for source/destination.", const=True, default=None)
     args.add_argument("--amazon-temporary-credentials-source", "-tcs", nargs="?",
@@ -44,7 +48,9 @@ def main() -> None:
                       help="Use Amazon temporary/session credentials for destination.", const=True, default=None)
     args.add_argument("--show-temporary-credentials-policy", "-tcp", action="store_true",
                       help="Show temporary credentials policy.", default=False)
-    args.add_argument("--google-credentials", "-gcs", help="Amazon or Google configuration file.")
+    args.add_argument("--google-credentials", "-gcs", help="Amazon or Google service account file.")
+    args.add_argument("--google-credentials-source", "-gcss", help="Amazon or Google service account file.")
+    args.add_argument("--google-credentials-destination", "-gcsd", help="Amazon or Google service account file.")
     args.add_argument("--kms", help="Amazon KMS key ID.", default=None)
     args.add_argument("--noprogress", action="store_true", help="Do not show progress bar.", default=False)
     args.add_argument("--verbose", action="store_true", help="Verbose output.", default=False)
@@ -66,7 +72,7 @@ def main() -> None:
     elif info:
         if not (source := args.source.strip()):
             usage(f"Must specify a source for copy.")
-        destination = None
+        destination = args.destination.strip()
     else:
         usage("Must specify copy or info.")
 
@@ -95,95 +101,127 @@ def main() -> None:
                                    if is_source_cloud else os.path.basename(source)):
                 destination = cloud_path.join(destination, source_basename, preserve_prefix=True)
             else:
-                copyto = False
+                usage(f"No source base name found: {source}")  # should not happen
     else:
-        destination = os.path.abspath(destination)
+        destination = os.path.abspath(destination) if destination else None
 
-    # Amazon credentials are split into source and destination
-    # because we may specify either/both/none as temporary credentials.
+    # Amazon credentials are split into source and destination because we may
+    # specify either/both/none as temporary credentials; and also because we may
+    # by copying from one S3 account to another (this is still TODO).
     credentials_source_amazon = None
     credentials_destination_amazon = None
-    credentials_google = None
+
+    # Google credentials are split into source and destination because we may
+    # by copying from one GCS account to another (this is still TODO).
+    credentials_source_google = None
+    credentials_destination_google = None
 
     # For AwS temporary credentials if requested, i.e. -tcs and/or -tcd.
     credentials_source_policy_amazon = {}
     credentials_destination_policy_amazon = {}
 
-    if is_source_amazon or is_destination_amazon:
+    if is_source_amazon:
 
-        if not (credentials_amazon := AmazonCredentials.obtain(args.amazon_credentials)):
+        if not args.amazon_credentials_source:
+            args.amazon_credentials_source = args.amazon_credentials
+
+        if not (credentials_source_amazon := AmazonCredentials.obtain(args.amazon_credentials_source)):
             usage(f"Cannot find AWS credentials.")
-        if not credentials_amazon.ping():
+        if not credentials_source_amazon.ping():
             usage(f"Given AWS credentials appear to be invalid.")
 
-        if is_source_amazon:
-            if not (temporary_credentials_source_amazon := args.amazon_temporary_credentials_source):
-                temporary_credentials_source_amazon = args.amazon_temporary_credentials
-            if temporary_credentials_source_amazon == "-":
-                # Special case of untargeted (to any bucket/key) temporary credentials.
+        if not (temporary_credentials_source_amazon := args.amazon_temporary_credentials_source):
+            temporary_credentials_source_amazon = args.amazon_temporary_credentials
+        if temporary_credentials_source_amazon == "-":
+            # Special case of untargeted (to any bucket/key) temporary credentials.
+            temporary_credentials_source_amazon = (
+                generate_amazon_temporary_credentials(credentials_source_amazon, kms_key_id=args.kms,
+                                                      policy=credentials_source_policy_amazon))
+        elif temporary_credentials_source_amazon:
+            bucket = key = None
+            if temporary_credentials_source_amazon is True:
+                # Default if no argument give for the -tcs option is to target
+                # the temporary credentials to the specified (S3) source bucket/key.
+                bucket, key = cloud_path.bucket_and_key(source)
+            else:
+                # Or allow targeting the temporary credentials to a specified bucket/key.
+                bucket, key = cloud_path.bucket_and_key(temporary_credentials_source_amazon)
+            if bucket:
                 temporary_credentials_source_amazon = (
-                    generate_amazon_temporary_credentials(credentials_amazon, kms_key_id=args.kms,
+                    generate_amazon_temporary_credentials(credentials_source_amazon,
+                                                          bucket=bucket, key=key, kms_key_id=args.kms,
                                                           policy=credentials_source_policy_amazon))
-            elif temporary_credentials_source_amazon:
-                bucket = key = None
-                if temporary_credentials_source_amazon is True:
-                    # Default if no argument give for the -tcs option is to target
-                    # the temporary credentials to the specified (S3) source bucket/key.
-                    bucket, key = cloud_path.bucket_and_key(source)
-                else:
-                    # Or allow targeting the temporary credentials to a specified bucket/key.
-                    bucket, key = cloud_path.bucket_and_key(temporary_credentials_source_amazon)
-                if bucket:
-                    temporary_credentials_source_amazon = (
-                        generate_amazon_temporary_credentials(credentials_amazon,
-                                                              bucket=bucket, key=key, kms_key_id=args.kms,
-                                                              policy=credentials_source_policy_amazon))
-                else:
-                    temporary_credentials_source_amazon = None
-            if temporary_credentials_source_amazon:
-                credentials_source_amazon = temporary_credentials_source_amazon
             else:
-                credentials_source_amazon = credentials_amazon
+                temporary_credentials_source_amazon = None
+        if temporary_credentials_source_amazon:
+            credentials_source_amazon = temporary_credentials_source_amazon
 
-        if is_destination_amazon:
-            if not (temporary_credentials_destination_amazon := args.amazon_temporary_credentials_destination):
-                temporary_credentials_destination_amazon = args.amazon_temporary_credentials
-            if temporary_credentials_destination_amazon == "-":
-                # Special case of untargeted (to any bucket/key) temporary credentials.
+    if is_destination_amazon:
+
+        if not args.amazon_credentials_destination:
+            args.amazon_credentials_destination = args.amazon_credentials
+
+        if not (credentials_destination_amazon := AmazonCredentials.obtain(args.amazon_credentials_destination)):
+            usage(f"Cannot find AWS credentials.")
+        if not credentials_destination_amazon.ping():
+            usage(f"Given AWS credentials appear to be invalid.")
+
+        if not (temporary_credentials_destination_amazon := args.amazon_temporary_credentials_destination):
+            temporary_credentials_destination_amazon = args.amazon_temporary_credentials
+        if temporary_credentials_destination_amazon == "-":
+            # Special case of untargeted (to any bucket/key) temporary credentials.
+            temporary_credentials_destination_amazon = (
+                generate_amazon_temporary_credentials(credentials_destination_amazon, kms_key_id=args.kms,
+                                                      policy=credentials_destination_policy_amazon))
+        elif temporary_credentials_destination_amazon:
+            bucket = key = None
+            if temporary_credentials_destination_amazon is True:
+                # Default if no argument give for the -tcd option is to target
+                # the temporary credentials to the specified (S3) destination bucket/key.
+                bucket, key = cloud_path.bucket_and_key(destination)
+            else:
+                # Or allow targeting the temporary credentials to a specified bucket/key.
+                bucket, key = cloud_path.bucket_and_key(temporary_credentials_destination_amazon)
+            if bucket:
                 temporary_credentials_destination_amazon = (
-                    generate_amazon_temporary_credentials(credentials_amazon, kms_key_id=args.kms,
+                    generate_amazon_temporary_credentials(credentials_destination_amazon,
+                                                          bucket=bucket, key=key, kms_key_id=args.kms,
                                                           policy=credentials_destination_policy_amazon))
-            elif temporary_credentials_destination_amazon:
-                bucket = key = None
-                if temporary_credentials_destination_amazon is True:
-                    # Default if no argument give for the -tcd option is to target
-                    # the temporary credentials to the specified (S3) destination bucket/key.
-                    bucket, key = cloud_path.bucket_and_key(destination)
-                else:
-                    # Or allow targeting the temporary credentials to a specified bucket/key.
-                    bucket, key = cloud_path.bucket_and_key(temporary_credentials_destination_amazon)
-                if bucket:
-                    temporary_credentials_destination_amazon = (
-                        generate_amazon_temporary_credentials(credentials_amazon,
-                                                              bucket=bucket, key=key, kms_key_id=args.kms,
-                                                              policy=credentials_destination_policy_amazon))
-                else:
-                    temporary_credentials_destination_amazon = None
-            if temporary_credentials_destination_amazon:
-                credentials_destination_amazon = temporary_credentials_destination_amazon
             else:
-                credentials_destination_amazon = credentials_amazon
+                temporary_credentials_destination_amazon = None
+        if temporary_credentials_destination_amazon:
+            credentials_destination_amazon = temporary_credentials_destination_amazon
 
-    if is_source_google or is_destination_google:
-        if ((google_credentials := args.google_credentials) or
-            (google_credentials := os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))):  # noqa
-            if not (credentials_google := GoogleCredentials.obtain(google_credentials)):
+    if is_source_google:
+
+        if not args.google_credentials_source:
+            args.google_credentials_source = args.google_credentials
+
+        if ((google_credentials_source := args.google_credentials_source) or
+            (google_credentials_source := os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))):  # noqa
+            if not (credentials_source_google := GoogleCredentials.obtain(google_credentials_source)):
                 usage(f"Cannot create GCS credentials from specified value: {args.google}")
         elif RCloneGoogle.is_google_compute_engine():
-            credentials_google = GoogleCredentials()
+            credentials_source_google = GoogleCredentials()
         else:
             usage("No GCP credentials specified.")
-        if not credentials_google.ping():
+        if not credentials_source_google.ping():
+            usage(f"Given GCS credentials appear to be invalid.")
+
+    if is_destination_google:
+
+        if not args.google_credentials_destination:
+            args.google_credentials_destination = args.google_credentials
+
+        if ((google_credentials_destination := args.google_credentials_destination) or
+            (google_credentials_destination := os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))):  # noqa
+            if not (credentials_destination_google := GoogleCredentials.obtain(google_credentials_destination)):
+                usage(f"Cannot create GCS credentials from specified value: {args.google}")
+        elif RCloneGoogle.is_google_compute_engine():
+            credentials_destination_google = GoogleCredentials()
+        else:
+            usage("No GCP credentials specified.")
+        if not credentials_destination_google.ping():
             usage(f"Given GCS credentials appear to be invalid.")
 
     if copy:
@@ -192,7 +230,8 @@ def main() -> None:
                        credentials_destination_amazon=credentials_destination_amazon,
                        credentials_source_policy_amazon=credentials_source_policy_amazon,
                        credentials_destination_policy_amazon=credentials_destination_policy_amazon,
-                       credentials_google=credentials_google,
+                       credentials_source_google=credentials_source_google,
+                       credentials_destination_google=credentials_destination_google,
                        copyto=copyto, progress=not args.noprogress,
                        show_temporary_credentials_policy=args.show_temporary_credentials_policy,
                        verbose=args.verbose, debug=args.debug))
@@ -200,7 +239,11 @@ def main() -> None:
         exit(main_info(source, destination,
                        credentials_source_amazon=credentials_source_amazon,
                        credentials_destination_amazon=credentials_destination_amazon,
-                       credentials_google=credentials_google,
+                       credentials_source_policy_amazon=credentials_source_policy_amazon,
+                       credentials_destination_policy_amazon=credentials_destination_policy_amazon,
+                       credentials_source_google=credentials_source_google,
+                       credentials_destination_google=credentials_destination_google,
+                       show_temporary_credentials_policy=args.show_temporary_credentials_policy,
                        verbose=args.verbose))
 
 
@@ -209,7 +252,8 @@ def main_copy(source: str, destination: str,
               credentials_destination_amazon: Optional[AmazonCredentials] = None,
               credentials_source_policy_amazon: Optional[dict] = None,
               credentials_destination_policy_amazon: Optional[dict] = None,
-              credentials_google: Optional[GoogleCredentials] = None,
+              credentials_source_google: Optional[GoogleCredentials] = None,
+              credentials_destination_google: Optional[GoogleCredentials] = None,
               copyto: bool = True, progress: bool = False,
               show_temporary_credentials_policy: bool = False,
               verbose: bool = False, debug: bool = False) -> None:
@@ -222,7 +266,7 @@ def main_copy(source: str, destination: str,
         source_config = RCloneAmazon(credentials_source_amazon)
     elif is_google_path(source):
         source = cloud_path.normalize(source)
-        if not credentials_google:
+        if not credentials_source_google:
             if not RCloneGoogle.is_google_compute_engine():
                 # No Google credentials AND NOT running on a GCE instance.
                 usage("No GCP credentials specified.")
@@ -233,7 +277,7 @@ def main_copy(source: str, destination: str,
                 print(f"Running from Google Cloud Engine (GCE)"
                       f"{f': {google_project} {chars.check}' if google_project else '.'}")
         else:
-            source_config = RCloneGoogle(credentials_google)
+            source_config = RCloneGoogle(credentials_source_google)
 
     destination_config = None
     if is_amazon_path(destination):
@@ -243,7 +287,7 @@ def main_copy(source: str, destination: str,
         destination_config = RCloneAmazon(credentials_destination_amazon)
     elif is_google_path(destination):
         destination = cloud_path.normalize(destination)
-        if not credentials_google:
+        if not credentials_destination_google:
             if not RCloneGoogle.is_google_compute_engine():
                 # No Google credentials AND NOT running on a GCE instance.
                 usage("No GCP credentials specified.")
@@ -254,9 +298,10 @@ def main_copy(source: str, destination: str,
                 print(f"Running from Google Cloud Engine (GCE)"
                       f"{f': {google_project} {chars.check}' if google_project else '.'}")
         else:
-            destination_config = RCloneGoogle(credentials_google)
+            destination_config = RCloneGoogle(credentials_destination_google)
 
     def define_progress_callback(source_target: RCloneStore, source: str) -> None:
+        nonlocal source_config, destination_config
         process_info = {}
         def interrupt_stop(bar: ProgressBar):  # noqa
             nonlocal process_info
@@ -265,7 +310,7 @@ def main_copy(source: str, destination: str,
             return False
         nbytes_total = source_target.file_size(source) if source_target else get_file_size(source)
         progress_bar = ProgressBar(total=nbytes_total,
-                                   description="Copying",
+                                   description="Transferring" if source_config and destination_config else "Copying",
                                    use_byte_size_for_rate=True,
                                    interrupt_stop=interrupt_stop,
                                    interrupt_message="upload")
@@ -321,21 +366,32 @@ def main_copy(source: str, destination: str,
         exit(1)
 
 
-def main_info(source: str,
-              destination: Optional[str] = None,
+def main_info(source: str, destination: Optional[str] = None,
               credentials_source_amazon: Optional[AmazonCredentials] = None,
               credentials_destination_amazon: Optional[AmazonCredentials] = None,
-              credentials_google: Optional[GoogleCredentials] = None,
+              credentials_source_policy_amazon: Optional[dict] = None,
+              credentials_destination_policy_amazon: Optional[dict] = None,
+              credentials_source_google: Optional[GoogleCredentials] = None,
+              credentials_destination_google: Optional[GoogleCredentials] = None,
+              show_temporary_credentials_policy: bool = False,
               verbose: bool = False):
 
     if source:
+        if destination:
+            print("")
         print_info(source,
                    credentials_amazon=credentials_source_amazon,
-                   credentials_google=credentials_google)
+                   credentials_google=credentials_source_google,
+                   credentials_policy_amazon=credentials_source_policy_amazon,
+                   show_temporary_credentials_policy=show_temporary_credentials_policy)
     if destination:
+        if source:
+            print("")
         print_info(destination,
                    credentials_amazon=credentials_destination_amazon,
-                   credentials_google=credentials_google)
+                   credentials_google=credentials_destination_google,
+                   credentials_policy_amazon=credentials_destination_policy_amazon,
+                   show_temporary_credentials_policy=show_temporary_credentials_policy)
 
 
 def generate_amazon_temporary_credentials(amazon_credentials: AmazonCredentials,
@@ -353,7 +409,9 @@ def is_google_path(path: str):
 
 def print_info(target: str,
                credentials_amazon: Optional[AmazonCredentials],
-               credentials_google: Optional[GoogleCredentials]) -> None:
+               credentials_google: Optional[GoogleCredentials],
+               credentials_policy_amazon: Optional[dict] = None,
+               show_temporary_credentials_policy: bool = False) -> None:
 
     if not target:
         return
@@ -362,6 +420,10 @@ def print_info(target: str,
             usage(f"No AWS credentials specified for: {target}")
         print(f"AWS S3 Target: {target}")
         print_info_via_rclone(target, RCloneAmazon(credentials_amazon))
+        if show_temporary_credentials_policy:
+            if credentials_policy_amazon:
+                print("AWS temporary credentials policy:")
+                print_amazon_temporary_credentials_policy(credentials_policy_amazon)
     elif is_google_path(target):
         if not credentials_google:
             usage(f"No GCS credentials specified for: {target}")
