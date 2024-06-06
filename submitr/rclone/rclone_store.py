@@ -43,14 +43,14 @@ class RCloneStore(AbstractBaseClass):
             self._name = create_uuid()
         return self._name
 
-    # TODO: Get rid of setters; make immutable.
-    @name.setter
-    def name(self, value: Optional[str]) -> None:
-        if (value := normalize_string(value)) is not None:
-            if not value:
-                self._name = create_uuid()
-            else:
-                self._name = value
+#   # TODO: Get rid of setters; make immutable.
+#   @name.setter
+#   def name(self, value: Optional[str]) -> None:
+#       if (value := normalize_string(value)) is not None:
+#           if not value:
+#               self._name = create_uuid()
+#           else:
+#               self._name = value
 
     @property
     def bucket(self) -> Optional[str]:
@@ -84,11 +84,6 @@ class RCloneStore(AbstractBaseClass):
     @property
     def credentials(self) -> Optional[Any]:
         return self._credentials
-
-#   @credentials.setter
-#   def credentials(self, value: Optional[Any]) -> None:
-#       if value:
-#           self._credentials = value
 
     @abstractproperty
     def config(self) -> dict:
