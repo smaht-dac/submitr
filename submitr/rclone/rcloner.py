@@ -132,6 +132,7 @@ class RCloner(RCloneCommands, RCloneInstallation):
             # Here a destination cloud configuration has been defined for this RCloner object;
             # meaning we are copying to some cloud destination (and not to a local file destination).
             is_destination_folder = destination_config.is_path_folder(destination)
+            is_destination_bucket_only = destination_config.is_path_bucket_only(destination)
             if not (destination := destination_config.path(destination)):
                 raise Exception(f"No cloud destination specified.")
             if isinstance(source_config := self.source, RCloneStore):
@@ -140,8 +141,9 @@ class RCloner(RCloneCommands, RCloneInstallation):
                 # from either Amazon S3 or Google Cloud Storage to either Amazon S3 or Google Cloud Storage.
                 if not (source := source_config.path(source)):
                     raise Exception(f"No cloud source specified.")
-                if is_destination_folder:
+                if (is_destination_folder and (copyto is True)) or is_destination_bucket_only:
                     destination = cloud_path.join(destination, cloud_path.basename(source))
+                    copyto = True
                 with self.config_file(persist=dryrun is True) as source_and_destination_config_file:  # noqa
                     command_args = [f"{source_config.name}:{source}", f"{destination_config.name}:{destination}"]
                     source_s3 = isinstance(source_config, RCloneAmazon)
@@ -162,8 +164,9 @@ class RCloner(RCloneCommands, RCloneInstallation):
                     raise Exception(f"No file source specified.")
                 elif not os.path.isfile(source):
                     raise Exception(f"Source file not found: {source}")
-                if is_destination_folder:
+                if (is_destination_folder and (copyto is True)) or is_destination_bucket_only:
                     destination = cloud_path.join(destination, os.path.basename(source))
+                    copyto = True
                 # if cloud_path.is_folder(destination) or cloud_path.is_bucket_only(destination):
                     # If the destination has no path separator then (assume) it must be just the (root)
                     # bucket, meaning we want to do a copy rather than a copyto; though FYI not that in
