@@ -35,7 +35,7 @@ class RCloneStore(AbstractBaseClass):
         # optional sub-folder, e.g. gs://bucket/sub-folder. If set then will be prepended,
         # via cloud_path.path/join, to any path which is operated upon, e.g. for the
         # path_exists, file_size, file_checksum, and RCloner.copy functions.
-        self._bucket = cloud_path.normalize(bucket)
+        self._bucket = cloud_path.normalize(bucket) or None
 
     @property
     def name(self) -> str:
@@ -43,23 +43,9 @@ class RCloneStore(AbstractBaseClass):
             self._name = create_uuid()
         return self._name
 
-#   # TODO: Get rid of setters; make immutable.
-#   @name.setter
-#   def name(self, value: Optional[str]) -> None:
-#       if (value := normalize_string(value)) is not None:
-#           if not value:
-#               self._name = create_uuid()
-#           else:
-#               self._name = value
-
     @property
     def bucket(self) -> Optional[str]:
         return self._bucket
-
-    @bucket.setter
-    def bucket(self, value: str) -> None:
-        if (value := cloud_path.normalize(value)) is not None:
-            self._bucket = value or None
 
     def bucket_exists(self) -> Optional[bool]:
         """
