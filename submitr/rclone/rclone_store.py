@@ -56,10 +56,10 @@ class RCloneStore(AbstractBaseClass):
     def bucket(self) -> Optional[str]:
         return self._bucket
 
-    @bucket.setter
-    def bucket(self, value: str) -> None:
-        if (value := cloud_path.normalize(value)) is not None:
-            self._bucket = value or None
+#   @bucket.setter
+#   def bucket(self, value: str) -> None:
+#       if (value := cloud_path.normalize(value)) is not None:
+#           self._bucket = value or None
 
     def bucket_exists(self) -> Optional[bool]:
         """
