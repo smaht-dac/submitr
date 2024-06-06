@@ -2,7 +2,7 @@ from __future__ import annotations
 from boto3 import client as BotoClient
 import configparser
 import os
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import normalize_string
 
@@ -10,7 +10,7 @@ from dcicutils.misc_utils import normalize_string
 class AmazonCredentials:
 
     def __init__(self,
-                 credentials: Optional[Union[AmazonCredentials, str]] = None,
+                 credentials_file: Optional[str] = None,
                  region: Optional[str] = None,
                  access_key_id: Optional[str] = None,
                  secret_access_key: Optional[str] = None,
@@ -19,18 +19,11 @@ class AmazonCredentials:
 
         # A KMS Key ID is not technically part of AWS credentials;
         # this is just a a convenient place to stash it.
-        if isinstance(credentials, AmazonCredentials):
-            self._region = credentials.region
-            self._access_key_id = credentials.access_key_id
-            self._secret_access_key = credentials.secret_access_key
-            self._session_token = credentials.session_token
-            self._kms_key_id = credentials.kms_key_id
-            self._account_number = credentials._account_number
-        elif credentials := normalize_path(credentials, expand_home=True):
+        if credentials_file := normalize_path(credentials_file, expand_home=True):
             region, access_key_id, secret_access_key, session_token = (
-                AmazonCredentials._read_credentials_file(credentials))
+                AmazonCredentials._read_credentials_file(credentials_file))
             if not access_key_id:
-                raise Exception(f"Amazon credentials cannot be loaded: {credentials}")
+                raise Exception(f"Amazon credentials cannot be loaded: {credentials_file}")
             self._region = region
             self._access_key_id = access_key_id
             self._secret_access_key = secret_access_key

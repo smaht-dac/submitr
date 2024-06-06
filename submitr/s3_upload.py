@@ -10,7 +10,7 @@ from dcicutils.file_utils import compute_file_md5
 from dcicutils.misc_utils import format_duration, format_size
 from dcicutils.progress_bar import ProgressBar
 from submitr.file_for_upload import FileForUpload
-from submitr.rclone import RCloner, RCloneAmazon, cloud_path
+from submitr.rclone import AmazonCredentials, RCloner, RCloneAmazon, cloud_path
 from submitr.s3_utils import get_s3_bucket_and_key_from_s3_uri, get_s3_key_metadata
 from submitr.utils import chars
 
@@ -93,11 +93,12 @@ def upload_file_to_aws_s3(file: FileForUpload,
 
     elif file.from_cloud:
         source_cloud_store = file.cloud_store
-        destination_cloud_store = RCloneAmazon(region=aws_credentials.get("region_name"),
-                                               access_key_id=aws_credentials.get("aws_access_key_id"),
-                                               secret_access_key=aws_credentials.get("aws_secret_access_key"),
-                                               session_token=aws_credentials.get("aws_session_token"),
-                                               kms_key_id=aws_kms_key_id)
+        destination_cloud_store = RCloneAmazon(AmazonCredentials(
+            region=aws_credentials.get("region_name"),
+            access_key_id=aws_credentials.get("aws_access_key_id"),
+            secret_access_key=aws_credentials.get("aws_secret_access_key"),
+            session_token=aws_credentials.get("aws_session_token"),
+            kms_key_id=aws_kms_key_id))
         rcloner = RCloner(source=source_cloud_store, destination=destination_cloud_store)
         if not source_cloud_store.path_exists(file.name):
             printf(f"ERROR: Cannot find the {source_cloud_store.proper_name} cloud storage object: {file.path_cloud}")

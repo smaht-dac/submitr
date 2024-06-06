@@ -1,6 +1,6 @@
 from __future__ import annotations
 import os
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, PRINT
 from submitr.rclone.amazon_credentials import AmazonCredentials
@@ -16,26 +16,8 @@ class RCloneAmazon(RCloneStore):
     proper_name_title = "Amazon S3"
     proper_name_label = "s3-cloud-store"
 
-    def __init__(self,
-                 credentials: Optional[Union[AmazonCredentials, str]] = None,
-                 region: Optional[str] = None,
-                 access_key_id: Optional[str] = None,
-                 secret_access_key: Optional[str] = None,
-                 session_token: Optional[str] = None,
-                 kms_key_id: Optional[str] = None,
-                 name: Optional[str] = None,
-                 bucket: Optional[str] = None) -> None:
-
-        if isinstance(credentials, str) and (credentials_file := normalize_path(credentials, expand_home=True)):
-            credentials = credentials_file
-        elif not isinstance(credentials, AmazonCredentials):
-            credentials = None
-        credentials = AmazonCredentials(credentials=credentials,
-                                        region=region,
-                                        access_key_id=access_key_id,
-                                        secret_access_key=secret_access_key,
-                                        session_token=session_token,
-                                        kms_key_id=kms_key_id)
+    def __init__(self, credentials: Optional[AmazonCredentials] = None,
+                 bucket: Optional[str] = None, name: Optional[str] = None) -> None:
         super().__init__(name=name, bucket=bucket, credentials=credentials)
 
     @property
@@ -74,9 +56,9 @@ class RCloneAmazon(RCloneStore):
         return self._credentials.kms_key_id
 
     def copy(self) -> RCloneAmazon:
-        return RCloneAmazon(name=self.name,
-                            credentials=self.credentials.copy() if self.credentials else None,
-                            bucket=self.bucket)
+        return RCloneAmazon(credentials=self.credentials.copy() if self.credentials else None,
+                            bucket=self.bucket,
+                            name=self.name)
 
     def __eq__(self, other: Optional[RCloneAmazon]) -> bool:
         return isinstance(other, RCloneAmazon) and super().__eq__(other)
@@ -126,7 +108,8 @@ class RCloneAmazon(RCloneStore):
         if not os.path.isfile(cloud_credentials):
             usage(f"ERROR: Amazon credentials file does not exist: {cloud_credentials}")
             return None
-        cloud_store = RCloneAmazon(cloud_credentials, region=cloud_location, bucket=cloud_source)
+        cloud_credentials = AmazonCredentials(credentials_file=cloud_credentials, region=cloud_location)
+        cloud_store = RCloneAmazon(cloud_credentials, bucket=cloud_source)
         if verify_connectivity is True:
             cloud_store.verify_connectivity(quiet=True, usage=usage, printf=printf)
         return cloud_store

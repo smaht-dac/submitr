@@ -2,7 +2,7 @@ from __future__ import annotations
 import io
 import json
 import os
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import create_dict, PRINT
 from submitr.rclone.google_credentials import GoogleCredentials
@@ -19,22 +19,8 @@ class RCloneGoogle(RCloneStore):
     proper_name_title = "Google Cloud Storage"
     proper_name_label = "google-cloud-storage"
 
-    def __init__(self,
-                 credentials: Optional[Union[GoogleCredentials, str]] = None,
-                 service_account_file: Optional[str] = None,
-                 location: Optional[str] = None,  # analagous to AWS region
-                 name: Optional[str] = None,
-                 bucket: Optional[str] = None) -> None:
-
-        if isinstance(credentials, GoogleCredentials):
-            credentials = GoogleCredentials(credentials=credentials, location=location)
-        elif service_account_file := normalize_path(service_account_file, expand_home=True):
-            credentials = GoogleCredentials(service_account_file=service_account_file, location=location)
-        elif (isinstance(credentials, str) and (service_account_file := normalize_path(credentials, expand_home=True))):
-            credentials = GoogleCredentials(service_account_file=service_account_file, location=location)
-        else:
-            # No credentials allowed/works when running on a GCE instance.
-            credentials = None
+    def __init__(self, credentials: Optional[GoogleCredentials] = None,
+                 bucket: Optional[str] = None, name: Optional[str] = None) -> None:
         super().__init__(name=name, bucket=bucket, credentials=credentials)
         self._project = None
 
@@ -90,9 +76,9 @@ class RCloneGoogle(RCloneStore):
             return self._project
 
     def copy(self) -> RCloneGoogle:
-        copy = RCloneGoogle(name=self.name,
-                            credentials=self.credentials.copy() if self.credentials else None,
-                            bucket=self.bucket)
+        copy = RCloneGoogle(credentials=self.credentials.copy() if self.credentials else None,
+                            bucket=self.bucket,
+                            name=self.name)
         copy._project = self._project
         return copy
 
@@ -153,7 +139,8 @@ class RCloneGoogle(RCloneStore):
         if not os.path.isfile(cloud_credentials):
             printf(f"ERROR: Google service account file does not exist: {cloud_credentials}")
             return None
-        cloud_store = RCloneGoogle(cloud_credentials, location=cloud_location, bucket=cloud_source)
+        cloud_credentials = GoogleCredentials(service_account_file=cloud_credentials, location=cloud_location)
+        cloud_store = RCloneGoogle(cloud_credentials, bucket=cloud_source)
         if verify_connectivity is True:
             cloud_store.verify_connectivity(quiet=True, usage=usage, printf=printf)
         return cloud_store
