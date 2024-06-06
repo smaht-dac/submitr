@@ -16,6 +16,8 @@ from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
 from submitr.utils import chars
 
 # Little command-line utility to interactively test out rclone support code in smaht-submitr.
+# Only supports Amazon and Google (obviously for now), but meaning these are hard-coded here,
+# does not take advantage of generic RCloneStore/RCloneStoreRegistry functionality.
 
 
 def main() -> None:

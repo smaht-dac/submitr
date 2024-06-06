@@ -124,17 +124,6 @@ class RCloneStore(AbstractBaseClass):
             return f"{self.prefix}{path}"
         return None
 
-    def is_path_folder_or_bucket_only(self, path: str) -> bool:
-        """
-        Returns True iff the give path, prefixed/joined with any bucket defined in this cloud
-        store object, represents either a folder or just a bucket; i.e. iff this joined path
-        ends in a slash, or has no slashes; otherwise returns False.
-        """
-        if path := self.path(path, preserve_suffix=True):
-            if cloud_path.is_folder(path) or cloud_path.is_bucket_only(path):
-                return True
-        return False
-
     def is_path_bucket_only(self, path: str) -> bool:
         """
         Returns True iff the give path, prefixed/joined with any bucket defined
