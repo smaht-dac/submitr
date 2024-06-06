@@ -335,10 +335,6 @@ class AwsS3:
                                                                       policy=policy,
                                                                       kms_key_id=kms_key_id,
                                                                       duration=duration)
-        print(f"{statements}")
-        print(f"access_key_id = {temporary_credentials.access_key_id}")
-        print(f"secret_access_key = {temporary_credentials.secret_access_key}")
-        print(f"session_token = {temporary_credentials.session_token}")
         return temporary_credentials
 
     def _generate_temporary_credentials(generating_credentials: AmazonCredentials,

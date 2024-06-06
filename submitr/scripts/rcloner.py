@@ -41,6 +41,9 @@ def main() -> None:
     args.add_argument("--debug", action="store_true", help="Debug output.", default=False)
     args = args.parse_args()
 
+    if args.debug:
+        os.environ["SMAHT_DEBUG"] = True
+
     action = args.action.lower()
     copy = (action == "copy") or (action == "cp")
     info = (action == "info")
