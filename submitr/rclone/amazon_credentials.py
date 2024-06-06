@@ -124,6 +124,15 @@ class AmazonCredentials:
         except Exception:
             return False
 
+    def copy(self) -> AmazonCredentials:
+        copy = AmazonCredentials(region=self.region,
+                                 access_key_id=self.access_key_id,
+                                 secret_access_key=self.secret_access_key,
+                                 session_token=self.session_token,
+                                 kms_key_id=self.kms_key_id)
+        copy._account_number = self.account_number
+        return copy
+
     def __eq__(self, other: Optional[AmazonCredentials]) -> bool:
         return (isinstance(other, AmazonCredentials) and
                 (self.region == other.region) and

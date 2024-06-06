@@ -381,7 +381,8 @@ def create_rclone_target_amazon(credentials: AmazonCredentials, bucket: Optional
     assert target_amazon.kms_key_id == credentials.kms_key_id
     assert target_amazon == target_amazon
     assert not (target_amazon != target_amazon)
-    assert RCloneAmazon(target_amazon, bucket="mismatch") != target_amazon  # checking equals override
+    assert RCloneAmazon(credentials, bucket="mismatch") != target_amazon  # checking equals override
+    # assert RCloneAmazon(target_amazon, bucket="mismatch") != target_amazon  # checking equals override
     return target_amazon
 
 
@@ -395,7 +396,8 @@ def create_rclone_target_google(credentials: GoogleCredentials, bucket: Optional
         assert target_google.service_account_file == credentials.service_account_file
     assert target_google == target_google
     assert not (target_google != target_google)
-    assert RCloneGoogle(target_google, bucket="mismatch") != target_google  # checking equals override
+    assert RCloneGoogle(credentials, bucket="mismatch") != target_google  # checking equals override
+    # assert RCloneGoogle(target_google, bucket="mismatch") != target_google  # checking equals override
     return target_google
 
 
