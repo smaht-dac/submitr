@@ -2,7 +2,7 @@ from __future__ import annotations
 from google.cloud.storage import Client as GcsClient
 import os
 import requests
-from typing import Optional, Union
+from typing import Optional
 from dcicutils.file_utils import normalize_path
 from dcicutils.misc_utils import normalize_string
 
@@ -10,27 +10,15 @@ from dcicutils.misc_utils import normalize_string
 class GoogleCredentials:
 
     def __init__(self,
-                 credentials: Optional[Union[GoogleCredentials, str]] = None,
                  service_account_file: Optional[str] = None,
                  location: Optional[str] = None) -> None:
 
-        if isinstance(credentials, GoogleCredentials):
-            self._location = credentials.location
-            self._service_account_file = credentials.service_account_file
-        else:
-            self._location = None
-            self._service_account_file = None
-
+        self._location = None
+        self._service_account_file = None
         if service_account_file := normalize_path(service_account_file, expand_home=True):
             if not os.path.isfile(service_account_file):
                 raise Exception(f"Google service account file not found: {service_account_file}")
             self._service_account_file = service_account_file
-        elif (isinstance(credentials, str) and (service_account_file := normalize_path(credentials, expand_home=True))):
-            # For convenience also all first argument to be the service account file.
-            if not os.path.isfile(service_account_file):
-                raise Exception(f"Google service account file not found: {service_account_file}")
-            self._service_account_file = service_account_file
-
         if location := normalize_string(location):
             self._location = location
 
