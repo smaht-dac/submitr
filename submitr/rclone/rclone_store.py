@@ -85,10 +85,10 @@ class RCloneStore(AbstractBaseClass):
     def credentials(self) -> Optional[Any]:
         return self._credentials
 
-    @credentials.setter
-    def credentials(self, value: Optional[Any]) -> None:
-        if value:
-            self._credentials = value
+#   @credentials.setter
+#   def credentials(self, value: Optional[Any]) -> None:
+#       if value:
+#           self._credentials = value
 
     @abstractproperty
     def config(self) -> dict:
