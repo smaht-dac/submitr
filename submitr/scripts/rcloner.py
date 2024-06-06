@@ -88,7 +88,7 @@ def main() -> None:
     if is_source_cloud:
         if source.endswith(cloud_path.separator):
             usage("May not specify a folder/directory as a source; only single key/file allowed.")
-        if not cloud_path.has_separator(cloud_path.normalize(source)):
+        if cloud_path.is_bucket_only(cloud_path.normalize(source)):
             usage("May not specify just a bucket as a source; only single key/file allowed.")
 
     if not is_source_cloud:
