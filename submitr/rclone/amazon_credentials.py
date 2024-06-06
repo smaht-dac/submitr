@@ -24,6 +24,7 @@ class AmazonCredentials:
                 AmazonCredentials._read_credentials_file(credentials_file))
             if not access_key_id:
                 raise Exception(f"Amazon credentials cannot be loaded: {credentials_file}")
+            self._credentials_file = credentials_file
             self._region = region
             self._access_key_id = access_key_id
             self._secret_access_key = secret_access_key
@@ -31,6 +32,7 @@ class AmazonCredentials:
             self._kms_key_id = None
             self._account_number = None
         else:
+            self._credentials_file = None
             self._region = None
             self._access_key_id = None
             self._secret_access_key = None
@@ -48,6 +50,10 @@ class AmazonCredentials:
             self._session_token = session_token
         if kms_key_id := normalize_string(kms_key_id):
             self._kms_key_id = kms_key_id
+
+    @property
+    def credentials_file(self) -> Optional[str]:
+        return self._credentials_file
 
     @property
     def region(self) -> Optional[str]:

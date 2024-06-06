@@ -55,11 +55,6 @@ class RCloneAmazon(RCloneStore):
     def kms_key_id(self) -> Optional[str]:
         return self._credentials.kms_key_id
 
-    def copy(self) -> RCloneAmazon:
-        return RCloneAmazon(credentials=self.credentials.copy() if self.credentials else None,
-                            bucket=self.bucket,
-                            name=self.name)
-
     def __eq__(self, other: Optional[RCloneAmazon]) -> bool:
         return isinstance(other, RCloneAmazon) and super().__eq__(other)
 

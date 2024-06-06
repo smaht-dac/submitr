@@ -75,13 +75,6 @@ class RCloneGoogle(RCloneStore):
             self._project = project
             return self._project
 
-    def copy(self) -> RCloneGoogle:
-        copy = RCloneGoogle(credentials=self.credentials.copy() if self.credentials else None,
-                            bucket=self.bucket,
-                            name=self.name)
-        copy._project = self._project
-        return copy
-
     def __eq__(self, other: Optional[RCloneGoogle]) -> bool:
         return isinstance(other, RCloneGoogle) and super().__eq__(other)
 
