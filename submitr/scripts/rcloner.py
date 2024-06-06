@@ -19,6 +19,13 @@ from submitr.utils import chars
 # Little command-line utility to interactively test out rclone support code in smaht-submitr.
 # Only supports Amazon and Google (obviously for now), but meaning these are hard-coded here,
 # does not take advantage of generic RCloneStore/RCloneStoreRegistry functionality.
+#
+# Examples:
+# rcloner cp file s3://bucket/folder/file -aws credentials-file
+# rcloner cp file gs://bucket/folder/  -gcs service-account-file
+# rcloner cp s3://bucket/folder/file . -aws credentials-file
+# rcloner cp gs://bucket/folder/file s3://bucket/folder/file -aws credentials-file -gcs service-account-file
+# rcloner cp s3://bucket/folder/file gs://bucket/folder/ -aws credentials-file -gcs service-account-file
 
 
 def main() -> None:
