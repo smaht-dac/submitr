@@ -205,7 +205,7 @@ class RCloner(RCloneCommands, RCloneInstallation):
                 source = cloud_path.join(source_config.bucket, source)
             if not (source := cloud_path.normalize(source)):
                 raise Exception(f"No cloud source specified.")
-            if not cloud_path.has_separator(source):
+            if cloud_path.is_bucket_only(source):
                 raise Exception(f"No cloud source key/file specified (only bucket: {source}).")
             if not (destination := normalize_path(destination)):
                 raise Exception(f"No file destination specified.")
