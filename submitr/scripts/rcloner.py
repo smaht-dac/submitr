@@ -16,9 +16,9 @@ from submitr.rclone.rclone_store_registry import RCloneStoreRegistry
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
 from submitr.utils import chars
 
-# Little command-line utility to interactively test out rclone support code in smaht-submitr.
+# Little command-line utility to interactively exercise our rclone support code in smaht-submitr.
 # Only supports Amazon and Google (obviously for now), but meaning these are hard-coded here,
-# does not take advantage of generic RCloneStore/RCloneStoreRegistry functionality.
+# does not take advantage of generic RCloneStore/RCloneStoreRegistry functionality, as elsewhere.
 #
 # Examples:
 # rcloner cp file s3://bucket/folder/file -aws credentials-file
@@ -70,34 +70,34 @@ def main() -> None:
     else:
         usage("Must specify copy or info.")
 
-    is_source_amazon = is_amazon_path(args.source)
-    is_source_google = is_google_path(args.source)
+    is_source_amazon = is_amazon_path(source)
+    is_source_google = is_google_path(source)
     is_source_cloud = is_source_amazon or is_source_google
-    is_destination_amazon = is_amazon_path(args.destination)
-    is_destination_google = is_google_path(args.destination)
+    is_destination_amazon = is_amazon_path(destination)
+    is_destination_google = is_google_path(destination)
     is_destination_cloud = is_destination_amazon or is_destination_google
 
     if is_source_cloud:
-        if args.source.endswith(cloud_path.separator):
+        if source.endswith(cloud_path.separator):
             usage("May not specify a folder/directory as a source; only single key/file allowed.")
-        if not cloud_path.has_separator(cloud_path.normalize(args.source)):
+        if not cloud_path.has_separator(cloud_path.normalize(source)):
             usage("May not specify just a bucket as a source; only single key/file allowed.")
 
     if not is_source_cloud:
-        args.source = os.path.abspath(args.source)
+        source = os.path.abspath(source)
 
     copyto = True
     if is_destination_cloud:
-        if cloud_path.is_folder(args.destination) or cloud_path.is_bucket_only(args.destination):
+        if cloud_path.is_folder(destination) or cloud_path.is_bucket_only(destination):
             # Special case to treat a destination ending in a slash (or just a
             # bucket destination by itself) as a directory (as does aws s3 cp).
-            if source_basename := (cloud_path.basename(cloud_path.normalize(args.source))
-                                   if is_source_cloud else os.path.basename(args.source)):
-                args.destination = cloud_path.join(args.destination, source_basename, preserve_prefix=True)
+            if source_basename := (cloud_path.basename(cloud_path.normalize(source))
+                                   if is_source_cloud else os.path.basename(source)):
+                destination = cloud_path.join(destination, source_basename, preserve_prefix=True)
             else:
                 copyto = False
     else:
-        args.destination = os.path.abspath(args.destination)
+        destination = os.path.abspath(destination)
 
     # Amazon credentials are split into source and destination
     # because we may specify either/both/none as temporary credentials.
@@ -129,7 +129,7 @@ def main() -> None:
                 if temporary_credentials_source_amazon is True:
                     # Default if no argument give for the -tcs option is to target
                     # the temporary credentials to the specified (S3) source bucket/key.
-                    bucket, key = cloud_path.bucket_and_key(args.source)
+                    bucket, key = cloud_path.bucket_and_key(source)
                 else:
                     # Or allow targeting the temporary credentials to a specified bucket/key.
                     bucket, key = cloud_path.bucket_and_key(temporary_credentials_source_amazon)
@@ -158,7 +158,7 @@ def main() -> None:
                 if temporary_credentials_destination_amazon is True:
                     # Default if no argument give for the -tcd option is to target
                     # the temporary credentials to the specified (S3) destination bucket/key.
-                    bucket, key = cloud_path.bucket_and_key(args.destination)
+                    bucket, key = cloud_path.bucket_and_key(destination)
                 else:
                     # Or allow targeting the temporary credentials to a specified bucket/key.
                     bucket, key = cloud_path.bucket_and_key(temporary_credentials_destination_amazon)
@@ -187,7 +187,7 @@ def main() -> None:
             usage(f"Given GCS credentials appear to be invalid.")
 
     if copy:
-        exit(main_copy(args.source, args.destination,
+        exit(main_copy(source, destination,
                        credentials_source_amazon=credentials_source_amazon,
                        credentials_destination_amazon=credentials_destination_amazon,
                        credentials_source_policy_amazon=credentials_source_policy_amazon,
@@ -197,7 +197,7 @@ def main() -> None:
                        show_temporary_credentials_policy=args.show_temporary_credentials_policy,
                        verbose=args.verbose, debug=args.debug))
     elif info:
-        exit(main_info(args.source, args.destination,
+        exit(main_info(source, destination,
                        credentials_source_amazon=credentials_source_amazon,
                        credentials_destination_amazon=credentials_destination_amazon,
                        credentials_google=credentials_google,
