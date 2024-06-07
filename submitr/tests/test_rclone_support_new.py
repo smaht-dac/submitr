@@ -44,11 +44,11 @@ from submitr.tests.testing_rclone_config import (  # noqa
 pytestmark = [pytest.mark.integration]
 
 
-def xxx_setup_module():
+def setup_module():
     rclone_config_setup_module()
 
 
-def xxx_teardown_module():
+def teardown_module():
     rclone_config_teardown_module()
 
 
@@ -95,7 +95,7 @@ class Amazon:
             s3.delete_file(bucket, key)
 
 
-def xxx_test_new() -> None:
+def test_new() -> None:
     global AMAZON_CREDENTIALS_FILE_PATH, AMAZON_KMS_KEY_ID
     nokms = True
     with Amazon.temporary_cloud_file(nokms=nokms) as amazon_cloud_path:

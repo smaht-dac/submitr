@@ -157,20 +157,39 @@ def rclone_config_setup_module():
 
     # Just make sure no interference from credentials not explicitly setup for testing.
 
-    os.environ.pop("AWS_DEFAULT_REGION", None)
-    os.environ.pop("AWS_ACCESS_KEY_ID", None)
-    os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
-    os.environ.pop("AWS_SESSION_TOKEN", None)
-    os.environ.pop("AWS_SHARED_CREDENTIALS_FILE", None)
-    os.environ.pop("AWS_CONFIG_FILE", None)
-    os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+    _remove_environment_variables_which_might_interfere_with_testing()
 
 
 def rclone_config_teardown_module():
+
+    global TMPDIR
+
+    _restore_environment_variables_which_might_interfere_with_testing()
 
     if is_github_actions_context():
         remove_temporary_file(AMAZON_CREDENTIALS_FILE_PATH)
         remove_temporary_file(GOOGLE_SERVICE_ACCOUNT_FILE_PATH)
 
-    global TMPDIR
     remove_temporary_directory(TMPDIR)
+
+
+_environment_variables_which_might_interfere_with_testing = {
+    "AWS_DEFAULT_REGION": None,
+    "AWS_ACCESS_KEY_ID": None,
+    "AWS_SECRET_ACCESS_KEY": None,
+    "AWS_SESSION_TOKEN": None,
+    "AWS_SHARED_CREDENTIALS_FILE": None,
+    "AWS_CONFIG_FILE": None,
+    "GOOGLE_APPLICATION_CREDENTIALS": None
+}
+
+
+def _remove_environment_variables_which_might_interfere_with_testing():
+    for key in _environment_variables_which_might_interfere_with_testing:
+        _environment_variables_which_might_interfere_with_testing[key] = os.environ.pop(key, None)
+
+
+def _restore_environment_variables_which_might_interfere_with_testing():
+    for key in _environment_variables_which_might_interfere_with_testing:
+        if (value := _environment_variables_which_might_interfere_with_testing[key]) is not None:
+            os.environ[key] = value
