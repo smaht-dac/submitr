@@ -11,19 +11,19 @@ from submitr.tests.testing_rclone_helpers import (
     teardown_module as rclone_teardown_module,
     Mock_LocalStorage, Mock_RCloneAmazon, Mock_RCloneGoogle)
 
-TMPDIR = None
+# TMPDIR = None
 RANDOM_TMPFILE_SIZE = 2048
 
 
 def setup_module():
-    global TMPDIR
-    TMPDIR = tempfile.mkdtemp()
+    # global TMPDIR
+    # TMPDIR = tempfile.mkdtemp()
     rclone_setup_module()
 
 
 def teardown_module():
-    global TMPDIR
-    remove_temporary_directory(TMPDIR)
+    # global TMPDIR
+    # remove_temporary_directory(TMPDIR)
     rclone_teardown_module()
 
 
