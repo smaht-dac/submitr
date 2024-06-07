@@ -74,7 +74,7 @@ def main() -> None:
     elif info:
         if not (source := args.source.strip()):
             usage(f"Must specify a source for copy.")
-        destination = args.destination.strip()
+        destination = args.destination.strip() if args.destination else None
     else:
         usage("Must specify copy or info.")
 
