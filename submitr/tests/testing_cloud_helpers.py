@@ -17,22 +17,28 @@ TEST_FILE_SIZE = 2048
 class Mock_CloudStorage:
     # We simply use the file system, within a temporary directory, via global temporary
     # directory created in setup_class, to simulate/mock AWS S3 and Google Cloud Storage (GCS).
-    def __init__(self, subdir):  # noqa
+    def __init__(self, subdir: Optional[str] = None):  # noqa
         self._tmpdir_root = tempfile.mkdtemp()
         assert os.path.isdir(self._tmpdir_root) and is_temporary_directory(self._tmpdir_root)
         assert isinstance(subdir, str) and subdir
-        self._tmpdir = os.path.join(self._tmpdir_root, subdir)
+        self._tmpdir = os.path.join(self._tmpdir_root, subdir) if isinstance(subdir, str) else self._tmpdir_root
         os.makedirs(self._tmpdir, exist_ok=True)
         assert is_temporary_directory(self._tmpdir)
     def __del__(self):  # noqa
+        assert is_temporary_directory(self._tmpdir_root)
         remove_temporary_directory(self._tmpdir_root)
-    def path_exists(self, path):  # noqa
+        assert not os.path.exists(self._tmpdir_root)
+        self._tmpdir_root = None
+    def path_exists(self, path: str):  # noqa
         return os.path.isfile(path) if (path := self._realpath(path)) else None
-    def file_size(self, file):  # noqa
+    def file_size(self, file: str):  # noqa
         return get_file_size(file) if (self.path_exists(file) and (file := self._realpath(file))) else None
-    def file_checksum(self, file):  # noqa
+    def file_checksum(self, file: str):  # noqa
         return compute_file_md5(file) if (self.path_exists(file) and (file := self._realpath(file))) else None
-    def _realpath(self, path):  # noqa
+    def clear(self):  # noqa
+        self.__del__()
+        self.__init__()
+    def _realpath(self, path: str):  # noqa
         if isinstance(self, RCloneStore):
             return os.path.join(self._tmpdir, path) if (path := super().path(path)) else None
         return os.path.join(self._tmpdir, path) if (path := normalize_path(path)) else None
@@ -46,7 +52,7 @@ class Mock_CloudStorage:
                 for file in arg:
                     if isinstance(file, str):
                         self._create_files_for_testing(file, nbytes=kwargs.get("nbytes"))
-    def _create_file_for_testing(self, file, nbytes=None):  # noqa
+    def _create_file_for_testing(self, file: str, nbytes: Optional[int] = None):  # noqa
         if not isinstance(nbytes, int) or nbytes < 0:
             nbytes = TEST_FILE_SIZE
         if (file := normalize_path(file)) and (not file.startswith(os.path.sep) or (file := file[1:])):
@@ -54,11 +60,6 @@ class Mock_CloudStorage:
                 if file_directory := os.path.dirname(file):
                     os.makedirs(file_directory, exist_ok=True)
                 create_random_file(file, nbytes=nbytes)
-    def _clear_files(self):  # noqa
-        assert is_temporary_directory(self._tmpdir)
-        remove_temporary_directory(self._tmpdir)
-        os.makedirs(self._tmpdir, exist_ok=True)
-        assert is_temporary_directory(self._tmpdir)
 
 
 class Mock_RCloneAmazon(Mock_CloudStorage, RCloneAmazon):
@@ -88,7 +89,7 @@ class Mock_LocalStorage(Mock_CloudStorage):
     @property  # noqa
     def root(self):
         return super()._root()
-    def path(self, path):  # noqa
+    def path(self, path: str):  # noqa
         return os.path.join(self.root, path) if (path := normalize_path(path)) else None
 
 

@@ -128,7 +128,7 @@ def test_file_for_upload_b():
     assert ffunr[0].found is True
     assert ffunr[1].found is False
 
-    filesystem._clear_files()
+    filesystem.clear()
     ffu = FilesForUpload.assemble(files,
                                   main_search_directory=filesystem._root(),
                                   main_search_directory_recursively=True)
@@ -208,7 +208,7 @@ def test_mock_cloud_storage(cloud_storage_args):
         assert amazon.file_size("def/ghi.json") == TEST_FILE_SIZE
         assert amazon.file_checksum("def/ghi.json") == compute_file_md5(amazon._realpath("def/ghi.json"))
         assert amazon.path_exists("does-not-exists.json") is False
-        amazon._clear_files()
+        amazon.clear()
         assert amazon.path_exists("abc.fastq") is False
         assert amazon.path_exists("def/ghi.json") is False
         amazon._create_file_for_testing("xyzzy/foobar/does-exist.json")
