@@ -28,7 +28,6 @@ class RCloneGoogle(RCloneStore):
     def credentials(self) -> Optional[GoogleCredentials]:
         return super().credentials
 
-    @property
     def config(self) -> dict:
         # The bucket_policy_only=true option indicates that rclone should enforce a bucket-only access policy,
         # meaning that object-level ACLs are not used to control access to objects within the bucket.

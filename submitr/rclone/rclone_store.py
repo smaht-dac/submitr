@@ -1,5 +1,5 @@
 from __future__ import annotations
-from abc import ABC as AbstractBaseClass, abstractproperty
+from abc import ABC as AbstractBaseClass, abstractproperty, abstractmethod
 import argparse
 from contextlib import contextmanager
 from datetime import datetime
@@ -71,16 +71,15 @@ class RCloneStore(AbstractBaseClass):
     def credentials(self) -> Optional[Any]:
         return self._credentials
 
-    @abstractproperty
-    def config(self) -> dict:
+    @abstractmethod
+    def config(self, checksum: bool = False) -> dict:
         return {}
 
-    @property
     def config_lines(self) -> List[str]:
         lines = []
-        if isinstance(config := self.config, dict):
+        if isinstance(config := self.config(), dict):
             lines.append(f"[{self.name}]")
-            for key in self.config:
+            for key in config:
                 if config[key] is not None:
                     lines.append(f"{key} = {config[key]}")
         return lines
@@ -89,7 +88,7 @@ class RCloneStore(AbstractBaseClass):
     def config_file(self, persist: bool = False) -> str:
         with temporary_file(suffix=".conf") as temporary_config_file_name:
             os.chmod(temporary_config_file_name, 0o600)  # for security
-            self.write_config_file(temporary_config_file_name, self.config_lines)
+            self.write_config_file(temporary_config_file_name, self.config_lines())
             if (persist is True) or DEBUGGING():
                 persistent_config_file_name = create_temporary_file_name(suffix=".conf")
                 copy_file(temporary_config_file_name, persistent_config_file_name)
@@ -179,6 +178,12 @@ class RCloneStore(AbstractBaseClass):
         # policies) this will NOT work. See submitr.s3_upload for special handling.
         if path := self.path(path):
             with self.config_file() as config_file:
+                # N.B. For AWS S3 keys with KMS encryption rclone hashsum md5 does not seem to work;
+                # the command does not fail but returns no checksum (just the filename in the output);
+                # removing the KMS info from the rclone config file fixes this, and it does return a
+                # checksum value but it is not the same as the one we compute for the same file.
+                # So not good, but for our use-cases so far it is of no consequence. But for
+                # integration tests, we can just use AWS directly (via boto and our credentials).
                 return RCloneCommands.checksum_command(source=f"{self.name}:{path}", config=config_file)
 
     def file_modified(self, path: str, formatted: bool = False) -> Optional[Union[datetime, str]]:

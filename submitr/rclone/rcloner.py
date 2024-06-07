@@ -83,10 +83,10 @@ class RCloner(RCloneCommands, RCloneInstallation):
     def config_lines(self) -> List[str]:
         lines = []
         if (isinstance(source := self.source, RCloneStore) and
-            isinstance(source_config_lines := source.config_lines, list)):  # noqa
+            isinstance(source_config_lines := source.config_lines(), list)):  # noqa
             lines.extend(source_config_lines)
         if (isinstance(destination_config := self.destination, RCloneStore) and
-            isinstance(destination_config_lines := destination_config.config_lines, list)):  # noqa
+            isinstance(destination_config_lines := destination_config.config_lines(), list)):  # noqa
             if lines:
                 lines.append("")  # not necessary but sporting
             lines.extend(destination_config_lines)

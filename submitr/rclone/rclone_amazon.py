@@ -24,7 +24,6 @@ class RCloneAmazon(RCloneStore):
     def credentials(self) -> AmazonCredentials:
         return super().credentials
 
-    @property
     def config(self) -> dict:
         return create_dict(provider="AWS",
                            type="s3",

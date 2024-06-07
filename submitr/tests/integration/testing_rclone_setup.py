@@ -1,5 +1,10 @@
 # Configuration parameters for rclone related integration testing.
 
+# These integration tests actually talks to AWS S3 and Google Cloud Storage (GCS);
+# both directly (via Python boto3 and google.cloud.storage) and via rclone.
+# The access credentials are defined by the variables as described below.
+# See testing_rclone_setup for configuration parameters and comments.
+
 import json
 import os
 import pytest
@@ -10,7 +15,6 @@ from submitr.rclone.google_credentials import GoogleCredentials
 from submitr.rclone.rclone_google import RCloneGoogle
 from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.tests.testing_cloud_helpers import TEST_FILE_SIZE
-
 
 # If running from within GitHub actions these environment variables assumed to be
 # setup; via .github/workflows/main-integration-tests.yml file and GitHub secrets.

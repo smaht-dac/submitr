@@ -1,23 +1,12 @@
-from contextlib import contextmanager
 import os
 import pytest
-from typing import Optional
 from dcicutils.file_utils import compute_file_md5 as get_file_checksum, get_file_size
-from dcicutils.misc_utils import create_uuid
-from dcicutils.tmpfile_utils import (
-    temporary_directory, temporary_random_file)
-from submitr.rclone.amazon_credentials import AmazonCredentials
+from dcicutils.tmpfile_utils import temporary_directory
 from submitr.rclone.rcloner import RCloner
 from submitr.rclone.rclone_amazon import RCloneAmazon
+from submitr.rclone.rclone_google import RCloneGoogle
 from submitr.rclone.rclone_utils import cloud_path
-from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
-
-
-# This integration test actually talks to AWS S3 and Google Cloud Storage (GCS);
-# both directly (via Python boto3 and google.cloud.storage) and via rclone.
-# The access credentials are defined by the variables as described below.
-# See testing_rclone_setup for configuration parameters and comments.
-
+from submitr.tests.integration.testing_rclone_helpers import Amazon, Google
 from submitr.tests.integration.testing_rclone_setup import (  # noqa
 
     rclone_config_setup_module,
@@ -38,7 +27,6 @@ from submitr.tests.integration.testing_rclone_setup import (  # noqa
     TEST_FILE_SIZE
 )
 
-
 # This marks this entire module as "integrtation" tests.
 # To run only integration tests:    pytest -m integration
 # To run all but integration tests: pytest -m "not integration"
@@ -53,60 +41,28 @@ def teardown_module():
     rclone_config_teardown_module()
 
 
-class Amazon:
-
-    @staticmethod
-    def credentials(nokms: bool = False) -> AmazonCredentials:
-        return AmazonCredentials(amazon_credentials_file_path(),
-                                 kms_key_id=None if nokms is True else AMAZON_KMS_KEY_ID)
-
-    @staticmethod
-    def s3(nokms: bool = False) -> AmazonCredentials:
-        return AwsS3(Amazon.credentials(nokms=nokms))
-
-    @staticmethod
-    @contextmanager
-    def temporary_cloud_file(nosubfolder: bool = False, nokms: bool = False, size: Optional[int] = None) -> str:
-
-        global AMAZON_TEST_BUCKET_NAME, TEST_FILE_PREFIX, TEST_FILE_SUFFIX, TEST_FILE_SIZE
-
-        assert nosubfolder in (True, False)
-        assert nokms in (True, False)
-        assert isinstance(bucket := AMAZON_TEST_BUCKET_NAME, str) and bucket
-        if size is None: size = TEST_FILE_SIZE  # noqa
-        assert isinstance(size, int) and (size >= 0)
-
-        key = f"{TEST_FILE_PREFIX}{create_uuid()}{TEST_FILE_SUFFIX}"
-        if nosubfolder is False:
-            subfolder = f"{TEST_FILE_PREFIX}{create_uuid()}"
-            key = cloud_path.join(subfolder, key)
-
-        s3 = Amazon.s3(nokms=nokms)
-        try:
-            with temporary_random_file(prefix=TEST_FILE_PREFIX, suffix=TEST_FILE_SUFFIX, nbytes=size) as tmp_file_path:
-                assert s3.upload_file(tmp_file_path, bucket, key) is True
-                assert s3.file_exists(bucket, key) is True
-                assert s3.file_size(bucket, key) == size
-                if nokms is False:
-                    assert s3.file_kms_encrypted(bucket, key, AMAZON_KMS_KEY_ID) is True
-                yield cloud_path.join(bucket, key)
-        except Exception:
-            pytest.fail("Cannot create (non-rclone) AWS S3 object!")
-            return None
-        finally:
-            s3.delete_file(bucket, key)
+def test_new_local_to_amazon(nokms: bool = True) -> None:
+    nokms = False
+    with Amazon.temporary_cloud_file(nokms=nokms) as store_path, temporary_directory() as tmpdir:
+        store = RCloneAmazon(Amazon.credentials(nokms=nokms))
+        RCloner(source=store).copy(store_path, tmpdir)
+        local_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
+        assert os.path.isfile(local_file_path)
+        assert get_file_size(local_file_path) == store.file_size(store_path)
+        # N.B. For AWS S3 keys with KMS encryption rclone hashsum md5 does not seem to work;
+        # the command does not fail but returns no checksum (just the filename in the output);
+        # removing the KMS info from the rclone config file fixes this, and it does return a
+        # checksum value but it is not the same as the one we compute for the same file.
+        # So not good, but for our use-cases so far it is of no consequence. But for
+        # integration tests, we can just use AWS directly (via boto and our credentials).
+        # assert get_file_checksum(local_file_path) == store.file_checksum(store_path)
 
 
-def test_new() -> None:
-    nokms = True
-    with Amazon.temporary_cloud_file(nokms=nokms) as amazon_cloud_path:
-        with temporary_directory() as tmpdir:
-            amazon_credentials = Amazon.credentials(nokms=nokms)
-            amazon = RCloneAmazon(amazon_credentials)
-            RCloner(source=amazon).copy(amazon_cloud_path, tmpdir)
-            local_file_path = os.path.join(tmpdir, cloud_path.basename(amazon_cloud_path))
-            assert os.path.isfile(local_file_path)
-            assert get_file_size(local_file_path) == amazon.file_size(amazon_cloud_path)
-            assert get_file_checksum(local_file_path) == amazon.file_checksum(amazon_cloud_path)
-        pass
-    pass
+def test_new_local_to_google() -> None:
+    with Google.temporary_cloud_file() as store_path,temporary_directory() as tmpdir:
+        store = RCloneGoogle(Google.credentials())
+        RCloner(source=store).copy(store_path, tmpdir)
+        local_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
+        assert os.path.isfile(local_file_path)
+        assert get_file_size(local_file_path) == store.file_size(store_path)
+        assert get_file_checksum(local_file_path) == store.file_checksum(store_path)

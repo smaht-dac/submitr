@@ -20,12 +20,8 @@ from submitr.s3_upload import upload_file_to_aws_s3
 from submitr.s3_utils import get_s3_key_metadata
 import submitr.submission_uploads  # noqa
 from submitr.submission_uploads import do_any_uploads
-
-# This integration test actually talks to AWS S3 and Google Cloud Storage (GCS);
-# both directly (via Python boto3 and google.cloud.storage) and via rclone.
-# The access credentials are defined by the variables as described below.
-# See testing_rclone_setup for configuration parameters and comments.
-
+from submitr.tests.testing_cloud_helpers import Mock_LocalStorage, Mock_Portal
+from submitr.tests.testing_helpers import load_json_test_data
 from submitr.tests.integration.testing_rclone_setup import (
 
     rclone_config_setup_module,
@@ -46,18 +42,22 @@ from submitr.tests.integration.testing_rclone_setup import (
     TEST_FILE_SIZE
 )
 
-from submitr.tests.testing_cloud_helpers import (
-    Mock_LocalStorage,
-    Mock_Portal,
-)
-
-from submitr.tests.testing_helpers import load_json_test_data
-
 # This marks this entire module as "integrtation" tests.
 # To run only integration tests:    pytest -m integration
 # To run all but integration tests: pytest -m "not integration"
 pytestmark = [pytest.mark.integration]
 
+
+def setup_module():
+    rclone_config_setup_module()
+
+
+def teardown_module():
+    rclone_config_teardown_module()
+
+# TODO: FYI RCloneAmazon.file_checksum never gets called by tests (though RCloneGoogle.file_checksum does).
+# And it appears the rlcone hashsum md5 on a key which has KMS encryption does not work if we specify
+# the KMS ID in the rclone config file, but if we leave it out of the config file it does work, hmmm.
 
 class Env:
 
@@ -155,14 +155,6 @@ class EnvGoogle(Env):
 
     def non_rclone(self):
         return Gcs(self.main_credentials)
-
-
-def setup_module():
-    rclone_config_setup_module()
-
-
-def teardown_module():
-    rclone_config_teardown_module()
 
 
 def test_all():
