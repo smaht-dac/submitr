@@ -182,8 +182,11 @@ class RCloneStore(AbstractBaseClass):
                 # the command does not fail but returns no checksum (just the filename in the output);
                 # removing the KMS info from the rclone config file fixes this, and it does return a
                 # checksum value but it is not the same as the one we compute for the same file.
-                # So not good, but for our use-cases so far it is of no consequence. But for
-                # integration tests, we can just use AWS directly (via boto and our credentials).
+                # So not good, but for our use-cases so far it is of no consequence because at least
+                # currently, although we do (as of June 2024) allow S3-to-S3 copy, we do not yet allow
+                # the specification of a KMS Key ID for the source, and for the verify step after upload
+                # to S3 we use boto3 to get the checksum (because we can as we have the targeted credentials).
+                # Ror integration tests, we can just use AWS directly (via boto and our credentials).
                 return RCloneCommands.checksum_command(source=f"{self.name}:{path}", config=config_file)
 
     def file_modified(self, path: str, formatted: bool = False) -> Optional[Union[datetime, str]]:
