@@ -59,6 +59,10 @@ class Amazon:
         return AmazonCredentials(AMAZON_CREDENTIALS_FILE_PATH, kms_key_id=None if nokms is True else AMAZON_KMS_KEY_ID)
 
     @staticmethod
+    def s3(nokms: bool = False) -> AmazonCredentials:
+        return AwsS3(Amazon.credentials(nokms=nokms))
+
+    @staticmethod
     @contextmanager
     def temporary_cloud_file(nosubfolder: bool = False, nokms: bool = False, size: Optional[int] = None) -> str:
 
@@ -75,7 +79,7 @@ class Amazon:
             subfolder = f"{TEST_FILE_PREFIX}{create_uuid()}"
             key = cloud_path.join(subfolder, key)
 
-        s3 = AwsS3(Amazon.credentials(nokms=nokms))
+        s3 = Amazon.s3(nokms=nokms)
         try:
             with temporary_random_file(prefix=TEST_FILE_PREFIX, suffix=TEST_FILE_SUFFIX, nbytes=size) as tmp_file_path:
                 assert s3.upload_file(tmp_file_path, bucket, key) is True
