@@ -185,11 +185,13 @@ _environment_variables_which_might_interfere_with_testing = {
 
 
 def _remove_environment_variables_which_might_interfere_with_testing():
+    return
     for key in _environment_variables_which_might_interfere_with_testing:
         _environment_variables_which_might_interfere_with_testing[key] = os.environ.pop(key, None)
 
 
 def _restore_environment_variables_which_might_interfere_with_testing():
+    return
     for key in _environment_variables_which_might_interfere_with_testing:
         if (value := _environment_variables_which_might_interfere_with_testing[key]) is not None:
             os.environ[key] = value
