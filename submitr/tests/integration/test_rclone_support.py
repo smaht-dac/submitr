@@ -24,9 +24,9 @@ from submitr.submission_uploads import do_any_uploads
 # This integration test actually talks to AWS S3 and Google Cloud Storage (GCS);
 # both directly (via Python boto3 and google.cloud.storage) and via rclone.
 # The access credentials are defined by the variables as described below.
-# See testing_rclone_config for configuration parameters and comments.
+# See testing_rclone_setup for configuration parameters and comments.
 
-from submitr.tests.integration.testing_rclone_config import (
+from submitr.tests.integration.testing_rclone_setup import (
 
     rclone_config_setup_module,
     rclone_config_teardown_module,

@@ -142,7 +142,7 @@ def rclone_config_setup_module():
                 os.path.isfile(normalize_path(_GOOGLE_SERVICE_ACCOUNT_FILE_PATH, expand_home=True))):
             if not RCloneGoogle.is_google_compute_engine():
                 pytest.fail(f"Test setup ERROR: No Google credentials file defined!"
-                            f" The testing_rclone_config._GOOGLE_SERVICE_ACCOUNT_FILE_PATH variable"
+                            f" The testing_rclone_setup._GOOGLE_SERVICE_ACCOUNT_FILE_PATH variable"
                             f" should be set to the path of a GCS service account JSON file.")
             else:
                 # Google credentials can be None on a GCE instance; i.e. no service account file needed.
