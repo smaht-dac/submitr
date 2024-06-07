@@ -59,17 +59,11 @@ class cloud_path:
         return False
 
     @staticmethod
-    def to_file_path(value: str) -> str:
-        if not (value := cloud_path.normalize(value)):
-            return ""
-        return value.replace(cloud_path.separator, os.sep)
-
-    @staticmethod
     def basename(value: str) -> str:
         # Returns the basename of the given cloud path (like os.path.basename).
         if not (value := cloud_path.normalize(value)):
             return ""
-        return os.path.basename(cloud_path.to_file_path(value))
+        return os.path.basename(value.replace(cloud_path.separator, os.sep))
 
     @staticmethod
     def bucket(value: str) -> str:
