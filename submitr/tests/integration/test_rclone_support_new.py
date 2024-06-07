@@ -59,7 +59,7 @@ def test_new_local_to_amazon(nokms: bool = True) -> None:
 
 
 def test_new_local_to_google() -> None:
-    with Google.temporary_cloud_file() as store_path,temporary_directory() as tmpdir:
+    with Google.temporary_cloud_file() as store_path, temporary_directory() as tmpdir:
         store = RCloneGoogle(Google.credentials())
         RCloner(source=store).copy(store_path, tmpdir)
         local_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))

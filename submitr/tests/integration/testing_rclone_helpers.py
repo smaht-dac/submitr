@@ -71,7 +71,7 @@ class Amazon:
                 if nokms is False:
                     assert cloud.file_kms_encrypted(Amazon.bucket, key, AMAZON_KMS_KEY_ID) is True
                 yield cloud_path.join(Amazon.bucket, key)
-        except Exception as e:
+        except Exception:
             pytest.fail("Cannot create (non-rclone) Amazon S3 object!")
             return None
         finally:

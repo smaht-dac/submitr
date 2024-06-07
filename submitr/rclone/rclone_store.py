@@ -1,5 +1,5 @@
 from __future__ import annotations
-from abc import ABC as AbstractBaseClass, abstractproperty, abstractmethod
+from abc import ABC as AbstractBaseClass, abstractmethod
 import argparse
 from contextlib import contextmanager
 from datetime import datetime
