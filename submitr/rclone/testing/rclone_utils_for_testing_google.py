@@ -55,14 +55,12 @@ class Gcs:
                 return False
             if not (key := cloud_path.normalize(key)):
                 return False
-            if not isinstance(file, str) or not file:
+            if not isinstance(file := normalize_path(file), str) or not file:
                 return False
             if os.path.isdir(file):
                 if cloud_path.has_separator(key):
-                    key_as_file_path = cloud_path.to_file_path(key)
-                    directory = normalize_path(os.path.join(file, os.path.dirname(key_as_file_path)))
-                    os.makedirs(directory, exist_ok=True)
-                    file = os.path.join(directory, os.path.basename(key_as_file_path))
+                    key_basename = cloud_path.basename(key)
+                    file = os.path.join(file, key_basename)
                 else:
                     file = os.path.join(file, key)
             self.client.get_bucket(bucket).blob(key).download_to_filename(file)

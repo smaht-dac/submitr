@@ -484,7 +484,7 @@ def _test_utils_for_testing_amazon(env_amazon: EnvAmazon, credentials: AmazonCre
             assert are_files_equal(tmp_test_file_path, "/dev/null") is False
         with temporary_directory() as tmp_download_directory:
             assert s3.download_file(tmp_download_directory, env_amazon.bucket, key) is True
-            assert are_files_equal(tmp_test_file_path, f"{tmp_download_directory}/{key}") is True
+            assert are_files_equal(tmp_test_file_path, f"{tmp_download_directory}/{cloud_path.basename(key)}") is True
         assert s3.delete_file(env_amazon.bucket, key) is True
         assert s3.file_exists(env_amazon.bucket, key) is False
         assert s3.file_equals("/dev/null", env_amazon.bucket, key) is False
