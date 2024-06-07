@@ -5,7 +5,7 @@ import os
 import pytest
 from typing import Optional, Tuple
 from unittest.mock import patch as mock_patch
-from dcicutils.file_utils import are_files_equal, compute_file_md5, normalize_path
+from dcicutils.file_utils import are_files_equal, compute_file_md5 as get_file_checksum, get_file_size, normalize_path
 from dcicutils.misc_utils import create_uuid
 from dcicutils.tmpfile_utils import (
     create_temporary_file_name, remove_temporary_file,
@@ -23,54 +23,38 @@ from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.s3_upload import upload_file_to_aws_s3
 from submitr.s3_utils import get_s3_key_metadata
 import submitr.submission_uploads  # noqa
-from submitr.submission_uploads import do_any_uploads  # noqa/xyzzy
-from submitr.tests.testing_rclone_helpers import (  # noqa/xyzzy
-    setup_module as rclone_setup_module, teardown_module as rclone_teardown_module,
-    load_test_data_json, Mock_LocalStorage, Mock_Portal, RANDOM_TMPFILE_SIZE)
+from submitr.submission_uploads import do_any_uploads
 from submitr.utils import chars
-
-
-# This marks this entire module as "integrtation" tests.
-# To run only integration tests:    pytest -m integration
-# To run all but integration tests: pytest -m "not integration"
-pytestmark = [pytest.mark.integration]
 
 
 # This integration test actually talks to AWS S3 and Google Cloud Storage (GCS);
 # both directly (via Python boto3 and google.cloud.storage) and via rclone.
 # The access credentials are defined by the variables as described below.
+# See testing_rclone_config for configuration parameters and comments.
 
-# If running from within GitHub actions these environment variables assumed to be
-# setup; via .github/workflows/main-integration-tests.yml file and GitHub secrets.
-#
-# These are setup in GitHub as "secrets". The AWS access key values are currently,
-# May 2024, for the special user test-integration-user in the smaht-wolf account;
-# the access key was created on 2024-05-15. The Google value is the JSON from the
-# service account file exported from the HMS Google account for the smaht-dac project;
-# the service account email is ga4-service-account@smaht-dac.iam.gserviceaccount.com;
-# its key ID is b488dd9cfde6b59b1aa347aabd9add86c7ff9057; it was created on 2024-04-28.
-#
-# - AWS_ACCESS_KEY_ID
-# - AWS_SECRET_ACCESS_KEY
-# - GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON
+from submitr.tests.testing_rclone_config import (
 
-# If NOT running from within GitHub actions (i.e. locally) these variables assumed to be setup.
-#
-# - AMAZON_CREDENTIALS_FILE_PATH
-#   Full path to your AWS credentials file (e.g. ~/.aws_test.smaht-wolf/credentials).
-# - GOOGLE_SERVICE_ACCOUNT_FILE_PATH
-#   Full path to GCP credential "service account file" exported from Google account.
+    AMAZON_CREDENTIALS_FILE_PATH,
+    AMAZON_TEST_BUCKET_NAME,
+    AMAZON_REGION,
+    AMAZON_KMS_KEY_ID,
 
-# Set from setup_module() IFF running from within GitHub actions.
-AMAZON_CREDENTIALS_FILE_PATH = "~/.aws_test.smaht-test/credentials"
-GOOGLE_SERVICE_ACCOUNT_FILE_PATH = "~/.config/google-cloud/smaht-dac-617e0480d8e2.json"
+    GOOGLE_SERVICE_ACCOUNT_FILE_PATH,
+    GOOGLE_TEST_BUCKET_NAME,
+    GOOGLE_LOCATION,
 
-# Credentials related values less likely to need updating and hard-coded here.
-AMAZON_TEST_BUCKET_NAME = "smaht-unit-testing-files"
-AMAZON_REGION = "us-east-1"
-AMAZON_KMS_KEY_ID = "27d040a3-ead1-4f5a-94ce-0fa6e7f84a95"  # fyi: not a secret
-GOOGLE_TEST_BUCKET_NAME = "smaht-submitr-rclone-testing"
-GOOGLE_LOCATION = "us-east1"
+    TEST_FILE_PREFIX,
+    TEST_FILE_SUFFIX,
+    TEST_FILE_SIZE,
+)
+from submitr.tests.testing_rclone_helpers import (
+    is_github_actions_context,
+    load_test_data_json,
+    Mock_LocalStorage,
+    Mock_Portal,
+    setup_module as rclone_setup_module,
+    teardown_module as rclone_teardown_module,
+)
 
 # Set from setup_module() which pytest runs first.
 RUNNING_FROM_WITHIN_GITHUB_ACTIONS = None
@@ -79,16 +63,17 @@ AMAZON_CREDENTIALS_ERROR = None
 GOOGLE_CREDENTIALS_ERROR = None
 
 
-def is_github_actions_context():
-    # Returns True iff we are running within GitHub Actions.
-    return "GITHUB_ACTIONS" in os.environ
+# This marks this entire module as "integrtation" tests.
+# To run only integration tests:    pytest -m integration
+# To run all but integration tests: pytest -m "not integration"
+pytestmark = [pytest.mark.integration]
 
 
 class Env:
 
-    test_file_prefix = "test-smaht-submitr-"
-    test_file_suffix = ".txt"
-    test_file_size = 2048
+    test_file_prefix = TEST_FILE_PREFIX
+    test_file_suffix = TEST_FILE_SUFFIX
+    test_file_size = TEST_FILE_SIZE
 
     def __init__(self, use_cloud_subfolder_key: bool = False):
         self.use_cloud_subfolder_key = True if (use_cloud_subfolder_key is True) else False
@@ -150,7 +135,41 @@ class EnvAmazon(Env):
         assert temporary_credentials.kms_key_id == (None if nokms is True else self.kms_key_id)
         return temporary_credentials
 
-    def non_rclone(self):
+    @staticmethod
+    @contextmanager
+    def temporary_cloud_file(nosubfolder: bool = False, nokms: bool = False, size: Optional[int] = None) -> str:
+
+        global AMAZON_TEST_BUCKET_NAME, TEST_FILE_PREFIX, TEST_FILE_SUFFIX, TEST_FILE_SIZE
+
+        assert nosubfolder in (True, False)
+        assert nokms in (True, False)
+        assert isinstance(bucket := AMAZON_TEST_BUCKET_NAME, str) and bucket
+        if size is None: size = TEST_FILE_SIZE  # noqa
+        assert isinstance(size, int) and (size >= 0)
+
+        env = EnvAmazon()
+        key = f"{env.test_file_prefix}{create_uuid()}{env.test_file_suffix}"
+        if nosubfolder is False:
+            subfolder = f"{env.test_file_prefix}{create_uuid()}"
+            key = cloud_path.join(subfolder, key)
+
+        credentials = AmazonCredentials(kms_key_id=None if nokms is True else AMAZON_KMS_KEY_ID)
+        s3 = AwsS3(credentials)
+        try:
+            with temporary_random_file(prefix=TEST_FILE_PREFIX, suffix=TEST_FILE_SUFFIX, nbytes=size) as tmp_file_path:
+                assert s3.upload_file(tmp_file_path, bucket, key) is True
+                assert s3.file_exists(bucket, key) is True
+                assert s3.file_size(bucket, key) == size
+                if nokms is False:
+                    assert s3.file_kms_encrypted(bucket, key, AMAZON_KMS_KEY_ID) is True
+                yield cloud_path.join(bucket, key)
+        except Exception:
+            pytest.fail("Cannot create (non-rclone) AWS S3 object!")
+            return None
+        finally:
+            s3.delete_file(bucket, key)
+
+    def non_rclone(self) -> AwsS3:
         return AwsS3(self.main_credentials)
 
 
@@ -656,13 +675,13 @@ def __test_rclone_google_to_amazon(env_amazon: EnvAmazon,
         path_cloud = cloud_path.join(env_google.bucket, key_google)
         assert rclone_google.file_size(path_cloud) == Env.test_file_size
         assert rclone_google.path_exists(path_cloud) is True
-        assert rclone_google.file_checksum(path_cloud) == compute_file_md5(tmp_test_file_path)
+        assert rclone_google.file_checksum(path_cloud) == get_file_checksum(tmp_test_file_path)
         assert rclone_google.ping() is True
         # Exercise the RCloneStore rclone commands (path_exists, file_size, file_checksum) for Amazon file.
         assert env_amazon.non_rclone().file_size(env_amazon.bucket, key_amazon) == Env.test_file_size
         assert env_amazon.non_rclone().file_exists(env_amazon.bucket, key_amazon) is True
         assert (env_amazon.non_rclone().file_checksum(env_amazon.bucket, key_amazon) ==
-                compute_file_md5(tmp_test_file_path))
+                get_file_checksum(tmp_test_file_path))
         # Do the above copy again but this time with the destination
         # bucket specified within the RCloneGoogle object (new: 2024-05-10).
         cleanup_amazon_file(env_amazon, env_amazon.bucket, key_amazon)
@@ -685,7 +704,7 @@ def __test_rclone_google_to_amazon(env_amazon: EnvAmazon,
         assert env_amazon.non_rclone().file_size(env_amazon.bucket, key_amazon) == Env.test_file_size
         assert env_amazon.non_rclone().file_exists(env_amazon.bucket, key_amazon) is True
         assert (env_amazon.non_rclone().file_checksum(env_amazon.bucket, key_amazon) ==
-                compute_file_md5(tmp_test_file_path))
+                get_file_checksum(tmp_test_file_path))
         # Cleanup (delete) the test destination file in AWS S3.
         cleanup_amazon_file(env_amazon, env_amazon.bucket, key_amazon)
         # Cleanup (delete) the test source file in Google Cloud Storage.
@@ -769,7 +788,7 @@ def test_rclone_local_to_google_copy_to_bucket() -> None:
     assert env_google.non_rclone().file_size(cloud_path.join(bucket_google, os.path.basename(file_one))) == filesize
     assert env_google.non_rclone().file_size(bucket_google, os.path.basename(file_one)) == filesize
     assert (env_google.non_rclone().file_checksum(cloud_path.join(bucket_google, os.path.basename(file_one))) ==
-            compute_file_md5(os.path.join(filesystem.root, file_one)))
+            get_file_checksum(os.path.join(filesystem.root, file_one)))
     assert env_google.non_rclone().delete_file(rclone_google.bucket, os.path.basename(file_one)) is True
     assert env_google.non_rclone().file_exists(rclone_google.bucket, os.path.basename(file_one)) is False
 
@@ -792,7 +811,7 @@ def test_rclone_local_to_amazon_copy_to_bucket() -> None:
     assert env_amazon.non_rclone().file_size(cloud_path.join(bucket_amazon, os.path.basename(file_one))) == filesize
     assert env_amazon.non_rclone().file_size(bucket_amazon, os.path.basename(file_one)) == filesize
     assert (env_amazon.non_rclone().file_checksum(cloud_path.join(bucket_amazon, os.path.basename(file_one))) ==
-            compute_file_md5(os.path.join(filesystem.root, file_one)))
+            get_file_checksum(os.path.join(filesystem.root, file_one)))
     assert env_amazon.non_rclone().delete_file(bucket_amazon, os.path.basename(file_one)) is True
     assert env_amazon.non_rclone().file_exists(bucket_amazon, os.path.basename(file_one)) is False
 
@@ -807,7 +826,7 @@ def test_rclone_amazon_to_amazon() -> None:
         source_key_amazon = env_amazon.file_name_to_key_name(tmp_test_file_name)
         rcloner = create_rcloner(destination=rclone_target_amazon)
         rcloner.copy(tmp_test_file_path, cloud_path.join(source_bucket_amazon, source_key_amazon))
-        source_checksum = compute_file_md5(tmp_test_file_path)
+        source_checksum = get_file_checksum(tmp_test_file_path)
     source_amazon = cloud_path.join(source_bucket_amazon, source_key_amazon)
     destination_bucket_amazon = bucket_amazon
     destination_subfolder_amazon = f"test-{create_uuid()}"
@@ -819,7 +838,7 @@ def test_rclone_amazon_to_amazon() -> None:
     rcloner = create_rcloner(source=source_target_amazon, destination=destination_target_amazon)
     rcloner.copy(source_amazon, destination_amazon, metadata=destination_metadata_amazon)
     assert env_amazon.non_rclone().file_size(destination_bucket_amazon,
-                                             destination_key_amazon) == RANDOM_TMPFILE_SIZE
+                                             destination_key_amazon) == TEST_FILE_SIZE
     assert env_amazon.non_rclone().file_exists(destination_bucket_amazon, destination_key_amazon) is True
     assert env_amazon.non_rclone().file_checksum(destination_bucket_amazon,
                                                  destination_key_amazon) == source_checksum
@@ -844,7 +863,7 @@ def test_rclone_amazon_to_amazon_using_temporary_credentials() -> None:
         source_key_amazon = env_amazon.file_name_to_key_name(tmp_test_file_name)
         rcloner = create_rcloner(destination=rclone_target_amazon)
         rcloner.copy(tmp_test_file_path, cloud_path.join(source_bucket_amazon, source_key_amazon))
-        source_checksum = compute_file_md5(tmp_test_file_path)
+        source_checksum = get_file_checksum(tmp_test_file_path)
     source_amazon = cloud_path.join(source_bucket_amazon, source_key_amazon)
     destination_bucket_amazon = bucket_amazon
     destination_subfolder_amazon = f"test-{create_uuid()}"
@@ -859,7 +878,7 @@ def test_rclone_amazon_to_amazon_using_temporary_credentials() -> None:
     rcloner = create_rcloner(source=source_target_amazon, destination=destination_target_amazon)
     rcloner.copy(source_amazon, destination_amazon, metadata=destination_metadata_amazon)
     assert env_amazon.non_rclone().file_size(destination_bucket_amazon,
-                                             destination_key_amazon) == RANDOM_TMPFILE_SIZE
+                                             destination_key_amazon) == TEST_FILE_SIZE
     assert env_amazon.non_rclone().file_exists(destination_bucket_amazon, destination_key_amazon) is True
     assert env_amazon.non_rclone().file_checksum(destination_bucket_amazon,
                                                  destination_key_amazon) == source_checksum
@@ -879,6 +898,7 @@ def test_rclone_amazon_to_amazon_using_temporary_credentials() -> None:
     # destination_target_with_main_credentials_amazon = create_rclone_target_amazon(credentials_amazon)
     # assert destination_target_with_main_credentials_amazon.directory_exists(
     #     cloud_path.join(destination_bucket_amazon, destination_subfolder_amazon)) is True
+    #
     assert env_amazon.non_rclone().delete_file(source_amazon) is True
     assert env_amazon.non_rclone().delete_file(destination_amazon) is True
 
@@ -908,10 +928,10 @@ def test_rclone_upload_file_to_aws_s3() -> None:
     assert files_for_upload[0].found_cloud is True
     assert files_for_upload[0].path_local == os.path.join(filesystem.root, file_one)
     assert files_for_upload[0].size_local == filesize
-    assert files_for_upload[0].checksum_local == compute_file_md5(os.path.join(filesystem.root, file_one))
+    assert files_for_upload[0].checksum_local == get_file_checksum(os.path.join(filesystem.root, file_one))
     assert files_for_upload[0].path_cloud == cloud_path.join(bucket_google, files_for_upload[0].name)
     assert files_for_upload[0].size_cloud == filesize
-    assert files_for_upload[0].checksum_cloud == compute_file_md5(os.path.join(filesystem.root, file_one))
+    assert files_for_upload[0].checksum_cloud == get_file_checksum(os.path.join(filesystem.root, file_one))
     # Found both locally and in Google; ambiguous, as favor_local starts as None;
     # so these return False/None; favor_local normally gets resolved in review function.
     assert files_for_upload[0].favor_local is None
@@ -933,7 +953,7 @@ def test_rclone_upload_file_to_aws_s3() -> None:
     assert files_for_upload[0].from_cloud is True
     assert files_for_upload[0].path == cloud_path.join(rclone_google.bucket, files_for_upload[0].name)
     assert files_for_upload[0].size == filesize
-    assert files_for_upload[0].checksum == compute_file_md5(os.path.join(filesystem.root, file_one))
+    assert files_for_upload[0].checksum == get_file_checksum(os.path.join(filesystem.root, file_one))
     assert files_for_upload[1].found is True
     assert files_for_upload[1].found_local is True
     assert files_for_upload[1].found_cloud is False
@@ -942,7 +962,7 @@ def test_rclone_upload_file_to_aws_s3() -> None:
     assert files_for_upload[1].from_cloud is False
     assert files_for_upload[1].path == os.path.join(filesystem.root, file_two)
     assert files_for_upload[1].size == filesize
-    assert files_for_upload[1].checksum == compute_file_md5(os.path.join(filesystem.root, file_two))
+    assert files_for_upload[1].checksum == get_file_checksum(os.path.join(filesystem.root, file_two))
 
     env_amazon = EnvAmazon()
     s3_key = f"test-{create_uuid()}/SMAFIPIGC8NG.fastq"
@@ -961,13 +981,13 @@ def test_rclone_upload_file_to_aws_s3() -> None:
     assert env_amazon.non_rclone().file_exists(env_amazon.bucket, s3_key) is True
     assert env_amazon.non_rclone().file_size(env_amazon.bucket, s3_key) == filesize
     assert (env_amazon.non_rclone().file_checksum(env_amazon.bucket, s3_key) ==
-            compute_file_md5(os.path.join(filesystem.root, file_one)))
+            get_file_checksum(os.path.join(filesystem.root, file_one)))
     s3_key_metadata = get_s3_key_metadata(credentials_amazon.to_dictionary(environment_names=False),
                                           env_amazon.bucket, s3_key)
     assert isinstance(s3_key_metadata, dict)
     assert s3_key_metadata["size"] == filesize
     assert s3_key_metadata["size"] == filesize
-    assert s3_key_metadata["md5"] == compute_file_md5(os.path.join(filesystem.root, file_one))
+    assert s3_key_metadata["md5"] == get_file_checksum(os.path.join(filesystem.root, file_one))
     assert s3_key_metadata["md5-source"] == "google-cloud-storage"
     assert env_amazon.non_rclone().delete_file(env_amazon.bucket, s3_key) is True
     assert env_amazon.non_rclone().file_exists(env_amazon.bucket, s3_key) is False
@@ -988,7 +1008,7 @@ def test_rclone_do_any_uploads() -> None:
     rcloner = RCloner(destination=rclone_google)
     assert rcloner.copy_to_key(filesystem.path(file_one), key_google := test_file_two) is True
     assert env_google.non_rclone().file_exists(rclone_google.bucket, key_google) is True
-    assert env_google.non_rclone().file_size(rclone_google.bucket, key_google) == RANDOM_TMPFILE_SIZE
+    assert env_google.non_rclone().file_size(rclone_google.bucket, key_google) == TEST_FILE_SIZE
 
     uploaded_uris_amazon = []
 
@@ -1087,3 +1107,20 @@ def test_rclone_copy_to_folder() -> None:
         assert env_amazon.non_rclone().file_exists(cloud_path.join(amazon_bucket_and_folder,
                                                                    tmp_test_file_name)) is True
         assert env_amazon.non_rclone().delete_folders(env_amazon.bucket, amazon_base_subfolder) is True
+
+
+def test_new() -> None:
+    global AMAZON_CREDENTIALS_FILE_PATH, AMAZON_KMS_KEY_ID
+    nokms = True
+    with EnvAmazon.temporary_cloud_file(nokms=nokms) as amazon_cloud_path:
+        with temporary_directory() as tmpdir:
+            amazon_credentials = AmazonCredentials(AMAZON_CREDENTIALS_FILE_PATH,
+                                                   kms_key_id=None if nokms is True else AMAZON_KMS_KEY_ID)
+            amazon = RCloneAmazon(amazon_credentials)
+            RCloner(source=amazon).copy(amazon_cloud_path, tmpdir)
+            local_file_path = os.path.join(tmpdir, cloud_path.basename(amazon_cloud_path))
+            assert os.path.isfile(local_file_path)
+            assert get_file_size(local_file_path) == amazon.file_size(amazon_cloud_path)
+            assert get_file_checksum(local_file_path) == amazon.file_checksum(amazon_cloud_path)
+        pass
+    pass

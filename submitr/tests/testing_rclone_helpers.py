@@ -6,9 +6,9 @@ from dcicutils.structured_data import Portal
 from dcicutils.tmpfile_utils import (
     is_temporary_directory, remove_temporary_directory)
 from submitr.rclone import RCloneStore, RCloneAmazon, RCloneGoogle
+from submitr.tests.testing_rclone_config import TEST_FILE_SIZE
 
 TMPDIR = None
-RANDOM_TMPFILE_SIZE = 2048
 
 
 def setup_module():
@@ -19,6 +19,11 @@ def setup_module():
 def teardown_module():
     global TMPDIR
     remove_temporary_directory(TMPDIR)
+
+
+def is_github_actions_context():
+    # Returns True iff we are running within GitHub Actions.
+    return "GITHUB_ACTIONS" in os.environ
 
 
 class Mock_CloudStorage:
@@ -53,7 +58,7 @@ class Mock_CloudStorage:
                         self._create_files_for_testing(file, nbytes=kwargs.get("nbytes"))
     def _create_file_for_testing(self, file, nbytes=None):  # noqa
         if not isinstance(nbytes, int) or nbytes < 0:
-            nbytes = RANDOM_TMPFILE_SIZE
+            nbytes = TEST_FILE_SIZE
         if (file := normalize_path(file)) and (not file.startswith(os.path.sep) or (file := file[1:])):
             if file := self._realpath(file):
                 if file_directory := os.path.dirname(file):
