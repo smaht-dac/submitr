@@ -63,11 +63,21 @@ class cloud_path:
     def bucket(value: str) -> str:
         # Returns the bucket portion of the given cloud path assuming it consists of
         # a bucket (a single name followed by a separator, i.e. a slash) followed
-        # by an optional key. If no bucket is found then returns and empty string.
+        # by an optional key. If no bucket is found then returns an empty string.
         if value := cloud_path.normalize(value):
             if (separator_index := value.find(cloud_path.separator)) > 0:
                 value = value[:separator_index]
             return value
+        return ""
+
+    @staticmethod
+    def key(value: str) -> str:
+        # Returns the key portion of the given cloud path assuming it consists of
+        # a bucket (a single name followed by a separator, i.e. a slash) followed
+        # by an optional key. If no key is found then returns an empty string.
+        if value := cloud_path.normalize(value):
+            if (separator_index := value.find(cloud_path.separator)) > 0:
+                return value[separator_index + 1:]
         return ""
 
     @staticmethod
@@ -86,7 +96,7 @@ class cloud_path:
             return None, None
         if cloud_path.separator in bucket_and_key:
             bucket = cloud_path.bucket(bucket_and_key)
-            key = cloud_path.basename(bucket_and_key)
+            key = cloud_path.key(bucket_and_key)
             return (bucket, key + cloud_path.separator) if is_folder else (bucket, key)
         else:
             return bucket_and_key, None
