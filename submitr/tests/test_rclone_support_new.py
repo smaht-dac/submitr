@@ -20,21 +20,22 @@ from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
 
 from submitr.tests.testing_rclone_config import (  # noqa
 
-    AMAZON_CREDENTIALS_FILE_PATH,
+    rclone_config_setup_module,
+    rclone_config_teardown_module,
+
+    amazon_credentials_file_path,
+    google_service_account_file_path,
+
     AMAZON_TEST_BUCKET_NAME,
     AMAZON_REGION,
     AMAZON_KMS_KEY_ID,
 
-    GOOGLE_SERVICE_ACCOUNT_FILE_PATH,
     GOOGLE_TEST_BUCKET_NAME,
     GOOGLE_LOCATION,
 
     TEST_FILE_PREFIX,
     TEST_FILE_SUFFIX,
-    TEST_FILE_SIZE,
-
-    rclone_config_setup_module,
-    rclone_config_teardown_module
+    TEST_FILE_SIZE
 )
 
 
@@ -44,11 +45,11 @@ from submitr.tests.testing_rclone_config import (  # noqa
 pytestmark = [pytest.mark.integration]
 
 
-def xxx_setup_module():
+def setup_module():
     rclone_config_setup_module()
 
 
-def xxx_teardown_module():
+def teardown_module():
     rclone_config_teardown_module()
 
 
@@ -56,7 +57,8 @@ class Amazon:
 
     @staticmethod
     def credentials(nokms: bool = False) -> AmazonCredentials:
-        return AmazonCredentials(AMAZON_CREDENTIALS_FILE_PATH, kms_key_id=None if nokms is True else AMAZON_KMS_KEY_ID)
+        return AmazonCredentials(amazon_credentials_file_path(),
+                                 kms_key_id=None if nokms is True else AMAZON_KMS_KEY_ID)
 
     @staticmethod
     def s3(nokms: bool = False) -> AmazonCredentials:
@@ -95,13 +97,11 @@ class Amazon:
             s3.delete_file(bucket, key)
 
 
-def xxx_test_new() -> None:
-    global AMAZON_CREDENTIALS_FILE_PATH, AMAZON_KMS_KEY_ID
+def test_new() -> None:
     nokms = True
     with Amazon.temporary_cloud_file(nokms=nokms) as amazon_cloud_path:
         with temporary_directory() as tmpdir:
-            amazon_credentials = AmazonCredentials(AMAZON_CREDENTIALS_FILE_PATH,
-                                                   kms_key_id=None if nokms is True else AMAZON_KMS_KEY_ID)
+            amazon_credentials = Amazon.credentials(nokms=nokms)
             amazon = RCloneAmazon(amazon_credentials)
             RCloner(source=amazon).copy(amazon_cloud_path, tmpdir)
             local_file_path = os.path.join(tmpdir, cloud_path.basename(amazon_cloud_path))

@@ -3,12 +3,21 @@ import os
 import tempfile
 from dcicutils.file_utils import create_random_file, compute_file_md5, get_file_size, normalize_path
 from dcicutils.structured_data import Portal
-from dcicutils.tmpfile_utils import (
-    is_temporary_directory, remove_temporary_directory)
+from dcicutils.tmpfile_utils import is_temporary_directory, remove_temporary_directory
 from submitr.rclone import RCloneStore, RCloneAmazon, RCloneGoogle
-from submitr.tests.testing_rclone_config import TEST_FILE_SIZE
 
 TMPDIR = None
+TEST_FILE_SIZE = 2048
+
+
+def rclone_helpers_setup_module():
+    global TMPDIR
+    TMPDIR = tempfile.mkdtemp()
+
+
+def rclone_helpers_teardown_module():
+    global TMPDIR
+    remove_temporary_directory(TMPDIR)
 
 
 def setup_module():
