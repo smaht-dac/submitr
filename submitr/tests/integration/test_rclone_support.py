@@ -26,7 +26,7 @@ from submitr.submission_uploads import do_any_uploads
 # The access credentials are defined by the variables as described below.
 # See testing_rclone_config for configuration parameters and comments.
 
-from submitr.tests.testing_rclone_config import (
+from submitr.tests.integration.testing_rclone_config import (
 
     rclone_config_setup_module,
     rclone_config_teardown_module,
@@ -43,12 +43,15 @@ from submitr.tests.testing_rclone_config import (
 
     TEST_FILE_PREFIX,
     TEST_FILE_SUFFIX,
-    TEST_FILE_SIZE,
+    TEST_FILE_SIZE
+)
 
+from submitr.tests.testing_cloud_helpers import (
     Mock_LocalStorage,
     Mock_Portal,
-    load_test_data_json
 )
+
+from submitr.tests.testing_helpers import load_json_test_data
 
 # This marks this entire module as "integrtation" tests.
 # To run only integration tests:    pytest -m integration
@@ -823,7 +826,7 @@ def test_rclone_do_any_uploads() -> None:
     # list of dictionary with file names.
     with (mock_patch("submitr.submission_uploads.generate_credentials_for_upload") as mock_generate_credentials_for_upload,  # noqa
           mock_patch("submitr.submission_uploads.yes_or_no", return_value="yes")):
-        ingestion_submission_object = load_test_data_json("ingestion_submission")  # noqa/xyzzy
+        ingestion_submission_object = load_json_test_data("ingestion_submission")  # noqa/xyzzy
         mock_generate_credentials_for_upload.side_effect = mocked_generate_credentials_for_upload
         do_any_uploads(ingestion_submission_object,
                        metadata_file=metadata_file,

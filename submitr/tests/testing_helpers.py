@@ -41,3 +41,11 @@ def temporary_json_file(data: dict) -> Generator[Any, None, None]:
                 os.remove(filename)
             except Exception:  # perhaps someone else already removed it
                 pass
+
+
+def load_json_test_data(file):
+    this_directory = os.path.dirname(os.path.abspath(__file__))
+    test_data_directory = os.path.join(this_directory, "data")
+    test_data_file = os.path.join(test_data_directory, file if file.endswith(".json") else f"{file}.json")
+    with open(test_data_file, "r") as f:
+        return json.load(f)

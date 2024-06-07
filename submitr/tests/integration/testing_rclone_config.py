@@ -3,17 +3,13 @@
 import json
 import os
 import pytest
-import tempfile
-from dcicutils.file_utils import create_random_file, compute_file_md5, get_file_size, normalize_path
-from dcicutils.structured_data import Portal
-from dcicutils.tmpfile_utils import (
-    is_temporary_directory, create_temporary_file_name, remove_temporary_directory, remove_temporary_file)
+from dcicutils.file_utils import normalize_path
+from dcicutils.tmpfile_utils import create_temporary_file_name, remove_temporary_file
 from submitr.rclone.amazon_credentials import AmazonCredentials
 from submitr.rclone.google_credentials import GoogleCredentials
-from submitr.rclone.rclone_amazon import RCloneAmazon
 from submitr.rclone.rclone_google import RCloneGoogle
-from submitr.rclone.rclone_store import RCloneStore
 from submitr.rclone.rclone_installation import RCloneInstallation
+from submitr.tests.testing_cloud_helpers import TEST_FILE_SIZE
 
 
 # If running from within GitHub actions these environment variables assumed to be
@@ -57,11 +53,7 @@ GOOGLE_LOCATION = "us-east1"
 # Other rclone related test parameters.
 TEST_FILE_PREFIX = "test-"
 TEST_FILE_SUFFIX = ".txt"
-TEST_FILE_SIZE = 4096
-
-# Set from the rclone_config_setup_module function below, which should be called from
-# the setup_module function of any test module doing rclone related integration testing.
-_TMPDIR = None
+TEST_FILE_SIZE = TEST_FILE_SIZE  # here for emphasis (from testing_cloud_helpers)
 
 
 def is_running_from_github_actions():
@@ -85,11 +77,8 @@ def google_service_account_file_path():
 
 def rclone_config_setup_module():
 
-    global _TMPDIR
     global _AMAZON_CREDENTIALS_FILE_PATH
     global _GOOGLE_SERVICE_ACCOUNT_FILE_PATH
-
-    _TMPDIR = tempfile.mkdtemp()
 
     print(f"Running from within GitHub Actions:"
           f" {'YES' if is_running_from_github_actions() else 'NO'}")
@@ -178,15 +167,11 @@ def rclone_config_setup_module():
 
 def rclone_config_teardown_module():
 
-    global _TMPDIR
-
     _restore_environment_variables_which_might_interfere_with_testing()
 
     if is_running_from_github_actions():
         remove_temporary_file(_AMAZON_CREDENTIALS_FILE_PATH)
         remove_temporary_file(_GOOGLE_SERVICE_ACCOUNT_FILE_PATH)
-
-    remove_temporary_directory(_TMPDIR)
 
 
 _environment_variables_which_might_interfere_with_testing = {
@@ -211,101 +196,3 @@ def _restore_environment_variables_which_might_interfere_with_testing():
     for key in _environment_variables_which_might_interfere_with_testing:
         if (value := _environment_variables_which_might_interfere_with_testing[key]) is not None:
             os.environ[key] = value
-
-
-class Mock_CloudStorage:
-    # We simply use the file system, within a temporary directory, via global
-    # _TMPDIR (above), to simulate/mock AWS S3 and Google Cloud Storage (GCS).
-    def __init__(self, subdir):  # noqa
-        global _TMPDIR
-        assert isinstance(_TMPDIR, str) and _TMPDIR and is_temporary_directory(_TMPDIR)
-        assert isinstance(subdir, str) and subdir
-        self._tmpdir = os.path.join(_TMPDIR, subdir)
-        os.makedirs(self._tmpdir, exist_ok=True)
-        assert is_temporary_directory(self._tmpdir)
-    def path_exists(self, path):  # noqa
-        return os.path.isfile(path) if (path := self._realpath(path)) else None
-    def file_size(self, file):  # noqa
-        return get_file_size(file) if (self.path_exists(file) and (file := self._realpath(file))) else None
-    def file_checksum(self, file):  # noqa
-        return compute_file_md5(file) if (self.path_exists(file) and (file := self._realpath(file))) else None
-    def _realpath(self, path):  # noqa
-        if isinstance(self, RCloneStore):
-            return os.path.join(self._tmpdir, path) if (path := super().path(path)) else None
-        return os.path.join(self._tmpdir, path) if (path := normalize_path(path)) else None
-    def _root(self):  # noqa
-        return self._tmpdir
-    def _create_files_for_testing(self, *args, **kwargs):  # noqa
-        for arg in args:
-            if isinstance(arg, str):
-                self._create_file_for_testing(arg, nbytes=kwargs.get("nbytes"))
-            elif isinstance(arg, (list, tuple)):
-                for file in arg:
-                    if isinstance(file, str):
-                        self._create_files_for_testing(file, nbytes=kwargs.get("nbytes"))
-    def _create_file_for_testing(self, file, nbytes=None):  # noqa
-        if not isinstance(nbytes, int) or nbytes < 0:
-            nbytes = TEST_FILE_SIZE
-        if (file := normalize_path(file)) and (not file.startswith(os.path.sep) or (file := file[1:])):
-            if file := self._realpath(file):
-                if file_directory := os.path.dirname(file):
-                    os.makedirs(file_directory, exist_ok=True)
-                create_random_file(file, nbytes=nbytes)
-    def _clear_files(self):  # noqa
-        assert is_temporary_directory(self._tmpdir)
-        remove_temporary_directory(self._tmpdir)
-        os.makedirs(self._tmpdir, exist_ok=True)
-        assert is_temporary_directory(self._tmpdir)
-
-
-class Mock_RCloneAmazon(Mock_CloudStorage, RCloneAmazon):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(subdir="amazon")
-        super(RCloneAmazon, self).__init__(*args, **kwargs)
-
-
-class Mock_RCloneGoogle(Mock_CloudStorage, RCloneGoogle):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(subdir="google")
-        super(RCloneGoogle, self).__init__(*args, **kwargs)
-
-
-class Mock_LocalStorage(Mock_CloudStorage):
-    # Might as well also use Mock_CloudStorage for easy
-    # local file system test file setup for convenience.
-    def __init__(self, *args, **kwargs):
-        super().__init__(subdir="local")
-        self.create_files(*args, **kwargs)
-    def create_files(self, *args, **kwargs):  # noqa
-        super()._create_files_for_testing(*args, **kwargs)
-    def create_file(self, *args, **kwargs):  # noqa
-        super()._create_file_for_testing(*args, **kwargs)
-    @property  # noqa
-    def root(self):
-        return super()._root()
-    def path(self, path):  # noqa
-        return os.path.join(self.root, path) if (path := normalize_path(path)) else None
-
-
-class Mock_Portal(Portal):
-    # Designed to handle calls to get_schemas, get_schema, get_schema_type, is_schema_type, is_schema_file_type.
-    # which can all be done be simply overriding get_schemas which reads a static/snapshot (2024-05-18) copy
-    # of the schemas as returned by the /profiles/ (trailing slash required there btw) endpoint.
-    def __init__(self):  # noqa
-        dummy_key = {"key": "dummy", "secret": "dummy"}
-        super().__init__(dummy_key)
-        self._schemas = None
-    def get_schemas(self) -> dict:  # noqa
-        if not self._schemas:
-            self._schemas = load_test_data_json("profiles")
-        return self._schemas
-
-
-def load_test_data_json(file):
-    this_directory = os.path.dirname(os.path.abspath(__file__))
-    test_data_directory = os.path.join(this_directory, "data")
-    test_data_file = os.path.join(test_data_directory, file if file.endswith(".json") else f"{file}.json")
-    with open(test_data_file, "r") as f:
-        return json.load(f)

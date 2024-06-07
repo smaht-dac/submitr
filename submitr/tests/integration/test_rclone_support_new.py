@@ -18,7 +18,7 @@ from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
 # The access credentials are defined by the variables as described below.
 # See testing_rclone_config for configuration parameters and comments.
 
-from submitr.tests.testing_rclone_config import (  # noqa
+from submitr.tests.integration.testing_rclone_config import (  # noqa
 
     rclone_config_setup_module,
     rclone_config_teardown_module,

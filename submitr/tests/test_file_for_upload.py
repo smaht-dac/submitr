@@ -1,30 +1,16 @@
 import os
 import pytest
-import tempfile
 from dcicutils.file_utils import create_random_file, compute_file_md5
 from dcicutils.misc_utils import create_uuid
-from dcicutils.tmpfile_utils import remove_temporary_directory, temporary_directory, temporary_file
+from dcicutils.tmpfile_utils import temporary_directory, temporary_file
 from submitr.file_for_upload import FilesForUpload
 from submitr.rclone import AmazonCredentials, GoogleCredentials
-from submitr.tests.testing_rclone_helpers import (
-    setup_module as rclone_setup_module,
-    teardown_module as rclone_teardown_module,
-    Mock_LocalStorage, Mock_RCloneAmazon, Mock_RCloneGoogle)
-
-TMPDIR = None
-RANDOM_TMPFILE_SIZE = 2048
-
-
-def setup_module():
-    global TMPDIR
-    TMPDIR = tempfile.mkdtemp()
-    rclone_setup_module()
-
-
-def teardown_module():
-    global TMPDIR
-    remove_temporary_directory(TMPDIR)
-    rclone_teardown_module()
+from submitr.tests.testing_cloud_helpers import (
+    Mock_LocalStorage,
+    Mock_RCloneAmazon,
+    Mock_RCloneGoogle,
+    TEST_FILE_SIZE
+)
 
 
 def test_file_for_upload_a():
@@ -105,7 +91,7 @@ def test_file_for_upload_b():
         assert ff.path == os.path.join(filesystem._root(), files[ffui]["filename"])
         assert ff.display_path == os.path.join(filesystem._root(), files[ffui]["filename"])
         assert ff.uuid == files[ffui]["uuid"]
-        assert ff.size == RANDOM_TMPFILE_SIZE
+        assert ff.size == TEST_FILE_SIZE
         assert ff.checksum == compute_file_md5(ff.path)
         assert ff.found_local is True
         assert ff.found_local_multiple is False
@@ -114,7 +100,7 @@ def test_file_for_upload_b():
         assert ff.ignore is False
         assert ff.path_local == os.path.join(filesystem._root(), files[ffui]["filename"])
         assert ff.path_local_multiple is None
-        assert ff.size_local == RANDOM_TMPFILE_SIZE
+        assert ff.size_local == TEST_FILE_SIZE
         assert ff.checksum_local == compute_file_md5(ff.path)
         assert ff.found_cloud is False
         assert ff.from_cloud is False
@@ -216,10 +202,10 @@ def test_mock_cloud_storage(cloud_storage_args):
         amazon._create_files_for_testing(["abc.fastq", "def/ghi.json"])
         assert amazon.path("some-file") == f"{bucket}/some-file" if bucket else "some-file"
         assert amazon.path_exists("abc.fastq") is True
-        assert amazon.file_size("abc.fastq") == RANDOM_TMPFILE_SIZE
+        assert amazon.file_size("abc.fastq") == TEST_FILE_SIZE
         assert amazon.file_checksum("abc.fastq") == compute_file_md5(amazon._realpath("abc.fastq"))
         assert amazon.path_exists("def/ghi.json") is True
-        assert amazon.file_size("def/ghi.json") == RANDOM_TMPFILE_SIZE
+        assert amazon.file_size("def/ghi.json") == TEST_FILE_SIZE
         assert amazon.file_checksum("def/ghi.json") == compute_file_md5(amazon._realpath("def/ghi.json"))
         assert amazon.path_exists("does-not-exists.json") is False
         amazon._clear_files()
