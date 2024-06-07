@@ -53,12 +53,6 @@ class cloud_path:
         return path
 
     @staticmethod
-    def has_separator(value: str) -> bool:
-        if value := cloud_path.normalize(value):
-            return cloud_path.separator in value
-        return False
-
-    @staticmethod
     def basename(value: str) -> str:
         # Returns the basename of the given cloud path (like os.path.basename).
         if not (value := cloud_path.normalize(value)):

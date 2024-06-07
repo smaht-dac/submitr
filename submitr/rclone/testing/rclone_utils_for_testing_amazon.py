@@ -82,7 +82,7 @@ class AwsS3:
             if not isinstance(file := normalize_path(file), str) or not file:
                 return False
             if os.path.isdir(file):
-                if cloud_path.has_separator(key):
+                if cloud_path.separator in key:
                     key_basename = cloud_path.basename(key)
                     file = os.path.join(file, key_basename)
                 else:
