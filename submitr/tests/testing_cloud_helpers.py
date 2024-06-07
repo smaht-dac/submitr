@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+from typing import Optional
 from dcicutils.file_utils import create_random_file, compute_file_md5, get_file_size, normalize_path
 from dcicutils.structured_data import Portal
 from dcicutils.tmpfile_utils import (
