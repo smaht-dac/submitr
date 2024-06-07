@@ -5,7 +5,7 @@ import os
 import pytest
 from typing import Optional, Tuple
 from unittest.mock import patch as mock_patch
-from dcicutils.file_utils import are_files_equal, compute_file_md5 as get_file_checksum, get_file_size, normalize_path
+from dcicutils.file_utils import are_files_equal, compute_file_md5 as get_file_checksum, normalize_path
 from dcicutils.misc_utils import create_uuid
 from dcicutils.tmpfile_utils import (
     create_temporary_file_name, remove_temporary_file,
@@ -135,40 +135,6 @@ class EnvAmazon(Env):
         assert temporary_credentials.kms_key_id == (None if nokms is True else self.kms_key_id)
         return temporary_credentials
 
-    @staticmethod
-    @contextmanager
-    def temporary_cloud_file(nosubfolder: bool = False, nokms: bool = False, size: Optional[int] = None) -> str:
-
-        global AMAZON_TEST_BUCKET_NAME, TEST_FILE_PREFIX, TEST_FILE_SUFFIX, TEST_FILE_SIZE
-
-        assert nosubfolder in (True, False)
-        assert nokms in (True, False)
-        assert isinstance(bucket := AMAZON_TEST_BUCKET_NAME, str) and bucket
-        if size is None: size = TEST_FILE_SIZE  # noqa
-        assert isinstance(size, int) and (size >= 0)
-
-        env = EnvAmazon()
-        key = f"{env.test_file_prefix}{create_uuid()}{env.test_file_suffix}"
-        if nosubfolder is False:
-            subfolder = f"{env.test_file_prefix}{create_uuid()}"
-            key = cloud_path.join(subfolder, key)
-
-        credentials = AmazonCredentials(kms_key_id=None if nokms is True else AMAZON_KMS_KEY_ID)
-        s3 = AwsS3(credentials)
-        try:
-            with temporary_random_file(prefix=TEST_FILE_PREFIX, suffix=TEST_FILE_SUFFIX, nbytes=size) as tmp_file_path:
-                assert s3.upload_file(tmp_file_path, bucket, key) is True
-                assert s3.file_exists(bucket, key) is True
-                assert s3.file_size(bucket, key) == size
-                if nokms is False:
-                    assert s3.file_kms_encrypted(bucket, key, AMAZON_KMS_KEY_ID) is True
-                yield cloud_path.join(bucket, key)
-        except Exception:
-            pytest.fail("Cannot create (non-rclone) AWS S3 object!")
-            return None
-        finally:
-            s3.delete_file(bucket, key)
-
     def non_rclone(self) -> AwsS3:
         return AwsS3(self.main_credentials)
 
@@ -286,7 +252,7 @@ def setup_module():
 
 
 def teardown_module():
-    if is_github_actions_context:
+    if is_github_actions_context():
         remove_temporary_file(AMAZON_CREDENTIALS_FILE_PATH)
         remove_temporary_file(GOOGLE_SERVICE_ACCOUNT_FILE_PATH)
     rclone_teardown_module()
@@ -1107,20 +1073,3 @@ def test_rclone_copy_to_folder() -> None:
         assert env_amazon.non_rclone().file_exists(cloud_path.join(amazon_bucket_and_folder,
                                                                    tmp_test_file_name)) is True
         assert env_amazon.non_rclone().delete_folders(env_amazon.bucket, amazon_base_subfolder) is True
-
-
-def test_new() -> None:
-    global AMAZON_CREDENTIALS_FILE_PATH, AMAZON_KMS_KEY_ID
-    nokms = True
-    with EnvAmazon.temporary_cloud_file(nokms=nokms) as amazon_cloud_path:
-        with temporary_directory() as tmpdir:
-            amazon_credentials = AmazonCredentials(AMAZON_CREDENTIALS_FILE_PATH,
-                                                   kms_key_id=None if nokms is True else AMAZON_KMS_KEY_ID)
-            amazon = RCloneAmazon(amazon_credentials)
-            RCloner(source=amazon).copy(amazon_cloud_path, tmpdir)
-            local_file_path = os.path.join(tmpdir, cloud_path.basename(amazon_cloud_path))
-            assert os.path.isfile(local_file_path)
-            assert get_file_size(local_file_path) == amazon.file_size(amazon_cloud_path)
-            assert get_file_checksum(local_file_path) == amazon.file_checksum(amazon_cloud_path)
-        pass
-    pass
