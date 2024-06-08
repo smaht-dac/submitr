@@ -438,7 +438,7 @@ def print_info(target: str,
     if is_amazon_path(target):
         if not credentials_amazon:
             usage(f"No AWS credentials specified for: {target}")
-        print(f"AWS S3 target: {target}")
+        print(f"AWS S3 path: {target}")
         amazon = RCloneAmazon(credentials_amazon)
         print_amazon_credentials_info(amazon)
         if show_temporary_credentials_policy:
@@ -449,7 +449,7 @@ def print_info(target: str,
     elif is_google_path(target):
         if not credentials_google:
             usage(f"No GCS credentials specified for: {target}")
-        print(f"GCS target: {target}")
+        print(f"GCS path: {target}")
         google = RCloneGoogle(credentials_google)
         print_google_credentials_info(google)
         print_info_via_rclone(target, google)
