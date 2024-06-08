@@ -1,7 +1,6 @@
 import os
 import pytest
 from dcicutils.file_utils import compute_file_md5 as get_file_checksum, get_file_size
-from dcicutils.misc_utils import create_uuid
 from dcicutils.tmpfile_utils import temporary_directory
 from submitr.rclone.rcloner import RCloner
 from submitr.rclone.rclone_amazon import RCloneAmazon
@@ -77,9 +76,7 @@ def test_new_amazon_to_local(nokms, credentials_type) -> None:
 @pytest.mark.parametrize("subfolder", [False, True])
 def test_new_local_to_amazon(credentials_type, kms, subfolder) -> None:
     with Amazon.temporary_local_file() as tmpfile:
-        store_path = cloud_path.join(f"{Amazon.bucket}",
-                                     f"{TEST_FILE_PREFIX}{create_uuid()}" if subfolder is True else None,
-                                     f"{TEST_FILE_PREFIX}{create_uuid()}{TEST_FILE_SUFFIX}")
+        store_path = Google.create_temporary_cloud_path(Google.bucket, subfolder)
         # Copy from local to cloud via rclone.
         credentials = Amazon.credentials(nokms=not kms, credentials_type=credentials_type, path=store_path)
         store = RCloneAmazon(credentials)
@@ -114,9 +111,7 @@ def test_new_google_to_local() -> None:
 @pytest.mark.parametrize("subfolder", [False, True])
 def test_new_local_to_google(subfolder) -> None:
     with Google.temporary_local_file() as tmpfile:
-        store_path = cloud_path.join(f"{Google.bucket}",
-                                     f"{TEST_FILE_PREFIX}{create_uuid()}" if subfolder is True else None,
-                                     f"{TEST_FILE_PREFIX}{create_uuid()}{TEST_FILE_SUFFIX}")
+        store_path = Google.create_temporary_cloud_path(Google.bucket, subfolder)
         # Copy from local to cloud via rclone.
         credentials = Google.credentials()
         store = RCloneGoogle(credentials)
