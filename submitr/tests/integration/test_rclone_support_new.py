@@ -80,9 +80,11 @@ def test_new_local_to_amazon(credentials_type, kms, subfolder) -> None:
         store_path = cloud_path.join(f"{Amazon.bucket}",
                                      f"{TEST_FILE_PREFIX}{create_uuid()}" if subfolder is True else None,
                                      f"{TEST_FILE_PREFIX}{create_uuid()}{TEST_FILE_SUFFIX}")
+        # Copy from local to cloud via rclone.
         credentials = Amazon.credentials(nokms=not kms, credentials_type=credentials_type, path=store_path)
         store = RCloneAmazon(credentials)
         RCloner(destination=store).copy(tmpfile, store_path) is True
+        # Sanity check.
         store.file_exists(store_path) is True
         store.file_size(store_path) == TEST_FILE_SIZE
         store.file_checksum(store_path) == get_file_checksum(tmpfile)
@@ -99,11 +101,14 @@ def test_new_google_to_local() -> None:
     with Google.temporary_cloud_file() as store_path, temporary_directory() as tmpdir:
         credentials = Google.credentials()
         store = RCloneGoogle(credentials)
+        # Copy to from cloud to local via rclone.
         RCloner(source=store).copy(store_path, tmpdir)
         local_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
+        # Sanity check.
         assert os.path.isfile(local_file_path)
         assert get_file_size(local_file_path) == store.file_size(store_path)
         assert get_file_checksum(local_file_path) == store.file_checksum(store_path)
+        # No cleanup; context managers above do it.
 
 
 @pytest.mark.parametrize("subfolder", [False, True])
@@ -112,9 +117,17 @@ def test_new_local_to_google(subfolder) -> None:
         store_path = cloud_path.join(f"{Google.bucket}",
                                      f"{TEST_FILE_PREFIX}{create_uuid()}" if subfolder is True else None,
                                      f"{TEST_FILE_PREFIX}{create_uuid()}{TEST_FILE_SUFFIX}")
+        # Copy from local to cloud via rclone.
         credentials = Google.credentials()
         store = RCloneGoogle(credentials)
         RCloner(destination=store).copy(tmpfile, store_path) is True
+        # Sanity check.
         store.file_exists(store_path) is True
+        store.file_size(store_path) == TEST_FILE_SIZE
+        store.file_checksum(store_path) == get_file_checksum(tmpfile)
+        Google.gcs.file_exists(store_path) is True
+        Google.gcs.file_size(store_path) == TEST_FILE_SIZE
+        Google.gcs.file_checksum(store_path) == get_file_checksum(tmpfile)
+        # Cleanup.
         Google.gcs.delete_file(store_path) is True
         Google.gcs.file_exists(store_path) is False
