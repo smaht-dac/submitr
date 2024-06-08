@@ -97,6 +97,7 @@ def rclone_config_setup_module():
     # Obtain Amazon credentials for testing.
 
     if is_running_from_github_actions():
+        region = os.environ.get("AWS_DEFAULT_REGION", None)
         access_key_id = os.environ.get("AWS_ACCESS_KEY_ID", None)
         secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
         session_token = os.environ.get("AWS_SESSION_TOKEN", None)
@@ -107,11 +108,13 @@ def rclone_config_setup_module():
             _AMAZON_CREDENTIALS_FILE_PATH = create_temporary_file_name()
             with open(_AMAZON_CREDENTIALS_FILE_PATH, "w") as f:
                 f.write(f"[default]\n")
+                f.write(f"aws_default_region={region}\n")
                 f.write(f"aws_access_key_id={access_key_id}\n")
                 f.write(f"aws_secret_access_key={secret_access_key}\n")
                 f.write(f"aws_session_token={session_token}\n") if session_token else None
             os.chmod(_AMAZON_CREDENTIALS_FILE_PATH, 0o600)  # for security
             print(f"Amazon Credentials:")
+            print(f"- AWS region: {region}")
             print(f"- AWS access key ID: {access_key_id[:2]}******")
             print(f"- AWS secret access key: ********")
             if session_token:
