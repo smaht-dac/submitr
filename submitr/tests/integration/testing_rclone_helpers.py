@@ -120,7 +120,7 @@ class Amazon:
         with temporary_random_file(prefix=TEST_FILE_PREFIX, suffix=TEST_FILE_SUFFIX, nbytes=TEST_FILE_SIZE) as file:
             yield file
 
-    def create_temporary_cloud_path(bucket: str, subfolder: bool = False) -> str:
+    def create_temporary_cloud_file_path(bucket: str, subfolder: bool = False) -> str:
         return cloud_path.join(f"{bucket}",
                                f"{TEST_FILE_PREFIX}{create_uuid()}" if subfolder is True else None,
                                f"{TEST_FILE_PREFIX}{create_uuid()}{TEST_FILE_SUFFIX}")
@@ -177,5 +177,5 @@ class Google:
         with Amazon.temporary_local_file() as file:
             yield file
 
-    def create_temporary_cloud_path(bucket: str, subfolder: bool = False) -> str:
-        return Amazon.create_temporary_cloud_path(bucket=bucket, subfolder=subfolder)
+    def create_temporary_cloud_file_path(bucket: str, subfolder: bool = False) -> str:
+        return Amazon.create_temporary_cloud_file_path(bucket=bucket, subfolder=subfolder)
