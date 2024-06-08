@@ -1,4 +1,6 @@
+from __future__ import annotations
 from contextlib import contextmanager
+from enum import Enum
 import pytest
 from typing import Optional
 from dcicutils.misc_utils import create_uuid
@@ -31,6 +33,11 @@ from submitr.tests.integration.testing_rclone_setup import (  # noqa
 
 class Amazon:
 
+    class CredentialsType(Enum):
+        DEFAULT = "credentials-type-default"
+        TEMPORARY = "credentials-type-temporary"
+        TEMPORARY_KEY_SPECIFIC = "credentials-type-temporary-key-specific"
+
     @classmethod
     @property
     def bucket(cls) -> str:
@@ -38,19 +45,43 @@ class Amazon:
         return AMAZON_TEST_BUCKET_NAME
 
     @staticmethod
-    def credentials(nokms: bool = False) -> AmazonCredentials:
-        return AmazonCredentials(amazon_credentials_file_path(),
-                                 kms_key_id=None if nokms is True else AMAZON_KMS_KEY_ID)
+    def credentials(nokms: bool = False,
+                    credentials_type: CredentialsType = CredentialsType.DEFAULT,
+                    path: Optional[str] = None) -> AmazonCredentials:
+        assert nokms in [False, True]
+        assert path is None or isinstance(path, str)
+        kms_key_id = None if nokms is True else AMAZON_KMS_KEY_ID
+        if credentials_type == Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC:
+            bucket, key = cloud_path.bucket_and_key(path)
+            assert bucket and key
+            credentials = Amazon.s3.generate_temporary_credentials(bucket=bucket, key=key, kms_key_id=kms_key_id)
+        elif credentials_type == Amazon.CredentialsType.TEMPORARY:
+            credentials = Amazon.s3.generate_temporary_credentials(kms_key_id=kms_key_id)
+        elif credentials_type == Amazon.CredentialsType.DEFAULT:
+            credentials = AmazonCredentials(amazon_credentials_file_path(), kms_key_id=kms_key_id)
+        else:
+            pytest.fail(f"Incorrect Amazon.CredentialsType specified.")
+        if nokms is True:
+            assert not credentials.kms_key_id
+        else:
+            assert isinstance(credentials.kms_key_id, str) and credentials.kms_key_id
+        if credentials_type == Amazon.CredentialsType.DEFAULT:
+            assert not credentials.session_token
+        else:
+            assert isinstance(credentials.session_token, str) and credentials.session_token
+        return credentials
 
     @classmethod
     @property
     def s3(cls) -> AwsS3:
-        return AwsS3(cls.credentials())
+        # This is for non-rclone based access to S3 (with KMS).
+        return AwsS3(cls.credentials(nokms=True))
 
     @classmethod
     @property
-    def s3_nokms(cls) -> AwsS3:
-        return AwsS3(cls.credentials(nokms=True))
+    def s3_kms(cls) -> AwsS3:
+        # This is for non-rclone based access to S3 (sans KMS).
+        return AwsS3(cls.credentials(nokms=False))
 
     @staticmethod
     @contextmanager
@@ -68,7 +99,7 @@ class Amazon:
             subfolder = f"{TEST_FILE_PREFIX}{create_uuid()}"
             key = cloud_path.join(subfolder, key)
 
-        s3 = Amazon.s3_nokms if nokms is True else Amazon.s3
+        s3 = Amazon.s3 if nokms is True else Amazon.s3_kms
         try:
             with temporary_random_file(prefix=TEST_FILE_PREFIX, suffix=TEST_FILE_SUFFIX, nbytes=size) as tmp_file_path:
                 assert s3.upload_file(tmp_file_path, Amazon.bucket, key) is True
@@ -82,6 +113,12 @@ class Amazon:
             return None
         finally:
             s3.delete_file(Amazon.bucket, key)
+
+    @staticmethod
+    @contextmanager
+    def temporary_local_file() -> str:
+        with temporary_random_file(prefix=TEST_FILE_PREFIX, suffix=TEST_FILE_SUFFIX, nbytes=TEST_FILE_SIZE) as file:
+            yield file
 
 
 class Google:
@@ -128,3 +165,9 @@ class Google:
             return None
         finally:
             gcs.delete_file(Google.bucket, key)
+
+    @staticmethod
+    @contextmanager
+    def temporary_local_file() -> str:
+        with Amazon.temporary_local_file() as file:
+            yield file

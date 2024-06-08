@@ -12,7 +12,7 @@ from submitr.rclone.rclone_google import RCloneGoogle
 from submitr.rclone.rclone_store import RCloneStore
 from submitr.tests.testing_helpers import load_json_test_data
 
-TEST_FILE_SIZE = 2048
+TEST_FILE_SIZE = 4096
 
 
 class Mock_CloudStorage:
