@@ -55,7 +55,7 @@ def test_new_amazon_to_local(nokms, credentials_type) -> None:
         RCloner(source=store).copy(store_path, tmpdir)
         # Sanity check.
         local_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
-        assert os.path.isfile(local_file_path)
+        assert store.file_exists(store_path) is True
         assert get_file_size(local_file_path) == store.file_size(store_path)
         # N.B. For AWS S3 keys with KMS encryption rclone hashsum md5 does not seem to work;
         # the command does not fail but returns no checksum (just the filename in the output);
@@ -64,11 +64,18 @@ def test_new_amazon_to_local(nokms, credentials_type) -> None:
         # But for our real-life use-cases, so far, it is of little/no consequence, since
         # we do not support specifying a KMS key ID for an S3 --cloud-source. And on the
         # destination side (i.e for smaht-submitr file uploads), we use boto3 to get the
-        # checksum, as we have the (Portal-generated temporary/session) credentials we
-        # need to do this (and because of this and general issues with checksums).
-        # And so for integration tests, we use boto3.
-        # assert store.file_checksum(store_path) == get_file_checksum(local_file_path)
-        Amazon.s3.file_checksum(store_path) == get_file_checksum(local_file_path)
+        # checksum, as we have the (Portal-generated temporary/session) credentials we need
+        # to do this (and because of this and general issues with checksums). And neither does
+        # boto3 get a reliable checksum value; sometimes sjust the etag which can be different.
+        # And so for integration tests, we skip this.
+        # assert get_file_checksum(local_file_path) == store.file_checksum(store_path)
+        # assert get_file_checksum(local_file_path) == (Amazon.s3 if nokms is True
+        #                                               else Amazon.s3_kms).file_checksum(store_path)
+        # assert get_file_checksum(local_file_path) == store.file_checksum(store_path) if nokms is True else True
+        # TODO: Investigate further ...
+        assert get_file_checksum(local_file_path) == Amazon.s3.file_checksum(store_path) if nokms is True else True
+        assert os.path.isfile(local_file_path) is True
+        assert get_file_size(local_file_path) == (Amazon.s3 if nokms is True else Amazon.s3_kms).file_size(store_path)
         # No cleanup; context managers above do it.
 
 
@@ -106,11 +113,12 @@ def test_new_google_to_local() -> None:
         store = RCloneGoogle(credentials)
         # Copy from cloud to local via rclone.
         RCloner(source=store).copy(store_path, tmpdir)
-        local_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
         # Sanity check.
-        assert os.path.isfile(local_file_path)
+        local_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
+        assert store.file_exists(store_path) is True
         assert get_file_size(local_file_path) == store.file_size(store_path)
         assert get_file_checksum(local_file_path) == store.file_checksum(store_path)
+        assert os.path.isfile(local_file_path) is True
         # No cleanup; context managers above do it.
 
 
