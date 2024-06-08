@@ -140,9 +140,12 @@ def test_new_local_to_google(subfolder) -> None:
         Google.gcs.file_exists(store_path) is False
 
 
-def test_new_google_to_amazon() -> None:
+@pytest.mark.parametrize("amazon_subfolder", [False, True])
+def test_new_google_to_amazon(amazon_subfolder) -> None:
     with Google.temporary_cloud_file() as google_path:
+        amazon_path = Amazon.create_temporary_cloud_file_path(Amazon.bucket, subfolder=amazon_subfolder)
         assert google_path  # TODO
+        assert amazon_path  # TODO
 
 
 def test_new_amazon_to_amazon() -> None:
