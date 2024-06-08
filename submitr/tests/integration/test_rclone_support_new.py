@@ -56,7 +56,7 @@ def test_new_amazon_to_local(nokms, credentials_type) -> None:
         # Sanity check.
         local_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
         assert store.file_exists(store_path) is True
-        assert get_file_size(local_file_path) == store.file_size(store_path)
+        assert get_file_size(local_file_path) == store.file_size(store_path) == TEST_FILE_SIZE
         # N.B. For AWS S3 keys with KMS encryption rclone hashsum md5 does not seem to work;
         # the command does not fail but returns no checksum (just the filename in the output);
         # removing the KMS info from the rclone config file fixes this, and it does return a
@@ -113,7 +113,7 @@ def test_new_google_to_local() -> None:
         # Sanity check.
         local_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
         assert store.file_exists(store_path) is True
-        assert get_file_size(local_file_path) == store.file_size(store_path)
+        assert get_file_size(local_file_path) == store.file_size(store_path) == TEST_FILE_SIZE
         assert get_file_checksum(local_file_path) == store.file_checksum(store_path)
         assert os.path.isfile(local_file_path) is True
         # No cleanup; context managers above do it.
