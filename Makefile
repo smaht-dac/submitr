@@ -19,7 +19,7 @@ test:
 
 test-integration:
 	# pytest -vv submitr/tests/test_rclone_support.py
-	pytest -m integration
+	pytest -m integration -s
 
 retest:  # runs only failed tests from the last test run. (if no failures, it seems to run all?? -kmp 17-Dec-2020)
 	pytest -vv --last-failed
