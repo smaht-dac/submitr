@@ -68,9 +68,6 @@ def test_new_amazon_to_local(nokms, credentials_type) -> None:
         # to do this (and because of this and general issues with checksums). And neither does
         # boto3 get a reliable checksum value; sometimes sjust the etag which can be different.
         # And so for integration tests, we skip this.
-        # assert get_file_checksum(local_file_path) == store.file_checksum(store_path)
-        # assert get_file_checksum(local_file_path) == (Amazon.s3 if nokms is True
-        #                                               else Amazon.s3_kms).file_checksum(store_path)
         # assert get_file_checksum(local_file_path) == store.file_checksum(store_path) if nokms is True else True
         # TODO: Investigate further ...
         assert get_file_checksum(local_file_path) == Amazon.s3.file_checksum(store_path) if nokms is True else True
