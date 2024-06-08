@@ -41,11 +41,11 @@ def teardown_module():
     rclone_config_teardown_module()
 
 
-#@pytest.mark.parametrize("credentials_type",
+# @pytest.mark.parametrize("credentials_type",
 #                         [Amazon.CredentialsType.DEFAULT,
 #                          Amazon.CredentialsType.TEMPORARY,
 #                          Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC])
-#@pytest.mark.parametrize("nokms", [False, True])
+# @pytest.mark.parametrize("nokms", [False, True])
 @pytest.mark.parametrize("nokms", [False])
 @pytest.mark.parametrize("credentials_type", [Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC])
 def test_new_amazon_to_local(nokms, credentials_type) -> None:
