@@ -48,9 +48,12 @@ def teardown_module():
 @pytest.mark.parametrize("nokms", [False, True])
 def test_new_amazon_to_local(nokms, credentials_type) -> None:
     with Amazon.temporary_cloud_file(nokms=nokms) as store_path, temporary_directory() as tmpdir:
+        # Here we have a temporary cloud file for testing rclone copy to local.
         credentials = Amazon.credentials(nokms=nokms, credentials_type=credentials_type, path=store_path)
         store = RCloneAmazon(credentials)
+        # Copy from cloud to local via rclone.
         RCloner(source=store).copy(store_path, tmpdir)
+        # Sanity check.
         local_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
         assert os.path.isfile(local_file_path)
         assert get_file_size(local_file_path) == store.file_size(store_path)
@@ -63,9 +66,10 @@ def test_new_amazon_to_local(nokms, credentials_type) -> None:
         # destination side (i.e for smaht-submitr file uploads), we use boto3 to get the
         # checksum, as we have the (Portal-generated temporary/session) credentials we
         # need to do this (and because of this and general issues with checksums).
-        # And soe for integration tests, we use boto3
+        # And so for integration tests, we use boto3.
         # assert store.file_checksum(store_path) == get_file_checksum(local_file_path)
         Amazon.s3.file_checksum(store_path) == get_file_checksum(local_file_path)
+        # No cleanup; context managers above do it.
 
 
 @pytest.mark.parametrize("credentials_type",
@@ -76,6 +80,7 @@ def test_new_amazon_to_local(nokms, credentials_type) -> None:
 @pytest.mark.parametrize("subfolder", [False, True])
 def test_new_local_to_amazon(credentials_type, kms, subfolder) -> None:
     with Amazon.temporary_local_file() as tmpfile:
+        # Here we have a temporary local file for testing rclone copy to cloud.
         store_path = Amazon.create_temporary_cloud_path(Amazon.bucket, subfolder)
         # Copy from local to cloud via rclone.
         credentials = Amazon.credentials(nokms=not kms, credentials_type=credentials_type, path=store_path)
@@ -96,9 +101,10 @@ def test_new_local_to_amazon(credentials_type, kms, subfolder) -> None:
 
 def test_new_google_to_local() -> None:
     with Google.temporary_cloud_file() as store_path, temporary_directory() as tmpdir:
+        # Here we have a temporary cloud file for testing rclone copy to local.
         credentials = Google.credentials()
         store = RCloneGoogle(credentials)
-        # Copy to from cloud to local via rclone.
+        # Copy from cloud to local via rclone.
         RCloner(source=store).copy(store_path, tmpdir)
         local_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
         # Sanity check.
@@ -111,6 +117,7 @@ def test_new_google_to_local() -> None:
 @pytest.mark.parametrize("subfolder", [False, True])
 def test_new_local_to_google(subfolder) -> None:
     with Google.temporary_local_file() as tmpfile:
+        # Here we have a temporary local file for testing rclone copy to cloud.
         store_path = Google.create_temporary_cloud_path(Google.bucket, subfolder)
         # Copy from local to cloud via rclone.
         credentials = Google.credentials()

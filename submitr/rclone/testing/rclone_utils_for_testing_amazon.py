@@ -330,15 +330,12 @@ class AwsS3:
         if policy == {}:
             policy.update(aws_policy)
             del policy["Version"]
-        print('xyzzy/policy:')
-        import json
-        print(json.dumps(aws_policy, indent=4, default=str))
         temporary_credentials = AwsS3._generate_temporary_credentials(generating_credentials=self.credentials,
                                                                       policy=aws_policy,
                                                                       kms_key_id=kms_key_id,
                                                                       duration=duration)
         # For troubleshooting squirrel away the policy in the credentials; harmless in general.
-        # setattr(temporary_credentials, "policy", aws_policy)
+        setattr(temporary_credentials, "policy", aws_policy)
         return temporary_credentials
 
     def _generate_temporary_credentials(generating_credentials: AmazonCredentials,
