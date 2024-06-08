@@ -337,7 +337,8 @@ class AwsS3:
         # For troubleshooting squirrel away the policy in the credentials; harmless in general.
         # setattr(temporary_credentials, "policy", aws_policy)
         print('xyzzy/policy:')
-        print(aws_policy)
+        import json
+        print(json.dumps(aws_policy, indent=4, default=str))
         return temporary_credentials
 
     def _generate_temporary_credentials(generating_credentials: AmazonCredentials,
