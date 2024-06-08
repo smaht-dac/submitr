@@ -157,13 +157,29 @@ def test_new_google_to_amazon(amazon_credentials_type, amazon_kms, amazon_subfol
                                                 credentials_type=amazon_credentials_type,
                                                 path=amazon_path)
         amazon_store = RCloneAmazon(amazon_credentials)
+        # Copy from Google cloud to Amazon cloud via rclone.
         rcloner = RCloner(source=google_store, destination=amazon_store)
-        assert rcloner  # TODO
-        # rcloner.copy(google_path, amazon_path) is True
+        rcloner.copy(google_path, amazon_path) is True
         # Sanity check.
-        assert google_path  # TODO
-        assert amazon_path  # TODO
+        assert amazon_store.file_exists(amazon_path) is True
+        assert amazon_store.file_size(amazon_path) == TEST_FILE_SIZE
+#       if not (amazon_store.file_checksum(amazon_path) == Google.gcs.file_checksum(google_path)):
+#           import pdb ; pdb.set_trace()  # noqa
+#           os.environ["SMAHT_DEBUG"] = "true"
+#           xyz = Amazon.credentials(nokms=not amazon_kms,
+#                                               credentials_type=amazon_credentials_type,
+#                                               path=amazon_path)
+#           import pdb ; pdb.set_trace()  # noqa
+#           pass
+#       assert amazon_store.file_checksum(amazon_path) == Google.gcs.file_checksum(google_path)
+        assert Amazon.s3.file_exists(amazon_path) is True
+        assert Amazon.s3.file_size(amazon_path) == TEST_FILE_SIZE
+#       if not (Amazon.s3.file_checksum(amazon_path) == Google.gcs.file_checksum(google_path)):
+#           import pdb ; pdb.set_trace()  # noqa
+#           pass
+#       assert Amazon.s3.file_checksum(amazon_path) == Google.gcs.file_checksum(google_path)
         # Cleanup.
+        assert Amazon.s3.delete_file(amazon_path) is True
 
 
 def test_new_amazon_to_amazon() -> None:

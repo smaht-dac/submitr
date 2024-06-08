@@ -11,6 +11,7 @@ from dcicutils.tmpfile_utils import temporary_file
 from dcicutils.datetime_utils import format_datetime
 from submitr.rclone.amazon_credentials import AmazonCredentials
 from submitr.rclone.rclone_utils import cloud_path
+from submitr.utils import DEBUG
 
 
 # Module with class/functions to aid in integration testing of smaht-submitr rclone support.
@@ -296,7 +297,7 @@ class AwsS3:
                                        bucket: Optional[str] = None, key: Optional[str] = None,
                                        kms_key_id: Optional[str] = None,
                                        duration: Optional[Union[int, timedelta]] = None,
-                                       source: Optional[str] = None,
+                                       untargeted: bool = False,
                                        readonly: bool = False,
                                        policy: Optional[dict] = None) -> Optional[AmazonCredentials]:
         """
@@ -311,11 +312,17 @@ class AwsS3:
         """
         statements = []
         resources = ["*"] ; deny = False  # noqa
-        if isinstance(bucket, str) and (bucket := bucket.strip()):
-            if isinstance(key, str) and (key := key.strip()):
+        bucket, key = cloud_path.bucket_and_key(bucket, key)
+        if bucket and untargeted is not True:
+            if key:
                 resources = [f"arn:aws:s3:::{bucket}/{key}"]
             else:
                 raise Exception("Must use both bucket and key for temporary credentials or no bucket at all.")
+#       if isinstance(bucket, str) and (bucket := bucket.strip()):
+#           if isinstance(key, str) and (key := key.strip()):
+#               resources = [f"arn:aws:s3:::{bucket}/{key}"]
+#           else:
+#               raise Exception("Must use both bucket and key for temporary credentials or no bucket at all.")
         # For how this policy stuff is defined in smaht-portal for file upload
         # session token creation process see: encoded_core.types.file.external_creds
         actions = ["s3:GetObject"]
@@ -346,6 +353,7 @@ class AwsS3:
                                                                       kms_key_id=kms_key_id,
                                                                       duration=duration)
         # For troubleshooting squirrel away the policy in the credentials; harmless in general.
+        DEBUG(f"TEMPORARY-CREDENTIALS-POLICY: {aws_policy}")
         setattr(temporary_credentials, "policy", aws_policy)
         return temporary_credentials
 
