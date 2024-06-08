@@ -180,4 +180,6 @@ class Google:
 
     def create_temporary_cloud_file_path(bucket: str, subfolder: bool = False) -> str:
         assert bucket is None or (bucket == Google.bucket)
-        return Amazon.create_temporary_cloud_file_path(bucket=bucket or Google.bucket, subfolder=subfolder)
+        return cloud_path.join(f"{bucket}",
+                               f"{TEST_FILE_PREFIX}{create_uuid()}" if subfolder is True else None,
+                               f"{TEST_FILE_PREFIX}{create_uuid()}{TEST_FILE_SUFFIX}")
