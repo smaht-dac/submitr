@@ -1,10 +1,13 @@
 import argparse
 from base64 import b64decode as base64_decode
 from collections import namedtuple
+import datetime
 import os
+import pytz
 import signal
 import yaml
 from typing import Optional
+from dcicutils.datetime_utils import format_datetime
 from dcicutils.file_utils import get_file_size
 from dcicutils.misc_utils import format_size
 from dcicutils.progress_bar import ProgressBar
@@ -491,11 +494,17 @@ def print_info_via_rclone(target: str, rclone_store: RCloneStore) -> None:
     if metadata_via_boto:
         print(f"Metadata (non-rclone): [{len(metadata_via_boto)}]")
         for key in {key: metadata_via_boto[key] for key in sorted(metadata_via_boto)}:
+            extra_info = None
             if key == "md5chksum":
-                md5chksum_decoded = base64_decode(metadata_via_boto[key]).hex()
-            else:
-                md5chksum_decoded = None
-            print(f"- {key}: {metadata_via_boto[key]}{f' ({md5chksum_decoded})' if md5chksum_decoded else ''}")
+                extra_info = f" ({base64_decode(metadata_via_boto[key]).hex()})"
+            elif key == "mtime":
+                try:
+                    mtime = float(metadata_via_boto[key])
+                    if mtime := format_datetime(datetime.datetime.fromtimestamp(mtime, tz=pytz.UTC), ms=True):
+                        extra_info = f" ({mtime})"
+                except Exception:
+                    pass
+            print(f"- {key}: {metadata_via_boto[key]}{extra_info}")
 
 
 def print_amazon_credentials_info(store: RCloneAmazon, prefix: Optional[str] = "") -> None:
