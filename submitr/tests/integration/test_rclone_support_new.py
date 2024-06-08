@@ -141,3 +141,19 @@ def test_new_local_to_google(subfolder) -> None:
         # Cleanup.
         Google.gcs.delete_file(store_path) is True
         Google.gcs.file_exists(store_path) is False
+
+
+def test_new_google_to_amazon() -> None:
+    pass  # TODO
+
+
+def test_new_amazon_to_google() -> None:
+    pass  # TODO
+
+
+def test_new_google_to_google() -> None:
+    pass  # TODO
+
+
+def test_new_amazon_to_amazon() -> None:
+    pass  # TODO
