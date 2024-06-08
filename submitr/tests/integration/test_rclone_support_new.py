@@ -141,16 +141,20 @@ def test_new_local_to_google(subfolder) -> None:
 
 
 def test_new_google_to_amazon() -> None:
-    pass  # TODO
-
-
-def test_new_amazon_to_google() -> None:
-    pass  # TODO
-
-
-def test_new_google_to_google() -> None:
-    pass  # TODO
+    with Google.temporary_cloud_file() as google_path:
+        _ = google_path  # TODO
 
 
 def test_new_amazon_to_amazon() -> None:
-    pass  # TODO
+    with Amazon.temporary_cloud_file() as amazon_path:
+        _ = amazon_path  # TODO
+
+
+def test_new_google_to_google() -> None:
+    with Google.temporary_cloud_file() as google_path:
+        _ = google_path  # TODO
+
+
+def test_new_amazon_to_google() -> None:
+    with Amazon.temporary_cloud_file() as amazon_path:
+        _ = amazon_path  # TODO
