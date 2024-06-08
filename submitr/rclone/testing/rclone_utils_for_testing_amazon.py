@@ -335,7 +335,9 @@ class AwsS3:
                                                                       kms_key_id=kms_key_id,
                                                                       duration=duration)
         # For troubleshooting squirrel away the policy in the credentials; harmless in general.
-        setattr(temporary_credentials, "policy", aws_policy)
+        # setattr(temporary_credentials, "policy", aws_policy)
+        print('xyzzy/policy:')
+        print(aws_policy)
         return temporary_credentials
 
     def _generate_temporary_credentials(generating_credentials: AmazonCredentials,
