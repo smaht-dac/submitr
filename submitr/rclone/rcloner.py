@@ -204,13 +204,22 @@ class RCloner(RCloneCommands, RCloneInstallation):
                 source = cloud_path.join(source_config.bucket, source)
             if not (source := cloud_path.normalize(source)):
                 raise Exception(f"No cloud source specified.")
-            if cloud_path.is_bucket_only(source):
+            elif cloud_path.is_bucket_only(source):
                 raise Exception(f"No cloud source key/file specified (only bucket: {source}).")
-            if not (destination := normalize_path(destination)):
+            elif not (destination := normalize_path(destination)):
                 raise Exception(f"No file destination specified.")
-            if os.path.isdir(destination):
+            elif os.path.isdir(destination):
                 # Normal/usually-desired case e.g.: cp s3://bucket/subfolder/file to destination/file
+                if not os.access(destination, os.W_OK):
+                    raise Exception(f"Destination directory is not writable: {destination}")
                 destination = os.path.join(destination, cloud_path.basename(source))
+            elif not (dirname := os.path.dirname(destination)):
+                if not os.access(dirname := os.getcwd(), os.W_OK):
+                    raise Exception(f"Destination directory is not writable: {dirname}")
+            elif not os.path.isdir(dirname):
+                raise Exception(f"Destination directory does not exist: {dirname}")
+            elif not os.access(dirname, os.W_OK):
+                raise Exception(f"Destination directory is not writable: {dirname}")
             source_s3 = isinstance(source_config, RCloneAmazon)
             with source_config.config_file(persist=dryrun is True) as source_config_file:  # noqa
                 command_args = [f"{source_config.name}:{source}", destination]
@@ -226,10 +235,21 @@ class RCloner(RCloneCommands, RCloneInstallation):
             # object; meaning this is (degenerate case of a) simple local file to file copy.
             if not (source := normalize_path(source)):
                 raise Exception(f"No file source specified.")
-            if not (destination := normalize_path(destination)):
+            elif not os.path.isfile(source):
+                raise Exception(f"Source file does not exist: {source}")
+            elif not (destination := normalize_path(destination)):
                 raise Exception(f"No file destination specified.")
-            if os.path.isdir(destination):
+            elif os.path.isdir(destination):
+                if not os.access(destination, os.W_OK):
+                    raise Exception(f"Destination directory is not writable: {destination}")
                 destination = os.path.join(destination, cloud_path.basename(source))
+            elif not (dirname := os.path.dirname(destination)):
+                if not os.access(dirname := os.getcwd(), os.W_OK):
+                    raise Exception(f"Destination directory is not writable: {dirname}")
+            elif not os.path.isdir(dirname):
+                raise Exception(f"Destination directory does not exist: {dirname}")
+            elif not os.access(dirname, os.W_OK):
+                raise Exception(f"Destination directory is not writable: {dirname}")
             command_args = [source, destination]
             return RCloneCommands.copy_command(command_args,
                                                copyto=True,

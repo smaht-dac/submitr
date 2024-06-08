@@ -40,15 +40,15 @@ def main() -> None:
                       help="Destination file/directory or cloud bucket/key.", default=None)
     args.add_argument("--amazon-credentials", "-aws",
                       help="AWS credentials file for source and/or destination.", default=None)
-    args.add_argument("--amazon-credentials-source", "-awss",
+    args.add_argument("--amazon-credentials-source", "-aws-source",
                       help="AWS credentials file for for source.", default=None)
-    args.add_argument("--amazon-credentials-destination", "-awsd",
+    args.add_argument("--amazon-credentials-destination", "-aws-destination",
                       help="AWS credentials file for for destination.", default=None)
     args.add_argument("--amazon-temporary-credentials", "-tc", nargs="?",
                       help="Use Amazon temporary/session credentials for source/destination.", const=True, default=None)
-    args.add_argument("--amazon-temporary-credentials-source", "-tcs", nargs="?",
+    args.add_argument("--amazon-temporary-credentials-source", "-tc-source", nargs="?",
                       help="Use Amazon temporary/session credentials for source.", const=True, default=None)
-    args.add_argument("--amazon-temporary-credentials-destination", "-tcd", nargs="?",
+    args.add_argument("--amazon-temporary-credentials-destination", "-tc-destination", nargs="?",
                       help="Use Amazon temporary/session credentials for destination.", const=True, default=None)
     args.add_argument("--show-temporary-credentials-policy", "-tcp", action="store_true",
                       help="Show temporary credentials policy.", default=False)
@@ -123,7 +123,7 @@ def main() -> None:
     credentials_source_google = None
     credentials_destination_google = None
 
-    # For AwS temporary credentials if requested, i.e. -tcs and/or -tcd.
+    # For AwS temporary credentials if requested, i.e. -tc-source and/or -tc-destination.
     credentials_source_policy_amazon = {}
     credentials_destination_policy_amazon = {}
 
@@ -150,7 +150,7 @@ def main() -> None:
         elif temporary_credentials_source_amazon:
             bucket = key = None
             if temporary_credentials_source_amazon is True:
-                # Default if no argument give for the -tcs option is to target
+                # Default if no argument give for the -tc-source option is to target
                 # the temporary credentials to the specified (S3) source bucket/key.
                 bucket, key = cloud_path.bucket_and_key(source)
             else:
@@ -190,7 +190,7 @@ def main() -> None:
         elif temporary_credentials_destination_amazon:
             bucket = key = None
             if temporary_credentials_destination_amazon is True:
-                # Default if no argument give for the -tcd option is to target
+                # Default if no argument give for the -tc-destination option is to target
                 # the temporary credentials to the specified (S3) destination bucket/key.
                 bucket, key = cloud_path.bucket_and_key(destination)
             else:
@@ -357,10 +357,15 @@ def main_copy(source: str, destination: str,
 
     progress_callback = define_progress_callback(source_config, source) if progress is True else None
     rcloner = RCloner(source=source_config, destination=destination_config)
-    result, output = rcloner.copy(source, destination, copyto=copyto,
-                                  progress=progress_callback.function if progress_callback else None,
-                                  process_info=progress_callback.process if progress_callback else None,
-                                  return_output=True)
+    result = output = None
+    try:
+        result, output = rcloner.copy(source, destination, copyto=copyto,
+                                      progress=progress_callback.function if progress_callback else None,
+                                      process_info=progress_callback.process if progress_callback else None,
+                                      return_output=True)
+    except Exception as e:
+        print(f"ERROR: {e}")
+        exit(1)
     if progress:
         print()
 
