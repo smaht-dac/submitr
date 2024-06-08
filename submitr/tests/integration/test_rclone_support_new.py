@@ -85,12 +85,14 @@ def test_new_local_to_amazon(credentials_type, kms, subfolder) -> None:
         RCloner(destination=store).copy(tmpfile, store_path) is True
         store.file_exists(store_path) is True
         store.file_size(store_path) == TEST_FILE_SIZE
+        store.file_checksum(store_path) == get_file_checksum(tmpfile)
         Amazon.s3.file_exists(store_path) is True
         Amazon.s3.file_size(store_path) == TEST_FILE_SIZE
         Amazon.s3.file_checksum(store_path) == get_file_checksum(tmpfile)
         # Cleanup.
         Amazon.s3.delete_file(store_path) is True
         Amazon.s3.file_exists(store_path) is False
+        store.file_exists(store_path) is False
 
 
 def test_new_google_to_local() -> None:
@@ -104,5 +106,15 @@ def test_new_google_to_local() -> None:
         assert get_file_checksum(local_file_path) == store.file_checksum(store_path)
 
 
-def test_new_local_to_google() -> None:
-    pass
+@pytest.mark.parametrize("subfolder", [False, True])
+def test_new_local_to_google(subfolder) -> None:
+    with Google.temporary_local_file() as tmpfile:
+        store_path = cloud_path.join(f"{Google.bucket}",
+                                     f"{TEST_FILE_PREFIX}{create_uuid()}" if subfolder is True else None,
+                                     f"{TEST_FILE_PREFIX}{create_uuid()}{TEST_FILE_SUFFIX}")
+        credentials = Google.credentials()
+        store = RCloneGoogle(credentials)
+        RCloner(destination=store).copy(tmpfile, store_path) is True
+        store.file_exists(store_path) is True
+        Google.gcs.delete_file(store_path) is True
+        Google.gcs.file_exists(store_path) is False
