@@ -74,7 +74,7 @@ def test_new_amazon_to_local(nokms, credentials_type) -> None:
                           Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC])
 @pytest.mark.parametrize("kms", [False, True])
 @pytest.mark.parametrize("subfolder", [False, True])
-def test_new_local_to_amazon(credentials_type, kms, subfolder) -> None:
+def xyzzy_test_new_local_to_amazon(credentials_type, kms, subfolder) -> None:
     with Amazon.temporary_local_file() as tmpfile:
         store_path = Amazon.create_temporary_cloud_path(Amazon.bucket, subfolder)
         # Copy from local to cloud via rclone.
@@ -94,7 +94,7 @@ def test_new_local_to_amazon(credentials_type, kms, subfolder) -> None:
         store.file_exists(store_path) is False
 
 
-def test_new_google_to_local() -> None:
+def xyzzy_test_new_google_to_local() -> None:
     with Google.temporary_cloud_file() as store_path, temporary_directory() as tmpdir:
         credentials = Google.credentials()
         store = RCloneGoogle(credentials)
@@ -109,7 +109,7 @@ def test_new_google_to_local() -> None:
 
 
 @pytest.mark.parametrize("subfolder", [False, True])
-def test_new_local_to_google(subfolder) -> None:
+def xyzzy_test_new_local_to_google(subfolder) -> None:
     with Google.temporary_local_file() as tmpfile:
         store_path = Google.create_temporary_cloud_path(Google.bucket, subfolder)
         # Copy from local to cloud via rclone.

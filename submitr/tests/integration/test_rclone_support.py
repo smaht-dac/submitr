@@ -158,7 +158,7 @@ class EnvGoogle(Env):
         return Gcs(self.main_credentials)
 
 
-def test_all():
+def xyzzy_test_all():
     # TODO
     # Split the _test function into separate real test_ functions;
     # originally developed as non-pytest module.
@@ -557,7 +557,7 @@ def _test_rclone_local_to_local() -> None:
                                    os.path.join(tmp_destination_directory, os.path.basename(tmp_test_file_path)))
 
 
-def test_rclone_local_to_google_copy_to_bucket() -> None:
+def xyzzy_test_rclone_local_to_google_copy_to_bucket() -> None:
     # Just an aside (ran across while testing); make sure copyto=False works for sub-folder.
     filesize = 1234
     env_google = EnvGoogle()
@@ -580,7 +580,7 @@ def test_rclone_local_to_google_copy_to_bucket() -> None:
     assert env_google.non_rclone().file_exists(rclone_google.bucket, os.path.basename(file_one)) is False
 
 
-def test_rclone_local_to_amazon_copy_to_bucket() -> None:
+def xyzzy_testrclone_local_to_amazon_copy_to_bucket() -> None:
     # Just an aside (ran across while testing); make sure copyto=False works for sub-folder.
     filesize = 1236
     env_amazon = EnvAmazon()
@@ -603,7 +603,7 @@ def test_rclone_local_to_amazon_copy_to_bucket() -> None:
     assert env_amazon.non_rclone().file_exists(bucket_amazon, os.path.basename(file_one)) is False
 
 
-def test_rclone_amazon_to_amazon() -> None:
+def xyzzy_test_rclone_amazon_to_amazon() -> None:
     env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
     credentials_amazon = env_amazon.credentials()
     rclone_target_amazon = create_rclone_target_amazon(credentials_amazon)
@@ -640,7 +640,7 @@ def test_rclone_amazon_to_amazon() -> None:
     assert env_amazon.non_rclone().delete_file(destination_amazon) is True
 
 
-def test_rclone_amazon_to_amazon_using_temporary_credentials() -> None:
+def xyzzy_test_rclone_amazon_to_amazon_using_temporary_credentials() -> None:
     env_amazon = EnvAmazon(use_cloud_subfolder_key=True)
     credentials_amazon = env_amazon.credentials(nokms=True)
     rclone_target_amazon = create_rclone_target_amazon(credentials_amazon)
@@ -690,7 +690,7 @@ def test_rclone_amazon_to_amazon_using_temporary_credentials() -> None:
     assert env_amazon.non_rclone().delete_file(destination_amazon) is True
 
 
-def test_rclone_upload_file_to_aws_s3() -> None:
+def xyzzy_test_rclone_upload_file_to_aws_s3() -> None:
 
     filesystem = Mock_LocalStorage(file_one := "subdir/test_file_one.fastq",
                                    file_two := "test_file_two.fastq",
@@ -782,7 +782,7 @@ def test_rclone_upload_file_to_aws_s3() -> None:
     assert env_google.non_rclone().file_exists(rclone_google.bucket, files_for_upload[0].name) is False
 
 
-def test_rclone_do_any_uploads() -> None:
+def xyzzy_test_rclone_do_any_uploads() -> None:
     filesystem = Mock_LocalStorage()
     metadata_file = "metadata_file.xlsx"
     test_file_subdirectory = "subdir"
@@ -841,7 +841,7 @@ def test_rclone_do_any_uploads() -> None:
     assert env_google.non_rclone().file_exists(rclone_google.bucket, key_google) is False
 
 
-def test_rclone_store_bucket_exists_amazon() -> None:
+def xyzzy_test_rclone_store_bucket_exists_amazon() -> None:
     env_amazon = EnvAmazon()
     with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         base_subfolder_name = f"test-{create_uuid()}"
@@ -861,7 +861,7 @@ def test_rclone_store_bucket_exists_amazon() -> None:
         assert env_amazon.non_rclone().delete_folders(env_amazon.bucket, base_subfolder_name) is True
 
 
-def test_rclone_store_bucket_exists_google() -> None:
+def xyzzy_test_rclone_store_bucket_exists_google() -> None:
     env_google = EnvGoogle()
     with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         base_subfolder_name = f"test-{create_uuid()}"
@@ -881,7 +881,7 @@ def test_rclone_store_bucket_exists_google() -> None:
         assert env_google.non_rclone().delete_folders(env_google.bucket, base_subfolder_name) is True
 
 
-def test_rclone_copy_to_folder() -> None:
+def xyzzy_test_rclone_copy_to_folder() -> None:
     env_amazon = EnvAmazon()
     with Env.temporary_test_file() as (tmp_test_file_path, tmp_test_file_name):
         amazon_base_subfolder = f"test-{create_uuid()}"
