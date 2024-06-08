@@ -207,7 +207,8 @@ class AwsS3:
             return file_head.get("ContentLength", None)
         return None
 
-    def file_checksum(self, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> Optional[str]:
+    def file_checksum(self, bucket: str, key: Optional[str] = None,
+                      etag: bool = False, raise_exception: bool = True) -> Optional[str]:
         # N.B. When using rclone to copy a file to AWS S3, it writes checksum (md5) for the file
         # to the metadata associated with the target key; it seems to put it in two places, in
         # x-amz-meta-md5chksum in the HTTPHeaders and also in md5chksum in the Metadata; see below.
@@ -218,11 +219,12 @@ class AwsS3:
         if not bucket or not key:
             return None
         if file_head := self._file_head(bucket, key, raise_exception=raise_exception):
-            if isinstance(md5 := file_head.get("Metadata", {}).get("md5chksum"), str):
-                return base64_decode(md5).hex()
-            md5 = file_head.get("ResponseMetadata", {}).get("HTTPHeaders", {}).get("x-amz-meta-md5chksum")
-            if isinstance(md5, str):
-                return base64_decode(md5).hex()
+            if etag is not True:
+                if isinstance(md5 := file_head.get("Metadata", {}).get("md5chksum"), str):
+                    return base64_decode(md5).hex()
+                md5 = file_head.get("ResponseMetadata", {}).get("HTTPHeaders", {}).get("x-amz-meta-md5chksum")
+                if isinstance(md5, str):
+                    return base64_decode(md5).hex()
             return file_head.get("ETag").strip("\"")
         return None
 
@@ -246,6 +248,15 @@ class AwsS3:
                     return True if (kms_key_id in file_kms_key_id) else False
                 return True
         return False
+
+    def file_kms_key(self, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> Optional[str]:
+        bucket, key = cloud_path.bucket_and_key(bucket, key)
+        if not bucket or not key:
+            return None
+        if file_head := self._file_head(bucket, key, raise_exception=raise_exception):
+            if file_kms_key := file_head.get("SSEKMSKeyId"):
+                return file_kms_key
+        return None
 
     def list_files(self, bucket: str,
                    prefix: Optional[str] = None,

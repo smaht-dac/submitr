@@ -1,4 +1,5 @@
 import argparse
+from base64 import b64decode as base64_decode
 from collections import namedtuple
 import os
 import signal
@@ -51,9 +52,10 @@ def main() -> None:
     args.add_argument("--google-credentials", "-gcs", help="Amazon or Google service account file.")
     args.add_argument("--google-credentials-source", "-gcss", help="Amazon or Google service account file.")
     args.add_argument("--google-credentials-destination", "-gcsd", help="Amazon or Google service account file.")
-    args.add_argument("--kms", help="Amazon KMS key ID for source and/or destination.", default=None)
-    args.add_argument("--kms-source", "-kmss", help="Amazon KMS key ID for source.", default=None)
-    args.add_argument("--kms-destination", "-kmsd", help="Amazon KMS key ID for destination.", default=None)
+    args.add_argument("--amazon-kms-key", "-kms", help="Amazon KMS key ID for source and/or destination.", default=None)
+    args.add_argument("--amazon-kms-key-source", "-kms-source", help="Amazon KMS key ID for source.", default=None)
+    args.add_argument("--amazon-kms-key-destination", "-kms-destination",
+                      help="Amazon KMS key ID for destination.", default=None)
     args.add_argument("--noprogress", action="store_true", help="Do not show progress bar.", default=False)
     args.add_argument("--verbose", action="store_true", help="Verbose output.", default=False)
     args.add_argument("--debug", action="store_true", help="Debug output.", default=False)
@@ -126,11 +128,11 @@ def main() -> None:
 
         if not args.amazon_credentials_source:
             args.amazon_credentials_source = args.amazon_credentials
-        if not args.kms_source:
-            args.kms_source = args.kms
+        if not args.amazon_kms_key_source:
+            args.amazon_kms_key_source = args.amazon_kms_key
 
         if not (credentials_source_amazon := AmazonCredentials.obtain(args.amazon_credentials_source,
-                                                                      kms_key_id=args.kms_source)):
+                                                                      kms_key_id=args.amazon_kms_key_source)):
             usage(f"Cannot find AWS credentials.")
         if not credentials_source_amazon.ping():
             usage(f"Given AWS credentials appear to be invalid.")
@@ -140,7 +142,7 @@ def main() -> None:
         if temporary_credentials_source_amazon == "-":
             # Special case of untargeted (to any bucket/key) temporary credentials.
             temporary_credentials_source_amazon = (
-                generate_amazon_temporary_credentials(credentials_source_amazon, kms_key_id=args.kms_source,
+                generate_amazon_temporary_credentials(credentials_source_amazon, kms_key_id=args.amazon_kms_key_source,
                                                       policy=credentials_source_policy_amazon))
         elif temporary_credentials_source_amazon:
             bucket = key = None
@@ -154,7 +156,7 @@ def main() -> None:
             if bucket:
                 temporary_credentials_source_amazon = (
                     generate_amazon_temporary_credentials(credentials_source_amazon,
-                                                          bucket=bucket, key=key, kms_key_id=args.kms_source,
+                                                          bucket=bucket, key=key, kms_key_id=args.amazon_kms_key_source,
                                                           policy=credentials_source_policy_amazon))
             else:
                 temporary_credentials_source_amazon = None
@@ -165,11 +167,11 @@ def main() -> None:
 
         if not args.amazon_credentials_destination:
             args.amazon_credentials_destination = args.amazon_credentials
-        if not args.kms_destination:
-            args.kms_destination = args.kms
+        if not args.amazon_kms_key_destination:
+            args.amazon_kms_key_destination = args.amazon_kms_key
 
         if not (credentials_destination_amazon := AmazonCredentials.obtain(args.amazon_credentials_destination,
-                                                                           kms_key_id=args.kms_destination)):
+                                                                           kms_key_id=args.amazon_kms_key_destination)):
             usage(f"Cannot find AWS credentials.")
         if not credentials_destination_amazon.ping():
             usage(f"Given AWS credentials appear to be invalid.")
@@ -179,7 +181,8 @@ def main() -> None:
         if temporary_credentials_destination_amazon == "-":
             # Special case of untargeted (to any bucket/key) temporary credentials.
             temporary_credentials_destination_amazon = (
-                generate_amazon_temporary_credentials(credentials_destination_amazon, kms_key_id=args.kms_destination,
+                generate_amazon_temporary_credentials(credentials_destination_amazon,
+                                                      kms_key_id=args.amazon_kms_key_destination,
                                                       policy=credentials_destination_policy_amazon))
         elif temporary_credentials_destination_amazon:
             bucket = key = None
@@ -193,7 +196,8 @@ def main() -> None:
             if bucket:
                 temporary_credentials_destination_amazon = (
                     generate_amazon_temporary_credentials(credentials_destination_amazon,
-                                                          bucket=bucket, key=key, kms_key_id=args.kms_destination,
+                                                          bucket=bucket, key=key,
+                                                          kms_key_id=args.amazon_kms_key_destination,
                                                           policy=credentials_destination_policy_amazon))
             else:
                 temporary_credentials_destination_amazon = None
@@ -455,6 +459,17 @@ def print_info_via_rclone(target: str, rclone_store: RCloneStore) -> None:
 
     size = rclone_store.file_size(target)
     checksum = rclone_store.file_checksum(target)
+    if isinstance(rclone_store, RCloneAmazon):
+        s3 = AwsS3(rclone_store.credentials)
+        checksum_via_aws_boto = s3.file_checksum(target)
+        checksum_etag_via_boto = s3.file_checksum(target, etag=True)
+        kms_key_via_boto = s3.file_kms_key(target)
+        metadata_via_boto = s3.file_metadata(target)
+    else:
+        checksum_via_aws_boto = None
+        checksum_etag_via_boto = None
+        kms_key_via_boto = None
+        metadata_via_boto = None
     modified = rclone_store.file_modified(target, formatted=True)
     formatted_size = format_size(size)
     print(f"Bucket: {cloud_path.bucket(target)}")
@@ -462,11 +477,25 @@ def print_info_via_rclone(target: str, rclone_store: RCloneStore) -> None:
     print(f"Size: {format_size(size)}{f' ({size} bytes)' if '.' in formatted_size else ''}")
     print(f"Modified: {modified}")
     print(f"Checksum: {checksum}")
+    if checksum_via_aws_boto:
+        print(f"Checksum (non-rclone): {checksum_via_aws_boto}")
+    if checksum_etag_via_boto:
+        print(f"Etag (non-rclone): {checksum_etag_via_boto}")
+    if kms_key_via_boto:
+        print(f"KMS Key (non-rclone): {kms_key_via_boto}")
     if info := rclone_store.file_info(target):
         if metadata := info.get("metadata"):
-            print(f"Metadata ({len(metadata)}):")
+            print(f"Metadata: [{len(metadata)}]")
             for key in {key: metadata[key] for key in sorted(metadata)}:
                 print(f"- {key}: {metadata[key]}")
+    if metadata_via_boto:
+        print(f"Metadata (non-rclone): [{len(metadata_via_boto)}]")
+        for key in {key: metadata_via_boto[key] for key in sorted(metadata_via_boto)}:
+            if key == "md5chksum":
+                md5chksum_decoded = base64_decode(metadata_via_boto[key]).hex()
+            else:
+                md5chksum_decoded = None
+            print(f"- {key}: {metadata_via_boto[key]}{f' ({md5chksum_decoded})' if md5chksum_decoded else ''}")
 
 
 def print_amazon_credentials_info(store: RCloneAmazon, prefix: Optional[str] = "") -> None:
@@ -474,6 +503,8 @@ def print_amazon_credentials_info(store: RCloneAmazon, prefix: Optional[str] = "
         if store.credentials.credentials_file:
             print(f"{prefix}AWS credentials file: {store.credentials.credentials_file}")
         print(f"{prefix}AWS access key ID: {store.credentials.access_key_id}")
+        if store.credentials.kms_key_id:
+            print(f"{prefix}AWS KMS key ID: {store.credentials.kms_key_id}")
 
 
 def print_google_credentials_info(store: RCloneGoogle, prefix: Optional[str] = "") -> None:
