@@ -85,17 +85,17 @@ class Amazon:
 
     @staticmethod
     @contextmanager
-    def temporary_cloud_file(nosubfolder: bool = False, nokms: bool = False, size: Optional[int] = None) -> str:
+    def temporary_cloud_file(subfolder: bool = True, nokms: bool = False, size: Optional[int] = None) -> str:
 
         global TEST_FILE_PREFIX, TEST_FILE_SUFFIX, TEST_FILE_SIZE
 
-        assert nosubfolder in (True, False)
+        assert subfolder in (True, False)
         assert nokms in (True, False)
         if size is None: size = TEST_FILE_SIZE  # noqa
         assert isinstance(size, int) and (size >= 0)
 
         key = f"{TEST_FILE_PREFIX}{create_uuid()}{TEST_FILE_SUFFIX}"
-        if nosubfolder is False:
+        if subfolder is True:
             subfolder = f"{TEST_FILE_PREFIX}{create_uuid()}"
             key = cloud_path.join(subfolder, key)
 
@@ -146,16 +146,16 @@ class Google:
 
     @staticmethod
     @contextmanager
-    def temporary_cloud_file(nosubfolder: bool = False, size: Optional[int] = None) -> str:
+    def temporary_cloud_file(subfolder: bool = True, size: Optional[int] = None) -> str:
 
         global TEST_FILE_PREFIX, TEST_FILE_SUFFIX, TEST_FILE_SIZE
 
-        assert nosubfolder in (True, False)
+        assert subfolder in (True, False)
         if size is None: size = TEST_FILE_SIZE  # noqa
         assert isinstance(size, int) and (size >= 0)
 
         key = f"{TEST_FILE_PREFIX}{create_uuid()}{TEST_FILE_SUFFIX}"
-        if nosubfolder is False:
+        if subfolder is True:
             subfolder = f"{TEST_FILE_PREFIX}{create_uuid()}"
             key = cloud_path.join(subfolder, key)
 
