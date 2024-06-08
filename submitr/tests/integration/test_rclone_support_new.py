@@ -55,7 +55,8 @@ def test_new_local_to_amazon(nokms: bool = True) -> None:
         # checksum value but it is not the same as the one we compute for the same file.
         # So not good, but for our use-cases so far it is of no consequence. But for
         # integration tests, we can just use AWS directly (via boto and our credentials).
-        # assert get_file_checksum(local_file_path) == store.file_checksum(store_path)
+        # assert  store.file_checksum(store_path) == get_file_checksum(local_file_path)
+        Amazon.s3.file_checksum(store_path) == get_file_checksum(local_file_path)
 
 
 def test_new_local_to_google() -> None:

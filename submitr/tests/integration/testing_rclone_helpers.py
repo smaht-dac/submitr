@@ -42,9 +42,15 @@ class Amazon:
         return AmazonCredentials(amazon_credentials_file_path(),
                                  kms_key_id=None if nokms is True else AMAZON_KMS_KEY_ID)
 
-    @staticmethod
-    def cloud(nokms: bool = False) -> AwsS3:
-        return AwsS3(Amazon.credentials(nokms=nokms))
+    @classmethod
+    @property
+    def s3(cls) -> AwsS3:
+        return AwsS3(cls.credentials())
+
+    @classmethod
+    @property
+    def s3_nokms(cls) -> AwsS3:
+        return AwsS3(cls.credentials(nokms=True))
 
     @staticmethod
     @contextmanager
@@ -62,20 +68,20 @@ class Amazon:
             subfolder = f"{TEST_FILE_PREFIX}{create_uuid()}"
             key = cloud_path.join(subfolder, key)
 
-        cloud = Amazon.cloud(nokms=nokms)
+        s3 = Amazon.s3_nokms if nokms is True else Amazon.s3
         try:
             with temporary_random_file(prefix=TEST_FILE_PREFIX, suffix=TEST_FILE_SUFFIX, nbytes=size) as tmp_file_path:
-                assert cloud.upload_file(tmp_file_path, Amazon.bucket, key) is True
-                assert cloud.file_exists(Amazon.bucket, key) is True
-                assert cloud.file_size(Amazon.bucket, key) == size
+                assert s3.upload_file(tmp_file_path, Amazon.bucket, key) is True
+                assert s3.file_exists(Amazon.bucket, key) is True
+                assert s3.file_size(Amazon.bucket, key) == size
                 if nokms is False:
-                    assert cloud.file_kms_encrypted(Amazon.bucket, key, AMAZON_KMS_KEY_ID) is True
+                    assert s3.file_kms_encrypted(Amazon.bucket, key, AMAZON_KMS_KEY_ID) is True
                 yield cloud_path.join(Amazon.bucket, key)
-        except Exception:
-            pytest.fail("Cannot create (non-rclone) Amazon S3 object!")
+        except Exception as e:
+            pytest.fail(f"Error on Amazon temporary cloud file creation context! {str(e)}")
             return None
         finally:
-            cloud.delete_file(Amazon.bucket, key)
+            s3.delete_file(Amazon.bucket, key)
 
 
 class Google:
@@ -90,9 +96,10 @@ class Google:
     def credentials() -> GoogleCredentials:
         return GoogleCredentials(google_service_account_file_path())
 
-    @staticmethod
-    def cloud() -> Gcs:
-        return Gcs(Google.credentials())
+    @classmethod
+    @property
+    def gcs(cls) -> Gcs:
+        return Gcs(cls.credentials())
 
     @staticmethod
     @contextmanager
@@ -109,15 +116,15 @@ class Google:
             subfolder = f"{TEST_FILE_PREFIX}{create_uuid()}"
             key = cloud_path.join(subfolder, key)
 
-        cloud = Google.cloud()
+        gcs = Google.gcs
         try:
             with temporary_random_file(prefix=TEST_FILE_PREFIX, suffix=TEST_FILE_SUFFIX, nbytes=size) as tmp_file_path:
-                assert cloud.upload_file(tmp_file_path, Google.bucket, key) is True
-                assert cloud.file_exists(Google.bucket, key) is True
-                assert cloud.file_size(Google.bucket, key) == size
+                assert gcs.upload_file(tmp_file_path, Google.bucket, key) is True
+                assert gcs.file_exists(Google.bucket, key) is True
+                assert gcs.file_size(Google.bucket, key) == size
                 yield cloud_path.join(Google.bucket, key)
-        except Exception:
-            pytest.fail("Cannot create (non-rclone) Google GCS object!")
+        except Exception as e:
+            pytest.fail(f"Error on Google temporary cloud file creation context! {str(e)}")
             return None
         finally:
-            cloud.delete_file(Google.bucket, key)
+            gcs.delete_file(Google.bucket, key)
