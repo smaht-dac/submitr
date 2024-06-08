@@ -76,7 +76,7 @@ def test_new_amazon_to_local(nokms, credentials_type) -> None:
 @pytest.mark.parametrize("subfolder", [False, True])
 def test_new_local_to_amazon(credentials_type, kms, subfolder) -> None:
     with Amazon.temporary_local_file() as tmpfile:
-        store_path = Google.create_temporary_cloud_path(Google.bucket, subfolder)
+        store_path = Amazon.create_temporary_cloud_path(Amazon.bucket, subfolder)
         # Copy from local to cloud via rclone.
         credentials = Amazon.credentials(nokms=not kms, credentials_type=credentials_type, path=store_path)
         store = RCloneAmazon(credentials)
