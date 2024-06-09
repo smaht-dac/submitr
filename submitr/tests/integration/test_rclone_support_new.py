@@ -74,23 +74,25 @@ def test_amazon_to_local(kms, credentials_type) -> None:
         # No cleanup; context managers above do it.
 
 
-@pytest.mark.parametrize("credentials_type", Amazon.CredentialTypes)
-@pytest.mark.parametrize("kms", [False, True])
-@pytest.mark.parametrize("subfolder", [False, True])
-def test_local_to_amazon(credentials_type, kms, subfolder) -> None:
+@pytest.mark.parametrize("amazon_destination_credentials_type", Amazon.CredentialTypes)
+@pytest.mark.parametrize("amazon_destination_kms", [False, True])
+@pytest.mark.parametrize("amazon_destination_subfolder", [False, True])
+def test_local_to_amazon(amazon_destination_credentials_type,
+                         amazon_destination_kms, amazon_destination_subfolder) -> None:
     with Amazon.temporary_local_file() as source_file_path:
         # Here we have a temporary local file for testing rclone copy to cloud.
-        amazon_destination_path = Amazon.create_temporary_cloud_file_path(Amazon.bucket, subfolder=subfolder)
+        amazon_destination_path = Amazon.create_temporary_cloud_file_path(Amazon.bucket,
+                                                                          subfolder=amazon_destination_subfolder)
         # Copy from local to cloud via rclone.
-        amazon_destination_credentials = Amazon.credentials(credentials_type=credentials_type,
-                                                            kms=kms, path=amazon_destination_path)
+        amazon_destination_credentials = Amazon.credentials(credentials_type=amazon_destination_credentials_type,
+                                                            kms=amazon_destination_kms, path=amazon_destination_path)
         amazon_destination_store = RCloneAmazon(amazon_destination_credentials)
         RCloner(destination=amazon_destination_store).copy(source_file_path, amazon_destination_path) is True
         # Sanity check.
         assert amazon_destination_store.file_exists(amazon_destination_path) is True
         assert (amazon_destination_store.file_size(amazon_destination_path) ==
                 get_file_size(source_file_path) == TEST_FILE_SIZE)
-        if credentials_type != Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC:
+        if amazon_destination_credentials_type != Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC:
             # N.B. As noted elsewhere, with bucket/key targeted temporary AWS credentials,
             # with a Portal-like policy (i.e. encoded-core/../types/file.py/external_creds,
             # which we implement for testing via AwsS3.generate_temporary_credentials in
