@@ -46,11 +46,11 @@ def teardown_module():
 def test_amazon_to_local(amazon_source_credentials_type, amazon_source_kms) -> None:
     with (Amazon.temporary_cloud_file(kms=amazon_source_kms) as amazon_source_path,
           temporary_directory() as destination_directory):
-        # Here we have a temporary cloud file for testing rclone copy to local.
+        # Here we have a temporary Amazon cloud file for testing rclone copy to local.
         amazon_source_credentials = Amazon.credentials(credentials_type=amazon_source_credentials_type,
                                                        kms=amazon_source_kms, path=amazon_source_path)
         amazon_source_store = RCloneAmazon(amazon_source_credentials)
-        # Copy from cloud to local via rclone.
+        # Copy from Amazon cloud to local via rclone.
         rclone = RCloner(source=amazon_source_store)
         assert rclone.copy(amazon_source_path, destination_directory) is True
         # Sanity check.
@@ -83,10 +83,10 @@ def test_amazon_to_local(amazon_source_credentials_type, amazon_source_kms) -> N
 def test_local_to_amazon(amazon_destination_credentials_type,
                          amazon_destination_kms, amazon_destination_subfolder) -> None:
     with Amazon.temporary_local_file() as local_source_path:
-        # Here we have a temporary local file for testing rclone copy to cloud.
+        # Here we have a temporary local file for testing rclone copy to Amazon cloud.
         amazon_destination_path = Amazon.create_temporary_cloud_file_path(Amazon.bucket,
                                                                           subfolder=amazon_destination_subfolder)
-        # Copy from local to cloud via rclone.
+        # Copy from local to Amazon cloud via rclone.
         amazon_destination_credentials = Amazon.credentials(credentials_type=amazon_destination_credentials_type,
                                                             kms=amazon_destination_kms, path=amazon_destination_path)
         amazon_destination_store = RCloneAmazon(amazon_destination_credentials)
@@ -115,10 +115,10 @@ def test_local_to_amazon(amazon_destination_credentials_type,
 
 def test_google_to_local() -> None:
     with Google.temporary_cloud_file() as google_source_path, temporary_directory() as destination_directory:
-        # Here we have a temporary cloud file for testing rclone copy to local.
+        # Here we have a temporary Google cloud file for testing rclone copy to local.
         google_source_credentials = Google.credentials()
         google_source_store = RCloneGoogle(google_source_credentials)
-        # Copy from cloud to local via rclone.
+        # Copy from Google cloud to local via rclone.
         rclone = RCloner(source=google_source_store)
         assert rclone.copy(google_source_path, destination_directory) is True
         # Sanity check.
@@ -134,10 +134,10 @@ def test_google_to_local() -> None:
 @pytest.mark.parametrize("google_destination_subfolder", [False, True])
 def test_local_to_google(google_destination_subfolder) -> None:
     with Google.temporary_local_file() as local_source_path:
-        # Here we have a temporary local file for testing rclone copy to cloud.
+        # Here we have a temporary local file for testing rclone copy to Google cloud.
         google_destination_path = Google.create_temporary_cloud_file_path(Google.bucket,
                                                                           subfolder=google_destination_subfolder)
-        # Copy from local to cloud via rclone.
+        # Copy from local to Google cloud via rclone.
         google_destination_credentials = Google.credentials()
         google_destination_store = RCloneGoogle(google_destination_credentials)
         rclone = RCloner(destination=google_destination_store)
@@ -237,7 +237,7 @@ def test_google_to_google(google_destination_subfolder) -> None:
         # Here we have a temporary Google cloud file for testing rclone copy to Google cloud.
         google_source_credentials = Google.credentials()
         google_source_store = RCloneGoogle(google_source_credentials)
-        # Copy from local to cloud via rclone.
+        # Copy from Google cloud to Google cloud via rclone.
         google_destination_path = Google.create_temporary_cloud_file_path(Google.bucket,
                                                                           subfolder=google_destination_subfolder)
         google_destination_credentials = Google.credentials()
@@ -266,7 +266,7 @@ def test_amazon_to_google(amazon_source_kms, amazon_source_subfolder) -> None:
         # Here we have a temporary Amazon cloud file for testing rclone copy to Google cloud.
         amazon_source_credentials = Amazon.credentials(kms=amazon_source_kms)
         amazon_source_store = RCloneAmazon(amazon_source_credentials)
-        # Copy from local to cloud via rclone.
+        # Copy from Amazon cloud to Google cloud via rclone.
         google_destination_path = Google.create_temporary_cloud_file_path(Google.bucket,
                                                                           subfolder=amazon_source_subfolder)
         google_destination_credentials = Google.credentials()
