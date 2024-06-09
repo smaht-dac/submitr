@@ -90,9 +90,12 @@ class Amazon:
         return AwsS3(cls.credentials(kms=True))
 
     @staticmethod
-    def s3_with(credentials_type: CredentialsType = CredentialsType.DEFAULT,
+    def s3_with(credentials: Optional[AmazonCredentials] = None,
+                credentials_type: Optional[CredentialsType] = CredentialsType.DEFAULT,
                 kms: bool = False, path: Optional[str] = None) -> AwsS3:
         # This is for non-rclone based access to S3 (sans KMS).
+        if isinstance(credentials, AmazonCredentials):
+            return AwsS3(credentials)
         assert credentials_type in Amazon.CredentialTypes
         assert kms in [False, True]
         assert path is None or isinstance(path, str)

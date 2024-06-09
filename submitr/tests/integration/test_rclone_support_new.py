@@ -44,16 +44,18 @@ def teardown_module():
 @pytest.mark.parametrize("credentials_type", Amazon.CredentialTypes)
 @pytest.mark.parametrize("kms", [False, True])
 def test_amazon_to_local(kms, credentials_type) -> None:
-    with Amazon.temporary_cloud_file(kms=kms) as store_path, temporary_directory() as tmpdir:
+    with Amazon.temporary_cloud_file(kms=kms) as amazon_source_path, temporary_directory() as tmpdir:
         # Here we have a temporary cloud file for testing rclone copy to local.
-        credentials = Amazon.credentials(credentials_type=credentials_type, kms=kms, path=store_path)
-        store = RCloneAmazon(credentials)
+        amazon_source_redentials = Amazon.credentials(credentials_type=credentials_type,
+                                                      kms=kms, path=amazon_source_path)
+        amazon_source_store = RCloneAmazon(amazon_source_redentials)
         # Copy from cloud to local via rclone.
-        RCloner(source=store).copy(store_path, tmpdir)
+        RCloner(source=amazon_source_store).copy(amazon_source_path, tmpdir)
         # Sanity check.
-        destination_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
-        assert store.file_exists(store_path) is True
-        assert get_file_size(destination_file_path) == store.file_size(store_path) == TEST_FILE_SIZE
+        destination_file_path = os.path.join(tmpdir, cloud_path.basename(amazon_source_path))
+        assert amazon_source_store.file_exists(amazon_source_path) is True
+        assert (get_file_size(destination_file_path) ==
+                amazon_source_store.file_size(amazon_source_path) == TEST_FILE_SIZE)
         # N.B. For AWS S3 keys with KMS encryption rclone hashsum md5 does not seem to work;
         # the command does not fail but returns no checksum (just the filename in the output);
         # removing the KMS info from the rclone config file fixes this, and it does return a
@@ -64,12 +66,12 @@ def test_amazon_to_local(kms, credentials_type) -> None:
         # checksum, as we have the (Portal-generated temporary/session) credentials we need
         # to do this (and because of this and general issues with checksums). And neither does
         # boto3 get a reliable checksum value; sometimes sjust the etag which can be different.
-        # And so for integration tests, we skip the store.file_checksum call.
+        # And so for integration tests, we skip the amazon_source_store.file_checksum call.
         if not kms:
-            assert get_file_checksum(destination_file_path) == Amazon.s3.file_checksum(store_path)
+            assert get_file_checksum(destination_file_path) == Amazon.s3.file_checksum(amazon_source_path)
         assert os.path.isfile(destination_file_path) is True
         assert (get_file_size(destination_file_path) ==
-                (Amazon.s3 if kms is False else Amazon.s3_kms).file_size(store_path))
+                (Amazon.s3 if kms is False else Amazon.s3_kms).file_size(amazon_source_path))
         # No cleanup; context managers above do it.
 
 
