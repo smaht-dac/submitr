@@ -43,7 +43,7 @@ def teardown_module():
 
 @pytest.mark.parametrize("credentials_type", Amazon.CredentialTypes)
 @pytest.mark.parametrize("kms", [False, True])
-def test_new_amazon_to_local(kms, credentials_type) -> None:
+def test_amazon_to_local(kms, credentials_type) -> None:
     with Amazon.temporary_cloud_file(kms=kms) as store_path, temporary_directory() as tmpdir:
         # Here we have a temporary cloud file for testing rclone copy to local.
         credentials = Amazon.credentials(credentials_type=credentials_type, kms=kms, path=store_path)
@@ -74,7 +74,7 @@ def test_new_amazon_to_local(kms, credentials_type) -> None:
 @pytest.mark.parametrize("credentials_type", Amazon.CredentialTypes)
 @pytest.mark.parametrize("kms", [False, True])
 @pytest.mark.parametrize("subfolder", [False, True])
-def test_new_local_to_amazon(credentials_type, kms, subfolder) -> None:
+def test_local_to_amazon(credentials_type, kms, subfolder) -> None:
     with Amazon.temporary_local_file() as tmpfile:
         # Here we have a temporary local file for testing rclone copy to cloud.
         store_path = Amazon.create_temporary_cloud_file_path(Amazon.bucket, subfolder=subfolder)
@@ -95,7 +95,7 @@ def test_new_local_to_amazon(credentials_type, kms, subfolder) -> None:
         store.file_exists(store_path) is False
 
 
-def test_new_google_to_local() -> None:
+def test_google_to_local() -> None:
     with Google.temporary_cloud_file() as store_path, temporary_directory() as tmpdir:
         # Here we have a temporary cloud file for testing rclone copy to local.
         credentials = Google.credentials()
@@ -112,7 +112,7 @@ def test_new_google_to_local() -> None:
 
 
 @pytest.mark.parametrize("subfolder", [False, True])
-def test_new_local_to_google(subfolder) -> None:
+def test_local_to_google(subfolder) -> None:
     with Google.temporary_local_file() as tmpfile:
         # Here we have a temporary local file for testing rclone copy to cloud.
         store_path = Google.create_temporary_cloud_file_path(Google.bucket, subfolder=subfolder)
@@ -136,7 +136,7 @@ def test_new_local_to_google(subfolder) -> None:
 @pytest.mark.parametrize("amazon_kms", [False, True])
 @pytest.mark.parametrize("amazon_subfolder", [False, True])
 @pytest.mark.parametrize("google_subfolder", [False, True])
-def test_new_google_to_amazon(amazon_credentials_type, amazon_kms, amazon_subfolder, google_subfolder) -> None:
+def test_google_to_amazon(amazon_credentials_type, amazon_kms, amazon_subfolder, google_subfolder) -> None:
     with Google.temporary_cloud_file(subfolder=google_subfolder) as google_path:
         # Here we have a temporary Google cloud file for testing rclone copy to Amazon cloud.
         google_credentials = Google.credentials()
@@ -170,7 +170,7 @@ def test_new_google_to_amazon(amazon_credentials_type, amazon_kms, amazon_subfol
 @pytest.mark.parametrize("amazon_destination_credentials_type", Amazon.CredentialTypes)
 @pytest.mark.parametrize("amazon_destination_kms", [False, True])
 @pytest.mark.parametrize("amazon_destination_subfolder", [False, True])
-def test_new_amazon_to_amazon(amazon_destination_credentials_type,
+def test_amazon_to_amazon(amazon_destination_credentials_type,
                               amazon_destination_kms,
                               amazon_destination_subfolder) -> None:
     amazon_source_credentials_type = Amazon.CredentialsType.DEFAULT
@@ -204,11 +204,11 @@ def test_new_amazon_to_amazon(amazon_destination_credentials_type,
         assert Amazon.s3.file_exists(amazon_destination_path) is False
 
 
-def test_new_google_to_google() -> None:
+def test_google_to_google() -> None:
     # No need for this; not a real use-case at all.
     pass
 
 
-def test_new_amazon_to_google() -> None:
+def test_amazon_to_google() -> None:
     # No need for this; not a real use-case at all.
     pass
