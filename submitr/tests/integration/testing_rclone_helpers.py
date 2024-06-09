@@ -56,7 +56,8 @@ class Amazon:
         kms_key_id = None if not kms else AMAZON_KMS_KEY_ID
         if credentials_type == Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC:
             bucket, key = cloud_path.bucket_and_key(path)
-            assert bucket and key
+            assert isinstance(bucket, str) and bucket
+            assert isinstance(key, str) and key
             credentials = Amazon.s3.generate_temporary_credentials(bucket=bucket, key=key, kms_key_id=kms_key_id)
         elif credentials_type == Amazon.CredentialsType.TEMPORARY:
             bucket, key = cloud_path.bucket_and_key(path)
