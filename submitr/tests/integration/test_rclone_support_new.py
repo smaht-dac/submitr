@@ -51,9 +51,9 @@ def test_amazon_to_local(kms, credentials_type) -> None:
         # Copy from cloud to local via rclone.
         RCloner(source=store).copy(store_path, tmpdir)
         # Sanity check.
-        local_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
+        destintation_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
         assert store.file_exists(store_path) is True
-        assert get_file_size(local_file_path) == store.file_size(store_path) == TEST_FILE_SIZE
+        assert get_file_size(destintation_file_path) == store.file_size(store_path) == TEST_FILE_SIZE
         # N.B. For AWS S3 keys with KMS encryption rclone hashsum md5 does not seem to work;
         # the command does not fail but returns no checksum (just the filename in the output);
         # removing the KMS info from the rclone config file fixes this, and it does return a
@@ -65,9 +65,11 @@ def test_amazon_to_local(kms, credentials_type) -> None:
         # to do this (and because of this and general issues with checksums). And neither does
         # boto3 get a reliable checksum value; sometimes sjust the etag which can be different.
         # And so for integration tests, we skip the store.file_checksum call.
-        assert get_file_checksum(local_file_path) == Amazon.s3.file_checksum(store_path) if kms is False else True
-        assert os.path.isfile(local_file_path) is True
-        assert get_file_size(local_file_path) == (Amazon.s3 if kms is False else Amazon.s3_kms).file_size(store_path)
+        if not kms:
+            assert get_file_checksum(destintation_file_path) == Amazon.s3.file_checksum(store_path)
+        assert os.path.isfile(destintation_file_path) is True
+        assert (get_file_size(destintation_file_path) ==
+                (Amazon.s3 if kms is False else Amazon.s3_kms).file_size(store_path))
         # No cleanup; context managers above do it.
 
 
@@ -103,11 +105,11 @@ def test_google_to_local() -> None:
         # Copy from cloud to local via rclone.
         RCloner(source=store).copy(store_path, tmpdir)
         # Sanity check.
-        local_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
+        destination_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
         assert store.file_exists(store_path) is True
-        assert get_file_size(local_file_path) == store.file_size(store_path) == TEST_FILE_SIZE
-        assert get_file_checksum(local_file_path) == store.file_checksum(store_path)
-        assert os.path.isfile(local_file_path) is True
+        assert get_file_size(destination_file_path) == store.file_size(store_path) == TEST_FILE_SIZE
+        assert get_file_checksum(destination_file_path) == store.file_checksum(store_path)
+        assert os.path.isfile(destination_file_path) is True
         # No cleanup; context managers above do it.
 
 
