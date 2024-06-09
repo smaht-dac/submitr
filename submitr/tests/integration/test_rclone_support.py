@@ -24,8 +24,8 @@ from submitr.tests.testing_cloud_helpers import Mock_LocalStorage, Mock_Portal
 from submitr.tests.testing_helpers import load_json_test_data
 from submitr.tests.integration.testing_rclone_setup import (
 
-    rclone_config_setup_module,
-    rclone_config_teardown_module,
+    rclone_setup_module,
+    rclone_teardown_module,
 
     amazon_credentials_file_path,
     google_service_account_file_path,
@@ -49,11 +49,11 @@ pytestmark = [pytest.mark.integration]
 
 
 def setup_module():
-    rclone_config_setup_module()
+    rclone_setup_module()
 
 
 def teardown_module():
-    rclone_config_teardown_module()
+    rclone_teardown_module()
 
 # TODO: FYI RCloneAmazon.file_checksum never gets called by tests (though RCloneGoogle.file_checksum does).
 # And it appears the rlcone hashsum md5 on a key which has KMS encryption does not work if we specify

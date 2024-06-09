@@ -12,8 +12,8 @@ from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
 from submitr.rclone.testing.rclone_utils_for_testing_google import Gcs
 from submitr.tests.integration.testing_rclone_setup import (  # noqa
 
-    rclone_config_setup_module,
-    rclone_config_teardown_module,
+    rclone_setup_module,
+    rclone_teardown_module,
 
     amazon_credentials_file_path,
     google_service_account_file_path,

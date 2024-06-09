@@ -9,8 +9,8 @@ from submitr.rclone.rclone_utils import cloud_path
 from submitr.tests.integration.testing_rclone_helpers import Amazon, Google
 from submitr.tests.integration.testing_rclone_setup import (  # noqa
 
-    rclone_config_setup_module,
-    rclone_config_teardown_module,
+    rclone_setup_module,
+    rclone_teardown_module,
 
     amazon_credentials_file_path,
     google_service_account_file_path,
@@ -34,11 +34,11 @@ pytestmark = [pytest.mark.integration]
 
 
 def setup_module():
-    rclone_config_setup_module()
+    rclone_setup_module()
 
 
 def teardown_module():
-    rclone_config_teardown_module()
+    rclone_teardown_module()
 
 
 @pytest.mark.parametrize("credentials_type",

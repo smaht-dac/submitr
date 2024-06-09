@@ -38,9 +38,9 @@ from submitr.tests.testing_cloud_helpers import TEST_FILE_SIZE
 # - _GOOGLE_SERVICE_ACCOUNT_FILE_PATH
 #   Path to GCP service account file exported from Google account; e.g. ~/.config/google/smaht-dac.json.
 
-# Amazon/Google credentials files are setup in rclone_config_setup_module iff
+# Amazon/Google credentials files are setup in rclone_setup_module iff
 # we are running from within GitHub actions; otherwise these are the values;
-# this the rclone_config_setup_module() function should be called from the
+# this the rclone_setup_module() function should be called from the
 # setup_module() function of any test module doing rclone related integration
 # testing. NOTE: These two values must be accessed via the functions
 # amazon_credentials_file_path() and google_service_account_file_path().
@@ -79,7 +79,7 @@ def google_service_account_file_path():
     return _GOOGLE_SERVICE_ACCOUNT_FILE_PATH
 
 
-def rclone_config_setup_module():
+def rclone_setup_module():
 
     global _AMAZON_CREDENTIALS_FILE_PATH
     global _GOOGLE_SERVICE_ACCOUNT_FILE_PATH
@@ -172,7 +172,7 @@ def rclone_config_setup_module():
     _remove_environment_variables_which_might_interfere_with_testing()
 
 
-def rclone_config_teardown_module():
+def rclone_teardown_module():
 
     _restore_environment_variables_which_might_interfere_with_testing()
 
