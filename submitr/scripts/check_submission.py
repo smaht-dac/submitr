@@ -6,7 +6,7 @@ from dcicutils.misc_utils import PRINT
 from submitr.base import DEFAULT_APP
 from submitr.rclone import RCloneStore
 from submitr.submission import _monitor_ingestion_process, _pytesting
-from submitr.cli_utils import CustomArgumentParser
+from submitr.scripts.cli_utils import CustomArgumentParser
 
 _HELP = f"""
 ===
