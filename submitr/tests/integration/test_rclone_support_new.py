@@ -44,15 +44,16 @@ def teardown_module():
 @pytest.mark.parametrize("amazon_source_credentials_type", Amazon.CredentialTypes)
 @pytest.mark.parametrize("amazon_source_kms", [False, True])
 def test_amazon_to_local(amazon_source_credentials_type, amazon_source_kms) -> None:
-    with Amazon.temporary_cloud_file(kms=amazon_source_kms) as amazon_source_path, temporary_directory() as tmpdir:
+    with (Amazon.temporary_cloud_file(kms=amazon_source_kms) as amazon_source_path,
+          temporary_directory() as destination_directory):
         # Here we have a temporary cloud file for testing rclone copy to local.
         amazon_source_credentials = Amazon.credentials(credentials_type=amazon_source_credentials_type,
                                                        kms=amazon_source_kms, path=amazon_source_path)
         amazon_source_store = RCloneAmazon(amazon_source_credentials)
         # Copy from cloud to local via rclone.
-        RCloner(source=amazon_source_store).copy(amazon_source_path, tmpdir)
+        RCloner(source=amazon_source_store).copy(amazon_source_path, destination_directory)
         # Sanity check.
-        local_destination_path = os.path.join(tmpdir, cloud_path.basename(amazon_source_path))
+        local_destination_path = os.path.join(destination_directory, cloud_path.basename(amazon_source_path))
         assert amazon_source_store.file_exists(amazon_source_path) is True
         assert (get_file_size(local_destination_path) ==
                 amazon_source_store.file_size(amazon_source_path) == TEST_FILE_SIZE)
@@ -111,14 +112,14 @@ def test_local_to_amazon(amazon_destination_credentials_type,
 
 
 def test_google_to_local() -> None:
-    with Google.temporary_cloud_file() as google_source_path, temporary_directory() as tmpdir:
+    with Google.temporary_cloud_file() as google_source_path, temporary_directory() as destination_directory:
         # Here we have a temporary cloud file for testing rclone copy to local.
         google_source_credentials = Google.credentials()
         google_source_store = RCloneGoogle(google_source_credentials)
         # Copy from cloud to local via rclone.
-        RCloner(source=google_source_store).copy(google_source_path, tmpdir)
+        RCloner(source=google_source_store).copy(google_source_path, destination_directory)
         # Sanity check.
-        local_destination_path = os.path.join(tmpdir, cloud_path.basename(google_source_path))
+        local_destination_path = os.path.join(destination_directory, cloud_path.basename(google_source_path))
         assert google_source_store.file_exists(google_source_path) is True
         assert (get_file_size(local_destination_path) ==
                 google_source_store.file_size(google_source_path) == TEST_FILE_SIZE)
