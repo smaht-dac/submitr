@@ -179,9 +179,48 @@ def test_new_google_to_amazon(amazon_credentials_type, amazon_kms, amazon_subfol
         assert Amazon.s3.file_exists(amazon_path) is False
 
 
-def test_new_amazon_to_amazon() -> None:
-    with Amazon.temporary_cloud_file() as amazon_path:
-        assert amazon_path  # TODO
+@pytest.mark.parametrize("amazon_destination_credentials_type",
+                         [Amazon.CredentialsType.DEFAULT,
+                          Amazon.CredentialsType.TEMPORARY,
+                          Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC])
+@pytest.mark.parametrize("amazon_destination_kms", [False, True])
+@pytest.mark.parametrize("amazon_destination_subfolder", [False, True])
+def test_new_amazon_to_amazon(amazon_destination_credentials_type,
+                              amazon_destination_kms,
+                              amazon_destination_subfolder) -> None:
+    with Amazon.temporary_cloud_file(subfolder=True, nokms=True) as amazon_source_path:
+        # Here we have a temporary Amazon cloud file for testing rclone copy to Amazon cloud.
+        amazon_source_credentials = Amazon.credentials(nokms=True)
+        amazon_source_store = RCloneAmazon(amazon_source_credentials)
+        amazon_destination_path = Amazon.create_temporary_cloud_file_path(Amazon.bucket,
+                                                                          subfolder=amazon_destination_subfolder)
+        amazon_destination_credentials = Amazon.credentials(nokms=not amazon_destination_kms,
+                                                            credentials_type=amazon_destination_credentials_type,
+                                                            path=amazon_destination_path)
+        amazon_destination_store = RCloneAmazon(amazon_destination_credentials)
+        # Copy from Amazon cloud to Amazon cloud via rclone.
+        rcloner = RCloner(source=amazon_source_store, destination=amazon_destination_store)
+        rcloner.copy(amazon_source_path, amazon_destination_path) is True
+        # Sanity check.
+        assert amazon_destination_store.file_exists(amazon_destination_path) is True
+        assert amazon_destination_store.file_size(amazon_destination_path) == TEST_FILE_SIZE
+        if amazon_destination_credentials_type == Amazon.CredentialsType.DEFAULT:  # TODO
+            # This amazon_store.file_checksum does not work for temporary credentials due to
+            # an oddity of rclone hashsum md5 where it seems to need s3:ListBucket on the ENTIRE
+            # bucket; which is not acceptable security-wise for the Portal to do; and so we do
+            # not do this in our test code AwsS3.generate_temporary_credentials; and so we
+            # need to use boto3 only to obtain the checksum for sanity checking, below.
+            assert (amazon_destination_store.file_checksum(amazon_destination_path) ==
+                    Amazon.s3.file_checksum(amazon_source_path))
+        assert Amazon.s3.file_exists(amazon_destination_path) is True
+        assert Amazon.s3.file_size(amazon_destination_path) == TEST_FILE_SIZE
+        assert Amazon.s3.file_checksum(amazon_destination_path) == Amazon.s3.file_checksum(amazon_source_path)
+        # Cleanup.
+        import pdb ; pdb.set_trace()  # noqa
+        pass
+        assert Amazon.s3.delete_file(amazon_destination_path) is True
+        assert amazon_destination_store.file_exists(amazon_destination_path) is False
+        assert Amazon.s3.file_exists(amazon_destination_path) is False
 
 
 def test_new_google_to_google() -> None:
