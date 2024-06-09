@@ -45,8 +45,8 @@ class Amazon:
         return AMAZON_TEST_BUCKET_NAME
 
     @staticmethod
-    def credentials(nokms: bool = False,
-                    credentials_type: CredentialsType = CredentialsType.DEFAULT,
+    def credentials(credentials_type: CredentialsType = CredentialsType.DEFAULT,
+                    nokms: bool = False,
                     path: Optional[str] = None) -> AmazonCredentials:
         assert nokms in [False, True]
         assert path is None or isinstance(path, str)
