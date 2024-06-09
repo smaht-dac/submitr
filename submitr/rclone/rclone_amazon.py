@@ -11,10 +11,25 @@ from submitr.utils import chars
 @RCloneStore.register
 class RCloneAmazon(RCloneStore):
 
-    prefix = "s3://"
-    proper_name = "AWS S3"
-    proper_name_title = "Amazon S3"
-    proper_name_label = "s3-cloud-store"
+    @classmethod
+    @property
+    def prefix(cls) -> str:
+        return "s3://"
+
+    @classmethod
+    @property
+    def proper_name(cls) -> str:
+        return "AWS S3"
+
+    @classmethod
+    @property
+    def proper_name_title(cls) -> str:
+        return "Amazon S3"
+
+    @classmethod
+    @property
+    def proper_name_label(cls) -> str:
+        return "s3-cloud-storage"
 
     def __init__(self, credentials: Optional[AmazonCredentials] = None,
                  bucket: Optional[str] = None, name: Optional[str] = None) -> None:

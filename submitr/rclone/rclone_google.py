@@ -14,10 +14,25 @@ from submitr.utils import chars
 @RCloneStore.register
 class RCloneGoogle(RCloneStore):
 
-    prefix = "gs://"
-    proper_name = "GCS"
-    proper_name_title = "Google Cloud Storage"
-    proper_name_label = "google-cloud-storage"
+    @classmethod
+    @property
+    def prefix(cls) -> str:
+        return "gs://"
+
+    @classmethod
+    @property
+    def proper_name(cls) -> str:
+        return "GCS"
+
+    @classmethod
+    @property
+    def proper_name_title(cls) -> str:
+        return "Google Cloud Storage"
+
+    @classmethod
+    @property
+    def proper_name_label(cls) -> str:
+        return "google-cloud-storage"
 
     def __init__(self, credentials: Optional[GoogleCredentials] = None,
                  bucket: Optional[str] = None, name: Optional[str] = None) -> None:

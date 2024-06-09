@@ -18,11 +18,32 @@ from submitr.utils import DEBUGGING
 
 class RCloneStore(AbstractBaseClass):
 
-    # This prefix class variable is to be set by the classes derived from RCloneStore.
+    # These prefix properties are to be set by the classes derived from RCloneStore.
     # i.e. RCloneAmazon (where it is "s3://"), and RCloneGoogle (where it is "gs://").
-    prefix = None
-    proper_name = None
-    proper_name_title = None
+
+    @classmethod
+    @property
+    @abstractmethod
+    def prefix(cls) -> str:
+        return None
+
+    @classmethod
+    @property
+    @abstractmethod
+    def proper_name(cls) -> str:
+        return None
+
+    @classmethod
+    @property
+    @abstractmethod
+    def proper_name_title(cls) -> str:
+        return None
+
+    @classmethod
+    @property
+    @abstractmethod
+    def proper_name_label(cls) -> str:
+        return None
 
     def __init__(self,
                  name: Optional[str] = None,
