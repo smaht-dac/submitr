@@ -60,7 +60,6 @@ class Amazon:
             credentials = Amazon.s3.generate_temporary_credentials(bucket=bucket, key=key, kms_key_id=kms_key_id)
         elif credentials_type == Amazon.CredentialsType.TEMPORARY:
             bucket, key = cloud_path.bucket_and_key(path)
-            assert bucket and key
             credentials = Amazon.s3.generate_temporary_credentials(bucket=bucket, key=key,
                                                                    untargeted=True, kms_key_id=kms_key_id)
         elif credentials_type == Amazon.CredentialsType.DEFAULT:
