@@ -77,34 +77,34 @@ def test_amazon_to_local(kms, credentials_type) -> None:
 @pytest.mark.parametrize("kms", [False, True])
 @pytest.mark.parametrize("subfolder", [False, True])
 def test_local_to_amazon(credentials_type, kms, subfolder) -> None:
-    with Amazon.temporary_local_file() as tmpfile:
+    with Amazon.temporary_local_file() as source_file_path:
         # Here we have a temporary local file for testing rclone copy to cloud.
         store_path = Amazon.create_temporary_cloud_file_path(Amazon.bucket, subfolder=subfolder)
         # Copy from local to cloud via rclone.
         credentials = Amazon.credentials(credentials_type=credentials_type, kms=kms, path=store_path)
         store = RCloneAmazon(credentials)
-        RCloner(destination=store).copy(tmpfile, store_path) is True
+        RCloner(destination=store).copy(source_file_path, store_path) is True
         # Sanity check.
         assert store.file_exists(store_path) is True
         assert store.file_size(store_path) == TEST_FILE_SIZE
 
 #       if not kms:
-#           if not (store.file_checksum(store_path) == get_file_checksum(tmpfile)):
+#           if not (store.file_checksum(store_path) == get_file_checksum(source_file_path)):
 #               import pdb ; pdb.set_trace()  # noqa
 #               pass
-#           assert store.file_checksum(store_path) == get_file_checksum(tmpfile)
+#           assert store.file_checksum(store_path) == get_file_checksum(source_file_path)
 
-#       if not (store.file_checksum(store_path) == get_file_checksum(tmpfile)):
-#           print(tmpfile)
+#       if not (store.file_checksum(store_path) == get_file_checksum(source_file_path)):
+#           print(source_file_path)
 #           print(store_path)
 #           xx = store.file_checksum(store_path)
-#           yy = get_file_checksum(tmpfile)
+#           yy = get_file_checksum(source_file_path)
 #           import pdb ; pdb.set_trace()  # noqa
 #           pass
-#       assert store.file_checksum(store_path) == get_file_checksum(tmpfile)
+#       assert store.file_checksum(store_path) == get_file_checksum(source_file_path)
         assert Amazon.s3.file_exists(store_path) is True
         assert Amazon.s3.file_size(store_path) == TEST_FILE_SIZE
-        assert Amazon.s3.file_checksum(store_path) == get_file_checksum(tmpfile)
+        assert Amazon.s3.file_checksum(store_path) == get_file_checksum(source_file_path)
         # Cleanup.
         assert Amazon.s3.delete_file(store_path) is True
         assert Amazon.s3.file_exists(store_path) is False
@@ -129,20 +129,20 @@ def test_google_to_local() -> None:
 
 @pytest.mark.parametrize("subfolder", [False, True])
 def test_local_to_google(subfolder) -> None:
-    with Google.temporary_local_file() as tmpfile:
+    with Google.temporary_local_file() as source_file_path:
         # Here we have a temporary local file for testing rclone copy to cloud.
         store_path = Google.create_temporary_cloud_file_path(Google.bucket, subfolder=subfolder)
         # Copy from local to cloud via rclone.
         credentials = Google.credentials()
         store = RCloneGoogle(credentials)
-        RCloner(destination=store).copy(tmpfile, store_path) is True
+        RCloner(destination=store).copy(source_file_path, store_path) is True
         # Sanity check.
         assert store.file_exists(store_path) is True
         assert store.file_size(store_path) == TEST_FILE_SIZE
-        assert store.file_checksum(store_path) == get_file_checksum(tmpfile)
+        assert store.file_checksum(store_path) == get_file_checksum(source_file_path)
         assert Google.gcs.file_exists(store_path) is True
         assert Google.gcs.file_size(store_path) == TEST_FILE_SIZE
-        assert Google.gcs.file_checksum(store_path) == get_file_checksum(tmpfile)
+        assert Google.gcs.file_checksum(store_path) == get_file_checksum(source_file_path)
         # Cleanup.
         assert Google.gcs.delete_file(store_path) is True
         assert Google.gcs.file_exists(store_path) is False
