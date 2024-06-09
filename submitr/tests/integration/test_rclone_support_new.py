@@ -266,3 +266,16 @@ def test_amazon_to_google(kms, subfolder) -> None:
         assert Google.gcs.delete_file(google_path) is True
         assert google_store.file_exists(google_path) is False
         assert Google.gcs.file_exists(google_path) is False
+
+
+def test_foo():
+    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    path = "s3://smaht-unit-testing-files/test-d0fb4eb7-068e-4227-b3c0-5dd733c8733b.txt"
+    import pdb ; pdb.set_trace()  # noqa
+    checksum = Amazon.s3.file_checksum(path)
+    print(checksum)
+    amazon_credentials = Amazon.credentials(Amazon.CredentialsType.TEMPORARY, path=path)
+    amazon_store = RCloneAmazon(amazon_credentials)
+    amazon_checksum = amazon_store.file_checksum(path)
+    import pdb ; pdb.set_trace()  # noqa
+    print(amazon_checksum)

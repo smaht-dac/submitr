@@ -298,8 +298,7 @@ class AwsS3:
                                        kms_key_id: Optional[str] = None,
                                        duration: Optional[Union[int, timedelta]] = None,
                                        untargeted: bool = False,
-                                       readonly: bool = False,
-                                       policy: Optional[dict] = None) -> Optional[AmazonCredentials]:
+                                       readonly: bool = False) -> Optional[AmazonCredentials]:
         """
         Generates and returns temporary AWS credentials. The default duration of validity for
         the generated credential is one hour; this can be overridden by specifying the duration
@@ -347,17 +346,14 @@ class AwsS3:
                     statements.append({"Effect": "Allow",
                                        "Action": "s3:ListBucket",
                                        "Resource": f"arn:aws:s3:::{bucket}"})
-        aws_policy = {"Version": "2012-10-17", "Statement": statements}
-        DEBUG(f"TEMPORARY-CREDENTIALS-POLICY: {aws_policy}")
-        if policy == {}:
-            policy.update(aws_policy)
-            del policy["Version"]
+        policy = {"Version": "2012-10-17", "Statement": statements}
+        DEBUG(f"TEMPORARY-CREDENTIALS-POLICY: {policy}")
         temporary_credentials = AwsS3._generate_temporary_credentials(generating_credentials=self.credentials,
-                                                                      policy=aws_policy,
+                                                                      policy=policy,
                                                                       kms_key_id=kms_key_id,
                                                                       duration=duration)
         # For troubleshooting squirrel away the policy in the credentials; harmless in general.
-        setattr(temporary_credentials, "policy", aws_policy)
+        setattr(temporary_credentials, "_policy", policy)
         return temporary_credentials
 
     def _generate_temporary_credentials(generating_credentials: AmazonCredentials,
