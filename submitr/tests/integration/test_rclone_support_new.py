@@ -87,14 +87,14 @@ def test_local_to_amazon(credentials_type, kms, subfolder) -> None:
         # Sanity check.
         assert store.file_exists(store_path) is True
         assert store.file_size(store_path) == TEST_FILE_SIZE
-#       if not (store.file_checksum(store_path) == get_file_checksum(tmpfile)):
-#           print(tmpfile)
-#           print(store_path)
-#           xx = store.file_checksum(store_path)
-#           yy = get_file_checksum(tmpfile)
-#           import pdb ; pdb.set_trace()  # noqa
-#           pass
-#       assert store.file_checksum(store_path) == get_file_checksum(tmpfile)
+        # if not (store.file_checksum(store_path) == get_file_checksum(tmpfile)):
+        #     print(tmpfile)
+        #     print(store_path)
+        #     xx = store.file_checksum(store_path)
+        #     yy = get_file_checksum(tmpfile)
+        #     import pdb ; pdb.set_trace()  # noqa
+        #     pass
+        assert store.file_checksum(store_path) == get_file_checksum(tmpfile)
         assert Amazon.s3.file_exists(store_path) is True
         assert Amazon.s3.file_size(store_path) == TEST_FILE_SIZE
         assert Amazon.s3.file_checksum(store_path) == get_file_checksum(tmpfile)
@@ -266,3 +266,16 @@ def test_amazon_to_google(kms, subfolder) -> None:
         assert Google.gcs.delete_file(google_path) is True
         assert google_store.file_exists(google_path) is False
         assert Google.gcs.file_exists(google_path) is False
+
+
+def xxx_test_foo():
+    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    path = "s3://smaht-unit-testing-files/test-d0fb4eb7-068e-4227-b3c0-5dd733c8733b.txt"
+    import pdb ; pdb.set_trace()  # noqa
+    checksum = Amazon.s3.file_checksum(path)
+    print(checksum)
+    amazon_credentials = Amazon.credentials(Amazon.CredentialsType.TEMPORARY, path=path)
+    amazon_store = RCloneAmazon(amazon_credentials)
+    amazon_checksum = amazon_store.file_checksum(path)
+    import pdb ; pdb.set_trace()  # noqa
+    print(amazon_checksum)

@@ -48,7 +48,7 @@ class Amazon:
 
     @staticmethod
     def credentials(credentials_type: CredentialsType = CredentialsType.DEFAULT,
-                    kms: bool = True,
+                    kms: bool = False,
                     path: Optional[str] = None) -> AmazonCredentials:
         assert kms in [False, True]
         assert path is None or isinstance(path, str)
@@ -96,7 +96,7 @@ class Amazon:
 
     @staticmethod
     @contextmanager
-    def temporary_cloud_file(kms: bool = True, subfolder: bool = True, size: Optional[int] = None) -> str:
+    def temporary_cloud_file(kms: bool = False, subfolder: bool = True, size: Optional[int] = None) -> str:
 
         global TEST_FILE_PREFIX, TEST_FILE_SUFFIX, TEST_FILE_SIZE
 
