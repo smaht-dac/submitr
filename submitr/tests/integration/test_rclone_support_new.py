@@ -52,9 +52,9 @@ def test_amazon_to_local(amazon_source_credentials_type, amazon_source_kms) -> N
         # Copy from cloud to local via rclone.
         RCloner(source=amazon_source_store).copy(amazon_source_path, tmpdir)
         # Sanity check.
-        destination_file_path = os.path.join(tmpdir, cloud_path.basename(amazon_source_path))
+        local_destination_path = os.path.join(tmpdir, cloud_path.basename(amazon_source_path))
         assert amazon_source_store.file_exists(amazon_source_path) is True
-        assert (get_file_size(destination_file_path) ==
+        assert (get_file_size(local_destination_path) ==
                 amazon_source_store.file_size(amazon_source_path) == TEST_FILE_SIZE)
         # N.B. For AWS S3 keys with KMS encryption rclone hashsum md5 does not seem to work;
         # the command does not fail but returns no checksum (just the filename in the output);
@@ -68,9 +68,9 @@ def test_amazon_to_local(amazon_source_credentials_type, amazon_source_kms) -> N
         # boto3 get a reliable checksum value; sometimes sjust the etag which can be different.
         # And so for integration tests, we skip the amazon_source_store.file_checksum call.
         if not amazon_source_kms:
-            assert get_file_checksum(destination_file_path) == Amazon.s3.file_checksum(amazon_source_path)
-        assert os.path.isfile(destination_file_path) is True
-        assert (get_file_size(destination_file_path) ==
+            assert get_file_checksum(local_destination_path) == Amazon.s3.file_checksum(amazon_source_path)
+        assert os.path.isfile(local_destination_path) is True
+        assert (get_file_size(local_destination_path) ==
                 Amazon.s3_with(kms=amazon_source_kms).file_size(amazon_source_path) == TEST_FILE_SIZE)
         # No cleanup; context managers above do it.
 
@@ -80,7 +80,7 @@ def test_amazon_to_local(amazon_source_credentials_type, amazon_source_kms) -> N
 @pytest.mark.parametrize("amazon_destination_subfolder", [False, True])
 def test_local_to_amazon(amazon_destination_credentials_type,
                          amazon_destination_kms, amazon_destination_subfolder) -> None:
-    with Amazon.temporary_local_file() as source_file_path:
+    with Amazon.temporary_local_file() as local_source_path:
         # Here we have a temporary local file for testing rclone copy to cloud.
         amazon_destination_path = Amazon.create_temporary_cloud_file_path(Amazon.bucket,
                                                                           subfolder=amazon_destination_subfolder)
@@ -88,11 +88,11 @@ def test_local_to_amazon(amazon_destination_credentials_type,
         amazon_destination_credentials = Amazon.credentials(credentials_type=amazon_destination_credentials_type,
                                                             kms=amazon_destination_kms, path=amazon_destination_path)
         amazon_destination_store = RCloneAmazon(amazon_destination_credentials)
-        RCloner(destination=amazon_destination_store).copy(source_file_path, amazon_destination_path) is True
+        RCloner(destination=amazon_destination_store).copy(local_source_path, amazon_destination_path) is True
         # Sanity check.
         assert amazon_destination_store.file_exists(amazon_destination_path) is True
         assert (amazon_destination_store.file_size(amazon_destination_path) ==
-                get_file_size(source_file_path) == TEST_FILE_SIZE)
+                get_file_size(local_source_path) == TEST_FILE_SIZE)
         if amazon_destination_credentials_type != Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC:
             # N.B. As noted elsewhere, with bucket/key targeted temporary AWS credentials,
             # with a Portal-like policy (i.e. encoded-core/../types/file.py/external_creds,
@@ -100,10 +100,10 @@ def test_local_to_amazon(amazon_destination_credentials_type,
             # rclone_utils_for_testing_amazon) rclone hashsum md5 does not work. But via
             # boto3 is does work (test below) so it is OK for our actual use-case in s3_upload.
             assert (amazon_destination_store.file_checksum(amazon_destination_path) ==
-                    get_file_checksum(source_file_path))
+                    get_file_checksum(local_source_path))
         assert Amazon.s3.file_exists(amazon_destination_path) is True
-        assert Amazon.s3.file_size(amazon_destination_path) == get_file_size(source_file_path) == TEST_FILE_SIZE
-        assert Amazon.s3.file_checksum(amazon_destination_path) == get_file_checksum(source_file_path)
+        assert Amazon.s3.file_size(amazon_destination_path) == get_file_size(local_source_path) == TEST_FILE_SIZE
+        assert Amazon.s3.file_checksum(amazon_destination_path) == get_file_checksum(local_source_path)
         # Cleanup.
         assert Amazon.s3.delete_file(amazon_destination_path) is True
         assert Amazon.s3.file_exists(amazon_destination_path) is False
@@ -118,32 +118,32 @@ def test_google_to_local() -> None:
         # Copy from cloud to local via rclone.
         RCloner(source=google_source_store).copy(google_source_path, tmpdir)
         # Sanity check.
-        destination_file_path = os.path.join(tmpdir, cloud_path.basename(google_source_path))
+        local_destination_path = os.path.join(tmpdir, cloud_path.basename(google_source_path))
         assert google_source_store.file_exists(google_source_path) is True
-        assert (get_file_size(destination_file_path) ==
+        assert (get_file_size(local_destination_path) ==
                 google_source_store.file_size(google_source_path) == TEST_FILE_SIZE)
-        assert get_file_checksum(destination_file_path) == google_source_store.file_checksum(google_source_path)
-        assert os.path.isfile(destination_file_path) is True
+        assert get_file_checksum(local_destination_path) == google_source_store.file_checksum(google_source_path)
+        assert os.path.isfile(local_destination_path) is True
         # No cleanup; context managers above do it.
 
 
 @pytest.mark.parametrize("google_destination_subfolder", [False, True])
 def test_local_to_google(google_destination_subfolder) -> None:
-    with Google.temporary_local_file() as source_file_path:
+    with Google.temporary_local_file() as local_source_path:
         # Here we have a temporary local file for testing rclone copy to cloud.
         google_destination_path = Google.create_temporary_cloud_file_path(Google.bucket,
                                                                           subfolder=google_destination_subfolder)
         # Copy from local to cloud via rclone.
         google_destination_credentials = Google.credentials()
         google_destination_store = RCloneGoogle(google_destination_credentials)
-        RCloner(destination=google_destination_store).copy(source_file_path, google_destination_path) is True
+        RCloner(destination=google_destination_store).copy(local_source_path, google_destination_path) is True
         # Sanity check.
         assert google_destination_store.file_exists(google_destination_path) is True
         assert google_destination_store.file_size(google_destination_path) == TEST_FILE_SIZE
-        assert google_destination_store.file_checksum(google_destination_path) == get_file_checksum(source_file_path)
+        assert google_destination_store.file_checksum(google_destination_path) == get_file_checksum(local_source_path)
         assert Google.gcs.file_exists(google_destination_path) is True
         assert Google.gcs.file_size(google_destination_path) == TEST_FILE_SIZE
-        assert Google.gcs.file_checksum(google_destination_path) == get_file_checksum(source_file_path)
+        assert Google.gcs.file_checksum(google_destination_path) == get_file_checksum(local_source_path)
         # Cleanup.
         assert Google.gcs.delete_file(google_destination_path) is True
         assert Google.gcs.file_exists(google_destination_path) is False
