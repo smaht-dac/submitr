@@ -42,11 +42,11 @@ def teardown_module():
 
 
 @pytest.mark.parametrize("credentials_type", Amazon.CredentialTypes)
-@pytest.mark.parametrize("nokms", [False, True])
-def test_new_amazon_to_local(nokms, credentials_type) -> None:
-    with Amazon.temporary_cloud_file(nokms=nokms) as store_path, temporary_directory() as tmpdir:
+@pytest.mark.parametrize("kms", [False, True])
+def test_new_amazon_to_local(kms, credentials_type) -> None:
+    with Amazon.temporary_cloud_file(kms=kms) as store_path, temporary_directory() as tmpdir:
         # Here we have a temporary cloud file for testing rclone copy to local.
-        credentials = Amazon.credentials(credentials_type=credentials_type, nokms=nokms, path=store_path)
+        credentials = Amazon.credentials(credentials_type=credentials_type, kms=kms, path=store_path)
         store = RCloneAmazon(credentials)
         # Copy from cloud to local via rclone.
         RCloner(source=store).copy(store_path, tmpdir)
@@ -64,12 +64,10 @@ def test_new_amazon_to_local(nokms, credentials_type) -> None:
         # checksum, as we have the (Portal-generated temporary/session) credentials we need
         # to do this (and because of this and general issues with checksums). And neither does
         # boto3 get a reliable checksum value; sometimes sjust the etag which can be different.
-        # And so for integration tests, we skip this.
-        # assert get_file_checksum(local_file_path) == store.file_checksum(store_path) if nokms is True else True
-        # TODO: Investigate further ...
-        assert get_file_checksum(local_file_path) == Amazon.s3.file_checksum(store_path) if nokms is True else True
+        # And so for integration tests, we skip the store.file_checksum call.
+        assert get_file_checksum(local_file_path) == Amazon.s3.file_checksum(store_path) if kms is False else True
         assert os.path.isfile(local_file_path) is True
-        assert get_file_size(local_file_path) == (Amazon.s3 if nokms is True else Amazon.s3_kms).file_size(store_path)
+        assert get_file_size(local_file_path) == (Amazon.s3 if kms is False else Amazon.s3_kms).file_size(store_path)
         # No cleanup; context managers above do it.
 
 
@@ -81,7 +79,7 @@ def test_new_local_to_amazon(credentials_type, kms, subfolder) -> None:
         # Here we have a temporary local file for testing rclone copy to cloud.
         store_path = Amazon.create_temporary_cloud_file_path(Amazon.bucket, subfolder=subfolder)
         # Copy from local to cloud via rclone.
-        credentials = Amazon.credentials(credentials_type=credentials_type, nokms=not kms, path=store_path)
+        credentials = Amazon.credentials(credentials_type=credentials_type, kms=kms, path=store_path)
         store = RCloneAmazon(credentials)
         RCloner(destination=store).copy(tmpfile, store_path) is True
         # Sanity check.
@@ -145,7 +143,7 @@ def test_new_google_to_amazon(amazon_credentials_type, amazon_kms, amazon_subfol
         google_store = RCloneGoogle(google_credentials)
         amazon_path = Amazon.create_temporary_cloud_file_path(Amazon.bucket, subfolder=amazon_subfolder)
         amazon_credentials = Amazon.credentials(credentials_type=amazon_credentials_type,
-                                                nokms=not amazon_kms, path=amazon_path)
+                                                kms=amazon_kms, path=amazon_path)
         amazon_store = RCloneAmazon(amazon_credentials)
         # Copy from Google cloud to Amazon cloud via rclone.
         rcloner = RCloner(source=google_store, destination=amazon_store)
@@ -176,18 +174,18 @@ def test_new_amazon_to_amazon(amazon_destination_credentials_type,
                               amazon_destination_kms,
                               amazon_destination_subfolder) -> None:
     amazon_source_credentials_type = Amazon.CredentialsType.DEFAULT
-    amazon_source_kms = True
+    amazon_source_kms = False
     amazon_source_subfolder = True
-    with Amazon.temporary_cloud_file(subfolder=amazon_source_subfolder, nokms=amazon_source_kms) as amazon_source_path:
+    with Amazon.temporary_cloud_file(subfolder=amazon_source_subfolder, kms=amazon_source_kms) as amazon_source_path:
         # Here we have a temporary Amazon cloud file for testing rclone copy to Amazon cloud.
         amazon_source_credentials = Amazon.credentials(credentials_type=amazon_source_credentials_type,
-                                                       nokms=amazon_source_kms,
+                                                       kms=amazon_source_kms,
                                                        path=amazon_source_path)
         amazon_source_store = RCloneAmazon(amazon_source_credentials)
         amazon_destination_path = Amazon.create_temporary_cloud_file_path(Amazon.bucket,
                                                                           subfolder=amazon_destination_subfolder)
         amazon_destination_credentials = Amazon.credentials(credentials_type=amazon_destination_credentials_type,
-                                                            nokms=not amazon_destination_kms,
+                                                            kms=amazon_destination_kms,
                                                             path=amazon_destination_path)
         amazon_destination_store = RCloneAmazon(amazon_destination_credentials)
         # Copy from Amazon cloud to Amazon cloud via rclone.

@@ -48,11 +48,11 @@ class Amazon:
 
     @staticmethod
     def credentials(credentials_type: CredentialsType = CredentialsType.DEFAULT,
-                    nokms: bool = False,
+                    kms: bool = True,
                     path: Optional[str] = None) -> AmazonCredentials:
-        assert nokms in [False, True]
+        assert kms in [False, True]
         assert path is None or isinstance(path, str)
-        kms_key_id = None if nokms is True else AMAZON_KMS_KEY_ID
+        kms_key_id = None if kms is False else AMAZON_KMS_KEY_ID
         if credentials_type == Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC:
             bucket, key = cloud_path.bucket_and_key(path)
             assert bucket and key
@@ -66,7 +66,7 @@ class Amazon:
             credentials = AmazonCredentials(amazon_credentials_file_path(), kms_key_id=kms_key_id)
         else:
             pytest.fail(f"Incorrect Amazon.CredentialsType specified.")
-        if nokms is True:
+        if kms is False:
             assert not credentials.kms_key_id
         else:
             assert isinstance(credentials.kms_key_id, str) and credentials.kms_key_id
@@ -80,22 +80,22 @@ class Amazon:
     @property
     def s3(cls) -> AwsS3:
         # This is for non-rclone based access to S3 (with KMS).
-        return AwsS3(cls.credentials(nokms=True))
+        return AwsS3(cls.credentials(kms=False))
 
     @classmethod
     @property
     def s3_kms(cls) -> AwsS3:
         # This is for non-rclone based access to S3 (sans KMS).
-        return AwsS3(cls.credentials(nokms=False))
+        return AwsS3(cls.credentials(kms=True))
 
     @staticmethod
     @contextmanager
-    def temporary_cloud_file(subfolder: bool = True, nokms: bool = False, size: Optional[int] = None) -> str:
+    def temporary_cloud_file(subfolder: bool = True, kms: bool = True, size: Optional[int] = None) -> str:
 
         global TEST_FILE_PREFIX, TEST_FILE_SUFFIX, TEST_FILE_SIZE
 
         assert subfolder in (True, False)
-        assert nokms in (True, False)
+        assert kms in (True, False)
         if size is None: size = TEST_FILE_SIZE  # noqa
         assert isinstance(size, int) and (size >= 0)
 
@@ -104,13 +104,13 @@ class Amazon:
             subfolder = f"{TEST_FILE_PREFIX}{create_uuid()}"
             key = cloud_path.join(subfolder, key)
 
-        s3 = Amazon.s3 if nokms is True else Amazon.s3_kms
+        s3 = Amazon.s3 if kms is False else Amazon.s3_kms
         try:
             with temporary_random_file(prefix=TEST_FILE_PREFIX, suffix=TEST_FILE_SUFFIX, nbytes=size) as tmp_file_path:
                 assert s3.upload_file(tmp_file_path, Amazon.bucket, key) is True
                 assert s3.file_exists(Amazon.bucket, key) is True
                 assert s3.file_size(Amazon.bucket, key) == size
-                if nokms is False:
+                if kms is True:
                     assert s3.file_kms_encrypted(Amazon.bucket, key, AMAZON_KMS_KEY_ID) is True
                 yield cloud_path.join(Amazon.bucket, key)
         except Exception as e:
