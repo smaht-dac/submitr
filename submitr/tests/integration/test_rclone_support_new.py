@@ -253,16 +253,17 @@ def test_google_to_google(google_destination_subfolder) -> None:
         assert Google.gcs.file_exists(google_destination_path) is False
 
 
-@pytest.mark.parametrize("kms", [False, True])
-@pytest.mark.parametrize("subfolder", [False, True])
-def test_amazon_to_google(kms, subfolder) -> None:
+@pytest.mark.parametrize("amazon_source_kms", [False, True])
+@pytest.mark.parametrize("amazon_source_subfolder", [False, True])
+def test_amazon_to_google(amazon_source_kms, amazon_source_subfolder) -> None:
     # No real need for this as not a real use-case; just for completeness; mostly fell out.
-    with Amazon.temporary_cloud_file(kms=kms) as amazon_source_path:
+    with Amazon.temporary_cloud_file(kms=amazon_source_kms) as amazon_source_path:
         # Here we have a temporary Amazon cloud file for testing rclone copy to Google cloud.
-        amazon_source_credentials = Amazon.credentials(kms=kms)
+        amazon_source_credentials = Amazon.credentials(kms=amazon_source_kms)
         amazon_source_store = RCloneAmazon(amazon_source_credentials)
         # Copy from local to cloud via rclone.
-        google_destination_path = Google.create_temporary_cloud_file_path(Google.bucket, subfolder=subfolder)
+        google_destination_path = Google.create_temporary_cloud_file_path(Google.bucket,
+                                                                          subfolder=amazon_source_subfolder)
         google_destination_credentials = Google.credentials()
         google_destination_store = RCloneGoogle(google_destination_credentials)
         RCloner(source=amazon_source_store, destination=google_destination_store).copy(amazon_source_path,
@@ -270,16 +271,16 @@ def test_amazon_to_google(kms, subfolder) -> None:
         # Sanity check.
         assert google_destination_store.file_exists(google_destination_path) is True
         assert google_destination_store.file_size(google_destination_path) == TEST_FILE_SIZE
-        if not kms:
+        if not amazon_source_kms:
             # Again issues with checksum for Amazon with KMS.
             assert (google_destination_store.file_checksum(google_destination_path) ==
                     amazon_source_store.file_checksum(amazon_source_path))
         assert Google.gcs.file_exists(google_destination_path) is True
         assert Google.gcs.file_size(google_destination_path) == TEST_FILE_SIZE
-        if not kms:
+        if not amazon_source_kms:
             # Again issues with checksum for Amazon with KMS.
             assert (Google.gcs.file_checksum(google_destination_path) ==
-                    Amazon.s3_with(kms=kms).file_checksum(amazon_source_path))
+                    Amazon.s3_with(kms=amazon_source_kms).file_checksum(amazon_source_path))
         # Cleanup.
         assert Google.gcs.delete_file(google_destination_path) is True
         assert google_destination_store.file_exists(google_destination_path) is False
