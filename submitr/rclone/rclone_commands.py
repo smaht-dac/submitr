@@ -226,8 +226,12 @@ class RCloneCommands:
             #         "tier": "STANDARD"
             #     }
             # }
-            result = RCloneCommands._run(command)
-            result = json.loads("".join(result))
+            if not (result := RCloneCommands._run(command)):
+                return {}
+            elif not (result := "".join(result)):
+                return {}
+            elif not isinstance(result := json.loads(result), dict):
+                return {}
             name = result["Name"]
             size = result["Size"]
             metadata = {"metadata": result["Metadata"]} if "Metadata" in result else {}

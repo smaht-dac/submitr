@@ -175,7 +175,7 @@ def test_new_google_to_amazon(amazon_credentials_type, amazon_kms, amazon_subfol
         assert Amazon.s3.file_checksum(amazon_path) == Google.gcs.file_checksum(google_path)
         # Cleanup.
         assert Amazon.s3.delete_file(amazon_path) is True
-        # assert amazon_store.file_exists(amazon_path) is False
+        assert amazon_store.file_exists(amazon_path) is False
         assert Amazon.s3.file_exists(amazon_path) is False
 
 
