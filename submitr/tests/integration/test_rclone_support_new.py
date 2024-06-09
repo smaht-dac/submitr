@@ -191,17 +191,10 @@ def test_new_amazon_to_amazon(amazon_destination_credentials_type,
         # Copy from Amazon cloud to Amazon cloud via rclone.
         rcloner = RCloner(source=amazon_source_store, destination=amazon_destination_store)
         rcloner.copy(amazon_source_path, amazon_destination_path) is True
-        # Sanity check.
         assert amazon_destination_store.file_exists(amazon_destination_path) is True
         assert amazon_destination_store.file_size(amazon_destination_path) == TEST_FILE_SIZE
-        if amazon_destination_credentials_type == Amazon.CredentialsType.DEFAULT:  # TODO
-            # This amazon_store.file_checksum does not work for temporary credentials due to
-            # an oddity of rclone hashsum md5 where it seems to need s3:ListBucket on the ENTIRE
-            # bucket; which is not acceptable security-wise for the Portal to do; and so we do
-            # not do this in our test code AwsS3.generate_temporary_credentials; and so we
-            # need to use boto3 only to obtain the checksum for sanity checking, below.
-            assert (amazon_destination_store.file_checksum(amazon_destination_path) ==
-                    Amazon.s3.file_checksum(amazon_source_path))
+        assert (amazon_source_store.file_checksum(amazon_source_path) ==
+                Amazon.s3.file_checksum(amazon_destination_path))
         assert Amazon.s3.file_exists(amazon_destination_path) is True
         assert Amazon.s3.file_size(amazon_destination_path) == TEST_FILE_SIZE
         assert Amazon.s3.file_checksum(amazon_destination_path) == Amazon.s3.file_checksum(amazon_source_path)
