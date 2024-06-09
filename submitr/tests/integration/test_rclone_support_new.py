@@ -164,17 +164,19 @@ def test_new_google_to_amazon(amazon_credentials_type, amazon_kms, amazon_subfol
         assert amazon_store.file_exists(amazon_path) is True
         assert amazon_store.file_size(amazon_path) == TEST_FILE_SIZE
         if amazon_credentials_type == Amazon.CredentialsType.DEFAULT:
-            # This amazon_store.file_checksum does not work due to an oddity of rclone
-            # hashsum md5 where it seems to need s3:ListBucket on the ENTIRE bucket; which is
-            # not acceptable security-wise for the Portal to do; and so we do not do this in our
-            # test code AwsS3.generate_temporary_credentials; and so we need to use boto3 only
-            # to obtain the checksum for sanity checking when using temporary credentials, below.
+            # This amazon_store.file_checksum does not work for temporary credentials due to
+            # an oddity of rclone hashsum md5 where it seems to need s3:ListBucket on the ENTIRE
+            # bucket; which is not acceptable security-wise for the Portal to do; and so we do
+            # not do this in our test code AwsS3.generate_temporary_credentials; and so we
+            # need to use boto3 only to obtain the checksum for sanity checking, below.
             assert amazon_store.file_checksum(amazon_path) == Google.gcs.file_checksum(google_path)
         assert Amazon.s3.file_exists(amazon_path) is True
         assert Amazon.s3.file_size(amazon_path) == TEST_FILE_SIZE
         assert Amazon.s3.file_checksum(amazon_path) == Google.gcs.file_checksum(google_path)
         # Cleanup.
         assert Amazon.s3.delete_file(amazon_path) is True
+        # assert amazon_store.file_exists(amazon_path) is False
+        assert Amazon.s3.file_exists(amazon_path) is False
 
 
 def test_new_amazon_to_amazon() -> None:
