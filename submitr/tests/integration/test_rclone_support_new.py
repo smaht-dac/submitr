@@ -41,13 +41,13 @@ def teardown_module():
     rclone_teardown_module()
 
 
-@pytest.mark.parametrize("credentials_type", Amazon.CredentialTypes)
-@pytest.mark.parametrize("kms", [False, True])
-def test_amazon_to_local(kms, credentials_type) -> None:
-    with Amazon.temporary_cloud_file(kms=kms) as amazon_source_path, temporary_directory() as tmpdir:
+@pytest.mark.parametrize("amazon_source_credentials_type", Amazon.CredentialTypes)
+@pytest.mark.parametrize("amazon_source_kms", [False, True])
+def test_amazon_to_local(amazon_source_credentials_type, amazon_source_kms) -> None:
+    with Amazon.temporary_cloud_file(kms=amazon_source_kms) as amazon_source_path, temporary_directory() as tmpdir:
         # Here we have a temporary cloud file for testing rclone copy to local.
-        amazon_source_credentials = Amazon.credentials(credentials_type=credentials_type,
-                                                       kms=kms, path=amazon_source_path)
+        amazon_source_credentials = Amazon.credentials(credentials_type=amazon_source_credentials_type,
+                                                       kms=amazon_source_kms, path=amazon_source_path)
         amazon_source_store = RCloneAmazon(amazon_source_credentials)
         # Copy from cloud to local via rclone.
         RCloner(source=amazon_source_store).copy(amazon_source_path, tmpdir)
@@ -67,10 +67,11 @@ def test_amazon_to_local(kms, credentials_type) -> None:
         # to do this (and because of this and general issues with checksums). And neither does
         # boto3 get a reliable checksum value; sometimes sjust the etag which can be different.
         # And so for integration tests, we skip the amazon_source_store.file_checksum call.
-        if not kms:
+        if not amazon_source_kms:
             assert get_file_checksum(destination_file_path) == Amazon.s3.file_checksum(amazon_source_path)
         assert os.path.isfile(destination_file_path) is True
-        assert get_file_size(destination_file_path) == Amazon.s3_with(kms=kms).file_size(amazon_source_path)
+        assert (get_file_size(destination_file_path) ==
+                Amazon.s3_with(kms=amazon_source_kms).file_size(amazon_source_path) == TEST_FILE_SIZE)
         # No cleanup; context managers above do it.
 
 
