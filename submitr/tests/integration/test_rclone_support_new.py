@@ -51,9 +51,9 @@ def test_amazon_to_local(kms, credentials_type) -> None:
         # Copy from cloud to local via rclone.
         RCloner(source=store).copy(store_path, tmpdir)
         # Sanity check.
-        destintation_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
+        destination_file_path = os.path.join(tmpdir, cloud_path.basename(store_path))
         assert store.file_exists(store_path) is True
-        assert get_file_size(destintation_file_path) == store.file_size(store_path) == TEST_FILE_SIZE
+        assert get_file_size(destination_file_path) == store.file_size(store_path) == TEST_FILE_SIZE
         # N.B. For AWS S3 keys with KMS encryption rclone hashsum md5 does not seem to work;
         # the command does not fail but returns no checksum (just the filename in the output);
         # removing the KMS info from the rclone config file fixes this, and it does return a
@@ -66,9 +66,9 @@ def test_amazon_to_local(kms, credentials_type) -> None:
         # boto3 get a reliable checksum value; sometimes sjust the etag which can be different.
         # And so for integration tests, we skip the store.file_checksum call.
         if not kms:
-            assert get_file_checksum(destintation_file_path) == Amazon.s3.file_checksum(store_path)
-        assert os.path.isfile(destintation_file_path) is True
-        assert (get_file_size(destintation_file_path) ==
+            assert get_file_checksum(destination_file_path) == Amazon.s3.file_checksum(store_path)
+        assert os.path.isfile(destination_file_path) is True
+        assert (get_file_size(destination_file_path) ==
                 (Amazon.s3 if kms is False else Amazon.s3_kms).file_size(store_path))
         # No cleanup; context managers above do it.
 
@@ -87,6 +87,13 @@ def test_local_to_amazon(credentials_type, kms, subfolder) -> None:
         # Sanity check.
         assert store.file_exists(store_path) is True
         assert store.file_size(store_path) == TEST_FILE_SIZE
+
+#       if not kms:
+#           if not (store.file_checksum(store_path) == get_file_checksum(tmpfile)):
+#               import pdb ; pdb.set_trace()  # noqa
+#               pass
+#           assert store.file_checksum(store_path) == get_file_checksum(tmpfile)
+
 #       if not (store.file_checksum(store_path) == get_file_checksum(tmpfile)):
 #           print(tmpfile)
 #           print(store_path)
@@ -258,23 +265,28 @@ def test_amazon_to_google(kms, subfolder) -> None:
         # Sanity check.
         assert google_store.file_exists(google_path) is True
         assert google_store.file_size(google_path) == TEST_FILE_SIZE
-        # TODO assert google_store.file_checksum(google_path) == amazon_store.file_checksum(amazon_path)
+        if not kms:
+            # Again issues with checksum for Amazon with KMS.
+            assert google_store.file_checksum(google_path) == amazon_store.file_checksum(amazon_path)
         assert Google.gcs.file_exists(google_path) is True
         assert Google.gcs.file_size(google_path) == TEST_FILE_SIZE
-        # TODO assert Google.gcs.file_checksum(google_path) == Amazon.s3.file_checksum(amazon_path)
+        if not kms:
+            # Again issues with checksum for Amazon with KMS.
+            assert Google.gcs.file_checksum(google_path) == Amazon.s3_with(kms=kms).file_checksum(amazon_path)
         # Cleanup.
         assert Google.gcs.delete_file(google_path) is True
         assert google_store.file_exists(google_path) is False
         assert Google.gcs.file_exists(google_path) is False
 
 
-def test_foo():
+def xxx_test_foo():
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     path = "s3://smaht-unit-testing-files/test-d0fb4eb7-068e-4227-b3c0-5dd733c8733b.txt"
     import pdb ; pdb.set_trace()  # noqa
     checksum = Amazon.s3.file_checksum(path)
     print(checksum)
-    amazon_credentials = Amazon.credentials(Amazon.CredentialsType.TEMPORARY, path=path)
+    # amazon_credentials = Amazon.credentials(Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC, path=path)
+    amazon_credentials = Amazon.credentials(Amazon.CredentialsType.TEMPORARY, kms=True, path=path)
     amazon_store = RCloneAmazon(amazon_credentials)
     amazon_checksum = amazon_store.file_checksum(path)
     import pdb ; pdb.set_trace()  # noqa
