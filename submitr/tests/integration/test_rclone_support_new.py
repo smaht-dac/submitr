@@ -193,8 +193,8 @@ def test_new_amazon_to_amazon(amazon_destination_credentials_type,
         rcloner.copy(amazon_source_path, amazon_destination_path) is True
         assert amazon_destination_store.file_exists(amazon_destination_path) is True
         assert amazon_destination_store.file_size(amazon_destination_path) == TEST_FILE_SIZE
-        assert (amazon_source_store.file_checksum(amazon_source_path) ==
-                Amazon.s3.file_checksum(amazon_destination_path))
+        assert (Amazon.s3.file_checksum(amazon_destination_path) ==
+                amazon_source_store.file_checksum(amazon_source_path))
         assert Amazon.s3.file_exists(amazon_destination_path) is True
         assert Amazon.s3.file_size(amazon_destination_path) == TEST_FILE_SIZE
         assert Amazon.s3.file_checksum(amazon_destination_path) == Amazon.s3.file_checksum(amazon_source_path)
