@@ -188,9 +188,14 @@ def test_new_google_to_amazon(amazon_credentials_type, amazon_kms, amazon_subfol
 def test_new_amazon_to_amazon(amazon_destination_credentials_type,
                               amazon_destination_kms,
                               amazon_destination_subfolder) -> None:
-    with Amazon.temporary_cloud_file(subfolder=True, nokms=True) as amazon_source_path:
+    amazon_source_credentials_type = Amazon.CredentialsType.DEFAULT
+    amazon_source_kms = True
+    amazon_source_subfolder = True
+    with Amazon.temporary_cloud_file(subfolder=amazon_source_subfolder, nokms=amazon_source_kms) as amazon_source_path:
         # Here we have a temporary Amazon cloud file for testing rclone copy to Amazon cloud.
-        amazon_source_credentials = Amazon.credentials(nokms=True)
+        amazon_source_credentials = Amazon.credentials(credentials_type=amazon_source_credentials_type,
+                                                       nokms=amazon_source_kms,
+                                                       path=amazon_source_path)
         amazon_source_store = RCloneAmazon(amazon_source_credentials)
         amazon_destination_path = Amazon.create_temporary_cloud_file_path(Amazon.bucket,
                                                                           subfolder=amazon_destination_subfolder)
@@ -216,8 +221,6 @@ def test_new_amazon_to_amazon(amazon_destination_credentials_type,
         assert Amazon.s3.file_size(amazon_destination_path) == TEST_FILE_SIZE
         assert Amazon.s3.file_checksum(amazon_destination_path) == Amazon.s3.file_checksum(amazon_source_path)
         # Cleanup.
-        import pdb ; pdb.set_trace()  # noqa
-        pass
         assert Amazon.s3.delete_file(amazon_destination_path) is True
         assert amazon_destination_store.file_exists(amazon_destination_path) is False
         assert Amazon.s3.file_exists(amazon_destination_path) is False
