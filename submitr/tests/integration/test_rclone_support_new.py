@@ -51,7 +51,8 @@ def test_amazon_to_local(amazon_source_credentials_type, amazon_source_kms) -> N
                                                        kms=amazon_source_kms, path=amazon_source_path)
         amazon_source_store = RCloneAmazon(amazon_source_credentials)
         # Copy from cloud to local via rclone.
-        RCloner(source=amazon_source_store).copy(amazon_source_path, destination_directory)
+        rclone = RCloner(source=amazon_source_store)
+        assert rclone.copy(amazon_source_path, destination_directory) is True
         # Sanity check.
         local_destination_path = os.path.join(destination_directory, cloud_path.basename(amazon_source_path))
         assert amazon_source_store.file_exists(amazon_source_path) is True
@@ -89,7 +90,8 @@ def test_local_to_amazon(amazon_destination_credentials_type,
         amazon_destination_credentials = Amazon.credentials(credentials_type=amazon_destination_credentials_type,
                                                             kms=amazon_destination_kms, path=amazon_destination_path)
         amazon_destination_store = RCloneAmazon(amazon_destination_credentials)
-        RCloner(destination=amazon_destination_store).copy(local_source_path, amazon_destination_path) is True
+        rclone = RCloner(destination=amazon_destination_store)
+        assert rclone.copy(local_source_path, amazon_destination_path) is True
         # Sanity check.
         assert amazon_destination_store.file_exists(amazon_destination_path) is True
         assert (amazon_destination_store.file_size(amazon_destination_path) ==
@@ -117,7 +119,8 @@ def test_google_to_local() -> None:
         google_source_credentials = Google.credentials()
         google_source_store = RCloneGoogle(google_source_credentials)
         # Copy from cloud to local via rclone.
-        RCloner(source=google_source_store).copy(google_source_path, destination_directory)
+        rclone = RCloner(source=google_source_store)
+        assert rclone.copy(google_source_path, destination_directory) is True
         # Sanity check.
         local_destination_path = os.path.join(destination_directory, cloud_path.basename(google_source_path))
         assert google_source_store.file_exists(google_source_path) is True
@@ -137,7 +140,8 @@ def test_local_to_google(google_destination_subfolder) -> None:
         # Copy from local to cloud via rclone.
         google_destination_credentials = Google.credentials()
         google_destination_store = RCloneGoogle(google_destination_credentials)
-        RCloner(destination=google_destination_store).copy(local_source_path, google_destination_path) is True
+        rclone = RCloner(destination=google_destination_store)
+        assert rclone.copy(local_source_path, google_destination_path) is True
         # Sanity check.
         assert google_destination_store.file_exists(google_destination_path) is True
         assert google_destination_store.file_size(google_destination_path) == TEST_FILE_SIZE
@@ -166,8 +170,8 @@ def test_google_to_amazon(amazon_destination_credentials_type,
                                                             kms=amazon_destination_kms, path=amazon_destination_path)
         amazon_destination_store = RCloneAmazon(amazon_destination_credentials)
         # Copy from Google cloud to Amazon cloud via rclone.
-        rcloner = RCloner(source=google_source_store, destination=amazon_destination_store)
-        rcloner.copy(google_source_path, amazon_destination_path) is True
+        rclone = RCloner(source=google_source_store, destination=amazon_destination_store)
+        assert rclone.copy(google_source_path, amazon_destination_path) is True
         # Sanity check.
         assert amazon_destination_store.file_exists(amazon_destination_path) is True
         assert amazon_destination_store.file_size(amazon_destination_path) == TEST_FILE_SIZE
@@ -210,8 +214,8 @@ def test_amazon_to_amazon(amazon_destination_credentials_type,
                                                             path=amazon_destination_path)
         amazon_destination_store = RCloneAmazon(amazon_destination_credentials)
         # Copy from Amazon cloud to Amazon cloud via rclone.
-        rcloner = RCloner(source=amazon_source_store, destination=amazon_destination_store)
-        rcloner.copy(amazon_source_path, amazon_destination_path) is True
+        rclone = RCloner(source=amazon_source_store, destination=amazon_destination_store)
+        assert rclone.copy(amazon_source_path, amazon_destination_path) is True
         assert amazon_destination_store.file_exists(amazon_destination_path) is True
         assert amazon_destination_store.file_size(amazon_destination_path) == TEST_FILE_SIZE
         assert (Amazon.s3.file_checksum(amazon_destination_path) ==
@@ -238,8 +242,8 @@ def test_google_to_google(google_destination_subfolder) -> None:
                                                                           subfolder=google_destination_subfolder)
         google_destination_credentials = Google.credentials()
         google_destination_store = RCloneGoogle(google_destination_credentials)
-        RCloner(source=google_source_store, destination=google_destination_store).copy(google_source_path,
-                                                                                       google_destination_path) is True
+        rclone = RCloner(source=google_source_store, destination=google_destination_store)
+        assert rclone.copy(google_source_path, google_destination_path) is True
         # Sanity check.
         assert google_destination_store.file_exists(google_destination_path) is True
         assert google_destination_store.file_size(google_destination_path) == TEST_FILE_SIZE
@@ -267,8 +271,8 @@ def test_amazon_to_google(amazon_source_kms, amazon_source_subfolder) -> None:
                                                                           subfolder=amazon_source_subfolder)
         google_destination_credentials = Google.credentials()
         google_destination_store = RCloneGoogle(google_destination_credentials)
-        RCloner(source=amazon_source_store, destination=google_destination_store).copy(amazon_source_path,
-                                                                                       google_destination_path) is True
+        rclone = RCloner(source=amazon_source_store, destination=google_destination_store)
+        assert rclone.copy(amazon_source_path, google_destination_path) is True
         # Sanity check.
         assert google_destination_store.file_exists(google_destination_path) is True
         assert google_destination_store.file_size(google_destination_path) == TEST_FILE_SIZE
