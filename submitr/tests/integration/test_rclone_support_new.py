@@ -83,16 +83,16 @@ def test_local_to_amazon(credentials_type, kms, subfolder) -> None:
         store = RCloneAmazon(credentials)
         RCloner(destination=store).copy(tmpfile, store_path) is True
         # Sanity check.
-        store.file_exists(store_path) is True
-        store.file_size(store_path) == TEST_FILE_SIZE
-        store.file_checksum(store_path) == get_file_checksum(tmpfile)
-        Amazon.s3.file_exists(store_path) is True
-        Amazon.s3.file_size(store_path) == TEST_FILE_SIZE
-        Amazon.s3.file_checksum(store_path) == get_file_checksum(tmpfile)
+        assert store.file_exists(store_path) is True
+        assert store.file_size(store_path) == TEST_FILE_SIZE
+        # TODO assert store.file_checksum(store_path) == get_file_checksum(tmpfile)
+        assert Amazon.s3.file_exists(store_path) is True
+        assert Amazon.s3.file_size(store_path) == TEST_FILE_SIZE
+        assert Amazon.s3.file_checksum(store_path) == get_file_checksum(tmpfile)
         # Cleanup.
-        Amazon.s3.delete_file(store_path) is True
-        Amazon.s3.file_exists(store_path) is False
-        store.file_exists(store_path) is False
+        assert Amazon.s3.delete_file(store_path) is True
+        assert Amazon.s3.file_exists(store_path) is False
+        assert store.file_exists(store_path) is False
 
 
 def test_google_to_local() -> None:
@@ -121,15 +121,15 @@ def test_local_to_google(subfolder) -> None:
         store = RCloneGoogle(credentials)
         RCloner(destination=store).copy(tmpfile, store_path) is True
         # Sanity check.
-        store.file_exists(store_path) is True
-        store.file_size(store_path) == TEST_FILE_SIZE
-        store.file_checksum(store_path) == get_file_checksum(tmpfile)
-        Google.gcs.file_exists(store_path) is True
-        Google.gcs.file_size(store_path) == TEST_FILE_SIZE
-        Google.gcs.file_checksum(store_path) == get_file_checksum(tmpfile)
+        assert store.file_exists(store_path) is True
+        assert store.file_size(store_path) == TEST_FILE_SIZE
+        assert store.file_checksum(store_path) == get_file_checksum(tmpfile)
+        assert Google.gcs.file_exists(store_path) is True
+        assert Google.gcs.file_size(store_path) == TEST_FILE_SIZE
+        assert Google.gcs.file_checksum(store_path) == get_file_checksum(tmpfile)
         # Cleanup.
-        Google.gcs.delete_file(store_path) is True
-        Google.gcs.file_exists(store_path) is False
+        assert Google.gcs.delete_file(store_path) is True
+        assert Google.gcs.file_exists(store_path) is False
 
 
 @pytest.mark.parametrize("amazon_credentials_type", Amazon.CredentialTypes)
@@ -204,11 +204,56 @@ def test_amazon_to_amazon(amazon_destination_credentials_type,
         assert Amazon.s3.file_exists(amazon_destination_path) is False
 
 
-def test_google_to_google() -> None:
-    # No need for this; not a real use-case at all.
-    pass
+@pytest.mark.parametrize("google_destination_subfolder", [False, True])
+def test_google_to_google(google_destination_subfolder) -> None:
+    google_source_subfolder = True
+    # No real need for this as not a real use-case; just for completeness; mostly fell out.
+    with Google.temporary_cloud_file(subfolder=google_source_subfolder) as google_source_path:
+        # Here we have a temporary Google cloud file for testing rclone copy to Google cloud.
+        google_source_credentials = Google.credentials()
+        google_source_store = RCloneGoogle(google_source_credentials)
+        # Copy from local to cloud via rclone.
+        google_destination_path = Google.create_temporary_cloud_file_path(Google.bucket,
+                                                                          subfolder=google_destination_subfolder)
+        google_destination_credentials = Google.credentials()
+        google_destination_store = RCloneGoogle(google_destination_credentials)
+        RCloner(source=google_source_store, destination=google_destination_store).copy(google_source_path,
+                                                                                       google_destination_path) is True
+        # Sanity check.
+        assert google_destination_store.file_exists(google_destination_path) is True
+        assert google_destination_store.file_size(google_destination_path) == TEST_FILE_SIZE
+        assert (google_destination_store.file_checksum(google_destination_path) ==
+                google_source_store.file_checksum(google_source_path))
+        assert Google.gcs.file_exists(google_destination_path) is True
+        assert Google.gcs.file_size(google_destination_path) == TEST_FILE_SIZE
+        assert Google.gcs.file_checksum(google_destination_path) == Google.gcs.file_checksum(google_source_path)
+        # Cleanup.
+        assert Google.gcs.delete_file(google_destination_path) is True
+        assert google_destination_store.file_exists(google_destination_path) is False
+        assert Google.gcs.file_exists(google_destination_path) is False
 
 
-def test_amazon_to_google() -> None:
-    # No need for this; not a real use-case at all.
-    pass
+@pytest.mark.parametrize("kms", [False, True])
+@pytest.mark.parametrize("subfolder", [False, True])
+def test_amazon_to_google(kms, subfolder) -> None:
+    # No real need for this as not a real use-case; just for completeness; mostly fell out.
+    with Amazon.temporary_cloud_file(kms=kms) as amazon_path:
+        # Here we have a temporary Amazon cloud file for testing rclone copy to Google cloud.
+        amazon_credentials = Amazon.credentials(kms=kms)
+        amazon_store = RCloneAmazon(amazon_credentials)
+        # Copy from local to cloud via rclone.
+        google_path = Google.create_temporary_cloud_file_path(Google.bucket, subfolder=subfolder)
+        google_credentials = Google.credentials()
+        google_store = RCloneGoogle(google_credentials)
+        RCloner(source=amazon_store, destination=google_store).copy(amazon_path, google_path) is True
+        # Sanity check.
+        assert google_store.file_exists(google_path) is True
+        assert google_store.file_size(google_path) == TEST_FILE_SIZE
+        # TODO assert google_store.file_checksum(google_path) == amazon_store.file_checksum(amazon_path)
+        assert Google.gcs.file_exists(google_path) is True
+        assert Google.gcs.file_size(google_path) == TEST_FILE_SIZE
+        # TODO assert Google.gcs.file_checksum(google_path) == Amazon.s3.file_checksum(amazon_path)
+        # Cleanup.
+        assert Google.gcs.delete_file(google_path) is True
+        assert google_store.file_exists(google_path) is False
+        assert Google.gcs.file_exists(google_path) is False
