@@ -318,11 +318,6 @@ class AwsS3:
                 resources = [f"arn:aws:s3:::{bucket}/{key}"]
             else:
                 raise Exception("Must use both bucket and key for temporary credentials or no bucket at all.")
-#       if isinstance(bucket, str) and (bucket := bucket.strip()):
-#           if isinstance(key, str) and (key := key.strip()):
-#               resources = [f"arn:aws:s3:::{bucket}/{key}"]
-#           else:
-#               raise Exception("Must use both bucket and key for temporary credentials or no bucket at all.")
         # For how this policy stuff is defined in smaht-portal for file upload
         # session token creation process see: encoded_core.types.file.external_creds
         actions = ["s3:GetObject"]
@@ -345,6 +340,7 @@ class AwsS3:
         if deny:
             statements.append({"Effect": "Deny", "Action": actions, "NotResource": resources})
         aws_policy = {"Version": "2012-10-17", "Statement": statements}
+        DEBUG(f"TEMPORARY-CREDENTIALS-POLICY: {aws_policy}")
         if policy == {}:
             policy.update(aws_policy)
             del policy["Version"]
@@ -353,7 +349,6 @@ class AwsS3:
                                                                       kms_key_id=kms_key_id,
                                                                       duration=duration)
         # For troubleshooting squirrel away the policy in the credentials; harmless in general.
-        DEBUG(f"TEMPORARY-CREDENTIALS-POLICY: {aws_policy}")
         setattr(temporary_credentials, "policy", aws_policy)
         return temporary_credentials
 
