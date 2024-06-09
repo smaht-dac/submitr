@@ -150,17 +150,17 @@ def test_local_to_google(subfolder) -> None:
 @pytest.mark.parametrize("amazon_subfolder", [False, True])
 @pytest.mark.parametrize("google_subfolder", [False, True])
 def test_google_to_amazon(amazon_credentials_type, amazon_kms, amazon_subfolder, google_subfolder) -> None:
-    with Google.temporary_cloud_file(subfolder=google_subfolder) as google_path:
+    with Google.temporary_cloud_file(subfolder=google_subfolder) as google_source_path:
         # Here we have a temporary Google cloud file for testing rclone copy to Amazon cloud.
-        google_credentials = Google.credentials()
-        google_store = RCloneGoogle(google_credentials)
+        google_source_credentials = Google.credentials()
+        google_source_store = RCloneGoogle(google_source_credentials)
         amazon_path = Amazon.create_temporary_cloud_file_path(Amazon.bucket, subfolder=amazon_subfolder)
         amazon_credentials = Amazon.credentials(credentials_type=amazon_credentials_type,
                                                 kms=amazon_kms, path=amazon_path)
         amazon_store = RCloneAmazon(amazon_credentials)
         # Copy from Google cloud to Amazon cloud via rclone.
-        rcloner = RCloner(source=google_store, destination=amazon_store)
-        rcloner.copy(google_path, amazon_path) is True
+        rcloner = RCloner(source=google_source_store, destination=amazon_store)
+        rcloner.copy(google_source_path, amazon_path) is True
         # Sanity check.
         assert amazon_store.file_exists(amazon_path) is True
         assert amazon_store.file_size(amazon_path) == TEST_FILE_SIZE
@@ -170,10 +170,10 @@ def test_google_to_amazon(amazon_credentials_type, amazon_kms, amazon_subfolder,
             # bucket; which is not acceptable security-wise for the Portal to do; and so we do
             # not do this in our test code AwsS3.generate_temporary_credentials; and so we
             # need to use boto3 only to obtain the checksum for sanity checking, below.
-            assert amazon_store.file_checksum(amazon_path) == Google.gcs.file_checksum(google_path)
+            assert amazon_store.file_checksum(amazon_path) == Google.gcs.file_checksum(google_source_path)
         assert Amazon.s3.file_exists(amazon_path) is True
         assert Amazon.s3.file_size(amazon_path) == TEST_FILE_SIZE
-        assert Amazon.s3.file_checksum(amazon_path) == Google.gcs.file_checksum(google_path)
+        assert Amazon.s3.file_checksum(amazon_path) == Google.gcs.file_checksum(google_source_path)
         # Cleanup.
         assert Amazon.s3.delete_file(amazon_path) is True
         assert amazon_store.file_exists(amazon_path) is False
