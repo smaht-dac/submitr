@@ -57,14 +57,14 @@ OPTIONS:
   To specify a directory containing the files to upload; in addition
   to the default of using the directory containing the submitted file;
   this directory will be searched recursively.
---rclone-google-source GOOGLE-CLOUD-STORAGE-SOURCE
+--cloud-source GOOGLE-CLOUD-STORAGE-SOURCE
   A Google Cloud Storage (GCS) bucket or bucket/sub-folder
   from where the upload file(s) should be copied.
---rclone-google-credentials GCS-SERVICE-ACCOUNT-FILE
+--cloud-credentials GCS-SERVICE-ACCOUNT-FILE
   GCS credentials to use for --rclone-google-source;
   e.g. full path to your GCP service account file.
   May be omitted if running on a GCE instance.
---rclone-google-location LOCATION
+--cloud-location LOCATION
   The Google Cloud Storage (GCS) location (aka "region").
 --info
   Displays ONLY info about the specified metadata file; nothing else.
@@ -228,14 +228,16 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
     parser.add_argument('--ping', action="store_true", help="Ping server.", default=False)
 
+    # These original/deprecated options are just for backward compatibility.
     parser.add_argument('--rclone-google-source', help="Use rlcone to copy upload files from GCS.", default=None)
     parser.add_argument('--rclone-google-credentials', help="GCS credentials (service account file).", default=None)
     parser.add_argument('--rclone-google-location', help="GCS location (aka region).", default=None)
 
-    # TODO: This are in progress; unifying rclone based Google/Amazon cloud source).
+    # These are for GCS-to-S3 or S3-to-S3 support.
     parser.add_argument('--cloud-source', help="GCS credentials (service account file).", default=None)
     parser.add_argument('--cloud-credentials', help="GCS credentials (service account file).", default=None)
-    parser.add_argument('--cloud-location', '--cloud-region', help="Cloud location/region.", default=None)
+    parser.add_argument('--cloud-location', help="Cloud location/region.", default=None)
+    parser.add_argument('--cloud-region', help="Synonym for --cloud-location ", default=None)
 
     args = parser.parse_args(args=simulated_args_for_testing)
 
