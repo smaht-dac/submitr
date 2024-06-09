@@ -87,7 +87,14 @@ def test_local_to_amazon(credentials_type, kms, subfolder) -> None:
         # Sanity check.
         assert store.file_exists(store_path) is True
         assert store.file_size(store_path) == TEST_FILE_SIZE
-        # TODO assert store.file_checksum(store_path) == get_file_checksum(tmpfile)
+#       if not (store.file_checksum(store_path) == get_file_checksum(tmpfile)):
+#           print(tmpfile)
+#           print(store_path)
+#           xx = store.file_checksum(store_path)
+#           yy = get_file_checksum(tmpfile)
+#           import pdb ; pdb.set_trace()  # noqa
+#           pass
+#       assert store.file_checksum(store_path) == get_file_checksum(tmpfile)
         assert Amazon.s3.file_exists(store_path) is True
         assert Amazon.s3.file_size(store_path) == TEST_FILE_SIZE
         assert Amazon.s3.file_checksum(store_path) == get_file_checksum(tmpfile)

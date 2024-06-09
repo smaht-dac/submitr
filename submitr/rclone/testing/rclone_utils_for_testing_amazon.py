@@ -309,15 +309,19 @@ class AwsS3:
         key argument/s will further limit access to just the specified bucket or bucket/key.
         If the given policy argument is {} then it will be populated with the contents of the
         AWS policy used to create the temporary credentials; this is for troubleshooting.
+
+        N.B. For the real use-case WRT Portal see: encoded-core/../types/file.py/external_creds
         """
         statements = []
-        resources = ["*"] ; deny = False  # noqa
         bucket, key = cloud_path.bucket_and_key(bucket, key)
         if bucket and untargeted is not True:
             if key:
                 resources = [f"arn:aws:s3:::{bucket}/{key}"]
             else:
                 raise Exception("Must use both bucket and key for temporary credentials or no bucket at all.")
+        else:
+            # N.B. Not a real use-case WRT Portal (encoded-core/../types/file.py/external_creds).
+            resources = ["*"]
         # For how this policy stuff is defined in smaht-portal for file upload
         # session token creation process see: encoded_core.types.file.external_creds
         actions = ["s3:GetObject"]
@@ -333,12 +337,16 @@ class AwsS3:
         statements.append({"Effect": "Allow", "Action": actions, "Resource": resources})
         if AwsS3.ALLOW_EXTRA_POLICY_FOR_RCLONE_S3_TO_S3:
             if isinstance(bucket, str) and (bucket := bucket.strip()) and isinstance(key, str) and (key := key.strip()):
-                statements.append({"Effect": "Allow",
-                                   "Action": "s3:ListBucket",
-                                   "Resource": f"arn:aws:s3:::{bucket}",
-                                   "Condition": {"StringLike": {"s3:prefix": [f"{key}"]}}})  # NEW
-        if deny:
-            statements.append({"Effect": "Deny", "Action": actions, "NotResource": resources})
+                if untargeted is not True:
+                    statements.append({"Effect": "Allow",
+                                       "Action": "s3:ListBucket",
+                                       "Resource": f"arn:aws:s3:::{bucket}",
+                                       "Condition": {"StringLike": {"s3:prefix": [f"{key}"]}}})  # NEW
+                else:
+                    # N.B. Not a real use-case WRT Portal (encoded-core/../types/file.py/external_creds).
+                    statements.append({"Effect": "Allow",
+                                       "Action": "s3:ListBucket",
+                                       "Resource": f"arn:aws:s3:::{bucket}"})
         aws_policy = {"Version": "2012-10-17", "Statement": statements}
         DEBUG(f"TEMPORARY-CREDENTIALS-POLICY: {aws_policy}")
         if policy == {}:
