@@ -38,6 +38,8 @@ class Amazon:
         TEMPORARY = "credentials-type-temporary"
         TEMPORARY_KEY_SPECIFIC = "credentials-type-temporary-key-specific"
 
+    CredentialTypes = [CredentialsType.DEFAULT, CredentialsType.TEMPORARY, CredentialsType.TEMPORARY_KEY_SPECIFIC]
+
     @classmethod
     @property
     def bucket(cls) -> str:

@@ -41,10 +41,7 @@ def teardown_module():
     rclone_teardown_module()
 
 
-@pytest.mark.parametrize("credentials_type",
-                         [Amazon.CredentialsType.DEFAULT,
-                          Amazon.CredentialsType.TEMPORARY,
-                          Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC])
+@pytest.mark.parametrize("credentials_type", Amazon.CredentialTypes)
 @pytest.mark.parametrize("nokms", [False, True])
 def test_new_amazon_to_local(nokms, credentials_type) -> None:
     with Amazon.temporary_cloud_file(nokms=nokms) as store_path, temporary_directory() as tmpdir:
@@ -76,10 +73,7 @@ def test_new_amazon_to_local(nokms, credentials_type) -> None:
         # No cleanup; context managers above do it.
 
 
-@pytest.mark.parametrize("credentials_type",
-                         [Amazon.CredentialsType.DEFAULT,
-                          Amazon.CredentialsType.TEMPORARY,
-                          Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC])
+@pytest.mark.parametrize("credentials_type", Amazon.CredentialTypes)
 @pytest.mark.parametrize("kms", [False, True])
 @pytest.mark.parametrize("subfolder", [False, True])
 def test_new_local_to_amazon(credentials_type, kms, subfolder) -> None:
@@ -140,10 +134,7 @@ def test_new_local_to_google(subfolder) -> None:
         Google.gcs.file_exists(store_path) is False
 
 
-@pytest.mark.parametrize("amazon_credentials_type",
-                         [Amazon.CredentialsType.DEFAULT,
-                          Amazon.CredentialsType.TEMPORARY,
-                          Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC])
+@pytest.mark.parametrize("amazon_credentials_type", Amazon.CredentialTypes)
 @pytest.mark.parametrize("amazon_kms", [False, True])
 @pytest.mark.parametrize("amazon_subfolder", [False, True])
 @pytest.mark.parametrize("google_subfolder", [False, True])
@@ -178,10 +169,7 @@ def test_new_google_to_amazon(amazon_credentials_type, amazon_kms, amazon_subfol
         assert Amazon.s3.file_exists(amazon_path) is False
 
 
-@pytest.mark.parametrize("amazon_destination_credentials_type",
-                         [Amazon.CredentialsType.DEFAULT,
-                          Amazon.CredentialsType.TEMPORARY,
-                          Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC])
+@pytest.mark.parametrize("amazon_destination_credentials_type", Amazon.CredentialTypes)
 @pytest.mark.parametrize("amazon_destination_kms", [False, True])
 @pytest.mark.parametrize("amazon_destination_subfolder", [False, True])
 def test_new_amazon_to_amazon(amazon_destination_credentials_type,
