@@ -93,7 +93,7 @@ class Amazon:
     def s3_with(credentials: Optional[AmazonCredentials] = None,
                 credentials_type: Optional[CredentialsType] = CredentialsType.DEFAULT,
                 kms: bool = False, path: Optional[str] = None) -> AwsS3:
-        # This is for non-rclone based access to S3 (sans KMS).
+        # This is for non-rclone based access to S3.
         if isinstance(credentials, AmazonCredentials):
             return AwsS3(credentials)
         assert credentials_type in Amazon.CredentialTypes
@@ -160,6 +160,7 @@ class Google:
     @classmethod
     @property
     def gcs(cls) -> Gcs:
+        # This is for non-rclone based access to GCS.
         return Gcs(cls.credentials())
 
     @staticmethod
