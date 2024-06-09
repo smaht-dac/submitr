@@ -90,12 +90,12 @@ class Amazon:
 
     @staticmethod
     @contextmanager
-    def temporary_cloud_file(subfolder: bool = True, kms: bool = True, size: Optional[int] = None) -> str:
+    def temporary_cloud_file(kms: bool = True, subfolder: bool = True, size: Optional[int] = None) -> str:
 
         global TEST_FILE_PREFIX, TEST_FILE_SUFFIX, TEST_FILE_SIZE
 
-        assert subfolder in (True, False)
         assert kms in (True, False)
+        assert subfolder in (True, False)
         if size is None: size = TEST_FILE_SIZE  # noqa
         assert isinstance(size, int) and (size >= 0)
 

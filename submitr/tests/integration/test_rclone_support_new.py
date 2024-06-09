@@ -176,7 +176,7 @@ def test_new_amazon_to_amazon(amazon_destination_credentials_type,
     amazon_source_credentials_type = Amazon.CredentialsType.DEFAULT
     amazon_source_kms = False
     amazon_source_subfolder = True
-    with Amazon.temporary_cloud_file(subfolder=amazon_source_subfolder, kms=amazon_source_kms) as amazon_source_path:
+    with Amazon.temporary_cloud_file(kms=amazon_source_kms, subfolder=amazon_source_subfolder) as amazon_source_path:
         # Here we have a temporary Amazon cloud file for testing rclone copy to Amazon cloud.
         amazon_source_credentials = Amazon.credentials(credentials_type=amazon_source_credentials_type,
                                                        kms=amazon_source_kms,
