@@ -89,6 +89,12 @@ class Amazon:
         return AwsS3(cls.credentials(kms=True))
 
     @staticmethod
+    def s3_with(credentials_type: CredentialsType = CredentialsType.DEFAULT,
+                kms: bool = False, path: Optional[str] = None) -> AwsS3:
+        # This is for non-rclone based access to S3 (sans KMS).
+        return AwsS3(Amazon.credentials(credentials_type=credentials_type, kms=True, path=path))
+
+    @staticmethod
     @contextmanager
     def temporary_cloud_file(kms: bool = True, subfolder: bool = True, size: Optional[int] = None) -> str:
 
