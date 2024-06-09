@@ -18,8 +18,8 @@ from submitr.utils import DEBUGGING
 
 class RCloneStore(AbstractBaseClass):
 
-    # These prefix properties are to be set by the classes derived from RCloneStore.
-    # i.e. RCloneAmazon (where it is "s3://"), and RCloneGoogle (where it is "gs://").
+    # These prefix/proper-name properties are to be set by the classes derived from RCloneStore.
+    # i.e. e.g. RCloneAmazon (where it is "s3://"), and RCloneGoogle (where it is "gs://").
 
     @classmethod
     @property
@@ -81,7 +81,7 @@ class RCloneStore(AbstractBaseClass):
         where this function is (currently - in the RCloneStore implementations of the verify_connectivity
         function) used only to check that a given cloud source (for files to upload/transfer, i.e. via
         the --cloud-source option) exists; in this case we expect an actual/specific source key to exist,
-        i.e.  since we do not handle/allow copying (from) and entire bucket/folder.
+        i.e. since we do not handle/allow copying (from) and entire bucket/folder.
         """
         if not (bucket := self.bucket):
             return None
