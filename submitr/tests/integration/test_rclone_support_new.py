@@ -128,21 +128,21 @@ def test_google_to_local() -> None:
 def test_local_to_google(subfolder) -> None:
     with Google.temporary_local_file() as source_file_path:
         # Here we have a temporary local file for testing rclone copy to cloud.
-        store_path = Google.create_temporary_cloud_file_path(Google.bucket, subfolder=subfolder)
+        google_destination_path = Google.create_temporary_cloud_file_path(Google.bucket, subfolder=subfolder)
         # Copy from local to cloud via rclone.
-        credentials = Google.credentials()
-        store = RCloneGoogle(credentials)
-        RCloner(destination=store).copy(source_file_path, store_path) is True
+        google_destination_credentials = Google.credentials()
+        google_destination_store = RCloneGoogle(google_destination_credentials)
+        RCloner(destination=google_destination_store).copy(source_file_path, google_destination_path) is True
         # Sanity check.
-        assert store.file_exists(store_path) is True
-        assert store.file_size(store_path) == TEST_FILE_SIZE
-        assert store.file_checksum(store_path) == get_file_checksum(source_file_path)
-        assert Google.gcs.file_exists(store_path) is True
-        assert Google.gcs.file_size(store_path) == TEST_FILE_SIZE
-        assert Google.gcs.file_checksum(store_path) == get_file_checksum(source_file_path)
+        assert google_destination_store.file_exists(google_destination_path) is True
+        assert google_destination_store.file_size(google_destination_path) == TEST_FILE_SIZE
+        assert google_destination_store.file_checksum(google_destination_path) == get_file_checksum(source_file_path)
+        assert Google.gcs.file_exists(google_destination_path) is True
+        assert Google.gcs.file_size(google_destination_path) == TEST_FILE_SIZE
+        assert Google.gcs.file_checksum(google_destination_path) == get_file_checksum(source_file_path)
         # Cleanup.
-        assert Google.gcs.delete_file(store_path) is True
-        assert Google.gcs.file_exists(store_path) is False
+        assert Google.gcs.delete_file(google_destination_path) is True
+        assert Google.gcs.file_exists(google_destination_path) is False
 
 
 @pytest.mark.parametrize("amazon_credentials_type", Amazon.CredentialTypes)
