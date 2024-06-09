@@ -48,11 +48,12 @@ class Amazon:
 
     @staticmethod
     def credentials(credentials_type: CredentialsType = CredentialsType.DEFAULT,
-                    kms: bool = True,
+                    kms: bool = False,
                     path: Optional[str] = None) -> AmazonCredentials:
+        assert credentials_type in Amazon.CredentialTypes
         assert kms in [False, True]
         assert path is None or isinstance(path, str)
-        kms_key_id = None if kms is False else AMAZON_KMS_KEY_ID
+        kms_key_id = None if not kms else AMAZON_KMS_KEY_ID
         if credentials_type == Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC:
             bucket, key = cloud_path.bucket_and_key(path)
             assert bucket and key
@@ -66,7 +67,7 @@ class Amazon:
             credentials = AmazonCredentials(amazon_credentials_file_path(), kms_key_id=kms_key_id)
         else:
             pytest.fail(f"Incorrect Amazon.CredentialsType specified.")
-        if kms is False:
+        if not kms:
             assert not credentials.kms_key_id
         else:
             assert isinstance(credentials.kms_key_id, str) and credentials.kms_key_id
@@ -92,16 +93,19 @@ class Amazon:
     def s3_with(credentials_type: CredentialsType = CredentialsType.DEFAULT,
                 kms: bool = False, path: Optional[str] = None) -> AwsS3:
         # This is for non-rclone based access to S3 (sans KMS).
-        return AwsS3(Amazon.credentials(credentials_type=credentials_type, kms=True, path=path))
+        assert credentials_type in Amazon.CredentialTypes
+        assert kms in [False, True]
+        assert path is None or isinstance(path, str)
+        return AwsS3(Amazon.credentials(credentials_type=credentials_type, kms=kms, path=path))
 
     @staticmethod
     @contextmanager
-    def temporary_cloud_file(kms: bool = True, subfolder: bool = True, size: Optional[int] = None) -> str:
+    def temporary_cloud_file(kms: bool = False, subfolder: bool = True, size: Optional[int] = None) -> str:
 
         global TEST_FILE_PREFIX, TEST_FILE_SUFFIX, TEST_FILE_SIZE
 
-        assert kms in (True, False)
-        assert subfolder in (True, False)
+        assert kms in [True, False]
+        assert subfolder in [True, False]
         if size is None: size = TEST_FILE_SIZE  # noqa
         assert isinstance(size, int) and (size >= 0)
 
@@ -161,7 +165,7 @@ class Google:
 
         global TEST_FILE_PREFIX, TEST_FILE_SUFFIX, TEST_FILE_SIZE
 
-        assert subfolder in (True, False)
+        assert subfolder in [True, False]
         if size is None: size = TEST_FILE_SIZE  # noqa
         assert isinstance(size, int) and (size >= 0)
 
