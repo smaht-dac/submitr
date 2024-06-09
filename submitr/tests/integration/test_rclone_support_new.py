@@ -171,8 +171,8 @@ def test_google_to_amazon(amazon_credentials_type, amazon_kms, amazon_subfolder,
 @pytest.mark.parametrize("amazon_destination_kms", [False, True])
 @pytest.mark.parametrize("amazon_destination_subfolder", [False, True])
 def test_amazon_to_amazon(amazon_destination_credentials_type,
-                              amazon_destination_kms,
-                              amazon_destination_subfolder) -> None:
+                          amazon_destination_kms,
+                          amazon_destination_subfolder) -> None:
     amazon_source_credentials_type = Amazon.CredentialsType.DEFAULT
     amazon_source_kms = False
     amazon_source_subfolder = True
