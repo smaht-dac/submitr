@@ -87,21 +87,13 @@ def test_local_to_amazon(credentials_type, kms, subfolder) -> None:
         # Sanity check.
         assert store.file_exists(store_path) is True
         assert store.file_size(store_path) == TEST_FILE_SIZE
-
-#       if not kms:
-#           if not (store.file_checksum(store_path) == get_file_checksum(source_file_path)):
-#               import pdb ; pdb.set_trace()  # noqa
-#               pass
-#           assert store.file_checksum(store_path) == get_file_checksum(source_file_path)
-
-#       if not (store.file_checksum(store_path) == get_file_checksum(source_file_path)):
-#           print(source_file_path)
-#           print(store_path)
-#           xx = store.file_checksum(store_path)
-#           yy = get_file_checksum(source_file_path)
-#           import pdb ; pdb.set_trace()  # noqa
-#           pass
-#       assert store.file_checksum(store_path) == get_file_checksum(source_file_path)
+        if credentials_type != Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC:
+            # N.B. As noted elsewhere, with bucket/key targeted temporary AWS credentials,
+            # with a Portal-like policy (i.e. encoded-core/../types/file.py/external_creds,
+            # which we implement for testing via AwsS3.generate_temporary_credentials in
+            # rclone_utils_for_testing_amazon) rclone hashsum md5 does not work. But via
+            # boto3 is does work (test below) so it is OK for our actual use-case in s3_upload.
+            assert store.file_checksum(store_path) == get_file_checksum(source_file_path)
         assert Amazon.s3.file_exists(store_path) is True
         assert Amazon.s3.file_size(store_path) == TEST_FILE_SIZE
         assert Amazon.s3.file_checksum(store_path) == get_file_checksum(source_file_path)
