@@ -124,11 +124,12 @@ def test_google_to_local() -> None:
         # No cleanup; context managers above do it.
 
 
-@pytest.mark.parametrize("subfolder", [False, True])
-def test_local_to_google(subfolder) -> None:
+@pytest.mark.parametrize("google_destination_subfolder", [False, True])
+def test_local_to_google(google_destination_subfolder) -> None:
     with Google.temporary_local_file() as source_file_path:
         # Here we have a temporary local file for testing rclone copy to cloud.
-        google_destination_path = Google.create_temporary_cloud_file_path(Google.bucket, subfolder=subfolder)
+        google_destination_path = Google.create_temporary_cloud_file_path(
+            Google.bucket, google_destination_subfolder=google_destination_subfolder)
         # Copy from local to cloud via rclone.
         google_destination_credentials = Google.credentials()
         google_destination_store = RCloneGoogle(google_destination_credentials)
