@@ -34,9 +34,9 @@ from submitr.tests.integration.testing_rclone_setup import (  # noqa
 class Amazon:
 
     class CredentialsType(Enum):
-        DEFAULT = "credentials-type-default"
-        TEMPORARY = "credentials-type-temporary"
-        TEMPORARY_KEY_SPECIFIC = "credentials-type-temporary-key-specific"
+        DEFAULT = "default"
+        TEMPORARY = "temporary"
+        TEMPORARY_KEY_SPECIFIC = "temporary-key-specific"
 
     CredentialTypes = [CredentialsType.DEFAULT, CredentialsType.TEMPORARY, CredentialsType.TEMPORARY_KEY_SPECIFIC]
 
