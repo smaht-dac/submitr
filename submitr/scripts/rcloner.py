@@ -493,7 +493,7 @@ def print_info_via_rclone(target: str, rclone_store: RCloneStore) -> None:
         for key in {key: metadata_via_boto[key] for key in sorted(metadata_via_boto)}:
             extra_info = ""
             if key == "md5chksum":
-                extra_info = f" {chars.rarrow} {base64_decode(metadata_via_boto[key]).hex()})"
+                extra_info = f" {chars.rarrow} {base64_decode(metadata_via_boto[key]).hex()}"
             elif key in ["mtime", "md5-timestamp"]:
                 try:
                     timestamp = float(metadata_via_boto[key])
