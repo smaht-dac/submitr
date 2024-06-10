@@ -41,12 +41,9 @@ class AwsS3:
     @property
     def client(self) -> BotoClient:
         if not self._client:
-            self._client = BotoClient(
-                "s3",
-                region_name=self.credentials.region,
-                aws_access_key_id=self.credentials.access_key_id,
-                aws_secret_access_key=self.credentials.secret_access_key,
-                aws_session_token=self.credentials.session_token)
+            import pdb ; pdb.set_trace()  # noqa
+            pass
+            self._client = self._create_boto_client("s3", self.credentials)
         return self._client
 
     def upload_file(self, file: str, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> bool:
@@ -359,6 +356,7 @@ class AwsS3:
         setattr(temporary_credentials, "_policy", policy)
         return temporary_credentials
 
+    @staticmethod
     def _generate_temporary_credentials(generating_credentials: AmazonCredentials,
                                         policy: Optional[dict] = None,
                                         kms_key_id: Optional[str] = None,
@@ -388,10 +386,8 @@ class AwsS3:
 
         name = f"test.smaht.submitr.{create_short_uuid(length=12)}"
         try:
-            sts = BotoClient("sts",
-                             aws_access_key_id=generating_credentials.access_key_id,
-                             aws_secret_access_key=generating_credentials.secret_access_key,
-                             aws_session_token=generating_credentials.session_token)
+            import pdb ; pdb.set_trace()  # noqa
+            sts = AwsS3._create_boto_client("sts", generating_credentials)
             response = sts.get_federation_token(Name=name, Policy=policy, DurationSeconds=duration)
             if isinstance(credentials := response.get("Credentials"), dict):
                 return AmazonCredentials(access_key_id=credentials.get("AccessKeyId"),
@@ -412,3 +408,12 @@ class AwsS3:
             if raise_exception is True:
                 raise e
             return None
+
+    @staticmethod
+    def _create_boto_client(boto_service: str, credentials: AmazonCredentials) -> BotoClient:
+        return BotoClient(
+            boto_service,
+            region_name=credentials.region,
+            aws_access_key_id=credentials.access_key_id,
+            aws_secret_access_key=credentials.secret_access_key,
+            aws_session_token=credentials.session_token)

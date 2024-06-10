@@ -55,6 +55,10 @@ class RCloneCommands:
         #   existing metaadata on the object, if it already exists, otherwise it will get blown away;
         #   this is done in the s3_upload module..
         #
+        # Note that when copying to S3 via rclone, rclone seems to also write these metadata for the
+        # copied file in S3: x-amz-meta-md5chksum set to the md5 of the copied file; x-amz-meta-mtime
+        # set to the time_t (with millisconds e.g. 1718017149.229304173) of the copy.
+        #
         # FYI: https://forum.rclone.org/t/copy-to-scality-s3-corrupted-on-transfer-sizes-differ-xxx-vs-0/43281/3
         #
         command += ["--progress", "--ignore-times", "--ignore-size"]
