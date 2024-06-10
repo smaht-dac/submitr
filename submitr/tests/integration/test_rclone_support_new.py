@@ -160,6 +160,7 @@ def test_local_to_google(google_destination_subfolder) -> None:
 @pytest.mark.parametrize("google_source_subfolder", [False, True])
 def test_google_to_amazon(amazon_destination_credentials_type,
                           amazon_destination_kms, amazon_destination_subfolder, google_source_subfolder) -> None:
+    # This is the most important test case (with Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC).
     with Google.temporary_cloud_file(subfolder=google_source_subfolder) as google_source_path:
         # Here we have a temporary Google cloud file for testing rclone copy to Amazon cloud.
         google_source_credentials = Google.credentials()
