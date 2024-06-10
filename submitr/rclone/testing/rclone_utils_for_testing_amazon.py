@@ -41,8 +41,6 @@ class AwsS3:
     @property
     def client(self) -> BotoClient:
         if not self._client:
-            import pdb ; pdb.set_trace()  # noqa
-            pass
             self._client = self._create_boto_client("s3", self.credentials)
         return self._client
 
@@ -386,7 +384,6 @@ class AwsS3:
 
         name = f"test.smaht.submitr.{create_short_uuid(length=12)}"
         try:
-            import pdb ; pdb.set_trace()  # noqa
             sts = AwsS3._create_boto_client("sts", generating_credentials)
             response = sts.get_federation_token(Name=name, Policy=policy, DurationSeconds=duration)
             if isinstance(credentials := response.get("Credentials"), dict):
