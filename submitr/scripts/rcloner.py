@@ -478,18 +478,26 @@ def print_info_via_rclone(target: str, rclone_store: RCloneStore) -> None:
         if metadata := info.get("metadata"):
             print(f"Metadata: [{len(metadata)}]")
             for key in {key: metadata[key] for key in sorted(metadata)}:
-                print(f"- {key}: {metadata[key]}")
+                extra_info = ""
+                if key in ["mtime", "md5-timestamp"]:
+                    try:
+                        timestamp = float(metadata_via_boto[key])
+                        if timestamp := format_datetime(datetime.datetime.fromtimestamp(timestamp, tz=pytz.UTC), ms=True):
+                            extra_info = f" {chars.rarrow} {timestamp}"
+                    except Exception:
+                        pass
+                print(f"- {key}: {metadata[key]}{extra_info}")
     if metadata_via_boto:
         print(f"Metadata (non-rclone): [{len(metadata_via_boto)}]")
         for key in {key: metadata_via_boto[key] for key in sorted(metadata_via_boto)}:
             extra_info = ""
             if key == "md5chksum":
-                extra_info = f" ({base64_decode(metadata_via_boto[key]).hex()})"
-            elif key == "mtime":
+                extra_info = f" {chars.rarrow} {base64_decode(metadata_via_boto[key]).hex()})"
+            elif key in ["mtime", "md5-timestamp"]:
                 try:
-                    mtime = float(metadata_via_boto[key])
-                    if mtime := format_datetime(datetime.datetime.fromtimestamp(mtime, tz=pytz.UTC), ms=True):
-                        extra_info = f" ({mtime})"
+                    timestamp = float(metadata_via_boto[key])
+                    if timestamp := format_datetime(datetime.datetime.fromtimestamp(timestamp, tz=pytz.UTC), ms=True):
+                        extra_info = f" {chars.rarrow} {timestamp}"
                 except Exception:
                     pass
             print(f"- {key}: {metadata_via_boto[key]}{extra_info}")
