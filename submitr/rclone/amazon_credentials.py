@@ -93,6 +93,8 @@ class AmazonCredentials:
     @property
     def policy(self) -> Optional[dict]:
         if hasattr(self, "_policy"):
+            # Set for testing/troubleshooting purposes in
+            # rclone_utils_for_testing.AwsS3.generate_temporary_credentials.
             return self._policy
         return None
 

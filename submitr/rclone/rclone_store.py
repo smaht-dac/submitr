@@ -248,7 +248,7 @@ class RCloneStore(AbstractBaseClass):
                   usage: Optional[Callable] = None,
                   printf: Optional[Callable] = None) -> Optional[RCloneStore]:
         """
-        Generic function to create an instance/implementation for a RCloneStorei,
+        Generic function to create an instance/implementation for a RCloneStore,
         i.e. e.g. RCloneAmazon or RCloneGoogle, based on the given cloud_source
         which should be qualified path, i.e. like s3://bucket/key or gs://bucket/key.
         The cloud_credentials should be a path name to a credentials file (but FYI
