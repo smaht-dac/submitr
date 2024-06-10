@@ -103,7 +103,7 @@ specifially ``--cloud-source`` and ``--cloud-credentials``, for example::
         --cloud-credentials your-gcp-service-account-file
 
 The ``resume-uploads`` command support these same options.
-The value specified for the ``--cloud-source`` may be either just a GCS bucket name or
+The value specified for the ``--cloud-source`` may be either just a GCS bucket name or a bucket and key name.
 
 To obtain the credentials file you need, via the Google Cloud console (in your browser), navigate to the ``IAM & Admin`` section, select ``Service Accounts``, click on your desired listed service account, and from there click the ``KEYS`` tab at the top, and then the ``ADD KEY`` and ``Create new key`` from the dropdown, and select ``JSON`` for the ``Key type`` and click the ``CREATE`` button. This will save a JSON file with your exported credentials to your download folder; and this is the file to specify with the ``--cloud-credentials`` option. (Note that for security, you should ``chmod 600`` on this file).
 
