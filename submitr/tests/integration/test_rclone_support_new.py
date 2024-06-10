@@ -290,39 +290,3 @@ def test_amazon_to_google(amazon_source_kms, amazon_source_subfolder) -> None:
         assert Google.gcs.delete_file(google_destination_path) is True
         assert google_destination_store.file_exists(google_destination_path) is False
         assert Google.gcs.file_exists(google_destination_path) is False
-
-
-def xxx_test_foo():
-    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    path = "s3://smaht-unit-testing-files/test-d0fb4eb7-068e-4227-b3c0-5dd733c8733b.txt"
-    path = "s3://smaht-unit-testing-files/eee4e249-dcc0-4c93-86fe-d03c2109ba3c/SMAUREWJ2ZPW.fastq.gz"
-    import pdb ; pdb.set_trace()  # noqa
-    checksum = Amazon.s3.file_checksum(path)
-    print(checksum)
-    # amazon_credentials = Amazon.credentials(Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC, path=path)
-    amazon_credentials = Amazon.credentials(Amazon.CredentialsType.TEMPORARY, kms=True, path=path)
-    amazon_store = RCloneAmazon(amazon_credentials)
-    amazon_checksum = amazon_store.file_checksum(path)
-    import pdb ; pdb.set_trace()  # noqa
-    print(amazon_checksum)
-
-
-def xxx_test_goo() -> None:
-    amazon_destination_credentials_type = Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC
-    amazon_destination_kms = True
-    amazon_destination_subfolder = True
-    with Amazon.temporary_local_file() as local_source_path:
-        # Here we have a temporary local file for testing rclone copy to Amazon cloud.
-        amazon_destination_path = Amazon.create_temporary_cloud_file_path(Amazon.bucket,
-                                                                          subfolder=amazon_destination_subfolder)
-        # Copy from local to Amazon cloud via rclone.
-        amazon_destination_credentials = Amazon.credentials(credentials_type=amazon_destination_credentials_type,
-                                                            kms=amazon_destination_kms, path=amazon_destination_path)
-        amazon_destination_store = RCloneAmazon(amazon_destination_credentials)
-        rclone = RCloner(destination=amazon_destination_store)
-        assert rclone.copy(local_source_path, amazon_destination_path) is True
-        import pdb ; pdb.set_trace()  # noqa
-        # from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
-        # xx = Amazon.s3.file_checksum(amazon_destination_path)
-        import pdb ; pdb.set_trace()  # noqa
-        pass
