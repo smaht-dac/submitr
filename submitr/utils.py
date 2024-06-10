@@ -10,6 +10,7 @@ import pkg_resources
 import requests
 from signal import signal, SIGINT
 import string
+import sys
 from typing import Any, Callable, List, Optional, Tuple, Union
 from dcicutils.datetime_utils import format_datetime, parse_datetime
 from dcicutils.function_cache_decorator import function_cache
@@ -224,7 +225,7 @@ def catch_interrupt(on_interrupt: Optional[Callable] = None):
     def interrupt_handler(signum, frame):  # noqa
         if on_interrupt:
             if on_interrupt() is False:
-                exit(1)
+                sys.exit(1)
     try:
         previous_interrupt_handler = signal(SIGINT, interrupt_handler)
         yield

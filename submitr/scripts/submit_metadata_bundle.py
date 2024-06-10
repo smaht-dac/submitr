@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import sys
 from typing import Optional
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
@@ -245,7 +246,7 @@ def main(simulated_args_for_testing=None):
     if args.directory:
         if args.directory_only:
             PRINT("May not specify both --directory and --directory-only")
-            exit(1)
+            sys.exit(1)
         args.upload_folder = args.directory
         directory_only = False
     if args.directory_only:
@@ -274,7 +275,7 @@ def main(simulated_args_for_testing=None):
         ping_rclone_okay = None
         if cloud_store:
             ping_rclone_okay = cloud_store.verify_connectivity()
-        exit(0 if ping_okay is True and (ping_rclone_okay is not False) else 1)
+        sys.exit(0 if ping_okay is True and (ping_rclone_okay is not False) else 1)
 
     if args.consortia or (args.bundle_filename and args.bundle_filename.lower() == "consortia"):
         portal = _define_portal(env=args.env)
@@ -284,7 +285,7 @@ def main(simulated_args_for_testing=None):
             if ((consortium_name := consortium.get("name")) and
                 (consortium_uuid := consortium.get("uuid"))):  # noqa
                 PRINT(f"- {consortium_name}: {consortium_uuid}")
-        exit(0)
+        sys.exit(0)
 
     if (args.submission_centers or
         (args.bundle_filename and args.bundle_filename.lower() in
@@ -299,13 +300,13 @@ def main(simulated_args_for_testing=None):
                 if submission_center_code := get_submission_center_code(submission_center):
                     message += f" (submitted_id prefix: {submission_center_code}_)"
                 PRINT(message)
-        exit(0)
+        sys.exit(0)
 
     _setup_validate_related_options(args)
 
     if not args.bundle_filename:
         PRINT("Missing metadata file name.")
-        exit(2)
+        sys.exit(2)
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
         PRINT(f"WARNING: Directory does not exist: {args.upload_folder}")
@@ -313,7 +314,7 @@ def main(simulated_args_for_testing=None):
             # TODO: exist breaks test ...
             # FAILED submitr/tests/test_submit_metadata_bundle.py::test_submit_metadata_bundle_script[None]
             # FAILED submitr/tests/test_submit_metadata_bundle.py::test_submit_metadata_bundle_script[foo.bar]
-            exit(1)
+            sys.exit(1)
 
     if args.yes:
         args.no_query = True
@@ -330,7 +331,7 @@ def main(simulated_args_for_testing=None):
     if args.info:
         if not os.path.exists(args.bundle_filename):
             PRINT(f"File does not exist: {args.bundle_filename}")
-            exit(1)
+            sys.exit(1)
         _print_metadata_file_info(args.bundle_filename, env=args.env,
                                   refs=args.refs, files=args.files,
                                   subfolders=not directory_only,
@@ -338,12 +339,12 @@ def main(simulated_args_for_testing=None):
                                   rclone_google=cloud_store,
                                   output_file=args.output,
                                   verbose=args.verbose)
-        exit(0)
+        sys.exit(0)
 
     with script_catch_errors():
 
         if not _sanity_check_submitted_file(args.bundle_filename):
-            exit(1)
+            sys.exit(1)
 
         submit_any_ingestion(ingestion_filename=args.bundle_filename, ingestion_type=args.ingestion_type,
                              env=args.env, env_from_env=env_from_env,
@@ -411,43 +412,43 @@ def _setup_validate_related_options(args: argparse.Namespace):
     if args.submit:
         if args.validate or args.validate_local_only or args.validate_remote_only:
             PRINT(f"May not specify both --submit AND validate options.")
-            exit(1)
+            sys.exit(1)
         if args.json_only:
             PRINT(f"May not specify both --submit AND --json-only options.")
-            exit(1)
+            sys.exit(1)
 
     if not args.submit:
         if not (args.validate or args.validate_local_only or args.validate_remote_only):
             if not args.json_only and not _pytesting():
                 PRINT(f"Must specify either --validate or --submit options. Use --help for all options.")
-                exit(1)
+                sys.exit(1)
         elif args.json_only:
             PRINT(f"May not specify both --json-only and validate options.")
-            exit(1)
+            sys.exit(1)
 
     if args.validate_local_only and args.validate_remote_only:
         PRINT(f"May not specify both --validate-local-only and --validate-remote-only options.")
-        exit(1)
+        sys.exit(1)
 
     if args.validate_local_only and args.validate_local_skip:
         PRINT(f"May not specify both --validate-local-only and --validate-local-skip options.")
-        exit(1)
+        sys.exit(1)
 
     if args.validate_remote_only and args.validate_remote_skip:
         PRINT(f"May not specify both --validate-remote-only and --validate-remote-skip options.")
-        exit(1)
+        sys.exit(1)
 
     if args.validate_local_skip and args.validate_remote_skip and args.validate:
         PRINT(f"May not specify both validation and not validation.")
-        exit(1)
+        sys.exit(1)
 
     if args.json_only:
         if args.submit:
             PRINT("The --json-only option is not allowed with --submit.")
-            exit(1)
+            sys.exit(1)
         if args.validate_remote_only or args.validate_local_skip:
             PRINT("The --json-only option is not allowed with these validate options.")
-            exit(1)
+            sys.exit(1)
 
     # Ultimately only want these options:
     # - args.submit -> If False then doing validation only
@@ -462,7 +463,7 @@ def _setup_validate_related_options(args: argparse.Namespace):
 def usage(message: Optional[str] = None) -> None:
     if isinstance(message, str) and message:
         PRINT(message)
-    exit(1)
+    sys.exit(1)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 import io
 import requests
+import sys
 from contextlib import contextmanager
 from functools import lru_cache
 from itertools import islice
@@ -47,7 +48,7 @@ def check_metadata_version(file: str, portal: Portal,
                     print_metadata_version_warning(
                         version, metadata_template_version, metadata_template_url)
                     if not yes_or_no("Do you want to continue with your metadata file?"):
-                        exit(0)
+                        sys.exit(0)
             elif not quiet:
                 PRINT(f"Your metadata file is based on the latest HMS metadata template:"
                       f" {metadata_template_version} {chars.check}")

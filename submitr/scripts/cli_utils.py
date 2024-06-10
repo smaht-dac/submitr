@@ -69,7 +69,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
             sys.stdout = original_stdout
             sys.stderr = original_stderr
         if error:
-            exit(2)
+            sys.exit(2)
         return args
 
     def _check_obsolete_options(self) -> None:
@@ -80,20 +80,20 @@ class CustomArgumentParser(argparse.ArgumentParser):
                     PRINT(f"Obsolete option: {obsolete_option['option']} {chars.rarrow} {obsolete_option['message']}")
                     nobsolete_options += 1
             if nobsolete_options > 0:
-                exit(1)
+                sys.exit(1)
 
     def _check_help_options(self) -> None:
         for arg in sys.argv:
             if arg in ["help", "-help", "--help", "-h", "--h", "?", "-?", "--?",
                        "--help-raw", "--help-advanced", "--help-web"]:
                 self.print_help()
-                exit(0)
+                sys.exit(0)
 
     def _check_version_options(self) -> None:
         for arg in sys.argv:
             if arg in ["version", "-version", "--version", "-v", "--v"]:
                 self._print_version(verbose=("-v" not in sys.argv) and ("--v" not in sys.argv))
-                exit(0)
+                sys.exit(0)
 
     def print_help(self) -> None:
         if "--help-raw" in sys.argv:

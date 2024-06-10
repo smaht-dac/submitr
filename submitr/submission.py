@@ -276,7 +276,7 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
                                   " so you must specify --consortium explicitly.")
             SHOW("ERROR: No consortium was inferred. Use the --consortium option.")
             show_consortia()
-            exit(1)
+            sys.exit(1)
         else:
             suffix = " (inferred)"
     annotated_consortia = []
@@ -286,7 +286,7 @@ def _get_defaulted_consortia(consortia, user_record, portal=None, error_if_none=
             if not (consortium_object := portal.get_metadata(consortium_path, raise_exception=False)):
                 SHOW(f"ERROR: Consortium not found: {consortium}")
                 show_consortia()
-                exit(1)
+                sys.exit(1)
             elif consortium_name := consortium_object.get("identifier"):
                 consortium_uuid = consortium_object.get("uuid")
                 if verbose:
@@ -331,7 +331,7 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
                                   " so you must specify --submission-center explicitly.")
             SHOW("ERROR: No submission center was inferred. Use the --submission-center option.")
             show_submission_centers()
-            exit(1)
+            sys.exit(1)
         else:
             suffix = " (inferred)"
     annotated_submission_centers = []
@@ -343,7 +343,7 @@ def _get_defaulted_submission_centers(submission_centers, user_record, portal=No
             if not (submission_center_object := portal.get_metadata(submission_center_path, raise_exception=False)):
                 SHOW(f"ERROR: Submission center not found: {submission_center}")
                 show_submission_centers()
-                exit(1)
+                sys.exit(1)
             elif submission_center_name := submission_center_object.get("identifier"):
                 submission_center_uuid = submission_center_object.get("uuid")
                 if verbose:
@@ -678,7 +678,7 @@ def submit_any_ingestion(ingestion_filename, *,
 
     if not portal.ping():
         SHOW(f"Portal credentials do not seem to work: {portal.keys_file} ({env})")
-        exit(1)
+        sys.exit(1)
 
     user_record = _get_user_record(portal.server, auth=portal.key_pair, quiet=json_only and not verbose)
 
@@ -718,12 +718,12 @@ def submit_any_ingestion(ingestion_filename, *,
         elif len(submission_centers) > 1:
             PRINT(f"Multiple submission centers: {', '.join(submission_centers)}")
             PRINT(f"You must specify onely one submission center using the --submission-center option.")
-            exit(1)
+            sys.exit(1)
 
     if add_submission_center:
         if not _is_admin_user(user_record):
             PRINT("ERROR: Cannot use the --add-submission-center if you are not an admin user.")
-            exit(1)
+            sys.exit(1)
         known_submission_centers = _get_submission_centers(portal)
         found_submission_centers = [submission_center for submission_center in known_submission_centers
                                     if (submission_center.get("name") == add_submission_center) or
@@ -732,7 +732,7 @@ def submit_any_ingestion(ingestion_filename, *,
             PRINT(f"ERROR: Specified submission center ({add_submission_center}) not found. Use one of:")
             for known_submission_center in known_submission_centers:
                 PRINT(f"- {known_submission_center.get('name')} ({known_submission_center.get('uuid')})")
-            exit(1)
+            sys.exit(1)
         # add_submission_center = f"/submission-centers/{found_submission_centers[0]['uuid']}/"
         add_submission_center = found_submission_centers[0]["name"]
         PRINT(f"Additional submission center: {add_submission_center}")
@@ -812,7 +812,7 @@ def submit_any_ingestion(ingestion_filename, *,
                 verbose=verbose, debug=debug, debug_sleep=debug_sleep)
 
         if server_validation_status != "success":
-            exit(1)
+            sys.exit(1)
 
         PRINT(f"Validation results (server): OK {chars.check}")
 
@@ -830,13 +830,13 @@ def submit_any_ingestion(ingestion_filename, *,
                        portal=portal,
                        verbose=True,
                        review_only=True)
-        exit(0)
+        sys.exit(0)
 
     # Server submission.
 
     SHOW(f"Ready to submit your metadata to {portal.server}: {format_path(ingestion_filename)}")
     if not yes_or_no("Continue on with the actual submission?"):
-        exit(0)
+        sys.exit(0)
 
     submission_uuid = _initiate_server_ingestion_process(
         portal=portal,
@@ -868,7 +868,7 @@ def submit_any_ingestion(ingestion_filename, *,
             verbose=verbose, debug=debug, debug_sleep=debug_sleep)
 
     if submission_status != "success":
-        exit(1)
+        sys.exit(1)
 
     PRINT("Submission complete!")
 
@@ -904,7 +904,7 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
             user_name = user_record.get("display_title")
         except Exception:
             PRINT(f"Cannot find your user info.")
-            exit(1)
+            sys.exit(1)
     elif user:
         if "@" in user or is_uuid(user):
             try:
@@ -912,7 +912,7 @@ def _print_recent_submissions(portal: Portal, count: int = 30, message: Optional
                 user_name = user_record.get("display_title")
             except Exception:
                 PRINT(f"Cannot find user info: {user}")
-                exit(1)
+                sys.exit(1)
         else:
             user_name = user
 
@@ -1152,7 +1152,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             message += "\nSome recent submission IDs below. Use list-submissions to view more."
             if _print_recent_submissions(portal, message=message, count=4):
                 if check_submission_script:
-                    exit(1)
+                    sys.exit(1)
                 return
             raise Exception(f"Cannot find object given uuid: {uuid}")
     if not portal.is_schema_type(uuid_metadata, INGESTION_SUBMISSION_TYPE_NAME):
@@ -1229,7 +1229,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         SHOW(f"Timed out (after {format_duration(round(time.time() - started))}) WAITING for {action}.")
         SHOW(f"Your {'validation' if validation else 'submission'} is still running on the server: {uuid}")
         SHOW(f"Use this command to check its status: {command_summary}")
-        exit(1)
+        sys.exit(1)
 
     if (check_submission_script and check_response and
         (check_parameters := check_response.get("parameters", {})) and
@@ -1251,18 +1251,18 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
             if validation_errors:
                 PRINT("\nServer validation errors were encountered for this metadata.")
                 PRINT("You will need to correct any errors and resubmit via submit-metadata-bundle.")
-                exit(1)
+                sys.exit(1)
         elif isinstance(validation_info, dict):
             if validation_info.get("ref") or validation_info.get("validation"):
                 PRINT("\nServer validation errors were encountered for this metadata.")
                 PRINT("You will need to correct any errors and resubmit via submit-metadata-bundle.")
-                exit(1)
+                sys.exit(1)
         if check_status != "success":
-            exit(1)
+            sys.exit(1)
         PRINT(f"Validation results (server): OK {chars.check}")
         if not yes_or_no("Do you want to now continue with the submission for this metadata?"):
             PRINT("Exiting with no action.")
-            exit(0)
+            sys.exit(0)
         # Get parameters for this submission from the validation IngestionSubmission object.
         consortia = None
         submission_centers = None
@@ -1305,7 +1305,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
                 nofiles=True, noprogress=noprogress, timeout=timeout,
                 verbose=verbose, debug=debug, debug_sleep=debug_sleep)
         if submission_status != "success":
-            exit(1)
+            sys.exit(1)
         PRINT("Submission complete!")
         do_any_uploads(submission_response,
                        main_search_directory=upload_directory,
@@ -1364,7 +1364,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
         else:
             PRINT_STDOUT("\nExiting with no action with server validation errors.")
             PRINT_STDOUT("Use the --output FILE option to write errors to a file.")
-        exit(1)
+        sys.exit(1)
 
     return check_done, check_status, check_response
 
@@ -1918,7 +1918,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                      f" {structured_data.ref_invalid_identifying_property_count}")
     if json_only:
         PRINT_OUTPUT(json.dumps(structured_data.data, indent=4))
-        exit(1)
+        sys.exit(1)
     if verbose_json:
         PRINT_OUTPUT(f"Parsed JSON:")
         PRINT_OUTPUT(json.dumps(structured_data.data, indent=4))
@@ -1938,7 +1938,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                 PRINT_STDOUT()
             PRINT_STDOUT(f"Exiting with preliminary validation errors.")
             PRINT_STDOUT("Use the --output FILE option to write errors to a file.")
-        exit(1)
+        sys.exit(1)
 
     if verbose:
         _print_structured_data_verbose(portal, structured_data, ingestion_filename,
@@ -1954,10 +1954,10 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if not validation_okay:
         if not yes_or_no(f"There are some preliminary errors outlined above;"
                          f" do you want to continue with {'validation' if validation else 'submission'}?"):
-            exit(1)
+            sys.exit(1)
     if validate_local_only:
         PRINT("Terminating as requested (per --validate-local-only).")
-        exit(0 if validation_okay else 1)
+        sys.exit(0 if validation_okay else 1)
 
     return structured_data
 
@@ -2357,18 +2357,18 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
             if not keys_file.endswith(".json"):
                 PRINT(f"ERROR: The specified keys file{' (from SMAHT_KEYS)' if keys_file_from_env else ''}"
                       f" is not a .json file: {keys_file}")
-                exit(1)
+                sys.exit(1)
             if not keys_file.endswith(".json") or not os.path.exists(keys_file):
                 PRINT(f"ERROR: The specified keys file{' (from SMAHT_KEYS)' if keys_file_from_env else ''}"
                       f" must be the name of an existing .json file: {keys_file}")
-                exit(1)
+                sys.exit(1)
             try:
                 with open(keys_file, "r") as f:
                     json.load(f)
             except Exception:
                 PRINT(f"ERROR: The specified keys file{' (from SMAHT_KEYS)' if keys_file_from_env else ''}"
                       f" cannot be loaded as JSON: {keys_file}")
-                exit(1)
+                sys.exit(1)
         return keys_file
 
     if not env and not env_from_env:
@@ -2393,20 +2393,20 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
                 PRINT(f"Use the --env option with a name from that file; or set your SMAHT_ENV environment variable.")
             else:
                 PRINT(f"Environment ({env}) not found in keys file: {keys_file or get_default_keys_file()}")
-            exit(1)
+            sys.exit(1)
         else:
             PRINT(e)
-            exit(1)
+            sys.exit(1)
     if not portal or not portal.key:
         try:
             if keys_file and not os.path.exists(keys_file):
                 PRINT(f"No keys file found: {keys_file or get_default_keys_file()}")
-                exit(1)
+                sys.exit(1)
             else:
                 default_keys_file = get_default_keys_file()
                 if not os.path.exists(default_keys_file):
                     PRINT(f"No default keys file found: {default_keys_file}")
-                    exit(1)
+                    sys.exit(1)
         except Exception:
             pass
         if raise_exception:
@@ -2436,7 +2436,7 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
             PRINT(f"Portal key prefix is: {portal.key_id[:2]}******")
     if ping and not portal.ping():
         PRINT(f"Cannot ping Portal!")
-        exit(1)
+        sys.exit(1)
     return portal
 
 

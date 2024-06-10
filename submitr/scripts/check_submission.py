@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Optional
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.common import ORCHESTRATED_APPS
@@ -88,7 +89,7 @@ def main(simulated_args_for_testing=None):
 
     if not args.submission_uuid:
         if _pytesting():
-            exit(2)
+            sys.exit(2)
         args.submission_uuid = "dummy"
 
     env_from_env = False
@@ -112,7 +113,7 @@ def main(simulated_args_for_testing=None):
 
     if upload_directory and not os.path.isdir(upload_directory):
         print(f"Directory does not exist: {upload_directory}")
-        exit(1)
+        sys.exit(1)
 
     cloud_store = RCloneStore.from_args(args, usage=usage, printf=PRINT)
 
@@ -144,7 +145,7 @@ def main(simulated_args_for_testing=None):
 def usage(message: Optional[str] = None) -> None:
     if isinstance(message, str) and message:
         PRINT(message)
-    exit(1)
+    sys.exit(1)
 
 
 if __name__ == '__main__':

@@ -117,7 +117,7 @@ def main():
         nonlocal parser
         _print(message) if isinstance(message, str) else None
         parser.print_help()
-        exit(1)
+        sys.exit(1)
 
     if app := args.app:
         if (app not in ORCHESTRATED_APPS) and ((app := app.lower()) not in ORCHESTRATED_APPS):
@@ -157,14 +157,14 @@ def main():
     if args.delete:
         if not portal.get_metadata(args.delete, raise_exception=False):
             _print(f"Cannot find given object: {args.delete}")
-            exit(1)
+            sys.exit(1)
         if yes_or_no(f"Do you really want to delete this item: {args.delete} ?"):
             portal.delete_metadata(args.delete)
 
     if args.purge:
         if not portal.get_metadata(args.purge, raise_exception=False):
             _print(f"Cannot find given object: {args.purge}")
-            exit(1)
+            sys.exit(1)
         if yes_or_no(f"Do you really want to purge this item: {args.purge} ?"):
             portal.delete_metadata(args.purge)
             portal.purge_metadata(args.purge)

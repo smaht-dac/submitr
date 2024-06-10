@@ -121,7 +121,7 @@ def main():
 
     if not args.uuid:
         _print("UUID or schema or path required.")
-        exit(1)
+        sys.exit(1)
 
     if args.uuid and ((args.uuid.lower() == "schemas") or (args.uuid.lower() == "schema")):
         _print_all_schema_names(portal=portal, details=args.details,
@@ -180,10 +180,10 @@ def main():
     if args.bool:
         if data:
             _print(f"{args.uuid}: found")
-            exit(0)
+            sys.exit(0)
         else:
             _print(f"{args.uuid}: not found")
-            exit(1)
+            sys.exit(1)
     if args.copy:
         pyperclip.copy(json.dumps(data, indent=4))
     if args.yaml:
@@ -593,18 +593,18 @@ def _print_tree(root_name: Optional[str],
 def _read_json_from_file(file: str) -> Optional[dict]:
     if not os.path.exists(file):
         _print(f"Cannot find file: {file}")
-        exit(1)
+        sys.exit(1)
     try:
         with io.open(file, "r") as f:
             try:
                 return json.load(f)
             except Exception:
                 _print(f"Cannot parse JSON in file: {file}")
-                exit(1)
+                sys.exit(1)
     except Exception as e:
         print(e)
         _print(f"Cannot open file: {file}")
-        exit(1)
+        sys.exit(1)
 
 
 def _print(*args, **kwargs):
@@ -616,7 +616,7 @@ def _print(*args, **kwargs):
 def _exit(message: Optional[str] = None) -> None:
     if message:
         _print(f"ERROR: {message}")
-    exit(1)
+    sys.exit(1)
 
 
 if __name__ == "__main__":

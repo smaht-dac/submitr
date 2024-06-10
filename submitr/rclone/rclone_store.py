@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from datetime import datetime
 import os
 from shutil import copy as copy_file
+import sys
 from typing import Any, Callable, List, Optional, Union
 from dcicutils.datetime_utils import parse_datetime
 from dcicutils.misc_utils import create_uuid, normalize_string, PRINT
@@ -271,7 +272,7 @@ class RCloneStore(AbstractBaseClass):
             printf = PRINT
         if (verify_installation is True) and not RCloneInstallation.verify_installation():
             usage(f"Cannot install rclone for some reason (contact support - sorry).")
-            exit(1)
+            sys.exit(1)
         if cloud_store_class := RCloneStoreRegistry.lookup(cloud_source):
             return cloud_store_class.from_args(cloud_source=cloud_source,
                                                cloud_credentials=cloud_credentials,

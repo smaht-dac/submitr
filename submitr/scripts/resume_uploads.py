@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Optional
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
@@ -110,7 +111,7 @@ def main(simulated_args_for_testing=None):
     if args.directory:
         if args.directory_only:
             PRINT("May not specify both --directory and --directory-only")
-            exit(1)
+            sys.exit(1)
         args.upload_folder = args.directory
         directory_only = False
     if args.directory_only:
@@ -124,22 +125,22 @@ def main(simulated_args_for_testing=None):
 
     if not args.uuid:
         PRINT("Missing submission UUID or referenced file UUID or accession ID.")
-        exit(2)
+        sys.exit(2)
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
         PRINT(f"Directory does not exist: {args.upload_folder}")
-        exit(1)
+        sys.exit(1)
 
     if args.bundle and not os.path.isdir(os.path.normpath(os.path.dirname(args.bundle))):
         PRINT(f"Specified bundle file not found: {args.bundle}")
-        exit(1)
+        sys.exit(1)
 
     if not args.upload_folder and args.directory:
         args.upload_folder = args.directory
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
         PRINT(f"Specified upload directory not found: {args.upload_folder}")
-        exit(1)
+        sys.exit(1)
 
     env_from_env = False
     if not args.env:
@@ -167,7 +168,7 @@ def main(simulated_args_for_testing=None):
 def usage(message: Optional[str] = None) -> None:
     if isinstance(message, str) and message:
         PRINT(message)
-    exit(1)
+    sys.exit(1)
 
 
 if __name__ == '__main__':

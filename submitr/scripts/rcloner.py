@@ -2,9 +2,11 @@ import argparse
 from base64 import b64decode as base64_decode
 from collections import namedtuple
 import datetime
+import multiprocessing
 import os
 import pytz
 import signal
+import sys
 import yaml
 from typing import Optional
 from dcicutils.datetime_utils import format_datetime
@@ -34,6 +36,12 @@ from submitr.utils import chars
 
 
 def main() -> None:
+    # Playing with ...
+    # pip install pyinstaller
+    # pyinstaller --onefile --name my_application submitr/scripts/rcloner.py
+    # which needs this ...
+    # multiprocessing.freeze_support()
+(tmp-3.11) mac: pyinstaller --onefile --name my_application submitr/scripts/rcloner.py
     args = argparse.ArgumentParser(description="Test utility for rclone support in smaht-submitr.")
     args.add_argument("action", help="Action: copy or info.", default=None)
     args.add_argument("source", help="Source file or cloud bucket/key.", default=None)
@@ -237,22 +245,22 @@ def main() -> None:
             usage(f"Given GCS credentials appear to be invalid.")
 
     if copy:
-        exit(main_copy(source, destination,
-                       credentials_source_amazon=credentials_source_amazon,
-                       credentials_destination_amazon=credentials_destination_amazon,
-                       credentials_source_google=credentials_source_google,
-                       credentials_destination_google=credentials_destination_google,
-                       copyto=copyto, progress=not args.noprogress,
-                       show_temporary_credentials_policy=args.show_temporary_credentials_policy,
-                       verbose=args.verbose, debug=args.debug))
+        sys.exit(main_copy(source, destination,
+                           credentials_source_amazon=credentials_source_amazon,
+                           credentials_destination_amazon=credentials_destination_amazon,
+                           credentials_source_google=credentials_source_google,
+                           credentials_destination_google=credentials_destination_google,
+                           copyto=copyto, progress=not args.noprogress,
+                           show_temporary_credentials_policy=args.show_temporary_credentials_policy,
+                           verbose=args.verbose, debug=args.debug))
     elif info:
-        exit(main_info(source, destination,
-                       credentials_source_amazon=credentials_source_amazon,
-                       credentials_destination_amazon=credentials_destination_amazon,
-                       credentials_source_google=credentials_source_google,
-                       credentials_destination_google=credentials_destination_google,
-                       show_temporary_credentials_policy=args.show_temporary_credentials_policy,
-                       verbose=args.verbose))
+        sys.exit(main_info(source, destination,
+                           credentials_source_amazon=credentials_source_amazon,
+                           credentials_destination_amazon=credentials_destination_amazon,
+                           credentials_source_google=credentials_source_google,
+                           credentials_destination_google=credentials_destination_google,
+                           show_temporary_credentials_policy=args.show_temporary_credentials_policy,
+                           verbose=args.verbose))
 
 
 def main_copy(source: str, destination: str,
@@ -356,7 +364,7 @@ def main_copy(source: str, destination: str,
                                       return_output=True)
     except Exception as e:
         print(f"ERROR: {e}")
-        exit(1)
+        sys.exit(1)
     if progress:
         print()
 
@@ -369,7 +377,7 @@ def main_copy(source: str, destination: str,
                 print(line)
         else:
             print()
-        exit(0)
+        sys.exit(0)
     else:
         access_denied = len([line for line in output if "accessdenied" in line.lower().replace(" ", "")]) > 0
         if access_denied:
@@ -382,7 +390,7 @@ def main_copy(source: str, destination: str,
                 print(line)
         else:
             print()
-        exit(1)
+        sys.exit(1)
 
 
 def main_info(source: str, destination: Optional[str] = None,
@@ -545,7 +553,7 @@ def print_amazon_temporary_credentials_policy(policy: dict) -> None:
 
 def usage(message: str) -> None:
     print(message)
-    exit(1)
+    sys.exit(1)
 
 
 if __name__ == "__main__":

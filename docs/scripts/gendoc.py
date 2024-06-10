@@ -10,6 +10,7 @@ from functools import lru_cache
 import io
 import os
 import re
+import sys
 from typing import Callable, List, Optional, Tuple
 from dcicutils.captured_output import captured_output
 from dcicutils.misc_utils import camel_case_to_snake_case, PRINT
@@ -1162,7 +1163,7 @@ def _usage(message: Optional[str] = None) -> None:
 def _exit(message: Optional[str] = None) -> None:
     if message:
         PRINT(f"ERROR: {message}")
-    exit(1)
+    sys.exit(1)
 
 
 if __name__ == "__main__":

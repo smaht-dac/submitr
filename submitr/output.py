@@ -35,7 +35,7 @@ def setup_for_output_file_option(output_file: str) -> Tuple[Callable, Callable, 
     if os.path.exists(output_file):
         PRINT(f"Output file already exists: {output_file}")
         if not yes_or_no("Overwrite this file?"):
-            exit(1)
+            sys.exit(1)
         with io.open(output_file, "w"):
             pass
     _OUTPUT_FILE = output_file  # Assuming this is only called once/globally
