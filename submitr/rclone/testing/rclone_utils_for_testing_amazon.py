@@ -221,8 +221,11 @@ class AwsS3:
             return None
         if file_head := self._file_head(bucket, key, raise_exception=raise_exception):
             if etag is not True:
-                if isinstance(md5 := file_head.get("Metadata", {}).get("md5chksum"), str):
+                # TODO: Document exactly where these md5 related metadata might come from.
+                if isinstance(md5 := file_head.get("Metadata", {}).get("md5chksum"), str) and md5:
                     return base64_decode(md5).hex()
+                elif isinstance(md5 := file_head.get("Metadata", {}).get("md5"), str) and md5:
+                    return md5
                 md5 = file_head.get("ResponseMetadata", {}).get("HTTPHeaders", {}).get("x-amz-meta-md5chksum")
                 if isinstance(md5, str):
                     return base64_decode(md5).hex()

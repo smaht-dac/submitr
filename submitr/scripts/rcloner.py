@@ -482,7 +482,7 @@ def print_info_via_rclone(target: str, rclone_store: RCloneStore) -> None:
     if metadata_via_boto:
         print(f"Metadata (non-rclone): [{len(metadata_via_boto)}]")
         for key in {key: metadata_via_boto[key] for key in sorted(metadata_via_boto)}:
-            extra_info = None
+            extra_info = ""
             if key == "md5chksum":
                 extra_info = f" ({base64_decode(metadata_via_boto[key]).hex()})"
             elif key == "mtime":
