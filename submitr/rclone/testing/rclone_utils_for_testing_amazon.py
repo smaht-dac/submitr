@@ -71,11 +71,10 @@ class AwsS3:
 
     def download_file(self, file: str, bucket: str, key: str, raise_exception: bool = True) -> bool:
         try:
-            if not (bucket := cloud_path.normalize(bucket)):
-                return False
-            if not (key := cloud_path.normalize(key)):
-                return False
             if not isinstance(file := normalize_path(file), str) or not file:
+                return False
+            bucket, key = cloud_path.bucket_and_key(bucket, key)
+            if not (bucket and key):
                 return False
             if os.path.isdir(file):
                 if cloud_path.separator in key:
@@ -90,7 +89,7 @@ class AwsS3:
                 return False
             if raise_exception is True:
                 raise e
-            return False
+        return False
 
     def create_folder(self, bucket: str, folder: Optional[str] = None, raise_exception: bool = True) -> bool:
         try:
@@ -108,7 +107,7 @@ class AwsS3:
         except Exception as e:
             if raise_exception is True:
                 raise e
-            return False
+        return False
 
     def delete_file(self, bucket: str, key: Optional[str] = None,
                     check: bool = False, raise_exception: bool = True) -> bool:
@@ -122,7 +121,7 @@ class AwsS3:
         except Exception as e:
             if raise_exception is True:
                 raise e
-            return False
+        return False
 
     def delete_folders(self, bucket: str, folder: Optional[str] = None, raise_exception: bool = True) -> bool:
         """
@@ -159,7 +158,7 @@ class AwsS3:
         except Exception as e:
             if raise_exception is True:
                 raise e
-            return False
+        return False
 
     def bucket_exists(self, bucket: str, raise_exception: bool = True) -> bool:
         try:
@@ -170,7 +169,7 @@ class AwsS3:
                 return False
             if raise_exception is True:
                 raise e
-            return False
+        return False
 
     def file_exists(self, bucket: str, key: Optional[str] = None, raise_exception: bool = True) -> bool:
         bucket, key = cloud_path.bucket_and_key(bucket, key)
@@ -404,7 +403,7 @@ class AwsS3:
                 return None
             if raise_exception is True:
                 raise e
-            return None
+        return None
 
     @staticmethod
     def _create_boto_client(boto_service: str, credentials: AmazonCredentials) -> BotoClient:
