@@ -96,7 +96,7 @@ faster than first downloading the full file from GCS and then uploading it
 (our initial tests indicate an approximate 30% increase in overall transfer speed).
 
 To take advantage of this you merely need to specificy a couple of command-line options,
-specifially ``--cloud-source`` and ``--cloud-credentials``, for example::
+specifically ``--cloud-source`` and ``--cloud-credentials``, for example::
 
     submit-metadata-bundle your-metadata.xlsx --submit \
         --cloud-source your-gcs-bucket \
