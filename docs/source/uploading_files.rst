@@ -95,7 +95,7 @@ of a file from GCS to AWS S3 is done in an interleaved fashion, so that it shoul
 faster than first downloading the full file from GCS and then uploading it
 (our initial tests indicate an approximate 30% increase in overall transfer speed).
 
-To take advantage of this you merely need to specificy a couple of command-line options,
+To take advantage of this you merely need to specify a couple of command-line options,
 specifically ``--cloud-source`` and ``--cloud-credentials``, for example::
 
     submit-metadata-bundle your-metadata.xlsx --submit \
@@ -110,6 +110,8 @@ To obtain the credentials file you need, via the Google Cloud console (in your b
 .. tip::
     If you happen to be running ``smaht-submitr`` on a Google Compute Engine (GCE) instance there is no need to specify the ``--cloud-credentials`` option as the credentials for the associated Google Cloud account are automatically and implicitly available and in force.
 
+.. note::
+    This same exact mechanism is actually also support for AWS S3, i.e. if you have a file in your own AWS S3 storage that you want to upload to SMaHT via ``smaht-submitr``, use the same options as desribed above, but specify your S3 bucket/key for the ``--cloud-source`` option and your AWS credentials file for the ``--cloud-credentials`` file.
 
 Mounting AWS S3 Files 
 ~~~~~~~~~~~~~~~~~~~~~
