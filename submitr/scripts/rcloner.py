@@ -482,7 +482,8 @@ def print_info_via_rclone(target: str, rclone_store: RCloneStore) -> None:
                 if key in ["mtime", "md5-timestamp"]:
                     try:
                         timestamp = float(metadata_via_boto[key])
-                        if timestamp := format_datetime(datetime.datetime.fromtimestamp(timestamp, tz=pytz.UTC), ms=True):
+                        if (timestamp := format_datetime(datetime.datetime.fromtimestamp(timestamp,
+                                                                                         tz=pytz.UTC), ms=True)):
                             extra_info = f" {chars.rarrow} {timestamp}"
                     except Exception:
                         pass
