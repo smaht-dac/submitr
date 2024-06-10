@@ -163,21 +163,6 @@ class RCloneCommands:
             return size if isinstance(result, dict) and (size := result.get("size")) and (size >= 0) else None
         except Exception:
             return None
-        if False:
-            # Obsolete; see above comments.
-            command = [RCloneInstallation.executable_path(), "size", source]
-            if isinstance(config, str) and config:
-                command += ["--config", config]
-            try:
-                for line in RCloneCommands._run(command):
-                    if line.lower().strip().replace(" ", "") == "totalobjects:1":
-                        found = True
-                    elif (nbytes := RCloneCommands._parse_rclone_size_to_bytes(line)) is not None:
-                        return nbytes if found else None
-            except Exception as e:
-                if raise_exception is True:
-                    raise e
-            return None
 
     @staticmethod
     def checksum_command(source: str, config: Optional[str] = None, raise_exception: bool = False) -> Optional[str]:

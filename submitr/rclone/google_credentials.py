@@ -30,9 +30,6 @@ class GoogleCredentials:
     def location(self) -> Optional[str]:
         return self._location
 
-#   def copy(self) -> GoogleCredentials:
-#       return GoogleCredentials(service_account_file=self.service_account_file, location=self.location)
-
     def __eq__(self, other: Optional[GoogleCredentials]) -> bool:
         return (isinstance(other, GoogleCredentials) and
                 (self.location == other.location) and
