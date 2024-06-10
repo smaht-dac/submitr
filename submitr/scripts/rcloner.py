@@ -16,6 +16,7 @@ from submitr.rclone import (
     RCloneStore, RCloneAmazon, RCloneGoogle,
     RCloner, cloud_path
 )
+from submitr.rclone.rclone_installation import RCloneInstallation
 from submitr.rclone.rclone_store_registry import RCloneStoreRegistry
 from submitr.rclone.testing.rclone_utils_for_testing_amazon import AwsS3
 from submitr.utils import chars
@@ -63,6 +64,8 @@ def main() -> None:
     args.add_argument("--verbose", action="store_true", help="Verbose output.", default=False)
     args.add_argument("--debug", action="store_true", help="Debug output.", default=False)
     args = args.parse_args()
+
+    RCloneInstallation.verify_installation()
 
     if args.debug:
         os.environ["SMAHT_DEBUG"] = "true"
