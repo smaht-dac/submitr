@@ -67,7 +67,7 @@ exe-linux-amd:
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/x86/submitr
 	# chmod a+x submitr
-	docker build --build-arg ARCHITECTURE=x86 -t pyinstaller-linux-build -f Dockerfile-for-pyinstallerx .
+	docker build --build-arg ARCHITECTURE=x86 -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller .
 	mkdir -p ./downloads/linux/x86
 	docker run --rm -v ./downloads/linux/x86:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
 	chmod a+x ./downloads/linux/x86/submitr
