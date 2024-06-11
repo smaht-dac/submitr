@@ -475,7 +475,7 @@ def print_info_via_rclone(target: str, rclone_store: RCloneStore) -> None:
     formatted_size = format_size(size)
     print(f"Bucket: {cloud_path.bucket(target)}")
     print(f"Key: {cloud_path.basename(target)}")
-    print(f"Size: {format_size(size)}{f' ({size} bytes)' if '.' in formatted_size else ''}")
+    print(f"Size: {format_size(size)}{f' ({size} bytes)' if '.' in formatted_size is not None else ''}")
     print(f"Modified: {modified}")
     print(f"Checksum: {checksum}")
     if checksum_via_aws_boto:
