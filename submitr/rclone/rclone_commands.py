@@ -159,8 +159,9 @@ class RCloneCommands:
         # as the info_command does) is fine. This permission stuff with rclone and S3 is very finicky indeed.
         try:
             result = RCloneCommands.info_command(source, config=config, raise_exception=raise_exception)
-            # N.B. Returns a size of -1 if file/key not found (at least for GCS).
-            return size if isinstance(result, dict) and isinstance(size := result.get("size"), int) else None
+            # N.B. rclone returns a size of -1 if file/key not found (at least for GCS).
+            return size if (isinstance(result, dict) and
+                            isinstance(size := result.get("size"), int) and size >= 0) else None
         except Exception:
             return None
 
