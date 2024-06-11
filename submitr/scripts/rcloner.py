@@ -2,7 +2,6 @@ import argparse
 from base64 import b64decode as base64_decode
 from collections import namedtuple
 import datetime
-import multiprocessing
 import os
 import pytz
 import signal
@@ -40,8 +39,8 @@ def main() -> None:
     # pip install pyinstaller
     # pyinstaller --onefile --name my_application submitr/scripts/rcloner.py
     # which needs this ...
+    # import multiprocessing
     # multiprocessing.freeze_support()
-(tmp-3.11) mac: pyinstaller --onefile --name my_application submitr/scripts/rcloner.py
     args = argparse.ArgumentParser(description="Test utility for rclone support in smaht-submitr.")
     args.add_argument("action", help="Action: copy or info.", default=None)
     args.add_argument("source", help="Source file or cloud bucket/key.", default=None)
