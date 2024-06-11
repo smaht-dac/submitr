@@ -59,8 +59,7 @@ exe-linux-x86:
 	# chmod a+x submitr
 	docker build -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller-linux-x86 .
 	mkdir -p ./downloads/linux/x86
-	docker run --rm -v ./downloads/linux/x86:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
-	chmod a+x ./downloads/linux/x86/submitr
+	docker run --rm -v ./downloads/linux/x86:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr.gz /output/"
 
 exe-macos:
 	# Download/use with(once merged with master)
