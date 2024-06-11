@@ -1,5 +1,6 @@
 import io
 import requests
+import sys
 from contextlib import contextmanager
 from functools import lru_cache
 from itertools import islice
@@ -9,7 +10,7 @@ from dcicutils.data_readers import Excel
 from dcicutils.misc_utils import get_error_message, PRINT
 from dcicutils.portal_utils import Portal
 from dcicutils.tmpfile_utils import temporary_file
-from submitr.utils import is_excel_file_name, print_boxed, remove_punctuation_and_space
+from submitr.utils import chars, is_excel_file_name, print_boxed, remove_punctuation_and_space
 
 
 # This module provides functions to get the version of our (HMS DBMI) smaht-submitr metadata
@@ -47,10 +48,10 @@ def check_metadata_version(file: str, portal: Portal,
                     print_metadata_version_warning(
                         version, metadata_template_version, metadata_template_url)
                     if not yes_or_no("Do you want to continue with your metadata file?"):
-                        exit(0)
+                        sys.exit(0)
             elif not quiet:
                 PRINT(f"Your metadata file is based on the latest HMS metadata template:"
-                      f" {metadata_template_version} ✓")
+                      f" {metadata_template_version} {chars.check}")
             return version, metadata_template_version
     return None, None
 

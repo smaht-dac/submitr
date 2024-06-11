@@ -82,7 +82,7 @@ _SCHEMAS_IGNORE_PROPERTIES = [
 def main():
 
     parser = argparse.ArgumentParser(description="View Portal object.")
-    parser.add_argument("uuid", type=str,
+    parser.add_argument("uuid", nargs="?", type=str,
                         help=f"The uuid (or path) of the object to fetch and view. ")
     parser.add_argument("--ini", type=str, required=False, default=None,
                         help=f"Name of the application .ini file.")
@@ -98,10 +98,6 @@ def main():
                         help="Include all properties for schema usage.")
     parser.add_argument("--raw", action="store_true", required=False, default=False, help="Raw output.")
     parser.add_argument("--tree", action="store_true", required=False, default=False, help="Tree output for schemas.")
-    parser.add_argument("--post", type=str, required=False, default=None,
-                        help="POST data of the main arg type with data from file specified with this option.")
-    parser.add_argument("--patch", type=str, required=False, default=None,
-                        help="PATCH data of the main arg type with data from file specified with this option.")
     parser.add_argument("--database", action="store_true", required=False, default=False,
                         help="Read from database output.")
     parser.add_argument("--bool", action="store_true", required=False,
@@ -109,6 +105,7 @@ def main():
     parser.add_argument("--yaml", action="store_true", required=False, default=False, help="YAML output.")
     parser.add_argument("--copy", "-c", action="store_true", required=False, default=False,
                         help="Copy object data to clipboard.")
+    parser.add_argument("--indent", required=False, default=False, help="Indent output.", type=int)
     parser.add_argument("--details", action="store_true", required=False, default=False, help="Detailed output.")
     parser.add_argument("--more-details", action="store_true", required=False, default=False,
                         help="More detailed output.")
@@ -122,12 +119,16 @@ def main():
     portal = _create_portal(ini=args.ini, env=args.env or os.environ.get("SMAHT_ENV"),
                             server=args.server, app=args.app, verbose=args.verbose, debug=args.debug)
 
-    if args.uuid.lower() == "schemas" or args.uuid.lower() == "schema":
+    if not args.uuid:
+        _print("UUID or schema or path required.")
+        sys.exit(1)
+
+    if args.uuid and ((args.uuid.lower() == "schemas") or (args.uuid.lower() == "schema")):
         _print_all_schema_names(portal=portal, details=args.details,
                                 more_details=args.more_details, all=args.all,
                                 tree=args.tree, raw=args.raw, raw_yaml=args.yaml)
         return
-    elif args.uuid.lower() == "info":  # TODO: need word for what consortiums and submission centers are collectively
+    elif args.uuid and (args.uuid.lower() == "info"):
         if consortia := portal.get_metadata("/consortia?limit=1000"):
             _print("Known Consortia:")
             consortia = sorted(consortia.get("@graph", []), key=lambda key: key.get("identifier"))
@@ -158,13 +159,6 @@ def main():
         args.schema = True
 
     if args.schema:
-        if args.post:
-            if post_data := _read_json_from_file(args.post):
-                if args.verbose:
-                    _print(f"POSTing data from file ({args.post}) as type: {args.uuid}")
-                portal.post_metadata(args.uuid, post_data)
-                if args.verbose:
-                    _print(f"Done POSTing data from file ({args.post}) as type: {args.uuid}")
         schema, schema_name = _get_schema(portal, args.uuid)
         if schema:
             if args.copy:
@@ -180,33 +174,34 @@ def main():
             _print_schema(schema, details=args.details, more_details=args.details,
                           all=args.all, raw=args.raw, raw_yaml=args.yaml)
             return
-    elif args.patch:
-        if patch_data := _read_json_from_file(args.patch):
-            if args.verbose:
-                _print(f"PATCHing data from file ({args.patch}) for object: {args.uuid}")
-            portal.patch_metadata(args.uuid, patch_data)
-            if args.verbose:
-                _print(f"Done PATCHing data from file ({args.patch}) as type: {args.uuid}")
-            return
-        else:
-            _print(f"No PATCH data found in file: {args.patch}")
-            exit(1)
 
     data = _get_portal_object(portal=portal, uuid=args.uuid, raw=args.raw,
                               database=args.database, check=args.bool, verbose=args.verbose)
     if args.bool:
         if data:
             _print(f"{args.uuid}: found")
-            exit(0)
+            sys.exit(0)
         else:
             _print(f"{args.uuid}: not found")
-            exit(1)
+            sys.exit(1)
     if args.copy:
         pyperclip.copy(json.dumps(data, indent=4))
     if args.yaml:
         _print(yaml.dump(data))
     else:
-        _print(json.dumps(data, default=str, indent=4))
+        if args.indent > 0:
+            _print(_format_json_with_indent(data, indent=args.indent))
+        else:
+            _print(json.dumps(data, default=str, indent=4))
+
+
+def _format_json_with_indent(value: dict, indent: int = 0) -> Optional[str]:
+    if isinstance(value, dict):
+        result = json.dumps(value, indent=4)
+        if indent > 0:
+            result = f"{indent * ' '}{result}"
+            result = result.replace("\n", f"\n{indent * ' '}")
+        return result
 
 
 def _create_portal(ini: str, env: Optional[str] = None,
@@ -269,7 +264,7 @@ def _get_schema(portal: Portal, name: str) -> Tuple[Optional[dict], Optional[str
     if portal and name and (name := name.replace("_", "").replace("-", "").strip().lower()):
         if schemas := _get_schemas(portal):
             for schema_name in schemas:
-                if schema_name.replace("_", "").replace("-", "").strip().lower() == name:
+                if schema_name.replace("_", "").replace("-", "").strip().lower() == name.lower():
                     return schemas[schema_name], schema_name
     return None, None
 
@@ -278,6 +273,30 @@ def _is_maybe_schema_name(value: str) -> bool:
     if value and not is_uuid(value) and not value.startswith("/"):
         return True
     return False
+
+
+def _is_schema_name(portal: Portal, value: str) -> bool:
+    try:
+        return _get_schema(portal, value)[0] is not None
+    except Exception:
+        return False
+
+
+def _is_schema_named_json_file_name(portal: Portal, value: str) -> bool:
+    try:
+        return value.endswith(".json") and _is_schema_name(portal, os.path.basename(value[:-5]))
+    except Exception:
+        return False
+
+
+def _get_schema_name_from_schema_named_json_file_name(portal: Portal, value: str) -> Optional[str]:
+    try:
+        if not value.endswith(".json"):
+            return None
+        _, schema_name = _get_schema(portal, os.path.basename(value[:-5]))
+        return schema_name
+    except Exception:
+        return False
 
 
 def _print_schema(schema: dict, details: bool = False, more_details: bool = False, all: bool = False,
@@ -574,18 +593,18 @@ def _print_tree(root_name: Optional[str],
 def _read_json_from_file(file: str) -> Optional[dict]:
     if not os.path.exists(file):
         _print(f"Cannot find file: {file}")
-        exit(1)
+        sys.exit(1)
     try:
         with io.open(file, "r") as f:
             try:
                 return json.load(f)
             except Exception:
                 _print(f"Cannot parse JSON in file: {file}")
-                exit(1)
+                sys.exit(1)
     except Exception as e:
         print(e)
         _print(f"Cannot open file: {file}")
-        exit(1)
+        sys.exit(1)
 
 
 def _print(*args, **kwargs):
@@ -597,7 +616,7 @@ def _print(*args, **kwargs):
 def _exit(message: Optional[str] = None) -> None:
     if message:
         _print(f"ERROR: {message}")
-    exit(1)
+    sys.exit(1)
 
 
 if __name__ == "__main__":

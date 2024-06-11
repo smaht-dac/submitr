@@ -1,11 +1,14 @@
 import argparse
 import json
 import os
+import sys
+from typing import Optional
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
 from .cli_utils import CustomArgumentParser
-from ..base import DEFAULT_APP
-from ..submission import (
+from submitr.base import DEFAULT_APP
+from submitr.rclone import RCloneStore
+from submitr.submission import (
     submit_any_ingestion,
     DEFAULT_INGESTION_TYPE,
     DEFAULT_SUBMISSION_PROTOCOL,
@@ -17,6 +20,7 @@ from ..submission import (
     _print_metadata_file_info,
     _pytesting
 )
+from submitr.utils import chars, get_submission_center_code
 
 _HELP = f"""
 ===
@@ -54,9 +58,15 @@ OPTIONS:
   To specify a directory containing the files to upload; in addition
   to the default of using the directory containing the submitted file;
   this directory will be searched recursively.
---output OUTPUT-FILE
-  Writes all logging output to the specified file;
-  and refrains from printing lengthy content to output/stdout.
+--cloud-source GOOGLE-CLOUD-STORAGE-SOURCE
+  A Google Cloud Storage (GCS) bucket or bucket/sub-folder
+  from where the upload file(s) should be copied.
+--cloud-credentials GCS-SERVICE-ACCOUNT-FILE
+  GCS credentials to use for --rclone-google-source;
+  e.g. full path to your GCP service account file.
+  May be omitted if running on a GCE instance.
+--cloud-location LOCATION
+  The Google Cloud Storage (GCS) location (aka "region").
 --info
   Displays ONLY info about the specified metadata file; nothing else.
   Add --refs or --files to see (linkTo) references or (upload) files.
@@ -76,10 +86,6 @@ For any issues please contact SMaHT DAC: smhelp@hms-dbmi.atlassian.net
 _HELP_ADVANCED = _HELP.strip() + f"""
 ADVANCED OPTIONS:
 ===
---validate-only
-  Same as --validate with slightly different command interaction.
-  Performs ONLY, but BOTH client-side (local) and
-  server-side (remote) validation only WITHOUT submitting.
 --validate-remote-only
   Performs ONLY server-side (remote) validation WITHOUT submitting.
 --validate-local-only
@@ -88,6 +94,7 @@ ADVANCED OPTIONS:
   Skips client-side (local) validation.
 --validate-remote-skip
   Skips server-side (remote) validation.
+  Only allowed for admin users.
 --noanalyze
   Skips analysis of parsed metadata WRT creates/updates.
 --patch-only
@@ -112,6 +119,9 @@ ADVANCED OPTIONS:
   Displays ONLY info about the specified metadata file; nothing else.
 --details
   Displays slightly more detailed output.
+--output OUTPUT-FILE
+  Writes all logging output to the specified file;
+  and refrains from printing lengthy content to output/stdout.
 --noprogress
   Do not print progress of (client-side) parsing/validation output.
 --timeout SECONDS
@@ -160,8 +170,6 @@ def main(simulated_args_for_testing=None):
                         help="Actually submit the metadata for ingestion..", default=False)
     parser.add_argument('--validate', action="store_true",
                         help="Perform both client-side and server-side validation first.", default=False)
-    parser.add_argument('--validate-only', action="store_true",
-                        help="Same as --validate.", default=False)
     parser.add_argument('--validate-local-only', action="store_true",
                         help="Validate submitted data locally only (on client-side).")
     parser.add_argument('--validate-remote-only', action="store_true",
@@ -213,29 +221,39 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--files', action="store_true",
                         help="Outputs list of files from the metadata file; only with --info.", default=False)
     parser.add_argument('--output', help="Output file for results.", default=False)
+    parser.add_argument('--merge', action="store_true", help="Merge supplied metadata objects into existing ones.",
+                        default=False)
     parser.add_argument('--verbose', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--timeout', help="Wait timeout for server validation/submission.")
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
     parser.add_argument('--ping', action="store_true", help="Ping server.", default=False)
+
+    # These original/deprecated options are just for backward compatibility.
+    parser.add_argument('--rclone-google-source', help="Use rlcone to copy upload files from GCS.", default=None)
+    parser.add_argument('--rclone-google-credentials', help="GCS credentials (service account file).", default=None)
+    parser.add_argument('--rclone-google-location', help="GCS location (aka region).", default=None)
+
+    # These are for GCS-to-S3 or S3-to-S3 support.
+    parser.add_argument('--cloud-source', help="GCS credentials (service account file).", default=None)
+    parser.add_argument('--cloud-credentials', help="GCS credentials (service account file).", default=None)
+    parser.add_argument('--cloud-location', help="Cloud location/region.", default=None)
+    parser.add_argument('--cloud-region', help="Synonym for --cloud-location ", default=None)
+
     args = parser.parse_args(args=simulated_args_for_testing)
 
     directory_only = True
     if args.directory:
+        if args.directory_only:
+            PRINT("May not specify both --directory and --directory-only")
+            sys.exit(1)
         args.upload_folder = args.directory
         directory_only = False
     if args.directory_only:
         args.upload_folder = args.directory_only
         directory_only = True
 
-#   keys_file = args.keys or os.environ.get("SMAHT_KEYS")
-#   if keys_file:
-#       if not keys_file.endswith(".json"):
-#           PRINT(f"ERROR: The specified keys file is not a .json file: {keys_file}")
-#           exit(1)
-#       if not keys_file.endswith(".json") or not os.path.exists(keys_file):
-#           PRINT(f"ERROR: The --keys argument must be the name of an existing .json file: {keys_file}")
-#           exit(1)
+    cloud_store = RCloneStore.from_args(args, usage=usage, printf=PRINT)
 
     env_from_env = False
     if not args.env:
@@ -244,19 +262,20 @@ def main(simulated_args_for_testing=None):
             env_from_env = True
 
     if args.ping or (args.bundle_filename and args.bundle_filename.lower() == "ping"):
-        ping_okay = _ping(
-            env=args.env or os.environ.get("SMAHT_ENV"),
-            env_from_env=env_from_env,
-            server=args.server,
-            app=args.app,
-            keys_file=args.keys,
-            verbose=True)
-        if ping_okay:
-            PRINT("Ping success. Your connection appears to be OK.")
-            exit(0)
+        if args.env or os.environ.get("SMAHT_ENV"):
+            ping_okay = _ping(env=args.env or os.environ.get("SMAHT_ENV"), env_from_env=env_from_env,
+                              server=args.server, app=args.app, keys_file=args.keys, verbose=True)
+            if ping_okay:
+                PRINT(f"Portal connectivity appears to be OK {chars.check}")
+            else:
+                PRINT(f"Portal connectivty appears to be problematic {chars.xmark}")
         else:
-            PRINT("Ping failure. Your connection appears to be problematic.")
-            exit(1)
+            PRINT("No environment specified (via --env); skipping SMaHT Portal ping.")
+            ping_okay = True
+        ping_rclone_okay = None
+        if cloud_store:
+            ping_rclone_okay = cloud_store.verify_connectivity()
+        sys.exit(0 if ping_okay is True and (ping_rclone_okay is not False) else 1)
 
     if args.consortia or (args.bundle_filename and args.bundle_filename.lower() == "consortia"):
         portal = _define_portal(env=args.env)
@@ -266,7 +285,7 @@ def main(simulated_args_for_testing=None):
             if ((consortium_name := consortium.get("name")) and
                 (consortium_uuid := consortium.get("uuid"))):  # noqa
                 PRINT(f"- {consortium_name}: {consortium_uuid}")
-        exit(0)
+        sys.exit(0)
 
     if (args.submission_centers or
         (args.bundle_filename and args.bundle_filename.lower() in
@@ -277,14 +296,17 @@ def main(simulated_args_for_testing=None):
         for submission_center in submission_centers:
             if ((submission_center_name := submission_center.get("name")) and
                 (submission_center_uuid := submission_center.get("uuid"))):  # noqa
-                PRINT(f"- {submission_center_name}: {submission_center_uuid}")
-        exit(0)
+                message = f"- {submission_center_name}: {submission_center_uuid}"
+                if submission_center_code := get_submission_center_code(submission_center):
+                    message += f" (submitted_id prefix: {submission_center_code}_)"
+                PRINT(message)
+        sys.exit(0)
 
     _setup_validate_related_options(args)
 
     if not args.bundle_filename:
-        PRINT("Missing submission file name.")
-        exit(2)
+        PRINT("Missing metadata file name.")
+        sys.exit(2)
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
         PRINT(f"WARNING: Directory does not exist: {args.upload_folder}")
@@ -292,7 +314,7 @@ def main(simulated_args_for_testing=None):
             # TODO: exist breaks test ...
             # FAILED submitr/tests/test_submit_metadata_bundle.py::test_submit_metadata_bundle_script[None]
             # FAILED submitr/tests/test_submit_metadata_bundle.py::test_submit_metadata_bundle_script[foo.bar]
-            exit(1)
+            sys.exit(1)
 
     if args.yes:
         args.no_query = True
@@ -309,15 +331,20 @@ def main(simulated_args_for_testing=None):
     if args.info:
         if not os.path.exists(args.bundle_filename):
             PRINT(f"File does not exist: {args.bundle_filename}")
-            exit(1)
+            sys.exit(1)
         _print_metadata_file_info(args.bundle_filename, env=args.env,
-                                  refs=args.refs, files=args.files, output_file=args.output, verbose=args.verbose)
-        exit(0)
+                                  refs=args.refs, files=args.files,
+                                  subfolders=not directory_only,
+                                  upload_folder=args.upload_folder,
+                                  rclone_google=cloud_store,
+                                  output_file=args.output,
+                                  verbose=args.verbose)
+        sys.exit(0)
 
     with script_catch_errors():
 
         if not _sanity_check_submitted_file(args.bundle_filename):
-            exit(1)
+            sys.exit(1)
 
         submit_any_ingestion(ingestion_filename=args.bundle_filename, ingestion_type=args.ingestion_type,
                              env=args.env, env_from_env=env_from_env,
@@ -335,6 +362,7 @@ def main(simulated_args_for_testing=None):
                              post_only=args.post_only,
                              patch_only=args.patch_only,
                              submit=args.submit,
+                             rclone_google=cloud_store,
                              validate_local_only=args.validate_local_only,
                              validate_remote_only=args.validate_remote_only,
                              validate_local_skip=args.validate_local_skip,
@@ -342,6 +370,7 @@ def main(simulated_args_for_testing=None):
                              noanalyze=args.noanalyze,
                              json_only=args.json_only,
                              ref_nocache=args.ref_nocache,
+                             merge=args.merge,
                              verbose_json=args.json,
                              verbose=args.verbose,
                              noversion=args.noversion,
@@ -361,7 +390,7 @@ def _sanity_check_submitted_file(file_name: str) -> bool:
     with a "-inserts" suffix. Returns True if passed sanity check otherwise False.
     """
     if not os.path.exists(file_name):
-        PRINT(f"ERROR: Submission file does not exist: {file_name}")
+        PRINT(f"ERROR: Metadata file does not exist: {file_name}")
         return False
 
     if file_name.endswith(".json"):
@@ -381,45 +410,45 @@ def _setup_validate_related_options(args: argparse.Namespace):
         return
 
     if args.submit:
-        if args.validate or args.validate_only or args.validate_local_only or args.validate_remote_only:
+        if args.validate or args.validate_local_only or args.validate_remote_only:
             PRINT(f"May not specify both --submit AND validate options.")
-            exit(1)
+            sys.exit(1)
         if args.json_only:
             PRINT(f"May not specify both --submit AND --json-only options.")
-            exit(1)
+            sys.exit(1)
 
     if not args.submit:
-        if not (args.validate or args.validate_only or args.validate_local_only or args.validate_remote_only):
+        if not (args.validate or args.validate_local_only or args.validate_remote_only):
             if not args.json_only and not _pytesting():
                 PRINT(f"Must specify either --validate or --submit options. Use --help for all options.")
-                exit(1)
+                sys.exit(1)
         elif args.json_only:
             PRINT(f"May not specify both --json-only and validate options.")
-            exit(1)
+            sys.exit(1)
 
     if args.validate_local_only and args.validate_remote_only:
         PRINT(f"May not specify both --validate-local-only and --validate-remote-only options.")
-        exit(1)
+        sys.exit(1)
 
     if args.validate_local_only and args.validate_local_skip:
         PRINT(f"May not specify both --validate-local-only and --validate-local-skip options.")
-        exit(1)
+        sys.exit(1)
 
     if args.validate_remote_only and args.validate_remote_skip:
         PRINT(f"May not specify both --validate-remote-only and --validate-remote-skip options.")
-        exit(1)
+        sys.exit(1)
 
-    if args.validate_local_skip and args.validate_remote_skip and (args.validate or args.validate_only):
+    if args.validate_local_skip and args.validate_remote_skip and args.validate:
         PRINT(f"May not specify both validation and not validation.")
-        exit(1)
+        sys.exit(1)
 
     if args.json_only:
         if args.submit:
             PRINT("The --json-only option is not allowed with --submit.")
-            exit(1)
+            sys.exit(1)
         if args.validate_remote_only or args.validate_local_skip:
             PRINT("The --json-only option is not allowed with these validate options.")
-            exit(1)
+            sys.exit(1)
 
     # Ultimately only want these options:
     # - args.submit -> If False then doing validation only
@@ -429,7 +458,12 @@ def _setup_validate_related_options(args: argparse.Namespace):
     # - args.validate_remote_skip
 
     delattr(args, "validate")
-    delattr(args, "validate_only")
+
+
+def usage(message: Optional[str] = None) -> None:
+    if isinstance(message, str) and message:
+        PRINT(message)
+    sys.exit(1)
 
 
 if __name__ == '__main__':

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 import io
 import os
@@ -6,7 +7,7 @@ import sys
 from typing import Callable, Optional, Tuple
 from dcicutils.command_utils import yes_or_no
 from dcicutils.misc_utils import PRINT as __PRINT
-from .utils import show as __show
+from submitr.utils import show as __show
 
 # TODO: Cleanup this arbitrary differentiation between
 # print and show; but need to fix tests when this happens.
@@ -34,7 +35,7 @@ def setup_for_output_file_option(output_file: str) -> Tuple[Callable, Callable, 
     if os.path.exists(output_file):
         PRINT(f"Output file already exists: {output_file}")
         if not yes_or_no("Overwrite this file?"):
-            exit(1)
+            sys.exit(1)
         with io.open(output_file, "w"):
             pass
     _OUTPUT_FILE = output_file  # Assuming this is only called once/globally

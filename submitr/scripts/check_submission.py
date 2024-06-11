@@ -1,9 +1,13 @@
 import os
+import sys
+from typing import Optional
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.common import ORCHESTRATED_APPS
-from ..base import DEFAULT_APP
-from ..submission import _monitor_ingestion_process, _pytesting
-from .cli_utils import CustomArgumentParser
+from dcicutils.misc_utils import PRINT
+from submitr.base import DEFAULT_APP
+from submitr.rclone import RCloneStore
+from submitr.submission import _monitor_ingestion_process, _pytesting
+from submitr.scripts.cli_utils import CustomArgumentParser
 
 _HELP = f"""
 ===
@@ -30,6 +34,15 @@ OPTIONS:
   this directory will be search, recursively.
 --directory-only
   Same as --directory but does NOT search recursively.
+--cloud-source GOOGLE-CLOUD-STORAGE-SOURCE
+  A Google Cloud Storage (GCS) bucket or bucket/sub-folder
+  from where the upload file(s) should be copied.
+--cloud-credentials GCS-SERVICE-ACCOUNT-FILE
+  GCS credentials to use for --rclone-google-source;
+  e.g. full path to your GCP service account file.
+  May be omitted if running on a GCE instance.
+--cloud-location LOCATION
+  The Google Cloud Storage (GCS) location (aka "region").
 --output OUTPUT-FILE
   Writes all logging output to the specified file;
   and refrains from printing lengthy content to output/stdout.
@@ -61,11 +74,22 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--verbose', action="store_true", help="More verbose output.", default=False)
     parser.add_argument('--timeout', help="Wait timeout for server validation/submission.")
     parser.add_argument('--debug', action="store_true", help="Debugging output.", default=False)
+
+    # These original/deprecated options are just for backward compatibility.
+    parser.add_argument('--rclone-google-source', help="Use rlcone to copy upload files from GCS.", default=None)
+    parser.add_argument('--rclone-google-credentials', help="GCS credentials (service account file).", default=None)
+    parser.add_argument('--rclone-google-location', help="GCS location (aka region).", default=None)
+
+    # These are for GCS-to-S3 or S3-to-S3 support.
+    parser.add_argument('--cloud-source', help="GCS credentials (service account file).", default=None)
+    parser.add_argument('--cloud-credentials', help="GCS credentials (service account file).", default=None)
+    parser.add_argument('--cloud-location', help="Cloud location/region.", default=None)
+    parser.add_argument('--cloud-region', help="Synonym for --cloud-location ", default=None)
     args = parser.parse_args(args=simulated_args_for_testing)
 
     if not args.submission_uuid:
         if _pytesting():
-            exit(2)
+            sys.exit(2)
         args.submission_uuid = "dummy"
 
     env_from_env = False
@@ -89,7 +113,9 @@ def main(simulated_args_for_testing=None):
 
     if upload_directory and not os.path.isdir(upload_directory):
         print(f"Directory does not exist: {upload_directory}")
-        exit(1)
+        sys.exit(1)
+
+    cloud_store = RCloneStore.from_args(args, usage=usage, printf=PRINT)
 
     if args.timeout:
         if not args.timeout.isdigit():
@@ -110,9 +136,16 @@ def main(simulated_args_for_testing=None):
                 debug=args.debug,
                 upload_directory=upload_directory,
                 upload_directory_recursive=not upload_directory_only,
+                rclone_google=cloud_store,
                 output_file=args.output,
                 note="Checking Submission"
         )
+
+
+def usage(message: Optional[str] = None) -> None:
+    if isinstance(message, str) and message:
+        PRINT(message)
+    sys.exit(1)
 
 
 if __name__ == '__main__':

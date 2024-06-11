@@ -1,0 +1,94 @@
+Notes on demo file (bcm_formatted_hapmapmix.xlsx) for Annual Meeting in St. Louis, June 2024
+
+- Some commands:
+
+  - Submit metadata:
+    > submit-metadata-bundle --env smaht-local --submit --directory files bcm_formatted_hapmapmix.xlsx
+
+  - Validate metadata:
+    > submit-metadata-bundle --env smaht-local --validate --directory files bcm_formatted_hapmapmix.xlsx
+
+  - Submit metadata with rclone support to upload (transfer) to S3 from Google (GCS) if a file for upload is there:
+    > submit-metadata-bundle --env smaht-local --submit --directory files \
+      --rclone-google-source smaht-submitr-rclone-testing/demo \
+      --rclone-google-credentials ~/.config/google-cloud/smaht-dac-617e0480d8e2.json bcm_formatted_hapmapmix.xlsx
+    > Note these files are currently (2024-05-31) in GCS:
+      - gs://smaht-submitr-rclone-testing/demo/222TWJLT4-1-IDUDI0056v2_S2_L001_R2_001.fastq.gz
+      - gs://smaht-submitr-rclone-testing/demo/222TWJLT4-1-IDUDI0055v2_S1_L001_R2_001.fastq.gz
+
+  - Resume upload:
+    > resume-uploads --env smaht-local --directory files <submission-uuid-or-upload-file-uuid-or-accession>
+
+  - Get info (only - no submit or validate) related to metadata file:
+    > submit-metadata-bundle --env smaht-local --info --refs --files --directory files bcm_formatted_hapmapmix.xlsx
+
+  - Dump metadata (only - no submit or validate) as JSON:
+    > submit-metadata-bundle --env smaht-local --json-only bcm_formatted_hapmapmix.xlsx
+
+  - View known submission-centers/consortia:
+    > submit-metadata-bundle --env smaht-local --submission-centers --consortia
+
+  - List recent submissions (add --mine to see only yours):
+    > list-submissions --env smaht-local
+
+  - Get info on submission - with optional continue on to submission if the submission-uuid is for a validation:
+    > check-submission --env smaht-local <submission-uuid>
+
+  - Download latest HMS metadata template:
+    > get-metadata-template <file-name-with-dot-xlsx-suffix>
+
+  - View arbitrary portal object (for troubleshooting)
+    > view-portal-object --env smaht-local <uuid-or-object-path>
+
+  - Use rclone to copy smaht-local file to Google (for testing/troubleshooting):
+    > rcloner copy <your-file> gs://smaht-submitr-rclone-testing/demo -gcs ~/.config/google-cloud/smaht-dac-617e0480d8e2.json
+
+  - Use rclone to copy file from Google to local current directory (for testing/troubleshooting):
+    > rcloner copy gs://smaht-submitr-rclone-testing/demo/<your-file> . -gcs ~/.config/google-cloud/smaht-dac-617e0480d8e2.json
+
+  - Use rclone to get info about a file in Google (for testing/troubleshooting):
+    > rcloner info gs://smaht-submitr-rclone-testing/demo/<some-file> . -gcs ~/.config/google-cloud/smaht-dac-617e0480d8e2.json
+
+- File bcm_formatted_hapmapmix.xlsx from William Feng on 2024-05-21
+  https://docs.google.com/spreadsheets/d/1qCm0bY-vG4a9uiaOvmKHZ12MvhmMKKRfEpgAm-7Hsh4/edit#gid=1645623888
+  https://hms-dbmi.slack.com/archives/D05LSGRQYV7/p1716239277185859
+
+- Made some minor corrections to this spreadsheet locally
+  - Removed blank row #3 in Sequencing sheet
+  - Change values of target_read_length in Sequencing tab from '25-30 kb' and '15-20 kb' to 27500 and 17500
+  - Changed all submission-center prefixes in submitted_id values to be DAC (previously mixture of BCM, MAYO, WASHU, USWC)
+
+- Dependencies for this spreadsheet; in smaht-portal/src/encoded/tests/data/demo_inserts;
+  also in dependencies directory here; manually load/upsert these with create-dependencies.sh.
+  /Assay/bulk_rna_seq
+  /Assay/bulk_wgs_pcr_free
+  /FileFormat/bam
+  /FileFormat/bam_bai 
+  /FileFormat/bam_pbi
+  /FileFormat/fastq_gz
+  /Sequencer/illumina_novaseq_6000
+  /Sequencer/illumina_novaseq_x
+  /Sequencer/ont_promethion_24
+  /Sequencer/pacbio_revio_hifi
+  /Sequencing/BCM_SEQUENCING_NOVASEQX-400X
+  /Sequencing/BCM_SEQUENCING_ONT-100X
+  /Sequencing/BCM_SEQUENCING_PACBIO-100X
+  /Software/BCM_SOFTWARE_BCL2FASTQ2
+  /Software/BCM_SOFTWARE_DORADO
+  /Software/BCM_SOFTWARE_LIMA
+  /Software/BCM_SOFTWARE_MINKNOW
+  /Software/BCM_SOFTWARE_REVIO-ICS
+  /Software/BCM_SOFTWARE_SAMTOOLS
+  /Software/BCM_SOFTWARE_SMRTLINK
+  /SubmissionCenter/bcm_gcc
+  /SubmissionCenter/mayo_tdd
+  /SubmissionCenter/washu_gcc
+
+- Referenced files to upload in the files directory here (these have dummy/random content):
+  222TWJLT4-1-IDUDI0055V2_S1_L001_R1_001.FASTQ.GZ
+  222TWJLT4-1-IDUDI0056V2_S2_L001_R1_001.FASTQ.GZ
+  222TWJLT4-1-IDUDI0057_S3_L001_R1_001.FASTQ.GZ
+  222TWJLT4-1-IDUDI0055V2_S1_L001_R2_001.FASTQ.GZ
+  222TWJLT4-1-IDUDI0056V2_S2_L001_R2_001.FASTQ.GZ
+  > THIS ONE IS CURRENTLY (2024-05-29) in GCS:
+    > gs://smaht-submitr-rclone-testing/demo/222TWJLT4-1-IDUDI0056v2_S2_L001_R2_001.fastq.gz

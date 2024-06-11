@@ -1,0 +1,187 @@
+{
+    "status": "in review",
+    "consortia": [
+        {
+            "status": "released",
+            "@id": "/consortia/358aed10-9b9d-4e26-ab84-4bd162da182b/",
+            "display_title": "SMaHT",
+            "@type": [
+                "Consortium",
+                "Item"
+            ],
+            "uuid": "358aed10-9b9d-4e26-ab84-4bd162da182b",
+            "principals_allowed": {
+                "view": [
+                    "group.admin",
+                    "group.read-only-admin",
+                    "remoteuser.EMBED",
+                    "remoteuser.INDEXER",
+                    "role.consortium_member_rw",
+                    "role.consortium_member_rw.358aed10-9b9d-4e26-ab84-4bd162da182b",
+                    "role.submission_center_member_rw"
+                ],
+                "edit": [
+                    "group.admin"
+                ]
+            }
+        }
+    ],
+    "parameters": {
+        "user": "{\"uuid\": \"74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68\", \"email\": \"david_michaels@hms.harvard.edu\", \"name\": \"David Michaels\"}",
+        "autoadd": "{\"submission_centers\": [\"9626d82e-8110-4213-ac75-0a50adf890ff\"]}",
+        "datafile": "metadata_file.xlsx",
+        "post_only": "False",
+        "consortium": "/consortia/358aed10-9b9d-4e26-ab84-4bd162da182b/",
+        "patch_only": "False",
+        "ref_nocache": "False",
+        "datafile_size": "12876",
+        "validate_only": "False",
+        "validate_skip": "False",
+        "ingestion_type": "metadata_bundle",
+        "submitr_version": "0.8.2.1b6",
+        "validation_uuid": "0a98d83a-df6a-4ad1-b4fb-1fc16262164d",
+        "datafile_checksum": "f53fdf9539654e3f50fd94d4c6c20d05",
+        "submission_center": "/submission-centers/9626d82e-8110-4213-ac75-0a50adf890ff/",
+        "ingestion_directory": ""
+    },
+    "object_name": "0a3742b5-6415-4fe6-b297-9339bfef2d16/datafile.xlsx",
+    "date_created": "2024-05-17T20:09:02.615014+00:00",
+    "submitted_by": {
+        "@type": [
+            "User",
+            "Item"
+        ],
+        "display_title": "David Michaels",
+        "status": "current",
+        "@id": "/users/74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68/",
+        "uuid": "74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68",
+        "principals_allowed": {
+            "view": [
+                "group.admin",
+                "remoteuser.EMBED",
+                "remoteuser.INDEXER",
+                "role.owner",
+                "userid.74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68"
+            ],
+            "edit": [
+                "group.admin"
+            ]
+        }
+    },
+    "last_modified": {
+        "modified_by": {
+            "display_title": "David Michaels",
+            "@id": "/users/74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68/",
+            "uuid": "74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68",
+            "status": "current",
+            "@type": [
+                "User",
+                "Item"
+            ],
+            "principals_allowed": {
+                "view": [
+                    "group.admin",
+                    "remoteuser.EMBED",
+                    "remoteuser.INDEXER",
+                    "role.owner",
+                    "userid.74fef71a-dfc1-4aa4-acc0-cedcb7ac1d68"
+                ],
+                "edit": [
+                    "group.admin"
+                ]
+            }
+        },
+        "date_modified": "2024-05-17T20:09:02.618052+00:00"
+    },
+    "submission_id": "0a3742b5-6415-4fe6-b297-9339bfef2d16",
+    "ingestion_type": "metadata_bundle",
+    "schema_version": "1",
+    "additional_data": {
+        "upload_info": [
+            {
+                "uuid": "c2da72ca-086d-4d4b-9dcf-1b8e9ed310dd",
+                "filename": "test_file_one.fastq"
+            },
+            {
+                "uuid": "18fa4aea-0124-4341-a1f2-3994f9034e3e",
+                "filename": "test_file_two.fastq"
+            }
+        ],
+        "validation_output": [
+            "Submission UUID: 0a3742b5-6415-4fe6-b297-9339bfef2d16",
+            "Status: OK",
+            "File: metadata_file.xlsx",
+            "S3 File: s3://smaht-unit-testing-metadata-bundles/0a3742b5-6415-4fe6-b297-9339bfef2d16/datafile.xlsx",
+            "Details: s3://smaht-unit-testing-metadata-bundles/0a3742b5-6415-4fe6-b297-9339bfef2d16/submission.json",
+            "Total: 11",
+            "Types: 4",
+            "Created: 0",
+            "Updated: 11",
+            "Skipped: 0",
+            "Checked: 0"
+        ]
+    },
+    "processing_status": {
+        "state": "done",
+        "outcome": "success",
+        "progress": "complete"
+    },
+    "submission_centers": [
+        {
+            "@type": [
+                "SubmissionCenter",
+                "Item"
+            ],
+            "display_title": "HMS DAC",
+            "uuid": "9626d82e-8110-4213-ac75-0a50adf890ff",
+            "status": "public",
+            "@id": "/submission-centers/9626d82e-8110-4213-ac75-0a50adf890ff/",
+            "principals_allowed": {
+                "view": [
+                    "system.Everyone"
+                ],
+                "edit": [
+                    "group.admin"
+                ]
+            }
+        }
+    ],
+    "@id": "/ingestion-submissions/0a3742b5-6415-4fe6-b297-9339bfef2d16/",
+    "@type": [
+        "IngestionSubmission",
+        "Item"
+    ],
+    "uuid": "0a3742b5-6415-4fe6-b297-9339bfef2d16",
+    "principals_allowed": {
+        "view": [
+            "group.admin",
+            "group.read-only-admin",
+            "remoteuser.EMBED",
+            "remoteuser.INDEXER",
+            "role.submission_center_member_rw",
+            "role.submission_center_member_rw.9626d82e-8110-4213-ac75-0a50adf890ff"
+        ],
+        "edit": [
+            "group.admin",
+            "group.submitter"
+        ]
+    },
+    "display_title": "Submission:0a3742b5-6415-4fe6-b297-9339bfef2d16",
+    "@context": "/terms/",
+    "actions": [
+        {
+            "name": "create",
+            "title": "Create",
+            "profile": "/profiles/IngestionSubmission.json",
+            "href": "/ingestion-submissions/0a3742b5-6415-4fe6-b297-9339bfef2d16/?currentAction=create"
+        },
+        {
+            "name": "edit",
+            "title": "Edit",
+            "profile": "/profiles/IngestionSubmission.json",
+            "href": "/ingestion-submissions/0a3742b5-6415-4fe6-b297-9339bfef2d16/?currentAction=edit"
+        }
+    ],
+    "aggregated-items": {},
+    "validation-errors": []
+}

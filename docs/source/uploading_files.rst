@@ -4,9 +4,9 @@ Uploading Files
 
 As mentioned previously (in the `Usage <usage.html>`_ section),
 after ``submit-metadata-bundle`` processes the main submitted metadata file,
-it will (after prompting) upload any files referenced within the submission metadata file.
+it will (after prompting) upload, to AWS S3, any files referenced within the submission metadata file.
 
-These files should reside in the same directory as your submission file.
+These files should reside on you local file-system in the same directory as your submission file.
 Or, if they do not, then you must specify the directory where these files can be found, like this::
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files>
@@ -28,7 +28,7 @@ You can resume execution with the upload part by doing::
    resume-uploads --env <environment-name> <uuid>
 
 where the ``<uuid>`` argument is the UUID (e.g. ``0ad28518-2755-40b5-af51-036042dd099d``) for the submission which should
-have been displayed in the output of the ``submit-metadata-bundle`` command (e.g. see `screenshot <usage.html#example-screenshots>`_);
+have been displayed in the output of the ``submit-metadata-bundle`` command (e.g. see `screenshot <usage.html#screenshots>`_);
 this will upload `all` of the files references for the given submission UUID.
 
 Or, you can upload `individual` files referenced in the original submission separately by doing::
@@ -39,7 +39,7 @@ where the ``<referenced-file-uuid>`` argument is the UUID for the individual fil
 the :toplink:`accession <https://en.wikipedia.org/wiki/Accession_number_(bioinformatics)>` ID (e.g. ``SMAURL8WB1ZS``)
 or accession ID based file name (e.g. ``SMAURL8WB1ZS.fastq``) of the referenced file.
 This UUID, and accession ID and accession ID based file name, is included in the output of ``submit-metadata-bundle``;
-specifically in the **Upload Info** section of that output (e.g. see `screenshot <usage.html#example-screenshots>`_).
+specifically in the **Upload Info** section of that output (e.g. see `screenshot <usage.html#screenshots>`_).
 
 For both of these commands above, you will be asked to confirm if you would like to continue with the stated action.
 If you would like to skip these prompts so the commands can be run by a
@@ -59,7 +59,7 @@ you need to consider other options for uploading such files.
 Upoading Files Locally
 ~~~~~~~~~~~~~~~~~~~~~~
 
-This option works well for uploading a small number
+This default option works well for uploading a small number
 of files or files of small size. Files can be
 transferred to your local computer from Cloud storage
 or a computing cluster in several ways.
@@ -74,6 +74,45 @@ As such files can be rather large, we recommend performing
 the upload from a Cloud or cluster instance
 for uploading many files or larger files.
 
+Uploading from Google Cloud Storage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If your data files reside in Google Cloud Storage (GCS), we support the ability to upload,
+or more precisely, `transfer` files directly from GCS to AWS S3. The smaht-submitr command-line
+tools (``submit-metadata-bundle`` and ``resume-uploads``) accomplish this by leveraging
+third-party open source software called :toplink:`rclone <https://rclone.org>`.
+
+.. tip::
+   You needn't worry about the details of rclone - its installation, usage, and whatnot - the ``smaht-submitr`` tools automatically installs and hides the details of its workings from you.
+
+The advantage of this is that you do not need to download the entire data file to your local
+machine, which may well not have enough disk space. The rclone facility transfers the data
+file from GCS to AWS S3 by way of your machine, i.e. using it as an intermediary, so that
+only a small portion of the data ever actually travels through your machine at a time.
+
+Another benefit of this method, if your files are already in GCS, is that the transfer
+of a file from GCS to AWS S3 is done in an interleaved fashion, so that it should be
+faster than first downloading the full file from GCS and then uploading it
+(our initial tests indicate an approximate 30% increase in overall transfer speed).
+
+To take advantage of this you merely need to specify a couple of command-line options,
+specifically ``--cloud-source`` and ``--cloud-credentials``, for example::
+
+    submit-metadata-bundle your-metadata.xlsx --submit \
+        --cloud-source your-gcs-bucket \
+        --cloud-credentials your-gcp-service-account-file
+
+The ``resume-uploads`` command support these same options.
+The value specified for the ``--cloud-source`` may be either just a GCS bucket name or a bucket and folder key name.
+
+To obtain the credentials file you need, via the Google Cloud console (in your browser), navigate to the ``IAM & Admin`` section, select ``Service Accounts``, click on your desired listed service account, and from there click the ``KEYS`` tab at the top, and then the ``ADD KEY`` and ``Create new key`` from the dropdown, and select ``JSON`` for the ``Key type`` and click the ``CREATE`` button. This will save a JSON file with your exported credentials to your download folder; and this is the file to specify with the ``--cloud-credentials`` option. (Note that for security, you should ``chmod 600`` on this file).
+
+.. tip::
+    If you happen to be running ``smaht-submitr`` on a Google Compute Engine (GCE) instance there is no need to specify the ``--cloud-credentials`` option as the credentials for the associated Google Cloud account are automatically and implicitly available and in force.
+
+.. note::
+    This same exact mechanism is actually also support for AWS S3, i.e. if you have a file in your own AWS S3 storage that you want to upload to SMaHT via ``smaht-submitr``, use the same options as desribed above, but specify your S3 bucket/folder for the ``--cloud-source`` option and your AWS credentials file for the ``--cloud-credentials`` file.
+
 Mounting AWS S3 Files 
 ~~~~~~~~~~~~~~~~~~~~~
 If your files are stored on :toplink:`AWS S3 <https://en.wikipedia.org/wiki/Amazon_S3>`, tools such as
@@ -85,7 +124,7 @@ Similar tools exist for :toplink:`Google Cloud Storage <https://en.wikipedia.org
 and :toplink:`Microsoft Azure <https://en.wikipedia.org/wiki/Microsoft_Azure>`.
 
 .. caution::
-    If you are working on a :toplink:`Mac M1 <https://en.wikipedia.org/wiki/Apple_M1>` or :toplink:`M2 <https://en.wikipedia.org/wiki/Apple_M2>` system (i.e. using the :toplink:`ARM <https://en.wikipedia.org/wiki/ARM_architecture_family>`-based chip), you may encounter problems
+    If you are working on a :toplink:`Mac M1 <https://en.wikipedia.org/wiki/Apple_M1>`, :toplink:`M2 <https://en.wikipedia.org/wiki/Apple_M2>`, or :toplink:`M3 <https://en.wikipedia.org/wiki/Apple_M3>` system (i.e. using the :toplink:`ARM <https://en.wikipedia.org/wiki/ARM_architecture_family>`-based chip), you may encounter problems
     using these kinds of mounting tools. More guidance about this will (hopefully) be forthcoming.
 
 Running Submission Remotely

@@ -1,0 +1,56 @@
+# Build for submitr
+
+name: INTEGRATION TESTS
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    name: TEST INTEGRATION WITH PYTHON ${{ matrix.python_version }}
+
+    # The type of runner that the job will run on
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        python_version: [3.11]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: BUILD
+        run: |
+          make build
+      
+      # The integration tests actually talk to AWS S3 and Google Cloud Storage (GCS);
+      # both directly (via Python boto3 and google.cloud.storage) and via rclone.
+      # The access credentials are defined by the environment variables described below.
+      - name: INTEGRATION TESTS
+        env:
+          # These are setup in GitHub as "secrets". The AWS access key values are currently,
+          # May 2024, for the special user test-integration-user in the smaht-wolf account;
+          # the access key was created on 2024-05-15. The Google value is the JSON from the
+          # service account file exported from the HMS Google account for the smaht-dac project;
+          # the service account email is ga4-service-account@smaht-dac.iam.gserviceaccount.com;
+          # its key ID is b488dd9cfde6b59b1aa347aabd9add86c7ff9057; it was created on 2024-04-28.
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON }}
+        run: |
+          make test-integration

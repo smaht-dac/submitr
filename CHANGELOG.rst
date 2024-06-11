@@ -6,19 +6,12 @@ smaht-submitr
 Change Log
 ----------
 
-0.8.2
+0.8.3
 =====
 
-* 2024-05-08/dmichaels/PR-8
-  Pass validate_only flag to ingester on --validate-remote-skip to
-  skip server-side validation on submit; previously this flag merely
-  served to skip kicking off server-side validation from submitr.
-  ONLY allowed (on server-side) for admin users.
-
-
-0.8.1
-=====
-
+* 2024-05-14/dmichaels/PR-10
+* Added rclone support; most relevant code in submitr/rclone directory. 
+  A lot of refactoring of file upload related code for this (see files_for_upload.py)
 * Added metadata_template.py module with goal of checking the user's metadata
   file with the latest HMS DBMI metadata template and giving a warning if the
   version appears to be out of date. Also new convenience command to export and
@@ -33,8 +26,31 @@ Change Log
 * Improved messaging for check-submission.
 * Fix for usage of --keys (was not being used for server validation/submission).
 * Minor fix for --validate-local-skip option (undefined structured_data variable).
+* Fix for --validate-remote-skip option to pass validate_skip to ingester to
+  skip the validation on submission which happens by default before the loadxl.
 * Added --files for use with --info to submit-metadata-bundle.
+* For file uploads, after asking the same yes/no question and getting the same response many
+  times in a row, ask if all subsequent such questions should automatically get the same answer.
+* Removed ref_lookup_strategy references for structured_data; refactored/internalized in dcicutils.
 
+
+0.8.2
+=====
+
+* 2024-05-08/dmichaels/PR-8
+  Pass validate_only flag to ingester on --validate-remote-skip to
+  skip server-side validation on submit; previously this flag merely
+  served to skip kicking off server-side validation from submitr.
+  ONLY allowed (on server-side) for admin users.
+
+
+0.8.2
+=====
+
+* 2024-05-08/dmichaels/PR-8
+  Pass validate_only flag to ingester on --validate-remote-skip to
+  skip server-side validation on submit; previously this flag merely
+  served to skip kicking off server-side validatieon from submitr.
 
 0.8.0
 =====

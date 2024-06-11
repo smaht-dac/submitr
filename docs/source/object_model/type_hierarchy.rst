@@ -10,6 +10,7 @@ Items suffixed with **(A)** are abstract types which may not be directly created
         └─ <a href='../object_model.html#types'><b>Types</b></a>
            ├── <a href='types/analyte.html'>Analyte</a>
            ├── <a href='types/assay.html'>Assay</a>
+           ├── <a href='types/basecalling.html'>Basecalling</a>
            ├── <a href='types/cell_line.html'>CellLine</a>
            ├── <a href='types/consortium.html'>Consortium</a>
            ├── <a href='types/death_circumstances.html'>DeathCircumstances</a>

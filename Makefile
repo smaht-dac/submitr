@@ -15,7 +15,11 @@ build:  # builds
 	poetry install
 
 test:
-	pytest -vv
+	pytest -m "not integration"
+
+test-integration:
+	# pytest -vv submitr/tests/test_rclone_support.py
+	pytest -m integration
 
 retest:  # runs only failed tests from the last test run. (if no failures, it seems to run all?? -kmp 17-Dec-2020)
 	pytest -vv --last-failed

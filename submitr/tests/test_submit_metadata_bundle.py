@@ -64,7 +64,7 @@ def test_submit_metadata_bundle_script(keyfile):
             expect_called=True,
             expect_call_args=expect_call_args)
     test_it(args_in=[some_file, "--env", "some-env",  # "--institution", "some-institution",
-                     "--server", "some-server", "--validate-only"],  # , "--project", "some-project"],
+                     "--server", "some-server"],  # , "--project", "some-project"],
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
@@ -125,7 +125,6 @@ def test_submit_metadata_bundle_script(keyfile):
                      "--env", "some-env",
                      # "--institution", "some-institution",
                      "--server", "some-server",
-                     "--validate-only",
                      # "--project", "some-project",
                      '--directory', 'a-folder',
                      '--ingestion_type', 'simulated_bundle'],

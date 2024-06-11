@@ -1,9 +1,12 @@
 import os
+import sys
+from typing import Optional
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
-from .cli_utils import CustomArgumentParser
-from ..base import DEFAULT_APP
-from ..submission import resume_uploads
+from submitr.base import DEFAULT_APP
+from submitr.rclone import RCloneStore
+from submitr.submission import resume_uploads
+from submitr.scripts.cli_utils import CustomArgumentParser
 
 
 _HELP = f"""
@@ -37,6 +40,15 @@ OPTIONS:
   this directory will be search, recursively.
 --directory-only
   Same as --directory but does NOT search recursively.
+--cloud-source GOOGLE-CLOUD-STORAGE-SOURCE
+  A Google Cloud Storage (GCS) bucket or bucket/sub-folder
+  from where the upload file(s) should be copied.
+--cloud-credentials GCS-SERVICE-ACCOUNT-FILE
+  GCS credentials to use for --rclone-google-source;
+  e.g. full path to your GCP service account file.
+  May be omitted if running on a GCE instance.
+--cloud-location LOCATION
+  The Google Cloud Storage (GCS) location (aka "region").
 --help
   Prints this documentation.
 --help-advanced
@@ -76,46 +88,59 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--directory', help="Directory of the upload files.")
     parser.add_argument('--directory-only', help="Same as --directory but NOT recursively.", default=False)
     parser.add_argument('--upload_folder', help="Synonym for --directory.")
-    parser.add_argument('--output', help="Output file for results.", default=False)
+
+    parser.add_argument('--verbose', action="store_true", default=False)
     parser.add_argument('--yes', action="store_true",
                         help="Suppress (yes/no) requests for user input.", default=False)
+    parser.add_argument('--output', help="Output file for results.", default=False)
+
+    # These original/deprecated options are just for backward compatibility.
+    parser.add_argument('--rclone-google-source', help="Use rlcone to copy upload files from GCS.", default=None)
+    parser.add_argument('--rclone-google-credentials', help="GCS credentials (service account file).", default=None)
+    parser.add_argument('--rclone-google-location', help="GCS location (aka region).", default=None)
+
+    # These are for GCS-to-S3 or S3-to-S3 support.
+    parser.add_argument('--cloud-source', help="GCS credentials (service account file).", default=None)
+    parser.add_argument('--cloud-credentials', help="GCS credentials (service account file).", default=None)
+    parser.add_argument('--cloud-location', help="Cloud location/region.", default=None)
+    parser.add_argument('--cloud-region', help="Synonym for --cloud-location ", default=None)
+
     args = parser.parse_args(args=simulated_args_for_testing)
 
     directory_only = True
     if args.directory:
+        if args.directory_only:
+            PRINT("May not specify both --directory and --directory-only")
+            sys.exit(1)
         args.upload_folder = args.directory
         directory_only = False
     if args.directory_only:
         args.upload_folder = args.directory_only
         directory_only = True
 
+    cloud_store = RCloneStore.from_args(args, usage=usage, printf=PRINT)
+
     if args.yes:
         args.no_query = True
 
     if not args.uuid:
         PRINT("Missing submission UUID or referenced file UUID or accession ID.")
-        exit(2)
-
-#   keys_file = args.keys or os.environ.get("SMAHT_KEYS")
-#   if keys_file:
-#       if not keys_file.endswith(".json") or not os.path.exists(keys_file):
-#           PRINT(f"The --keys argument ({keys_file}) must be the name of an existing .json file.")
-#           exit(1)
+        sys.exit(2)
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
         PRINT(f"Directory does not exist: {args.upload_folder}")
-        exit(1)
+        sys.exit(1)
 
     if args.bundle and not os.path.isdir(os.path.normpath(os.path.dirname(args.bundle))):
         PRINT(f"Specified bundle file not found: {args.bundle}")
-        exit(1)
+        sys.exit(1)
 
     if not args.upload_folder and args.directory:
         args.upload_folder = args.directory
 
     if args.upload_folder and not os.path.isdir(args.upload_folder):
         PRINT(f"Specified upload directory not found: {args.upload_folder}")
-        exit(1)
+        sys.exit(1)
 
     env_from_env = False
     if not args.env:
@@ -134,8 +159,16 @@ def main(simulated_args_for_testing=None):
                        upload_folder=args.upload_folder,
                        no_query=args.yes,
                        subfolders=not directory_only,
+                       rclone_google=cloud_store,
                        output_file=args.output,
-                       app=args.app)
+                       app=args.app,
+                       verbose=args.verbose)
+
+
+def usage(message: Optional[str] = None) -> None:
+    if isinstance(message, str) and message:
+        PRINT(message)
+    sys.exit(1)
 
 
 if __name__ == '__main__':
