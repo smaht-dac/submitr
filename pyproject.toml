@@ -93,15 +93,16 @@ make-sample-fastq-file = "submitr.scripts.make_sample_fastq_file:main"
 publish-to-pypi = "dcicutils.scripts.publish_to_pypi:main"
 rcloner= "submitr.scripts.rcloner:main"
 resume-uploads = "submitr.scripts.resume_uploads:main"
-# Covered by check-submission
-# show-submission-info = "submitr.scripts.show_upload_info:main"
-# show-upload-info = "submitr.scripts.show_upload_info:main"
+submitr = "submitr.scripts.submitr:main"
 submit-genelist = "submitr.scripts.submit_genelist:main"
 submit-metadata-bundle = "submitr.scripts.submit_metadata_bundle:main"
 submit-ontology = "submitr.scripts.submit_ontology:main"
 upload-item-data = "submitr.scripts.upload_item_data:main"
 update-portal-object= "submitr.scripts.update_portal_object:main"
 view-portal-object= "submitr.scripts.view_portal_object:main"
+# Covered by check-submission
+# show-submission-info = "submitr.scripts.show_upload_info:main"
+# show-upload-info = "submitr.scripts.show_upload_info:main"
 
 [tool.coverage.report]
 
