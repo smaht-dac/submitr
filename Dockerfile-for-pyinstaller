@@ -1,6 +1,9 @@
 # Use an official Python runtime as a parent image
-ARG ARCHITECTURE=x86
-FROM ${ARCHITECTURE}/python:3.9-slim
+# Nevermind ARM for now; does not work.
+# ARG ARCHITECTURE=x86
+# FROM ${ARCHITECTURE}/python:3.9-slim
+FROM python:3.9-slim
+
 
 # Install system dependencies and PyInstaller
 RUN apt-get update && \
