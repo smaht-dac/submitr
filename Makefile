@@ -53,8 +53,8 @@ publish-for-ga:
 
 exe:
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
-	mkdir -p ./submitr/downloads/macos
-	mv ./dist/submitr ./submitr/downloads/macos/submitr
+	mkdir -p ./downloads/macos
+	mv ./dist/submitr ./downloads/macos/submitr
 	rm -rf ./build ./dist
 
 help:
