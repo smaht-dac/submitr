@@ -51,7 +51,17 @@ publish-for-ga:
 	# New Python based publish script in dcicutils (2023-04-25).
 	poetry run publish-to-pypi --noconfirm
 
-exe: exe-macos exe-linux-x86
+exe: exe-macos exe-linux-x86 # exe-linux-arm
+
+exe-macos:
+	# Download/use with(once merged with master)
+	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/macos/submitr
+	# chmod a+x submitr
+	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
+	mkdir -p ./downloads/macos
+	mv ./dist/submitr ./downloads/macos/submitr
+	chmod a+x ./downloads/macos/submitr
+	rm -rf ./build ./dist
 
 exe-linux-amd:
 	# Download/use with (once merged with master):
@@ -65,6 +75,11 @@ exe-linux-amd:
 exe-linux-x86: exe-linux-amd
 
 exe-linux-arm:
+	# Note that this, pyinstaller for Linux ARM architecture, does NOT seem to work, at least where
+	# it was tried (on a GCE t2a-standard-1 Ampere Altra instance); getting below message; searching
+	# around it is said the pyinstaller is not officially supported for ARM architectures. Oh well.
+	# [2546] Failed to load Python shared library '/tmp/_MEIIWRHEC/libpython3.9.so.1.0': dlopen:
+	# /lib/aarch64-linux-gnu/libm.so.6: version `GLIBC_2.35' not found (required by /tmp/_MEIIWRHEC/libpython3.9.so.1.0)
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/arm/submitr
 	# chmod a+x submitr
@@ -72,16 +87,6 @@ exe-linux-arm:
 	mkdir -p ./downloads/linux/arm
 	docker run --rm -v ./downloads/linux/arm:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
 	chmod a+x ./downloads/linux/arm/submitr
-
-exe-macos:
-	# Download/use with(once merged with master)
-	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/macos/submitr
-	# chmod a+x submitr
-	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
-	mkdir -p ./downloads/macos
-	mv ./dist/submitr ./downloads/macos/submitr
-	chmod a+x ./downloads/macos/submitr
-	rm -rf ./build ./dist
 
 help:
 	@make info
