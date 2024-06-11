@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "smaht-submitr"
-version = "0.8.3"
+version = "0.8.3.1b1"  # TODO: To become 0.8.4
 description = "Support for uploading file submissions to SMAHT."
 # TODO: Update this email address when a more specific one is available for SMaHT.
 authors = ["SMaHT DAC <smhelp@hms-dbmi.atlassian.net >"]
@@ -93,6 +93,7 @@ make-sample-fastq-file = "submitr.scripts.make_sample_fastq_file:main"
 publish-to-pypi = "dcicutils.scripts.publish_to_pypi:main"
 rcloner= "submitr.scripts.rcloner:main"
 resume-uploads = "submitr.scripts.resume_uploads:main"
+submitr = "submitr.scripts.submitr:main"
 submit-genelist = "submitr.scripts.submit_genelist:main"
 submit-metadata = "submitr.scripts.submit_metadata_bundle:main"
 submit-metadata-bundle = "submitr.scripts.submit_metadata_bundle:main"
