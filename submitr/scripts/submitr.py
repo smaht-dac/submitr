@@ -21,7 +21,6 @@ supported_commands = {
     "rcloner": main_rcloner,
     "resume-uploads": main_resume_uploads,
     "submit-metadata": main_submit_metadata_bundle,
-    "submit-metadata-bundle": main_submit_metadata_bundle,
     "view-portal-object": main_view_portal_object
 }
 
