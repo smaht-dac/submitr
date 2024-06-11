@@ -53,6 +53,7 @@ dcicutils = "^8.10.0"
 PyYAML = "^6.0.1"
 requests = "^2.31.0"
 googleapi = "^0.1.0"
+pyinstaller = "^6.8.0"
 
 [tool.poetry.dev-dependencies]
 
