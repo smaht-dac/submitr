@@ -176,7 +176,7 @@ def test_google_to_amazon(amazon_destination_credentials_type,
         # Sanity check.
         assert amazon_destination_store.file_exists(amazon_destination_path) is True
         assert amazon_destination_store.file_size(amazon_destination_path) == TEST_FILE_SIZE
-        if amazon_destination_credentials_type == Amazon.CredentialsType.DEFAULT:
+        if amazon_destination_credentials_type != Amazon.CredentialsType.TEMPORARY_KEY_SPECIFIC:
             # This amazon_destination_store.file_checksum does not work for temporary credentials due
             # to an oddity of rclone hashsum md5 where it seems to need s3:ListBucket on the ENTIRE
             # bucket; which is not acceptable security-wise for the Portal to do; and so we do
