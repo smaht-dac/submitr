@@ -51,7 +51,18 @@ publish-for-ga:
 	# New Python based publish script in dcicutils (2023-04-25).
 	poetry run publish-to-pypi --noconfirm
 
-exe:
+exe: exe-macos exe-linux-x86
+
+exe-linux-x86:
+	docker build -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller-linux-x86 .
+	mkdir -p ./downloads/linux/x86
+	docker run --rm -v ./downloads/linux/x86:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
+	chmod a+x ./downloads/linux/x86/submitr
+
+exe-macos:
+	# Download/use with:
+	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/macos/submitr
+	# chmod a+x submitr
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
 	mkdir -p ./downloads/macos
 	mv ./dist/submitr ./downloads/macos/submitr
