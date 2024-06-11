@@ -53,14 +53,25 @@ publish-for-ga:
 
 exe: exe-macos exe-linux-x86
 
-exe-linux-x86:
+exe-linux-amd:
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/x86/submitr
 	# chmod a+x submitr
-	docker build -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller-linux-x86 .
+	docker build --build-arg ARCHITECTURE=x86 -t pyinstaller-linux-build -f Dockerfile-for-pyinstallerx .
 	mkdir -p ./downloads/linux/x86
 	docker run --rm -v ./downloads/linux/x86:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
 	chmod a+x ./downloads/linux/x86/submitr
+
+exe-linux-x86: exe-linux-amd
+
+exe-linux-arm:
+	# Download/use with (once merged with master):
+	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/arm/submitr
+	# chmod a+x submitr
+	docker build --build-arg ARCHITECTURE=arm64v8 -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller .
+	mkdir -p ./downloads/linux/arm
+	docker run --rm -v ./downloads/linux/arm:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
+	chmod a+x ./downloads/linux/arm/submitr
 
 exe-macos:
 	# Download/use with(once merged with master)
