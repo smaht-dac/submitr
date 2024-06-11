@@ -51,6 +51,12 @@ publish-for-ga:
 	# New Python based publish script in dcicutils (2023-04-25).
 	poetry run publish-to-pypi --noconfirm
 
+exe:
+	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
+	mkdir -p ./submitr/downloads/macos
+	mv ./dist/submitr ./submitr/downloads/macos/submitr
+	rm -rf ./build ./dist
+
 help:
 	@make info
 

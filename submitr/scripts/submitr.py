@@ -9,6 +9,11 @@ from submitr.scripts.resume_uploads import main as main_resume_uploads
 from submitr.scripts.submit_metadata_bundle import main as main_submit_metadata_bundle
 from submitr.scripts.view_portal_object import main as main_view_portal_object
 
+# This exists primarily to support pyinstaller method of running smaht-submitr commands.
+# where we package a single command (this module) into a self-contained independent
+# executable file (via pyinstaller) which can be run WITHOUT Python (and any
+# related tools like pyenv) having to be installed.
+
 supported_commands = {
     "check-submission": main_check_submission,
     "get-metadata-template": main_get_metadata_template,
