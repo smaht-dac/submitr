@@ -32,6 +32,7 @@ def main():
     supported_commands[command]()
     sys.exit(0)
 
+
 def usage(message: Optional[str] = None):
     if isinstance(message, str) and message:
         print(message)
