@@ -55,6 +55,7 @@ exe:
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
 	mkdir -p ./downloads/macos
 	mv ./dist/submitr ./downloads/macos/submitr
+	chmod a+x ./downloads/macos/submitr
 	rm -rf ./build ./dist
 
 help:
