@@ -51,7 +51,7 @@ publish-for-ga:
 	# New Python based publish script in dcicutils (2023-04-25).
 	poetry run publish-to-pypi --noconfirm
 
-exe: exe-macos exe-mac-installer exe-linux-x86 # exe-linux-arm
+exe: exe-macos exe-macos-installer exe-linux-x86 # exe-linux-arm
 
 exe-macos:
 	# Download/use with (once merged with master)
