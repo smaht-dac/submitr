@@ -54,7 +54,7 @@ publish-for-ga:
 exe: exe-macos exe-mac-installer exe-linux-x86 # exe-linux-arm
 
 exe-macos:
-	# Download/use with(once merged with master)
+	# Download/use with (once merged with master)
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/macos/submitr
 	# chmod a+x submitr
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
@@ -64,13 +64,17 @@ exe-macos:
 	rm -rf ./build ./dist
 
 exe-macos-installer:
+	# Download/install with (once merged with master)
+	# curl -o submitr.installer.pkg https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/downloads/macos/submitr.installer.pkg
+	# curl -o submitr.installer.pkg https://github.com/smaht-dac/submitr/raw/pyinstaller-experiment-20240611/downloads/macos/edu.harvard.hms.submitr.pkg
+	# Run (double click on) submitr.install.pkg
 	mkdir -p ./downloads/macos/installer/package/usr/local/bin ./downloads/macos/installer/scripts
 	cp ./downloads/macos/submitr ./downloads/macos/installer/package/usr/local/bin
 	echo "#!/bin/bash" > ./downloads/macos/installer/scripts/postinstall
 	echo "chmod a+x /usr/local/bin/submitr" >> ./downloads/macos/installer/scripts/postinstall
 	chmod a+x ./downloads/macos/installer/scripts/postinstall
-	pkgbuild --root ./downloads/macos/installer/package --identifier edu.harvard.hms --version 1.0 --install-location / --scripts ./downloads/macos/installer/scripts ./downloads/macos/edu.harvard.hms.submitr.pkg
-	ls -l ./downloads/macos/edu.harvard.hms.submitr.pkg
+	pkgbuild --root ./downloads/macos/installer/package --identifier edu.harvard.hms --version 1.0 --install-location / --scripts ./downloads/macos/installer/scripts ./downloads/macos/submitr.installer.pkg
+	ls -l ./downloads/macos/submitr.installer.pkg
 	rm -rf ./downloads/macos/installer
 
 exe-linux-amd:
