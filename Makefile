@@ -66,8 +66,8 @@ exe-macos:
 exe-macos-installer:
 	# Download/install with (once merged with master)
 	# curl -o submitr.installer.pkg https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/downloads/macos/submitr.installer.pkg
-	# curl -o submitr.installer.pkg https://github.com/smaht-dac/submitr/raw/pyinstaller-experiment-20240611/downloads/macos/edu.harvard.hms.submitr.pkg
 	# Run (double click on) submitr.install.pkg
+	# However error/warning about unknown developer; need a MacOS developer license and key et cetera.
 	mkdir -p ./downloads/macos/installer/package/usr/local/bin ./downloads/macos/installer/scripts
 	cp ./downloads/macos/submitr ./downloads/macos/installer/package/usr/local/bin
 	echo "#!/bin/bash" > ./downloads/macos/installer/scripts/postinstall
