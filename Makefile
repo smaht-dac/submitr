@@ -51,6 +51,12 @@ publish-for-ga:
 	# New Python based publish script in dcicutils (2023-04-25).
 	poetry run publish-to-pypi --noconfirm
 
+# This exe stuff is experimental. The pyinstaller utility allows the creation of a self-contained executable
+# which can be run without Python or anything like that being installed. If used will have to create separate
+# executables for Mac and Linu; and possible M1 vs non-M1 Macs and possibly x86_64 vs arm64 Linux; for now just
+# create here MacOS M1 (actually only by virtue of running this on an M1) and Linux x86, via docker. And also
+# creating a Mac (pkg) installer, but won't easily work unless we get an Apple Developer's License and sign it.
+
 exe: exe-macos exe-macos-installer exe-linux-x86 # exe-linux-arm
 
 exe-macos:
@@ -65,7 +71,7 @@ exe-macos:
 
 exe-macos-installer:
 	# Download/install with (once merged with master)
-	# curl -o submitr.installer.pkg https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/downloads/macos/submitr.installer.pkg
+	# curl -o submitr.installer.pkg https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/macos/submitr.installer.pkg
 	# Run (double click on) submitr.install.pkg
 	# However error/warning about unknown developer; need a MacOS developer license and key et cetera.
 	mkdir -p ./downloads/macos/installer/package/usr/local/bin ./downloads/macos/installer/scripts
