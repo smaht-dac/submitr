@@ -16,9 +16,23 @@ import os
 import sys
 from typing import Callable, List, Optional, Tuple, Union
 from dcicutils.misc_utils import get_error_message, PRINT
-from dcicutils.portal_utils import Portal
+from dcicutils.portal_utils import Portal as PortalFromUtils
+from dcicutils.ff_utils import delete_metadata, purge_metadata
 from dcicutils.command_utils import yes_or_no
 from dcicutils.common import ORCHESTRATED_APPS, APP_SMAHT
+
+
+class Portal(PortalFromUtils):
+
+    def delete_metadata(self, object_id: str) -> Optional[dict]:
+        if isinstance(object_id, str) and object_id and self.key:
+            return delete_metadata(obj_id=object_id, key=self.key)
+        return None
+
+    def purge_metadata(self, object_id: str) -> Optional[dict]:
+        if isinstance(object_id, str) and object_id and self.key:
+            return purge_metadata(obj_id=object_id, key=self.key)
+        return None
 
 
 _DEFAULT_APP = "smaht"
