@@ -28,6 +28,7 @@ supported_commands = {
 # Older names for backward compatibility.
 supported_commands_hide = ["submit-metadata-bundle"]
 
+
 def main():
     multiprocessing.freeze_support()
     if len(sys.argv) < 2:
