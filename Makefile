@@ -59,7 +59,7 @@ publish-for-ga:
 
 exe: exe-macos exe-macos-installer exe-linux-x86 # exe-linux-arm
 
-exe-macos:
+exe-macos: build
 	# Download/use with (once merged with master)
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/macos/submitr
 	# chmod a+x submitr
@@ -69,7 +69,7 @@ exe-macos:
 	chmod a+x ./downloads/macos/submitr
 	rm -rf ./build ./dist
 
-exe-macos-installer:
+exe-macos-installer: exe-macos
 	# Download/install with (once merged with master)
 	# curl -o submitr.installer.pkg https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/macos/submitr.installer.pkg
 	# Run (double click on) submitr.install.pkg
@@ -82,7 +82,7 @@ exe-macos-installer:
 		--install-location / --scripts ./downloads/macos/installer/scripts ./downloads/macos/submitr.installer.pkg
 	rm -rf ./downloads/macos/installer
 
-exe-linux-amd:
+exe-linux-amd: build
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/x86/submitr
 	# chmod a+x submitr
@@ -93,7 +93,7 @@ exe-linux-amd:
 
 exe-linux-x86: exe-linux-amd
 
-exe-linux-arm:
+exe-linux-arm: build
 	# Note that this, pyinstaller for Linux ARM architecture, does NOT seem to work, at least where
 	# it was tried (on a GCE t2a-standard-1 Ampere Altra instance); getting below message; searching
 	# around it is said the pyinstaller is not officially supported for ARM architectures. Oh well.
@@ -102,10 +102,11 @@ exe-linux-arm:
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/arm/submitr
 	# chmod a+x submitr
-	docker build --build-arg ARCHITECTURE=arm64v8 -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller .
-	mkdir -p ./downloads/linux/arm
-	docker run --rm -v ./downloads/linux/arm:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
-	chmod a+x ./downloads/linux/arm/submitr
+	# docker build --build-arg ARCHITECTURE=arm64v8 -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller .
+	# mkdir -p ./downloads/linux/arm
+	# docker run --rm -v ./downloads/linux/arm:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
+	# chmod a+x ./downloads/linux/arm/submitr
+	echo "Not yet supported." 
 
 help:
 	@make info
