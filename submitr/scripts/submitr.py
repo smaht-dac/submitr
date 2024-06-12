@@ -21,9 +21,12 @@ supported_commands = {
     "rcloner": main_rcloner,
     "resume-uploads": main_resume_uploads,
     "submit-metadata": main_submit_metadata_bundle,
+    "submit-metadata-bundle": main_submit_metadata_bundle,
     "view-portal-object": main_view_portal_object
 }
 
+# Older names for backward compatibility.
+supported_commands_hide = ["submit-metadata-bundle"]
 
 def main():
     multiprocessing.freeze_support()
@@ -43,7 +46,8 @@ def usage(message: Optional[str] = None):
     print("usage: submitr [command] [arguments]")
     print("commands: ")
     for command in supported_commands:
-        print(f"- {command}")
+        if command not in supported_commands_hide:
+            print(f"- {command}")
     sys.exit(1)
 
 
