@@ -51,7 +51,7 @@ publish-for-ga:
 	# New Python based publish script in dcicutils (2023-04-25).
 	poetry run publish-to-pypi --noconfirm
 
-exe: exe-macos exe-linux-x86 # exe-linux-arm
+exe: exe-macos exe-mac-installer exe-linux-x86 # exe-linux-arm
 
 exe-macos:
 	# Download/use with(once merged with master)
@@ -62,6 +62,16 @@ exe-macos:
 	mv ./dist/submitr ./downloads/macos/submitr
 	chmod a+x ./downloads/macos/submitr
 	rm -rf ./build ./dist
+
+exe-macos-installer:
+	mkdir -p ./downloads/macos/installer/package/usr/local/bin ./downloads/macos/installer/scripts
+	cp ./downloads/macos/submitr ./downloads/macos/installer/package/usr/local/bin
+	echo "#!/bin/bash" > ./downloads/macos/installer/scripts/postinstall
+	echo "chmod a+x /usr/local/bin/submitr" >> ./downloads/macos/installer/scripts/postinstall
+	chmod a+x ./downloads/macos/installer/scripts/postinstall
+	pkgbuild --root ./downloads/macos/installer/package --identifier edu.harvard.hms --version 1.0 --install-location / --scripts ./downloads/macos/installer/scripts ./downloads/macos/edu.harvard.hms.submitr.pkg
+	ls -l ./downloads/macos/edu.harvard.hms.submitr.pkg
+	rm -rf ./downloads/macos/installer
 
 exe-linux-amd:
 	# Download/use with (once merged with master):
