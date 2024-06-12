@@ -70,11 +70,10 @@ exe-macos-installer:
 	# However error/warning about unknown developer; need a MacOS developer license and key et cetera.
 	mkdir -p ./downloads/macos/installer/package/usr/local/bin ./downloads/macos/installer/scripts
 	cp ./downloads/macos/submitr ./downloads/macos/installer/package/usr/local/bin
-	echo "#!/bin/bash" > ./downloads/macos/installer/scripts/postinstall
-	echo "chmod a+x /usr/local/bin/submitr" >> ./downloads/macos/installer/scripts/postinstall
+	echo "#!/bin/bash\nchmod a+x /usr/local/bin/submitr" > ./downloads/macos/installer/scripts/postinstall
 	chmod a+x ./downloads/macos/installer/scripts/postinstall
-	pkgbuild --root ./downloads/macos/installer/package --identifier edu.harvard.hms --version 1.0 --install-location / --scripts ./downloads/macos/installer/scripts ./downloads/macos/submitr.installer.pkg
-	ls -l ./downloads/macos/submitr.installer.pkg
+	pkgbuild --root ./downloads/macos/installer/package --identifier edu.harvard.hms --version 1.0 \
+		--install-location / --scripts ./downloads/macos/installer/scripts ./downloads/macos/submitr.installer.pkg
 	rm -rf ./downloads/macos/installer
 
 exe-linux-amd:
