@@ -57,7 +57,7 @@ publish-for-ga:
 # create here MacOS M1 (actually only by virtue of running this on an M1) and Linux x86, via docker. And also
 # creating a Mac (pkg) installer, but won't easily work unless we get an Apple Developer's License and sign it.
 
-exe: exe-macos exe-macos-installer exe-linux-x86 # exe-linux-arm
+exe: exe-macos exe-macos-installer exe-linux
 
 exe-macos: build
 	# Download/use with (once merged with master)
@@ -82,28 +82,22 @@ exe-macos-installer: exe-macos
 		--install-location / --scripts ./downloads/macos/installer/scripts ./downloads/macos/submitr.installer.pkg
 	rm -rf ./downloads/macos/installer
 
-exe-linux-amd exe-linux-x86: build
+exe-linux: exe-linux-x86 exe-linux-arm-ubuntu-debian exe-linux-arm-redhat-centos
+
+exe-linux-x86 exe-linux-amd: build
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/x86/submitr
 	# chmod a+x submitr
-	# docker build --build-arg ARCHITECTURE=x86 -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller .
-	# docker build --build-arg -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller .
-	docker build --build-arg IMAGE=python:3.11-slim -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller .
+	docker build -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller-x86 .
 	mkdir -p ./downloads/linux/x86
 	docker run --rm -v ./downloads/linux/x86:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
 	chmod a+x ./downloads/linux/x86/submitr
 
 exe-linux-arm-ubuntu-debian: build
-	# Note that this, pyinstaller for Linux ARM architecture, does NOT seem to work, at least where
-	# it was tried (on a GCE t2a-standard-1 Ampere Altra instance); getting below message; searching
-	# around it is said the pyinstaller is not officially supported for ARM architectures. Oh well.
-	# [2546] Failed to load Python shared library '/tmp/_MEIIWRHEC/libpython3.9.so.1.0': dlopen:
-	# /lib/aarch64-linux-gnu/libm.so.6: version `GLIBC_2.35' not found (required by /tmp/_MEIIWRHEC/libpython3.9.so.1.0)
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/arm-ubuntu-debian/submitr
 	# chmod a+x submitr
-	#docker build --build-arg ARCHITECTURE=arm64v8/ -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller .
-	docker build --build-arg IMAGE=arm64v8/python:3.11-slim -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller .
+	docker build -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller-arm-ubuntu-debian .
 	mkdir -p ./downloads/linux/arm-ubuntu-debian
 	docker run --rm -v ./downloads/linux/arm-ubuntu-debian:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
 	chmod a+x ./downloads/linux/arm-ubuntu-debian/submitr
@@ -111,7 +105,7 @@ exe-linux-arm-ubuntu-debian: build
 exe-linux-arm-redhat-centos: build
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/arm-redhat-centos/submitr
-	docker build --build-arg IMAGE=arm64v8/centos -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller .
+	docker build -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller-arm-redhat-centos .
 	mkdir -p ./downloads/linux/arm-redhat-centos
 	docker run --rm -v ./downloads/linux/arm-redhat-centos:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
 	chmod a+x ./downloads/linux/arm-redhat-centos/submitr
