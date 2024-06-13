@@ -1,8 +1,7 @@
 # Use an official Python runtime as a parent image
 # Nevermind ARM for now; does not work.
-# ARG ARCHITECTURE=x86
-# FROM ${ARCHITECTURE}/python:3.9-slim
-FROM python:3.9-slim
+ARG IMAGE=python:3.9-slim
+FROM ${IMAGE}
 
 
 # Install system dependencies and PyInstaller

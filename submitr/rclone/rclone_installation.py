@@ -72,7 +72,10 @@ class RCloneInstallation:
             rclone_version = version or RCLONE_VERSION
             if not destination_file:
                 destination_file = RCloneInstallation.executable_path()
-            rclone_package_name = f"rclone-v{rclone_version}-{get_os_name()}-{get_cpu_architecture_name()}"
+            os_name = get_os_name()
+            if (architecture_name := get_cpu_architecture_name()) == "aarch64":
+                architecture_name = "arm"
+            rclone_package_name = f"rclone-v{rclone_version}-{os_name}-{architecture_name}"
             rclone_download_url = f"{RCLONE_DOWNLOAD_BASE_URL}/v{rclone_version}/{rclone_package_name}.zip"
             with download(rclone_download_url, suffix=".zip", progress=progress_callback) as downloaded_rclone_package:
                 extract_file_from_zip(downloaded_rclone_package,
