@@ -1,5 +1,3 @@
-# Use an official Python runtime as a parent image
-# Nevermind ARM for now; does not work.
 ARG IMAGE=arm64v8/centos
 FROM ${IMAGE}
 
