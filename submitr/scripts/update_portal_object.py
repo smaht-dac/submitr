@@ -155,19 +155,22 @@ def main():
                                  file_or_directory=args.post,
                                  explicit_schema_name=explicit_schema_name,
                                  update_function=_post_from_file,
-                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet, debug=args.debug, testmode=args.testmode)
+                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet,
+                                 debug=args.debug, testmode=args.testmode)
     if args.patch:
         _post_or_patch_or_upsert(portal=portal,
                                  file_or_directory=args.patch,
                                  explicit_schema_name=explicit_schema_name,
                                  update_function=_patch_from_file,
-                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet, debug=args.debug, testmode=args.testmode)
+                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet,
+                                 debug=args.debug, testmode=args.testmode)
     if args.upsert:
         _post_or_patch_or_upsert(portal=portal,
                                  file_or_directory=args.upsert,
                                  explicit_schema_name=explicit_schema_name,
                                  update_function=_upsert_from_file,
-                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet, debug=args.debug, testmode=args.testmode)
+                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet,
+                                 debug=args.debug, testmode=args.testmode)
 
     if args.delete:
         if not portal.get_metadata(args.delete, raise_exception=False):
@@ -215,7 +218,7 @@ def _post_from_file(portal: Portal, file: str, schema_name: Optional[str] = None
                     confirm: bool = False, verbose: bool = False,
                     quiet: bool = False, debug: bool = False, testmode: Optional[str] = None) -> bool:
 
-    if not schema_name and not(schema_name := portal.schema_name(file)):
+    if not schema_name and not (schema_name := portal.schema_name(file)):
         return False
 
     def post_data(data: dict, index: int = 0) -> None:
@@ -300,7 +303,7 @@ def _upsert_from_file(portal: Portal, file: str, schema_name: Optional[str] = No
                       confirm: bool = False, verbose: bool = False,
                       quiet: bool = False, debug: bool = False, testmode: Optional[str] = None) -> bool:
 
-    if not schema_name and not(schema_name := portal.schema_name(file)):
+    if not schema_name and not (schema_name := portal.schema_name(file)):
         return False
 
     def upsert_data(data: dict, index: int = 0) -> bool:
