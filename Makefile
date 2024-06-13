@@ -62,6 +62,7 @@ exe: exe-linux exe-macos exe-macos-installer
 exe-macos: build
 	# Download/use with (once merged with master)
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/macos/submitr
+	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/downloads/macos/submitr
 	# chmod a+x submitr
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
 	mkdir -p ./downloads/macos
@@ -72,6 +73,7 @@ exe-macos: build
 exe-macos-installer: exe-macos
 	# Download/install with (once merged with master)
 	# curl -o submitr.installer.pkg https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/macos/submitr.installer.pkg
+	# curl -o submitr.installer.pkg https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/downloads/macos/submitr.installer.pkg
 	# Run (double click on) submitr.install.pkg
 	# However error/warning about unknown developer; need a MacOS developer license and key et cetera.
 	mkdir -p ./downloads/macos/installer/package/usr/local/bin ./downloads/macos/installer/scripts
@@ -87,6 +89,7 @@ exe-linux: exe-linux-x86 exe-linux-arm
 exe-linux-x86: build
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/x86/submitr
+	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/downloads/linux/x86/submitr
 	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
 	docker build --build-arg IMAGE=centos -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller .
 	mkdir -p ./downloads/linux/x86
@@ -96,6 +99,7 @@ exe-linux-x86: build
 exe-linux-arm: build
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/arm/submitr
+	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/downloads/linux/arm/submitr
 	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
 	docker build --build-arg IMAGE=arm64v8/centos -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller .
 	mkdir -p ./downloads/linux/arm
