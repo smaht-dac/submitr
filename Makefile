@@ -57,7 +57,7 @@ publish-for-ga:
 # create here MacOS M1 (actually only by virtue of running this on an M1) and Linux x86, via docker. And also
 # creating a Mac (pkg) installer, but won't easily work unless we get an Apple Developer's License and sign it.
 
-exe: exe-macos exe-macos-installer exe-linux
+exe: exe-linux exe-macos exe-macos-installer
 
 exe-macos: build
 	# Download/use with (once merged with master)
