@@ -82,10 +82,28 @@ exe-macos-installer: exe-macos
 		--install-location / --scripts ./downloads/macos/installer/scripts ./downloads/macos/submitr.installer.pkg
 	rm -rf ./downloads/macos/installer
 
-#exe-linux: exe-linux-x86 exe-linux-arm-ubuntu-debian exe-linux-arm-redhat-centos
-exe-linux: exe-linux-x86-ubuntu-debian exe-linux-x86-redhat-centos exe-linux-arm-ubuntu-debian exe-linux-arm-redhat-centos
+exe-linux: exe-linux-x86 exe-linux-arm
 
-exe-linux-x86-ubuntu-debian: build # ubuntu/debian
+exe-linux-x86: build
+	# Download/use with (once merged with master):
+	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/x86/submitr
+	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
+	docker build --build-args IMAGE=centos -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller
+	mkdir -p ./downloads/linux/x86
+	docker run --rm -v ./downloads/linux/x86:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
+	chmod a+x ./downloads/linux/x86/submitr
+
+exe-linux-arm: build
+	# Download/use with (once merged with master):
+	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/arm/submitr
+	docker build --build-args IMAGE=arm64v8/centos -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller
+	mkdir -p ./downloads/linux/arm
+	docker run --rm -v ./downloads/linux/arm:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
+	chmod a+x ./downloads/linux/arm/submitr
+
+obsolete-exe-linux: exe-linux-x86-ubuntu-debian exe-linux-x86-redhat-centos exe-linux-arm-ubuntu-debian exe-linux-arm-redhat-centos
+
+obsolete-exe-linux-x86-ubuntu-debian: build # ubuntu/debian
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/x86-ubuntu-debian/submitr
 	# chmod a+x submitr
@@ -94,7 +112,7 @@ exe-linux-x86-ubuntu-debian: build # ubuntu/debian
 	docker run --rm -v ./downloads/linux/x86-ubuntu-debian:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
 	chmod a+x ./downloads/linux/x86-ubuntu-debian/submitr
 
-exe-linux-x86-redhat-centos: build
+obsolete-exe-linux-x86-redhat-centos: build
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/x86-redhat-centos/submitr
 	# chmod a+x submitr
@@ -103,7 +121,7 @@ exe-linux-x86-redhat-centos: build
 	docker run --rm -v ./downloads/linux/x86-redhat-centos:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
 	chmod a+x ./downloads/linux/x86-redhat-centos/submitr
 
-exe-linux-arm-ubuntu-debian: build
+obsolete-exe-linux-arm-ubuntu-debian: build
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/arm-ubuntu-debian/submitr
 	# chmod a+x submitr
@@ -112,7 +130,7 @@ exe-linux-arm-ubuntu-debian: build
 	docker run --rm -v ./downloads/linux/arm-ubuntu-debian:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
 	chmod a+x ./downloads/linux/arm-ubuntu-debian/submitr
 
-exe-linux-arm-redhat-centos: build
+obsolete-exe-linux-arm-redhat-centos: build
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/arm-redhat-centos/submitr
 	docker build -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller-arm-redhat-centos .
