@@ -84,14 +84,23 @@ exe-macos-installer: exe-macos
 
 exe-linux: exe-linux-x86 exe-linux-arm-ubuntu-debian exe-linux-arm-redhat-centos
 
-exe-linux-x86 exe-linux-amd: build
+exe-linux-x86: build # ubuntu/debian
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/x86/submitr
 	# chmod a+x submitr
-	docker build -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller-x86 .
+	docker build -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller-x86-ubuntu-debian .
 	mkdir -p ./downloads/linux/x86
 	docker run --rm -v ./downloads/linux/x86:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
 	chmod a+x ./downloads/linux/x86/submitr
+
+exe-linux-x86-redhat-centos: build
+	# Download/use with (once merged with master):
+	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/x86/submitr
+	# chmod a+x submitr
+	docker build -t pyinstaller-linux-build -f Dockerfile-for-pyinstaller-x86-redhat-centos .
+	mkdir -p ./downloads/linux/x86-redhat-centos
+	docker run --rm -v ./downloads/linux/x86-redhat-centos:/output pyinstaller-linux-build sh -c "cp /app/dist/submitr /output/"
+	chmod a+x ./downloads/linux/x86-redhat-centos/submitr
 
 exe-linux-arm-ubuntu-debian: build
 	# Download/use with (once merged with master):

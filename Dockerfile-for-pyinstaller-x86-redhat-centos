@@ -1,6 +1,4 @@
-# Use an official Python runtime as a parent image
-# Nevermind ARM for now; does not work.
-ARG IMAGE=arm64v8/centos
+ARG IMAGE=centos
 FROM ${IMAGE}
 
 RUN /bin/bash
@@ -8,11 +6,11 @@ RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
 RUN sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
 RUN yum install sudo -y
 RUN sudo yum install git python3 gcc make bzip2 zlib-devel readline-devel sqlite-devel openssl-devel tk-devel libffi-devel wget xz-devel -y
-RUN curl https://pyenv.run | /bin/bash
 
 WORKDIR /app
 COPY . .
 
+RUN curl https://pyenv.run | /bin/bash
 RUN export PYENV_ROOT="$HOME/.pyenv" ; \
     export PATH="$PYENV_ROOT/bin:$PATH" ; \
     eval "$(pyenv init -)" ; \
