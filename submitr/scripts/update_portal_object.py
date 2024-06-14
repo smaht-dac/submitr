@@ -15,24 +15,10 @@ import json
 import os
 import sys
 from typing import Callable, List, Optional, Tuple, Union
-from dcicutils.misc_utils import create_uuid, get_error_message, PRINT
-from dcicutils.portal_utils import Portal as PortalFromUtils
-from dcicutils.ff_utils import delete_metadata, purge_metadata
+from dcicutils.misc_utils import get_error_message, PRINT
+from dcicutils.portal_utils import Portal
 from dcicutils.command_utils import yes_or_no
 from dcicutils.common import ORCHESTRATED_APPS, APP_SMAHT
-
-
-class Portal(PortalFromUtils):
-
-    def delete_metadata(self, object_id: str) -> Optional[dict]:
-        if isinstance(object_id, str) and object_id and self.key:
-            return delete_metadata(obj_id=object_id, key=self.key)
-        return None
-
-    def purge_metadata(self, object_id: str) -> Optional[dict]:
-        if isinstance(object_id, str) and object_id and self.key:
-            return purge_metadata(obj_id=object_id, key=self.key)
-        return None
 
 
 _DEFAULT_APP = "smaht"
@@ -125,7 +111,6 @@ def main():
     parser.add_argument("--verbose", action="store_true", required=False, default=False, help="Verbose output.")
     parser.add_argument("--quiet", action="store_true", required=False, default=False, help="Quiet output.")
     parser.add_argument("--debug", action="store_true", required=False, default=False, help="Debugging output.")
-    parser.add_argument("--testmode", nargs="?", required=False, default=False, help="Test mode.")
     args = parser.parse_args()
 
     def usage(message: Optional[str] = None) -> None:
@@ -155,22 +140,19 @@ def main():
                                  file_or_directory=args.post,
                                  explicit_schema_name=explicit_schema_name,
                                  update_function=_post_from_file,
-                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet,
-                                 debug=args.debug, testmode=args.testmode)
+                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet, debug=args.debug)
     if args.patch:
         _post_or_patch_or_upsert(portal=portal,
                                  file_or_directory=args.patch,
                                  explicit_schema_name=explicit_schema_name,
                                  update_function=_patch_from_file,
-                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet,
-                                 debug=args.debug, testmode=args.testmode)
+                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet, debug=args.debug)
     if args.upsert:
         _post_or_patch_or_upsert(portal=portal,
                                  file_or_directory=args.upsert,
                                  explicit_schema_name=explicit_schema_name,
                                  update_function=_upsert_from_file,
-                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet,
-                                 debug=args.debug, testmode=args.testmode)
+                                 confirm=args.confirm, verbose=args.verbose, quiet=args.quiet, debug=args.debug)
 
     if args.delete:
         if not portal.get_metadata(args.delete, raise_exception=False):
@@ -191,7 +173,7 @@ def main():
 def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
                              explicit_schema_name: str, update_function: Callable,
                              confirm: bool = False, verbose: bool = False,
-                             quiet: bool = False, debug: bool = False, testmode: Optional[str] = None) -> None:
+                             quiet: bool = False, debug: bool = False) -> None:
     if os.path.isdir(file_or_directory):
         if ((files := glob.glob(os.path.join(file_or_directory, "*.json"))) and
             (files_and_schemas := _file_names_to_ordered_file_and_schema_names(portal, files))):  # noqa
@@ -202,7 +184,7 @@ def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
                     _print(f"ERROR: Schema cannot be inferred from file name and --schema not specified: {file}")
                     continue
                 update_function(portal, file_and_schema[0], schema_name=schema_name,
-                                confirm=confirm, quiet=quiet, verbose=verbose, debug=debug, testmode=testmode)
+                                confirm=confirm, quiet=quiet, verbose=verbose, debug=debug)
     elif os.path.isfile(file := file_or_directory):
         if (not (schema_name := _get_schema_name_from_schema_named_json_file_name(portal, file)) and
             not (schema_name := explicit_schema_name)):  # noqa
@@ -214,23 +196,20 @@ def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
         _print(f"ERROR: Cannot find file or directory: {file_or_directory}")
 
 
-def _post_from_file(portal: Portal, file: str, schema_name: Optional[str] = None,
+def _post_from_file(portal: Portal, file: str, schema_name: str,
                     confirm: bool = False, verbose: bool = False,
-                    quiet: bool = False, debug: bool = False, testmode: Optional[str] = None) -> bool:
-
-    if not schema_name and not (schema_name := portal.schema_name(file)):
-        return False
+                    quiet: bool = False, debug: bool = False) -> bool:
 
     def post_data(data: dict, index: int = 0) -> None:
         nonlocal portal, file, schema_name, verbose, debug
         if not (identifying_path := portal.get_identifying_path(data, portal_type=schema_name)):
             _print(f"ERROR: Item for POST has no identifying property: {file} (#{index + 1})")
-            return False
+            return
         if portal.get_metadata(identifying_path, raise_exception=False):
             _print(f"ERROR: Item for POST already exists: {identifying_path}")
-            return False
+            return
         if (confirm is True) and not yes_or_no(f"POST data for: {identifying_path} ?"):
-            return False
+            return
         if verbose:
             _print(f"POST {schema_name} item: {identifying_path}")
         try:
@@ -240,38 +219,34 @@ def _post_from_file(portal: Portal, file: str, schema_name: Optional[str] = None
         except Exception as e:
             _print(f"ERROR: Cannot POST {schema_name} item: {identifying_path}")
             _print(get_error_message(e))
-            return False
-        return True
+            return
 
     if not quiet:
         _print(f"Processing POST file: {file}")
-    if data := _read_json_from_file(file, testmode=testmode):
+    if data := _read_json_from_file(file):
         if isinstance(data, dict):
-            if not post_data(data):
-                return False
+            post_data(data)
         elif isinstance(data, list):
             for index, item in enumerate(data):
-                if not post_data(item, index):
-                    return False
+                post_data(item, index)
         if debug:
             _print(f"DEBUG: Processing POST file done: {file}")
-    return True
 
 
 def _patch_from_file(portal: Portal, file: str, schema_name: str,
                      confirm: bool = False, verbose: bool = False,
-                     quiet: bool = False, debug: bool = False, testmode: Optional[str] = None) -> bool:
+                     quiet: bool = False, debug: bool = False) -> bool:
 
     def patch_data(data: dict, index: int = 0) -> None:
         nonlocal portal, file, schema_name, verbose, debug
         if not (identifying_path := portal.get_identifying_path(data, portal_type=schema_name)):
             _print(f"ERROR: Item for PATCH has no identifying property: {file} (#{index + 1})")
-            return False
+            return
         if not portal.get_metadata(identifying_path, raise_exception=False):
             _print(f"ERROR: Item for PATCH does not already exist: {identifying_path}")
-            return False
+            return
         if (confirm is True) and not yes_or_no(f"PATCH data for: {identifying_path}"):
-            return False
+            return
         if verbose:
             _print(f"PATCH {schema_name} item: {identifying_path}")
         try:
@@ -281,47 +256,40 @@ def _patch_from_file(portal: Portal, file: str, schema_name: str,
         except Exception as e:
             _print(f"ERROR: Cannot PATCH {schema_name} item: {identifying_path}")
             _print(e)
-            return False
-        return True
+            return
 
     if not quiet:
         _print(f"Processing PATCH file: {file}")
-    if data := _read_json_from_file(file, testmode=testmode):
+    if data := _read_json_from_file(file):
         if isinstance(data, dict):
-            if not patch_data(data):
-                return False
+            patch_data(data)
         elif isinstance(data, list):
             for index, item in enumerate(data):
-                if not patch_data(item, index):
-                    return False
+                patch_data(item, index)
         if debug:
             _print(f"DEBUG: Processing PATCH file done: {file}")
-    return True
 
 
 def _upsert_from_file(portal: Portal, file: str, schema_name: Optional[str] = None,
                       confirm: bool = False, verbose: bool = False,
-                      quiet: bool = False, debug: bool = False, testmode: Optional[str] = None) -> bool:
+                      quiet: bool = False, debug: bool = False) -> bool:
 
-    if not schema_name and not (schema_name := portal.schema_name(file)):
-        return False
-
-    def upsert_data(data: dict, index: int = 0) -> bool:
+    def upsert_data(data: dict, index: int = 0) -> None:
         nonlocal portal, file, schema_name, verbose, debug
         if not (identifying_path := portal.get_identifying_path(data, portal_type=schema_name)):
             _print(f"ERROR: Item for UPSERT has no identifying property: {file} (#{index + 1})")
-            return False
+            return
         existing_item = portal.get_metadata(identifying_path, raise_exception=False)
         try:
             if not existing_item:
                 if (confirm is True) and not yes_or_no(f"POST data for: {identifying_path} ?"):
-                    return False
+                    return
                 if verbose:
                     _print(f"POST {schema_name} item: {identifying_path}")
                 portal.post_metadata(schema_name, data)
             else:
                 if (confirm is True) and not yes_or_no(f"PATCH data for: {identifying_path} ?"):
-                    return False
+                    return
                 if verbose:
                     _print(f"PATCH {schema_name} item: {identifying_path}")
                 portal.patch_metadata(identifying_path, data)
@@ -330,22 +298,18 @@ def _upsert_from_file(portal: Portal, file: str, schema_name: Optional[str] = No
         except Exception as e:
             _print(f"ERROR: Cannot UPSERT {schema_name} item: {identifying_path}")
             _print(e)
-            return False
-        return True
+            return
 
     if not quiet:
         _print(f"Processing UPSERT file: {file}")
-    if data := _read_json_from_file(file, testmode=testmode):
+    if data := _read_json_from_file(file):
         if isinstance(data, dict):
-            if not upsert_data(data):
-                return False
+            upsert_data(data)
         elif isinstance(data, list):
             for index, item in enumerate(data):
-                if not upsert_data(item, index):
-                    return False
+                upsert_data(item, index)
         if debug:
             _print(f"DEBUG: Processing UPSERT file done: {file}")
-    return True
 
 
 def _create_portal(env: Optional[str] = None, app: Optional[str] = None,
@@ -370,33 +334,13 @@ def _create_portal(env: Optional[str] = None, app: Optional[str] = None,
     return portal
 
 
-def _read_json_from_file(file: str, testmode: Optional[str] = None) -> Optional[dict]:
-
-    def testmode_ize_data(data: dict) -> None:
-        if (uuid := data.get("uuid"), str) and uuid:
-            data["uuid"] = create_uuid()
-        if (identifier := data.get("identifier"), str) and identifier:
-            data["identifier"] = f"{identifier}{testmode}"
-        if (submitted_id := data.get("submitted_id"), str) and submitted_id:
-            data["submitted_id"] = f"{submitted_id}{testmode}"
-        if (aliases := data.get("aliases"), list) and aliases:
-            for index, _ in enumerate(aliases):
-                aliases[index] = f"{aliases[index]}{testmode}"
-
+def _read_json_from_file(file: str) -> Optional[dict]:
     try:
         if not os.path.exists(file):
             return None
-
         with io.open(file, "r") as f:
             try:
-                loaded_json = json.load(f)
-                if isinstance(testmode, str) and testmode:
-                    if isinstance(loaded_json, list):
-                        for data in loaded_json:
-                            testmode_ize_data(data)
-                    elif isinstance(loaded_json, dict):
-                        testmode_ize_data(loaded_json)
-                return loaded_json
+                return json.load(f)
             except Exception:
                 _print(f"ERROR: Cannot load JSON from file: {file}")
                 return None
