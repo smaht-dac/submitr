@@ -1,5 +1,8 @@
 name: BINARIES RELEASE
 
+permissions:
+  contents: write
+
 on:
   push:
     branches:
