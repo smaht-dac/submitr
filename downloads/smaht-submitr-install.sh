@@ -9,7 +9,7 @@ ARCH=`arch`
 if [ $UNAME == 'Darwin' ] ; then
         URL=$BASEURL/macos/submitr
 else
-    if [ $ARCH == 'arm64' ] ; then
+    if [ $ARCH == 'arm64' -o $ARCH == 'aarch64' ] ; then
         URL=$BASEURL/linux/arm/submitr
     else
         URL=$BASEURL/linux/x86/submitr
