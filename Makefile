@@ -51,11 +51,11 @@ publish-for-ga:
 	# New Python based publish script in dcicutils (2023-04-25).
 	poetry run publish-to-pypi --noconfirm
 
-# This exe stuff is experimental. The pyinstaller utility allows the creation of a self-contained executable
-# which can be run without Python or anything like that being installed. If used will have to create separate
-# executables for Mac and Linux; and possible M1 vs non-M1 Macs and possibly x86_64 vs arm64 Linux; for now just
-# create here MacOS M1 (actually only by virtue of running this on an M1) and Linux x86, via docker. And also
-# creating a Mac (pkg) installer, but won't easily work unless we get an Apple Developer's License and sign it.
+# This exe stuff is experimental. The pyinstaller utility allows the creation of a self-contained
+# executable which can be run without Python or anything like that being installed. Have separate
+# executables for MacOS and x86_64 and arm64 architectures of Linux (via docker). Can also create
+# a MacOS (pkg) installer (exe-macos-installer), but won't easily work without signing via Apple
+# Developer's License. Also not sure if we need separate build/executable for non-M1 MacOS.
 
 exe: exe-linux exe-macos # exe-macos-installer
 
