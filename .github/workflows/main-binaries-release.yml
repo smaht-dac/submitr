@@ -1,0 +1,38 @@
+name: BINARIES RELEASE
+
+on:
+  push:
+    branches:
+      - binaries
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v0.9.0  # Change this to your release version
+          release_name: Release v0.9.0  # Change this to your release name
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        run: |
+          for file in $(find binaries -type f); do
+            gh release upload ${{ steps.create_release.outputs.tag_name }} "$file" --clobber
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
