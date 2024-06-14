@@ -35,4 +35,4 @@ jobs:
 
       - name: EXE BUILD
         run: |
-          make exe-linux-x86
+          make exe-linux-arm
