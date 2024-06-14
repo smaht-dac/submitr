@@ -35,7 +35,9 @@ jobs:
       - name: Upload Release Assets
         run: |
           for file in $(find binaries -type f); do
-            gh release upload ${{ steps.create_release.outputs.tag_name }} "$file" --clobber
+            asset_path="$file"
+            asset_name=$(basename "$file")
+            gh release upload ${{ steps.create_release.outputs.tag_name }} "$asset_path" --name "$asset_name" --clobber
           done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
