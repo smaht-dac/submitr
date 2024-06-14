@@ -57,7 +57,7 @@ publish-for-ga:
 # create here MacOS M1 (actually only by virtue of running this on an M1) and Linux x86, via docker. And also
 # creating a Mac (pkg) installer, but won't easily work unless we get an Apple Developer's License and sign it.
 
-exe: exe-linux exe-macos exe-macos-installer
+exe: exe-linux exe-macos # exe-macos-installer
 
 exe-macos: build
 	# Download/use with (once merged with master)
@@ -70,10 +70,10 @@ exe-macos: build
 	chmod a+x ./downloads/macos/submitr
 	rm -rf ./build ./dist
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
-	git status downloads/macos/submitr-* -s | egrep -v '^\?\?' | awk '{print "git rm -f " $$2}' \
+	git status ./downloads/macos/submitr-* -s | egrep -v '^\?\?' | awk '{print "git rm -f " $$2}' \
 		> /tmp/.submitr.sh ; chmod a+x /tmp/.submitr.sh ; /tmp/.submitr.sh ; rm -f /tmp/.submitr.sh
-	ln -s downloads/macos/submitr downloads/macos/submitr-`python -m submitr.scripts.submitr version`
-	git add downloads/macos/submitr-`python -m submitr.scripts.submitr version`
+	ln -s ./downloads/macos/submitr ./downloads/macos/submitr-`python -m submitr.scripts.submitr version`
+	git add ./downloads/macos/submitr-`python -m submitr.scripts.submitr version`
 
 exe-macos-installer: exe-macos
 	# Download/install with (once merged with master)
@@ -89,10 +89,10 @@ exe-macos-installer: exe-macos
 		--install-location / --scripts ./downloads/macos/installer/scripts ./downloads/macos/submitr.installer.pkg
 	rm -rf ./downloads/macos/installer
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
-	git status downloads/macos/submitr.installer.pkg-* -s | egrep -v '^\?\?' | awk '{print "git rm -f " $$2}' \
+	git status ./downloads/macos/submitr.installer.pkg-* -s | egrep -v '^\?\?' | awk '{print "git rm -f " $$2}' \
 		> /tmp/.submitr.sh ; chmod a+x /tmp/.submitr.sh ; /tmp/.submitr.sh ; rm -f /tmp/.submitr.sh
-	ln -s downloads/macos/submitr.installer.pkg downloads/macos/submitr.installer.pkg-`python -m submitr.scripts.submitr version`
-	git add downloads/macos/submitr.installer.pkg-`python -m submitr.scripts.submitr version`
+	ln -s ./downloads/macos/submitr.installer.pkg ./downloads/macos/submitr.installer.pkg-`python -m submitr.scripts.submitr version`
+	git add ./downloads/macos/submitr.installer.pkg-`python -m submitr.scripts.submitr version`
 
 exe-linux: exe-linux-x86 exe-linux-arm
 
@@ -106,10 +106,10 @@ exe-linux-x86: build
 	docker run --rm -v ./downloads/linux/x86:/output pyinstaller-linux-x86-build sh -c "cp /app/dist/submitr /output/"
 	chmod a+x ./downloads/linux/x86/submitr
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
-	git status downloads/linux/x86/submitr-* -s | egrep -v '^\?\?' | awk '{print "git rm -f " $$2}' \
+	git status ./downloads/linux/x86/submitr-* -s | egrep -v '^\?\?' | awk '{print "git rm -f " $$2}' \
 		> /tmp/.submitr.sh ; chmod a+x /tmp/.submitr.sh ; /tmp/.submitr.sh ; rm -f /tmp/.submitr.sh
-	ln -s downloads/linux/x86/submitr downloads/linux/x86/submitr-`python -m submitr.scripts.submitr version`
-	git add downloads/linux/x86/submitr-`python -m submitr.scripts.submitr version`
+	ln -s ./downloads/linux/x86/submitr ./downloads/linux/x86/submitr-`python -m submitr.scripts.submitr version`
+	git add ./downloads/linux/x86/submitr-`python -m submitr.scripts.submitr version`
 
 exe-linux-arm: build
 	# Download/use with (once merged with master):
@@ -121,10 +121,10 @@ exe-linux-arm: build
 	docker run --rm -v ./downloads/linux/arm:/output pyinstaller-linux-arm-build sh -c "cp /app/dist/submitr /output/"
 	chmod a+x ./downloads/linux/arm/submitr
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
-	git status downloads/linux/arm/submitr-* -s | egrep -v '^\?\?' | awk '{print "git rm -f " $$2}' \
+	git status ./downloads/linux/arm/submitr-* -s | egrep -v '^\?\?' | awk '{print "git rm -f " $$2}' \
 		> /tmp/.submitr.sh ; chmod a+x /tmp/.submitr.sh ; /tmp/.submitr.sh ; rm -f /tmp/.submitr.sh
-	ln -s downloads/linux/arm/submitr downloads/linux/arm/submitr-`python -m submitr.scripts.submitr version`
-	git add downloads/linux/arm/submitr-`python -m submitr.scripts.submitr version`
+	ln -s ./downloads/linux/arm/submitr ./downloads/linux/arm/submitr-`python -m submitr.scripts.submitr version`
+	git add ./downloads/linux/arm/submitr-`python -m submitr.scripts.submitr version`
 
 help:
 	@make info
