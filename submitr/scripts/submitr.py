@@ -29,7 +29,7 @@ def usage(message: Optional[str] = None) -> None:
 
 
 def main_version():
-    print(f"smaht-submitr version: {get_version()}")
+    print(f"{get_version()}")
     sys.exit(0)
 
 

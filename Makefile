@@ -69,6 +69,11 @@ exe-macos: build
 	mv ./dist/submitr ./downloads/macos/submitr
 	chmod a+x ./downloads/macos/submitr
 	rm -rf ./build ./dist
+	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
+	git status downloads/macos/submitr-* -s | egrep -v '^\?\?' | awk '{print "git rm -f " $$2}' \
+		> /tmp/.submitr.sh ; chmod a+x /tmp/.submitr.sh ; /tmp/.submitr.sh ; rm -f /tmp/.submitr.sh
+	ln -s downloads/macos/submitr downloads/macos/submitr-`python -m submitr.scripts.submitr version`
+	git add downloads/macos/submitr-`python -m submitr.scripts.submitr version`
 
 exe-macos-installer: exe-macos
 	# Download/install with (once merged with master)
@@ -83,6 +88,11 @@ exe-macos-installer: exe-macos
 	pkgbuild --root ./downloads/macos/installer/package --identifier edu.harvard.hms --version 1.0 \
 		--install-location / --scripts ./downloads/macos/installer/scripts ./downloads/macos/submitr.installer.pkg
 	rm -rf ./downloads/macos/installer
+	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
+	git status downloads/macos/submitr.installer.pkg-* -s | egrep -v '^\?\?' | awk '{print "git rm -f " $$2}' \
+		> /tmp/.submitr.sh ; chmod a+x /tmp/.submitr.sh ; /tmp/.submitr.sh ; rm -f /tmp/.submitr.sh
+	ln -s downloads/macos/submitr.installer.pkg downloads/macos/submitr.installer.pkg-`python -m submitr.scripts.submitr version`
+	git add downloads/macos/submitr.installer.pkg-`python -m submitr.scripts.submitr version`
 
 exe-linux: exe-linux-x86 exe-linux-arm
 
@@ -95,6 +105,11 @@ exe-linux-x86: build
 	mkdir -p ./downloads/linux/x86
 	docker run --rm -v ./downloads/linux/x86:/output pyinstaller-linux-x86-build sh -c "cp /app/dist/submitr /output/"
 	chmod a+x ./downloads/linux/x86/submitr
+	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
+	git status downloads/linux/x86/submitr-* -s | egrep -v '^\?\?' | awk '{print "git rm -f " $$2}' \
+		> /tmp/.submitr.sh ; chmod a+x /tmp/.submitr.sh ; /tmp/.submitr.sh ; rm -f /tmp/.submitr.sh
+	ln -s downloads/linux/x86/submitr downloads/linux/x86/submitr-`python -m submitr.scripts.submitr version`
+	git add downloads/linux/x86/submitr-`python -m submitr.scripts.submitr version`
 
 exe-linux-arm: build
 	# Download/use with (once merged with master):
@@ -105,6 +120,11 @@ exe-linux-arm: build
 	mkdir -p ./downloads/linux/arm
 	docker run --rm -v ./downloads/linux/arm:/output pyinstaller-linux-arm-build sh -c "cp /app/dist/submitr /output/"
 	chmod a+x ./downloads/linux/arm/submitr
+	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
+	git status downloads/linux/arm/submitr-* -s | egrep -v '^\?\?' | awk '{print "git rm -f " $$2}' \
+		> /tmp/.submitr.sh ; chmod a+x /tmp/.submitr.sh ; /tmp/.submitr.sh ; rm -f /tmp/.submitr.sh
+	ln -s downloads/linux/arm/submitr downloads/linux/arm/submitr-`python -m submitr.scripts.submitr version`
+	git add downloads/linux/arm/submitr-`python -m submitr.scripts.submitr version`
 
 help:
 	@make info
