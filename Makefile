@@ -57,7 +57,7 @@ publish-for-ga:
 # a MacOS (pkg) installer (exe-macos-installer), but won't easily work without signing via Apple
 # Developer's License. Also not sure if we need separate build/executable for non-M1 MacOS.
 
-exe: exe-linux exe-macos # exe-macos-installer
+exe: exe-macos exe-linux # exe-macos-installer
 
 exe-macos: build
 	# Download/use with (once merged with master)
