@@ -2,7 +2,7 @@
 BRANCH=master
 BRANCH=pyinstaller-experiment-20240611
 BASEURL=https://raw.githubusercontent.com/smaht-dac/submitr/$BRANCH/downloads
-TARGET=/usr/local/bin/submitr
+TARGET=submitr
 
 UNAME=`uname`
 ARCH=`arch`
