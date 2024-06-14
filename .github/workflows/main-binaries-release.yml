@@ -27,14 +27,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v0.9.3  # Change this to your release version
-          release_name: Release v0.9.3  # Change this to your release name
+          tag_name: v0.9.4  # Change this to your release version
+          release_name: Release v0.9.4  # Change this to your release name
           draft: false
           prerelease: false
 
       - name: Upload Release Assets
         run: |
+          echo "Tag Name: ${{ steps.create_release.outputs.tag_name }}"
           for file in $(find binaries -type f); do
+            echo "Uploading $file"
             gh release upload ${{ steps.create_release.outputs.tag_name }} "$file" --clobber
           done
         env:
