@@ -18,3 +18,4 @@ fi
 
 curl -L -o $TARGET $URL -s
 chmod a+x $TARGET
+ls -l $TARGET
