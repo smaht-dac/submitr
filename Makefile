@@ -73,6 +73,7 @@ exe-macos: build
 	rm -rf ./downloads/macos/submitr-*
 	ln -s ./downloads/macos/submitr ./downloads/macos/submitr-`python -m submitr.scripts.submitr version`
 	git add ./downloads/macos/submitr-`python -m submitr.scripts.submitr version`
+	cp downloads/macos/submitr binaries/submitr-macos
 
 exe-macos-installer: exe-macos
 	# Download/install with (once merged with master)
@@ -91,6 +92,7 @@ exe-macos-installer: exe-macos
 	rm -rf ./downloads/macos/submitr.installer.pkg-*
 	ln -s ./downloads/macos/submitr.installer.pkg ./downloads/macos/submitr.installer.pkg-`python -m submitr.scripts.submitr version`
 	git add ./downloads/macos/submitr.installer.pkg-`python -m submitr.scripts.submitr version`
+	cp downloads/macos/submitr.installer.pkg binaries/submitr.installer.pkg-macos
 
 exe-linux: exe-linux-x86 exe-linux-arm
 
@@ -107,6 +109,7 @@ exe-linux-x86: build
 	rm -rf ./downloads/linux/x86/submitr-*
 	ln -s ./downloads/linux/x86/submitr ./downloads/linux/x86/submitr-`python -m submitr.scripts.submitr version`
 	git add ./downloads/linux/x86/submitr-`python -m submitr.scripts.submitr version`
+	cp downloads/linux/arm/submitr binaries/submitr-linux-x86
 
 exe-linux-arm: build
 	# Download/use with (once merged with master):
@@ -121,6 +124,7 @@ exe-linux-arm: build
 	rm -rf ./downloads/linux/arm/submitr-*
 	ln -s ./downloads/linux/arm/submitr ./downloads/linux/arm/submitr-`python -m submitr.scripts.submitr version`
 	git add ./downloads/linux/arm/submitr-`python -m submitr.scripts.submitr version`
+	cp downloads/linux/arm/submitr binaries/submitr-linux-arm
 
 help:
 	@make info
