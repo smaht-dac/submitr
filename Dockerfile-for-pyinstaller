@@ -1,3 +1,6 @@
+# Dockerfile to build single self-contained executable for smaht-submitr using pyinstaller.
+# Tested with IMAGE values: centos, arm64v8/centos - for x86_64 and arm64 architectures respectively.
+# FYI: It turns out that binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
 ARG IMAGE=
 FROM ${IMAGE}
 
