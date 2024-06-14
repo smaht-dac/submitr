@@ -32,7 +32,7 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload Release Assets
+      - name: Upload Binary Assets
         run: |
           echo "Tag Name: ${{ steps.create_release.outputs.tag_name }}"
           for file in $(find binaries -type f); do
