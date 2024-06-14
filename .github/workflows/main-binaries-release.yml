@@ -37,7 +37,7 @@ jobs:
           echo "Tag Name: ${{ steps.create_release.outputs.tag_name }}"
           for file in $(find binaries -type f); do
             echo "Uploading $file"
-            gh release upload v0.9.6 "$file" --clobber
+            gh release upload latest "$file" --clobber
           done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
