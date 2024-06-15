@@ -45,7 +45,7 @@ jobs:
           poetry install
           poetry run flake8 submitr
           brew install --cask docker
-          open -a /Applications/Docker.app
+          sudo open -a /Applications/Docker.app
           while (! docker stats --no-stream ); do
             echo "Waiting for docker to start ..."
             sleep 1
