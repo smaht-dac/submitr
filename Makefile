@@ -57,7 +57,7 @@ publish-for-ga:
 # a MacOS (pkg) installer (exe-macos-installer), but won't easily work without signing via Apple
 # Developer's License. Also not sure if we need separate build/executable for non-M1 MacOS.
 
-exe: exe-macos exe-linux # exe-macos-installer
+exe: exe-macos exe-linux
 
 exe-macos: build
 	# Download/use with (once merged with master)
@@ -65,34 +65,14 @@ exe-macos: build
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/downloads/macos/submitr
 	# chmod a+x submitr
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
-	mkdir -p ./downloads/macos
-	mv ./dist/submitr ./downloads/macos/submitr
-	chmod a+x ./downloads/macos/submitr
+	mkdir -p ./binaries
+	mv ./dist/submitr ./binaries/submitr-macos
+	chmod a+x ./binaries/submitr-macos
 	rm -rf ./build ./dist
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
-	rm -rf ./downloads/macos/submitr-*
-	ln -s ./downloads/macos/submitr ./downloads/macos/submitr-`python -m submitr.scripts.submitr version`
-	git add ./downloads/macos/submitr-`python -m submitr.scripts.submitr version`
-	cp downloads/macos/submitr binaries/submitr-macos
-
-exe-macos-installer: exe-macos
-	# Download/install with (once merged with master)
-	# curl -o submitr.installer.pkg https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/macos/submitr.installer.pkg
-	# curl -o submitr.installer.pkg https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/downloads/macos/submitr.installer.pkg
-	# Run (double click on) submitr.install.pkg
-	# However error/warning about unknown developer; need a MacOS developer license and key et cetera.
-	mkdir -p ./downloads/macos/installer/package/usr/local/bin ./downloads/macos/installer/scripts
-	cp ./downloads/macos/submitr ./downloads/macos/installer/package/usr/local/bin
-	echo "#!/bin/bash\nchmod a+x /usr/local/bin/submitr" > ./downloads/macos/installer/scripts/postinstall
-	chmod a+x ./downloads/macos/installer/scripts/postinstall
-	pkgbuild --root ./downloads/macos/installer/package --identifier edu.harvard.hms --version 1.0 \
-		--install-location / --scripts ./downloads/macos/installer/scripts ./downloads/macos/submitr.installer.pkg
-	rm -rf ./downloads/macos/installer
-	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
-	rm -rf ./downloads/macos/submitr.installer.pkg-*
-	ln -s ./downloads/macos/submitr.installer.pkg ./downloads/macos/submitr.installer.pkg-`python -m submitr.scripts.submitr version`
-	git add ./downloads/macos/submitr.installer.pkg-`python -m submitr.scripts.submitr version`
-	cp downloads/macos/submitr.installer.pkg binaries/submitr.installer.pkg-macos
+	rm -rf ./binaries/submitr-macos.*
+	cd ./binaries ; ln -s submitr-macos submitr-macos.`python -m submitr.scripts.submitr version`
+	git add binaries/submitr-macos.`python -m submitr.scripts.submitr version`
 
 exe-linux: exe-linux-x86 exe-linux-arm
 
@@ -102,29 +82,27 @@ exe-linux-x86: build
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/downloads/linux/x86/submitr
 	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
 	docker build --build-arg IMAGE=centos -t pyinstaller-linux-x86-build -f Dockerfile-for-pyinstaller .
-	mkdir -p ./downloads/linux/x86
-	docker run --rm -v ./downloads/linux/x86:/output pyinstaller-linux-x86-build sh -c "cp /app/dist/submitr /output/"
-	chmod a+x ./downloads/linux/x86/submitr
+	mkdir -p ./binaries
+	docker run --rm -v ./binaries:/output pyinstaller-linux-x86-build sh -c "cp /app/dist/submitr /output/submitr-linux-x86"
+	chmod a+x ./binaries/submitr-linux-x86
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
-	rm -rf ./downloads/linux/x86/submitr-*
-	ln -s ./downloads/linux/x86/submitr ./downloads/linux/x86/submitr-`python -m submitr.scripts.submitr version`
-	git add ./downloads/linux/x86/submitr-`python -m submitr.scripts.submitr version`
-	cp downloads/linux/arm/submitr binaries/submitr-linux-x86
+	rm -rf ./binaries/submitr-linux-x86.*
+	cd ./binaries ; ln -s submitr-linux-x86 submitr-linux-x86.`python -m submitr.scripts.submitr version`
+	git add binaries/submitr-linux-x86.`python -m submitr.scripts.submitr version`
 
 exe-linux-arm: build
 	# Download/use with (once merged with master):
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/arm/submitr
 	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/downloads/linux/arm/submitr
 	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
-	docker build --build-arg IMAGE=arm64v8/centos -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller .
-	mkdir -p ./downloads/linux/arm
-	docker run --rm -v ./downloads/linux/arm:/output pyinstaller-linux-arm-build sh -c "cp /app/dist/submitr /output/"
-	chmod a+x ./downloads/linux/arm/submitr
+	docker build --build-arg IMAGE=centos -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller .
+	mkdir -p ./binaries
+	docker run --rm -v ./binaries:/output pyinstaller-linux-arm-build sh -c "cp /app/dist/submitr /output/submitr-linux-arm"
+	chmod a+x ./binaries/submitr-linux-arm
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
-	rm -rf ./downloads/linux/arm/submitr-*
-	ln -s ./downloads/linux/arm/submitr ./downloads/linux/arm/submitr-`python -m submitr.scripts.submitr version`
-	git add ./downloads/linux/arm/submitr-`python -m submitr.scripts.submitr version`
-	cp downloads/linux/arm/submitr binaries/submitr-linux-arm
+	rm -rf ./binaries/submitr-linux-arm.*
+	cd ./binaries ; ln -s submitr-linux-arm submitr-linux-arm.`python -m submitr.scripts.submitr version`
+	git add binaries/submitr-linux-arm.`python -m submitr.scripts.submitr version`
 
 help:
 	@make info
