@@ -1,5 +1,5 @@
 #!/bin/bash
-BASEURL=https://github.com/smaht-dac/submitr/releases/download/latest/submitr-
+BASEURL=https://github.com/smaht-dac/submitr/releases/download/latest/submitr
 TARGET=submitr
 
 UNAME=`uname`
