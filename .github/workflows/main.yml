@@ -50,6 +50,9 @@ jobs:
           echo "Installing colima."
           brew install colima
 
+          echo "Starting colima."
+          colima start
+
           echo "Waiting for docker get up/running. This can take over 2 minutes ..."
           while (! docker stats --no-stream ); do
             echo "Waiting for docker to start ..."
