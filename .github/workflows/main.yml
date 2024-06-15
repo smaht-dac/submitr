@@ -50,7 +50,8 @@ jobs:
           # sudo /Volumes/Docker/Docker.app/Contents/MacOS/install --accep-license
           # sudo hdiutil detach /Volumes/Docker
           # Remove quarantine attribute
-          sudo xattr -r -d com.apple.quarantine /Applications/Docker.app
+          # sudo xattr -r -d com.apple.quarantine /Applications/Docker.app
+          sudo xattr -d com.apple.quarantine /Applications/Docker.app
           # Install privileged components
           sudo /Applications/Docker.app/Contents/MacOS/Docker \
                 --unattended \
