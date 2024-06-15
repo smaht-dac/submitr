@@ -30,9 +30,9 @@ jobs:
       - name: Upload Release Assets
         run: |
           if [[ $GITHUB_REF =~ ^refs/tags/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            if [ -f "binaries/submitr-macos.${{ github.ref_name }}" ] && \
-               [ -f "binaries/submitr-linux-x86.${{ github.ref_name }}" ] && \
-               [ -f "binaries/submitr-linux-arm.${{ github.ref_name }}" ]; then
+            if [ -f "binaries/submitr-macos.0.8.13" ] && \
+               [ -f "binaries/submitr-linux-x86.0.8.13" ] && \
+               [ -f "binaries/submitr-linux-arm.0.8.13" ]; then
               echo "Releasing binaries for tag: ${{ steps.create_release.outputs.tag_name }}"
               gh release upload ${{ github.ref_name }} binaries/submitr-macos --clobber
               gh release upload ${{ github.ref_name }} binaries/submitr-linux-x86 --clobber
