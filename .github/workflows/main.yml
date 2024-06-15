@@ -20,9 +20,7 @@ jobs:
     name: TEST WITH PYTHON ${{ matrix.python_version }}
 
     # The type of runner that the job will run on
-    # runs-on: ubuntu-22.04
-    # runs-on: mac-14
-    runs-on: asdfafasdfasfdsa
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         python_version: ['3.9', '3.10', '3.11']
