@@ -21,6 +21,7 @@ jobs:
 
     # The type of runner that the job will run on
     # runs-on: ubuntu-22.04
+    # experimental
     runs-on: macos-14
     strategy:
       matrix:
@@ -42,6 +43,8 @@ jobs:
         run: |
           poetry install
           poetry run flake8 submitr
+          # experimental
+          make exe
       
       - name: CI
         run: |
