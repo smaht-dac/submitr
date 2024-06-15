@@ -46,13 +46,6 @@ jobs:
           poetry run flake8 submitr
           brew install --cask docker
           open -a /Applications/Docker.app
-          echo A
-          docker stats --no-stream
-          echo B
-          docker stats --no-stream
-          echo C
-          docker stats --no-stream
-          echo D
           while (! docker stats --no-stream ); do
             echo "Waiting for docker to start ..."
             sleep 1
