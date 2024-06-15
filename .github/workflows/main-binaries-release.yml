@@ -42,9 +42,11 @@ jobs:
               echo "Done releasing binary artifacts for tag: ${tag_name}"
             else
               echo "Latest binary artifacts not all built. No action taken."
+              exit 1
             fi
           else
             echo "Release is not a non-beta. No action taken."
+            exit 1
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
