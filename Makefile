@@ -94,7 +94,7 @@ exe-linux-arm: build
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
 	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
-	docker build --build-arg IMAGE=centos -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller .
+	docker build --build-arg IMAGE=arm64v8/centos -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller .
 	mkdir -p ./binaries
 	docker run --rm -v ./binaries:/output pyinstaller-linux-arm-build sh -c "cp /app/dist/submitr /output/submitr-linux-arm"
 	chmod a+x ./binaries/submitr-linux-arm
