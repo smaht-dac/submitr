@@ -21,7 +21,7 @@ jobs:
 
     # The type of runner that the job will run on
     # experimental # runs-on: ubuntu-22.04
-    runs-on: macos-13
+    runs-on: flyci-macos-large-latest-m1
     # experimental end
     strategy:
       matrix:
