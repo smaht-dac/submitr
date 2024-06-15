@@ -1,4 +1,4 @@
-name: BINARIES RELEASE
+name: BINARY RELEASE
 
 permissions:
   contents: write
@@ -15,6 +15,28 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Sanity Checks
+        run: |
+          tag_name=${{ github.ref_name }}
+          if [[ $GITHUB_REF =~ ^refs/tags/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "Releasing binary artifacts for tag: ${tag_name}"
+            if [ -f "binaries/submitr-macos.${tag_name}" ] && \
+               [ -f "binaries/submitr-linux-x86.${tag_name}" ] && \
+               [ -f "binaries/submitr-linux-arm.${tag_name}" ]; then
+              echo "Releasing binaries for tag: ${{ steps.create_release.outputs.tag_name }}"
+              gh release upload ${{ github.ref_name }} binaries/submitr-macos --clobber
+              gh release upload ${{ github.ref_name }} binaries/submitr-linux-x86 --clobber
+              gh release upload ${{ github.ref_name }} binaries/submitr-linux-arm --clobber
+              echo "Done releasing binary artifacts for tag: ${tag_name}"
+            else
+              echo "Latest binary artifacts not all built. No action taken."
+              exit 1
+            fi
+          else
+            echo "Release is not a non-beta. No action taken."
+            exit 1
+          fi
 
       - name: Create Release
         id: create_release
@@ -41,11 +63,11 @@ jobs:
               gh release upload ${{ github.ref_name }} binaries/submitr-linux-arm --clobber
               echo "Done releasing binary artifacts for tag: ${tag_name}"
             else
-              echo "Latest binary artifacts not all built. No action taken."
+              echo "DEBUG: Latest binary artifacts not all built. No action taken."
               exit 1
             fi
           else
-            echo "Release is not a non-beta. No action taken."
+            echo "DEBUG: Release is not a non-beta. No action taken."
             exit 1
           fi
         env:
