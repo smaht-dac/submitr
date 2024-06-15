@@ -1,5 +1,5 @@
 #!/bin/bash
-LATEST_INFO_URL=https://api.github.com/repos/smaht-dac/submitr/releases/latest
+LATEST_RELEASE_INFO_URL=https://api.github.com/repos/smaht-dac/submitr/releases/latest
 TARGET=submitr
 
 UNAME=`uname`
@@ -14,7 +14,7 @@ else
     fi
 fi
 
-DOWNLOAD_URL=`curl -L -s $LATEST_INFO_URL | sed -nE "s/.*\"browser_download_url\": \"(https:\/\/[^\"]*$FILE)\".*/\1/p"`
+DOWNLOAD_URL=`curl -L -s $LATEST_RELEASE_INFO_URL | sed -nE "s/.*\"browser_download_url\": \"(https:\/\/[^\"]*$FILE)\".*/\1/p"`
 echo "Downloading $DOWNLOAD_URL to $TARGET"
 curl -L -s -o $TARGET $DOWNLOAD_URL
 chmod a+x $TARGET
