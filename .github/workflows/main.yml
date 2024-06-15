@@ -45,7 +45,19 @@ jobs:
           poetry run flake8 submitr
           # experimental
           brew install --cask docker
-          open /Applications/Docker.app
+          # steps from https://docs.docker.com/desktop/install/mac-install/#install-from-the-command-line
+          sudo hdiutil attach Docker.dmg
+          sudo /Volumes/Docker/Docker.app/Contents/MacOS/install --accep-license
+          sudo hdiutil detach /Volumes/Docker
+          # Remove quarantine attribute
+          sudo xattr -r -d com.apple.quarantine /Applications/Docker.app
+          # Install privileged components
+          sudo /Applications/Docker.app/Contents/MacOS/Docker \
+                --unattended \
+                --install-privileged-components
+          # Start Docker 
+          open -a /Applications/Docker.app
+          # open /Applications/Docker.app
           # while (! docker stats --no-stream ); do
           #   echo "Waiting for docker to start ..."
           #   sleep 1
