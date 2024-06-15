@@ -1,19 +1,22 @@
 #!/bin/bash
-BASEURL=https://github.com/smaht-dac/submitr/releases/download/latest/submitr
+LATEST_INFO_URL=https://api.github.com/repos/smaht-dac/submitr/releases/latest
 TARGET=submitr
 
 UNAME=`uname`
 ARCH=`arch`
 if [ $UNAME == 'Darwin' ] ; then
-        URL=$BASEURL-macos
+        FILE=submitr-macos
 else
     if [ $ARCH == 'arm64' -o $ARCH == 'aarch64' ] ; then
-        URL=$BASEURL-linux-arm
+        FILE=submitr-linux-arm
     else
-        URL=$BASEURL-linux-x86
+        FILE=submitr-linux-x86
     fi
 fi
 
-curl -L -o $TARGET $URL -s
+DOWNLOAD_URL=`curl -L -s $LATEST_INFO_URL | sed -nE "s/.*\"browser_download_url\": \"(https:\/\/[^\"]*$FILE)\".*/\1/p"`
+echo "Downloading $DOWNLOAD_URL to $TARGET"
+curl -L -s -o $TARGET $DOWNLOAD_URL
 chmod a+x $TARGET
+echo "Downloaded $DOWNLOAD_URL to $TARGET"
 ls -l $TARGET
