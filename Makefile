@@ -71,7 +71,7 @@ exe-macos: build
 	rm -rf ./build ./dist
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
 	rm -rf ./binaries/submitr-macos.*
-	cd ./binaries ; ln -s submitr-macos submitr-macos.`python -m submitr.scripts.submitr version`
+	cd ./binaries ; ln -s submitr-macos submitr-macos.v`python -m submitr.scripts.submitr version`
 	git add binaries/submitr-macos.`python -m submitr.scripts.submitr version`
 
 exe-linux: exe-linux-x86 exe-linux-arm
@@ -87,7 +87,7 @@ exe-linux-x86: build
 	chmod a+x ./binaries/submitr-linux-x86
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
 	rm -rf ./binaries/submitr-linux-x86.*
-	cd ./binaries ; ln -s submitr-linux-x86 submitr-linux-x86.`python -m submitr.scripts.submitr version`
+	cd ./binaries ; ln -s submitr-linux-x86 submitr-linux-x86.v`python -m submitr.scripts.submitr version`
 	git add binaries/submitr-linux-x86.`python -m submitr.scripts.submitr version`
 
 exe-linux-arm: build
@@ -101,7 +101,7 @@ exe-linux-arm: build
 	chmod a+x ./binaries/submitr-linux-arm
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
 	rm -rf ./binaries/submitr-linux-arm.*
-	cd ./binaries ; ln -s submitr-linux-arm submitr-linux-arm.`python -m submitr.scripts.submitr version`
+	cd ./binaries ; ln -s submitr-linux-arm submitr-linux-arm.v`python -m submitr.scripts.submitr version`
 	git add binaries/submitr-linux-arm.`python -m submitr.scripts.submitr version`
 
 help:
