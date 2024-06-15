@@ -29,10 +29,14 @@ jobs:
 
       - name: Upload Release Assets
         run: |
-          echo "Tag Name: ${{ steps.create_release.outputs.tag_name }}"
-          for file in $(find binaries -type f ! -name 'source.zip' ! -name 'source.tar.gz'); do
-            echo "Uploading $file"
-            gh release upload ${{ github.ref_name }} "$file" --clobber
-          done
+          if [[ $GITHUB_REF =~ ^refs/tags/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "Tag Name: ${{ steps.create_release.outputs.tag_name }}"
+            for file in $(find binaries -type f ! -name "submitr-${{ github.ref_name }}.zip"); do
+              echo "Uploading $file"
+              gh release upload ${{ github.ref_name }} "$file" --clobber
+            done
+          else
+            echo "Did not meet release criteria. No action taken."
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
