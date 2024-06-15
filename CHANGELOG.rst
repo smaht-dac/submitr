@@ -6,6 +6,11 @@ smaht-submitr
 Change Log
 ----------
 
+0.8.9
+=====
+TESTING release process ...
+
+
 0.8.4
 =====
 * Experimenting with pyinstaller to create a single independent executable (per command)
