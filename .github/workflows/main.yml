@@ -46,10 +46,10 @@ jobs:
           # experimental
           brew install --cask docker
           open /Applications/Docker.app
-          while (! docker stats --no-stream ); do
-            echo "Waiting for docker to start ..."
-            sleep 1
-          done
+          # while (! docker stats --no-stream ); do
+          #   echo "Waiting for docker to start ..."
+          #   sleep 1
+          # done
           make exe
       
       - name: CI
