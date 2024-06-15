@@ -7,6 +7,11 @@ Change Log
 ----------
 
 
+0.9.9
+=====
+Release testing.
+
+
 0.9.0
 =====
 * Experimenting with pyinstaller to create a single independent executable (per command)
