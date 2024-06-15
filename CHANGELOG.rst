@@ -6,7 +6,7 @@ smaht-submitr
 Change Log
 ----------
 
-0.8.18
+0.8.19
 ======
 TESTING release process ...
 
