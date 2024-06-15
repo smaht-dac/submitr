@@ -46,9 +46,9 @@ jobs:
           # experimental
           brew install --cask docker
           # steps from https://docs.docker.com/desktop/install/mac-install/#install-from-the-command-line
-          sudo hdiutil attach Docker.dmg
-          sudo /Volumes/Docker/Docker.app/Contents/MacOS/install --accep-license
-          sudo hdiutil detach /Volumes/Docker
+          # sudo hdiutil attach Docker.dmg
+          # sudo /Volumes/Docker/Docker.app/Contents/MacOS/install --accep-license
+          # sudo hdiutil detach /Volumes/Docker
           # Remove quarantine attribute
           sudo xattr -r -d com.apple.quarantine /Applications/Docker.app
           # Install privileged components
@@ -63,6 +63,7 @@ jobs:
           #   sleep 1
           # done
           make exe
+          # end experimental
       
       - name: CI
         run: |
