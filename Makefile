@@ -55,18 +55,31 @@ publish-for-ga:
 # executable which can be run without Python or anything like that being installed. Have separate
 # executables for MacOS and x86_64 and arm64 architectures of Linux (via docker). We do the builds
 # locally; the MacOS version using native MacOS (M1) which ASSUMES we using for local builds; and
-# we use docker to do x86 and arm64 Linux build; and note that we use docker RedHat/CentOS flavors
-# of Linux, as binaries built here run on Debian/Ubuntu flavors, but not vice versa..
+# we use docker to do x86_64 and arm64 Linux build; and note that we use docker RedHat/CentOS
+# flavors of Linux, as binaries built here run on Debian/Ubuntu flavors, but not vice versa.
 #
-# Builds for this needs to be run locally, assuming local means MacOS M1+, and not in GitHub Actions
+# Builds for this need to be run locally, where local means MacOS M1+, and not in GitHub Actions,
 # because we obviously need to build the MacOS version on MacOS, and GitHub Actions runs on Linux;
-# supposedly GitHub Actions can also do MacOS but couldn't get it totally working. And for Linux
-# could not get the docker RedHat/CentoS based Linux working in GitHub actions.
+# supposedly GitHub Actions can also do MacOS but couldn't get it totally working. And for Linux,
+# we CAN use GitHub Actions for the docker based x86_64 build, but could not get it working for
+# the arm64 version (exec format error). So for simplicity just build all binary versions locally.
+# Binaries are written to (and checked into) the binaries directory; with a symbolic from a
+# version-named file to the unversion-named file; do it like this so we don't end up with
+# a ton of binaries checked in for different binary versions which haven't actually changed.
 #
-# Could also create a MacOS (pkg) installer (see exe-macos-installer in commit 42ec17dc), but won't
-# easily work without signing via Apple Developer's License.
+# There is a GitHub Actions workflow (main-binaries-release.yml) to "release" the binaries. 
+# This workflow ONLY runs when a NON-beta tag is created. And it makes sure that the binaries
+# which are checked in (to the binaries directory) are for this version; it not the release
+# build will fail (though currently it will still leave an empty "release" around; see TODOs).
 #
-# Also TODO: Not sure if we need separate build/executable for non-M1 MacOS.
+# To install (on MacOS or Linux x86_64 or Linux arm64):
+# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
+#
+# Could also create a MacOS (pkg) installer (see exe-macos-installer in commit 42ec17dc),
+# but won't easily work without signing via Apple Developer's License; so nevermind that.
+#
+# TODO: Figure out if we need a separate build/executable for non-M1 MacOS.
+# TODO: Prevent a "release" from being created if the correct versions are unavailable.
 
 exe: exe-macos exe-linux
 
