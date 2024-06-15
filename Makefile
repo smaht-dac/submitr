@@ -69,7 +69,7 @@ publish-for-ga:
 #
 # There is a GitHub Actions workflow (main-binaries-release.yml) to "release" the binaries. 
 # This workflow ONLY runs when a NON-beta tag is created. And it makes sure that the binaries
-# which are checked in (to the binaries directory) are for this version; it not the release
+# which are checked in (to the binaries directory) are for this version; if not the release
 # build will fail (though currently it will still leave an empty "release" around; see TODOs).
 #
 # To install (on MacOS or Linux x86_64 or Linux arm64):
