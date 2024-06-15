@@ -34,9 +34,9 @@ jobs:
                [ -f "binaries/submitr-linux-x86.0.8.13" ] && \
                [ -f "binaries/submitr-linux-arm.0.8.13" ]; then
               echo "Releasing binaries for tag: ${{ steps.create_release.outputs.tag_name }}"
-              gh release upload ${{ github.ref_name }} binaries/submitr-macos --clobber
-              gh release upload ${{ github.ref_name }} binaries/submitr-linux-x86 --clobber
-              gh release upload ${{ github.ref_name }} binaries/submitr-linux-arm --clobber
+              gh release upload ${{github.ref_name}} binaries/submitr-macos --clobber
+              gh release upload ${{github.ref_name}} binaries/submitr-linux-x86 --clobber
+              gh release upload ${{github.ref_name}} binaries/submitr-linux-arm --clobber
             else
               echo "Latest binary artifacts not all built. No action taken."
             fi
