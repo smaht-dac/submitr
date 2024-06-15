@@ -41,7 +41,7 @@ jobs:
         run: |
           poetry install
           poetry run flake8 submitr
-          make exe-linux-x86
+          make exe-linux-arm
       
       - name: CI
         run: |
