@@ -61,9 +61,8 @@ exe: exe-macos exe-linux
 
 exe-macos: build
 	# Download/use with (once merged with master)
-	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/macos/submitr
-	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/downloads/macos/submitr
-	# chmod a+x submitr
+	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
+	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
 	mkdir -p ./binaries
 	mv ./dist/submitr ./binaries/submitr-macos
@@ -78,8 +77,8 @@ exe-linux: exe-linux-x86 exe-linux-arm
 
 exe-linux-x86: build
 	# Download/use with (once merged with master):
-	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/x86/submitr
-	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/downloads/linux/x86/submitr
+	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
+	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
 	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
 	docker build --build-arg IMAGE=centos -t pyinstaller-linux-x86-build -f Dockerfile-for-pyinstaller .
 	mkdir -p ./binaries
@@ -92,8 +91,8 @@ exe-linux-x86: build
 
 exe-linux-arm: build
 	# Download/use with (once merged with master):
-	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/master/downloads/linux/arm/submitr
-	# curl -o submitr https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/downloads/linux/arm/submitr
+	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
+	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
 	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
 	docker build --build-arg IMAGE=centos -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller .
 	mkdir -p ./binaries
