@@ -20,7 +20,10 @@ jobs:
     name: TEST WITH PYTHON ${{ matrix.python_version }}
 
     # The type of runner that the job will run on
-    runs-on: ubuntu-22.04
+    # runs-on: ubuntu-22.04
+    # experimental
+    runs-on: macos-14
+    # end experimental
     strategy:
       matrix:
         python_version: ['3.9', '3.10', '3.11']
@@ -41,6 +44,19 @@ jobs:
         run: |
           poetry install
           poetry run flake8 submitr
+          brew install --cask docker
+          open -a /Applications/Docker.app
+          echo A
+          docker stats --no-stream
+          echo B
+          docker stats --no-stream
+          echo C
+          docker stats --no-stream
+          echo D
+          while (! docker stats --no-stream ); do
+            echo "Waiting for docker to start ..."
+            sleep 1
+          done
       
       - name: CI
         run: |
