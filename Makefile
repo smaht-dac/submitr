@@ -53,9 +53,20 @@ publish-for-ga:
 
 # This exe stuff is experimental. The pyinstaller utility allows the creation of a self-contained
 # executable which can be run without Python or anything like that being installed. Have separate
-# executables for MacOS and x86_64 and arm64 architectures of Linux (via docker). Can also create
-# a MacOS (pkg) installer (exe-macos-installer), but won't easily work without signing via Apple
-# Developer's License. Also not sure if we need separate build/executable for non-M1 MacOS.
+# executables for MacOS and x86_64 and arm64 architectures of Linux (via docker). We do the builds
+# locally; the MacOS version using native MacOS (M1) which ASSUMES we using for local builds; and
+# we use docker to do x86 and arm64 Linux build; and note that we use docker RedHat/CentOS flavors
+# of Linux, as binaries built here run on Debian/Ubuntu flavors, but not vice versa..
+#
+# Builds for this needs to be run locally, assuming local means MacOS M1+, and not in GitHub Actions
+# because we obviously need to build the MacOS version on MacOS, and GitHub Actions runs on Linux;
+# supposedly GitHub Actions can also do MacOS but couldn't get it totally working. And for Linux
+# could not get the docker RedHat/CentoS based Linux working in GitHub actions.
+#
+# Could also create a MacOS (pkg) installer (see exe-macos-installer in commit 42ec17dc), but won't
+# easily work without signing via Apple Developer's License.
+#
+# Also TODO: Not sure if we need separate build/executable for non-M1 MacOS.
 
 exe: exe-macos exe-linux
 
