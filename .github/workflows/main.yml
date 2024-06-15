@@ -44,16 +44,22 @@ jobs:
           poetry install
           poetry run flake8 submitr
           echo "Installing docker."
-          HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
-          sudo /Applications/Docker.app/Contents/MacOS/Docker --unattended --install-privileged-components
-          open -a /Applications/Docker.app --args --unattended --accept-license
+          brew install docker
+          echo "Installed docker."
           echo "Starting docker."
-          echo "Waiting for docker to be up and running. This can take over 2 minutes ..."
-          while ! /Applications/Docker.app/Contents/Resources/bin/docker info &>/dev/null; do sleep 1; done
-          echo "Docker now seems to be up/running."
-          echo "Building Linux binaries."
-          make exe-linux
-          echo "Done building Linux binaries."
+          colima start
+          echo "Started docker."
+          # HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
+          # sudo /Applications/Docker.app/Contents/MacOS/Docker --unattended --install-privileged-components
+          # open -a /Applications/Docker.app --args --unattended --accept-license
+          # echo "Starting docker."
+          # open -a /Applications/Docker.app --unattended --install-privileged-components
+          # echo "Waiting for docker to be up and running. This can take over 2 minutes ..."
+          # while ! /Applications/Docker.app/Contents/Resources/bin/docker info &>/dev/null; do sleep 1; done
+          # echo "Docker now seems to be up/running."
+          # echo "Building Linux binaries."
+          # make exe-linux
+          # echo "Done building Linux binaries."
       
       - name: CI
         run: |
