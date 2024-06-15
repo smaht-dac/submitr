@@ -69,8 +69,8 @@ publish-for-ga:
 #
 # There is a GitHub Actions workflow (main-binaries-release.yml) to "release" the binaries. 
 # This workflow ONLY runs when a NON-beta tag is created. And it makes sure that the binaries
-# which are checked in (to the binaries directory) are for this version; if not the release
-# build will fail (though currently it will still leave an empty "release" around; see TODOs).
+# which are checked in (to the binaries directory) are for this version; if not then the
+# release build will fail.
 #
 # To install (on MacOS or Linux x86_64 or Linux arm64):
 # curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
@@ -79,7 +79,6 @@ publish-for-ga:
 # but won't easily work without signing via Apple Developer's License; so nevermind that.
 #
 # TODO: Figure out if we need a separate build/executable for non-M1 MacOS.
-# TODO: Prevent a "release" from being created if the correct versions are unavailable.
 
 exe: exe-macos exe-linux
 
