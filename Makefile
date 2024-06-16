@@ -86,11 +86,12 @@ exe-for-ga: exe
 	git commit -m 'GitHub Actions committing smaht-submitr binaries.'
 	git push
 
-exe-macos: build
+exe-macos:
 	# Download/use with (once merged with master)
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
 	pip install setuptools
+	poetry install
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
 	mkdir -p ./binaries
 	mv ./dist/submitr ./binaries/submitr-macos
