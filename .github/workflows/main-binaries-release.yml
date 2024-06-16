@@ -37,8 +37,11 @@ jobs:
       - name: Build Linux Binaries
         run: |
           echo "Building Linux binaries."
-          echo "Installing docker and colima for building Linux binaries."
-          HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker colima docker-buildx
+          echo "Installing docker and docker-buildx for building Linux binaries."
+          HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install --cask docker
+          HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install docker-buildx
+          echo "Installing colima for running docker."
+          HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install colima
           echo "Starting docker via colima."
           colima start --arch x86_64 -r docker --very-verbose
           echo "Waiting for docker come up."
