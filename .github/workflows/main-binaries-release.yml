@@ -39,6 +39,8 @@ jobs:
           HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
           echo "Installing colima for running docker."
           brew install colima
+          echo "NOTE: GitHub runner architecture is: `arch`"
+          arch
           echo "Starting docker via colima."
           # Was sometimes timing out with many of these messages after column start:
           # - Waiting for the essential requirement 1 of 4: "ssh"
