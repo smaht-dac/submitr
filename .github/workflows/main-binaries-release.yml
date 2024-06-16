@@ -17,18 +17,16 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Sanity Checks
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag_name=${{ github.ref_name }}
           if [[ $GITHUB_REF =~ ^refs/tags/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            echo "Releasing binary artifacts for tag: ${tag_name}"
             if [ -f "binaries/submitr-macos.${tag_name}" ] && \
                [ -f "binaries/submitr-linux-x86.${tag_name}" ] && \
                [ -f "binaries/submitr-linux-arm.${tag_name}" ]; then
-              echo "Releasing binaries for tag: ${{ steps.create_release.outputs.tag_name }}"
-              gh release upload ${{ github.ref_name }} binaries/submitr-macos --clobber
-              gh release upload ${{ github.ref_name }} binaries/submitr-linux-x86 --clobber
-              gh release upload ${{ github.ref_name }} binaries/submitr-linux-arm --clobber
-              echo "Done releasing binary artifacts for tag: ${tag_name}"
+              echo "Releasing binary artifacts for tag: ${tag_name} ..."
             else
               echo "Latest binary artifacts not all built. No action taken."
               exit 1
