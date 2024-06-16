@@ -30,15 +30,6 @@ jobs:
             exit 1
           fi
 
-      - name: Build MacOS Binary
-        run: |
-          echo "Building MacOS binaries."
-          make exe-macos-for-ga
-          echo "Done building MacOS binaries."
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build Linux Binaries
         run: |
           echo "Building Linux binaries."
@@ -69,6 +60,15 @@ jobs:
           release_name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
+
+      - name: Build MacOS Binary
+        run: |
+          echo "Building MacOS binaries."
+          make exe-macos-for-ga
+          echo "Done building MacOS binaries."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Binaries
         run: |
