@@ -38,7 +38,8 @@ jobs:
           echo "Installing colima for running docker."
           brew install colima
           echo "Starting docker via colima."
-          colima start
+          # colima start
+          colima start --arch x86_64
           echo "Waiting for docker come up."
           while (! docker stats --no-stream ); do
             sleep 3
@@ -46,6 +47,15 @@ jobs:
           echo "Docker is up/running."
           make exe-linux
           echo "Done building Linux binaries."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build MacOS Binary
+        run: |
+          echo "Building MacOS binaries."
+          make exe-macos-for-ga
+          echo "Done building MacOS binaries."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -60,15 +70,6 @@ jobs:
           release_name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
-
-      - name: Build MacOS Binary
-        run: |
-          echo "Building MacOS binaries."
-          make exe-macos-for-ga
-          echo "Done building MacOS binaries."
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Binaries
         run: |
