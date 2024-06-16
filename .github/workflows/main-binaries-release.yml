@@ -46,8 +46,8 @@ jobs:
       - name: Build Linux Binaries
         run: |
           echo "Building Linux binaries."
-          echo "Installing docker for building Linux binaries."
-          HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
+          # echo "Installing docker for building Linux binaries."
+          # HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
           echo "Installing colima for running docker."
           brew install colima
           echo "Starting docker via colima."
