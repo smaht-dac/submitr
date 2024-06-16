@@ -35,6 +35,7 @@ jobs:
       - name: Build MacOS Binary
         run: |
           echo "Building MacOS binaries."
+          pip install poetry
           make exe-macos
           # make exe-macos-for-ga
           echo "Done building MacOS binaries."
