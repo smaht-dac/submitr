@@ -2,12 +2,10 @@ FROM davidmichaels/harvard:linux-x86-centos-python-3.11
 
 USER root
 WORKDIR /app
-COPY . .
+COPY submitr submitr
+COPY Makefile pyproject.toml poetry.lock README.rst .
 
 RUN source ~/.bashrc ; \
-    make build ; \
-    pip install distutils pyinstaller ; \
-    pyinstaller --onefile submitr/scripts/submitr.py
-
-RUN chmod a+x dist/submitr
-CMD ["./dist/submitr"]
+    poetry install ; \
+    pyinstaller --onefile submitr/scripts/submitr.py ; \
+    chmod a+x dist/submitr
