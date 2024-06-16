@@ -42,17 +42,7 @@ jobs:
           echo "Installing colima for running docker."
           brew install colima
           echo "Starting docker via colima."
-          # Was sometimes timing out with many of these messages after column start:
-          # - Waiting for the essential requirement 1 of 4: "ssh"
-          # Changed to colima start --arch x86_64 and not so much but unclear if it really mattered.
-          # And maybe --vm-type vz option will help speed things up, dunno.
-          # colima start --arch x86_64
-          # colima start --vm-type vz --arch x86_64
-          # colima start -a aarch64 -m 4 -r docker
-          # TODO: try --very-verbose
-          # TODO: try colima start -a x86_64 --cpu 4 --memory 8 --disk 80
-          # colima start -a x86_64 --vm-type vz -m 4 -r docker
-          colima start -a x86_64 --cpu 4 --memory 8 --disk 80 -r docker --very-verbose
+          colima start --arch x86_64 -r docker --very-verbose
           echo "Waiting for docker come up."
           while (! docker stats --no-stream ); do
             sleep 3
@@ -60,6 +50,15 @@ jobs:
           echo "Docker is up/running."
           make exe-linux
           echo "Done building Linux binaries."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build MacOS Binary
+        run: |
+          echo "Building MacOS binaries."
+          make exe-macos
+          echo "Done building MacOS binaries."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
