@@ -87,22 +87,6 @@ exe-for-ga: exe-macos-for-ga exe-linux
 	# git commit -m 'GitHub Actions committing smaht-submitr binaries.'
 	# git push
 
-exe-macos-for-ga:
-	# Unless we use a pyenv virtualenv in GitHub Action (for the macos-13 runner) we get this
-	# error when executing python -m submitr.scripts.submitr version: no module named 'imp' imp.py
-	curl https://pyenv.run | /bin/bash
-	export PYENV_ROOT="$$HOME/.pyenv" ; \
-	export PATH="$$PYENV_ROOT/bin:$$PATH" ; \
-	eval "$$(pyenv init -)" ; \
-	eval "$$(pyenv virtualenv-init -)" ; \
-	pyenv install 3.11.8 ; \
-	pyenv virtualenv 3.11.8 default-3.11 ; \
-	pyenv activate default-3.11 ; \
-	pip install poetry ; \
-	make exe-macos
-	# git commit -m 'GitHub Actions committing smaht-submitr binaries.'
-	# git push
-
 exe-macos:
 	# Download/use with (once merged with master)
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
@@ -116,9 +100,22 @@ exe-macos:
 	chmod a+x ./binaries/submitr-macos
 	rm -rf ./build ./dist
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
-	rm -rf ./binaries/submitr-macos.*
-	cd ./binaries ; ln -s submitr-macos submitr-macos.v`python -m submitr.scripts.submitr version`
-	# git add binaries/submitr-macos binaries/submitr-macos.v`python -m submitr.scripts.submitr version`
+	# rm -rf ./binaries/submitr-macos.*
+	# cd ./binaries ; ln -s submitr-macos submitr-macos.v`python -m submitr.scripts.submitr version`
+
+exe-macos-for-ga:
+	# Unless we use a pyenv virtualenv in GitHub Action (for the macos-13 runner) we get this
+	# error when executing python -m submitr.scripts.submitr version: no module named 'imp' imp.py
+	curl https://pyenv.run | /bin/bash
+	export PYENV_ROOT="$$HOME/.pyenv" ; \
+	export PATH="$$PYENV_ROOT/bin:$$PATH" ; \
+	eval "$$(pyenv init -)" ; \
+	eval "$$(pyenv virtualenv-init -)" ; \
+	pyenv install 3.11.8 ; \
+	pyenv virtualenv 3.11.8 default-3.11 ; \
+	pyenv activate default-3.11 ; \
+	pip install poetry ; \
+	make exe-macos
 
 exe-linux: exe-linux-x86 exe-linux-arm
 
@@ -132,9 +129,8 @@ exe-linux-x86:
 	docker run --rm -v ./binaries:/output pyinstaller-linux-x86-build sh -c "cp /app/dist/submitr /output/submitr-linux-x86"
 	chmod a+x ./binaries/submitr-linux-x86
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
-	rm -rf ./binaries/submitr-linux-x86.*
-	cd ./binaries ; ln -s submitr-linux-x86 submitr-linux-x86.v`python -m submitr.scripts.submitr version`
-	# git add binaries/submitr-linux-x86 binaries/submitr-linux-x86.v`python -m submitr.scripts.submitr version`
+	# rm -rf ./binaries/submitr-linux-x86.*
+	# cd ./binaries ; ln -s submitr-linux-x86 submitr-linux-x86.v`python -m submitr.scripts.submitr version`
 
 exe-linux-arm:
 	# Download/use with (once merged with master):
@@ -146,9 +142,8 @@ exe-linux-arm:
 	docker run --platform linux/arm64/v8 --rm -v ./binaries:/output pyinstaller-linux-arm-build sh -c "cp /app/dist/submitr /output/submitr-linux-arm"
 	chmod a+x ./binaries/submitr-linux-arm
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
-	rm -rf ./binaries/submitr-linux-arm.*
-	cd ./binaries ; ln -s submitr-linux-arm submitr-linux-arm.v`python -m submitr.scripts.submitr version`
-	# git add binaries/submitr-linux-arm binaries/submitr-linux-arm.v`python -m submitr.scripts.submitr version`
+	# rm -rf ./binaries/submitr-linux-arm.*
+	# cd ./binaries ; ln -s submitr-linux-arm submitr-linux-arm.v`python -m submitr.scripts.submitr version`
 
 obsolete-exe-linux-x86: build
 	# Download/use with (once merged with master):

@@ -5,6 +5,7 @@ permissions:
 
 on:
   push:
+    # Only run this workflow to create binaries when a non-beta tag is created.
     tags:
       - 'v[0-9]+\.[0-9]+\.[0-9]+'
 
@@ -23,38 +24,37 @@ jobs:
         run: |
           tag_name=${{ github.ref_name }}
           if [[ $GITHUB_REF =~ ^refs/tags/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            if [ -f "binaries/submitr-macos.${tag_name}" ] && \
-               [ -f "binaries/submitr-linux-x86.${tag_name}" ] && \
-               [ -f "binaries/submitr-linux-arm.${tag_name}" ]; then
-              echo "Releasing binary artifacts for tag: ${tag_name} ..."
-            else
-              echo "Latest binary artifacts not all built. No action taken."
-              exit 1
-            fi
+            echo "Releasing binary artifacts for tag: ${tag_name} ..."
           else
-            echo "Release is not a non-beta. No action taken."
+            echo "Release tag is not for a non-beta. No action taken."
             exit 1
           fi
 
-      - name: Upload Release Assets
+      - name: Build MacOS Binary
         run: |
           echo "Building MacOS binaries."
           make exe-macos-for-ga
           echo "Done building MacOS binaries."
-#         echo "Installing docker for building Linux binaries."
-#         HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
-#         echo "Installing colima for running docker."
-#         brew install colima
-#         echo "Starting docker via colima."
-#         colima start
-#         echo "Waiting for docker come up."
-#         while (! docker stats --no-stream ); do
-#           sleep 3
-#         done
-#         echo "Docker is up/running."
-#         echo "Building Linux binaries."
-#         make exe-linux
-#         echo "Done building Linux binaries."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Linux Binaries
+        run: |
+          echo "Building Linux binaries."
+          echo "Installing docker for building Linux binaries."
+          HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
+          echo "Installing colima for running docker."
+          brew install colima
+          echo "Starting docker via colima."
+          colima start
+          echo "Waiting for docker come up."
+          while (! docker stats --no-stream ); do
+            sleep 3
+          done
+          echo "Docker is up/running."
+          make exe-linux
+          echo "Done building Linux binaries."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -70,13 +70,14 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload Release Assets
+      - name: Upload Release Binaries
         run: |
           tag_name=${{ github.ref_name }}
           echo "Releasing binary artifacts for tag: ${tag_name}"
           gh release upload ${{ github.ref_name }} binaries/submitr-macos --clobber
-          # gh release upload ${{ github.ref_name }} binaries/submitr-linux-x86 --clobber
-          # gh release upload ${{ github.ref_name }} binaries/submitr-linux-arm --clobber
+          gh release upload ${{ github.ref_name }} binaries/submitr-linux-x86 --clobber
+          gh release upload ${{ github.ref_name }} binaries/submitr-linux-arm --clobber
           echo "Done releasing binary artifacts for tag: ${tag_name}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
