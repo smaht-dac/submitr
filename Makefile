@@ -91,7 +91,7 @@ exe-macos-for-ga:
 	# error when executing python -m submitr.scripts.submitr version: no module named 'imp' imp.py
 	curl https://pyenv.run | /bin/bash
 	export PYENV_ROOT="$$HOME/.pyenv" ; \
-	export PATH="$PYENV_ROOT/bin:$$PATH" ; \
+	export PATH="$$PYENV_ROOT/bin:$$PATH" ; \
 	eval "$$(pyenv init -)" ; \
 	eval "$$(pyenv virtualenv-init -)" ; \
 	pyenv install 3.11.8 ; \
@@ -120,6 +120,17 @@ goo: /dev/null
 	pyenv virtualenvs
 	echo foo
 	pyenv virtualenvs
+
+hoo: /dev/null
+	export PYENV_ROOT="$$HOME/.pyenv" ; \
+	export PATH="$$PYENV_ROOT/bin:$$PATH" ; \
+	eval "$$(pyenv init -)" ; \
+	eval "$$(pyenv virtualenv-init -)" ; \
+	pyenv install 3.11.8 ; \
+	pyenv virtualenv 3.11.8 default-3.11 ; \
+	pyenv activate default-3.11 ; \
+	pip install poetry ; \
+	make exe-macos
 
 exe-macos:
 	# Download/use with (once merged with master)
