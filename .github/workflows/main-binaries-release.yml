@@ -14,8 +14,10 @@ jobs:
     runs-on: macos-13
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.11"
 
       - name: Sanity Checks
         env:
@@ -31,8 +33,6 @@ jobs:
           fi
 
       - name: Build MacOS Binary
-        with:
-          python-version: "3.11"
         run: |
           echo "Building MacOS binaries."
           make exe-macos
