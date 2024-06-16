@@ -116,7 +116,7 @@ exe-linux-x86:
 	cd ./binaries ; ln -s submitr-linux-x86 submitr-linux-x86.v`python -m submitr.scripts.submitr version`
 	git add binaries/submitr-linux-x86 binaries/submitr-linux-x86.v`python -m submitr.scripts.submitr version`
 
-exe-linux-arm: build
+exe-linux-arm:
 	# Download/use with (once merged with master):
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
