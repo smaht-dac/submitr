@@ -94,6 +94,8 @@ exe-macos-for-ga:
 	pyenv virtualenv 3.11.8 default-3.11 ; \
 	pyenv activate default-3.11 ; \
 	make exe-macos
+	git commit -m 'GitHub Actions committing smaht-submitr binaries.'
+	git push
 
 exe-macos:
 	# Download/use with (once merged with master)
@@ -104,6 +106,7 @@ exe-macos:
 	pip install importlib
 	pip install pyinstaller
 	poetry install
+	python -m submitr.scripts.submitr version # xyzzy
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
 	mkdir -p ./binaries
 	mv ./dist/submitr ./binaries/submitr-macos
