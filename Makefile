@@ -90,6 +90,7 @@ exe-macos:
 	# Download/use with (once merged with master)
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
+	pip install poetry
 	pip install setuptools
 	poetry install
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
