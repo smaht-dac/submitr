@@ -7,7 +7,7 @@ on:
   push:
     # Only run this workflow to create binaries when a non-beta tag is created.
     tags:
-      - "v[0-9]+\.[0-9]+\.[0-9]+"
+      - 'v[0-9]+\.[0-9]+\.[0-9]+'
 
 jobs:
   release:
