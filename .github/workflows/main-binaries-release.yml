@@ -13,7 +13,7 @@ jobs:
     runs-on: macos-13
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v2
 
       - name: Sanity Checks
@@ -36,7 +36,7 @@ jobs:
             exit 1
           fi
 
-      - name: Create Release
+      - name: Create Binaries
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -47,8 +47,6 @@ jobs:
           release_name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
-
-      - name: Upload Release Assets
         run: |
           echo "Installing docker."
           HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
@@ -65,6 +63,29 @@ jobs:
           echo "Building smaht-submitr binaries."
           make exe
           echo "Done building smaht-submitr binaries."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Binaries Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Binaries to Release
+        run: |
+          tag_name=${{ github.ref_name }}
+          echo "Releasing binary artifacts for tag: ${tag_name}"
+          gh release upload ${{ github.ref_name }} binaries/submitr-macos --clobber
+          gh release upload ${{ github.ref_name }} binaries/submitr-linux-x86 --clobber
+          gh release upload ${{ github.ref_name }} binaries/submitr-linux-arm --clobber
+          echo "Done releasing binary artifacts for tag: ${tag_name}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
