@@ -90,12 +90,12 @@ exe-macos-for-ga:
 	curl https://pyenv.run | /bin/bash
 	echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
     echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
-    echo 'eval "$(pyenv init -)"' >> ~/.bashrc
-    echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.bashrc
-    source ~/.bashrc ; \
-    pyenv install 3.11.8 ; \
-    pyenv virtualenv 3.11.8 default-3.11 ; \
-    pyenv activate default-3.11 ; \
+	echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+	echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.bashrc
+	source ~/.bashrc ; \
+	pyenv install 3.11.8 ; \
+	pyenv virtualenv 3.11.8 default-3.11 ; \
+	pyenv activate default-3.11 ; \
 	make exe-macos
 
 exe-macos:
@@ -105,17 +105,6 @@ exe-macos:
 	pip install poetry
 	pip install setuptools
 	pip install importlib
-	curl https://pyenv.run | /bin/bash
-	echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc ; \
-    echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc ; \
-    echo 'eval "$(pyenv init -)"' >> ~/.bashrc ; \
-    echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.bashrc ; \
-    source ~/.bashrc ; \
-    pyenv install 3.11.8 ; \
-    pyenv virtualenv 3.11.8 default-3.11 ; \
-    pyenv activate default-3.11 ; \
-
-
 	poetry install
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
 	mkdir -p ./binaries
