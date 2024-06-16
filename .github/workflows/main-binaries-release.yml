@@ -11,7 +11,8 @@ on:
 
 jobs:
   release:
-    runs-on: macos-13
+    runs-on: macos-14-arm64
+    # runs-on: macos-13
 
     steps:
       - name: Checkout Code
@@ -38,8 +39,11 @@ jobs:
           echo "Installing colima for running docker."
           brew install colima
           echo "Starting docker via colima."
-          # colima start
-          colima start --arch x86_64
+          # Was sometimes timing out with many of these messages after column start:
+          # - Waiting for the essential requirement 1 of 4: "ssh"
+          # Changed to colima start --arch x86_64 and not so much but unclear if it really mattered.
+          # colima start --arch x86_64
+          colima start --arch aarch64
           echo "Waiting for docker come up."
           while (! docker stats --no-stream ); do
             sleep 3
