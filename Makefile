@@ -102,6 +102,7 @@ exe-macos:
 	pip install poetry
 	pip install setuptools
 	pip install importlib
+	pip install pyinstaller
 	poetry install
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
 	mkdir -p ./binaries
