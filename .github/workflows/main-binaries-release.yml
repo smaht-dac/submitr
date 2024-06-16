@@ -7,7 +7,7 @@ on:
   push:
     # Only run this workflow to create binaries when a non-beta tag is created.
     tags:
-      - 'v[0-9]+\.[0-9]+\.[0-9]+'
+      - "v[0-9]+\.[0-9]+\.[0-9]+"
 
 jobs:
   release:
@@ -35,8 +35,8 @@ jobs:
       - name: Build Linux Binaries
         run: |
           echo "Building Linux binaries."
-          # echo "Installing docker for building Linux binaries."
-          # HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
+          echo "Installing docker for building Linux binaries."
+          HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
           echo "Installing colima for running docker."
           brew install colima
           echo "Starting docker via colima."
@@ -51,17 +51,6 @@ jobs:
           echo "Docker is up/running."
           make exe-linux
           echo "Done building Linux binaries."
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build MacOS Binary
-        run: |
-          echo "Building MacOS binaries."
-          pip install poetry
-          make exe-macos
-          # make exe-macos-for-ga
-          echo "Done building MacOS binaries."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
