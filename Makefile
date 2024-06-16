@@ -82,6 +82,10 @@ publish-for-ga:
 
 exe: exe-macos exe-linux
 
+exe-for-ga: exe
+	git commit -m 'GitHub Actions committing smaht-submitr binaries.'
+	git push
+
 exe-macos: build
 	# Download/use with (once merged with master)
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
@@ -94,11 +98,39 @@ exe-macos: build
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
 	rm -rf ./binaries/submitr-macos.*
 	cd ./binaries ; ln -s submitr-macos submitr-macos.v`python -m submitr.scripts.submitr version`
-	git add binaries/submitr-macos.v`python -m submitr.scripts.submitr version`
+	git add binaries/submitr-macos binaries/submitr-macos.v`python -m submitr.scripts.submitr version`
 
 exe-linux: exe-linux-x86 exe-linux-arm
 
 exe-linux-x86: build
+	# Download/use with (once merged with master):
+	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
+	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
+	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
+	docker build -t pyinstaller-linux-x86-build -f Dockerfile-for-pyinstaller-x86 .
+	mkdir -p ./binaries
+	docker run --rm -v ./binaries:/output pyinstaller-linux-x86-build sh -c "cp /app/dist/submitr /output/submitr-linux-x86"
+	chmod a+x ./binaries/submitr-linux-x86
+	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
+	rm -rf ./binaries/submitr-linux-x86.*
+	cd ./binaries ; ln -s submitr-linux-x86 submitr-linux-x86.v`python -m submitr.scripts.submitr version`
+	git add binaries/submitr-linux-x86 binaries/submitr-linux-x86.v`python -m submitr.scripts.submitr version`
+
+exe-linux-arm: build
+	# Download/use with (once merged with master):
+	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
+	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
+	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
+	docker build --platform linux/arm64/v8 -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller-arm .
+	mkdir -p ./binaries
+	docker run --platform linux/arm64/v8 --rm -v ./binaries:/output pyinstaller-linux-arm-build sh -c "cp /app/dist/submitr /output/submitr-linux-arm"
+	chmod a+x ./binaries/submitr-linux-arm
+	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
+	rm -rf ./binaries/submitr-linux-arm.*
+	cd ./binaries ; ln -s submitr-linux-arm submitr-linux-arm.v`python -m submitr.scripts.submitr version`
+	git add binaries/submitr-linux-arm binaries/submitr-linux-arm.v`python -m submitr.scripts.submitr version`
+
+obsolete-exe-linux-x86: build
 	# Download/use with (once merged with master):
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
@@ -110,21 +142,21 @@ exe-linux-x86: build
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
 	rm -rf ./binaries/submitr-linux-x86.*
 	cd ./binaries ; ln -s submitr-linux-x86 submitr-linux-x86.v`python -m submitr.scripts.submitr version`
-	git add binaries/submitr-linux-x86.v`python -m submitr.scripts.submitr version`
+	git add binaries/submitr-linux-x86 binaries/submitr-linux-x86.v`python -m submitr.scripts.submitr version`
 
-exe-linux-arm: build
+obsolete-exe-linux-arm: build
 	# Download/use with (once merged with master):
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
 	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
 	docker build --build-arg IMAGE=arm64v8/centos -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller .
 	mkdir -p ./binaries
-	docker run --rm -v ./binaries:/output pyinstaller-linux-arm-build sh -c "cp /app/dist/submitr /output/submitr-linux-arm"
+	docker run --platform linux/arm64/v8 --rm -v ./binaries:/output pyinstaller-linux-arm-build sh -c "cp /app/dist/submitr /output/submitr-linux-arm"
 	chmod a+x ./binaries/submitr-linux-arm
 	# Maintain/checkin a symbolic link from a version named executable to the main unversioned named executable. 
 	rm -rf ./binaries/submitr-linux-arm.*
 	cd ./binaries ; ln -s submitr-linux-arm submitr-linux-arm.v`python -m submitr.scripts.submitr version`
-	git add binaries/submitr-linux-arm.v`python -m submitr.scripts.submitr version`
+	git add binaries/submitr-linux-arm binaries/submitr-linux-arm.v`python -m submitr.scripts.submitr version`
 
 help:
 	@make info

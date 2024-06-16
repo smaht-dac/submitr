@@ -10,7 +10,7 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: macos-13
 
     steps:
       - name: Checkout code
@@ -51,24 +51,20 @@ jobs:
 
       - name: Upload Release Assets
         run: |
-          tag_name=${{ github.ref_name }}
-          if [[ $GITHUB_REF =~ ^refs/tags/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            echo "Releasing binary artifacts for tag: ${tag_name}"
-            if [ -f "binaries/submitr-macos.${tag_name}" ] && \
-               [ -f "binaries/submitr-linux-x86.${tag_name}" ] && \
-               [ -f "binaries/submitr-linux-arm.${tag_name}" ]; then
-              echo "Releasing binaries for tag: ${{ steps.create_release.outputs.tag_name }}"
-              gh release upload ${{ github.ref_name }} binaries/submitr-macos --clobber
-              gh release upload ${{ github.ref_name }} binaries/submitr-linux-x86 --clobber
-              gh release upload ${{ github.ref_name }} binaries/submitr-linux-arm --clobber
-              echo "Done releasing binary artifacts for tag: ${tag_name}"
-            else
-              echo "DEBUG: Latest binary artifacts not all built. No action taken."
-              exit 1
-            fi
-          else
-            echo "DEBUG: Release is not a non-beta. No action taken."
-            exit 1
-          fi
+          echo "Installing docker."
+          HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
+          echo "Installing colima."
+          brew install colima
+          echo "Starting colima."
+          colima start
+          echo "Waiting for docker get up/running. This can take over 2 minutes ..."
+          while (! docker stats --no-stream ); do
+            echo "Waiting for docker to start ..."
+            sleep 3
+          done
+          echo "Docker now seems to be up/running."
+          echo "Building smaht-submitr binaries."
+          make exe
+          echo "Done building smaht-submitr binaries."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
