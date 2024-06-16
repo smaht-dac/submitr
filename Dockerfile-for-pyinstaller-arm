@@ -1,0 +1,13 @@
+FROM davidmichaels/harvard:linux-arm-centos-python-3.11
+
+USER root
+WORKDIR /app
+COPY . .
+
+RUN source ~/.bashrc ; \
+    make build ; \
+    pip install distutils pyinstaller ; \
+    pyinstaller --onefile submitr/scripts/submitr.py
+
+RUN chmod a+x dist/submitr
+CMD ["./dist/submitr"]
