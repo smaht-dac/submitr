@@ -87,26 +87,51 @@ exe-for-ga: exe-macos-for-ga exe-linux
 	git push
 
 exe-macos-for-ga:
+	# Unless we use a pyenv virtualenv in GitHub Action (for the macos-13 runner) we get this
+	# error when executing python -m submitr.scripts.submitr version: no module named 'imp' imp.py
 	curl https://pyenv.run | /bin/bash
-	cat bashrc
-	source bashrc ; \
+	export PYENV_ROOT="$$HOME/.pyenv" ; \
+	export PATH="$PYENV_ROOT/bin:$$PATH" ; \
+	eval "$$(pyenv init -)" ; \
+	eval "$$(pyenv virtualenv-init -)" ; \
 	pyenv install 3.11.8 ; \
 	pyenv virtualenv 3.11.8 default-3.11 ; \
 	pyenv activate default-3.11 ; \
+	pip install poetry ; \
 	make exe-macos
 	git commit -m 'GitHub Actions committing smaht-submitr binaries.'
 	git push
+
+foo: /dev/null
+	export FOO=123 ; ./goo
+	eval "$$(pyenv init -)" ; \
+	eval "$$(pyenv virtualenv-init -)" ; \
+	./goo
+
+goo: /dev/null
+	export PYENV_ROOT="$$HOME/.pyenv" ; \
+	export PATH="$PYENV_ROOT/bin:$$PATH" ; \
+	eval "$$(pyenv init -)" ; \
+	eval "$$(pyenv virtualenv-init -)" ; \
+	pyenv install 3.11.8 ; \
+	pyenv virtualenv 3.11.8 hoo-3.11 ; \
+	pyenv activate hoo-3.11 ; \
+	python --version ; \
+	pyenv virtualenvs
+	echo foo
+	pyenv virtualenvs
 
 exe-macos:
 	# Download/use with (once merged with master)
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
-	pip install poetry
-	pip install setuptools
-	pip install importlib
-	pip install pyinstaller
+	# pip install poetry
+	# pip install setuptools
+	# pip install importlib
+	# pip install pyinstaller
 	poetry install
 	python -m submitr.scripts.submitr version # xyzzy
+	pip install pyinstaller
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
 	mkdir -p ./binaries
 	mv ./dist/submitr ./binaries/submitr-macos
