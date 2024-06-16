@@ -3,7 +3,7 @@ FROM davidmichaels/harvard:linux-x86-centos-python-3.11
 USER root
 WORKDIR /app
 COPY submitr submitr
-COPY Makefile pyproject.toml poetry.lock README.rst .
+COPY Makefile pyproject.toml poetry.lock README.rst ./
 
 RUN source ~/.bashrc ; \
     poetry install ; \
