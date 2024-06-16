@@ -37,10 +37,8 @@ jobs:
       - name: Build Linux Binaries
         run: |
           echo "Building Linux binaries."
-          echo "Installing docker for building Linux binaries."
-          HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
-          echo "Installing colima for running docker."
-          brew install colima
+          echo "Installing docker and colima for building Linux binaries."
+          HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker colima docker-buildx
           echo "Starting docker via colima."
           colima start --arch x86_64 -r docker --very-verbose
           echo "Waiting for docker come up."
@@ -48,7 +46,10 @@ jobs:
             sleep 3
           done
           echo "Docker is up/running."
-          make exe-linux
+          echo "Building Linux x86_64 binary."
+          make exe-linux-x86
+          echo "Building Linux arm64 binary."
+          make exe-linux-arm
           echo "Done building Linux binaries."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
