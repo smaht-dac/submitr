@@ -38,21 +38,23 @@ jobs:
 
       - name: Upload Release Assets
         run: |
-          echo "Installing docker."
+          echo "Building MacOS binaries."
+          make exe-macos
+          echo "Done building MacOS binaries."
+          echo "Installing docker for building Linux binaries."
           HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
-          echo "Installing colima."
+          echo "Installing colima for running docker."
           brew install colima
-          echo "Starting colima."
+          echo "Starting docker via colima."
           colima start
-          echo "Waiting for docker get up/running. This can take over 2 minutes ..."
+          echo "Waiting for docker come up."
           while (! docker stats --no-stream ); do
-            echo "Waiting for docker to start ..."
             sleep 3
           done
-          echo "Docker now seems to be up/running."
-          echo "Building smaht-submitr binaries."
-          make exe
-          echo "Done building smaht-submitr binaries."
+          echo "Docker is up/running."
+          echo "Building Linux binaries."
+          make exe-linux
+          echo "Done building Linux binaries."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
