@@ -88,12 +88,8 @@ exe-for-ga: exe-macos-for-ga exe-linux
 
 exe-macos-for-ga:
 	curl https://pyenv.run | /bin/bash
-	echo 'export PYENV_ROOT="${HOME}/.pyenv"' >> ~/.bashrc
-	echo 'export PATH="${PYENV_ROOT}/bin:${PATH}"' >> ~/.bashrc
-	echo 'eval "\$(pyenv init -)"' >> ~/.bashrc
-	echo 'eval "\$(pyenv virtualenv-init -)"' >> ~/.bashrc
-	cat ~/.bashrc
-	source ~/.bashrc ; \
+	cat bashrc
+	source bashrc ; \
 	pyenv install 3.11.8 ; \
 	pyenv virtualenv 3.11.8 default-3.11 ; \
 	pyenv activate default-3.11 ; \
