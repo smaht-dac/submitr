@@ -11,8 +11,7 @@ on:
 
 jobs:
   release:
-    runs-on: macos-14-arm64
-    # runs-on: macos-13
+    runs-on: macos-13
 
     steps:
       - name: Checkout Code
@@ -31,6 +30,18 @@ jobs:
             exit 1
           fi
 
+      - name: Build MacOS Binary
+        with:
+          python-version: "3.11"
+        run: |
+          echo "Building MacOS binaries."
+          make exe-macos
+          # make exe-macos-for-ga
+          echo "Done building MacOS binaries."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build Linux Binaries
         run: |
           echo "Building Linux binaries."
@@ -42,8 +53,7 @@ jobs:
           # Was sometimes timing out with many of these messages after column start:
           # - Waiting for the essential requirement 1 of 4: "ssh"
           # Changed to colima start --arch x86_64 and not so much but unclear if it really mattered.
-          # colima start --arch x86_64
-          colima start --arch aarch64
+          colima start --arch x86_64
           echo "Waiting for docker come up."
           while (! docker stats --no-stream ); do
             sleep 3
@@ -51,15 +61,6 @@ jobs:
           echo "Docker is up/running."
           make exe-linux
           echo "Done building Linux binaries."
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build MacOS Binary
-        run: |
-          echo "Building MacOS binaries."
-          make exe-macos-for-ga
-          echo "Done building MacOS binaries."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

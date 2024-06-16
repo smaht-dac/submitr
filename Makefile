@@ -83,9 +83,6 @@ publish-for-ga:
 exe: exe-macos exe-linux
 
 exe-for-ga: exe-macos-for-ga exe-linux
-	date
-	# git commit -m 'GitHub Actions committing smaht-submitr binaries.'
-	# git push
 
 exe-macos:
 	# Download/use with (once merged with master)
