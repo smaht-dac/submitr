@@ -49,7 +49,10 @@ jobs:
           # colima start --arch x86_64
           # colima start --vm-type vz --arch x86_64
           # colima start -a aarch64 -m 4 -r docker
-          colima start -a x86_64 --vm-type vz -m 4 -r docker
+          # TODO: try --very-verbose
+          # TODO: try colima start -a x86_64 --cpu 4 --memory 8 --disk 80
+          # colima start -a x86_64 --vm-type vz -m 4 -r docker
+          colima start -a x86_64 --cpu 4 --memory 8 --disk 80 -r docker --very-verbose
           echo "Waiting for docker come up."
           while (! docker stats --no-stream ); do
             sleep 3
