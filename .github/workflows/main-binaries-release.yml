@@ -39,7 +39,7 @@ jobs:
       - name: Upload Release Assets
         run: |
           echo "Building MacOS binaries."
-          make exe-macos
+          make exe-macos-for-ga
           echo "Done building MacOS binaries."
 #         echo "Installing docker for building Linux binaries."
 #         HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
