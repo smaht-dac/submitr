@@ -22,6 +22,11 @@ jobs:
           echo "GitHub runner info:" `uname -a`
           expected_version=${{ github.event.release.tag_name }}
           echo "Installing MacOS binary (x86): ${expected_version}"
+          echo xyzzy1
+          curl https://api.github.com/repos/smaht-dac/submitr/releases/latest
+          echo xyzzy2
+          curl https://api.github.com/repos/smaht-dac/submitr/releases/latest
+          echo xyzzy3
           echo 'curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash'
           curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
           echo "Running submitr version."
@@ -36,6 +41,11 @@ jobs:
           echo "GitHub runner info:" `uname -a`
           expected_version=${{ github.event.release.tag_name }}
           echo "Installing MacOS binary (arm): ${expected_version}"
+          echo xyzzy1
+          curl https://api.github.com/repos/smaht-dac/submitr/releases/latest
+          echo xyzzy2
+          curl https://api.github.com/repos/smaht-dac/submitr/releases/latest
+          echo xyzzy3
           echo 'curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash'
           curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
           echo "Running submitr version."
