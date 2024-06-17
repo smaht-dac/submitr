@@ -27,18 +27,15 @@ jobs:
 
       - name: Build MacOS Binary
         run: |
-          echo "GiHub runner info:"
+          echo "GitHub runner info:"
           uname -a
-          echo "Building MacOS binaries."
+          echo "Building MacOS binary (x86)."
           make exe-macos
           mv -f binaries/submitr-macos binaries/submitr-macos-x86
-          echo "Done building MacOS binaries."
+          echo "Done building MacOS binary (x86). Info below:"
           ls -l binaries/submitr-macos-x86
           file binaries/submitr-macos-x86
-          binaries/submitr-macos-x86 version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo Version: `binaries/submitr-macos-x86 version`
 
       - name: Upload MacOS Binary (x86) Artifact
         uses: actions/upload-artifact@v3
@@ -56,15 +53,15 @@ jobs:
 
       - name: Build MacOS Binary
         run: |
-          echo "GiHub runner info:"
+          echo "GitHub runner info:"
           uname -a
-          echo "Building MacOS binaries."
+          echo "Building MacOS binary (arm)."
           make exe-macos
           mv -f binaries/submitr-macos binaries/submitr-macos-arm
-          echo "Done building MacOS binaries."
+          echo "Done building MacOS binary (arm). Info below:"
           ls -l binaries/submitr-macos-arm
           file binaries/submitr-macos-arm
-          binaries/submitr-macos-arm version
+          echo Version: `binaries/submitr-macos-arm version`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -81,14 +78,14 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build Linux Binary (x86)
         run: |
-          echo "GiHub runner info:"
+          echo "GitHub runner info:"
           uname -a
           echo "Building Linux binary (x86)."
           make exe-linux-x86
-          echo "Done building Linux binary (x86)."
+          echo "Done building Linux binary (x86). Info below:"
           ls -l binaries/submitr-linux-x86
           file binaries/submitr-linux-x86
-          binaries/submitr-linux-x86 version
+          echo Version `binaries/submitr-linux-x86 version`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -110,14 +107,14 @@ jobs:
 
       - name: Build Linux Binary (arm)
         run: |
-          echo "GiHub runner info:"
+          echo "GitHub runner info:"
           uname -a
           echo "Building Linux binary (arm)."
           make exe-linux-arm
-          echo "Done building Linux binary (arm)."
+          echo "Done building Linux binary (arm). Info below:"
           ls -l binaries/submitr-linux-arm
           file binaries/submitr-linux-arm
-          binaries/submitr-linux-arm version
+          echo Version: `binaries/submitr-linux-arm version`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
