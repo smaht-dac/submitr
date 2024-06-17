@@ -21,18 +21,14 @@ jobs:
         run: |
           echo "GitHub runner info:" `uname -a`
           expected_version=${{ github.event.release.tag_name }}
+          echo "Smoke testing MacOS binary (x86)"
           echo "Installing MacOS binary (x86): ${expected_version}"
-          # echo xyzzy1
-          # curl https://api.github.com/repos/smaht-dac/submitr/releases/latest
-          # echo xyzzy2
-          # curl https://api.github.com/repos/smaht-dac/submitr/releases/latest
-          # echo xyzzy3
-          echo 'curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash'
+          # For some reason on MacOS the curl intermittently fails if we do it immediately, so we take a breath.
           sleep 3
           curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
-          echo "Running submitr version."
+          echo "Running submitr version. Should be the same as what was mentioned above."
           ./submitr version
-          echo "Done running submitr version."
+          echo "Done smoke testing MacOS binary (x86)"
 
   build-macos-arm:
     runs-on: macos-14
@@ -41,18 +37,14 @@ jobs:
         run: |
           echo "GitHub runner info:" `uname -a`
           expected_version=${{ github.event.release.tag_name }}
+          echo "Smoke testing MacOS binary (arm)"
           echo "Installing MacOS binary (arm): ${expected_version}"
-          # echo xyzzy1
-          # curl https://api.github.com/repos/smaht-dac/submitr/releases/latest
-          # echo xyzzy2
-          # curl https://api.github.com/repos/smaht-dac/submitr/releases/latest
-          # echo xyzzy3
-          echo 'curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash'
+          # For some reason on MacOS the curl intermittently fails if we do it immediately, so we take a breath.
           sleep 3
           curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
-          echo "Running submitr version."
+          echo "Running submitr version. Should be the same as what was mentioned above."
           ./submitr version
-          echo "Done running submitr version."
+          echo "Done smoke testing MacOS binary (arm)"
 
   build-linux-x86:
     runs-on: ubuntu-latest
@@ -61,11 +53,13 @@ jobs:
         run: |
           echo "GitHub runner info:" `uname -a`
           expected_version=${{ github.event.release.tag_name }}
+          echo "Smoke testing Linux binary (x86)"
           echo "Installing Linux binary (x86): ${expected_version}"
           curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
-          echo "Running submitr version."
+          echo "Running submitr version. Should be the same as what was mentioned above."
           ./submitr version
           echo "Done running submitr version."
+          echo "Done smoke testing Linux binary (x86)"
 
   build-linux-arm:
     runs-on: ubuntu-latest
@@ -75,8 +69,10 @@ jobs:
         run: |
           echo "GitHub runner info:" `uname -a`
           expected_version=${{ github.event.release.tag_name }}
+          echo "Smoke testing Linux binary (arm)"
           echo "Installing Linux binary (arm): ${expected_version}"
           curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
-          echo "Running submitr version."
-          ./submitr version
-          echo "Done running submitr version."
+          echo "Running submitr version. Should be the same as what was mentioned above."
+          actual_version=`./submitr version`
+          echo ${actual_version}
+          echo "Done smoke testing Linux binary (arm)"
