@@ -106,10 +106,6 @@ exe-linux-x86:
 	docker build -t pyinstaller-linux-x86-build -f Dockerfile-for-pyinstaller-x86 .
 	# docker buildx build -t pyinstaller-linux-x86-build -f Dockerfile-for-pyinstaller-x86 .
 	mkdir -p ./binaries
-	echo xyzzy docker debug
-	docker ps
-	docker images
-	echo xyzzy end docker debug
 	docker run --rm -v ./binaries:/output pyinstaller-linux-x86-build sh -c "cp /app/dist/submitr /output/submitr-linux-x86"
 	# chmod a+x ./binaries/submitr-linux-x86
 
