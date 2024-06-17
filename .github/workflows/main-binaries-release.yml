@@ -65,26 +65,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v3
       - name: Build Linux Binary (x86)
         run: |
-          echo "Building Linux binaries."
-          #  echo "Installing docker for building Linux binaries."
-          # HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install --cask docker
-          # echo "Installing colima for running docker."
-          # HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install colima
-          # echo "Starting docker via colima."
-          # # No idea why this works with --arch x86_64 but not --arch aarch64 (default)
-          # # as we are running on macos-14 which is an Mn processor (arm64).
-          # colima start --arch x86_64
-          # echo "Waiting for docker come up."
-          # while (! docker stats --no-stream ); do
-          #   sleep 3
-          # done
-          # echo "Docker is up/running."
           echo "Building Linux binary (x86)."
           make exe-linux-x86
-          echo "Building Linux binary (x86)."
+          echo "Done building Linux binary (x86)."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -99,23 +84,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v3
+      - uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@v2
+
       - name: Build Linux Binary (arm)
         run: |
-          echo "Building Linux binaries."
-          # echo "Installing docker for building Linux binaries."
-          # HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install --cask docker
-          # echo "Installing colima for running docker."
-          # HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install colima
-          # echo "Starting docker via colima."
-          # # No idea why this works with --arch x86_64 but not --arch aarch64 (default)
-          # # as we are running on macos-14 which is an Mn processor (arm64).
-          # colima start --arch x86_64
-          # echo "Waiting for docker come up."
-          # while (! docker stats --no-stream ); do
-          #   sleep 3
-          # done
-          # echo "Docker is up/running."
           echo "Building Linux binary (arm)."
           make exe-linux-arm
           echo "Done building Linux binary (arm)."
