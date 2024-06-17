@@ -13,7 +13,7 @@ on:
 
 jobs:
   release:
-    runs-on: macos-14
+    runs-on: macos-13
 
     steps:
       - uses: actions/checkout@v2
@@ -38,6 +38,8 @@ jobs:
 
       - name: Build Linux Binaries
         run: |
+          echo "NOTE: GitHub runner architecture is: `arch`"
+          uname -a
           echo "Building Linux binaries."
           echo "Installing docker and docker-buildx for building Linux binaries."
           HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install --cask docker
