@@ -115,7 +115,7 @@ exe-linux-arm:
 	docker buildx create --use
 	docker buildx build --platform linux/arm64 --load -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller-arm .
 	mkdir -p ./binaries
-	docker run --platform linux/arm64 --rm -v ./binaries:/output pyinstaller-linux-arm-build:latest sh -c "cp /app/dist/submitr /output/submitr-linux-arm"
+	docker run --platform linux/arm64 --rm -v ./binaries:/output pyinstaller-linux-arm-build sh -c "cp /app/dist/submitr /output/submitr-linux-arm"
 
 help:
 	@make info
