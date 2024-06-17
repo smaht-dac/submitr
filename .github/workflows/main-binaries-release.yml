@@ -35,7 +35,7 @@ jobs:
           echo "Done building MacOS binary (x86). Info below:"
           ls -l binaries/submitr-macos-x86
           file binaries/submitr-macos-x86
-          echo Version: `binaries/submitr-macos-x86 version`
+          echo smaht-submitr version: `binaries/submitr-macos-x86 version`
 
       - name: Upload MacOS Binary (x86) Artifact
         uses: actions/upload-artifact@v3
@@ -61,10 +61,7 @@ jobs:
           echo "Done building MacOS binary (arm). Info below:"
           ls -l binaries/submitr-macos-arm
           file binaries/submitr-macos-arm
-          echo Version: `binaries/submitr-macos-arm version`
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo smaht-submitr version: `binaries/submitr-macos-arm version`
 
       - name: Upload MacOS Binary (arm) Artifact
         uses: actions/upload-artifact@v3
@@ -85,10 +82,7 @@ jobs:
           echo "Done building Linux binary (x86). Info below:"
           ls -l binaries/submitr-linux-x86
           file binaries/submitr-linux-x86
-          echo Version `binaries/submitr-linux-x86 version`
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo smaht-submitr version: `binaries/submitr-linux-x86 version`
 
       - name: Upload Linux Binary (x86) Artifact
         uses: actions/upload-artifact@v3
@@ -114,10 +108,7 @@ jobs:
           echo "Done building Linux binary (arm). Info below:"
           ls -l binaries/submitr-linux-arm
           file binaries/submitr-linux-arm
-          echo Version: `binaries/submitr-linux-arm version`
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo smaht-submitr version: `binaries/submitr-linux-arm version`
 
       - name: Upload Linux Binary (arm) Artifact
         uses: actions/upload-artifact@v3
