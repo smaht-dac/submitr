@@ -107,7 +107,7 @@ exe-linux-x86:
 	# docker buildx build -t pyinstaller-linux-x86-build -f Dockerfile-for-pyinstaller-x86 .
 	mkdir -p ./binaries
 	docker run --rm -v ./binaries:/output pyinstaller-linux-x86-build sh -c "cp /app/dist/submitr /output/submitr-linux-x86"
-	chmod a+x ./binaries/submitr-linux-x86
+	# chmod a+x ./binaries/submitr-linux-x86
 
 exe-linux-arm:
 	# Download/use with (once merged with master):
@@ -119,7 +119,7 @@ exe-linux-arm:
 	docker build --platform linux/arm64 -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller-arm .
 	mkdir -p ./binaries
 	docker run --platform linux/arm64/v8 --rm -v ./binaries:/output pyinstaller-linux-arm-build sh -c "cp /app/dist/submitr /output/submitr-linux-arm"
-	chmod a+x ./binaries/submitr-linux-arm
+	# chmod a+x ./binaries/submitr-linux-arm
 
 
 obsolete-exe-for-ga: exe-macos-for-ga exe-linux
