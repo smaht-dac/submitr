@@ -49,7 +49,7 @@ jobs:
           HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install colima
           echo "Starting docker via colima."
           # colima start --arch x86_64 -r docker --very-verbose
-          colima start -r docker --very-verbose
+          colima start --arch aarch64 -r docker --very-verbose
           echo "Waiting for docker come up."
           while (! docker stats --no-stream ); do
             sleep 3
