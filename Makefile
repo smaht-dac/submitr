@@ -135,7 +135,7 @@ exe-linux-arm-for-ga:
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
 	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
 	docker buildx create --use
-	docker buildx build --platform linux/arm64 -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller-arm .
+	docker buildx build --platform linux/arm64 --load -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller-arm .
 	mkdir -p ./binaries
 	echo xyzzy docker debug
 	docker ps
