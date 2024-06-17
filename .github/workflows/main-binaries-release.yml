@@ -51,8 +51,8 @@ jobs:
           # No idea why this works with --arch x86_64 but not --arch aarch64 (default)
           # as we are running on macos-14 which is an Mn processor (arm64).
           # colima start --arch x86_64 -r docker --very-verbose
-          colima delete -f
-          colima start -r docker --very-verbose
+          # colima delete -f
+          colima start # -r docker --very-verbose
           echo "Waiting for docker come up."
           while (! docker stats --no-stream ); do
             sleep 3
