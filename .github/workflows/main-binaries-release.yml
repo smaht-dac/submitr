@@ -5,7 +5,11 @@ permissions:
 
 on:
   push:
-    branches: [ pyinstaller-experiment-20240611 ]
+    # Only run this workflow to create binaries when a non-beta tag is created.
+    tags:
+      - 'v*'
+# push:
+#   branches: [ pyinstaller-experiment-20240611 ]
 # push:
 #   # Only run this workflow to create binaries when a non-beta tag is created.
 #   tags:
