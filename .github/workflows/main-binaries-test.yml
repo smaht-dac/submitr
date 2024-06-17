@@ -23,10 +23,6 @@ jobs:
           expected_version=${{ github.event.release.tag_name }}
           echo "Smoke testing MacOS binary (x86)"
           echo "Installing MacOS binary (x86): ${expected_version}"
-          # For some reason on MacOS the curl intermittently fails if we do it immediately, so we take a breath.
-          # sleep 3
-          curl -vv https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | cat
-          echo debug1
           curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
           echo "Running smaht-submitr version. Should be the same as what was mentioned above."
           actual_version=`./submitr version`
@@ -42,10 +38,6 @@ jobs:
           expected_version=${{ github.event.release.tag_name }}
           echo "Smoke testing MacOS binary (arm)"
           echo "Installing MacOS binary (arm): ${expected_version}"
-          # For some reason on MacOS the curl intermittently fails if we do it immediately, so we take a breath.
-          # sleep 3
-          curl -vv https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | cat
-          echo debug1
           curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
           echo "Running smaht-submitr version. Should be the same as what was mentioned above."
           actual_version=`./submitr version`
