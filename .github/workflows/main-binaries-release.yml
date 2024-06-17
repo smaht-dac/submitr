@@ -54,13 +54,14 @@ jobs:
           tag_name=${{ github.ref_name }}
           echo "Releasing MacOS (x86) binary artifact for tag: ${tag_name}"
           # gh release upload ${{ github.ref_name }} binaries/submitr-macos-arm --clobber
-          gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-macos-arm --repo ${{ github.repository }}
+          # gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-macos-arm --repo ${{ github.repository }}
+          gh release upload ${{ github.ref_name }} binaries/submitr-macos-arm --repo ${{ github.repository }}
           echo "Done releasing MacOS (x86) binary artifact for tag: ${tag_name}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build-macos-i86-and-linux:
+  build-macos-x86-and-linux:
     runs-on: macos-13
     needs: create-release
     steps:
@@ -100,9 +101,12 @@ jobs:
           # gh release upload ${{ github.ref_name }} binaries/submitr-macos-x86 --clobber
           # gh release upload ${{ github.ref_name }} binaries/submitr-linux-x86 --clobber
           # gh release upload ${{ github.ref_name }} binaries/submitr-linux-arm --clobber
-          gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-macos-x86 --repo ${{ github.repository }}
-          gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-linux-x86 --repo ${{ github.repository }}
-          gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-linux-arm --repo ${{ github.repository }}
+          # gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-macos-x86 --repo ${{ github.repository }}
+          # gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-linux-x86 --repo ${{ github.repository }}
+          # gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-linux-arm --repo ${{ github.repository }}
+          gh release upload ${{ github.ref_name }} binaries/submitr-macos-x86 --repo ${{ github.repository }}
+          gh release upload ${{ github.ref_name }} binaries/submitr-linux-x86 --repo ${{ github.repository }}
+          gh release upload ${{ github.ref_name }} binaries/submitr-linux-arm --repo ${{ github.repository }}
           echo "Done releasing binary MacOS (x86) and Linux artifacts for tag: ${tag_name}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
