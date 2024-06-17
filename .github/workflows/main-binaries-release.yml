@@ -12,15 +12,10 @@ on:
       - 'v[0-9]+\.[0-9]+\.[0-9]+'
 
 jobs:
-  release:
-    runs-on: macos-13
 
+  sanity-checks:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v3
-        with:
-          python-version: "3.11"
-
       - name: Sanity Checks
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -36,6 +31,43 @@ jobs:
             exit 1
           fi
 
+  build-macos-arm:
+    runs-on: macos-14
+    needs: create-release
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.11"
+
+      - name: Build MacOS Binary
+        run: |
+          echo "Building MacOS binaries."
+          make exe-macos
+          echo "Done building MacOS binaries."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload MacOS Binary (arm)
+        run: |
+          tag_name=${{ github.ref_name }}
+          echo "Releasing MacOS (x86) binary artifact for tag: ${tag_name}"
+          # gh release upload ${{ github.ref_name }} binaries/submitr-macos-arm --clobber
+          gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-macos-arm --repo ${{ github.repository }}
+          echo "Done releasing MacOS (x86) binary artifact for tag: ${tag_name}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-macos-i86-and-linux:
+    runs-on: macos-13
+    needs: create-release
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.11"
       - name: Build Linux Binaries
         run: |
           echo "Building Linux binaries."
@@ -61,14 +93,27 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build MacOS Binary
+      - name: Upload Release Binaries
         run: |
-          echo "Building MacOS binaries."
-          make exe-macos
-          echo "Done building MacOS binaries."
+          tag_name=${{ github.ref_name }}
+          echo "Releasing binary MacOS (x86) and Linux artifacts for tag: ${tag_name}"
+          # gh release upload ${{ github.ref_name }} binaries/submitr-macos-x86 --clobber
+          # gh release upload ${{ github.ref_name }} binaries/submitr-linux-x86 --clobber
+          # gh release upload ${{ github.ref_name }} binaries/submitr-linux-arm --clobber
+          gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-macos-x86 --repo ${{ github.repository }}
+          gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-linux-x86 --repo ${{ github.repository }}
+          gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-linux-arm --repo ${{ github.repository }}
+          echo "Done releasing binary MacOS (x86) and Linux artifacts for tag: ${tag_name}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create_release.outputs.release_id }}
+    steps:
+      - uses: actions/checkout@v2
 
       - name: Create Release
         id: create_release
@@ -81,15 +126,3 @@ jobs:
           release_name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
-
-      - name: Upload Release Binaries
-        run: |
-          tag_name=${{ github.ref_name }}
-          echo "Releasing binary artifacts for tag: ${tag_name}"
-          gh release upload ${{ github.ref_name }} binaries/submitr-macos --clobber
-          gh release upload ${{ github.ref_name }} binaries/submitr-linux-x86 --clobber
-          gh release upload ${{ github.ref_name }} binaries/submitr-linux-arm --clobber
-          echo "Done releasing binary artifacts for tag: ${tag_name}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
