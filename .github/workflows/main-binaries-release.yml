@@ -24,8 +24,7 @@ jobs:
       - uses: actions/setup-python@v3
         with:
           python-version: "3.11"
-
-      - name: Build MacOS Binary
+      - name: Build MacOS Binary (x86)
         run: |
           echo "GitHub runner info:"
           uname -a
@@ -36,7 +35,6 @@ jobs:
           ls -l binaries/submitr-macos-x86
           file binaries/submitr-macos-x86
           echo smaht-submitr version: `binaries/submitr-macos-x86 version`
-
       - name: Upload MacOS Binary (x86) Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -50,8 +48,7 @@ jobs:
       - uses: actions/setup-python@v3
         with:
           python-version: "3.11"
-
-      - name: Build MacOS Binary
+      - name: Build MacOS Binary (arm)
         run: |
           echo "GitHub runner info:"
           uname -a
@@ -62,7 +59,6 @@ jobs:
           ls -l binaries/submitr-macos-arm
           file binaries/submitr-macos-arm
           echo smaht-submitr version: `binaries/submitr-macos-arm version`
-
       - name: Upload MacOS Binary (arm) Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -83,7 +79,6 @@ jobs:
           ls -l binaries/submitr-linux-x86
           file binaries/submitr-linux-x86
           echo smaht-submitr version: `binaries/submitr-linux-x86 version`
-
       - name: Upload Linux Binary (x86) Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -98,7 +93,6 @@ jobs:
         with:
           platforms: arm64
       - uses: docker/setup-buildx-action@v2
-
       - name: Build Linux Binary (arm)
         run: |
           echo "GitHub runner info:"
@@ -109,7 +103,6 @@ jobs:
           ls -l binaries/submitr-linux-arm
           file binaries/submitr-linux-arm
           echo smaht-submitr version: `binaries/submitr-linux-arm version`
-
       - name: Upload Linux Binary (arm) Artifact
         uses: actions/upload-artifact@v3
         with:

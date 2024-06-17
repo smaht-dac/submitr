@@ -103,7 +103,6 @@ exe-linux-x86:
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
 	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
-	# docker build -t pyinstaller-linux-x86-build -f Dockerfile-for-pyinstaller-x86 .
 	docker buildx build -t pyinstaller-linux-x86-build -f Dockerfile-for-pyinstaller-x86 .
 	mkdir -p ./binaries
 	docker run --rm -v ./binaries:/output pyinstaller-linux-x86-build sh -c "cp /app/dist/submitr /output/submitr-linux-x86"
