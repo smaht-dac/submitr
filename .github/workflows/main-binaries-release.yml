@@ -4,16 +4,16 @@ permissions:
   contents: write
 
 on:
-  push:
-    branches: [ pyinstaller-experiment-20240611 ]
 # push:
-#   # Only run this workflow to create binaries when a non-beta tag is created.
-#   tags:
-#     - 'v[0-9]+\.[0-9]+\.[0-9]+'
+#   branches: [ pyinstaller-experiment-20240611 ]
+  push:
+    # Only run this workflow to create binaries when a non-beta tag is created.
+    tags:
+      - 'v[0-9]+\.[0-9]+\.[0-9]+'
 
 jobs:
   release:
-    runs-on: macos-14
+    runs-on: macos-13
 
     steps:
       - uses: actions/checkout@v2
@@ -33,7 +33,7 @@ jobs:
             echo "Releasing binary artifacts for tag: ${tag_name} ..."
           else
             echo "Release tag is not for a non-beta. No action taken. NOT (DEBUGGING)"
-            # exit 1
+            exit 1
           fi
 
       - name: Build Linux Binaries
@@ -75,6 +75,7 @@ jobs:
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref_name }}
           release_name: Release ${{ github.ref_name }}
