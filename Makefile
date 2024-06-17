@@ -96,7 +96,7 @@ exe-macos:
 	chmod a+x ./binaries/submitr-macos
 	rm -rf ./build ./dist
 
-exe-linux: exe-linux-x86 exe-linux-arm
+exe-linux: exe-linux-arm exe-linux-x86
 
 exe-linux-x86:
 	# Download/use with (once merged with master):
