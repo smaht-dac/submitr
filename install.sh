@@ -5,7 +5,11 @@ TARGET=submitr
 UNAME=`uname`
 ARCH=`arch`
 if [ $UNAME == 'Darwin' ] ; then
-        FILE=submitr-macos
+    if [ $ARCH == 'arm64' -o $ARCH == 'aarch64' ] ; then
+        FILE=submitr-macos-arm
+    else
+        FILE=submitr-macos-x86
+    fi
 else
     if [ $ARCH == 'arm64' -o $ARCH == 'aarch64' ] ; then
         FILE=submitr-linux-arm
