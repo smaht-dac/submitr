@@ -34,6 +34,16 @@ jobs:
             exit 1
           fi
 
+      - name: Build MacOS Binary (arm)
+        runs-on: macos-14
+        run: |
+          echo "Building MacOS binaries."
+          make exe-macos
+          echo "Done building MacOS binaries."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build Linux Binaries
         run: |
           echo "Building Linux binaries."
