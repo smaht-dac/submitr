@@ -27,9 +27,12 @@ jobs:
 
       - name: Build MacOS Binary
         run: |
+          echo "GiHub runner info:"
+          uname -a
           echo "Building MacOS binaries."
           make exe-macos
           mv -f binaries/submitr-macos binaries/submitr-macos-x86
+          chmod a+x binaries/submitr-macos-x86
           echo "Done building MacOS binaries."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -51,9 +54,12 @@ jobs:
 
       - name: Build MacOS Binary
         run: |
+          echo "GiHub runner info:"
+          uname -a
           echo "Building MacOS binaries."
           make exe-macos
           mv -f binaries/submitr-macos binaries/submitr-macos-arm
+          chmod a+x binaries/submitr-macos-arm
           echo "Done building MacOS binaries."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -71,8 +77,11 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build Linux Binary (x86)
         run: |
+          echo "GiHub runner info:"
+          uname -a
           echo "Building Linux binary (x86)."
           make exe-linux-x86
+          chmod a+x binaries/submitr-linux-x86
           echo "Done building Linux binary (x86)."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -95,8 +104,11 @@ jobs:
 
       - name: Build Linux Binary (arm)
         run: |
+          echo "GiHub runner info:"
+          uname -a
           echo "Building Linux binary (arm)."
           make exe-linux-arm-for-ga
+          chmod a+x binaries/submitr-linux-arm
           echo "Done building Linux binary (arm)."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
