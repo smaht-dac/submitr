@@ -13,24 +13,6 @@ on:
 
 jobs:
 
-  sanity-checks:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Sanity Checks
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "GitHub runner architecture is: `arch`"
-          uname -a
-          tag_name=${{ github.ref_name }}
-          if [[ $GITHUB_REF =~ ^refs/tags/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            echo "Releasing binary artifacts for tag: ${tag_name} ..."
-          else
-            echo "Release tag is not for a non-beta. No action taken. NOT (DEBUGGING)"
-            exit 1
-          fi
-
   build-macos-x86:
     runs-on: macos-14
     steps:
@@ -80,26 +62,26 @@ jobs:
           path: binaries/submitr-macos-arm
 
   build-linux-x86:
-    runs-on: macos-13
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v3
       - name: Build Linux Binary (x86)
         run: |
           echo "Building Linux binaries."
-          echo "Installing docker for building Linux binaries."
-          HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install --cask docker
-          echo "Installing colima for running docker."
-          HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install colima
-          echo "Starting docker via colima."
-          # No idea why this works with --arch x86_64 but not --arch aarch64 (default)
-          # as we are running on macos-14 which is an Mn processor (arm64).
-          colima start --arch x86_64
-          echo "Waiting for docker come up."
-          while (! docker stats --no-stream ); do
-            sleep 3
-          done
-          echo "Docker is up/running."
+          #  echo "Installing docker for building Linux binaries."
+          # HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install --cask docker
+          # echo "Installing colima for running docker."
+          # HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install colima
+          # echo "Starting docker via colima."
+          # # No idea why this works with --arch x86_64 but not --arch aarch64 (default)
+          # # as we are running on macos-14 which is an Mn processor (arm64).
+          # colima start --arch x86_64
+          # echo "Waiting for docker come up."
+          # while (! docker stats --no-stream ); do
+          #   sleep 3
+          # done
+          # echo "Docker is up/running."
           echo "Building Linux binary (x86)."
           make exe-linux-x86
           echo "Building Linux binary (x86)."
