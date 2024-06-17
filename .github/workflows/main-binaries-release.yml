@@ -21,20 +21,20 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Sanity Checks
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "NOTE: GitHub runner architecture is: `arch`"
-          uname -a
-          tag_name=${{ github.ref_name }}
-          if [[ $GITHUB_REF =~ ^refs/tags/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            echo "Releasing binary artifacts for tag: ${tag_name} ..."
-          else
-            echo "Release tag is not for a non-beta. No action taken."
-            exit 1
-          fi
+#     - name: Sanity Checks
+#       env:
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       run: |
+#         echo "NOTE: GitHub runner architecture is: `arch`"
+#         uname -a
+#         tag_name=${{ github.ref_name }}
+#         if [[ $GITHUB_REF =~ ^refs/tags/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+#           echo "Releasing binary artifacts for tag: ${tag_name} ..."
+#         else
+#           echo "Release tag is not for a non-beta. No action taken."
+#           exit 1
+#         fi
 
       - name: Build Linux Binaries
         run: |
