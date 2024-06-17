@@ -7,13 +7,8 @@ Change Log
 ----------
 
 
-0.9.23
+0.8.21
 ======
-Release testing.
-
-
-0.9.0
-=====
 * Experimenting with pyinstaller to create a single independent executable (per command)
   so commands can be run without having Python/pyenv/etc installed.
 * Some changes related to starting work on integration tests with the portal.
