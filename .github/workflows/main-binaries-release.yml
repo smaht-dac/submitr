@@ -31,9 +31,8 @@ jobs:
             exit 1
           fi
 
-  build-macos-arm:
+  build-macos-x86:
     runs-on: macos-14
-    needs: create-release
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v3
@@ -44,32 +43,48 @@ jobs:
         run: |
           echo "Building MacOS binaries."
           make exe-macos
+          mv -f binaries/submitr-macos binaries/submitr-macos-x86
           echo "Done building MacOS binaries."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload MacOS Binary (arm)
-        run: |
-          tag_name=${{ github.ref_name }}
-          echo "Releasing MacOS (x86) binary artifact for tag: ${tag_name}"
-          # gh release upload ${{ github.ref_name }} binaries/submitr-macos-arm --clobber
-          # gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-macos-arm --repo ${{ github.repository }}
-          gh release upload ${{ github.ref_name }} binaries/submitr-macos-arm --repo ${{ github.repository }}
-          echo "Done releasing MacOS (x86) binary artifact for tag: ${tag_name}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload MacOS Binary (x86) Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: submitr-macos-x86
+          path: binaries/submitr-macos-x86
 
-  build-macos-x86-and-linux:
-    runs-on: macos-13
-    needs: create-release
+  build-macos-arm:
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v3
         with:
           python-version: "3.11"
-      - name: Build Linux Binaries
+
+      - name: Build MacOS Binary
+        run: |
+          echo "Building MacOS binaries."
+          make exe-macos
+          mv -f binaries/submitr-macos binaries/submitr-macos-arm
+          echo "Done building MacOS binaries."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload MacOS Binary (arm) Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: submitr-macos-arm
+          path: binaries/submitr-macos-arm
+
+  build-linux-x86:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+      - name: Build Linux Binary (x86)
         run: |
           echo "Building Linux binaries."
           echo "Installing docker for building Linux binaries."
@@ -85,48 +100,116 @@ jobs:
             sleep 3
           done
           echo "Docker is up/running."
-          echo "Building Linux arm64 binary."
-          make exe-linux-arm
-          echo "Building Linux x86_64 binary."
+          echo "Building Linux binary (x86)."
           make exe-linux-x86
-          echo "Done building Linux binaries."
+          echo "Building Linux binary (x86)."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Release Binaries
+      - name: Upload Linux Binary (x86) Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: submitr-linux-x86
+          path: binaries/submitr-linux-x86
+
+  build-linux-arm:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+      - name: Build Linux Binary (arm)
         run: |
-          tag_name=${{ github.ref_name }}
-          echo "Releasing binary MacOS (x86) and Linux artifacts for tag: ${tag_name}"
-          # gh release upload ${{ github.ref_name }} binaries/submitr-macos-x86 --clobber
-          # gh release upload ${{ github.ref_name }} binaries/submitr-linux-x86 --clobber
-          # gh release upload ${{ github.ref_name }} binaries/submitr-linux-arm --clobber
-          # gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-macos-x86 --repo ${{ github.repository }}
-          # gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-linux-x86 --repo ${{ github.repository }}
-          # gh release upload ${{ needs.create-release.outputs.release_id }} binaries/submitr-linux-arm --repo ${{ github.repository }}
-          gh release upload ${{ github.ref_name }} binaries/submitr-macos-x86 --repo ${{ github.repository }}
-          gh release upload ${{ github.ref_name }} binaries/submitr-linux-x86 --repo ${{ github.repository }}
-          gh release upload ${{ github.ref_name }} binaries/submitr-linux-arm --repo ${{ github.repository }}
-          echo "Done releasing binary MacOS (x86) and Linux artifacts for tag: ${tag_name}"
+          echo "Building Linux binaries."
+          echo "Installing docker for building Linux binaries."
+          HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install --cask docker
+          echo "Installing colima for running docker."
+          HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install colima
+          echo "Starting docker via colima."
+          # No idea why this works with --arch x86_64 but not --arch aarch64 (default)
+          # as we are running on macos-14 which is an Mn processor (arm64).
+          colima start --arch x86_64
+          echo "Waiting for docker come up."
+          while (! docker stats --no-stream ); do
+            sleep 3
+          done
+          echo "Docker is up/running."
+          echo "Building Linux binary (arm)."
+          make exe-linux-arm
+          echo "Done building Linux binary (arm)."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux Binary (arm) Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: submitr-linux-arm
+          path: binaries/submitr-linux-arm
 
   create-release:
     runs-on: ubuntu-latest
-    outputs:
-      release_id: ${{ steps.create_release.outputs.release_id }}
+    needs: [build-macos-arm, build-macos-x86-and-linux]
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Create Release
+      - name: Download MacOS Binary (x86) Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: submitr-macos-x86
+
+      - name: Download MacOS Binary (arm) Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: submitr-macos-arm
+
+      - name: Download Linux Binary (x86) Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: submitr-linux-x86
+
+      - name: Download Linux Binary (arm) Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: submitr-linux-arm
+
+      - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
+          tag_name: 'v1.0.0'  # Adjust the tag name as needed
+          release_name: 'Release v1.0.0'
           draft: false
           prerelease: false
+
+      - name: Upload MacOS Binary (x86) to GitHub Release
+        run: |
+          gh release upload ${{ github.ref_name }} submitr-macos-x86 --repo ${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload MacOS Binary (arm) to GitHub Release
+        run: |
+          gh release upload ${{ github.ref_name }} submitr-macos-arm --repo ${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux Binary (x86) to GitHub Release
+        run: |
+          gh release upload ${{ github.ref_name }} submitr-linux-x86 --repo ${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux Binary (arm) to GitHub Release
+        run: |
+          gh release upload ${{ github.ref_name }} submitr-linux-arm --repo ${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
