@@ -32,11 +32,10 @@ jobs:
           echo "Building MacOS binaries."
           make exe-macos
           mv -f binaries/submitr-macos binaries/submitr-macos-x86
-          whoami
-          who am i
-          ls -l binaries
-          chmod a+x binaries/submitr-macos-x86
           echo "Done building MacOS binaries."
+          ls -l binaries/submitr-macos-x86
+          file binaries/submitr-macos-x86
+          binaries/submitr-macos-x86 version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -62,11 +61,10 @@ jobs:
           echo "Building MacOS binaries."
           make exe-macos
           mv -f binaries/submitr-macos binaries/submitr-macos-arm
-          whoami
-          who am i
-          ls -l binaries
-          chmod a+x binaries/submitr-macos-arm
           echo "Done building MacOS binaries."
+          ls -l binaries/submitr-macos-arm
+          file binaries/submitr-macos-arm
+          binaries/submitr-macos-arm version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -87,11 +85,10 @@ jobs:
           uname -a
           echo "Building Linux binary (x86)."
           make exe-linux-x86
-          whoami
-          who am i
-          ls -l binaries
-          chmod a+x binaries/submitr-linux-x86
           echo "Done building Linux binary (x86)."
+          ls -l binaries/submitr-linux-x86
+          file binaries/submitr-linux-x86
+          binaries/submitr-linux-x86 version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -116,12 +113,11 @@ jobs:
           echo "GiHub runner info:"
           uname -a
           echo "Building Linux binary (arm)."
-          make exe-linux-arm-for-ga
-          whoami
-          who am i
-          ls -l binaries
-          chmod a+x binaries/submitr-linux-arm
+          make exe-linux-arm
           echo "Done building Linux binary (arm)."
+          ls -l binaries/submitr-linux-arm
+          file binaries/submitr-linux-arm
+          binaries/submitr-linux-arm version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
