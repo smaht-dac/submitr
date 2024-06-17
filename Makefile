@@ -92,8 +92,8 @@ exe-macos:
 	pip install pyinstaller
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
 	mkdir -p ./binaries
-	mv ./dist/submitr ./binaries/submitr-macos
-	chmod a+x ./binaries/submitr-macos
+	mv ./dist/submitr ./binaries/submitr-macos-x86
+	chmod a+x ./binaries/submitr-macos-x86
 	rm -rf ./build ./dist
 
 exe-linux: exe-linux-x86 exe-linux-arm
