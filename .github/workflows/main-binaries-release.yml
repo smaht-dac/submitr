@@ -13,7 +13,7 @@ on:
 
 jobs:
   release:
-    runs-on: macos-13
+    runs-on: macos-14
 
     steps:
       - uses: actions/checkout@v2
@@ -21,47 +21,41 @@ jobs:
         with:
           python-version: "3.11"
 
-#     - name: Sanity Checks
-#       env:
-#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#       run: |
-#         echo "NOTE: GitHub runner architecture is: `arch`"
-#         uname -a
-#         tag_name=${{ github.ref_name }}
-#         if [[ $GITHUB_REF =~ ^refs/tags/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-#           echo "Releasing binary artifacts for tag: ${tag_name} ..."
-#         else
-#           echo "Release tag is not for a non-beta. No action taken."
+      - name: Sanity Checks
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "GitHub runner architecture is: `arch`"
+          uname -a
+          tag_name=${{ github.ref_name }}
+          if [[ $GITHUB_REF =~ ^refs/tags/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "Releasing binary artifacts for tag: ${tag_name} ..."
+          else
+            echo "Release tag is not for a non-beta. No action taken. NOT (DEBUGGING)"
 #           exit 1
-#         fi
+          fi
 
       - name: Build Linux Binaries
         run: |
-          echo "NOTE: GitHub runner architecture is: `arch`"
-          uname -a
           echo "Building Linux binaries."
-          # echo "Installing docker and docker-buildx for building Linux binaries."
           echo "Installing docker for building Linux binaries."
           HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install --cask docker
-          # HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install docker-buildx
           echo "Installing colima for running docker."
           HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install colima
           echo "Starting docker via colima."
           # No idea why this works with --arch x86_64 but not --arch aarch64 (default)
           # as we are running on macos-14 which is an Mn processor (arm64).
-          # colima start --arch x86_64 -r docker --very-verbose
-          # colima delete -f
-          colima start # -r docker --very-verbose
+          colima start --arch x86_64
           echo "Waiting for docker come up."
           while (! docker stats --no-stream ); do
             sleep 3
           done
           echo "Docker is up/running."
-          echo "Building Linux x86_64 binary."
-          make exe-linux-x86
           echo "Building Linux arm64 binary."
           make exe-linux-arm
+          echo "Building Linux x86_64 binary."
+          make exe-linux-x86
           echo "Done building Linux binaries."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
