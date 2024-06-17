@@ -118,6 +118,10 @@ exe-linux-arm:
 	# docker build --platform linux/arm64/v8 -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller-arm .
 	docker build --platform linux/arm64 -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller-arm .
 	mkdir -p ./binaries
+	echo xyzzy docker debug
+	docker ps
+	docker images
+	echo xyzzy end docker debug
 	docker run --platform linux/arm64/v8 --rm -v ./binaries:/output pyinstaller-linux-arm-build sh -c "cp /app/dist/submitr /output/submitr-linux-arm"
 	# chmod a+x ./binaries/submitr-linux-arm
 
