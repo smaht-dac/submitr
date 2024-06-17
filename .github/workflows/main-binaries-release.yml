@@ -92,7 +92,7 @@ jobs:
       - name: Build Linux Binary (arm)
         run: |
           echo "Building Linux binary (arm)."
-          make exe-linux-arm
+          make exe-linux-arm-for-ga
           echo "Done building Linux binary (arm)."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
