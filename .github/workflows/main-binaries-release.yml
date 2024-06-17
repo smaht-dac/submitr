@@ -33,7 +33,7 @@ jobs:
             echo "Releasing binary artifacts for tag: ${tag_name} ..."
           else
             echo "Release tag is not for a non-beta. No action taken. NOT (DEBUGGING)"
-#           exit 1
+            # exit 1
           fi
 
       - name: Build Linux Binaries
