@@ -48,8 +48,11 @@ jobs:
           echo "Installing colima for running docker."
           HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install colima
           echo "Starting docker via colima."
-          colima start --arch x86_64 -r docker --very-verbose
-          # colima start --arch aarch64 -r docker --very-verbose
+          # No idea why this works with --arch x86_64 but not --arch aarch64 (default)
+          # as we are running on macos-14 which is an Mn processor (arm64).
+          # colima start --arch x86_64 -r docker --very-verbose
+          colima delete -f
+          colima start --arch aarch64 -r docker --very-verbose
           echo "Waiting for docker come up."
           while (! docker stats --no-stream ); do
             sleep 3
