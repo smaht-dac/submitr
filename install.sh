@@ -23,39 +23,22 @@ function download_url() {
     DOWNLOAD_URL=`curl -L -s $LATEST_RELEASE_INFO_URL | sed -nE "s/.*\"browser_download_url\": \"(https:\/\/[^\"]*$FILE)\".*/\1/p"`
 }
 
-echo "xyzzy/DEBUG0"
-curl "https://api.github.com/zen"
-echo "xyzzy/DEBUG0b"
 download_url
 if [ -z $DOWNLOAD_URL ] ; then
     # Retry once or twice; in testing within GitHub Actions only, intermittently fails first time.
-    echo "xyzzy/DEBUG1"
-    curl "https://api.github.com/zen"
-    echo "xyzzy/DEBUG2"
     echo "Retrying once ..."
-    echo $LATEST_RELEASE_INFO_URL
-        curl $LATEST_RELEASE_INFO_URL
     sleep 1
     download_url
     if [ -z $DOWNLOAD_URL ] ; then
         echo "Retrying twice ..."
-        echo $DOWNLOAD_URL
-        echo $LATEST_RELEASE_INFO_URL
-        curl $LATEST_RELEASE_INFO_URL
         sleep 2
         download_url
         if [ -z $DOWNLOAD_URL ] ; then
             echo "Retrying thrice ..."
-            echo $DOWNLOAD_URL
-            echo $LATEST_RELEASE_INFO_URL
-            curl -L $LATEST_RELEASE_INFO_URL
             sleep 4
             download_url
             if [ -z $DOWNLOAD_URL ] ; then
                 echo "Retrying one final/fourth time ..."
-                echo $DOWNLOAD_URL
-                echo $LATEST_RELEASE_INFO_URL
-                curl -L $LATEST_RELEASE_INFO_URL
                 sleep 8
                 download_url
                 if [ -z $DOWNLOAD_URL ] ; then
