@@ -22,12 +22,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "GitHub runner info:" `uname -a`
-          echo xyzzy/debug1
-          curl https://api.github.com/zen
-          echo xyzzy/debug2
           echo "Smoke testing MacOS binary (x86)"
           echo "Installing MacOS binary (x86):" ${{ github.event.release.tag_name }}
-          curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
+          # This GITHUB_TOKEN thing is ONLY to make this work consistently
+          # from this workflow; users to NOT need to do anything like this.
+          curl -H "Authorization: token ${GITHUB_TOKEN}" https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
           echo "Running smaht-submitr version. Should be the same as what was mentioned above."
           actual_version=`./submitr version`
           echo "smaht-submitr version:" ${actual_version}
@@ -40,13 +39,10 @@ jobs:
       - name: Test MacOS Binary (arm)
         run: |
           echo "GitHub runner info:" `uname -a`
-          echo xyzzy/debug11
-          curl https://api.github.com/zen
-          echo xyzzy/debug22
           expected_version=${{ github.event.release.tag_name }}
           echo "Smoke testing MacOS binary (arm)"
           echo "Installing MacOS binary (arm):" ${{ github.event.release.tag_name }}
-          curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
+          curl -H "Authorization: token ${GITHUB_TOKEN}" https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
           echo "Running smaht-submitr version. Should be the same as what was mentioned above."
           actual_version=`./submitr version`
           echo "smaht-submitr version:" ${actual_version}

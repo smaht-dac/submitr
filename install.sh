@@ -23,7 +23,6 @@ function download_url() {
     DOWNLOAD_URL=`curl -L -s $LATEST_RELEASE_INFO_URL | sed -nE "s/.*\"browser_download_url\": \"(https:\/\/[^\"]*$FILE)\".*/\1/p"`
 }
 
-curl https://api.github.com/zen
 download_url
 if [ -z $DOWNLOAD_URL ] ; then
     # Retry once or twice; in testing within GitHub Actions only, intermittently fails first time.
