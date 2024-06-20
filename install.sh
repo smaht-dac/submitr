@@ -44,8 +44,8 @@ if [ -z $DOWNLOAD_URL ] ; then
     fi
 fi
 
-# echo "Downloading $DOWNLOAD_URL to $TARGET"
+echo "Downloading $DOWNLOAD_URL to $TARGET"
 curl -L -s -o $TARGET $DOWNLOAD_URL
 chmod a+x $TARGET
-# echo "Downloaded $DOWNLOAD_URL to $TARGET"
+echo "Downloaded $DOWNLOAD_URL to $TARGET"
 ls -l $TARGET
