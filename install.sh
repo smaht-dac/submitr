@@ -26,6 +26,9 @@ function download_url() {
 download_url
 if [ -z $DOWNLOAD_URL ] ; then
     # Retry once or twice; in testing within GitHub Actions only, intermittently fails first time.
+    echo "xyzzy/DEBUG1"
+    curl "https://api.github.com/zen"
+    echo "xyzzy/DEBUG2"
     echo "Retrying once ..."
     echo $LATEST_RELEASE_INFO_URL
         curl $LATEST_RELEASE_INFO_URL
