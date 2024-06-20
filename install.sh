@@ -26,31 +26,27 @@ function download_url() {
 download_url
 if [ -z $DOWNLOAD_URL ] ; then
     # Retry once or twice; in testing within GitHub Actions only, intermittently fails first time.
-    echo "Retrying once ..."
     sleep 1
     download_url
     if [ -z $DOWNLOAD_URL ] ; then
-        echo "Retrying twice ..."
         sleep 2
         download_url
         if [ -z $DOWNLOAD_URL ] ; then
-            echo "Retrying thrice ..."
             sleep 4
             download_url
             if [ -z $DOWNLOAD_URL ] ; then
-                echo "Retrying one final/fourth time ..."
                 sleep 8
                 download_url
                 if [ -z $DOWNLOAD_URL ] ; then
-                    echo "Failed to download: $LATEST_RELEASE_INFO_URL"
+                    exit 1
                 fi
             fi
         fi
     fi
 fi
 
-echo "Downloading $DOWNLOAD_URL to $TARGET"
+# echo "Downloading $DOWNLOAD_URL to $TARGET"
 curl -L -s -o $TARGET $DOWNLOAD_URL
 chmod a+x $TARGET
-echo "Downloaded $DOWNLOAD_URL to $TARGET"
+# echo "Downloaded $DOWNLOAD_URL to $TARGET"
 ls -l $TARGET
