@@ -47,7 +47,6 @@ jobs:
           # This GITHUB_TOKEN authorization header for curl is ONLY to make this work consistently
           # from within this GitHub Actions workflow; users to NOT need to do anything like this;
           # without we would intermittently get an error like: API rate limit exceeded for 13.105.117.6
-          curl -H "Authorization: token ${GITHUB_TOKEN}" https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh
           echo "Installing MacOS binary (arm):" ${{ github.event.release.tag_name }}
           curl -H "Authorization: token ${GITHUB_TOKEN}" https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
           echo "Running smaht-submitr version. Should be the same as what was mentioned above."
