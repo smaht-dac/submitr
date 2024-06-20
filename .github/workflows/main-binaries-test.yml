@@ -41,6 +41,7 @@ jobs:
           echo "GitHub runner info:" `uname -a`
           expected_version=${{ github.event.release.tag_name }}
           echo "Smoke testing MacOS binary (arm)"
+          which /bin/bash
           echo "Installing MacOS binary (arm):" ${{ github.event.release.tag_name }}
           curl -H "Authorization: token ${GITHUB_TOKEN}" https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
           echo "Running smaht-submitr version. Should be the same as what was mentioned above."
