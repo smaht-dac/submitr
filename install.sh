@@ -1,4 +1,3 @@
-#!/bin/bash
 # Download the most recent release of the smaht-submitr binary for the calling platform.
 
 LATEST_RELEASE_INFO_URL=https://api.github.com/repos/smaht-dac/submitr/releases/latest
