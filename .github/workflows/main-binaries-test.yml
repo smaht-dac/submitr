@@ -24,9 +24,9 @@ jobs:
           echo "GitHub runner info:" `uname -a`
           echo "Smoke testing MacOS binary (x86)"
           echo "Installing MacOS binary (x86):" ${{ github.event.release.tag_name }}
-          # This GITHUB_TOKEN authorization header for curl is ONLY to make this work consistently
-          # from within this GitHub Actions workflow; users to NOT need to do anything like this;
-          # without we would intermittently get an error like: API rate limit exceeded for 13.105.117.6
+          # This GITHUB_TOKEN authorization header for curl and argument to install.sh is
+          # ONLY to make this work consistently from within this workflow; without we would
+          # intermittently get an error like: API rate limit exceeded for 13.105.117.6
           curl -H "Authorization: token ${GITHUB_TOKEN}" https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash -s -- "$GITHUB_TOKEN"
           echo "Running smaht-submitr version. Should be the same as what was mentioned above."
           actual_version=`./submitr version`
@@ -44,12 +44,9 @@ jobs:
           echo "GitHub runner info:" `uname -a`
           expected_version=${{ github.event.release.tag_name }}
           echo "Smoke testing MacOS binary (arm)"
-          # This GITHUB_TOKEN authorization header for curl is ONLY to make this work consistently
-          # from within this GitHub Actions workflow; users to NOT need to do anything like this;
-          # without we would intermittently get an error like: API rate limit exceeded for 13.105.117.6
-          echo debug1
-          curl -H "Authorization: token ${GITHUB_TOKEN}" https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh
-          echo debug2
+          # This GITHUB_TOKEN authorization header for curl and argument to install.sh is
+          # ONLY to make this work consistently from within this workflow; without we would
+          # intermittently get an error like: API rate limit exceeded for 13.105.117.6
           echo "Installing MacOS binary (arm):" ${{ github.event.release.tag_name }}
           curl -H "Authorization: token ${GITHUB_TOKEN}" https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash -s -- "$GITHUB_TOKEN"
           echo "Running smaht-submitr version. Should be the same as what was mentioned above."

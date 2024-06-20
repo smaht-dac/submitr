@@ -1,5 +1,8 @@
 # Download the most recent release of the smaht-submitr binary for the calling platform.
 
+# This GITHUB_TOKEN for the authorization header for curl is ONLY
+# to make testing from within GitHub Actions work consistently; without
+# this would intermittently get an error like: API rate limit exceeded for 13.105.117.6
 GITHUB_TOKEN=$1
 LATEST_RELEASE_INFO_URL=https://api.github.com/repos/smaht-dac/submitr/releases/latest
 TARGET=submitr
