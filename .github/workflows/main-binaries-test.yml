@@ -24,6 +24,9 @@ jobs:
           echo "GitHub runner info:" `uname -a`
           echo "Smoke testing MacOS binary (x86)"
           echo "Installing MacOS binary (x86):" ${{ github.event.release.tag_name }}
+          echo "debug2a"
+          curl -H "Authorization: token ${GITHUB_TOKEN}" https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh
+          echo "debug3a"
           # This GITHUB_TOKEN thing is ONLY to make this work consistently
           # from this workflow; users to NOT need to do anything like this.
           curl -H "Authorization: token ${GITHUB_TOKEN}" https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
@@ -37,6 +40,8 @@ jobs:
     runs-on: macos-14
     steps:
       - name: Test MacOS Binary (arm)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "GitHub runner info:" `uname -a`
           expected_version=${{ github.event.release.tag_name }}
