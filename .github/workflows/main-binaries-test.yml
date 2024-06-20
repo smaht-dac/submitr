@@ -22,6 +22,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "GitHub runner info:" `uname -a`
+          echo xyzzy/debug1
+          curl https://api.github.com/zen
+          echo xyzzy/debug2
           echo "Smoke testing MacOS binary (x86)"
           echo "Installing MacOS binary (x86):" ${{ github.event.release.tag_name }}
           curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
@@ -37,6 +40,9 @@ jobs:
       - name: Test MacOS Binary (arm)
         run: |
           echo "GitHub runner info:" `uname -a`
+          echo xyzzy/debug11
+          curl https://api.github.com/zen
+          echo xyzzy/debug22
           expected_version=${{ github.event.release.tag_name }}
           echo "Smoke testing MacOS binary (arm)"
           echo "Installing MacOS binary (arm):" ${{ github.event.release.tag_name }}
