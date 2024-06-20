@@ -13,7 +13,7 @@ class RCloneCommands:
 
     @staticmethod
     def copy_command(args: List[str], config: Optional[str] = None, copyto: bool = False,
-                     metadata: Optional[dict] = None,
+                     metadata: Optional[dict] = None, nochecksum: bool = False,
                      progress: Optional[Callable] = None,
                      dryrun: bool = False,
                      source_s3: bool = False,
@@ -75,6 +75,8 @@ class RCloneCommands:
                 for metadata_key in metadata:
                     metadata_value = metadata[metadata_key]
                     command += ["--header-upload", f"X-Amz-Meta-{metadata_key}: {metadata_value}"]
+        if nochecksum is True:
+            command += ["--ignore-checksum"]
         if isinstance(config, str) and config:
             command += ["--config", config]
         if isinstance(args, list):

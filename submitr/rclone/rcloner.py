@@ -107,7 +107,7 @@ class RCloner(RCloneCommands, RCloneInstallation):
                 yield temporary_config_file_name
 
     def copy(self, source: str, destination: Optional[str] = None, metadata: Optional[Callable] = None,
-             progress: Optional[Callable] = None, dryrun: bool = False, copyto: bool = True,
+             nochecksum: bool = False, progress: Optional[Callable] = None, dryrun: bool = False, copyto: bool = True,
              process_info: Optional[dict] = None, return_output: bool = False,
              raise_exception: bool = True) -> Union[bool, Tuple[bool, List[str]]]:
         """
@@ -162,7 +162,8 @@ class RCloner(RCloneCommands, RCloneInstallation):
                                                        config=source_and_destination_config_file,
                                                        copyto=copyto,
                                                        source_s3=source_s3, destination_s3=destination_s3,
-                                                       metadata=metadata, progress=progress, dryrun=dryrun,
+                                                       metadata=metadata, nochecksum=nochecksum,
+                                                       progress=progress, dryrun=dryrun,
                                                        process_info=process_info,
                                                        return_output=return_output,
                                                        raise_exception=raise_exception)
@@ -190,7 +191,8 @@ class RCloner(RCloneCommands, RCloneInstallation):
                     return RCloneCommands.copy_command(command_args,
                                                        config=destination_config_file,
                                                        copyto=copyto, destination_s3=destination_s3,
-                                                       metadata=metadata, progress=progress, dryrun=dryrun,
+                                                       metadata=metadata, nochecksum=nochecksum,
+                                                       progress=progress, dryrun=dryrun,
                                                        process_info=process_info,
                                                        return_output=return_output,
                                                        raise_exception=raise_exception)
@@ -226,6 +228,7 @@ class RCloner(RCloneCommands, RCloneInstallation):
                 return RCloneCommands.copy_command(command_args,
                                                    config=source_config_file,
                                                    copyto=True, source_s3=source_s3,
+                                                   nochecksum=nochecksum,
                                                    progress=progress, dryrun=dryrun,
                                                    process_info=process_info,
                                                    return_output=return_output,
@@ -254,6 +257,7 @@ class RCloner(RCloneCommands, RCloneInstallation):
             return RCloneCommands.copy_command(command_args,
                                                copyto=True,
                                                progress=progress, dryrun=dryrun,
+                                               nochecksum=nochecksum,
                                                process_info=process_info,
                                                return_output=return_output,
                                                raise_exception=raise_exception)

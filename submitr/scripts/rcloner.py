@@ -358,6 +358,7 @@ def main_copy(source: str, destination: str,
     result = output = None
     try:
         result, output = rcloner.copy(source, destination, copyto=copyto,
+                                      nochecksum=True,
                                       progress=progress_callback.function if progress_callback else None,
                                       process_info=progress_callback.process if progress_callback else None,
                                       return_output=True)
