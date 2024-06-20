@@ -28,19 +28,34 @@ if [ -z $DOWNLOAD_URL ] ; then
     # Retry once or twice; in testing within GitHub Actions only, intermittently fails first time.
     echo "Retrying once ..."
     echo $LATEST_RELEASE_INFO_URL
+        curl $LATEST_RELEASE_INFO_URL
     sleep 1
     download_url
     if [ -z $DOWNLOAD_URL ] ; then
         echo "Retrying twice ..."
+        echo $DOWNLOAD_URL
         echo $LATEST_RELEASE_INFO_URL
+        curl $LATEST_RELEASE_INFO_URL
         sleep 2
         download_url
         if [ -z $DOWNLOAD_URL ] ; then
             echo "Retrying thrice ..."
+            echo $DOWNLOAD_URL
             echo $LATEST_RELEASE_INFO_URL
             curl -L $LATEST_RELEASE_INFO_URL
-            sleep 3
+            sleep 4
             download_url
+            if [ -z $DOWNLOAD_URL ] ; then
+                echo "Retrying one final/fourth time ..."
+                echo $DOWNLOAD_URL
+                echo $LATEST_RELEASE_INFO_URL
+                curl -L $LATEST_RELEASE_INFO_URL
+                sleep 8
+                download_url
+                if [ -z $DOWNLOAD_URL ] ; then
+                    echo "Failed to download: $LATEST_RELEASE_INFO_URL"
+                fi
+            fi
         fi
     fi
 fi
