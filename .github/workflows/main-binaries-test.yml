@@ -22,13 +22,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "GitHub runner info:" `uname -a`
-          echo xyzzy/debug0
-          curl https://api.github.com/repos/smaht-dac/submitr/releases/latest
-          echo xyzzy/debug1
-          curl -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/repos/smaht-dac/submitr/releases/latest
-          echo xyzzy/debug2
-          curl -H "Authorization: token ${GITHUB_TOKEN}x" https://api.github.com/repos/smaht-dac/submitr/releases/latest
-          echo xyzzy/debug3
           echo "Smoke testing MacOS binary (x86)"
           echo "Installing MacOS binary (x86):" ${{ github.event.release.tag_name }}
           curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
