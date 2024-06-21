@@ -32,12 +32,9 @@ jobs:
           # TODO: More actual testing besides just getting the version.
           actual_version=`./submitr version`
           echo "smaht-submitr version:" ${actual_version}
-          file ./submitr
-          echo debug1
+          file ./submitr | grep x86_64
           echo yes | ./submitr rcloner info foobar --noprogress
-          echo debug2
-          ls -l ~/Library/Application\ Support/edu.harvard.hms/smaht-submitr/rclonex
-          echo debug3
+          ls -l ~/Library/Application\ Support/edu.harvard.hms/smaht-submitr/rclone
           echo "Done smoke testing MacOS binary (x86)"
 
   build-macos-arm:
@@ -59,7 +56,9 @@ jobs:
           actual_version=`./submitr version`
           # TODO: More actual testing besides just getting the version.
           echo "smaht-submitr version:" ${actual_version}
-          file ./submitr
+          file ./submitr | grep arm64
+          echo yes | ./submitr rcloner info foobar --noprogress
+          ls -l ~/Library/Application\ Support/edu.harvard.hms/smaht-submitr/rclone
           echo "Done smoke testing MacOS binary (arm)"
 
   build-linux-x86:
