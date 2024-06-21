@@ -229,6 +229,7 @@ def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
         post_or_patch_or_upsert(portal, file, schema_name=schema_name,
                                 confirm=confirm, quiet=quiet, verbose=verbose, debug=debug)
     else:
+        # TODO: Allow json file containing dictionary of schema names each containing a list of objects.
         _print(f"ERROR: Cannot find file or directory: {file_or_directory}")
 
 
