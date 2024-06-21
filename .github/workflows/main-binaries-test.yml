@@ -95,7 +95,7 @@ jobs:
           echo "Smoke testing Linux binary (arm)"
           echo "Creating a Linux ARM docker container for this."
           echo "Installing Linux binary (arm):" ${{ github.event.release.tag_name }}
-          docker run --platform linux/arm64 --rm -it arm64v8/centos \
+          docker run --platform linux/arm64 --rm arm64v8/centos \
               sh -c "curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | \
                      /bin/bash ; ./submitr version ; \
                      echo yes | ./submitr rcloner info foobar ; \
