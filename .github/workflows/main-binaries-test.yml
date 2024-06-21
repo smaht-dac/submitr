@@ -34,9 +34,9 @@ jobs:
           echo "smaht-submitr version:" ${actual_version}
           file ./submitr
           echo debug1
-          echo yes | ./submitr rcloner info foobar
+          echo yes | ./submitr rcloner info foobar --noprogress
           echo debug2
-          ls -l ~/Library/Application\ Support/edu.harvard.hms/smaht-submitr/rclone
+          ls -l ~/Library/Application\ Support/edu.harvard.hms/smaht-submitr/rclonex
           echo debug3
           echo "Done smoke testing MacOS binary (x86)"
 

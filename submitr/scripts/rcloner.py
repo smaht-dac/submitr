@@ -35,12 +35,6 @@ from submitr.utils import chars
 
 
 def main() -> None:
-    # Playing with ...
-    # pip install pyinstaller
-    # pyinstaller --onefile --name my_application submitr/scripts/rcloner.py
-    # which needs this ...
-    # import multiprocessing
-    # multiprocessing.freeze_support()
     args = argparse.ArgumentParser(description="Test utility for rclone support in smaht-submitr.")
     args.add_argument("action", help="Action: copy or info.", default=None)
     args.add_argument("source", help="Source file or cloud bucket/key.", default=None)
@@ -72,7 +66,7 @@ def main() -> None:
     args.add_argument("--debug", action="store_true", help="Debug output.", default=False)
     args = args.parse_args()
 
-    RCloneInstallation.verify_installation()
+    RCloneInstallation.verify_installation(progress=not args.noprogress)
 
     if args.debug:
         os.environ["SMAHT_DEBUG"] = "true"
