@@ -14,7 +14,7 @@ on:
 
 jobs:
 
-  build-macos-x86:
+  test-macos-x86:
     runs-on: macos-13
     steps:
       - name: Test MacOS Binary (x86)
@@ -37,7 +37,7 @@ jobs:
           ls -l ~/Library/Application\ Support/edu.harvard.hms/smaht-submitr/rclone
           echo "Done smoke testing MacOS binary (x86)"
 
-  build-macos-arm:
+  test-macos-arm:
     runs-on: macos-14
     steps:
       - name: Test MacOS Binary (arm)
@@ -61,7 +61,7 @@ jobs:
           ls -l ~/Library/Application\ Support/edu.harvard.hms/smaht-submitr/rclone
           echo "Done smoke testing MacOS binary (arm)"
 
-  build-linux-x86:
+  test-linux-x86:
     runs-on: ubuntu-latest
     steps:
       - name: Test Linux Binary (x86)
@@ -80,21 +80,22 @@ jobs:
           ls -l ~/.local/share/edu.harvard.hms/smaht-submitr/rclone
           echo "Done smoke testing Linux binary (x86)"
 
-  build-linux-arm:
+  test-linux-arm:
     # TODO: This is wrong; need to run within docker as there is no GitHub runner for Linux ARM.
     runs-on: ubuntu-latest
     steps:
+      - uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
       - uses: docker/setup-buildx-action@v2
       - name: Build Linux Binary (arm)
         run: |
           echo "GitHub runner info:" `uname -a`
           expected_version=${{ github.event.release.tag_name }}
           echo "Smoke testing Linux binary (arm)"
+          echo "Creating a Linux ARM docker container for this."
+	      docker buildx create --use
+	      docker buildx build --platform linux/arm64 --load -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller-arm .
           echo "Installing Linux binary (arm):" ${{ github.event.release.tag_name }}
-          curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
-          echo "Running smaht-submitr version. Should be the same as what was mentioned above."
-          actual_version=`./submitr version`
-          # TODO: More actual testing besides just getting the version.
-          echo "smaht-submitr version:" ${actual_version}
-          file ./submitr
+	      docker run --platform linux/arm64 --rm -v ./binaries:/output pyinstaller-linux-arm-build sh -c "curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash ; ./submitr version"
           echo "Done smoke testing Linux binary (arm)"
