@@ -98,6 +98,6 @@ jobs:
           docker run --platform linux/arm64 --rm arm64v8/centos \
               sh -c "curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | \
                      /bin/bash ; ./submitr version ; \
-                     echo yes | ./submitr rcloner info foobar ; \
+                     echo yes | ./submitr rcloner info foobar --noprogress ; \
                      ls -l ~/.local/share/edu.harvard.hms/smaht-submitr/rclone"
           echo "Done smoke testing Linux binary (arm)"
