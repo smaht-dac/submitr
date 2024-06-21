@@ -75,7 +75,9 @@ jobs:
           actual_version=`./submitr version`
           # TODO: More actual testing besides just getting the version.
           echo "smaht-submitr version:" ${actual_version}
-          file ./submitr
+          file ./submitr | grep x86-64
+          echo yes | ./submitr rcloner info foobar --noprogress
+          ls -l ~/.local/share/edu.harvard.hms/smaht-submitr/rclone
           echo "Done smoke testing Linux binary (x86)"
 
   build-linux-arm:
