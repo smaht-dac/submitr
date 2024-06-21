@@ -33,6 +33,11 @@ jobs:
           actual_version=`./submitr version`
           echo "smaht-submitr version:" ${actual_version}
           file ./submitr
+          echo debug1
+          echo yes | ./submitr rcloner info foobar
+          echo debug2
+          ls -l ~/Library/Application\ Support/edu.harvard.hms/smaht-submitr/rclone
+          echo debug3
           echo "Done smoke testing MacOS binary (x86)"
 
   build-macos-arm:
