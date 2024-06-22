@@ -193,17 +193,39 @@ def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
                              confirm: bool = False, verbose: bool = False,
                              quiet: bool = False, debug: bool = False) -> None:
 
+    def is_schema_name_list(portal: Portal, keys: list) ->  bool:
+        if isinstance(keys, list):
+            for key in keys:
+                if portal.get_schema(key) is None:
+                    return False
+                return True
+        return False
+
     def post_or_patch_or_upsert(portal: Portal, file: str, schema_name: str,
                                 confirm: bool = False, verbose: bool = False,
                                 quiet: bool = False, debug: bool = False) -> bool:
+
         nonlocal update_function, update_action_name
         if not quiet:
             _print(f"Processing {update_action_name} file: {file}")
         if data := _read_json_from_file(file):
             if isinstance(data, dict):
-                update_function(portal, data, schema_name, confirm=confirm,
-                                file=file, verbose=verbose, debug=debug)
+                if is_schema_name_list(portal, list(data.keys())):
+                    if debug:
+                        _print(f"DEBUG: File ({file}) contains a dictionary of schema names.")
+                    for schema_name in data:
+                        if isinstance(schema_data := data[schema_name], list):
+                            for index, item in enumerate(schema_data):
+                                update_function(portal, item, schema_name, confirm=confirm,
+                                                file=file, index=index, verbose=verbose, debug=debug)
+                else:
+                    if debug:
+                        _print(f"DEBUG: File ({file}) contains an object.")
+                    update_function(portal, data, schema_name, confirm=confirm,
+                                    file=file, verbose=verbose, debug=debug)
             elif isinstance(data, list):
+                if debug:
+                    _print(f"DEBUG: File ({file}) contains a list of objects.")
                 for index, item in enumerate(data):
                     update_function(portal, item, schema_name, confirm=confirm,
                                     file=file, index=index, verbose=verbose, debug=debug)
@@ -222,14 +244,16 @@ def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
                 post_or_patch_or_upsert(portal, file_and_schema[0], schema_name=schema_name,
                                         confirm=confirm, quiet=quiet, verbose=verbose, debug=debug)
     elif os.path.isfile(file := file_or_directory):
-        if (not (schema_name := _get_schema_name_from_schema_named_json_file_name(portal, file)) and
-            not (schema_name := explicit_schema_name)):  # noqa
-            _print(f"ERROR: Schema cannot be inferred from file name and --schema not specified: {file}")
-            return
-        post_or_patch_or_upsert(portal, file, schema_name=schema_name,
-                                confirm=confirm, quiet=quiet, verbose=verbose, debug=debug)
+        if ((schema_name := _get_schema_name_from_schema_named_json_file_name(portal, file)) and
+            (schema_name := explicit_schema_name)):  # noqa
+            post_or_patch_or_upsert(portal, file, schema_name=schema_name,
+                                    confirm=confirm, quiet=quiet, verbose=verbose, debug=debug)
+        else:
+            post_or_patch_or_upsert(portal, file, schema_name=schema_name,
+                                    confirm=confirm, quiet=quiet, verbose=verbose, debug=debug)
+            # _print(f"ERROR: Schema cannot be inferred from file name and --schema not specified: {file}")
+            # return
     else:
-        # TODO: Allow json file containing dictionary of schema names each containing a list of objects.
         _print(f"ERROR: Cannot find file or directory: {file_or_directory}")
 
 
@@ -298,7 +322,7 @@ def upsert_data(portal: Portal, data: dict, schema_name: str, confirm: bool = Fa
     if ((confirm is True) and not yes_or_no(f"{'PATCH' if exists else 'POST'} data for: {identifying_path} ?")):
         return
     if verbose:
-        _print(f"{'PATCH' if exists else 'POST'}{schema_name} item: {identifying_path}")
+        _print(f"{'PATCH' if exists else 'POST'} {schema_name} item: {identifying_path}")
     try:
         portal.post_metadata(schema_name, data) if not exists else portal.patch_metadata(identifying_path, data)
         if debug:
