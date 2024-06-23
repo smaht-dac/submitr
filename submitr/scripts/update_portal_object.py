@@ -220,6 +220,8 @@ def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
                         _print(f"DEBUG: File ({file}) contains a dictionary of schema names.")
                     for schema_name in data:
                         if isinstance(schema_data := data[schema_name], list):
+                            if debug:
+                                _print(f"DEBUG: Processing {update_action_name}s for type: {schema_name}")
                             for index, item in enumerate(schema_data):
                                 update_function(portal, item, schema_name, confirm=confirm,
                                                 file=file, index=index, verbose=verbose, debug=debug)
