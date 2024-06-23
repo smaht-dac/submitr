@@ -193,7 +193,7 @@ def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
                              confirm: bool = False, verbose: bool = False,
                              quiet: bool = False, debug: bool = False) -> None:
 
-    def is_schema_name_list(portal: Portal, keys: list) ->  bool:
+    def is_schema_name_list(portal: Portal, keys: list) -> bool:
         if isinstance(keys, list):
             for key in keys:
                 if portal.get_schema(key) is None:
