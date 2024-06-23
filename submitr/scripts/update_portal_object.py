@@ -201,16 +201,21 @@ def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
                 return True
         return False
 
-    def post_or_patch_or_upsert(portal: Portal, file: str, schema_name: str,
+    def post_or_patch_or_upsert(portal: Portal, file: str, schema_name: Optional[str],
                                 confirm: bool = False, verbose: bool = False,
-                                quiet: bool = False, debug: bool = False) -> bool:
+                                quiet: bool = False, debug: bool = False) -> None:
 
         nonlocal update_function, update_action_name
         if not quiet:
             _print(f"Processing {update_action_name} file: {file}")
         if data := _read_json_from_file(file):
             if isinstance(data, dict):
-                if is_schema_name_list(portal, list(data.keys())):
+                if isinstance(schema_name, str) and schema_name:
+                    if debug:
+                        _print(f"DEBUG: File ({file}) contains an object of type: {schema_name}")
+                    update_function(portal, data, schema_name, confirm=confirm,
+                                    file=file, verbose=verbose, debug=debug)
+                elif is_schema_name_list(portal, list(data.keys())):
                     if debug:
                         _print(f"DEBUG: File ({file}) contains a dictionary of schema names.")
                     for schema_name in data:
@@ -218,14 +223,9 @@ def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
                             for index, item in enumerate(schema_data):
                                 update_function(portal, item, schema_name, confirm=confirm,
                                                 file=file, index=index, verbose=verbose, debug=debug)
-                else:
-                    if debug:
-                        _print(f"DEBUG: File ({file}) contains an object.")
-                    update_function(portal, data, schema_name, confirm=confirm,
-                                    file=file, verbose=verbose, debug=debug)
             elif isinstance(data, list):
                 if debug:
-                    _print(f"DEBUG: File ({file}) contains a list of objects.")
+                    _print(f"DEBUG: File ({file}) contains a list of objects of type: {schema_name}")
                 for index, item in enumerate(data):
                     update_function(portal, item, schema_name, confirm=confirm,
                                     file=file, index=index, verbose=verbose, debug=debug)
@@ -244,7 +244,7 @@ def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
                 post_or_patch_or_upsert(portal, file_and_schema[0], schema_name=schema_name,
                                         confirm=confirm, quiet=quiet, verbose=verbose, debug=debug)
     elif os.path.isfile(file := file_or_directory):
-        if ((schema_name := _get_schema_name_from_schema_named_json_file_name(portal, file)) and
+        if ((schema_name := _get_schema_name_from_schema_named_json_file_name(portal, file)) or
             (schema_name := explicit_schema_name)):  # noqa
             post_or_patch_or_upsert(portal, file, schema_name=schema_name,
                                     confirm=confirm, quiet=quiet, verbose=verbose, debug=debug)
