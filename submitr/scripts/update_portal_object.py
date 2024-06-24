@@ -18,7 +18,7 @@ from typing import Callable, List, Optional, Tuple, Union
 from dcicutils.command_utils import yes_or_no
 from dcicutils.common import ORCHESTRATED_APPS, APP_SMAHT
 from dcicutils.ff_utils import delete_metadata, purge_metadata
-from dcicutils.misc_utils import get_error_message, PRINT
+from dcicutils.misc_utils import create_uuid, get_error_message, PRINT
 from dcicutils.portal_utils import Portal as PortalFromUtils
 
 
@@ -125,6 +125,7 @@ def main():
     parser.add_argument("--verbose", action="store_true", required=False, default=False, help="Verbose output.")
     parser.add_argument("--quiet", action="store_true", required=False, default=False, help="Quiet output.")
     parser.add_argument("--debug", action="store_true", required=False, default=False, help="Debugging output.")
+    parser.add_argument("--testify", action="store_true", required=False, default=False, help="Test-ify data.")
     args = parser.parse_args()
 
     def usage(message: Optional[str] = None) -> None:
@@ -225,6 +226,10 @@ def _post_or_patch_or_upsert(portal: Portal, file_or_directory: str,
                             for index, item in enumerate(schema_data):
                                 update_function(portal, item, schema_name, confirm=confirm,
                                                 file=file, index=index, verbose=verbose, debug=debug)
+                        else:
+                            _print(f"WARNING: File ({file}) contains schema item which is not a list: {schema_name}")
+                else:
+                    _print(f"WARNING: File ({file}) contains unknown item type.")
             elif isinstance(data, list):
                 if debug:
                     _print(f"DEBUG: File ({file}) contains a list of objects of type: {schema_name}")
@@ -415,6 +420,35 @@ def _get_schema(portal: Portal, name: str) -> Tuple[Optional[dict], Optional[str
                 if schema_name.replace("_", "").replace("-", "").strip().lower() == name.lower():
                     return schemas[schema_name], schema_name
     return None, None
+
+
+# Function (test-ify) to give all of the identifying properties
+# of the given Portal object new, test, unique values.
+def _testify(portal: Portal, data: dict, data_type: str) -> Optional[dict]:
+    _unique_test_uuid_map = {}
+    unique_test_uuid = create_uuid()
+    unique_test_identifier = f"test{unique_test_uuid.replace('-', '')}"
+    if not ((schema := portal.get_schema(data_type)) and (schema_properties := schema.get("properties"))):
+        return None
+    identifying_property_names = portal.get_identifying_property_names(schema)
+    for identifying_property_name in identifying_property_names:
+        if identifying_property_value := data.get(identifying_property_name):
+            if identifying_property_name == "uuid":
+                _unique_test_uuid_map[identifying_property_value] = unique_test_uuid
+                identifying_property_value = unique_test_uuid
+            elif isinstance(identifying_property_value, list):
+                for index, identifying_property_item in enumerate(identifying_property_value):
+                    identifying_property_value[index] = f"{identifying_property_item}{unique_test_identifier}"
+            else:
+                identifying_property_value = f"{identifying_property_value}{unique_test_identifier}"
+            data[identifying_property_name] = identifying_property_value
+    for schema_property_name in schema_properties:
+        if ((schema_property_name not in identifying_property_names) and
+            (schema_properties[schema_property_name].get("uniqueKey") is True)):  # noqa
+            if unique_property_value := data.get(schema_property_name):
+                unique_property_value = f"{unique_property_value}{unique_test_identifier}"
+                data[schema_property_name] = unique_property_value
+    return data
 
 
 def _print(*args, **kwargs) -> None:
