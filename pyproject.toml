@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "smaht-submitr"
-version = "0.8.3"
+version = "1.0.0"
 description = "Support for uploading file submissions to SMAHT."
 # TODO: Update this email address when a more specific one is available for SMaHT.
 authors = ["SMaHT DAC <smhelp@hms-dbmi.atlassian.net >"]
@@ -49,10 +49,12 @@ include = [
 python = ">=3.8.0,<3.13"
 awscli = ">=1.32.112"
 boto3 = "^1.34.112"
-dcicutils = "^8.10.0"
+dcicutils = "8.12.0"
 PyYAML = "^6.0.1"
 requests = "^2.31.0"
 googleapi = "^0.1.0"
+google-cloud-storage = "^2.16.0"
+pyinstaller = "^6.8.0"
 
 [tool.poetry.dev-dependencies]
 
@@ -65,8 +67,6 @@ coverage = ">=6.5.0"
 
 # Linting generally
 flake8 = ">=3.9.2"
-
-google-cloud-storage = "^2.16.0"
 
 pip-licenses = ">=3.5.5"
 
@@ -93,6 +93,7 @@ make-sample-fastq-file = "submitr.scripts.make_sample_fastq_file:main"
 publish-to-pypi = "dcicutils.scripts.publish_to_pypi:main"
 rcloner= "submitr.scripts.rcloner:main"
 resume-uploads = "submitr.scripts.resume_uploads:main"
+submitr = "submitr.scripts.submitr:main"
 submit-genelist = "submitr.scripts.submit_genelist:main"
 submit-metadata = "submitr.scripts.submit_metadata_bundle:main"
 submit-metadata-bundle = "submitr.scripts.submit_metadata_bundle:main"

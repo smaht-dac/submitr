@@ -1,0 +1,11 @@
+FROM davidmichaels/harvard:linux-arm-centos-python-3.11
+
+USER root
+WORKDIR /app
+COPY submitr submitr
+COPY Makefile pyproject.toml poetry.lock README.rst ./
+
+RUN source ~/.bashrc ; \
+    poetry install ; \
+    pyinstaller --onefile submitr/scripts/submitr.py ; \
+    chmod a+x dist/submitr

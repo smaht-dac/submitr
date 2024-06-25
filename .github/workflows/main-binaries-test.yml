@@ -1,0 +1,103 @@
+name: BINARY RELEASE TEST
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - 'v*'
+# push:
+#   # Only run this workflow to create binaries when a non-beta tag is created.
+#   tags:
+#     - 'v[0-9]+\.[0-9]+\.[0-9]+'
+
+jobs:
+
+  test-macos-x86:
+    runs-on: macos-13
+    steps:
+      - name: Test MacOS Binary (x86)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "GitHub runner info:" `uname -a`
+          echo "Smoke testing MacOS binary (x86)"
+          echo "Installing MacOS binary (x86):" ${{ github.event.release.tag_name }}
+          # This GITHUB_TOKEN authorization header for curl and argument to install.sh is
+          # ONLY to make this work consistently from within this workflow; without we would
+          # intermittently get an error like: API rate limit exceeded for 13.105.117.6
+          curl -H "Authorization: token ${GITHUB_TOKEN}" https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash -s -- "$GITHUB_TOKEN"
+          echo "Running smaht-submitr version. Should be the same as what was mentioned above."
+          # TODO: More actual testing besides just getting the version.
+          actual_version=`./submitr version`
+          echo "smaht-submitr version:" ${actual_version}
+          file ./submitr | grep x86_64
+          echo yes | ./submitr rcloner info foobar --noprogress
+          ls -l ~/Library/Application\ Support/edu.harvard.hms/smaht-submitr/rclone
+          echo "Done smoke testing MacOS binary (x86)"
+
+  test-macos-arm:
+    runs-on: macos-14
+    steps:
+      - name: Test MacOS Binary (arm)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "GitHub runner info:" `uname -a`
+          expected_version=${{ github.event.release.tag_name }}
+          echo "Smoke testing MacOS binary (arm)"
+          # This GITHUB_TOKEN authorization header for curl and argument to install.sh is
+          # ONLY to make this work consistently from within this workflow; without we would
+          # intermittently get an error like: API rate limit exceeded for 13.105.117.6
+          echo "Installing MacOS binary (arm):" ${{ github.event.release.tag_name }}
+          curl -H "Authorization: token ${GITHUB_TOKEN}" https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash -s -- "$GITHUB_TOKEN"
+          echo "Running smaht-submitr version. Should be the same as what was mentioned above."
+          actual_version=`./submitr version`
+          # TODO: More actual testing besides just getting the version.
+          echo "smaht-submitr version:" ${actual_version}
+          file ./submitr | grep arm64
+          echo yes | ./submitr rcloner info foobar --noprogress
+          ls -l ~/Library/Application\ Support/edu.harvard.hms/smaht-submitr/rclone
+          echo "Done smoke testing MacOS binary (arm)"
+
+  test-linux-x86:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Linux Binary (x86)
+        run: |
+          echo "GitHub runner info:" `uname -a`
+          expected_version=${{ github.event.release.tag_name }}
+          echo "Smoke testing Linux binary (x86)"
+          echo "Installing Linux binary (x86):" ${{ github.event.release.tag_name }}
+          curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
+          echo "Running smaht-submitr version. Should be the same as what was mentioned above."
+          actual_version=`./submitr version`
+          # TODO: More actual testing besides just getting the version.
+          echo "smaht-submitr version:" ${actual_version}
+          file ./submitr | grep x86-64
+          echo yes | ./submitr rcloner info foobar --noprogress
+          ls -l ~/.local/share/edu.harvard.hms/smaht-submitr/rclone
+          echo "Done smoke testing Linux binary (x86)"
+
+  test-linux-arm:
+    # TODO: This is wrong; need to run within docker as there is no GitHub runner for Linux ARM.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@v2
+      - name: Build Linux Binary (arm)
+        run: |
+          echo "GitHub runner info:" `uname -a`
+          expected_version=${{ github.event.release.tag_name }}
+          echo "Smoke testing Linux binary (arm)"
+          echo "Creating a Linux ARM docker container for this."
+          echo "Installing Linux binary (arm):" ${{ github.event.release.tag_name }}
+          docker run --platform linux/arm64 --rm arm64v8/centos \
+              sh -c "curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | \
+                     /bin/bash ; ./submitr version ; \
+                     echo yes | ./submitr rcloner info foobar --noprogress ; \
+                     ls -l ~/.local/share/edu.harvard.hms/smaht-submitr/rclone"
+          echo "Done smoke testing Linux binary (arm)"

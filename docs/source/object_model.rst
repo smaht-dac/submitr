@@ -150,7 +150,7 @@ See Also
 
 .. raw:: html
 
-    <span style="color:#aaaaaa;">[ <small>Generated: 2024-06-10 4:41 PM EDT | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> 0.60.2</small> ]</span><p />
+    <span style="color:#aaaaaa;">[ <small>Generated: 2024-06-25 10:32 AM EDT | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> 0.65.1</small> ]</span><p />
     <p />
 
 

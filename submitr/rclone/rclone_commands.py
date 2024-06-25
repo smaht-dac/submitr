@@ -13,7 +13,7 @@ class RCloneCommands:
 
     @staticmethod
     def copy_command(args: List[str], config: Optional[str] = None, copyto: bool = False,
-                     metadata: Optional[dict] = None,
+                     metadata: Optional[dict] = None, nochecksum: bool = False,
                      progress: Optional[Callable] = None,
                      dryrun: bool = False,
                      source_s3: bool = False,
@@ -75,6 +75,8 @@ class RCloneCommands:
                 for metadata_key in metadata:
                     metadata_value = metadata[metadata_key]
                     command += ["--header-upload", f"X-Amz-Meta-{metadata_key}: {metadata_value}"]
+        if nochecksum is True:
+            command += ["--ignore-checksum"]
         if isinstance(config, str) and config:
             command += ["--config", config]
         if isinstance(args, list):
@@ -159,8 +161,9 @@ class RCloneCommands:
         # as the info_command does) is fine. This permission stuff with rclone and S3 is very finicky indeed.
         try:
             result = RCloneCommands.info_command(source, config=config, raise_exception=raise_exception)
-            # N.B. Returns a size of -1 if file/key not found (at least for GCS).
-            return size if isinstance(result, dict) and (size := result.get("size")) and (size >= 0) else None
+            # N.B. rclone returns a size of -1 if file/key not found (at least for GCS).
+            return size if (isinstance(result, dict) and
+                            isinstance(size := result.get("size"), int) and size >= 0) else None
         except Exception:
             return None
 

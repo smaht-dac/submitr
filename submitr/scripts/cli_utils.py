@@ -1,6 +1,7 @@
 import argparse
 from functools import lru_cache
 import io
+import os
 import subprocess
 import sys
 import time
@@ -120,6 +121,8 @@ class CustomArgumentParser(argparse.ArgumentParser):
         print_boxed(lines, right_justified_macro=("[VERSION]", self._get_version))
 
     def _print_version(self, verbose: bool = False, noupdate: bool = False) -> None:
+        if os.environ.get("SMAHT_SUBMITR_BINARY") == "true":
+            noupdate = True
         if version := self._get_version(with_most_recent_check_mark=False):
             if verbose and (most_recent_version_info := get_most_recent_version_info()):
                 has_most_recent_version = (

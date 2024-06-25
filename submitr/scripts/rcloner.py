@@ -35,12 +35,6 @@ from submitr.utils import chars
 
 
 def main() -> None:
-    # Playing with ...
-    # pip install pyinstaller
-    # pyinstaller --onefile --name my_application submitr/scripts/rcloner.py
-    # which needs this ...
-    # import multiprocessing
-    # multiprocessing.freeze_support()
     args = argparse.ArgumentParser(description="Test utility for rclone support in smaht-submitr.")
     args.add_argument("action", help="Action: copy or info.", default=None)
     args.add_argument("source", help="Source file or cloud bucket/key.", default=None)
@@ -72,7 +66,7 @@ def main() -> None:
     args.add_argument("--debug", action="store_true", help="Debug output.", default=False)
     args = args.parse_args()
 
-    RCloneInstallation.verify_installation()
+    RCloneInstallation.verify_installation(progress=not args.noprogress)
 
     if args.debug:
         os.environ["SMAHT_DEBUG"] = "true"
@@ -358,6 +352,7 @@ def main_copy(source: str, destination: str,
     result = output = None
     try:
         result, output = rcloner.copy(source, destination, copyto=copyto,
+                                      nochecksum=True,
                                       progress=progress_callback.function if progress_callback else None,
                                       process_info=progress_callback.process if progress_callback else None,
                                       return_output=True)
@@ -475,7 +470,7 @@ def print_info_via_rclone(target: str, rclone_store: RCloneStore) -> None:
     formatted_size = format_size(size)
     print(f"Bucket: {cloud_path.bucket(target)}")
     print(f"Key: {cloud_path.basename(target)}")
-    print(f"Size: {format_size(size)}{f' ({size} bytes)' if '.' in formatted_size else ''}")
+    print(f"Size: {format_size(size)}{f' ({size} bytes)' if '.' in formatted_size is not None else ''}")
     print(f"Modified: {modified}")
     print(f"Checksum: {checksum}")
     if checksum_via_aws_boto:

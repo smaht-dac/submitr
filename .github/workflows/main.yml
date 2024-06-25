@@ -21,6 +21,8 @@ jobs:
 
     # The type of runner that the job will run on
     runs-on: ubuntu-22.04
+    ## runs-on: macos-13
+    # experimental end
     strategy:
       matrix:
         python_version: ['3.9', '3.10', '3.11']
@@ -41,6 +43,51 @@ jobs:
         run: |
           poetry install
           poetry run flake8 submitr
+
+          # The following actually seems to works on GitHub Actions runner (runs-on) macos-13 (but not macos-14);
+          # but takes a long long time, mostly on Python install within the docker container; could build my own
+          # docker contained with Python/penv preinstalled.
+          #
+          # echo "Installing docker."
+          # HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
+          # echo "Installing colima."
+          # brew install colima
+          # echo "Starting colima."
+          # colima start
+          # echo "Waiting for docker get up/running. This can take over 2 minutes ..."
+          # while (! docker stats --no-stream ); do
+          #   echo "Waiting for docker to start ..."
+          #   sleep 5
+          # done
+          # echo "Docker now seems to be up/running."
+
+          ## echo "Installing docker."
+          ## HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask docker
+
+          ## echo "Installing colima."
+          ## brew install colima
+
+          ## echo "Starting colima."
+          ## colima start
+
+          ## echo "Waiting for docker get up/running. This can take over 2 minutes ..."
+          ## while (! docker stats --no-stream ); do
+          ## echo "Waiting for docker to start ..."
+          ## sleep 3
+          ## done
+          ## echo "Docker now seems to be up/running."
+
+          # echo "Preparing docker."
+          # sudo /Applications/Docker.app/Contents/MacOS/Docker\ Desktop.app/Contents/MacOS/Docker\ Desktop --unattended --install-privileged-components
+          # echo "Starting docker."
+          # open -a /Applications/Docker.app --args --unattended --accept-license
+          # echo "Waiting for docker get up/running. This can take over 2 minutes ..."
+          # while ! /Applications/Docker.app/Contents/Resources/bin/docker info &>/dev/null; do sleep 1; done
+          # echo "Docker now seems to be up/running."
+
+          ## echo "Building Linux binaries."
+          ## make exe-linux
+          ## echo "Done building Linux binaries."
       
       - name: CI
         run: |
