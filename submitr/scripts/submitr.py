@@ -1,5 +1,6 @@
 from __future__ import annotations
 import multiprocessing
+import os
 import sys
 from typing import Optional
 from submitr.scripts.check_submission import main as main_check_submission
@@ -52,6 +53,7 @@ supported_commands_hide = ["submit-metadata-bundle"]
 
 def main() -> None:
     multiprocessing.freeze_support()
+    os.environ["SMAHT_SUBMITR_BINARY"] = "true"
     if len(sys.argv) < 2:
         usage()
     if (command := sys.argv[1]) not in supported_commands:
