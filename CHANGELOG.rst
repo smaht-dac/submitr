@@ -7,7 +7,7 @@ Change Log
 ----------
 
 
-0.8.22
+0.8.23
 ======
 * Testing release process (need non-beta).
 
