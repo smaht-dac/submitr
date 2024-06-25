@@ -5,6 +5,11 @@ Installation
 .. toctree::
   :maxdepth: 1
 
+.. note::
+   As of June 2024 we offer an alternative installation procedure to the primary procedure outlined below.
+   This alternative does not require installing Python or anything; rather a self-contained binary is installed.
+   Please see the `Binary Installation <binary_installation.html>`_ section for details.
+
 More experienced users who already have ``python`` (version 3.9, 3.10, or 3.11) installed,
 and a (optional) Python virtual environment setup to their satisfaction,
 may proceed directly to the essential element of the `actual installation <installation.html#id1>`_
