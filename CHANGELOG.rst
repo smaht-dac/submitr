@@ -7,6 +7,10 @@ Change Log
 ----------
 
 
+1.0.1
+=====
+* Fix for local make exe (for building binaries locally).
+
 
 1.0.0
 =====
