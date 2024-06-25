@@ -7,6 +7,11 @@ Change Log
 ----------
 
 
+0.8.22
+======
+* Testing release process (need non-beta).
+
+
 0.8.21
 ======
 * Experimenting with pyinstaller to create a single independent executable (per command)
