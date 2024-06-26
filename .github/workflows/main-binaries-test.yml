@@ -1,4 +1,4 @@
-# GitHub Actions workflow for test for binary release.
+# GitHub Actions workflow for testing binary release.
 
 name: BINARY RELEASE TEST
 

@@ -83,6 +83,13 @@ publish-for-ga:
 exe: exe-macos exe-linux
 
 exe-macos:
+	if [ "`arch`" = "arm64" ]; then \
+		MACOS_ARCH='-arm' make exe-macos-arch ; \
+	else \
+		MACOS_ARCH='-x86' make exe-macos-arch ; \
+	fi;
+
+exe-macos-arch:
 	# Download/use with:
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
 	pip install poetry
@@ -90,8 +97,8 @@ exe-macos:
 	pip install pyinstaller
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
 	mkdir -p ./binaries
-	mv ./dist/submitr ./binaries/submitr-macos
-	chmod a+x ./binaries/submitr-macos
+	mv ./dist/submitr ./binaries/submitr-macos${MACOS_ARCH}
+	chmod a+x ./binaries/submitr-macos${MACOS_ARCH}
 	rm -rf ./build ./dist
 
 exe-linux: exe-linux-x86 exe-linux-arm
