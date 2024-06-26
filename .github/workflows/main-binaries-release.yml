@@ -173,3 +173,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get Release ID (to delete unnecessray source archive files) 
+        id: get_release
+        run: |
+          echo "::set-output name=id::$(jq -r .id <<<"${{ steps.create_release.outputs.release_id }}")"
+
+      - name: Remove Unnecesssary Source Code Archive Files
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_ID=${{ steps.get_release.outputs.id }}
+          API_URL="https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
+          ASSETS=$(curl -H "Authorization: token $GITHUB_TOKEN" $API_URL | jq -r '.assets[] | select(.name | test("source")) | .url')
+
+          for ASSET in $ASSETS; do
+            curl -X DELETE -H "Authorization: token $GITHUB_TOKEN" $ASSET
+          done
