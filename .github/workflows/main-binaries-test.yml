@@ -1,4 +1,4 @@
-name: BINARY RELEASE TESTS
+name: BINARY RELEASE TEST
 
 permissions:
   contents: write
