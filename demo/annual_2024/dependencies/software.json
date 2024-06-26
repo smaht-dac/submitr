@@ -6,7 +6,7 @@
         "category": [
             "Format Conversion"
         ],
-        "accession": "SMAADFSASF12",
+        "accession": "SMASWEYJ8TBH",
         "source_url": "https://support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html",
         "description": "Demultiplexes Illumina short-read sequences and converts BCL basecall files to FASTQ sequence files",
         "submitted_id": "BCM_SOFTWARE_BCL2FASTQ2",
