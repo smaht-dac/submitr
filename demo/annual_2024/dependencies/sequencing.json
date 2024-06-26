@@ -5,10 +5,10 @@
         "flow_cell": "25B",
         "read_type": "Paired-end",
         "sequencer": "adf1e7bd-f89e-4d3d-af41-1712fce9e720",
-        "submitted_id": "BCM_SEQUENCING_NOVASEQX-400X",
+        "submitted_id": "B8C9FSKZLCOF13Q37J2Y2U8XG0VO1NJMOM_SEQUENCING_NOVASEQX-400X",
         "target_coverage": 400.0,
         "submission_centers": [
-            "f5446853-630e-474c-ba51-35b7e992269b"
+            "38c23317-f704-46cf-b751-4f562d3268cc"
         ],
         "target_read_length": 150,
         "uuid": "9030feb4-2192-4d36-9797-81fd9ef9d058"
