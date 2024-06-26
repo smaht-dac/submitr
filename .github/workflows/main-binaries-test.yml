@@ -1,7 +1,6 @@
-name: BINARY RELEASE TEST
+# GitHub Actions workflow for test for binary release.
 
-permissions:
-  contents: write
+name: BINARY RELEASE TEST
 
 on:
   workflow_run:
@@ -11,6 +10,9 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
 
