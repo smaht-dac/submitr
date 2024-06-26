@@ -29,7 +29,6 @@ jobs:
           # intermittently get an error like: API rate limit exceeded for 13.105.117.6
           curl -H "Authorization: token ${GITHUB_TOKEN}" https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash -s -- "$GITHUB_TOKEN"
           echo "Running smaht-submitr version. Should be the same as what was mentioned above."
-          # TODO: More actual testing besides just getting the version.
           actual_version=`./submitr version`
           echo "smaht-submitr version:" ${actual_version}
           file ./submitr | grep x86_64
@@ -54,7 +53,6 @@ jobs:
           curl -H "Authorization: token ${GITHUB_TOKEN}" https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash -s -- "$GITHUB_TOKEN"
           echo "Running smaht-submitr version. Should be the same as what was mentioned above."
           actual_version=`./submitr version`
-          # TODO: More actual testing besides just getting the version.
           echo "smaht-submitr version:" ${actual_version}
           file ./submitr | grep arm64
           echo yes | ./submitr rcloner info foobar --noprogress
@@ -73,7 +71,6 @@ jobs:
           curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
           echo "Running smaht-submitr version. Should be the same as what was mentioned above."
           actual_version=`./submitr version`
-          # TODO: More actual testing besides just getting the version.
           echo "smaht-submitr version:" ${actual_version}
           file ./submitr | grep x86-64
           echo yes | ./submitr rcloner info foobar --noprogress
@@ -81,7 +78,6 @@ jobs:
           echo "Done smoke testing Linux binary (x86)"
 
   test-linux-arm:
-    # TODO: This is wrong; need to run within docker as there is no GitHub runner for Linux ARM.
     runs-on: ubuntu-latest
     steps:
       - uses: docker/setup-qemu-action@v2
