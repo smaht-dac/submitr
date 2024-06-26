@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "smaht-submitr"
-version = "1.0.0.1b3"  # TODO: To become 1.0.1
+version = "1.0.0.1b4"  # TODO: To become 1.0.1
 description = "Support for uploading file submissions to SMAHT."
 # TODO: Update this email address when a more specific one is available for SMaHT.
 authors = ["SMaHT DAC <smhelp@hms-dbmi.atlassian.net >"]
@@ -38,6 +38,7 @@ classifiers = [
   'Programming Language :: Python :: 3.9',
   'Programming Language :: Python :: 3.10',
   'Programming Language :: Python :: 3.11',
+  'Programming Language :: Python :: 3.12',
 
 ]
 include = [
