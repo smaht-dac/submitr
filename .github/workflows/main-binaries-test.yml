@@ -1,19 +1,18 @@
+# GitHub Actions workflow for test for binary release.
+
 name: BINARY RELEASE TEST
 
-permissions:
-  contents: write
-
 on:
-  push:
-    tags:
-      - 'v*'
-# push:
-#   # Only run this workflow to create binaries when a non-beta tag is created.
-#   tags:
-#     - 'v[0-9]+\.[0-9]+\.[0-9]+'
+  workflow_run:
+    workflows: ["BINARY RELEASE"]
+    types:
+      - completed
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
+permissions:
+  contents: writerkflow_dispatch:
   
 jobs:
 
