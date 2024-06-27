@@ -10,6 +10,7 @@ Change Log
 1.0.1
 =====
 * Fix for local make exe (for building binaries locally).
+* Make work with Python 3.12 (had to update to flake8 which required low Python version to go from 3.8 to 3.8.1).
 
 
 1.0.0
