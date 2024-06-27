@@ -26,7 +26,7 @@ def test_submit_ontology_script(keyfile):
                                 "submit_ontology_main should not exit normally.")
                         assert mock_submit_any_ingestion.call_count == (1 if expect_called else 0)
                         if expect_called:
-                            assert mock_submit_any_ingestion.called_with(**expect_call_args)
+                            assert mock_submit_any_ingestion.assert_called_with(**expect_call_args)
                         assert output == []
 
     test_it(args_in=[], expect_exit_code=2, expect_called=False)  # Missing args

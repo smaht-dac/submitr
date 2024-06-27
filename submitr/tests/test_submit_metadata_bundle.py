@@ -28,7 +28,7 @@ def test_submit_metadata_bundle_script(keyfile):
                             "submit_metadata_bundle_main should not exit normally.")
                     assert mock_submit_any_ingestion.call_count == (1 if expect_called else 0)
                     if expect_called:
-                        assert mock_submit_any_ingestion.called_with(**expect_call_args)
+                        assert mock_submit_any_ingestion.assert_called_with(**expect_call_args)
                     assert output == []
 
     some_file = _create_some_temporary_file()
