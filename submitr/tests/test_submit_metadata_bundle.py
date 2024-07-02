@@ -28,7 +28,45 @@ def test_submit_metadata_bundle_script(keyfile):
                             "submit_metadata_bundle_main should not exit normally.")
                     assert mock_submit_any_ingestion.call_count == (1 if expect_called else 0)
                     if expect_called:
-                        assert mock_submit_any_ingestion.called_with(**expect_call_args)
+                        # New in Python 3.12: Default arguments expected to be here too for assert_called_with.
+                        expect_call_args = {
+                            "ingestion_filename": expect_call_args["ingestion_filename"],
+                            "ingestion_type": expect_call_args.get("ingestion_type"),
+                            "env": expect_call_args.get("env", None),
+                            "env_from_env": False,
+                            "keys_file": None,
+                            "server": expect_call_args.get("server"),
+                            "consortium": None,
+                            "submission_center": None,
+                            "add_submission_center": None,
+                            "no_query": expect_call_args.get("no_query"),
+                            "subfolders": True if "--directory" in args_in else False,
+                            "app": None,
+                            "submission_protocol": "upload",
+                            "upload_folder": expect_call_args.get("upload_folder", None),
+                            "show_details": False,
+                            "post_only": False,
+                            "patch_only": False,
+                            "submit": False,
+                            "rclone_google": None,
+                            "validate_local_only": False,
+                            "validate_remote_only": False,
+                            "validate_local_skip": False,
+                            "validate_remote_skip": False,
+                            "noanalyze": False,
+                            "json_only": False,
+                            "ref_nocache": False,
+                            "verbose_json": False,
+                            "merge": False,
+                            "verbose": False,
+                            "noversion": False,
+                            "noprogress": False,
+                            "output_file": False,
+                            "timeout": None,
+                            "debug": False,
+                            "debug_sleep": False
+                        }
+                        mock_submit_any_ingestion.assert_called_with(**expect_call_args)
                     assert output == []
 
     some_file = _create_some_temporary_file()

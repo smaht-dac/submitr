@@ -7,6 +7,16 @@ Change Log
 ----------
 
 
+1.1.0
+=====
+* Fix for local make exe (for building binaries locally).
+* Make work with Python 3.12.
+  - Had to update to flake8 which required low Python version to go from 3.8 to 3.8.1.
+  - Had to update dcicutils for pyramid update (from 1.10.4 to 2.0.2 for imp import not found).
+  - Had to update a couple tests for assert_called_with rather than called_with.
+  - Had to update a couple tests for different behavior for assert_called_with.
+  - Removed obsolete tests (for obsolete/unsupported scripts).
+
 
 1.0.0
 =====

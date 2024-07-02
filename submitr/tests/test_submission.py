@@ -777,7 +777,7 @@ def test_post_files_data():
 
         d = _post_files_data(SubmissionProtocol.UPLOAD, test_filename)
         assert d == {'datafile': mocked_open_file}
-        mock_open.called_with(test_filename, 'rb')
+        mock_open.assert_called_with(test_filename, 'rb')
 
         mock_open.reset_mock()
 

@@ -83,37 +83,45 @@ publish-for-ga:
 exe: exe-macos exe-linux
 
 exe-macos:
-	# Download/use with (once merged with master)
+	if [ "`arch`" = "arm64" ]; then \
+		MACOS_ARCH='-arm' make exe-macos-arch ; \
+	else \
+		MACOS_ARCH='-x86' make exe-macos-arch ; \
+	fi;
+
+exe-macos-arch:
+	# Download/use with:
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
-	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
 	pip install poetry
 	poetry install
-	python -m submitr.scripts.submitr version # xyzzy
 	pip install pyinstaller
 	pyinstaller --onefile --name submitr ./submitr/scripts/submitr.py
 	mkdir -p ./binaries
-	mv ./dist/submitr ./binaries/submitr-macos
-	chmod a+x ./binaries/submitr-macos
+	cp ./dist/submitr ./binaries/submitr-macos
+	cp ./dist/submitr ./binaries/submitr-macos${MACOS_ARCH}
+	chmod a+x ./binaries/submitr-macos${MACOS_ARCH}
 	rm -rf ./build ./dist
 
 exe-linux: exe-linux-x86 exe-linux-arm
 
 exe-linux-x86:
-	# Download/use with (once merged with master):
+	# Download/use with:
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
-	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
 	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
-	docker buildx build -t pyinstaller-linux-x86-build -f Dockerfile-for-pyinstaller-x86 .
+	# TODO: Remind myself why we at one point seemed to need to use docker buildx.
+	# docker buildx build -t pyinstaller-linux-x86-build -f Dockerfile-for-pyinstaller-x86 .
+	docker build -t pyinstaller-linux-x86-build -f Dockerfile-for-pyinstaller-x86 .
 	mkdir -p ./binaries
 	docker run --rm -v ./binaries:/output pyinstaller-linux-x86-build sh -c "cp /app/dist/submitr /output/submitr-linux-x86"
 
 exe-linux-arm:
-	# Download/use with (once merged with master):
+	# Download/use with:
 	# curl https://raw.githubusercontent.com/smaht-dac/submitr/master/install.sh | /bin/bash
-	# curl https://raw.githubusercontent.com/smaht-dac/submitr/pyinstaller-experiment-20240611/install.sh | /bin/bash
 	# N.B. Turns out binaries built on RedHat (CentOS) work on Debian (Ubuntu); but not vice versa.
-	docker buildx create --use
-	docker buildx build --platform linux/arm64 --load -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller-arm .
+	# TODO: Remind myself why we at one point seemed to need to use docker buildx.
+	# docker buildx create --use
+	# docker buildx build --platform linux/arm64 --load -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller-arm .
+	docker build --platform linux/arm64 --load -t pyinstaller-linux-arm-build -f Dockerfile-for-pyinstaller-arm .
 	mkdir -p ./binaries
 	docker run --platform linux/arm64 --rm -v ./binaries:/output pyinstaller-linux-arm-build sh -c "cp /app/dist/submitr /output/submitr-linux-arm"
 
