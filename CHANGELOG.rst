@@ -7,7 +7,7 @@ Change Log
 ----------
 
 
-1.0.1
+1.1.0
 =====
 * Fix for local make exe (for building binaries locally).
 * Make work with Python 3.12.
