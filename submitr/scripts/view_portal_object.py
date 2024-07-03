@@ -272,13 +272,17 @@ def _get_portal_object(portal: Portal, uuid: str,
     if inserts:
         # Format results as suitable for inserts (e.g. via update-portal-object).
         response.pop("schema_version", None)
-        if isinstance(results := response.get("@graph"), list) and results:
-            if isinstance(results_type := response.get("@type"), list) and results_type:
-                if isinstance(results_type := results_type[0], str) and results_type.endswith("SearchResults"):
-                    if results_type := results_type[0:-len("SearchResults")]:
-                        for result in results:
-                            result.pop("schema_version", None)
-                        response = {f"{results_type}": results}
+        if ((isinstance(results := response.get("@graph"), list) and results) and
+            (isinstance(results_type := response.get("@type"), list) and results_type) and
+            (isinstance(results_type := results_type[0], str) and results_type.endswith("SearchResults")) and
+            (results_type := results_type[0:-len("SearchResults")])):
+            for result in results:
+                result.pop("schema_version", None)
+            response = {f"{results_type}": results}
+        # Get the result as non-raw so we can get its type.
+        elif ((response_cooked := portal.get(path, database=database)) and
+              (isinstance(response_type := response_cooked.json().get("@type"), list) and response_type)):
+            response = {f"{response_type[0]}": [response]}
     elif raw:
         response.pop("schema_version", None)
     return response
