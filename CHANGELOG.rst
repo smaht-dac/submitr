@@ -7,6 +7,11 @@ Change Log
 ----------
 
 
+1.1.1
+=====
+* Minor updates to utility view-portal-object script.
+
+
 1.1.0
 =====
 * Fix for local make exe (for building binaries locally).

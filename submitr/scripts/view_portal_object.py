@@ -102,6 +102,8 @@ def main():
     parser.add_argument("--all", action="store_true", required=False, default=False,
                         help="Include all properties for schema usage.")
     parser.add_argument("--raw", action="store_true", required=False, default=False, help="Raw output.")
+    parser.add_argument("--inserts", action="store_true", required=False, default=False,
+                        help="Format output for subsequent inserts.")
     parser.add_argument("--tree", action="store_true", required=False, default=False, help="Tree output for schemas.")
     parser.add_argument("--database", action="store_true", required=False, default=False,
                         help="Read from database output.")
@@ -192,7 +194,7 @@ def main():
                           all=args.all, raw=args.raw, raw_yaml=args.yaml)
             return
 
-    data = _get_portal_object(portal=portal, uuid=args.uuid, raw=args.raw,
+    data = _get_portal_object(portal=portal, uuid=args.uuid, raw=args.raw, inserts=args.inserts,
                               database=args.database, check=args.bool, verbose=args.verbose)
     if args.bool:
         if data:
@@ -243,7 +245,7 @@ def _create_portal(ini: str, env: Optional[str] = None,
 
 
 def _get_portal_object(portal: Portal, uuid: str,
-                       raw: bool = False, database: bool = False,
+                       raw: bool = False, inserts: bool = False, database: bool = False,
                        check: bool = False, verbose: bool = False) -> dict:
     response = None
     try:
@@ -251,7 +253,7 @@ def _get_portal_object(portal: Portal, uuid: str,
             path = f"/{uuid}"
         else:
             path = uuid
-        response = portal.get(path, raw=raw, database=database)
+        response = portal.get(path, raw=raw or inserts, database=database)
     except Exception as e:
         if "404" in str(e) and "not found" in str(e).lower():
             _print(f"Portal object not found at {portal.server}: {uuid}")
@@ -267,7 +269,17 @@ def _get_portal_object(portal: Portal, uuid: str,
     if not response.json:
         _exit(f"Invalid JSON getting Portal object: {uuid}")
     response = response.json()
-    if raw:
+    if inserts:
+        # Format results as suitable for inserts (e.g. via update-portal-object).
+        response.pop("schema_version", None)
+        if isinstance(results := response.get("@graph"), list) and results:
+            if isinstance(results_type := response.get("@type"), list) and results_type:
+                if isinstance(results_type := results_type[0], str) and results_type.endswith("SearchResults"):
+                    if results_type := results_type[0:-len("SearchResults")]:
+                        for result in results:
+                            result.pop("schema_version", None)
+                        response = {f"{results_type}": results}
+    elif raw:
         response.pop("schema_version", None)
     return response
 
