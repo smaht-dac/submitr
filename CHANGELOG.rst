@@ -9,7 +9,7 @@ Change Log
 
 1.1.1
 =====
-* Minor updates to utility view-portal-object script.
+* Moved utility scripts view-portal-object and update-portal-object to dcicutils 8.13.3.
 
 
 1.1.0
