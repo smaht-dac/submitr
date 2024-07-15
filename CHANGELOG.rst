@@ -10,6 +10,7 @@ Change Log
 1.1.1
 =====
 * Moved utility scripts view-portal-object and update-portal-object to dcicutils 8.13.3.
+* Ran poetry update.
 
 
 1.1.0
