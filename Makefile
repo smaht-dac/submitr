@@ -17,14 +17,14 @@ build:  # builds
 
 test:
 	pip install tomli
-	pytest -m "not integration"
+	pytest -s -m "not integration"
 
 test-integration:
 	# pytest -vv submitr/tests/test_rclone_support.py
-	pytest -m integration
+	pytest -s -m integration
 
 retest:  # runs only failed tests from the last test run. (if no failures, it seems to run all?? -kmp 17-Dec-2020)
-	pytest -vv --last-failed
+	pytest -s -vv --last-failed
 
 update:  # updates dependencies
 	poetry update

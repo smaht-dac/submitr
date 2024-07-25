@@ -47,7 +47,7 @@ jobs:
       
       - name: CI
         run: |
-          poetry run coverage run --source submitr -m pytest -vv -m "not integration"
+          poetry run coverage run --source submitr -m pytest -s -vv -m "not integration"
 
       - name: COVERALLS
         env:
