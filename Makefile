@@ -13,10 +13,8 @@ lint:
 build:  # builds
 	make configure
 	poetry install
-	pip install tomli
 
 test:
-	pip install tomli
 	pytest -m "not integration"
 
 test-integration:

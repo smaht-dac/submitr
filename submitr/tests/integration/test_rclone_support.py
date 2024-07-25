@@ -817,8 +817,9 @@ def test_rclone_do_any_uploads() -> None:
     # but rather pass files dictionary; and also need to mock submission_uploads.generate_credentials_for_upload.
     # Alternatively, easier, is just provide a StructuredDataSet with a simple upload_files property which is an
     # list of dictionary with file names.
-    with (mock_patch("submitr.submission_uploads.generate_credentials_for_upload") as mock_generate_credentials_for_upload,  # noqa
-          mock_patch("submitr.submission_uploads.yes_or_no", return_value="yes")):
+    with mock_patch("submitr.submission_uploads.generate_credentials_for_upload") as \
+            mock_generate_credentials_for_upload, \
+            mock_patch("submitr.submission_uploads.yes_or_no", return_value="yes"):
         ingestion_submission_object = load_json_test_data("ingestion_submission")  # noqa
         mock_generate_credentials_for_upload.side_effect = mocked_generate_credentials_for_upload
         do_any_uploads(ingestion_submission_object,
