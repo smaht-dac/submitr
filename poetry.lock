@@ -2533,7 +2533,7 @@ files = [
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -2809,4 +2809,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.13"
-content-hash = "f5e4aaee9397a3966e21a9f83f0f92eb2e8bc55a738dd567abac0e4e73e8266f"
+content-hash = "03847740a4cc6520e64b525521126629a830022532ada2c6bedf24392a53986b"
