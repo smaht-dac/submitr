@@ -8,8 +8,7 @@ import os
 import re
 import sys
 import time
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple
-from typing_extensions import Literal
+from typing import Any, BinaryIO, Callable, Dict, List, Literal, Optional, Tuple
 
 # get_env_real_url would rely on env_utils
 # from dcicutils.env_utils import get_env_real_url
