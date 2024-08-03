@@ -1888,6 +1888,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
 
     # Validator hook; initially 2024-08-02 just for submitted_id, but extendable.
     known_submission_center_name_list = ",".join(known_submission_center_names)
+
     def validator_hook(sheet_name: str, column_name: str, value: Any) -> Tuple[Any, Optional[str]]:
         nonlocal known_submission_center_name_list
         return validators(portal, sheet_name, column_name, value,
