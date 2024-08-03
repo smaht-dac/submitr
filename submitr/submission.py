@@ -42,6 +42,7 @@ from submitr.submission_uploads import (
     lookup_ingestion_submission_from_upload_file
 )
 from submitr.utils import chars, format_path, get_health_page, is_excel_file_name, print_boxed, tobool
+from submitr.validators import validators
 
 
 def set_output_file(output_file):
@@ -719,11 +720,11 @@ def submit_any_ingestion(ingestion_filename, *,
             PRINT(f"You must specify onely one submission center using the --submission-center option.")
             sys.exit(1)
 
+    known_submission_centers = _get_submission_centers(portal)
     if add_submission_center:
         if not _is_admin_user(user_record):
             PRINT("ERROR: Cannot use the --add-submission-center if you are not an admin user.")
             sys.exit(1)
-        known_submission_centers = _get_submission_centers(portal)
         found_submission_centers = [submission_center for submission_center in known_submission_centers
                                     if (submission_center.get("name") == add_submission_center) or
                                        (submission_center.get("uuid") == add_submission_center)]
@@ -735,6 +736,10 @@ def submit_any_ingestion(ingestion_filename, *,
         # add_submission_center = f"/submission-centers/{found_submission_centers[0]['uuid']}/"
         add_submission_center = found_submission_centers[0]["name"]
         PRINT(f"Additional submission center: {add_submission_center}")
+
+    # Gather all submission center names, to be used (currently)
+    # only to make an smaht-portal API calls to validate submitted_id.
+    known_submission_center_names = [item["name"] for item in known_submission_centers]
 
     if not json_only:
         PRINT(f"Metadata file to {'validate' if validation else 'ingest'}: {format_path(ingestion_filename)}")
@@ -757,6 +762,7 @@ def submit_any_ingestion(ingestion_filename, *,
                                             merge=merge,
                                             exit_immediately_on_errors=exit_immediately_on_errors,
                                             ref_nocache=ref_nocache, output_file=output_file, noprogress=noprogress,
+                                            known_submission_center_names=known_submission_center_names,
                                             noanalyze=noanalyze, json_only=json_only, verbose_json=verbose_json,
                                             verbose=verbose, debug=debug, debug_sleep=debug_sleep)
         if validate_local_only:
@@ -1798,6 +1804,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       rclone_google: Optional[RCloneGoogle] = None,
                       exit_immediately_on_errors: bool = False,
                       ref_nocache: bool = False, merge: bool = False, output_file: Optional[str] = None,
+                      known_submission_center_names: List[str] = [],
                       noanalyze: bool = False, json_only: bool = False, noprogress: bool = False,
                       verbose_json: bool = False, verbose: bool = False, quiet: bool = False,
                       debug: bool = False, debug_sleep: Optional[str] = None) -> StructuredDataSet:
@@ -1879,6 +1886,13 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if debug:
         PRINT("DEBUG: Starting client validation.")
 
+    # Validator hook; initially 2024-08-02 just for submitted_id, but extendable.
+    known_submission_center_name_list = ",".join(known_submission_center_names)
+    def validator_hook(sheet_name: str, column_name: str, value: Any) -> Tuple[Any, Optional[str]]:
+        nonlocal known_submission_center_name_list
+        return validators(portal, sheet_name, column_name, value,
+                          known_submission_center_names=known_submission_center_name_list)
+
     structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                         # ref_lookup_strategy=ref_lookup_strategy,
                                         ref_lookup_nocache=ref_nocache,
@@ -1893,6 +1907,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                         # given (i.e. e.g. spreasheet) object(s) into any existing ones.
                                         merge=merge,
                                         progress=None if noprogress else define_progress_callback(debug=debug),
+                                        validator_hook=validator_hook,
                                         debug_sleep=debug_sleep)
     structured_data.load_file(ingestion_filename)
 
@@ -2461,6 +2476,15 @@ def _get_submission_centers(portal: Portal) -> List[str]:
                 (submission_center_uuid := submission_center.get("uuid"))):  # noqa
                 results.append({"name": submission_center_name, "uuid": submission_center_uuid})
     return results
+
+
+def _get_submission_center(portal: Portal, submission_center: str) -> Optional[str]:
+    given_submission_center = os.path.basename(submission_center)  # just in case it is /submission-centers/{uuid}
+    for submission_center in _get_submission_centers(portal):
+        if ((given_submission_center == submission_center["name"]) or
+            (given_submission_center == submission_center["uuid"])):  # noqa
+            return submission_center["name"]
+    return None
 
 
 def _print_metadata_file_info(file: str, env: str,
