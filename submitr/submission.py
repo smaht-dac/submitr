@@ -23,7 +23,7 @@ from dcicutils.file_utils import (
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
     environ_bool, format_duration, format_size,
-    is_uuid, url_path_join, normalize_spaces
+    is_uuid, url_path_join, normalize_spaces, run_concurrently
 )
 from dcicutils.progress_bar import ProgressBar
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
@@ -42,7 +42,7 @@ from submitr.submission_uploads import (
     lookup_ingestion_submission_from_upload_file
 )
 from submitr.utils import chars, format_path, get_health_page, is_excel_file_name, print_boxed, tobool
-from submitr.validators import validators
+from submitr.validators import _validator_submited_id
 
 
 def set_output_file(output_file):
@@ -737,9 +737,21 @@ def submit_any_ingestion(ingestion_filename, *,
         add_submission_center = found_submission_centers[0]["name"]
         PRINT(f"Additional submission center: {add_submission_center}")
 
-    # Gather all submission center names, to be used (currently)
+    # Gather all valid submission center names for this submission; to be used (currently)
     # only to make an smaht-portal API calls to validate submitted_id.
-    known_submission_center_names = [item["name"] for item in known_submission_centers]
+    if _is_admin_user(user_record):
+        # For admin users all submission centers are valid (WRT submitted_id validation).
+        valid_submission_centers = ",".join([item["name"] for item in known_submission_centers])
+    elif submission_centers:
+        # For non-admin users all only the user submission center/s is/are valid (WRT submitted_id validation).
+        valid_submission_centers = []
+        for submission_center in submission_centers:
+            for known_submission_center in known_submission_centers:
+                if f"/submission-centers/{known_submission_center['uuid']}/" == submission_center:
+                    valid_submission_centers.append(known_submission_center["name"])
+        valid_submission_centers = ",".join([submission_center for submission_center in valid_submission_centers])
+    else:
+        valid_submission_centers = ""
 
     if not json_only:
         PRINT(f"Metadata file to {'validate' if validation else 'ingest'}: {format_path(ingestion_filename)}")
@@ -762,7 +774,7 @@ def submit_any_ingestion(ingestion_filename, *,
                                             merge=merge,
                                             exit_immediately_on_errors=exit_immediately_on_errors,
                                             ref_nocache=ref_nocache, output_file=output_file, noprogress=noprogress,
-                                            known_submission_center_names=known_submission_center_names,
+                                            valid_submission_centers=valid_submission_centers,
                                             noanalyze=noanalyze, json_only=json_only, verbose_json=verbose_json,
                                             verbose=verbose, debug=debug, debug_sleep=debug_sleep)
         if validate_local_only:
@@ -1804,7 +1816,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       rclone_google: Optional[RCloneGoogle] = None,
                       exit_immediately_on_errors: bool = False,
                       ref_nocache: bool = False, merge: bool = False, output_file: Optional[str] = None,
-                      known_submission_center_names: List[str] = [],
+                      valid_submission_centers: Optional[str] = None,
                       noanalyze: bool = False, json_only: bool = False, noprogress: bool = False,
                       verbose_json: bool = False, verbose: bool = False, quiet: bool = False,
                       debug: bool = False, debug_sleep: Optional[str] = None) -> StructuredDataSet:
@@ -1886,13 +1898,15 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if debug:
         PRINT("DEBUG: Starting client validation.")
 
-    # Validator hook; initially 2024-08-02 just for submitted_id, but extendable.
-    known_submission_center_name_list = ",".join(known_submission_center_names)
-
-    def validator_hook(sheet_name: str, column_name: str, value: Any) -> Tuple[Any, Optional[str]]:
-        nonlocal known_submission_center_name_list
-        return validators(portal, sheet_name, column_name, value,
-                          known_submission_center_names=known_submission_center_name_list)
+    # Validator hook; initially 2024-08-02 just for submitted_id, but extensible.
+    # Not doing it this way for now, rather, to facilitate performing the smaht-portal queries
+    # for the submitted_id validation in parallel/concurrently, we do them all at once/together
+    # in validate_submitted_ids.
+    # from submitr.validators import validators
+    # def validator_hook(sheet_name: str, column_name: str, value: Any) -> Tuple[Any, Optional[str]]:
+    #     nonlocal valid_submission_centers
+    #     return validators(portal, sheet_name, column_name, value,
+    #                       valid_submission_centers=valid_submission_centers)
 
     structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                         # ref_lookup_strategy=ref_lookup_strategy,
@@ -1908,7 +1922,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                         # given (i.e. e.g. spreasheet) object(s) into any existing ones.
                                         merge=merge,
                                         progress=None if noprogress else define_progress_callback(debug=debug),
-                                        validator_hook=validator_hook,
+                                        # Doing submitted_id validation in validate_submitted_ids, in parallel.
+                                        # validator_hook=validator_hook,
                                         debug_sleep=debug_sleep)
     structured_data.load_file(ingestion_filename)
 
@@ -1938,7 +1953,9 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         PRINT_OUTPUT(f"Parsed JSON:")
         PRINT_OUTPUT(json.dumps(structured_data.data, indent=4))
     validation_okay = _validate_data(structured_data, portal, ingestion_filename,
-                                     upload_folder, recursive=subfolders, verbose=verbose, debug=debug)
+                                     upload_folder, recursive=subfolders,
+                                     valid_submission_centers=valid_submission_centers,
+                                     verbose=verbose, debug=debug)
     if validation_okay:
         PRINT(f"Validation results (preliminary): OK {chars.check}")
     elif exit_immediately_on_errors:
@@ -1977,8 +1994,11 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     return structured_data
 
 
-def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str,
-                   upload_folder: str, recursive: bool, verbose: bool = False, debug: bool = False) -> bool:
+def _validate_data(structured_data: StructuredDataSet, portal: Portal,
+                   ingestion_filename: str,
+                   upload_folder: str, recursive: bool,
+                   valid_submission_centers: Optional[str] = None,
+                   verbose: bool = False, debug: bool = False) -> bool:
     nerrors = 0
 
     if initial_validation_errors := _validate_initial(structured_data, portal):
@@ -1988,6 +2008,9 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
         nerrors += len(ref_validation_errors)
 
     structured_data.validate()
+
+    _validate_submitted_ids(structured_data, portal, valid_submission_centers=valid_submission_centers)
+
     if data_validation_errors := structured_data.validation_errors:
         nerrors += len(data_validation_errors)
 
@@ -2026,6 +2049,34 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
         #         PRINT_OUTPUT(f"  - ERROR: {error['ref']} (refs: {error['count']})")
 
     return not (nerrors > 0)
+
+
+def _validate_submitted_ids(structured_data: StructuredDataSet, portal: Portal, valid_submission_centers: str):
+
+    def validate_submitted_id(submitted_id: str, schema_name: str, row_number: int):
+        nonlocal portal, structured_data, valid_submission_centers
+        _, validation_error = _validator_submited_id(portal=portal,
+                                                     value=submitted_id,
+                                                     valid_submission_centers=valid_submission_centers)
+        if validation_error:
+            structured_data.note_validation_error(validation_error, schema_name, row_number)
+
+    submitted_ids = []
+    for schema_name in structured_data.data:
+        row_number = 0
+        for row in structured_data.data[schema_name]:
+            row_number += 1
+            unique_submitted_ids = []
+            duplicate_submitted_ids = []
+            if submitted_id := row.get("submitted_id"):
+                submitted_ids.append(lambda submitted_id=submitted_id, schema_name=schema_name, row_number=row_number:
+                                     validate_submitted_id(submitted_id, schema_name, row_number))
+                if submitted_id not in unique_submitted_ids:
+                    duplicate_submitted_ids.append(submitted_id)
+                else:
+                    unique_submitted_ids.append(submitted_id)
+    if submitted_ids:
+        run_concurrently(submitted_ids, nthreads=5)
 
 
 def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: str, debug: bool = False) -> List[str]:
