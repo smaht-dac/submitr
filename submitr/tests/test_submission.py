@@ -5,7 +5,6 @@ import os
 import platform
 import pytest
 
-# from . import test_misc  # noqa
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT
 from dcicutils.misc_utils import ignored, ignorable, NamedObject
 from dcicutils.portal_utils import Portal
