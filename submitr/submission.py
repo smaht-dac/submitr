@@ -2059,22 +2059,28 @@ def _validate_submitted_ids(structured_data: StructuredDataSet, portal: Portal, 
                                                      value=submitted_id,
                                                      valid_submission_centers=valid_submission_centers)
         if validation_error:
-            structured_data.note_validation_error(validation_error, schema_name, row_number)
+            structured_data.note_validation_error(validation_error, schema_name, row_number + 1)
 
     submitted_ids = []
     for schema_name in structured_data.data:
         row_number = 0
+        uniques = {}
+        duplicates = []
         for row in structured_data.data[schema_name]:
             row_number += 1
-            unique_submitted_ids = []
-            duplicate_submitted_ids = []
             if submitted_id := row.get("submitted_id"):
                 submitted_ids.append(lambda submitted_id=submitted_id, schema_name=schema_name, row_number=row_number:
                                      validate_submitted_id(submitted_id, schema_name, row_number))
-                if submitted_id not in unique_submitted_ids:
-                    duplicate_submitted_ids.append(submitted_id)
+                if submitted_id in uniques:
+                    duplicates.append({"id": submitted_id, "row": row_number})
                 else:
-                    unique_submitted_ids.append(submitted_id)
+                    uniques[submitted_id] = row_number
+        if duplicates:
+            for duplicate in duplicates:
+                duplicate_submitted_id = duplicate["id"]
+                validation_error = (f"Duplicate submission_id: {duplicate_submitted_id}"
+                                    f" (first seen on row: {uniques[duplicate_submitted_id] + 1})")
+                structured_data.note_validation_error(validation_error, schema_name, row_number + 1)
     if submitted_ids:
         run_concurrently(submitted_ids, nthreads=5)
 
