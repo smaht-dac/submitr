@@ -1,7 +1,6 @@
 from typing import Any, Callable, Optional, Tuple
 from dcicutils.structured_data import StructuredDataSet
 
-
 _VALIDATORS = {}
 _FINISH_VALIDATORS = {}
 

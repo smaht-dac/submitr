@@ -55,10 +55,10 @@ def _validator_finish_submitted_id(structured_data: StructuredDataSet, **kwargs)
             row_number = item.get("row")
             submitted_ids.append(lambda submitted_id=submitted_id, schema_name=schema_name, row_number=row_number:
                                  validate_submitted_id(submitted_id, schema_name, row_number))
-            if submitted_id in uniques:
-                duplicates.append(item)
-            else:
+            if submitted_id not in uniques:
                 uniques[submitted_id] = row_number
+            else:
+                duplicates.append(item)
         if duplicates:
             for duplicate in duplicates:
                 duplicate_submitted_id = duplicate["value"]
