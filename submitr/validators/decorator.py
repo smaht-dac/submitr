@@ -30,20 +30,15 @@ def define_validators_hook(**kwargs) -> Callable:
                    column_name: Optional[str] = None,
                    row_number: Optional[int] = None,
                    value: Any = None) -> Tuple[Any, Optional[str]]:
-        if validator := find_validator(schema_name=schema_name, column_name=column_name):
+
+        if ((validator := _VALIDATORS.get(column_name)) or
+            (validator := _VALIDATORS.get(f"{schema_name}.{column_name}"))):  # noqa
             return validator(structured_data,
                              schema_name=schema_name,
                              column_name=column_name,
                              row_number=row_number,
-                             value=value,
-                             **kwargs)
+                             value=value, **kwargs)
         return value, None
-
-    def find_validator(schema_name: str, column_name: str) -> Optional[Callable]:
-        if ((validator := _VALIDATORS.get(column_name)) or
-            (validator := _VALIDATORS.get(f"{schema_name}.{column_name}"))):  # noqa
-            return validator
-        return None
 
     return validators
 
