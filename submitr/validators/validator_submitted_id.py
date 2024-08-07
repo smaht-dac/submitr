@@ -66,4 +66,4 @@ def _validator_finish_submitted_id(structured_data: StructuredDataSet, **kwargs)
                                     f" (first seen on item: {uniques[duplicate_submitted_id] + 1})")
                 structured_data.note_validation_error(validation_error, schema_name, row_number + 1)
     if submitted_ids:
-        run_concurrently(submitted_ids, nthreads=5)
+        run_concurrently(submitted_ids, nthreads=6)
