@@ -3,6 +3,14 @@ from dcicutils.misc_utils import run_concurrently  # noqa
 from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorator import validator
 
+# Validator for the submitted_id column which is checked for EVERY schema (aka type or sheet)
+# within the submission etadata. We use the smaht-portal /validators/submitted_id/{submitted_id}
+# endpoint/API to do the actual validation. But for better performance we do this in parallel
+# as much as possible. And to do this we need to save up the list of all submitted_id values,
+# within the main _validator_submitted_id function. Then when the _validator_finish_submitted_id
+# function is called at this end of the submission metadata processing, we make the smaht-portal
+# API calls concurrently; this function also checks for duplicates.
+
 _STRUCTURED_DATA_HOOK_PROPERTY = "__validator_submitted_id__"
 
 
@@ -40,21 +48,20 @@ def _validator_finish_submitted_id(structured_data: StructuredDataSet, **kwargs)
 
     submitted_ids = []
     for schema_name in validator_submitted_ids:
-        row_number = 0
         uniques = {}
         duplicates = []
         for item in validator_submitted_ids[schema_name]:
-            row_number += 1
-            if submitted_id := item.get("value"):
-                submitted_ids.append(lambda submitted_id=submitted_id, schema_name=schema_name, row_number=row_number:
-                                     validate_submitted_id(submitted_id, schema_name, row_number))
-                if submitted_id in uniques:
-                    duplicates.append({"id": submitted_id, "item": row_number})
-                else:
-                    uniques[submitted_id] = row_number
+            submitted_id = item.get("value")
+            row_number = item.get("row")
+            submitted_ids.append(lambda submitted_id=submitted_id, schema_name=schema_name, row_number=row_number:
+                                 validate_submitted_id(submitted_id, schema_name, row_number))
+            if submitted_id in uniques:
+                duplicates.append(item)
+            else:
+                uniques[submitted_id] = row_number
         if duplicates:
             for duplicate in duplicates:
-                duplicate_submitted_id = duplicate["id"]
+                duplicate_submitted_id = duplicate["value"]
                 validation_error = (f"Duplicate submission_id: {duplicate_submitted_id}"
                                     f" (first seen on item: {uniques[duplicate_submitted_id] + 1})")
                 structured_data.note_validation_error(validation_error, schema_name, row_number + 1)
