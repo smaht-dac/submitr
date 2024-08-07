@@ -23,7 +23,7 @@ from dcicutils.file_utils import (
 from dcicutils.lang_utils import conjoined_list, disjoined_list, there_are
 from dcicutils.misc_utils import (
     environ_bool, format_duration, format_size,
-    is_uuid, url_path_join, normalize_spaces, run_concurrently
+    is_uuid, url_path_join, normalize_spaces
 )
 from dcicutils.progress_bar import ProgressBar
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
@@ -42,7 +42,7 @@ from submitr.submission_uploads import (
     lookup_ingestion_submission_from_upload_file
 )
 from submitr.utils import chars, format_path, get_health_page, is_excel_file_name, print_boxed, tobool
-from submitr.validators import _validator_submited_id
+from submitr.validators.decorator import define_validators_hook, finish_validators_hook
 
 
 def set_output_file(output_file):
@@ -1898,16 +1898,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if debug:
         PRINT("DEBUG: Starting client validation.")
 
-    # Validator hook; initially 2024-08-02 just for submitted_id, but extensible.
-    # Not doing it this way for now, rather, to facilitate performing the smaht-portal queries
-    # for the submitted_id validation in parallel/concurrently, we do them all at once/together
-    # in validate_submitted_ids.
-    # from submitr.validators import validators
-    # def validator_hook(sheet_name: str, column_name: str, value: Any) -> Tuple[Any, Optional[str]]:
-    #     nonlocal valid_submission_centers
-    #     return validators(portal, sheet_name, column_name, value,
-    #                       valid_submission_centers=valid_submission_centers)
-
+    validator_hook = define_validators_hook(valid_submission_centers=valid_submission_centers)
     structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                         # ref_lookup_strategy=ref_lookup_strategy,
                                         ref_lookup_nocache=ref_nocache,
@@ -1919,13 +1910,15 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                         # i.e. this is really remove empty trailing object from arrays.
                                         remove_empty_objects_from_lists=True,
                                         # If the --merge option is given then merge the
-                                        # given (i.e. e.g. spreasheet) object(s) into any existing ones.
+                                        # given (i.e. e.g. spreadsheet) object(s) into any existing ones.
                                         merge=merge,
                                         progress=None if noprogress else define_progress_callback(debug=debug),
                                         # Doing submitted_id validation in validate_submitted_ids, in parallel.
-                                        # validator_hook=validator_hook,
+                                        validator_hook=validator_hook,
                                         debug_sleep=debug_sleep)
     structured_data.load_file(ingestion_filename)
+    import pdb ; pdb.set_trace()  # noqa
+    finish_validators_hook(structured_data)
 
     if debug:
         PRINT("DEBUG: Finished client validation.")
@@ -2009,8 +2002,6 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal,
 
     structured_data.validate()
 
-    _validate_submitted_ids(structured_data, portal, valid_submission_centers=valid_submission_centers)
-
     if data_validation_errors := structured_data.validation_errors:
         nerrors += len(data_validation_errors)
 
@@ -2049,40 +2040,6 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal,
         #         PRINT_OUTPUT(f"  - ERROR: {error['ref']} (refs: {error['count']})")
 
     return not (nerrors > 0)
-
-
-def _validate_submitted_ids(structured_data: StructuredDataSet, portal: Portal, valid_submission_centers: str):
-
-    def validate_submitted_id(submitted_id: str, schema_name: str, row_number: int):
-        nonlocal portal, structured_data, valid_submission_centers
-        _, validation_error = _validator_submited_id(portal=portal,
-                                                     value=submitted_id,
-                                                     valid_submission_centers=valid_submission_centers)
-        if validation_error:
-            structured_data.note_validation_error(validation_error, schema_name, row_number + 1)
-
-    submitted_ids = []
-    for schema_name in structured_data.data:
-        row_number = 0
-        uniques = {}
-        duplicates = []
-        for row in structured_data.data[schema_name]:
-            row_number += 1
-            if submitted_id := row.get("submitted_id"):
-                submitted_ids.append(lambda submitted_id=submitted_id, schema_name=schema_name, row_number=row_number:
-                                     validate_submitted_id(submitted_id, schema_name, row_number))
-                if submitted_id in uniques:
-                    duplicates.append({"id": submitted_id, "row": row_number})
-                else:
-                    uniques[submitted_id] = row_number
-        if duplicates:
-            for duplicate in duplicates:
-                duplicate_submitted_id = duplicate["id"]
-                validation_error = (f"Duplicate submission_id: {duplicate_submitted_id}"
-                                    f" (first seen on row: {uniques[duplicate_submitted_id] + 1})")
-                structured_data.note_validation_error(validation_error, schema_name, row_number + 1)
-    if submitted_ids:
-        run_concurrently(submitted_ids, nthreads=5)
 
 
 def _validate_references(ref_errors: Optional[List[dict]], ingestion_filename: str, debug: bool = False) -> List[str]:
