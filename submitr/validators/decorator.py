@@ -48,6 +48,6 @@ def define_validators_hook(**kwargs) -> Callable:
     return validators
 
 
-def finish_validators_hook(structured_data: StructuredDataSet) -> None:
+def finish_validators_hook(structured_data: StructuredDataSet, **kwargs) -> None:
     for validator in _FINISH_VALIDATORS:
-        _FINISH_VALIDATORS[validator](structured_data)
+        _FINISH_VALIDATORS[validator](structured_data, **kwargs)

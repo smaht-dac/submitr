@@ -1917,8 +1917,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                         validator_hook=validator_hook,
                                         debug_sleep=debug_sleep)
     structured_data.load_file(ingestion_filename)
-    import pdb ; pdb.set_trace()  # noqa
-    finish_validators_hook(structured_data)
+    finish_validators_hook(structured_data, valid_submission_centers=valid_submission_centers)
 
     if debug:
         PRINT("DEBUG: Finished client validation.")
