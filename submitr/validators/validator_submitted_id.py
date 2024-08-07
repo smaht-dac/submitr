@@ -8,8 +8,8 @@ from submitr.validators.decorator import validator
 # endpoint/API to do the actual validation. But for better performance we do this in parallel
 # as much as possible. And to do this we need to save up the list of all submitted_id values,
 # within the main _validator_submitted_id function. Then when the _validator_finish_submitted_id
-# function is called at this end of the submission metadata processing, we make the smaht-portal
-# API calls concurrently; this function also checks for duplicates.
+# function is called at the end of the submission metadata processing, we make the smaht-portal
+# API calls concurrently (via run_concurrently); this function also checks-for/reports duplicates.
 
 _STRUCTURED_DATA_HOOK_PROPERTY = "__validator_submitted_id__"
 
