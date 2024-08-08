@@ -13,8 +13,11 @@ Change Log
   string representing a floating point number to an integer. Per bug report here:
   https://docs.google.com/document/d/1zj-edWR1ugqhd6ZxC07Rkq6M7I_jqiR-pO598gFg0p8
 * Moved utility scripts view-portal-object and update-portal-object to dcicutils 8.13.3.
-* Extensible validators mechanism (see submitr/validators.py) initially for submitted_id.
-  See submitr/validators directory.
+* Extensible validators mechanism (see submitr/validators.py) initially for submitted_id;
+  uses new smaht-portal /validators/submitted_id/{submitted_id} endpoint/API to flag
+  misformatted submitted_id values; also flags duplicates. See submitr/validators directory.
+* Changed to disallow fuzzy matches (prefixes) for enum types; must be exact match (case-insensitive);
+  actual change in dcicutils.misc_utils.to_enum.
 
 
 1.1.0
