@@ -19,6 +19,9 @@ def _validator_submitted_id(structured_data: StructuredDataSet,
                             schema_name: str, column_name: str, row_number: int,
                             value: Any, **kwargs) -> Tuple[Any, Optional[str]]:
 
+    # Squirrel away the list of all seen submitted_id values within a hidden property
+    # in the StructuredDataSet object. We save these up and process/validate them all
+    # at once in _validator_finish_submitted_id so that we can do themt in parallel.
     if not hasattr(structured_data, _STRUCTURED_DATA_HOOK_PROPERTY):
         setattr(structured_data, _STRUCTURED_DATA_HOOK_PROPERTY, {})
     validator_submitted_ids = getattr(structured_data, _STRUCTURED_DATA_HOOK_PROPERTY)
