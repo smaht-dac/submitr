@@ -8,8 +8,7 @@ import os
 import re
 import sys
 import time
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple
-from typing_extensions import Literal
+from typing import Any, BinaryIO, Callable, Dict, List, Literal, Optional, Tuple
 
 # get_env_real_url would rely on env_utils
 # from dcicutils.env_utils import get_env_real_url
@@ -43,6 +42,7 @@ from submitr.submission_uploads import (
     lookup_ingestion_submission_from_upload_file
 )
 from submitr.utils import chars, format_path, get_health_page, is_excel_file_name, print_boxed, tobool
+from submitr.validators.decorator import define_validators_hook, finish_validators_hook
 
 
 def set_output_file(output_file):
@@ -720,11 +720,11 @@ def submit_any_ingestion(ingestion_filename, *,
             PRINT(f"You must specify onely one submission center using the --submission-center option.")
             sys.exit(1)
 
+    known_submission_centers = _get_submission_centers(portal)
     if add_submission_center:
         if not _is_admin_user(user_record):
             PRINT("ERROR: Cannot use the --add-submission-center if you are not an admin user.")
             sys.exit(1)
-        known_submission_centers = _get_submission_centers(portal)
         found_submission_centers = [submission_center for submission_center in known_submission_centers
                                     if (submission_center.get("name") == add_submission_center) or
                                        (submission_center.get("uuid") == add_submission_center)]
@@ -736,6 +736,22 @@ def submit_any_ingestion(ingestion_filename, *,
         # add_submission_center = f"/submission-centers/{found_submission_centers[0]['uuid']}/"
         add_submission_center = found_submission_centers[0]["name"]
         PRINT(f"Additional submission center: {add_submission_center}")
+
+    # Gather all valid submission center names for this submission; to be used (currently)
+    # only to make an smaht-portal API calls to validate submitted_id.
+    if _is_admin_user(user_record):
+        # For admin users all submission centers are valid (WRT submitted_id validation).
+        valid_submission_centers = ",".join([item["name"] for item in known_submission_centers])
+    elif submission_centers:
+        # For non-admin users all only the user submission center/s is/are valid (WRT submitted_id validation).
+        valid_submission_centers = []
+        for submission_center in submission_centers:
+            for known_submission_center in known_submission_centers:
+                if f"/submission-centers/{known_submission_center['uuid']}/" == submission_center:
+                    valid_submission_centers.append(known_submission_center["name"])
+        valid_submission_centers = ",".join([submission_center for submission_center in valid_submission_centers])
+    else:
+        valid_submission_centers = ""
 
     if not json_only:
         PRINT(f"Metadata file to {'validate' if validation else 'ingest'}: {format_path(ingestion_filename)}")
@@ -758,6 +774,7 @@ def submit_any_ingestion(ingestion_filename, *,
                                             merge=merge,
                                             exit_immediately_on_errors=exit_immediately_on_errors,
                                             ref_nocache=ref_nocache, output_file=output_file, noprogress=noprogress,
+                                            valid_submission_centers=valid_submission_centers,
                                             noanalyze=noanalyze, json_only=json_only, verbose_json=verbose_json,
                                             verbose=verbose, debug=debug, debug_sleep=debug_sleep)
         if validate_local_only:
@@ -1799,6 +1816,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       rclone_google: Optional[RCloneGoogle] = None,
                       exit_immediately_on_errors: bool = False,
                       ref_nocache: bool = False, merge: bool = False, output_file: Optional[str] = None,
+                      valid_submission_centers: Optional[str] = None,
                       noanalyze: bool = False, json_only: bool = False, noprogress: bool = False,
                       verbose_json: bool = False, verbose: bool = False, quiet: bool = False,
                       debug: bool = False, debug_sleep: Optional[str] = None) -> StructuredDataSet:
@@ -1880,6 +1898,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if debug:
         PRINT("DEBUG: Starting client validation.")
 
+    validator_hook = define_validators_hook(valid_submission_centers=valid_submission_centers)
     structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                         # ref_lookup_strategy=ref_lookup_strategy,
                                         ref_lookup_nocache=ref_nocache,
@@ -1891,11 +1910,14 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                         # i.e. this is really remove empty trailing object from arrays.
                                         remove_empty_objects_from_lists=True,
                                         # If the --merge option is given then merge the
-                                        # given (i.e. e.g. spreasheet) object(s) into any existing ones.
+                                        # given (i.e. e.g. spreadsheet) object(s) into any existing ones.
                                         merge=merge,
                                         progress=None if noprogress else define_progress_callback(debug=debug),
+                                        # Doing submitted_id validation in validate_submitted_ids, in parallel.
+                                        validator_hook=validator_hook,
                                         debug_sleep=debug_sleep)
     structured_data.load_file(ingestion_filename)
+    finish_validators_hook(structured_data, valid_submission_centers=valid_submission_centers)
 
     if debug:
         PRINT("DEBUG: Finished client validation.")
@@ -1923,7 +1945,9 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         PRINT_OUTPUT(f"Parsed JSON:")
         PRINT_OUTPUT(json.dumps(structured_data.data, indent=4))
     validation_okay = _validate_data(structured_data, portal, ingestion_filename,
-                                     upload_folder, recursive=subfolders, verbose=verbose, debug=debug)
+                                     upload_folder, recursive=subfolders,
+                                     valid_submission_centers=valid_submission_centers,
+                                     verbose=verbose, debug=debug)
     if validation_okay:
         PRINT(f"Validation results (preliminary): OK {chars.check}")
     elif exit_immediately_on_errors:
@@ -1962,8 +1986,11 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     return structured_data
 
 
-def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion_filename: str,
-                   upload_folder: str, recursive: bool, verbose: bool = False, debug: bool = False) -> bool:
+def _validate_data(structured_data: StructuredDataSet, portal: Portal,
+                   ingestion_filename: str,
+                   upload_folder: str, recursive: bool,
+                   valid_submission_centers: Optional[str] = None,
+                   verbose: bool = False, debug: bool = False) -> bool:
     nerrors = 0
 
     if initial_validation_errors := _validate_initial(structured_data, portal):
@@ -1973,6 +2000,7 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal, ingestion
         nerrors += len(ref_validation_errors)
 
     structured_data.validate()
+
     if data_validation_errors := structured_data.validation_errors:
         nerrors += len(data_validation_errors)
 
@@ -2462,6 +2490,15 @@ def _get_submission_centers(portal: Portal) -> List[str]:
                 (submission_center_uuid := submission_center.get("uuid"))):  # noqa
                 results.append({"name": submission_center_name, "uuid": submission_center_uuid})
     return results
+
+
+def _get_submission_center(portal: Portal, submission_center: str) -> Optional[str]:
+    given_submission_center = os.path.basename(submission_center)  # just in case it is /submission-centers/{uuid}
+    for submission_center in _get_submission_centers(portal):
+        if ((given_submission_center == submission_center["name"]) or
+            (given_submission_center == submission_center["uuid"])):  # noqa
+            return submission_center["name"]
+    return None
 
 
 def _print_metadata_file_info(file: str, env: str,

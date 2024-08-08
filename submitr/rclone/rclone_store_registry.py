@@ -47,7 +47,7 @@ class RCloneStoreRegistry:
     @staticmethod
     def _is_properly_defined_rclone_store_class_derivative(cls) -> bool:
         if (callable(getattr(cls, "from_args")) and
-            hasattr(cls, "proper_name") and isinstance and (value := cls.proper_name, str) and value and
+            hasattr(cls, "proper_name") and isinstance(value := cls.proper_name, str) and value and
             hasattr(cls, "proper_name_title") and isinstance(value := cls.proper_name_title, str) and value and
             hasattr(cls, "proper_name_label") and isinstance(value := cls.proper_name_label, str) and value and
             hasattr(cls, "prefix") and isinstance(value := cls.prefix, str) and

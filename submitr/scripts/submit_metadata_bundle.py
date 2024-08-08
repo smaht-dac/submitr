@@ -126,8 +126,6 @@ ADVANCED OPTIONS:
   Do not print progress of (client-side) parsing/validation output.
 --timeout SECONDS
   Maximum umber of seconds to wait for server validation or submission.
---progress-extra
-  Displasy extra info in progress of (client-side) parsing/validation.
 --debug
   Displays some debugging related output.
 --ping
@@ -196,9 +194,6 @@ def main(simulated_args_for_testing=None):
                         help="Do not cache reference (linkTo) lookups.", default=False)
     parser.add_argument('--noprogress', action="store_true",
                         help="Do not track progress of client-side parsing/validation.", default=False)
-    parser.add_argument('--progress-extra', action="store_true",
-                        help="Include extra info in progress of client-side tracking parsing/validation.",
-                        default=False)
     parser.add_argument('--app',
                         help=f"An application (default {DEFAULT_APP!r}. Only for debugging."
                              f" Normally this should not be given.")

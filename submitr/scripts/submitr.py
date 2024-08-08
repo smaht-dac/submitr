@@ -9,7 +9,6 @@ from submitr.scripts.list_submissions import main as main_list_submissions
 from submitr.scripts.rcloner import main as main_rcloner
 from submitr.scripts.resume_uploads import main as main_resume_uploads
 from submitr.scripts.submit_metadata_bundle import main as main_submit_metadata_bundle
-from submitr.scripts.view_portal_object import main as main_view_portal_object
 from submitr.utils import get_version
 
 # This exists primarily to support pyinstaller method of running smaht-submitr commands.
@@ -43,8 +42,7 @@ supported_commands = {
     "resume-uploads": main_resume_uploads,
     "submit-metadata": main_submit_metadata_bundle,
     "submit-metadata-bundle": main_submit_metadata_bundle,
-    "version": main_version,
-    "view-portal-object": main_view_portal_object
+    "version": main_version
 }
 
 # Older names for backward compatibility.
