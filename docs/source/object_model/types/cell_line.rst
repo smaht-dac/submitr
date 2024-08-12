@@ -14,7 +14,7 @@ CellLine
     <a target="_blank" href="https://data.smaht.org/profiles/CellLine.json" style="color:black"><b><u>CellLine</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/CellLine.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
     
-    Types <b>referencing</b> this type are: <a href='cell_culture.html'><u>CellCulture</u></a>, <a href='cell_culture_mixture.html'><u>CellCultureMixture</u></a>.
+    Types <b>referencing</b> this type are: <a href='cell_culture.html'><u>CellCulture</u></a>, <a href='cell_culture_mixture.html'><u>CellCultureMixture</u></a>, <a href='donor_specific_assembly.html'><u>DonorSpecificAssembly</u></a>.
     Property names in <span style='color:red'><b>red</b></span> are
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;
     those in <span style='color:blue'><b>blue</b></span> are

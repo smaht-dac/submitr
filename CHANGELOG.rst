@@ -18,6 +18,8 @@ Change Log
   misformatted submitted_id values; also flags duplicates. See submitr/validators directory.
 * Changed to disallow fuzzy matches (prefixes) for enum types; must be exact match (case-insensitive);
   actual change in dcicutils.misc_utils.to_enum.
+* Changed to report errors for malformed dates, e.g. "6/29/2024" rather than "2024-06-29";
+  actual change in dcicutils.structured_data.Schema._map_function_date/time.
 
 
 1.1.0

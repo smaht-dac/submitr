@@ -25,6 +25,7 @@ Items suffixed with **(A)** are abstract types which may not be directly created
            │   ├── <a href='types/reference_file.html'>ReferenceFile</a>
            │   └── <a href='types/submitted_file.html'>SubmittedFile</a> <small><b>(A)</b></small>
            │       ├── <a href='types/aligned_reads.html'>AlignedReads</a>
+           │       ├── <a href='types/supplementary_file.html'>SupplementaryFile</a>
            │       ├── <a href='types/unaligned_reads.html'>UnalignedReads</a>
            │       └── <a href='types/variant_calls.html'>VariantCalls</a>
            ├── <a href='types/file_format.html'>FileFormat</a>
@@ -38,12 +39,12 @@ Items suffixed with **(A)** are abstract types which may not be directly created
            ├── <a href='types/ontology_term.html'>OntologyTerm</a>
            ├── <a href='types/preparation.html'>Preparation</a> <small><b>(A)</b></small>
            │   ├── <a href='types/analyte_preparation.html'>AnalytePreparation</a>
-           │   ├── <a href='types/library_preparation.html'>LibraryPreparation</a>
-           │   └── <a href='types/sample_preparation.html'>SamplePreparation</a>
+           │   └── <a href='types/library_preparation.html'>LibraryPreparation</a>
            ├── <a href='types/preparation_kit.html'>PreparationKit</a>
            ├── <a href='types/protocol.html'>Protocol</a>
            ├── <a href='types/quality_metric.html'>QualityMetric</a>
            ├── <a href='types/reference_genome.html'>ReferenceGenome</a>
+           │   └── <a href='types/donor_specific_assembly.html'>DonorSpecificAssembly</a>
            ├── <a href='types/sample.html'>Sample</a> <small><b>(A)</b></small>
            │   ├── <a href='types/cell_culture_sample.html'>CellCultureSample</a>
            │   ├── <a href='types/cell_sample.html'>CellSample</a>
