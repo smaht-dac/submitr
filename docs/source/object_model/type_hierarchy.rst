@@ -43,6 +43,7 @@ Items suffixed with **(A)** are abstract types which may not be directly created
            ├── <a href='types/preparation_kit.html'>PreparationKit</a>
            ├── <a href='types/protocol.html'>Protocol</a>
            ├── <a href='types/quality_metric.html'>QualityMetric</a>
+           │   └── <a href='types/external_quality_metric.html'>ExternalQualityMetric</a>
            ├── <a href='types/reference_genome.html'>ReferenceGenome</a>
            │   └── <a href='types/donor_specific_assembly.html'>DonorSpecificAssembly</a>
            ├── <a href='types/sample.html'>Sample</a> <small><b>(A)</b></small>

@@ -40,6 +40,7 @@ Types
    object_model/types/donor
    object_model/types/donor_specific_assembly
    object_model/types/exposure
+   object_model/types/external_quality_metric
    object_model/types/family_history
    object_model/types/file
    object_model/types/file_format
@@ -80,11 +81,11 @@ Types
 
     <table><tr><td>
     <ul>
-        <li><a href='object_model/types/aligned_reads.html'>AlignedReads</a></li><li><a href='object_model/types/analyte.html'>Analyte</a></li><li><a href='object_model/types/analyte_preparation.html'>AnalytePreparation</a></li><li><a href='object_model/types/assay.html'>Assay</a></li><li><a href='object_model/types/basecalling.html'>Basecalling</a></li><li><a href='object_model/types/cell_culture.html'>CellCulture</a></li><li><a href='object_model/types/cell_culture_mixture.html'>CellCultureMixture</a></li><li><a href='object_model/types/cell_culture_sample.html'>CellCultureSample</a></li><li><a href='object_model/types/cell_line.html'>CellLine</a></li><li><a href='object_model/types/cell_sample.html'>CellSample</a></li><li><a href='object_model/types/consortium.html'>Consortium</a></li><li><a href='object_model/types/death_circumstances.html'>DeathCircumstances</a></li><li><a href='object_model/types/demographic.html'>Demographic</a></li><li><a href='object_model/types/diagnosis.html'>Diagnosis</a></li><li><a href='object_model/types/document.html'>Document</a></li><li><a href='object_model/types/donor.html'>Donor</a></li><li><a href='object_model/types/donor_specific_assembly.html'>DonorSpecificAssembly</a></li>
+        <li><a href='object_model/types/aligned_reads.html'>AlignedReads</a></li><li><a href='object_model/types/analyte.html'>Analyte</a></li><li><a href='object_model/types/analyte_preparation.html'>AnalytePreparation</a></li><li><a href='object_model/types/assay.html'>Assay</a></li><li><a href='object_model/types/basecalling.html'>Basecalling</a></li><li><a href='object_model/types/cell_culture.html'>CellCulture</a></li><li><a href='object_model/types/cell_culture_mixture.html'>CellCultureMixture</a></li><li><a href='object_model/types/cell_culture_sample.html'>CellCultureSample</a></li><li><a href='object_model/types/cell_line.html'>CellLine</a></li><li><a href='object_model/types/cell_sample.html'>CellSample</a></li><li><a href='object_model/types/consortium.html'>Consortium</a></li><li><a href='object_model/types/death_circumstances.html'>DeathCircumstances</a></li><li><a href='object_model/types/demographic.html'>Demographic</a></li><li><a href='object_model/types/diagnosis.html'>Diagnosis</a></li><li><a href='object_model/types/document.html'>Document</a></li><li><a href='object_model/types/donor.html'>Donor</a></li><li><a href='object_model/types/donor_specific_assembly.html'>DonorSpecificAssembly</a></li><li><a href='object_model/types/exposure.html'>Exposure</a></li>
     </ul>
     </td><td style="padding-left:20pt;">
     <ul>
-        <li><a href='object_model/types/exposure.html'>Exposure</a></li><li><a href='object_model/types/family_history.html'>FamilyHistory</a></li><li><a href='object_model/types/file.html'>File</a> <small><b>(A)</b></small></li><li><a href='object_model/types/file_format.html'>FileFormat</a></li><li><a href='object_model/types/file_set.html'>FileSet</a></li><li><a href='object_model/types/filter_set.html'>FilterSet</a></li><li><a href='object_model/types/histology.html'>Histology</a></li><li><a href='object_model/types/image.html'>Image</a></li><li><a href='object_model/types/library.html'>Library</a></li><li><a href='object_model/types/library_preparation.html'>LibraryPreparation</a></li><li><a href='object_model/types/medical_history.html'>MedicalHistory</a></li><li><a href='object_model/types/medical_treatment.html'>MedicalTreatment</a></li><li><a href='object_model/types/ontology_term.html'>OntologyTerm</a></li><li><a href='object_model/types/output_file.html'>OutputFile</a></li><li><a href='object_model/types/preparation.html'>Preparation</a> <small><b>(A)</b></small></li><li><a href='object_model/types/preparation_kit.html'>PreparationKit</a></li><li><a href='object_model/types/protocol.html'>Protocol</a></li><li><a href='object_model/types/quality_metric.html'>QualityMetric</a></li>
+        <li><a href='object_model/types/external_quality_metric.html'>ExternalQualityMetric</a></li><li><a href='object_model/types/family_history.html'>FamilyHistory</a></li><li><a href='object_model/types/file.html'>File</a> <small><b>(A)</b></small></li><li><a href='object_model/types/file_format.html'>FileFormat</a></li><li><a href='object_model/types/file_set.html'>FileSet</a></li><li><a href='object_model/types/filter_set.html'>FilterSet</a></li><li><a href='object_model/types/histology.html'>Histology</a></li><li><a href='object_model/types/image.html'>Image</a></li><li><a href='object_model/types/library.html'>Library</a></li><li><a href='object_model/types/library_preparation.html'>LibraryPreparation</a></li><li><a href='object_model/types/medical_history.html'>MedicalHistory</a></li><li><a href='object_model/types/medical_treatment.html'>MedicalTreatment</a></li><li><a href='object_model/types/ontology_term.html'>OntologyTerm</a></li><li><a href='object_model/types/output_file.html'>OutputFile</a></li><li><a href='object_model/types/preparation.html'>Preparation</a> <small><b>(A)</b></small></li><li><a href='object_model/types/preparation_kit.html'>PreparationKit</a></li><li><a href='object_model/types/protocol.html'>Protocol</a></li><li><a href='object_model/types/quality_metric.html'>QualityMetric</a></li>
     </ul>
     </td><td style="padding-left:24pt;">
     <ul>
@@ -151,7 +152,7 @@ See Also
 
 .. raw:: html
 
-    <span style="color:#aaaaaa;">[ <small>Generated: 2024-08-12 11:20 AM EDT | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> 0.78.5</small> ]</span><p />
+    <span style="color:#aaaaaa;">[ <small>Generated: 2024-08-15 10:40 PM EDT | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> 0.82.0</small> ]</span><p />
     <p />
 
 

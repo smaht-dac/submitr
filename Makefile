@@ -40,7 +40,7 @@ doc-view: doc
 
 doc-gen docgen gendoc:
 	# python docs/scripts/gendoc.py --env smaht-local
-	python docs/scripts/gendoc.py --env data
+	python docs/scripts/gendoc.py --env smaht-data
 	make doc
 
 publish:
