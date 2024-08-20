@@ -358,7 +358,7 @@ def main(simulated_args_for_testing=None):
                              show_details=args.details,
                              post_only=args.post_only,
                              patch_only=args.patch_only,
-                            # The --submit option (aka --submit-new) allows items to
+                             # The --submit option (aka --submit-new) allows items to
                              # be created but not updated (at least not updates with diffs)
                              submit=args.submit_new,
                              # The --update option allow items to be created or updated.
