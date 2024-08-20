@@ -1818,7 +1818,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       ref_nocache: bool = False, merge: bool = False, output_file: Optional[str] = None,
                       valid_submission_centers: Optional[str] = None,
                       noanalyze: bool = False, json_only: bool = False, noprogress: bool = False,
-                      verbose_json: bool = False, verbose: bool = False,
+                      verbose_json: bool = False, verbose: bool = False, quiet: bool = False,
                       debug: bool = False, debug_sleep: Optional[str] = None) -> StructuredDataSet:
 
     if json_only:
@@ -1969,12 +1969,12 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                        upload_folder=upload_folder, recursive=subfolders,
                                        rclone_google=rclone_google,
                                        validation=validation, verbose=verbose)
-    elif not noanalyze:
-        _print_structured_data_status(portal, structured_data, validation=validation,
-                                      report_updates_only=True, noprogress=noprogress, verbose=verbose, debug=debug)
-    else:
-        PRINT("Skipping analysis of metadata wrt creates/updates to be done (per --noanalyze).")
-
+    elif not quiet:
+        if not noanalyze:
+            _print_structured_data_status(portal, structured_data, validation=validation,
+                                          report_updates_only=True, noprogress=noprogress, verbose=verbose, debug=debug)
+        else:
+            PRINT("Skipping analysis of metadata wrt creates/updates to be done (per --noanalyze).")
     if not validation_okay:
         if not yes_or_no(f"There are some preliminary errors outlined above;"
                          f" do you want to continue with {'validation' if validation else 'submission'}?"):
@@ -2261,7 +2261,6 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
         message = f"Objects {to_or_which_would} be updated: {nupdates}"
         if nsubstantive_updates == 0:
             message += " (no substantive differences)"
-
     else:
         message = "No objects {to_or_which_would} create or update."
         return
