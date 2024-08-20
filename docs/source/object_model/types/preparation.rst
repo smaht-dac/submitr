@@ -13,7 +13,7 @@ Preparation
     <a target="_blank" href="https://data.smaht.org/search/?type=Preparation&format=json" style="color:black">object</a> <a target="_blank" href="https://data.smaht.org/profiles/Preparation.json?format=json" style="color:black">type</a>
     <a target="_blank" href="https://data.smaht.org/profiles/Preparation.json" style="color:black"><b><u>Preparation</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/Preparation.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
-    Its <b><a href='../type_hierarchy.html' style='color:black;'>derived</a></b> types are: <a href='analyte_preparation.html'><u>AnalytePreparation</u></a>, <a href='library_preparation.html'><u>LibraryPreparation</u></a>, <a href='sample_preparation.html'><u>SamplePreparation</u></a>.
+    Its <b><a href='../type_hierarchy.html' style='color:black;'>derived</a></b> types are: <a href='analyte_preparation.html'><u>AnalytePreparation</u></a>, <a href='library_preparation.html'><u>LibraryPreparation</u></a>.
     
     Property names in <span style='color:red'><b>red</b></span> are
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;

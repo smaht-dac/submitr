@@ -44,8 +44,8 @@ def teardown_module():
 @pytest.mark.parametrize("amazon_source_credentials_type", Amazon.CredentialTypes)
 @pytest.mark.parametrize("amazon_source_kms", [False, True])
 def test_amazon_to_local(amazon_source_credentials_type, amazon_source_kms) -> None:
-    with (Amazon.temporary_cloud_file(kms=amazon_source_kms) as amazon_source_path,
-          temporary_directory() as destination_directory):
+    with Amazon.temporary_cloud_file(kms=amazon_source_kms) as amazon_source_path, \
+            temporary_directory() as destination_directory:
         # Here we have a temporary Amazon cloud file for testing rclone copy to local.
         amazon_source_credentials = Amazon.credentials(credentials_type=amazon_source_credentials_type,
                                                        kms=amazon_source_kms, path=amazon_source_path)

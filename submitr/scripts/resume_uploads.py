@@ -29,9 +29,6 @@ OPTIONS:
 --KEYS-FILE
   To specify an alternate credentials/keys
   file to the default ~/.smaht-keys.json file.
---validate
-  To validate metadata before submitting.
-  This is the DEFAULT behavior for most (non-admin) users.
 --bundle METADATA-FILE
   To specifiy the path to your metatdata file;
   only the directory of this is used to locate your upload files.

@@ -14,7 +14,7 @@ PreparationKit
     <a target="_blank" href="https://data.smaht.org/profiles/PreparationKit.json" style="color:black"><b><u>PreparationKit</u></b></a><a target="_blank" href="https://data.smaht.org/profiles/PreparationKit.json"><span class="fa fa-external-link" style="position:relative;top:1pt;left:4pt;color:black;" /></a> .
     
     
-    Types <b>referencing</b> this type are: <a href='analyte_preparation.html'><u>AnalytePreparation</u></a>, <a href='library_preparation.html'><u>LibraryPreparation</u></a>, <a href='preparation.html'><u>Preparation</u></a>, <a href='sample_preparation.html'><u>SamplePreparation</u></a>.
+    Types <b>referencing</b> this type are: <a href='analyte_preparation.html'><u>AnalytePreparation</u></a>, <a href='library_preparation.html'><u>LibraryPreparation</u></a>, <a href='preparation.html'><u>Preparation</u></a>, <a href='sequencing.html'><u>Sequencing</u></a>.
     Property names in <span style='color:red'><b>red</b></span> are
     <a href="#required-properties" style="color:#222222"><i><b><u>required</u></b></i></a> properties;
     those in <span style='color:blue'><b>blue</b></span> are
