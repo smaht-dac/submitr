@@ -164,10 +164,8 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--patch-only', action="store_true",
                         help="Only perform updates (PATCH) for submitted data.", default=False)
     parser.add_argument('--keys', help="Path to keys file (rather than default ~/.smaht-keys.json).", default=None)
-    parser.add_argument('--submit-new', '--submit', action="store_true",
-                        help="Actually submit new metadata for ingestion; may NOT contain updtes.", default=False)
-    parser.add_argument('--submit-update', '--update', action="store_true",
-                        help="Actually submit the metadata for ingestion; may contain updates.", default=False)
+    parser.add_argument('--submit', action="store_true",
+                        help="Actually submit new metadata for ingestion.", default=False)
     parser.add_argument('--validate', action="store_true",
                         help="Perform both client-side and server-side validation first.", default=False)
     parser.add_argument('--validate-local-only', action="store_true",
@@ -358,11 +356,7 @@ def main(simulated_args_for_testing=None):
                              show_details=args.details,
                              post_only=args.post_only,
                              patch_only=args.patch_only,
-                             # The --submit option (aka --submit-new) allows items to
-                             # be created but not updated (at least not updates with diffs)
-                             submit=args.submit_new,
-                             # The --update option allow items to be created or updated.
-                             submit_update=args.submit_update,
+                             submit=args.submit,
                              rclone_google=cloud_store,
                              validate_local_only=args.validate_local_only,
                              validate_remote_only=args.validate_remote_only,
@@ -410,22 +404,18 @@ def _setup_validate_related_options(args: argparse.Namespace):
     if args.info:
         return
 
-    if args.submit_new and args.submit_update:
-        PRINT(f"May not specify both --submit-new AND --update options.")
-        sys.exit(1)
-
-    if args.submit_new or args.submit_update:
+    if args.submit:
         if args.validate or args.validate_local_only or args.validate_remote_only:
-            PRINT(f"May not specify both --submit-new AND validate options.")
+            PRINT(f"May not specify both --submit AND validate options.")
             sys.exit(1)
         if args.json_only:
-            PRINT(f"May not specify both --submit-new AND --json-only options.")
+            PRINT(f"May not specify both --submit AND --json-only options.")
             sys.exit(1)
 
-    if not (args.submit_new or args.submit_update):
+    if not args.submit:
         if not (args.validate or args.validate_local_only or args.validate_remote_only):
             if not args.json_only and not _pytesting():
-                PRINT(f"Must specify either --validate or --submit-new options. Use --help for all options.")
+                PRINT(f"Must specify either --validate or --submit options. Use --help for all options.")
                 sys.exit(1)
         elif args.json_only:
             PRINT(f"May not specify both --json-only and validate options.")
@@ -448,8 +438,8 @@ def _setup_validate_related_options(args: argparse.Namespace):
         sys.exit(1)
 
     if args.json_only:
-        if args.submit_new or args.submit_update:
-            PRINT("The --json-only option is not allowed with --submit-new or --update.")
+        if args.submit:
+            PRINT("The --json-only option is not allowed with --submit.")
             sys.exit(1)
         if args.validate_remote_only or args.validate_local_skip:
             PRINT("The --json-only option is not allowed with these validate options.")

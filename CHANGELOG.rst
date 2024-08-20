@@ -21,11 +21,6 @@ Change Log
   actual change in dcicutils.misc_utils.to_enum.
 * Changed to report errors for malformed dates, e.g. "6/29/2024" rather than "2024-06-29";
   actual change in dcicutils.structured_data.Schema._map_function_date/time.
-* Changed MEANING of (and added --submit-new synonym for) the --submit option, which now
-  means that IF any submitted metadata items would result in actual UPDATES of items which
-  already EXIST in the database, then an ERROR/message will be given and nothing will be done.
-  - Added new a --update (and submit-update synonym for) option which
-    means that items which already EXIST in the database MAY be updated.
 
 
 1.1.0
