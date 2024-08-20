@@ -9,9 +9,10 @@ Change Log
 
 1.1.1
 =====
-* Change to dcicutils (8.13.3.1b11) structured_data.py to NOT silently convert a
-  string representing a floating point number to an integer. Per bug report here:
+* Mostly changes related to additional fixes/enhancements from this doc:
   https://docs.google.com/document/d/1zj-edWR1ugqhd6ZxC07Rkq6M7I_jqiR-pO598gFg0p8
+* Fixed bug (to dcicutils 8.13.3.1b11) structured_data.py to NOT silently convert
+  a string representing a floating point number to an integer.
 * Moved utility scripts view-portal-object and update-portal-object to dcicutils 8.13.3.
 * Extensible validators mechanism (see submitr/validators.py) initially for submitted_id;
   uses new smaht-portal /validators/submitted_id/{submitted_id} endpoint/API to flag
