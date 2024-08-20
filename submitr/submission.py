@@ -607,7 +607,11 @@ def submit_any_ingestion(ingestion_filename, *,
                          no_query=False,
                          subfolders=False,
                          submission_protocol=DEFAULT_SUBMISSION_PROTOCOL,
+                         # The --submit option (aka --submit-new) allows items to
+                         # be created but not updated (at least not updates with diffs)
                          submit=False,
+                         # The --update option allow items to be created or updated.
+                         submit_update=False,
                          rclone_google=None,
                          validate_local_only=False,
                          validate_remote_only=False,
@@ -661,7 +665,7 @@ def submit_any_ingestion(ingestion_filename, *,
         app_default = False
         PRINT(f"App name is: {app}")
     """
-    validation = not submit
+    validation = not (submit or submit_update)
 
     # Setup for output to specified output file, in addition to stdout),
     # except in this case we will not output large amounts of output to stdout.
@@ -695,7 +699,8 @@ def submit_any_ingestion(ingestion_filename, *,
         PRINT("WARNING: Skipping local (client) validation is not recommended.")
 
     if debug:
-        PRINT(f"DEBUG: submit = {submit}")
+        PRINT(f"DEBUG: submit_new = {submit}")
+        PRINT(f"DEBUG: submit_update = {submit_update}")
         PRINT(f"DEBUG: validation = {validation}")
         PRINT(f"DEBUG: validate_local_only = {validate_local_only}")
         PRINT(f"DEBUG: validate_remote_only = {validate_remote_only}")
@@ -769,6 +774,7 @@ def submit_any_ingestion(ingestion_filename, *,
         structured_data = _validate_locally(ingestion_filename, portal,
                                             validation=validation,
                                             validate_local_only=validate_local_only,
+                                            submit_update=submit_update,
                                             autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
                                             rclone_google=rclone_google,
                                             merge=merge,
@@ -1811,14 +1817,14 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
 
 
 def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional[dict] = None,
-                      validation: bool = False, validate_local_only: bool = False,
+                      validation: bool = False, validate_local_only: bool = False, submit_update: bool = False,
                       upload_folder: Optional[str] = None, subfolders: bool = False,
                       rclone_google: Optional[RCloneGoogle] = None,
                       exit_immediately_on_errors: bool = False,
                       ref_nocache: bool = False, merge: bool = False, output_file: Optional[str] = None,
                       valid_submission_centers: Optional[str] = None,
                       noanalyze: bool = False, json_only: bool = False, noprogress: bool = False,
-                      verbose_json: bool = False, verbose: bool = False, quiet: bool = False,
+                      verbose_json: bool = False, verbose: bool = False,
                       debug: bool = False, debug_sleep: Optional[str] = None) -> StructuredDataSet:
 
     if json_only:
@@ -1968,13 +1974,13 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         _print_structured_data_verbose(portal, structured_data, ingestion_filename,
                                        upload_folder=upload_folder, recursive=subfolders,
                                        rclone_google=rclone_google,
-                                       validation=validation, verbose=verbose)
-    elif not quiet:
-        if not noanalyze:
-            _print_structured_data_status(portal, structured_data, validation=validation,
-                                          report_updates_only=True, noprogress=noprogress, verbose=verbose, debug=debug)
-        else:
-            PRINT("Skipping analysis of metadata wrt creates/updates to be done (per --noanalyze).")
+                                       validation=validation, submit_update=submit_update, verbose=verbose)
+    elif not noanalyze:
+        _print_structured_data_status(portal, structured_data, validation=validation, submit_update=submit_update,
+                                      report_updates_only=True, noprogress=noprogress, verbose=verbose, debug=debug)
+    else:
+        PRINT("Skipping analysis of metadata wrt creates/updates to be done (per --noanalyze).")
+
     if not validation_okay:
         if not yes_or_no(f"There are some preliminary errors outlined above;"
                          f" do you want to continue with {'validation' if validation else 'submission'}?"):
@@ -2148,7 +2154,7 @@ def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> Lis
 def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDataSet, ingestion_filename: str,
                                    upload_folder: str, recursive: bool,
                                    rclone_google: Optional[RCloneGoogle] = None,
-                                   validation: bool = False,
+                                   validation: bool = False, submit_update: bool = False,
                                    noanalyze: bool = False, noprogress: bool = False, verbose: bool = False) -> None:
     if (reader_warnings := structured_data.reader_warnings):
         PRINT_OUTPUT(f"\n> Parser warnings:")
@@ -2174,14 +2180,14 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
         PRINT_OUTPUT()
     if not noanalyze:
         _print_structured_data_status(portal, structured_data,
-                                      validation=validation,
+                                      validation=validation, submit_update=submit_update,
                                       report_updates_only=True, noprogress=noprogress, verbose=verbose)
     else:
         PRINT("Skipping analysis of metadata wrt creates/updates to be done (per --noanalyze).")
 
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet,
-                                  validation: bool = False,
+                                  validation: bool = False, submit_update: bool = False,
                                   report_updates_only: bool = False,
                                   noprogress: bool = False, verbose: bool = False, debug: bool = False) -> None:
 
@@ -2250,6 +2256,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
 
     to_or_which_would = "which would" if validation else "to"
 
+    do_not_continue_because_updates_and_not_submit_update = False
     if ncreates > 0:
         if nupdates > 0:
             message = f"Objects {to_or_which_would} be -> Created: {ncreates} | Updated: {nupdates}"
@@ -2261,6 +2268,9 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
         message = f"Objects {to_or_which_would} be updated: {nupdates}"
         if nsubstantive_updates == 0:
             message += " (no substantive differences)"
+        elif (not validation) and (not submit_update):
+            do_not_continue_because_updates_and_not_submit_update = True
+
     else:
         message = "No objects {to_or_which_would} create or update."
         return
@@ -2311,6 +2321,12 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                             PRINT(f"     DELETE {diff_path}: {diff.value}")
     if nreported:
         PRINT()
+    if do_not_continue_because_updates_and_not_submit_update:
+        PRINT(f"{chars.rarrow} This submission would result in UPDATES to existing data.")
+        PRINT(f"{chars.rarrow} But you have NOT specified the --submit-update option.")
+        PRINT(f"{chars.rarrow} This submission will NOT continue. Exiting with no action.")
+        PRINT()
+        exit(0)
 
 
 def _print_json_with_prefix(data, prefix):

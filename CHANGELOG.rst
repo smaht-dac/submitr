@@ -7,6 +7,15 @@ Change Log
 ----------
 
 
+1.2.0
+=====
+* Changed MEANING of (and added --submit-new synonym for) the --submit option, which now
+  means that IF any submitted metadata items would result in actual UPDATES of items which
+  already EXIST in the database, then an ERROR/message will be given and nothing will be done.
+  - Added new a --update (and submit-update synonym for) option which
+    means that items which already EXIST in the database MAY be updated.
+
+
 1.1.1
 =====
 * Mostly changes related to additional fixes/enhancements from this doc:
