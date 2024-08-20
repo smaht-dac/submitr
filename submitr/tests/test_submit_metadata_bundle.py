@@ -48,6 +48,7 @@ def test_submit_metadata_bundle_script(keyfile):
                             "post_only": False,
                             "patch_only": False,
                             "submit": False,
+                            "submit_update": False,
                             "rclone_google": None,
                             "validate_local_only": False,
                             "validate_remote_only": False,
