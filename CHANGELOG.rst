@@ -14,6 +14,11 @@ Change Log
   already EXIST in the database, then an ERROR/message will be given and nothing will be done.
   - Added new a --update (and submit-update synonym for) option which
     means that items which already EXIST in the database MAY be updated.
+* Fix submission_uploads.py to not bomb out of the file upload process
+  if we cannot get upload_credentials; this can happen if the file being uploaded already
+  has as status of uploaded (or anything except uploading or in-review); so in this case,
+  where the file status is uploaded, we will detect it, give a warning that this file is
+  being skipped for upload because it has already been uploaded, and continue on.
 
 
 1.1.1

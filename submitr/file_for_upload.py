@@ -11,6 +11,12 @@ from submitr.output import PRINT
 from submitr.rclone import RCloneAmazon, RCloneStore
 from submitr.utils import chars
 
+# See smaht-portal/.../schemas/file.json for these values; and see the definition and
+# usage of SHOW_UPLOAD_CREDENTIALS_STATUSES in encoded-core/.../types/file.py for logic
+# preventing upload credentials from being generated for anything but these statuss.
+_FILE_STATUSES_REQUIRED_FOR_UPLOAD = ["uploading", "to be uploaded by workflow", "upload failed"]
+
+
 # Unified the logic for looking for files to upload (to AWS S3), and storing
 # related info; whether or not the file is coming from the local file system
 # or from Cloud Storage (GCS or AWS S3), via rclone.
@@ -103,6 +109,7 @@ class FileForUpload:
         self._cloud_inaccessible = False
         self._favor_local = None
         self._ignore = False
+        self._status = None
 
     @property
     def name(self) -> str:
@@ -276,6 +283,19 @@ class FileForUpload:
             return f"{RCloneAmazon.prefix}{file_upload_bucket}/{self.uuid}/{accession_file_name}"
         return None
 
+    def get_status(self, portal: Portal, printf: Optional[Callable] = None) -> Optional[str]:
+        if self._status is None:
+            try:
+                self._status = portal.get_metadata(self.uuid).get("status", "")
+            except Exception:
+                if callable(printf):
+                    printf("ERROR: Cannot get status for file: {file.name} ({file.uuid})")
+                return None
+        return self._status
+
+    def should_upload(self, portal: Portal, printf: Optional[Callable] = None) -> bool:
+        return self.get_status(portal, printf=printf) in _FILE_STATUSES_REQUIRED_FOR_UPLOAD
+
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,
                last_in_list: bool = False, verbose: bool = False, printf: Optional[Callable] = None) -> bool:
         """
@@ -297,6 +317,12 @@ class FileForUpload:
                 file_identifier += f" ({self.uuid})"
         elif self.accession:
             file_identifier += f" ({self.accession})"
+
+        if (file_status := self.get_status(portal, printf=printf)) not in _FILE_STATUSES_REQUIRED_FOR_UPLOAD:
+            printf(f"{chars.xmark} WARNING: Ignoring file for upload: {file_identifier}")
+            printf(f"  Because the status of this file is: {file_status}"
+                   f" (must be one of: {", ".join(_FILE_STATUSES_REQUIRED_FOR_UPLOAD)})")
+            return False
 
         # TODO: Might make more sense to do this in assemble.
         destination = self.get_destination(portal)
@@ -387,7 +413,8 @@ class FileForUpload:
             f"size_local={self.size_local}|"
             f"found_cloud={self.found_cloud}|"
             f"path_cloud={self.path_cloud}|"
-            f"size_cloud={self.size_cloud}")
+            f"size_cloud={self.size_cloud}|"
+            f"status={self._status}")
 
 
 class FilesForUpload:

@@ -232,6 +232,10 @@ def upload_file(file: FileForUpload, portal: Portal) -> None:
     if not isinstance(file, FileForUpload) or not isinstance(portal, Portal):
         return
 
+    if not file.should_upload(portal):
+        # A message about skipping this should already have been emitted via FilesForUpload.review.
+        return
+
     aws_s3_uri, aws_credentials, aws_kms_key_id = generate_credentials_for_upload(file.name, file.uuid, portal)
 
     upload_file_to_aws_s3(file=file,
