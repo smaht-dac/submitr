@@ -321,7 +321,7 @@ class FileForUpload:
         if (file_status := self.get_status(portal, printf=printf)) not in _FILE_STATUSES_REQUIRED_FOR_UPLOAD:
             printf(f"{chars.xmark} WARNING: Ignoring file for upload: {file_identifier}")
             printf(f"  Because the status of this file is: {file_status}"
-                   f" (must be one of: {", ".join(_FILE_STATUSES_REQUIRED_FOR_UPLOAD)})")
+                   f" (must be one of: {', '.join(_FILE_STATUSES_REQUIRED_FOR_UPLOAD)})")
             return False
 
         # TODO: Might make more sense to do this in assemble.
@@ -330,7 +330,7 @@ class FileForUpload:
             found_both_local_and_cloud = False
             if self.found_cloud:
                 found_both_local_and_cloud = True
-                printf("- File for upload found BOTH locally"
+                printf(f"- File for upload found BOTH locally"
                        f" AND in {self.cloud_store.proper_name_title}"
                        f" ({self.cloud_store.proper_name}): {file_identifier}")
                 printf(f"  - {self.cloud_store.proper_name} cloud storage: {self.display_path_cloud}"
