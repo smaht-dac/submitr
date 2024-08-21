@@ -330,7 +330,7 @@ class FileForUpload:
             found_both_local_and_cloud = False
             if self.found_cloud:
                 found_both_local_and_cloud = True
-                printf(f"- File for upload found BOTH locally"
+                printf("- File for upload found BOTH locally"
                        f" AND in {self.cloud_store.proper_name_title}"
                        f" ({self.cloud_store.proper_name}): {file_identifier}")
                 printf(f"  - {self.cloud_store.proper_name} cloud storage: {self.display_path_cloud}"
