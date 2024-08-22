@@ -3,15 +3,15 @@ from dcicutils.structured_data import StructuredDataSet
 
 # Decorator for per-column per-schema/type/sheet validators. Usage like this:
 #
-#   @validator("submitted_id")
+#   @structured_data_validator_hook("submitted_id")
 #   def validator_some_name(structured_data: StructuredDataSet,
 #                           schema_name: str, column_name: str, row_number: int,
 #                           value: Any, **kwargs) -> Tuple[Any, Optional[str]]:
 #
-#   @validator("submitted_id", finish=True)
+#   @structured_data_validator_hook("submitted_id", finish=True)
 #   def validator_finish_some_name(structured_data: StructuredDataSet, *kwargs) -> None:
 #
-# The @validator argument may be either a column name, e.g. submitted_id, in which case the
+# The @structured_data_validator_hook argument may be either a column name, e.g. submitted_id, in which case the
 # validator will be called for each value of the named column for all schemas; or a schema
 # name (aka type or sheet name) followed by dot and a column name, e.g. Analyte.submitted_id,
 # in which case the validator will be called for each value of the named column within the
@@ -32,7 +32,7 @@ _VALIDATORS = {}
 _FINISH_VALIDATORS = {}
 
 
-def validator(*decorator_args, **decorator_kwargs) -> Callable:
+def structured_data_validator_hook(*decorator_args, **decorator_kwargs) -> Callable:
     def validator_decorator(wrapped_function: Callable) -> Callable:
         nonlocal decorator_args, decorator_kwargs
         if len(decorator_args) != 1:
@@ -42,14 +42,10 @@ def validator(*decorator_args, **decorator_kwargs) -> Callable:
             _FINISH_VALIDATORS[decorator_args[0]] = wrapped_function
         else:
             _VALIDATORS[decorator_args[0]] = wrapped_function
-        def function_wrapper(*args, **kwargs) -> Any:  # noqa
-            nonlocal wrapped_function
-            return wrapped_function(*args, **kwargs)
-        return function_wrapper
     return validator_decorator
 
 
-def define_validators_hook(**kwargs) -> Callable:
+def define_structured_data_validator_hook(**kwargs) -> Callable:
 
     def validators(structured_data: StructuredDataSet,
                    schema_name: Optional[str] = None,
@@ -66,9 +62,10 @@ def define_validators_hook(**kwargs) -> Callable:
                              value=value, **kwargs)
         return value, None
 
+    def finish_validators(structured_data: StructuredDataSet) -> None:
+        nonlocal kwargs
+        for validator in _FINISH_VALIDATORS:
+            _FINISH_VALIDATORS[validator](structured_data, **kwargs)
+
+    setattr(validators, "finish", finish_validators)
     return validators
-
-
-def finish_validators_hook(structured_data: StructuredDataSet, **kwargs) -> None:
-    for validator in _FINISH_VALIDATORS:
-        _FINISH_VALIDATORS[validator](structured_data, **kwargs)
