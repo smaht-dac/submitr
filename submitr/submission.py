@@ -31,7 +31,7 @@ from dcicutils.structured_data import Portal, StructuredDataSet
 from dcicutils.submitr.progress_constants import PROGRESS_INGESTER, PROGRESS_LOADXL, PROGRESS_PARSE
 from submitr.base import DEFAULT_APP
 from submitr.exceptions import PortalPermissionError
-from submitr.file_for_upload import FilesForUpload
+from submitr.file_for_upload import FilesForUpload, get_file_upload_bucket
 from submitr.metadata_template import check_metadata_version, print_metadata_version_warning
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 from submitr.rclone import RCloneGoogle
@@ -1713,7 +1713,7 @@ def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
         f"File Type: {file_type}" if file_type else None,
         f"File Format: {file_format}" if file_format else None,
         f"File Accession: {file_accession}" if file_accession else None,
-        f"S3 Bucket: {portal.get_health().json().get('file_upload_bucket')}" if file_title else None,
+        f"S3 Bucket: {get_file_upload_bucket(portal)}",
         f"S3 Key: {file_uuid}/{file_title}" if file_title else None,
         f"===",
         f"Status: {file_status.title()}" if file_status else None,

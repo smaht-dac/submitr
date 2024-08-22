@@ -232,7 +232,12 @@ def upload_file(file: FileForUpload, portal: Portal) -> None:
     if not isinstance(file, FileForUpload) or not isinstance(portal, Portal):
         return
 
+    # Check if the file may be uploaded, i.e. if its status is one of: "uploading",
+    # "to be uploaded by workflow", "upload failed". But if it is "uploading" also
+    # check that the file does not actually exist in S3, as it could be there but
+    # still marked as "uploading" if its md5 checksum is still being computed (by TODO).
     if not file.should_upload(portal):
+        print('xyzzy/todo')
         # A message about skipping this should already have been emitted via FilesForUpload.review.
         return
 

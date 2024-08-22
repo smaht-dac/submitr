@@ -14,7 +14,8 @@ from submitr.utils import chars
 # See smaht-portal/.../schemas/file.json for these values; and see the definition and
 # usage of SHOW_UPLOAD_CREDENTIALS_STATUSES in encoded-core/.../types/file.py for logic
 # preventing upload credentials from being generated for anything but these statuss.
-_FILE_STATUSES_REQUIRED_FOR_UPLOAD = ["uploading", "to be uploaded by workflow", "upload failed"]
+_FILE_STATUS_UPLOADING = "uploading"
+_FILE_STATUSES_REQUIRED_FOR_UPLOAD = [_FILE_STATUS_UPLOADING, "to be uploaded by workflow", "upload failed"]
 
 
 # Unified the logic for looking for files to upload (to AWS S3), and storing
@@ -294,7 +295,27 @@ class FileForUpload:
         return self._status
 
     def should_upload(self, portal: Portal, printf: Optional[Callable] = None) -> bool:
-        return self.get_status(portal, printf=printf) in _FILE_STATUSES_REQUIRED_FOR_UPLOAD
+        file_status = self.get_status(portal, printf=printf)
+        if file_status not in _FILE_STATUSES_REQUIRED_FOR_UPLOAD:
+            # Here, the file status is not "uploading"; or one of the others
+            # in _FILE_STATUSES_REQUIRED_FOR_UPLOAD; so it should not uploaded.
+            return False
+        if file_status == _FILE_STATUS_UPLOADING:
+            try:
+                file_name = portal.get(f"/{self.uuid}").json().get("display_title")
+                upload_file_exists_query = f"/upload_file_exists/{self.uuid}/{file_name}"
+                # TODO: Implment portal.head method.
+                # if portal.get(upload_file_exists_query).status_code == 200:
+                import requests
+                if requests.head(f"{portal.url(upload_file_exists_query)}").status_code == 200:
+                    # Here, though the file status is "uploading" (which generally means we
+                    # should be able to upload), it already exists in S3, which means that it
+                    # has actually been uploaded, but the md5 checksum computation process has
+                    # not yet finished; so in this case we will not allow it to be uploaded again.
+                    return False
+            except Exception:
+                pass
+        return True
 
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,
                last_in_list: bool = False, verbose: bool = False, printf: Optional[Callable] = None) -> bool:
@@ -318,9 +339,16 @@ class FileForUpload:
         elif self.accession:
             file_identifier += f" ({self.accession})"
 
-        if (file_status := self.get_status(portal, printf=printf)) not in _FILE_STATUSES_REQUIRED_FOR_UPLOAD:
+#       if (file_status := self.get_status(portal, printf=printf)) not in _FILE_STATUSES_REQUIRED_FOR_UPLOAD:
+#           printf(f"{chars.xmark} WARNING: Ignoring file for upload: {file_identifier}")
+#           printf(f"  Because the status of this file is: {file_status}"
+#                  f" (must be one of: {', '.join(_FILE_STATUSES_REQUIRED_FOR_UPLOAD)})")
+#           return False
+
+        if not self.should_upload(portal, printf=printf):
+            # TODO: Refine this to include case of status uploading but actually exists in S3.
             printf(f"{chars.xmark} WARNING: Ignoring file for upload: {file_identifier}")
-            printf(f"  Because the status of this file is: {file_status}"
+            printf(f"  Because the status of this file is: {self.get_status(portal)}"
                    f" (must be one of: {', '.join(_FILE_STATUSES_REQUIRED_FOR_UPLOAD)})")
             return False
 
