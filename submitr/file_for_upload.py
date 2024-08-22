@@ -271,6 +271,18 @@ class FileForUpload:
                     self._cloud_inaccessible = True
         return self._checksum_cloud
 
+    @property
+    def display_name(self) -> Optional[str]:
+        display_name = self.name
+        if self.uuid:
+            if self.accession:
+                display_name += f" ({self.uuid} | {self.accession})"
+            else:
+                display_name += f" ({self.uuid})"
+        elif self.accession:
+            display_name += f" ({self.accession})"
+        return display_name
+
     def get_destination(self, portal: Portal) -> Optional[str]:
         if not self.uuid or not isinstance(portal, Portal):
             return None
@@ -297,21 +309,27 @@ class FileForUpload:
     def should_upload(self, portal: Portal, printf: Optional[Callable] = None) -> bool:
         file_status = self.get_status(portal, printf=printf)
         if file_status not in _FILE_STATUSES_REQUIRED_FOR_UPLOAD:
-            # Here, the file status is not "uploading"; or one of the others
-            # in _FILE_STATUSES_REQUIRED_FOR_UPLOAD; so it should not uploaded.
+            # Here, the file status is not "uploading" (or one of the others
+            # in _FILE_STATUSES_REQUIRED_FOR_UPLOAD), so it should not uploaded.
+            if callable(printf):
+                printf(f"{chars.xmark} WARNING: Ignoring file for upload: {self.display_name}")
+                printf(f"  Because the status of this file is: {self.get_status(portal)}"
+                       f" (must be one of: {', '.join(_FILE_STATUSES_REQUIRED_FOR_UPLOAD)})")
             return False
         if file_status == _FILE_STATUS_UPLOADING:
             try:
-                file_name = portal.get(f"/{self.uuid}").json().get("display_title")
-                upload_file_exists_query = f"/upload_file_exists/{self.uuid}/{file_name}"
-                # TODO: Implment portal.head method.
-                # if portal.get(upload_file_exists_query).status_code == 200:
-                import requests
-                if requests.head(f"{portal.url(upload_file_exists_query)}").status_code == 200:
+                # N.B. This portal.head method as well as the /upload_file_exists Portal
+                # endpoint are new as of 2024-08-22; if either is not present then this
+                # block will catch the exception and fall through to returning True below.
+                if portal.head(f"/upload_file_exists/{self.uuid}/{self.accession_name}") == 200:
                     # Here, though the file status is "uploading" (which generally means we
                     # should be able to upload), it already exists in S3, which means that it
                     # has actually been uploaded, but the md5 checksum computation process has
                     # not yet finished; so in this case we will not allow it to be uploaded again.
+                    if callable(printf):
+                        printf(f"{chars.xmark} WARNING: Ignoring file for upload: {self.display_name}")
+                        printf(f"  It has already been uploaded:"
+                               f" {get_file_upload_bucket(portal)}/{self.uuid}/{self.accession_name}")
                     return False
             except Exception:
                 pass
@@ -330,37 +348,18 @@ class FileForUpload:
         if not callable(printf):
             printf = PRINT
 
-        file_identifier = self.name
-        if self.uuid:
-            if self.accession:
-                file_identifier += f" ({self.uuid} | {self.accession})"
-            else:
-                file_identifier += f" ({self.uuid})"
-        elif self.accession:
-            file_identifier += f" ({self.accession})"
-
-#       if (file_status := self.get_status(portal, printf=printf)) not in _FILE_STATUSES_REQUIRED_FOR_UPLOAD:
-#           printf(f"{chars.xmark} WARNING: Ignoring file for upload: {file_identifier}")
-#           printf(f"  Because the status of this file is: {file_status}"
-#                  f" (must be one of: {', '.join(_FILE_STATUSES_REQUIRED_FOR_UPLOAD)})")
-#           return False
+        destination = self.get_destination(portal)
 
         if not self.should_upload(portal, printf=printf):
-            # TODO: Refine this to include case of status uploading but actually exists in S3.
-            printf(f"{chars.xmark} WARNING: Ignoring file for upload: {file_identifier}")
-            printf(f"  Because the status of this file is: {self.get_status(portal)}"
-                   f" (must be one of: {', '.join(_FILE_STATUSES_REQUIRED_FOR_UPLOAD)})")
+            self._ignore = True
             return False
-
-        # TODO: Might make more sense to do this in assemble.
-        destination = self.get_destination(portal)
-        if self.found_local:
+        elif self.found_local:
             found_both_local_and_cloud = False
             if self.found_cloud:
                 found_both_local_and_cloud = True
                 printf(f"- File for upload found BOTH locally"
                        f" AND in {self.cloud_store.proper_name_title}"
-                       f" ({self.cloud_store.proper_name}): {file_identifier}")
+                       f" ({self.cloud_store.proper_name}): {self.display_name}")
                 printf(f"  - {self.cloud_store.proper_name} cloud storage: {self.display_path_cloud}"
                        f"{f' ({format_size(self.size_cloud)})' if self.size_cloud else ''}")
             if self.found_local_multiple and (not self.found_cloud or (self._favor_local is True)):
@@ -372,14 +371,14 @@ class FileForUpload:
                 if not review_only:
                     indent = ""
                     printf(f"- WARNING: Ignoring file for upload"
-                           f" as multiple/ambiguous local instances found: {file_identifier}")
+                           f" as multiple/ambiguous local instances found: {self.display_name}")
                 else:
                     if found_both_local_and_cloud:
                         indent = "  "
-                        printf(f"{indent}- Local file AMBIGUITY (multiple local instances found): {file_identifier}")
+                        printf(f"{indent}- Local file AMBIGUITY (multiple local instances found): {self.display_name}")
                     else:
                         indent = ""
-                        printf(f"- File for upload AMBIGUITY (multiple local instances found): {file_identifier}")
+                        printf(f"- File for upload AMBIGUITY (multiple local instances found): {self.display_name}")
                 for path_local in self.path_local_multiple:
                     printf(f"{indent}  - {path_local} ({format_size(get_file_size(path_local))})")
                 printf(f"{indent}  - Use --directory-only rather than --directory to NOT search recursively.")
@@ -415,7 +414,7 @@ class FileForUpload:
             return True
 
         else:  # I.e. self.found is False
-            printf(f"- WARNING: File NOT FOUND: {file_identifier} {chars.xmark}")
+            printf(f"{chars.xmark} WARNING: File NOT FOUND: {self.display_name} {chars.xmark}")
             if isinstance(portal, Portal):
                 if not review_only:
                     printf(f"  - Upload later with:"
