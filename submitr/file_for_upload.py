@@ -321,8 +321,7 @@ class FileForUpload:
                 # N.B. This portal.head method as well as the /upload_file_exists Portal
                 # endpoint are new as of 2024-08-22; if either is not present then this
                 # block will catch the exception and fall through to returning True below.
-                file_size_query = f"/upload_file_size/{self.uuid}/{self.accession_name}"
-                if (((file_size_response := portal.get(file_size_query)).status_code == 200) and
+                if (((file_size_response := portal.get(f"/files/{self.uuid}/upload_file_size")).status_code == 200) and
                     isinstance(file_size := file_size_response.json().get("size"), int)):  # noqa
                     if callable(printf):
                         printf(f"{chars.xmark} WARNING: Ignoring file for upload: {self.display_name}")
@@ -330,16 +329,6 @@ class FileForUpload:
                                f" {get_file_upload_bucket(portal)}/{self.uuid}/{self.accession_name}"
                                f" ({format_size(file_size)})")
                     return False
-                # if portal.head(f"/upload_file_exists/{self.uuid}/{self.accession_name}") == 200:
-                #     # Here, though the file status is "uploading" (which generally means we
-                #     # should be able to upload), it already exists in S3, which means that it
-                #     # has actually been uploaded, but the md5 checksum computation process has
-                #     # not yet finished; so in this case we will not allow it to be uploaded again.
-                #     if callable(printf):
-                #         printf(f"{chars.xmark} WARNING: Ignoring file for upload: {self.display_name}")
-                #         printf(f"  It has already been uploaded:"
-                #                f" {get_file_upload_bucket(portal)}/{self.uuid}/{self.accession_name}")
-                #     return False
             except Exception:
                 pass
         return True
