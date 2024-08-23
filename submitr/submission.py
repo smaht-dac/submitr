@@ -725,7 +725,7 @@ def submit_any_ingestion(ingestion_filename, *,
             autoadd = {"submission_centers": [extract_identifying_value_from_path(submission_centers[0])]}
         elif len(submission_centers) > 1:
             PRINT(f"Multiple submission centers: {', '.join(submission_centers)}")
-            PRINT(f"You must specify onely one submission center using the --submission-center option.")
+            PRINT(f"You must specify only one submission center using the --submission-center option.")
             sys.exit(1)
 
     known_submission_centers = _get_submission_centers(portal)
