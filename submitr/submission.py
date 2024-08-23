@@ -44,7 +44,7 @@ from submitr.submission_uploads import (
 from submitr.utils import chars, format_path, get_health_page, is_excel_file_name, print_boxed, tobool
 from submitr.validators.utils.structured_data_validator_hook import (
     define_structured_data_validator_hook,
-    define_structured_data_validator_sheet_hook
+    # define_structured_data_validator_sheet_hook
 )
 
 
