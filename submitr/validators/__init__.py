@@ -1,3 +1,3 @@
 # This module should import any specific validator modules.
 
-import submitr.validators.validator_submitted_id  # noqa
+import submitr.validators.submitted_id_validator  # noqa
