@@ -11,9 +11,9 @@ from dcicutils.structured_data import StructuredDataSet
 #   @structured_data_validator_hook("submitted_id", finish=True)
 #   def validator_finish_some_name(structured_data: StructuredDataSet, *kwargs) -> None:
 #
-# The @structured_data_validator_hook argument may be either a column name, e.g. submitted_id, in which case the
-# validator will be called for each value of the named column for all schemas; or a schema
-# name (aka type or sheet name) followed by dot and a column name, e.g. Analyte.submitted_id,
+# The @structured_data_validator_hook argument may be either a column name, e.g. submitted_id, in
+# which case the validator will be called for each value of the named column for all schemas; or a
+# schema name (aka type or sheet name) followed by dot and a column name, e.g. Analyte.submitted_id,
 # in which case the validator will be called for each value of the named column within the
 # named schema. The return value is a 2-tuple with the desired column value and a validation
 # error message (or None if no error). If the finish decorator argument is True, then the
