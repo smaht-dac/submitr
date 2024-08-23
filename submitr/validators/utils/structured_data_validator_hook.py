@@ -69,3 +69,7 @@ def define_structured_data_validator_hook(**kwargs) -> Callable:
 
     setattr(validators, "finish", finish_validators)
     return validators
+
+
+def structured_data_validator_sheet_hook(**kwargs) -> Callable:
+    pass
