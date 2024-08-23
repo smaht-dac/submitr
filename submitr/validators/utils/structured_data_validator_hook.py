@@ -73,3 +73,10 @@ def define_structured_data_validator_hook(**kwargs) -> Callable:
 
 def structured_data_validator_sheet_hook(**kwargs) -> Callable:
     pass
+
+
+def define_structured_data_validator_sheet_hook(**kwargs) -> Callable:
+    def validators(structured_data: StructuredDataSet, sheet_name: str, data: dict) -> None:
+        # TODO
+        pass
+    return validators
