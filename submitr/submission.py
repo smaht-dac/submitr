@@ -1926,7 +1926,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                         progress=None if noprogress else define_progress_callback(debug=debug),
                                         # Doing submitted_id validation in validate_submitted_ids, in parallel.
                                         validator_hook=validator_hook,
-                                        validator_sheet_hook=validator_sheet_hook,
+                                        # TODO 2024-08-23
+                                        # validator_sheet_hook=validator_sheet_hook,
                                         debug_sleep=debug_sleep)
     structured_data.load_file(ingestion_filename)
     # finish_validators_hook(structured_data, valid_submission_centers=valid_submission_centers)
