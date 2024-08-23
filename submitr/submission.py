@@ -1909,7 +1909,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         PRINT("DEBUG: Starting client validation.")
 
     validator_hook = define_structured_data_validator_hook(valid_submission_centers=valid_submission_centers)
-    validator_sheet_hook = define_structured_data_validator_sheet_hook()
+    # validator_sheet_hook = define_structured_data_validator_sheet_hook()
     structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                         # ref_lookup_strategy=ref_lookup_strategy,
                                         ref_lookup_nocache=ref_nocache,
