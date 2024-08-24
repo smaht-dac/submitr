@@ -1,6 +1,11 @@
 from typing import Any, Callable
 from dcicutils.structured_data import StructuredDataSet
 
+_VALIDATORS = {}
+_FINISH_VALIDATORS = []
+_SHEET_VALIDATORS = {}
+
+
 # Decorator for per-column per-schema/type/sheet validators. Called by StructuredData
 # for each column/value within each sheet for post-processing. Usage like this:
 #
@@ -8,9 +13,13 @@ from dcicutils.structured_data import StructuredDataSet
 #   def your_validator(structured_data: StructuredDataSet,
 #                      schema: str, column: str, row: int, value: Any, **kwargs) -> None:
 #
+#   @structured_data_validator_hook("Analyte.concentration")
+#   def your_validator(structured_data: StructuredDataSet,
+#                      schema: str, column: str, row: int, value: Any, **kwargs) -> None:
+#
 # The @structured_data_validator_hook argument may be either a column name, e.g. submitted_id, in
-# which case the validator will be called for each value of the named column for all schemas; or a
-# schema name (aka type or sheet name) followed by dot and a column name, e.g. Analyte.submitted_id,
+# which case the validator will be called for each value of the named column for ALL schemas; or a
+# schema name (aka type or sheet name) followed by dot and a column name, e.g. Analyte.concentration,
 # in which case the validator will be called for each value of the named column within the named
 # schema. The return value is the desired column value.
 #
@@ -20,12 +29,7 @@ from dcicutils.structured_data import StructuredDataSet
 # That will also include a "finish" function/callback property which, if set,
 # StructuredDataSet will call at the end of processing; "finish" validator functions
 # may be defined via the @structured_data_validator_finish_hook decorator (below).
-
-_VALIDATORS = {}
-_FINISH_VALIDATORS = []
-_SHEET_VALIDATORS = {}
-
-
+#
 def structured_data_validator_hook(*decorator_args, **decorator_kwargs) -> Callable:
     if (len(decorator_args) > 0) and callable(decorator_args[0]):
         print(f"CODE ERROR: Missing column or schema.column argument for"
@@ -46,8 +50,7 @@ def structured_data_validator_hook(*decorator_args, **decorator_kwargs) -> Calla
 #
 #   @structured_data_validator_finish_hook
 #   def your_finish_validator(structured_data: StructuredDataSet, *kwargs) -> None:
-
-
+#
 def structured_data_validator_finish_hook(*decorator_args, **decorator_kwargs) -> Callable:
     # Reminder of how decorators works:
     # - @structured_data_validator_finish_hook -> decorator_args == tuple(wrapped_function)
@@ -74,7 +77,7 @@ def structured_data_validator_finish_hook(*decorator_args, **decorator_kwargs) -
 #
 #   @structured_data_validator_sheet_hook(["Analyte", "CellLine"])
 #   def some_validator(structured_data: StructuredDataSet, schema: str, data: dict) -> None:
-
+#
 def structured_data_validator_sheet_hook(*decorator_args, **decorator_kwargs) -> Callable:
     if (len(decorator_args) > 0) and callable(decorator_args[0]):
         print(f"CODE ERROR: Single schema name argument required for"
@@ -97,6 +100,8 @@ def structured_data_validator_sheet_hook(*decorator_args, **decorator_kwargs) ->
     return decorator
 
 
+# Define the main per-column/value StructuredDataSet hook (including the "finish" hook as a property thereof).
+#
 def define_structured_data_validator_hook(**kwargs) -> Callable:
     def hook(structured_data: StructuredDataSet, schema: str,
              column: str, row: int, value: Any) -> Any:
@@ -112,6 +117,8 @@ def define_structured_data_validator_hook(**kwargs) -> Callable:
     return hook
 
 
+# Define the main StructuredDataSet per-sheet hook.
+#
 def define_structured_data_validator_sheet_hook() -> Callable:
     def hook(structured_data: StructuredDataSet, schema: str, data: dict) -> None:
         if validator := _SHEET_VALIDATORS.get(schema):
