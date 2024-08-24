@@ -20,8 +20,10 @@ _DUPLICATE_ROW_DETECTION_SHEETS = [
 def _duplicate_row_validator(structured_data: StructuredDataSet, schema: str, data: List[dict]) -> Optional[List[dict]]:
     index, duplicate_index = _find_duplicate_elements(data)
     if duplicate_index is not None:
+        # When reporting the indices we add two; one because it was
+        # zero-indexed (by _find_duplicate_elements), and another one for the header column.
         structured_data.note_validation_error(
-            f"Duplicate rows in sheet: {schema} (items: {index} and {duplicate_index})", schema)
+            f"Duplicate rows in sheet: {schema} (items: {index + 2} and {duplicate_index + 2})", schema)
 
 
 def _find_duplicate_elements(array: List[dict]) -> Tuple[Optional[int], Optional[int]]:
