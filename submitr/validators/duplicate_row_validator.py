@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import List, Optional, Tuple
 from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorators import structured_data_validator_sheet_hook
 
@@ -17,17 +17,19 @@ _DUPLICATE_ROW_DETECTION_SHEETS = [
 
 
 @structured_data_validator_sheet_hook(_DUPLICATE_ROW_DETECTION_SHEETS)
-def _duplicate_row_validator(structured_data: StructuredDataSet, schema: str, data: dict) -> None:
-    if _has_duplicate_elements(data):
-        structured_data.note_validation_error(f"Duplicate rows in sheet: {schema}", schema, 0)
+def _duplicate_row_validator(structured_data: StructuredDataSet, schema: str, data: List[dict]) -> None:
+    index, duplicate_index = _find_duplicate_elements(data)
+    if duplicate_index is not None:
+        structured_data.note_validation_error(
+            f"Duplicate rows in sheet: {schema} (items: {index} and {duplicate_index})", schema)
 
 
-def _has_duplicate_elements(array: List[dict]) -> bool:
+def _find_duplicate_elements(array: List[dict]) -> Tuple[Optional[int], Optional[int]]:
     if isinstance(array, list):
-        seen = set()
-        for element in array:
+        seen = {}
+        for index, element in enumerate(array):
             serialized_element = json.dumps(element, sort_keys=True)
             if serialized_element in seen:
-                return True
-            seen.add(serialized_element)
-    return False
+                return seen[serialized_element], index
+            seen[serialized_element] = index
+    return None, None
