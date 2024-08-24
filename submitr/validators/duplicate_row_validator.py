@@ -2,6 +2,8 @@ import json
 from submitr.validators.utils.structured_data_validator_hook import structured_data_validator_sheet_hook
 from dcicutils.structured_data import StructuredDataSet
 
+# Sheet for which we will check for duplicate rows, per:
+# https://docs.google.com/document/d/1zj-edWR1ugqhd6ZxC07Rkq6M7I_jqiR-pO598gFg0p8
 _DUPLICATE_ROW_DETECTIONS_SHEETS = [
     "AnalytePreparation",
     "Basecalling",
