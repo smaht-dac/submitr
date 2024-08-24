@@ -26,10 +26,11 @@ def duplicate_row_validator(structured_data: StructuredDataSet, sheet_name: str,
 
 
 def _has_duplicate_elements(array: List[dict]) -> bool:
-    seen = set()
-    for element in array:
-        serialized_element = json.dumps(element, sort_keys=True)
-        if serialized_element in seen:
-            return True
-        seen.add(serialized_element)
+    if isinstance(array, list):
+        seen = set()
+        for element in array:
+            serialized_element = json.dumps(element, sort_keys=True)
+            if serialized_element in seen:
+                return True
+            seen.add(serialized_element)
     return False
