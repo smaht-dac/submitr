@@ -5,7 +5,7 @@ from submitr.validators.decorators import structured_data_validator_sheet_hook
 
 # Sheet for which we will check for duplicate rows, per:
 # https://docs.google.com/document/d/1zj-edWR1ugqhd6ZxC07Rkq6M7I_jqiR-pO598gFg0p8
-_DUPLICATE_ROW_DETECTIONS_SHEETS = [
+_DUPLICATE_ROW_DETECTION_SHEETS = [
     "AnalytePreparation",
     "Basecalling",
     "LibraryPreparation",
@@ -16,10 +16,10 @@ _DUPLICATE_ROW_DETECTIONS_SHEETS = [
 ]
 
 
-@structured_data_validator_sheet_hook(_DUPLICATE_ROW_DETECTIONS_SHEETS)
-def duplicate_row_validator(structured_data: StructuredDataSet, sheet_name: str, data: dict) -> None:
+@structured_data_validator_sheet_hook(_DUPLICATE_ROW_DETECTION_SHEETS)
+def _duplicate_row_validator(structured_data: StructuredDataSet, schema: str, data: dict) -> None:
     if _has_duplicate_elements(data):
-        structured_data.note_validation_error(f"Duplicate rows in sheet: {sheet_name}", sheet_name, 0)
+        structured_data.note_validation_error(f"Duplicate rows in sheet: {schema}", schema, 0)
 
 
 def _has_duplicate_elements(array: List[dict]) -> bool:
