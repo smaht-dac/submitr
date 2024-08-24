@@ -111,6 +111,8 @@ ADVANCED OPTIONS:
   Displays ONLY all known consortia; nothing else.
 --submission-centers
   Displays ONLY all known submission centers; nothing else.
+--nouploads
+  Do not attempt to upload any files; use resume-uploads later.
 --json
   Displays the submitted metadata as formatted JSON.
 --json-only
@@ -194,6 +196,8 @@ def main(simulated_args_for_testing=None):
                         help="Suppress (yes/no) requests for user input.", default=False)
     parser.add_argument('--ref-nocache', action="store_true",
                         help="Do not cache reference (linkTo) lookups.", default=False)
+    parser.add_argument('--nouploads', action="store_true",
+                        help="Do not attempt to upload any files; use resume-uploads later.", default=False)
     parser.add_argument('--noprogress', action="store_true",
                         help="Do not track progress of client-side parsing/validation.", default=False)
     parser.add_argument('--app',
@@ -369,6 +373,7 @@ def main(simulated_args_for_testing=None):
                              validate_local_skip=args.validate_local_skip,
                              validate_remote_skip=args.validate_remote_skip,
                              noanalyze=args.noanalyze,
+                             nouploads=args.nouploads,
                              json_only=args.json_only,
                              ref_nocache=args.ref_nocache,
                              merge=args.merge,

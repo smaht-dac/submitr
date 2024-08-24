@@ -55,6 +55,7 @@ def test_submit_metadata_bundle_script(keyfile):
                             "validate_local_skip": False,
                             "validate_remote_skip": False,
                             "noanalyze": False,
+                            "nouploads": False,
                             "json_only": False,
                             "ref_nocache": False,
                             "verbose_json": False,

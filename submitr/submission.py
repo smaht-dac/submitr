@@ -625,6 +625,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          keys_file=None,
                          show_details=False,
                          noanalyze=False,
+                         nouploads=False,
                          json_only=False,
                          ref_nocache=False,
                          merge=False,
@@ -899,6 +900,10 @@ def submit_any_ingestion(ingestion_filename, *,
     PRINT("Submission complete!")
 
     # Now that submission has successfully complete, review the files to upload and then do it.
+
+    if nouploads:
+        PRINT("Skipping any uploads (per --nouploads option).")
+        return
 
     do_any_uploads(submission_response,
                    metadata_file=ingestion_filename,
@@ -2033,7 +2038,10 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal,
             printed_newline = True
         PRINT_OUTPUT(f"- Data errors: {len(data_validation_errors)}")
         for error in data_validation_errors:
-            PRINT_OUTPUT(f"  - ERROR: {_format_issue(error, ingestion_filename)}")
+            formatted_issue = _format_issue(error, ingestion_filename)
+            if formatted_issue.startswith("Error: "):
+                formatted_issue = formatted_issue[7:]
+            PRINT_OUTPUT(f"  - ERROR: {formatted_issue}")
 
     if ref_validation_errors:
         if not printed_newline:

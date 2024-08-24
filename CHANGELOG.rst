@@ -21,6 +21,7 @@ Change Log
   being skipped for upload because it has already been uploaded, and continue on.
 * Validator hook to look for duplicate rows for certain types; see submitr.validators.duplicate_row_validator.
 * Print Python version in command header, and Portal version.
+* Added --nouploads option (if using resume-uploads later).
 
 
 1.1.1
