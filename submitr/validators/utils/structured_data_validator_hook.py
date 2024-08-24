@@ -30,10 +30,11 @@ from dcicutils.structured_data import StructuredDataSet
 
 _VALIDATORS = {}
 _FINISH_VALIDATORS = {}
+_SHEET_VALIDATORS = {}
 
 
 def structured_data_validator_hook(*decorator_args, **decorator_kwargs) -> Callable:
-    def validator_decorator(wrapped_function: Callable) -> Callable:
+    def decorator(wrapped_function: Callable) -> Callable:
         nonlocal decorator_args, decorator_kwargs
         if len(decorator_args) != 1:
             print("CODE ERROR: column or schema.column argument required for @validation decorator")
@@ -42,7 +43,7 @@ def structured_data_validator_hook(*decorator_args, **decorator_kwargs) -> Calla
             _FINISH_VALIDATORS[decorator_args[0]] = wrapped_function
         else:
             _VALIDATORS[decorator_args[0]] = wrapped_function
-    return validator_decorator
+    return decorator
 
 
 def define_structured_data_validator_hook(**kwargs) -> Callable:
@@ -71,12 +72,28 @@ def define_structured_data_validator_hook(**kwargs) -> Callable:
     return validators
 
 
-def structured_data_validator_sheet_hook(**kwargs) -> Callable:
-    pass
+def structured_data_validator_sheet_hook(*decorator_args, **decorator_kwargs) -> Callable:
+    if (len(decorator_args) > 0) and callable(decorator_args[0]):
+        print(f"CODE ERROR: sheet name argument required for @validation decorator: {decorator_args[0].__name__}")
+        exit(1)
+    def decorator(wrapped_function: Callable) -> Callable:  # noqa
+        nonlocal decorator_args, decorator_kwargs
+        if not ((len(decorator_args) == 1) and
+                isinstance(sheet_names := decorator_args[0], (str, list)) and sheet_names):
+            print(f"CODE ERROR: sheet name argument required for @validation decorator: {wrapped_function.__name__}")
+            exit(1)
+        if isinstance(sheet_names, str):
+            sheet_names = [sheet_names]
+        for sheet_name in sheet_names:
+            if _SHEET_VALIDATORS.get(sheet_name):
+                print(f"CODE ERROR: duplicate sheet validator: {sheet_name}")
+                exit(1)
+            _SHEET_VALIDATORS[sheet_name] = wrapped_function
+    return decorator
 
 
 def define_structured_data_validator_sheet_hook(**kwargs) -> Callable:
     def validators(structured_data: StructuredDataSet, sheet_name: str, data: dict) -> None:
-        # TODO
-        pass
+        if validator := _SHEET_VALIDATORS.get(sheet_name):
+            validator(structured_data, sheet_name, data)
     return validators

@@ -44,7 +44,7 @@ from submitr.submission_uploads import (
 from submitr.utils import chars, format_path, get_health_page, is_excel_file_name, print_boxed, tobool
 from submitr.validators.utils.structured_data_validator_hook import (
     define_structured_data_validator_hook,
-    # define_structured_data_validator_sheet_hook
+    define_structured_data_validator_sheet_hook
 )
 
 
@@ -1909,7 +1909,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         PRINT("DEBUG: Starting client validation.")
 
     validator_hook = define_structured_data_validator_hook(valid_submission_centers=valid_submission_centers)
-    # validator_sheet_hook = define_structured_data_validator_sheet_hook()
+    validator_sheet_hook = define_structured_data_validator_sheet_hook()
     structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                         # ref_lookup_strategy=ref_lookup_strategy,
                                         ref_lookup_nocache=ref_nocache,
@@ -1926,8 +1926,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                         progress=None if noprogress else define_progress_callback(debug=debug),
                                         # Doing submitted_id validation in validate_submitted_ids, in parallel.
                                         validator_hook=validator_hook,
-                                        # TODO 2024-08-23
-                                        # validator_sheet_hook=validator_sheet_hook,
+                                        validator_sheet_hook=validator_sheet_hook,
                                         debug_sleep=debug_sleep)
     structured_data.load_file(ingestion_filename)
     # finish_validators_hook(structured_data, valid_submission_centers=valid_submission_centers)
