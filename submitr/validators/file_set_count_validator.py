@@ -14,7 +14,6 @@ _FILE_SCHEMA_NAMES = ["AlignedReads", "UnalignedReads", "VariantCalls"]
 
 @structured_data_validator_finish_hook
 def _file_set_count_validator(structured_data: StructuredDataSet, **kwargs) -> None:
-    import pdb ; pdb.set_trace()  # noqa
     if not isinstance(data := structured_data.data.get(_FILE_SET_SCHEMA_NAME), list):
         return
     for item in data:
