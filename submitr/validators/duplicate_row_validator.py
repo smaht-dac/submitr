@@ -17,7 +17,7 @@ _DUPLICATE_ROW_DETECTION_SHEETS = [
 
 
 @structured_data_validator_sheet_hook(_DUPLICATE_ROW_DETECTION_SHEETS)
-def _duplicate_row_validator(structured_data: StructuredDataSet, schema: str, data: List[dict]) -> None:
+def _duplicate_row_validator(structured_data: StructuredDataSet, schema: str, data: List[dict]) -> Optional[List[dict]]:
     index, duplicate_index = _find_duplicate_elements(data)
     if duplicate_index is not None:
         structured_data.note_validation_error(
