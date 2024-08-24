@@ -1,7 +1,7 @@
-from typing import Any, Optional, Tuple
+from typing import Any
 from dcicutils.misc_utils import run_concurrently  # noqa
 from dcicutils.structured_data import StructuredDataSet
-from submitr.validators.utils.structured_data_validator_hook import structured_data_validator_hook
+from submitr.validators.decorators import structured_data_validator_hook
 
 # Validator for the submitted_id column which is checked for EVERY schema (aka type or sheet)
 # within the submission etadata. We use the smaht-portal /validators/submitted_id/{submitted_id}
@@ -18,7 +18,7 @@ _NTHREADS_FOR_SMAHT_PORTAL_API_CALLS = 6
 @structured_data_validator_hook("submitted_id")
 def _submitted_id_validator(structured_data: StructuredDataSet,
                             schema_name: str, column_name: str, row_number: int,
-                            value: Any, **kwargs) -> Tuple[Any, Optional[str]]:
+                            value: Any, **kwargs) -> Any:
 
     # Squirrel away the list of all seen submitted_id values within a hidden property
     # in the StructuredDataSet object. We save these up and process/validate them all
@@ -32,7 +32,7 @@ def _submitted_id_validator(structured_data: StructuredDataSet,
     # submitted_id list in memory, we could kick off the calls here in
     # parallel _NTHREADS_FOR_SMAHT_PORTAL_API_CALLS at a time.
     submitted_ids[schema_name].append({"value": value, "row": row_number})
-    return value, None
+    return value
 
 
 @structured_data_validator_hook("submitted_id", finish=True)
