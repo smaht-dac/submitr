@@ -1,7 +1,7 @@
 from typing import Any
 from dcicutils.misc_utils import run_concurrently  # noqa
 from dcicutils.structured_data import StructuredDataSet
-from submitr.validators.decorators import structured_data_validator_hook
+from submitr.validators.decorators import structured_data_validator_hook, structured_data_validator_finish_hook
 
 # Validator for the submitted_id column which is checked for EVERY schema (aka type or sheet)
 # within the submission etadata. We use the smaht-portal /validators/submitted_id/{submitted_id}
@@ -34,7 +34,7 @@ def _submitted_id_validator(structured_data: StructuredDataSet, schema: str,
     return value
 
 
-@structured_data_validator_hook("submitted_id", finish=True)
+@structured_data_validator_finish_hook
 def _submitted_id_validator_finish(structured_data: StructuredDataSet, **kwargs) -> None:
 
     if not hasattr(structured_data, _STRUCTURED_DATA_HOOK_PROPERTY):
