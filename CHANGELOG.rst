@@ -19,6 +19,8 @@ Change Log
   has as status of uploaded (or anything except uploading or in-review); so in this case,
   where the file status is uploaded, we will detect it, give a warning that this file is
   being skipped for upload because it has already been uploaded, and continue on.
+* Validator hook to look for duplicate rows for certain types; see submitr.validators.duplicate_row_validator.
+* Print Python version in command header, and Portal version.
 
 
 1.1.1
@@ -28,7 +30,7 @@ Change Log
 * Fixed bug (to dcicutils 8.13.3.1b11) structured_data.py to NOT silently convert
   a string representing a floating point number to an integer.
 * Moved utility scripts view-portal-object and update-portal-object to dcicutils 8.13.3.
-* Extensible validators mechanism (see submitr/validators.py) initially for submitted_id;
+* Extensible validators hook mechanism (see submitr/validators.py) initially for submitted_id;
   uses new smaht-portal /validators/submitted_id/{submitted_id} endpoint/API to flag
   misformatted submitted_id values; also flags duplicates. See submitr/validators directory.
 * Changed to disallow fuzzy matches (prefixes) for enum types; must be exact match (case-insensitive);

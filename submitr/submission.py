@@ -2461,7 +2461,8 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
             raise Exception(
                 f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")
     if report:
-        message = f"SMaHT submitr version: {get_version()}"
+        message = (f"SMaHT submitr version: {get_version()}"
+                   f" | Python: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
         if note:
             message += f" | {note}"
         PRINT(message)
@@ -2479,7 +2480,8 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
                     pass
         PRINT(f"Portal environment (in keys file) is: {portal.env}{' (from SMAHT_ENV)' if env_from_env else ''}")
         PRINT(f"Portal keys file is: {format_path(portal.keys_file)}")
-        PRINT(f"Portal server is: {portal.server}")
+        portal_version = portal.get_version()
+        PRINT(f"Portal server is: {portal.server}{f' ({portal_version})' if portal_version else ''}")
         if portal.key_id and len(portal.key_id) > 2:
             PRINT(f"Portal key prefix is: {portal.key_id[:2]}******")
     if ping and not portal.ping():
