@@ -318,9 +318,8 @@ class FileForUpload:
             return False
         if file_status == _FILE_STATUS_UPLOADING:
             try:
-                # N.B. This portal.head method as well as the /upload_file_exists Portal
-                # endpoint are new as of 2024-08-22; if either is not present then this
-                # block will catch the exception and fall through to returning True below.
+                # N.B. This Portal /upload_file_exists endpoint is new as of 2024-08-22; if not
+                # present then this block will catch the exception and fall through to returning True below.
                 if (((file_size_response := portal.get(f"/files/{self.uuid}/upload_file_size")).status_code == 200) and
                     isinstance(file_size := file_size_response.json().get("size"), int)):  # noqa
                     if callable(printf):
