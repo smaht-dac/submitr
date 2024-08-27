@@ -19,9 +19,14 @@ Change Log
   has as status of uploaded (or anything except uploading or in-review); so in this case,
   where the file status is uploaded, we will detect it, give a warning that this file is
   being skipped for upload because it has already been uploaded, and continue on.
-* Validator hook to look for duplicate rows for certain types; see submitr.validators.duplicate_row_validator.
-* Print Python version in command header, and Portal version.
+  This uses new smaht-portal /files/{uuid}/upload_file_size endpoint; if it this
+  does not yet exist though we fail gracefully, not doing this check in this case.
+* Validator hook to validate (all) submitted_id values; see validators.submitted_id_validator.
+* Validator hook to look for duplicate rows for certain types; see validators.duplicate_row_validator.
+* Validator hook to validate submitted_id values using server-side custom validator.
+* Added support for FileSet.expected_file_count pseudo column; see validators.file_set_count_validator.
 * Added --nouploads option (if using resume-uploads later).
+* Print Python version in command header, and Portal version.
 
 
 1.1.1
