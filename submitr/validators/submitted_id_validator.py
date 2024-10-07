@@ -4,7 +4,7 @@ from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorators import structured_data_validator_hook, structured_data_validator_finish_hook
 
 # Validator for the submitted_id column which is checked for EVERY schema (aka type or sheet)
-# within the submission etadata. We use the smaht-portal /validators/submitted_id/{submitted_id}
+# within the submission metadata. We use the smaht-portal /validators/submitted_id/{submitted_id}
 # endpoint/API to do the actual validation. But for better performance we do this in parallel
 # as much as possible. And to do this we need to save up the list of all submitted_id values,
 # within the main _submitted_id_validator function. Then when the _submitted_id_validator_finish

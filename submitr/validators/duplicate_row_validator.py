@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple
 from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorators import structured_data_validator_sheet_hook
 
-# Sheet for which we will check for duplicate rows, per:
+# Sheets for which we will check for duplicate rows, per:
 # https://docs.google.com/document/d/1zj-edWR1ugqhd6ZxC07Rkq6M7I_jqiR-pO598gFg0p8
 _DUPLICATE_ROW_DETECTION_SHEETS = [
     "AnalytePreparation",
