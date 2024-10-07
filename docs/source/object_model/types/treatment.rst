@@ -22,7 +22,7 @@ Treatment
     and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     <p />
-    
+    <br /><u>Description</u>: An experimental treatment applied during analyte preparation or library preparation.
 
 
 .. tip::

@@ -152,7 +152,7 @@ See Also
 
 .. raw:: html
 
-    <span style="color:#aaaaaa;">[ <small>Generated: 2024-08-15 10:40 PM EDT | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> 0.82.0</small> ]</span><p />
+    <span style="color:#aaaaaa;">[ <small>Generated: 2024-10-07 10:48 AM EDT | <a target='_blank' style="color:#aaaaaa" href='https://data.smaht.org/profiles/?format=json'>data.smaht.org</a> 0.100.1</small> ]</span><p />
     <p />
 
 

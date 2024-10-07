@@ -7,6 +7,28 @@ Change Log
 ----------
 
 
+1.2.0
+=====
+* Changed MEANING of (and added --submit-new synonym for) the --submit option, which now
+  means that IF any submitted metadata items would result in actual UPDATES of items which
+  already EXIST in the database, then an ERROR/message will be given and nothing will be done.
+  - Added new a --update (and submit-update synonym for) option which
+    means that items which already EXIST in the database MAY be updated.
+* Fix submission_uploads.py/file_for_upload.py to not bomb out of the file upload process
+  if we cannot get upload_credentials; this can happen if the file being uploaded already
+  has as status of uploaded (or anything except uploading or in-review); so in this case,
+  where the file status is uploaded, we will detect it, give a warning that this file is
+  being skipped for upload because it has already been uploaded, and continue on.
+  This uses new smaht-portal /files/{uuid}/upload_file_size endpoint; if it this
+  does not yet exist though we fail gracefully, not doing this check in this case.
+* Validator hook to validate (all) submitted_id values; see validators.submitted_id_validator.
+* Validator hook to look for duplicate rows for certain types; see validators.duplicate_row_validator.
+* Validator hook to validate submitted_id values using server-side custom validator.
+* Added support for FileSet.expected_file_count pseudo column; see validators.file_set_count_validator.
+* Added --nouploads option (if using resume-uploads later).
+* Print Python version in command header, and Portal version.
+
+
 1.1.1
 =====
 * Mostly changes related to additional fixes/enhancements from this doc:
@@ -14,7 +36,7 @@ Change Log
 * Fixed bug (to dcicutils 8.13.3.1b11) structured_data.py to NOT silently convert
   a string representing a floating point number to an integer.
 * Moved utility scripts view-portal-object and update-portal-object to dcicutils 8.13.3.
-* Extensible validators mechanism (see submitr/validators.py) initially for submitted_id;
+* Extensible validators hook mechanism (see submitr/validators.py) initially for submitted_id;
   uses new smaht-portal /validators/submitted_id/{submitted_id} endpoint/API to flag
   misformatted submitted_id values; also flags duplicates. See submitr/validators directory.
 * Changed to disallow fuzzy matches (prefixes) for enum types; must be exact match (case-insensitive);

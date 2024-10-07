@@ -232,6 +232,16 @@ def upload_file(file: FileForUpload, portal: Portal) -> None:
     if not isinstance(file, FileForUpload) or not isinstance(portal, Portal):
         return
 
+    # Check if the file may be uploaded, i.e. if its status is one of: "uploading",
+    # "to be uploaded by workflow", "upload failed". But if it IS "uploading" ALSO
+    # check that the file does NOT actually EXIST in S3, as it could be there but still
+    # marked as "uploading" if its md5 checksum is still being computed by a Foursight check.
+    if not file.should_upload(portal):
+        # A message about skipping this should already have been emitted via FilesForUpload.review.
+        # And actually, we should not even get here, as if not should_upload then it should have been
+        # marked as FileForUpload.ignore and should therefore not be in the list from FilesForUpload.
+        return
+
     aws_s3_uri, aws_credentials, aws_kms_key_id = generate_credentials_for_upload(file.name, file.uuid, portal)
 
     upload_file_to_aws_s3(file=file,

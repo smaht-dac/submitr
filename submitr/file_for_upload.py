@@ -11,6 +11,13 @@ from submitr.output import PRINT
 from submitr.rclone import RCloneAmazon, RCloneStore
 from submitr.utils import chars
 
+# See smaht-portal/.../schemas/file.json for these values; and see the definition and
+# usage of SHOW_UPLOAD_CREDENTIALS_STATUSES in encoded-core/.../types/file.py for logic
+# preventing upload credentials from being generated for anything but these statuss.
+_FILE_STATUS_UPLOADING = "uploading"
+_FILE_STATUSES_REQUIRED_FOR_UPLOAD = [_FILE_STATUS_UPLOADING, "to be uploaded by workflow", "upload failed"]
+
+
 # Unified the logic for looking for files to upload (to AWS S3), and storing
 # related info; whether or not the file is coming from the local file system
 # or from Cloud Storage (GCS or AWS S3), via rclone.
@@ -103,6 +110,7 @@ class FileForUpload:
         self._cloud_inaccessible = False
         self._favor_local = None
         self._ignore = False
+        self._status = None
 
     @property
     def name(self) -> str:
@@ -263,6 +271,18 @@ class FileForUpload:
                     self._cloud_inaccessible = True
         return self._checksum_cloud
 
+    @property
+    def display_name(self) -> Optional[str]:
+        display_name = self.name
+        if self.uuid:
+            if self.accession:
+                display_name += f" ({self.uuid} | {self.accession})"
+            else:
+                display_name += f" ({self.uuid})"
+        elif self.accession:
+            display_name += f" ({self.accession})"
+        return display_name
+
     def get_destination(self, portal: Portal) -> Optional[str]:
         if not self.uuid or not isinstance(portal, Portal):
             return None
@@ -275,6 +295,42 @@ class FileForUpload:
             self._accession_name = accession_file_name
             return f"{RCloneAmazon.prefix}{file_upload_bucket}/{self.uuid}/{accession_file_name}"
         return None
+
+    def get_status(self, portal: Portal, printf: Optional[Callable] = None) -> Optional[str]:
+        if self._status is None:
+            try:
+                self._status = portal.get_metadata(self.uuid).get("status", "")
+            except Exception:
+                if callable(printf):
+                    printf("ERROR: Cannot get status for file: {file.name} ({file.uuid})")
+                return None
+        return self._status
+
+    def should_upload(self, portal: Portal, printf: Optional[Callable] = None) -> bool:
+        file_status = self.get_status(portal, printf=printf)
+        if file_status not in _FILE_STATUSES_REQUIRED_FOR_UPLOAD:
+            # Here, the file status is not "uploading" (or one of the others
+            # in _FILE_STATUSES_REQUIRED_FOR_UPLOAD), so it should not uploaded.
+            if callable(printf):
+                printf(f"{chars.xmark} WARNING: Ignoring file for upload: {self.display_name}")
+                printf(f"  Because the status of this file is: {self.get_status(portal)}"
+                       f" (must be one of: {', '.join(_FILE_STATUSES_REQUIRED_FOR_UPLOAD)})")
+            return False
+        if file_status == _FILE_STATUS_UPLOADING:
+            try:
+                # N.B. This Portal /upload_file_exists endpoint is new as of 2024-08-22; if not
+                # present then this block will catch the exception and fall through to returning True below.
+                if (((file_size_response := portal.get(f"/files/{self.uuid}/upload_file_size")).status_code == 200) and
+                    isinstance(file_size := file_size_response.json().get("size"), int)):  # noqa
+                    if callable(printf):
+                        printf(f"{chars.xmark} WARNING: Ignoring file for upload: {self.display_name}")
+                        printf(f"  It has already been uploaded:"
+                               f" {get_file_upload_bucket(portal)}/{self.uuid}/{self.accession_name}"
+                               f" ({format_size(file_size)})")
+                    return False
+            except Exception:
+                pass
+        return True
 
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,
                last_in_list: bool = False, verbose: bool = False, printf: Optional[Callable] = None) -> bool:
@@ -289,24 +345,18 @@ class FileForUpload:
         if not callable(printf):
             printf = PRINT
 
-        file_identifier = self.name
-        if self.uuid:
-            if self.accession:
-                file_identifier += f" ({self.uuid} | {self.accession})"
-            else:
-                file_identifier += f" ({self.uuid})"
-        elif self.accession:
-            file_identifier += f" ({self.accession})"
-
-        # TODO: Might make more sense to do this in assemble.
         destination = self.get_destination(portal)
-        if self.found_local:
+
+        if not self.should_upload(portal, printf=printf):
+            self._ignore = True
+            return False
+        elif self.found_local:
             found_both_local_and_cloud = False
             if self.found_cloud:
                 found_both_local_and_cloud = True
                 printf(f"- File for upload found BOTH locally"
                        f" AND in {self.cloud_store.proper_name_title}"
-                       f" ({self.cloud_store.proper_name}): {file_identifier}")
+                       f" ({self.cloud_store.proper_name}): {self.display_name}")
                 printf(f"  - {self.cloud_store.proper_name} cloud storage: {self.display_path_cloud}"
                        f"{f' ({format_size(self.size_cloud)})' if self.size_cloud else ''}")
             if self.found_local_multiple and (not self.found_cloud or (self._favor_local is True)):
@@ -318,14 +368,14 @@ class FileForUpload:
                 if not review_only:
                     indent = ""
                     printf(f"- WARNING: Ignoring file for upload"
-                           f" as multiple/ambiguous local instances found: {file_identifier}")
+                           f" as multiple/ambiguous local instances found: {self.display_name}")
                 else:
                     if found_both_local_and_cloud:
                         indent = "  "
-                        printf(f"{indent}- Local file AMBIGUITY (multiple local instances found): {file_identifier}")
+                        printf(f"{indent}- Local file AMBIGUITY (multiple local instances found): {self.display_name}")
                     else:
                         indent = ""
-                        printf(f"- File for upload AMBIGUITY (multiple local instances found): {file_identifier}")
+                        printf(f"- File for upload AMBIGUITY (multiple local instances found): {self.display_name}")
                 for path_local in self.path_local_multiple:
                     printf(f"{indent}  - {path_local} ({format_size(get_file_size(path_local))})")
                 printf(f"{indent}  - Use --directory-only rather than --directory to NOT search recursively.")
@@ -361,7 +411,7 @@ class FileForUpload:
             return True
 
         else:  # I.e. self.found is False
-            printf(f"- WARNING: File NOT FOUND: {file_identifier} {chars.xmark}")
+            printf(f"{chars.xmark} WARNING: File NOT FOUND: {self.display_name} {chars.xmark}")
             if isinstance(portal, Portal):
                 if not review_only:
                     printf(f"  - Upload later with:"
@@ -387,7 +437,8 @@ class FileForUpload:
             f"size_local={self.size_local}|"
             f"found_cloud={self.found_cloud}|"
             f"path_cloud={self.path_cloud}|"
-            f"size_cloud={self.size_cloud}")
+            f"size_cloud={self.size_cloud}|"
+            f"status={self._status}")
 
 
 class FilesForUpload:

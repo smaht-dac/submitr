@@ -22,7 +22,7 @@ CellSample
     and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     <p />
-    
+    <br /><u>Description</u>: Samples consisting of isolated cells. The Cell Sample item is intended for specific cell types taken from a source tissue or cell culture, such as flow-sorted neurons from a brain. Because of this, the Cell Sample item will contain information on the cell type isolated and other relevant information.
 
 
 .. tip::

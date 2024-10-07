@@ -31,7 +31,7 @@ from dcicutils.structured_data import Portal, StructuredDataSet
 from dcicutils.submitr.progress_constants import PROGRESS_INGESTER, PROGRESS_LOADXL, PROGRESS_PARSE
 from submitr.base import DEFAULT_APP
 from submitr.exceptions import PortalPermissionError
-from submitr.file_for_upload import FilesForUpload
+from submitr.file_for_upload import FilesForUpload, get_file_upload_bucket
 from submitr.metadata_template import check_metadata_version, print_metadata_version_warning
 from submitr.output import PRINT, PRINT_OUTPUT, PRINT_STDOUT, SHOW, get_output_file, setup_for_output_file_option
 from submitr.rclone import RCloneGoogle
@@ -42,7 +42,10 @@ from submitr.submission_uploads import (
     lookup_ingestion_submission_from_upload_file
 )
 from submitr.utils import chars, format_path, get_health_page, is_excel_file_name, print_boxed, tobool
-from submitr.validators.decorator import define_validators_hook, finish_validators_hook
+from submitr.validators.decorators import (
+    define_structured_data_validator_hook,
+    define_structured_data_validator_sheet_hook
+)
 
 
 def set_output_file(output_file):
@@ -607,7 +610,11 @@ def submit_any_ingestion(ingestion_filename, *,
                          no_query=False,
                          subfolders=False,
                          submission_protocol=DEFAULT_SUBMISSION_PROTOCOL,
+                         # The --submit option (aka --submit-new) allows items to
+                         # be created but not updated (at least not updates with diffs)
                          submit=False,
+                         # The --update option allow items to be created or updated.
+                         submit_update=False,
                          rclone_google=None,
                          validate_local_only=False,
                          validate_remote_only=False,
@@ -618,6 +625,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          keys_file=None,
                          show_details=False,
                          noanalyze=False,
+                         nouploads=False,
                          json_only=False,
                          ref_nocache=False,
                          merge=False,
@@ -661,7 +669,7 @@ def submit_any_ingestion(ingestion_filename, *,
         app_default = False
         PRINT(f"App name is: {app}")
     """
-    validation = not submit
+    validation = not (submit or submit_update)
 
     # Setup for output to specified output file, in addition to stdout),
     # except in this case we will not output large amounts of output to stdout.
@@ -695,7 +703,8 @@ def submit_any_ingestion(ingestion_filename, *,
         PRINT("WARNING: Skipping local (client) validation is not recommended.")
 
     if debug:
-        PRINT(f"DEBUG: submit = {submit}")
+        PRINT(f"DEBUG: submit_new = {submit}")
+        PRINT(f"DEBUG: submit_update = {submit_update}")
         PRINT(f"DEBUG: validation = {validation}")
         PRINT(f"DEBUG: validate_local_only = {validate_local_only}")
         PRINT(f"DEBUG: validate_remote_only = {validate_remote_only}")
@@ -717,7 +726,7 @@ def submit_any_ingestion(ingestion_filename, *,
             autoadd = {"submission_centers": [extract_identifying_value_from_path(submission_centers[0])]}
         elif len(submission_centers) > 1:
             PRINT(f"Multiple submission centers: {', '.join(submission_centers)}")
-            PRINT(f"You must specify onely one submission center using the --submission-center option.")
+            PRINT(f"You must specify only one submission center using the --submission-center option.")
             sys.exit(1)
 
     known_submission_centers = _get_submission_centers(portal)
@@ -769,6 +778,7 @@ def submit_any_ingestion(ingestion_filename, *,
         structured_data = _validate_locally(ingestion_filename, portal,
                                             validation=validation,
                                             validate_local_only=validate_local_only,
+                                            submit_update=submit_update,
                                             autoadd=autoadd, upload_folder=upload_folder, subfolders=subfolders,
                                             rclone_google=rclone_google,
                                             merge=merge,
@@ -890,6 +900,10 @@ def submit_any_ingestion(ingestion_filename, *,
     PRINT("Submission complete!")
 
     # Now that submission has successfully complete, review the files to upload and then do it.
+
+    if nouploads:
+        PRINT("Skipping any uploads (per --nouploads option).")
+        return
 
     do_any_uploads(submission_response,
                    metadata_file=ingestion_filename,
@@ -1703,11 +1717,12 @@ def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
         f"===" if file_submitted_id else None,
         f"{file_submitted_id}" if file_submitted_id else None,
         "===",
-        f"File: {file_title}" if file_title else None,
         f"File Name: {file_name}" if file_name else None,
         f"File Type: {file_type}" if file_type else None,
         f"File Format: {file_format}" if file_format else None,
         f"File Accession: {file_accession}" if file_accession else None,
+        f"S3 Bucket: {get_file_upload_bucket(portal)}",
+        f"S3 Key: {file_uuid}/{file_title}" if file_title else None,
         f"===",
         f"Status: {file_status.title()}" if file_status else None,
         f"Size: {file_size_formatted} ({file_size} bytes)" if file_size else None,
@@ -1811,14 +1826,14 @@ def _fetch_results(metadata_bundles_bucket: str, uuid: str, file: str) -> Option
 
 
 def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional[dict] = None,
-                      validation: bool = False, validate_local_only: bool = False,
+                      validation: bool = False, validate_local_only: bool = False, submit_update: bool = False,
                       upload_folder: Optional[str] = None, subfolders: bool = False,
                       rclone_google: Optional[RCloneGoogle] = None,
                       exit_immediately_on_errors: bool = False,
                       ref_nocache: bool = False, merge: bool = False, output_file: Optional[str] = None,
                       valid_submission_centers: Optional[str] = None,
                       noanalyze: bool = False, json_only: bool = False, noprogress: bool = False,
-                      verbose_json: bool = False, verbose: bool = False, quiet: bool = False,
+                      verbose_json: bool = False, verbose: bool = False,
                       debug: bool = False, debug_sleep: Optional[str] = None) -> StructuredDataSet:
 
     if json_only:
@@ -1898,7 +1913,8 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     if debug:
         PRINT("DEBUG: Starting client validation.")
 
-    validator_hook = define_validators_hook(valid_submission_centers=valid_submission_centers)
+    validator_hook = define_structured_data_validator_hook(valid_submission_centers=valid_submission_centers)
+    validator_sheet_hook = define_structured_data_validator_sheet_hook()
     structured_data = StructuredDataSet(None, portal, autoadd=autoadd,
                                         # ref_lookup_strategy=ref_lookup_strategy,
                                         ref_lookup_nocache=ref_nocache,
@@ -1913,11 +1929,10 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                         # given (i.e. e.g. spreadsheet) object(s) into any existing ones.
                                         merge=merge,
                                         progress=None if noprogress else define_progress_callback(debug=debug),
-                                        # Doing submitted_id validation in validate_submitted_ids, in parallel.
                                         validator_hook=validator_hook,
+                                        validator_sheet_hook=validator_sheet_hook,
                                         debug_sleep=debug_sleep)
     structured_data.load_file(ingestion_filename)
-    finish_validators_hook(structured_data, valid_submission_centers=valid_submission_centers)
 
     if debug:
         PRINT("DEBUG: Finished client validation.")
@@ -1968,13 +1983,13 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
         _print_structured_data_verbose(portal, structured_data, ingestion_filename,
                                        upload_folder=upload_folder, recursive=subfolders,
                                        rclone_google=rclone_google,
-                                       validation=validation, verbose=verbose)
-    elif not quiet:
-        if not noanalyze:
-            _print_structured_data_status(portal, structured_data, validation=validation,
-                                          report_updates_only=True, noprogress=noprogress, verbose=verbose, debug=debug)
-        else:
-            PRINT("Skipping analysis of metadata wrt creates/updates to be done (per --noanalyze).")
+                                       validation=validation, submit_update=submit_update, verbose=verbose)
+    elif not noanalyze:
+        _print_structured_data_status(portal, structured_data, validation=validation, submit_update=submit_update,
+                                      report_updates_only=True, noprogress=noprogress, verbose=verbose, debug=debug)
+    else:
+        PRINT("Skipping analysis of metadata wrt creates/updates to be done (per --noanalyze).")
+
     if not validation_okay:
         if not yes_or_no(f"There are some preliminary errors outlined above;"
                          f" do you want to continue with {'validation' if validation else 'submission'}?"):
@@ -2023,7 +2038,10 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal,
             printed_newline = True
         PRINT_OUTPUT(f"- Data errors: {len(data_validation_errors)}")
         for error in data_validation_errors:
-            PRINT_OUTPUT(f"  - ERROR: {_format_issue(error, ingestion_filename)}")
+            formatted_issue = _format_issue(error, ingestion_filename)
+            if formatted_issue.startswith("Error: "):
+                formatted_issue = formatted_issue[7:]
+            PRINT_OUTPUT(f"  - ERROR: {formatted_issue}")
 
     if ref_validation_errors:
         if not printed_newline:
@@ -2148,7 +2166,7 @@ def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> Lis
 def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDataSet, ingestion_filename: str,
                                    upload_folder: str, recursive: bool,
                                    rclone_google: Optional[RCloneGoogle] = None,
-                                   validation: bool = False,
+                                   validation: bool = False, submit_update: bool = False,
                                    noanalyze: bool = False, noprogress: bool = False, verbose: bool = False) -> None:
     if (reader_warnings := structured_data.reader_warnings):
         PRINT_OUTPUT(f"\n> Parser warnings:")
@@ -2174,14 +2192,14 @@ def _print_structured_data_verbose(portal: Portal, structured_data: StructuredDa
         PRINT_OUTPUT()
     if not noanalyze:
         _print_structured_data_status(portal, structured_data,
-                                      validation=validation,
+                                      validation=validation, submit_update=submit_update,
                                       report_updates_only=True, noprogress=noprogress, verbose=verbose)
     else:
         PRINT("Skipping analysis of metadata wrt creates/updates to be done (per --noanalyze).")
 
 
 def _print_structured_data_status(portal: Portal, structured_data: StructuredDataSet,
-                                  validation: bool = False,
+                                  validation: bool = False, submit_update: bool = False,
                                   report_updates_only: bool = False,
                                   noprogress: bool = False, verbose: bool = False, debug: bool = False) -> None:
 
@@ -2250,6 +2268,7 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
 
     to_or_which_would = "which would" if validation else "to"
 
+    do_not_continue_because_updates_and_not_submit_update = False
     if ncreates > 0:
         if nupdates > 0:
             message = f"Objects {to_or_which_would} be -> Created: {ncreates} | Updated: {nupdates}"
@@ -2261,6 +2280,9 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
         message = f"Objects {to_or_which_would} be updated: {nupdates}"
         if nsubstantive_updates == 0:
             message += " (no substantive differences)"
+        elif (not validation) and (not submit_update):
+            do_not_continue_because_updates_and_not_submit_update = True
+
     else:
         message = "No objects {to_or_which_would} create or update."
         return
@@ -2311,6 +2333,12 @@ def _print_structured_data_status(portal: Portal, structured_data: StructuredDat
                             PRINT(f"     DELETE {diff_path}: {diff.value}")
     if nreported:
         PRINT()
+    if do_not_continue_because_updates_and_not_submit_update:
+        PRINT(f"{chars.rarrow} This submission would result in UPDATES to existing data.")
+        PRINT(f"{chars.rarrow} But you have NOT specified the --submit-update option.")
+        PRINT(f"{chars.rarrow} This submission will NOT continue. Exiting with no action.")
+        PRINT()
+        exit(0)
 
 
 def _print_json_with_prefix(data, prefix):
@@ -2441,7 +2469,8 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
             raise Exception(
                 f"No portal key defined; setup your ~/.{app or 'smaht'}-keys.json file and use the --env argument.")
     if report:
-        message = f"SMaHT submitr version: {get_version()}"
+        message = (f"SMaHT submitr version: {get_version()}"
+                   f" | Python: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
         if note:
             message += f" | {note}"
         PRINT(message)
@@ -2459,7 +2488,8 @@ def _define_portal(key: Optional[dict] = None, env: Optional[str] = None, server
                     pass
         PRINT(f"Portal environment (in keys file) is: {portal.env}{' (from SMAHT_ENV)' if env_from_env else ''}")
         PRINT(f"Portal keys file is: {format_path(portal.keys_file)}")
-        PRINT(f"Portal server is: {portal.server}")
+        portal_version = portal.get_version()
+        PRINT(f"Portal server is: {portal.server}{f' ({portal_version})' if portal_version else ''}")
         if portal.key_id and len(portal.key_id) > 2:
             PRINT(f"Portal key prefix is: {portal.key_id[:2]}******")
     if ping and not portal.ping():
