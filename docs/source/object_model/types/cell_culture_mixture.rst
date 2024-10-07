@@ -22,7 +22,7 @@ CellCultureMixture
     and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     <p />
-    
+    <br /><u>Description</u>: A Cell Culture Mixture is a mixture of cell cultures. For example, COLO829BLT50 is a mixture of the cell cultures COLO829BL and COLO829T at a 50-to-1 ratio.
 
 
 .. tip::
