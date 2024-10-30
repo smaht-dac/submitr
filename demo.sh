@@ -1,0 +1,1 @@
+submit-metadata-bundle --env smaht-local --submit-new --directory demo/annual_2024/files --cloud-source gs://smaht-submitr-rclone-testing/demo --cloud-credentials ~/.config/google-cloud/smaht-dac-617e0480d8e2.json demo/annual_2024/bcm_formatted_hapmapmix.xlsx $*

@@ -22,7 +22,7 @@ TissueSample
     and properties with types in <span style='color:green'><b>green</b></span> are
     <a href="#reference-properties" style="color:#222222"><i><b><u>reference</u></b></i></a> properties.
     <p />
-    
+    <br /><u>Description</u>: Samples derived from a tissue. A Tissue Sample describes a portion taken from a Tissue, likely consisting of some unknown mixture of cell types.
 
 
 .. tip::
