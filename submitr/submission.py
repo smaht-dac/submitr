@@ -1933,8 +1933,6 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                         validator_sheet_hook=validator_sheet_hook,
                                         debug_sleep=debug_sleep)
     structured_data.load_file(ingestion_filename)
-    import pdb ; pdb.set_trace()  # noqa
-    pass
 
     if debug:
         PRINT("DEBUG: Finished client validation.")
