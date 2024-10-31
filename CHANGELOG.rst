@@ -7,6 +7,12 @@ Change Log
 ----------
 
 
+1.3.0
+=====
+* Fix for C4-1187 where we were not implicitly adding consortia to submitted like for submission-centers.
+  Also added setting of file_size for uploaded files.
+
+
 1.2.0
 =====
 * Changed MEANING of (and added --submit-new synonym for) the --submit option, which now
