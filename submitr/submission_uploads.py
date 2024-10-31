@@ -251,6 +251,7 @@ def upload_file(file: FileForUpload, portal: Portal) -> None:
                           print_progress=True,
                           verify_upload=True,
                           catch_interrupt=True,
+                          portal=portal,
                           printf=PRINT)
 
 
