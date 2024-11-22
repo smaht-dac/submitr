@@ -302,7 +302,7 @@ class FileForUpload:
                 self._status = portal.get_metadata(self.uuid).get("status", "")
             except Exception:
                 if callable(printf):
-                    printf("ERROR: Cannot get status for file: {file.name} ({file.uuid})")
+                    printf(f"ERROR: Cannot get status for file: {self.name} ({self.uuid})")
                 return None
         return self._status
 
