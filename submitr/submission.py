@@ -1795,6 +1795,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     if rclone_google:
         rclone_google.verify_connectivity()
 
+    PRINT(f"Attempting to resume uploads for submission: {uuid}")
     do_any_uploads(uuid,
                    metadata_file=bundle_filename,
                    main_search_directory=upload_folder,
