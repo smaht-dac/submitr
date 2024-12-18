@@ -24,11 +24,3 @@ submitr.scripts.submit\_metadata\_bundle module
    :members:
    :undoc-members:
    :show-inheritance:
-
-submitr.scripts.upload\_item\_data module
------------------------------------------
-
-.. automodule:: submitr.scripts.upload_item_data
-   :members:
-   :undoc-members:
-   :show-inheritance:

@@ -31,6 +31,7 @@ Items suffixed with **(A)** are abstract types which may not be directly created
            ├── <a href='types/file_format.html'>FileFormat</a>
            ├── <a href='types/file_set.html'>FileSet</a>
            ├── <a href='types/filter_set.html'>FilterSet</a>
+           ├── <a href='types/gene_annotation.html'>GeneAnnotation</a>
            ├── <a href='types/histology.html'>Histology</a>
            ├── <a href='types/image.html'>Image</a>
            ├── <a href='types/library.html'>Library</a>
