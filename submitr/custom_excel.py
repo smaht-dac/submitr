@@ -1,7 +1,9 @@
+import io
+import json
+import os
 from requests import get as requests_get
 from typing import Any, Iterator, List, Optional
 from dcicutils.data_readers import Excel, ExcelSheetReader
-from submitr.config.custom_column_mappings import CUSTOM_COLUMN_MAPPINGS as CUSTOM_COLUMN_MAPPINGS_FALLBACK
 
 CUSTOM_COLUMN_MAPPINGS_BASE_URL = "https://raw.githubusercontent.com/smaht-dac/submitr/refs/heads"
 CUSTOM_COLUMN_MAPPINGS_BRANCH = "dmichaels-custom-column-mappings-20250115"
@@ -22,7 +24,8 @@ class CustomExcel(Excel):
         try:
             return requests_get(CUSTOM_COLUMN_MAPPINGS_URL).json()
         except Exception:
-            return CUSTOM_COLUMN_MAPPINGS_FALLBACK
+            with io.open(os.path.join(os.path.dirname(__file__), "config", "custom_column_mappings.json"), "r") as f:
+                return json.load(f)
 
 
 class CustomExcelSheetReader(ExcelSheetReader):
