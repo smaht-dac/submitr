@@ -31,6 +31,18 @@ class CustomExcelSheetReader(ExcelSheetReader):
         self._custom_column_mappings = CustomExcel._get_custom_column_mappings()
         super().__init__(*args, **kwargs)
 
+    def _define_header(self, header: List[Optional[Any]]) -> None:
+        if not self._custom_column_mappings:
+            super()._define_header(header)
+            return
+        self.header = []
+        for column_name in header:
+            if column_name in self._custom_column_mappings:
+                synthetic_column_names = list(self._custom_column_mappings[column_name].keys())
+                self.header += synthetic_column_names
+            else:
+                self.header.append(column_name)
+
     def __iter__(self) -> Iterator:
         for row in super().__iter__():
             yield self._map(row)
@@ -58,15 +70,3 @@ class CustomExcelSheetReader(ExcelSheetReader):
         if synthetic_columns:
             row.update(synthetic_columns)
         return row
-
-    def _define_header(self, header: List[Optional[Any]]) -> None:
-        if not self._custom_column_mappings:
-            super()._define_header(header)
-            return
-        self.header = []
-        for column_name in header:
-            if column_name in self._custom_column_mappings:
-                synthetic_column_names = list(self._custom_column_mappings[column_name].keys())
-                self.header += synthetic_column_names
-            else:
-                self.header.append(column_name)
