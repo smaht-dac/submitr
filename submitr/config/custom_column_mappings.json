@@ -65,7 +65,6 @@
         }
     },
     "sheet_mappings": {
-        "ExternalQualityMetric": "external_quality_metric",
-        "TEST": "external_quality_metric"
+        "ExternalQualityMetric": "external_quality_metric"
     }
 }

@@ -58,9 +58,10 @@ class CustomExcelSheetReader(ExcelSheetReader):
         super().__init__(*args, **kwargs)
 
     def _define_header(self, header: List[Optional[Any]]) -> None:
+        super()._define_header(header)
         if not self._custom_column_mappings:
-            super()._define_header(header)
             return
+        self._original_header = self.header
         self.header = []
         for column_name in header:
             if column_name in self._custom_column_mappings:
@@ -69,9 +70,13 @@ class CustomExcelSheetReader(ExcelSheetReader):
             else:
                 self.header.append(column_name)
 
-    def __iter__(self) -> Iterator:
-        for row in super().__iter__():
-            yield self._map(row)
+    def _iter_header(self) -> List[str]:
+        if not self._custom_column_mappings:
+            return super()._iter_header()
+        return self._original_header
+
+    def _iter_mapper(self, row: dict) -> List[str]:
+        return self._map(row)
 
     def _map(self, row: dict) -> dict:
         if not self._custom_column_mappings:

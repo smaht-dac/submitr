@@ -555,13 +555,13 @@ test-randomorder = ["pytest-randomly"]
 
 [[package]]
 name = "dcicutils"
-version = "8.16.6.1b2"
+version = "8.16.6.1b3"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 optional = false
 python-versions = "<3.13,>=3.8.1"
 files = [
-    {file = "dcicutils-8.16.6.1b2-py3-none-any.whl", hash = "sha256:c1ccfd69ee8c8846e2acc92758d2f0a83ff698c44ac97c7a9d613b7961640d85"},
-    {file = "dcicutils-8.16.6.1b2.tar.gz", hash = "sha256:59cc6174b91d01100fa327859603226644d26eeecf16194a1dc2d6691c22b974"},
+    {file = "dcicutils-8.16.6.1b3-py3-none-any.whl", hash = "sha256:42d0bcce6aaa35dcf427eda7b2db1b287f6609fb500cd91799c9e84df8e6a234"},
+    {file = "dcicutils-8.16.6.1b3.tar.gz", hash = "sha256:4b5b176c78cd61ee391431aabaaf6d228865e3d3d9cff4cdf326d7802ddb183b"},
 ]
 
 [package.dependencies]
