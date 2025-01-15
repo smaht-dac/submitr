@@ -12,16 +12,14 @@ CUSTOM_COLUMN_MAPPINGS_URL = f"{CUSTOM_COLUMN_MAPPINGS_BASE_URL}/{CUSTOM_COLUMN_
 
 class CustomExcel(Excel):
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
     def sheet_reader(self, sheet_name: str) -> ExcelSheetReader:
-        return CustomExcelSheetReader(self, sheet_name=sheet_name, workbook=self._workbook)
+        return CustomExcelSheetReader(self, sheet_name=sheet_name, workbook=self._workbook,
+                                      custom_column_mappings=CustomExcel._get_custom_column_mappings())
 
     @staticmethod
     def _get_custom_column_mappings() -> dict:
         try:
-            custom_column_mappings = requests_get(CUSTOM_COLUMN_MAPPINGS_URL).json()
+            custom_column_mappings = requests_get('x'+CUSTOM_COLUMN_MAPPINGS_URL).json()
         except Exception:
             try:
                 with open(os.path.join(os.path.dirname(__file__), "config", "custom_column_mappings.json"), "r") as f:
@@ -33,18 +31,30 @@ class CustomExcel(Excel):
         if isinstance(column_mappings := custom_column_mappings.get("column_mappings"), dict):
             if isinstance(sheet_mappings := custom_column_mappings.get("sheet_mappings"), dict):
                 for sheet_name in list(sheet_mappings.keys()):
-                    if isinstance(column_mappings.get(sheet_mappings[sheet_name]), dict):
-                        sheet_mappings[sheet_name] = column_mappings.get(sheet_mappings[sheet_name])
-                    else:
+                    if isinstance(sheet_mappings[sheet_name], str):
+                        if isinstance(column_mappings.get(sheet_mappings[sheet_name]), dict):
+                            sheet_mappings[sheet_name] = column_mappings.get(sheet_mappings[sheet_name])
+                        else:
+                            del sheet_mappings[sheet_name]
+                    elif not isinstance(sheet_mappings[sheet_name], dict):
                         del sheet_mappings[sheet_name]
-                pass
         return sheet_mappings
 
 
 class CustomExcelSheetReader(ExcelSheetReader):
 
     def __init__(self, *args, **kwargs) -> None:
-        self._custom_column_mappings = CustomExcel._get_custom_column_mappings()
+        ARGUMENT_NAME_SHEET_NAME = "sheet_name"
+        ARGUMENT_NAME_CUSTOM_COLUMN_MAPPINGS = "custom_column_mappings"
+        self._custom_column_mappings = None
+        if ARGUMENT_NAME_CUSTOM_COLUMN_MAPPINGS in kwargs:
+            custom_column_mappings = kwargs[ARGUMENT_NAME_CUSTOM_COLUMN_MAPPINGS]
+            del kwargs[ARGUMENT_NAME_CUSTOM_COLUMN_MAPPINGS]
+            if not (isinstance(custom_column_mappings, dict) and
+                    isinstance(sheet_name := kwargs.get(ARGUMENT_NAME_SHEET_NAME, None), str) and
+                    isinstance(custom_column_mappings := custom_column_mappings.get(sheet_name), dict)):
+                custom_column_mappings = None
+            self._custom_column_mappings = custom_column_mappings
         super().__init__(*args, **kwargs)
 
     def _define_header(self, header: List[Optional[Any]]) -> None:
