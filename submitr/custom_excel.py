@@ -73,6 +73,3 @@ class CustomExcel(Excel):
 
     def sheet_reader(self, sheet_name: str) -> ExcelSheetReader:
         return CustomExcelSheetReader(self, sheet_name=sheet_name, workbook=self._workbook)
-
-x = CustomExcelSheetReader._get_custom_column_mappings()
-print(x)
