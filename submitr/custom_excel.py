@@ -1,9 +1,25 @@
+from requests import get as requests_get
 from typing import Any, Iterator, List, Optional
 from dcicutils.data_readers import Excel, ExcelSheetReader
 from submitr.config.custom_column_mappings import CUSTOM_COLUMN_MAPPINGS
 
+CUSTOM_COLUMN_MAPPINGS_BASE_URL = "https://raw.githubusercontent.com/smaht-dac/submitr/refs/heads"
+CUSTOM_COLUMN_MAPPINGS_BRANCH = "c4-1187-fix-missing-consortia-on-submitted-items"
+CUSTOM_COLUMN_MAPPINGS_PATH = "submitr/config/custom_column_mappings.json"
+CUSTOM_COLUMN_MAPPINGS_URL = f"{CUSTOM_COLUMN_MAPPINGS_BASE_URL}/{CUSTOM_COLUMN_MAPPINGS_BRANCH}/{CUSTOM_COLUMN_MAPPINGS_PATH}"  # noqa
+
 
 class CustomExcelSheetReader(ExcelSheetReader):
+
+    @staticmethod
+    def _get_custom_column_mappings() -> dict:
+        try:
+            import pdb ; pdb.set_trace()  # noqa
+            pass
+            return requests_get(CUSTOM_COLUMN_MAPPINGS_URL).json()
+        except Exception:
+            pass
+        pass
 
     def __init__(self, *args, **kwargs) -> None:
         self._custom_column_mappings = CUSTOM_COLUMN_MAPPINGS.get(kwargs.get("sheet_name"))
@@ -57,3 +73,6 @@ class CustomExcel(Excel):
 
     def sheet_reader(self, sheet_name: str) -> ExcelSheetReader:
         return CustomExcelSheetReader(self, sheet_name=sheet_name, workbook=self._workbook)
+
+x = CustomExcelSheetReader._get_custom_column_mappings()
+print(x)
