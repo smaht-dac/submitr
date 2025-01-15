@@ -9,7 +9,13 @@ CUSTOM_COLUMN_MAPPINGS_PATH = "submitr/config/custom_column_mappings.json"
 CUSTOM_COLUMN_MAPPINGS_URL = f"{CUSTOM_COLUMN_MAPPINGS_BASE_URL}/{CUSTOM_COLUMN_MAPPINGS_BRANCH}/{CUSTOM_COLUMN_MAPPINGS_PATH}"  # noqa
 
 
-class CustomExcelSheetReader(ExcelSheetReader):
+class CustomExcel(Excel):
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def sheet_reader(self, sheet_name: str) -> ExcelSheetReader:
+        return CustomExcelSheetReader(self, sheet_name=sheet_name, workbook=self._workbook)
 
     @staticmethod
     def _get_custom_column_mappings() -> dict:
@@ -18,8 +24,11 @@ class CustomExcelSheetReader(ExcelSheetReader):
         except Exception:
             return CUSTOM_COLUMN_MAPPINGS_FALLBACK
 
+
+class CustomExcelSheetReader(ExcelSheetReader):
+
     def __init__(self, *args, **kwargs) -> None:
-        self._custom_column_mappings = CUSTOM_COLUMN_MAPPINGS.get(kwargs.get("sheet_name"))
+        self._custom_column_mappings = CustomExcel._get_custom_column_mappings()
         super().__init__(*args, **kwargs)
 
     def __iter__(self) -> Iterator:
@@ -61,12 +70,3 @@ class CustomExcelSheetReader(ExcelSheetReader):
                 self.header += synthetic_column_names
             else:
                 self.header.append(column_name)
-
-
-class CustomExcel(Excel):
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-    def sheet_reader(self, sheet_name: str) -> ExcelSheetReader:
-        return CustomExcelSheetReader(self, sheet_name=sheet_name, workbook=self._workbook)
