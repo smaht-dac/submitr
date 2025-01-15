@@ -1,4 +1,3 @@
-import io
 import json
 import os
 from requests import get as requests_get
@@ -22,10 +21,24 @@ class CustomExcel(Excel):
     @staticmethod
     def _get_custom_column_mappings() -> dict:
         try:
-            return requests_get(CUSTOM_COLUMN_MAPPINGS_URL).json()
+            custom_column_mappings = requests_get(CUSTOM_COLUMN_MAPPINGS_URL).json()
         except Exception:
-            with io.open(os.path.join(os.path.dirname(__file__), "config", "custom_column_mappings.json"), "r") as f:
-                return json.load(f)
+            try:
+                with open(os.path.join(os.path.dirname(__file__), "config", "custom_column_mappings.json"), "r") as f:
+                    custom_column_mappings = json.load(f)
+            except Exception:
+                custom_column_mappings = None
+        if not isinstance(custom_column_mappings, dict):
+            custom_column_mappings = {}
+        if isinstance(column_mappings := custom_column_mappings.get("column_mappings"), dict):
+            if isinstance(sheet_mappings := custom_column_mappings.get("sheet_mappings"), dict):
+                for sheet_name in list(sheet_mappings.keys()):
+                    if isinstance(column_mappings.get(sheet_mappings[sheet_name]), dict):
+                        sheet_mappings[sheet_name] = column_mappings.get(sheet_mappings[sheet_name])
+                    else:
+                        del sheet_mappings[sheet_name]
+                pass
+        return sheet_mappings
 
 
 class CustomExcelSheetReader(ExcelSheetReader):
