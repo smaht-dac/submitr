@@ -59,45 +59,40 @@ class CustomExcelSheetReader(ExcelSheetReader):
 
     def _define_header(self, header: List[Optional[Any]]) -> None:
         super()._define_header(header)
-        if not self._custom_column_mappings:
-            return
-        self._original_header = self.header
-        self.header = []
-        for column_name in header:
-            if column_name in self._custom_column_mappings:
-                synthetic_column_names = list(self._custom_column_mappings[column_name].keys())
-                self.header += synthetic_column_names
-            else:
-                self.header.append(column_name)
+        if self._custom_column_mappings:
+            self._original_header = self.header
+            self.header = []
+            for column_name in header:
+                if column_name in self._custom_column_mappings:
+                    synthetic_column_names = list(self._custom_column_mappings[column_name].keys())
+                    self.header += synthetic_column_names
+                else:
+                    self.header.append(column_name)
 
     def _iter_header(self) -> List[str]:
-        if not self._custom_column_mappings:
-            return super()._iter_header()
-        return self._original_header
+        if self._custom_column_mappings:
+            return self._original_header
+        return super()._iter_header()
 
     def _iter_mapper(self, row: dict) -> List[str]:
-        return self._map(row)
-
-    def _map(self, row: dict) -> dict:
-        if not self._custom_column_mappings:
-            return row
-        synthetic_columns = {}
-        columns_to_delete = []
-        for column_name in row:
-            if column_name in self._custom_column_mappings:
-                column_mapping = self._custom_column_mappings[column_name]
-                for synthetic_column_name in column_mapping:
-                    synthetic_column_value = column_mapping[synthetic_column_name]
-                    if synthetic_column_value == "{name}":
-                        synthetic_columns[synthetic_column_name] = column_name
-                    elif synthetic_column_value == "{value}":
-                        synthetic_columns[synthetic_column_name] = row[column_name]
-                    else:
-                        synthetic_columns[synthetic_column_name] = synthetic_column_value
-                columns_to_delete.append(column_name)
-        if columns_to_delete:
-            for column_to_delete in columns_to_delete:
-                del row[column_to_delete]
-        if synthetic_columns:
-            row.update(synthetic_columns)
+        if self._custom_column_mappings:
+            synthetic_columns = {}
+            columns_to_delete = []
+            for column_name in row:
+                if column_name in self._custom_column_mappings:
+                    column_mapping = self._custom_column_mappings[column_name]
+                    for synthetic_column_name in column_mapping:
+                        synthetic_column_value = column_mapping[synthetic_column_name]
+                        if synthetic_column_value == "{name}":
+                            synthetic_columns[synthetic_column_name] = column_name
+                        elif synthetic_column_value == "{value}":
+                            synthetic_columns[synthetic_column_name] = row[column_name]
+                        else:
+                            synthetic_columns[synthetic_column_name] = synthetic_column_value
+                    columns_to_delete.append(column_name)
+            if columns_to_delete:
+                for column_to_delete in columns_to_delete:
+                    del row[column_to_delete]
+            if synthetic_columns:
+                row.update(synthetic_columns)
         return row
