@@ -1,7 +1,7 @@
 import json
 import os
 from requests import get as requests_get
-from typing import Any, Iterator, List, Optional
+from typing import Any, List, Optional
 from dcicutils.data_readers import Excel, ExcelSheetReader
 
 CUSTOM_COLUMN_MAPPINGS_BASE_URL = "https://raw.githubusercontent.com/smaht-dac/submitr/refs/heads"
