@@ -715,15 +715,26 @@ def submit_any_ingestion(ingestion_filename, *,
     if not _do_app_arg_defaulting(app_args, user_record, portal, quiet=json_only and not verbose, verbose=verbose):
         pass
 
-    autoadd = None
+    def extract_identifying_value_from_path(path: str) -> str:
+        if isinstance(path, str):
+            if path.endswith("/"):
+                path = path[:-1]
+            return parts[-1] if (parts := path.split("/")) else ""
+        return ""
+
+    autoadd = {}
     if app_args and isinstance(submission_centers := app_args.get("submission_centers"), list):
+        # 2024-10-30/C4-1187/dmichaels: Fix for consortia not being automatically added to all submitted items.
+        if not isinstance(consortia := app_args.get("consortia"), list):
+            consortia = [consortia] if isinstance(consortia := app_args.get("consortia"), str) else []
+        if len(consortia) == 1:
+            autoadd["consortia"] = [extract_identifying_value_from_path(consortia[0])]
+        elif len(consortia) > 1:
+            PRINT(f"Multiple consortia: {', '.join(consortia)}")
+            PRINT(f"You must specify only one consortium using the --consortia option.")
+            sys.exit(1)
         if len(submission_centers) == 1:
-            def extract_identifying_value_from_path(path: str) -> str:
-                if path.endswith("/"):
-                    path = path[:-1]
-                parts = path.split("/")
-                return parts[-1] if parts else ""
-            autoadd = {"submission_centers": [extract_identifying_value_from_path(submission_centers[0])]}
+            autoadd["submission_centers"] = [extract_identifying_value_from_path(submission_centers[0])]
         elif len(submission_centers) > 1:
             PRINT(f"Multiple submission centers: {', '.join(submission_centers)}")
             PRINT(f"You must specify only one submission center using the --submission-center option.")
@@ -1705,7 +1716,8 @@ def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
     file_created = format_datetime(file_object.get("date_created")) or ""
     file_modified = format_datetime(file_object.get("last_modified", {}).get("date_modified")) or ""
     file_modified_by = file_object.get("last_modified", {}).get("modified_by", {}).get("display_title") or ""
-    submission_centers = _format_submission_centers(file_object.get("submission_centers")) or ""
+    submission_centers = _format_affiliation(file_object.get("submission_centers")) or ""
+    consortia = _format_affiliation(file_object.get("consortia")) or ""
     if file_md5_content == file_md5:
         file_md5_content = None
     if file_md5_submitted == file_md5:
@@ -1734,19 +1746,20 @@ def _print_upload_file_summary(portal: Portal, file_object: dict) -> None:
         f"Submitted: {file_created} | {file_submitted_by}" if file_created and file_submitted_by else None,
         f"Modified: {file_modified} | {file_modified_by}" if file_modified and file_modified_by else None,
         f"Submission Centers: {submission_centers}" if submission_centers else None,
+        f"Consortia: {consortia}" if consortia else None,
         "==="
     ]
     print_boxed(lines, right_justified_macro=("[UUID]", lambda: file_uuid))
 
 
-def _format_submission_centers(submission_centers: Optional[List[dict]]) -> Optional[str]:
-    if (not isinstance(submission_centers, List)) or (not submission_centers):
+def _format_affiliation(affiliations: Optional[List[dict]]) -> Optional[str]:
+    if (not isinstance(affiliations, List)) or (not affiliations):
         return None
     result = ""
-    for submission_center in submission_centers:
+    for affiliation in affiliations:
         if result:
             result += " | "
-        result += submission_center.get("display_title")
+        result += affiliation.get("display_title")
     return result
 
 
@@ -1782,6 +1795,7 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     if rclone_google:
         rclone_google.verify_connectivity()
 
+    PRINT(f"Attempting to resume uploads for submission: {uuid}")
     do_any_uploads(uuid,
                    metadata_file=bundle_filename,
                    main_search_directory=upload_folder,

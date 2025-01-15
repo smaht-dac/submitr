@@ -9,6 +9,7 @@ from dcicutils.command_utils import Question
 from dcicutils.file_utils import compute_file_md5
 from dcicutils.misc_utils import format_duration, format_size
 from dcicutils.progress_bar import ProgressBar
+from dcicutils.structured_data import Portal
 from submitr.file_for_upload import FileForUpload
 from submitr.rclone import AmazonCredentials, RCloner, RCloneAmazon, cloud_path
 from submitr.s3_utils import get_s3_bucket_and_key_from_s3_uri, get_s3_key_metadata
@@ -57,6 +58,8 @@ def upload_file_to_aws_s3(file: FileForUpload,
                           print_progress: bool = True,
                           print_preamble: bool = True,
                           verify_upload: bool = True,
+                          update_file_size: bool = True,
+                          portal: Optional[Portal] = None,
                           catch_interrupt: bool = True,
                           printf: Optional[Callable] = print) -> bool:
 
@@ -259,6 +262,11 @@ def upload_file_to_aws_s3(file: FileForUpload,
                 if file_checksum and file_info.get("md5") and (file_checksum != file_info["md5"]):
                     printf(f"WARNING: File checksum mismatch {chars.rarrow} {file_checksum} vs {file_info['md5']}")
                     return False
+                # 2024-10-31/dmichaels/C4-1187: Update the file size.
+                if update_file_size and isinstance(portal, Portal):
+                    if isinstance(file_size, int) and (file_uuid := file.uuid):
+                        portal.patch_metadata(file_uuid, data={"file_size": file_size})
+                        pass
                 printf(f"OK {chars.check}")
                 return True
         except Exception:

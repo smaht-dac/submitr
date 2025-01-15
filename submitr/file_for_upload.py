@@ -299,14 +299,18 @@ class FileForUpload:
     def get_status(self, portal: Portal, printf: Optional[Callable] = None) -> Optional[str]:
         if self._status is None:
             try:
-                self._status = portal.get_metadata(self.uuid).get("status", "")
+                if self.uuid:
+                    self._status = portal.get_metadata(self.uuid).get("status", "")
             except Exception:
                 if callable(printf):
-                    printf("ERROR: Cannot get status for file: {file.name} ({file.uuid})")
+                    printf(f"ERROR: Cannot get status for file: {self.name} ({self.uuid})")
                 return None
         return self._status
 
     def should_upload(self, portal: Portal, printf: Optional[Callable] = None) -> bool:
+        if not self.uuid:
+            # No uuid for the file  means we are validating only.
+            return True
         file_status = self.get_status(portal, printf=printf)
         if file_status not in _FILE_STATUSES_REQUIRED_FOR_UPLOAD:
             # Here, the file status is not "uploading" (or one of the others
