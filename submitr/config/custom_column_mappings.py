@@ -45,7 +45,7 @@ _CUSTOM_COLUMN_MAPPINGS_EXTERNAL_QUALITY_METRIC = {
         "qc_values#7.derived_from": "{name}",
         "qc_values#7.value": "{value}",
         "qc_values#7.key": "Number of Final Post-filtering Consensus Interrogated Base Pairs",
-        "qc_values#7.tooltip": "After applying all filters for variant calling, e.e. Mapping quality, Low complexity regions, a4s2 duplex reconstruction criteria, etc."
+        "qc_values#7.tooltip": "After applying all filters for variant calling, e.e. Mapping quality, Low complexity regions, a4s2 duplex reconstruction criteria, etc."  # noqa
     },
     "somatic_snv_count_by_molecule": {
         "qc_values#8.derived_from": "{name}",
