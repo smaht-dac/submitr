@@ -133,9 +133,11 @@ class CustomExcelSheetReader(ExcelSheetReader):
                             return str(value)
                         if value_specifier[6] == ":":
                             if (value_specifier := value_specifier[7:-1]) in ["int", "integer"]:
-                                return to_integer(value, fallback=value, allow_commas=True, allow_multiplier_suffix=True)
+                                return to_integer(value, fallback=value,
+                                                  allow_commas=True, allow_multiplier_suffix=True)
                             elif value_specifier in ["float", "number"]:
-                                return to_float(value, fallback=value, allow_commas=True, allow_multiplier_suffix=True)
+                                return to_float(value, fallback=value,
+                                                allow_commas=True, allow_multiplier_suffix=True)
                             elif value_specifier in ["bool", "boolean"]:
                                 return to_boolean(value, fallback=value)
                         return str(value)
