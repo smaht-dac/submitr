@@ -3,6 +3,7 @@ import os
 from requests import get as requests_get
 from typing import Any, List, Optional
 from dcicutils.data_readers import Excel, ExcelSheetReader
+from dcicutils.misc_utils import to_boolean, to_float, to_integer
 
 # This module implements a custom Excel spreadsheet class which support "custom column mappings",
 # meaning that, and a very low/early level in processing, the columns/values in the spreadsheet
@@ -109,8 +110,9 @@ class CustomExcelSheetReader(ExcelSheetReader):
                         synthetic_column_value = column_mapping[synthetic_column_name]
                         if synthetic_column_value == "{name}":
                             synthetic_columns[synthetic_column_name] = column_name
-                        elif synthetic_column_value == "{value}":
-                            synthetic_columns[synthetic_column_name] = row[column_name]
+                        elif (column_value := self._parse_value_specifier(synthetic_column_value,
+                                                                          row[column_name])) is not None:
+                            synthetic_columns[synthetic_column_name] = column_value
                         else:
                             synthetic_columns[synthetic_column_name] = synthetic_column_value
                     columns_to_delete.append(column_name)
@@ -120,3 +122,21 @@ class CustomExcelSheetReader(ExcelSheetReader):
             if synthetic_columns:
                 row.update(synthetic_columns)
         return row
+
+    @staticmethod
+    def _parse_value_specifier(value_specifier: Optional[Any], value: Optional[Any]) -> Optional[Any]:
+        if value is not None:
+            if isinstance(value_specifier, str) and (value_specifier := value_specifier.replace(" ", "")):
+                if value_specifier.startswith("{value"):
+                    if (value_specifier[len(value_specifier) - 1] == "}"):
+                        if len(value_specifier) == 7:
+                            return str(value)
+                        if value_specifier[6] == ":":
+                            if (value_specifier := value_specifier[7:-1]) in ["int", "integer"]:
+                                return to_integer(value, fallback=value, allow_commas=True, allow_multiplier_suffix=True)
+                            elif value_specifier in ["float", "number"]:
+                                return to_float(value, fallback=value, allow_commas=True, allow_multiplier_suffix=True)
+                            elif value_specifier in ["bool", "boolean"]:
+                                return to_boolean(value, fallback=value)
+                        return str(value)
+        return None
