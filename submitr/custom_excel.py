@@ -4,6 +4,29 @@ from requests import get as requests_get
 from typing import Any, List, Optional
 from dcicutils.data_readers import Excel, ExcelSheetReader
 
+# This module implements a custom Excel spreadsheet class which support "custom column mappings",
+# meaning that, and a very low/early level in processing, the columns/values in the spreadsheet
+# can be redefined/remapped to different columns/values. The mapping is defined by a JSON config
+# file (by default in ../config/custom_column_mappings.json). It can be thought of as a virtual
+# preprocessing step on the spreadsheet. This was first implemented to support the simplified QC
+# columns/values. For EXAMPLE, so the spreadsheet author can specify a single column like this:
+#
+#     external_quality_metric: 11870183
+#     total_raw_bases_sequenced: 44928835584
+#
+# But this will be mapped, i.e the system will act AS-iF we instead had these columns/values:
+#
+#     qc_values#0.derived_from: total_raw_reads_sequenced
+#     qc_values#0.value:        11870183
+#     qc_values#0.key:          Total Raw Reads Sequenced
+#     qc_values#0.tooltip:      # of reads (150bp)
+#     qc_values#1.derived_from: total_raw_bases_sequenced
+#     qc_values#1.value:        44928835584
+#     qc_values#1.key:          Total Raw Bases Sequenced
+#     qc_values#1.tooltip:      None
+#
+# The hook for this is to pass the CustomExcel type to StructuredDataSet in submission.py.
+
 CUSTOM_COLUMN_MAPPINGS_BASE_URL = "https://raw.githubusercontent.com/smaht-dac/submitr/refs/heads"
 CUSTOM_COLUMN_MAPPINGS_BRANCH = "dmichaels-custom-column-mappings-20250115"
 CUSTOM_COLUMN_MAPPINGS_PATH = "submitr/config/custom_column_mappings.json"
