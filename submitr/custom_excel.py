@@ -19,7 +19,7 @@ class CustomExcel(Excel):
     @staticmethod
     def _get_custom_column_mappings() -> dict:
         try:
-            custom_column_mappings = requests_get('x'+CUSTOM_COLUMN_MAPPINGS_URL).json()
+            custom_column_mappings = requests_get(CUSTOM_COLUMN_MAPPINGS_URL).json()
         except Exception:
             try:
                 with open(os.path.join(os.path.dirname(__file__), "config", "custom_column_mappings.json"), "r") as f:
