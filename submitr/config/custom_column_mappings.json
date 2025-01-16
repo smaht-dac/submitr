@@ -1,5 +1,8 @@
 {
     "version": "1.0.0",
+    "sheet_mappings": {
+        "ExternalQualityMetric": "external_quality_metric"
+    },
     "column_mappings": {
         "external_quality_metric": {
             "total_raw_reads_sequenced": {
@@ -63,8 +66,5 @@
                 "qc_values#9.tooltip": "Detected somatic mutation / final consensus interrogated base pairs"
             }
         }
-    },
-    "sheet_mappings": {
-        "ExternalQualityMetric": "external_quality_metric"
     }
 }
