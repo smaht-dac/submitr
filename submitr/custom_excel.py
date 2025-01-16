@@ -26,6 +26,7 @@ from dcicutils.data_readers import Excel, ExcelSheetReader
 #     qc_values#1.tooltip:      None
 #
 # The hook for this is to pass the CustomExcel type to StructuredDataSet in submission.py.
+# Note that the config file is fetched from GitHub, with a fallback to ../config/custom_column_mappings.json.
 
 CUSTOM_COLUMN_MAPPINGS_BASE_URL = "https://raw.githubusercontent.com/smaht-dac/submitr/refs/heads"
 CUSTOM_COLUMN_MAPPINGS_BRANCH = "dmichaels-custom-column-mappings-20250115"
