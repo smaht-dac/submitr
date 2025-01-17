@@ -66,7 +66,7 @@ from dcicutils.misc_utils import to_boolean, to_float, to_integer
 # as possible/acceptable types for qc_values.value), we also allow a ":TYPE" suffix for the
 # special "{value}" macro, so that a specific primitive type may be specified, e.g. "{value:integer}"
 # will evaluate the original property value as an integer (if it cannot be converted to an integer
-# then it whatever its value is will be passed on through as a string).  
+# then it whatever its value is will be passed on through as a string).
 #
 # The hook for this is to pass the CustomExcel type to StructuredDataSet in submission.py.
 # Note that the config file is fetched from GitHub, with a fallback to ../config/custom_column_mappings.json.
