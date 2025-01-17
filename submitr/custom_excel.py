@@ -1,4 +1,5 @@
 from copy import deepcopy
+import io
 import json
 import os
 from requests import get as requests_get
@@ -11,7 +12,7 @@ from dcicutils.misc_utils import to_boolean, to_float, to_integer
 # can be redefined/remapped to different columns/values. The mapping is defined by a JSON config
 # file (by default in config/custom_column_mappings.json). It can be thought of as a virtual
 # preprocessing step on the spreadsheet. This was first implemented to support the simplified QC
-# columns/values. For EXAMPLE, so the spreadsheet author can specify a single column like this:
+# columns/values. For EXAMPLE, so the spreadsheet author can specify single columns like this:
 #
 #   external_quality_metric: 11870183
 #   total_raw_bases_sequenced: 44928835584
@@ -27,7 +28,7 @@ from dcicutils.misc_utils import to_boolean, to_float, to_integer
 #   qc_values#1.key:          Total Raw Bases Sequenced
 #   qc_values#1.tooltip:      None
 #
-# The relevant portaion of the controlling config file (config/custom_column_mappings.json)
+# The relevant portion of the controlling config file (config/custom_column_mappings.json)
 # for the above example looks something like this:
 #
 #   "sheet_mappings": {
@@ -90,7 +91,7 @@ class CustomExcel(Excel):
             if not custom_column_mappings:
                 try:
                     file = os.path.join(os.path.dirname(__file__), "config", "custom_column_mappings.json")
-                    with open(file, "r") as f:
+                    with io.open(file, "r") as f:
                         custom_column_mappings = json.load(f)
                 except Exception:
                     custom_column_mappings = None
@@ -138,6 +139,10 @@ class CustomExcelSheetReader(ExcelSheetReader):
     def _define_header(self, header: List[Optional[Any]]) -> None:
 
         def fixup_custom_column_mappings(custom_column_mappings: dict, actual_column_names: List[str]) -> dict:
+
+            # This fixes up the custom column mappings config for this particular sheet based
+            # on the actual (header) column names, i.e. e.g. in particular for the array
+            # specifiers like mapping "qc_values#.value" to qc_values#0.value".
 
             def fixup_custom_array_column_mappings(custom_column_mappings: dict) -> None:
 
