@@ -11,6 +11,12 @@
                 "qc_values#.key": "Total Raw Reads Sequenced",
                 "qc_values#.tooltip": "# of reads (150bp)"
             },
+            "foobar": {
+                "qc_values#.derived_from": "{name}",
+                "qc_values#.value": "{value:integer}",
+                "qc_values#.key": "Total Raw Bases Sequenced",
+                "qc_values#.tooltip": null
+            },
             "total_raw_bases_sequenced": {
                 "qc_values#.derived_from": "{name}",
                 "qc_values#.value": "{value:integer}",

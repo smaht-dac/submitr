@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 import os
 from requests import get as requests_get
@@ -8,23 +9,52 @@ from dcicutils.misc_utils import to_boolean, to_float, to_integer
 # This module implements a custom Excel spreadsheet class which support "custom column mappings",
 # meaning that, and a very low/early level in processing, the columns/values in the spreadsheet
 # can be redefined/remapped to different columns/values. The mapping is defined by a JSON config
-# file (by default in ../config/custom_column_mappings.json). It can be thought of as a virtual
+# file (by default in config/custom_column_mappings.json). It can be thought of as a virtual
 # preprocessing step on the spreadsheet. This was first implemented to support the simplified QC
 # columns/values. For EXAMPLE, so the spreadsheet author can specify a single column like this:
 #
-#     external_quality_metric: 11870183
-#     total_raw_bases_sequenced: 44928835584
+#   external_quality_metric: 11870183
+#   total_raw_bases_sequenced: 44928835584
 #
 # But this will be mapped, i.e the system will act AS-iF we instead had these columns/values:
 #
-#     qc_values#0.derived_from: total_raw_reads_sequenced
-#     qc_values#0.value:        11870183
-#     qc_values#0.key:          Total Raw Reads Sequenced
-#     qc_values#0.tooltip:      # of reads (150bp)
-#     qc_values#1.derived_from: total_raw_bases_sequenced
-#     qc_values#1.value:        44928835584
-#     qc_values#1.key:          Total Raw Bases Sequenced
-#     qc_values#1.tooltip:      None
+#   qc_values#0.derived_from: total_raw_reads_sequenced
+#   qc_values#0.value:        11870183
+#   qc_values#0.key:          Total Raw Reads Sequenced
+#   qc_values#0.tooltip:      # of reads (150bp)
+#   qc_values#1.derived_from: total_raw_bases_sequenced
+#   qc_values#1.value:        44928835584
+#   qc_values#1.key:          Total Raw Bases Sequenced
+#   qc_values#1.tooltip:      None
+#
+# The relevant portaion of the controlling config file (config/custom_column_mappings.json)
+# for this example looks something like this:
+#
+#   "sheet_mappings": {
+#       "ExternalQualityMetric": "external_quality_metric"
+#   },
+#   "column_mappings": {
+#       "external_quality_metric": {
+#           "total_raw_reads_sequenced": {
+#               "qc_values#.derived_from": "{name}",
+#               "qc_values#.value": "{value:integer}",
+#               "qc_values#.key": "Total Raw Reads Sequenced",
+#               "qc_values#.tooltip": "# of reads (150bp)"
+#           },
+#           "total_raw_bases_sequenced": {
+#               "qc_values#.derived_from": "{name}",
+#               "qc_values#.value": "{value:integer}",
+#               "qc_values#.key": "Total Raw Bases Sequenced",
+#               "qc_values#.tooltip": null
+#           },
+#           "et cetera": "..."
+#       }
+#   }
+#
+# This says that for the ExternalQualityMetric tab (only) the mappings with the config file
+# section column_mappings.external_quality_metric will be applied. The "qc_values#" portaion
+# of the mapped columns names will be expanded to "qc_values#0" for total_raw_reads_sequenced
+# items and to "qc_values#1" for the total_raw_bases_sequenced items, and so on.
 #
 # The hook for this is to pass the CustomExcel type to StructuredDataSet in submission.py.
 # Note that the config file is fetched from GitHub, with a fallback to ../config/custom_column_mappings.json.
@@ -77,47 +107,13 @@ class CustomExcel(Excel):
                                 del sheet_mappings[sheet_name]
                         elif not isinstance(sheet_mappings[sheet_name], dict):
                             del sheet_mappings[sheet_name]
-                    fixup_array_columns(custom_column_mappings)
                 return sheet_mappings
-            return None
-
-        def fixup_array_columns(custom_column_mappings: dict) -> None:
-            for sheet_name in (sheet_mappings := custom_column_mappings["sheet_mappings"]):
-                synthetic_array_column_names = {}
-                for column_name in (sheet_mapping := sheet_mappings[sheet_name]):
-                    for synthetic_column_name in list(sheet_mapping[column_name].keys()):
-                        synthetic_array_column_name = get_simple_array_column_name_component(synthetic_column_name)
-                        if synthetic_array_column_name:
-                            if synthetic_array_column_name not in synthetic_array_column_names:
-                                synthetic_array_column_names[synthetic_array_column_name] = \
-                                    {"index": 0, "columns": [column_name]}
-                            elif (column_name not in
-                                  synthetic_array_column_names[synthetic_array_column_name]["columns"]):
-                                synthetic_array_column_names[synthetic_array_column_name]["index"] += 1
-                                synthetic_array_column_names[synthetic_array_column_name]["columns"].append(column_name)
-                            synthetic_array_column_index = \
-                                synthetic_array_column_names[synthetic_array_column_name]["index"]
-                            synthetic_array_column_name = synthetic_column_name.replace(
-                                f"{synthetic_array_column_name}#",
-                                f"{synthetic_array_column_name}#{synthetic_array_column_index}")
-                            sheet_mapping[column_name][synthetic_array_column_name] = \
-                                sheet_mapping[column_name][synthetic_column_name]
-                            del sheet_mapping[column_name][synthetic_column_name]
-
-        def get_simple_array_column_name_component(column_name: str) -> Optional[str]:
-            if isinstance(column_name, str):
-                if column_name_components := column_name.split(COLUMN_NAME_SEPARATOR):
-                    if (suffix := column_name_components[0].find(COLUMN_NAME_ARRAY_SUFFIX_CHAR)) > 0:
-                        if (suffix + 1) == len(column_name_components[0]):
-                            return column_name_components[0][:suffix]
             return None
 
         if not (custom_column_mappings := fetch_custom_column_mappings()):
             return None
-
         if not (custom_column_mappings := post_process(custom_column_mappings)):
             return None
-
         return custom_column_mappings
 
 
@@ -138,8 +134,50 @@ class CustomExcelSheetReader(ExcelSheetReader):
         super().__init__(*args, **kwargs)
 
     def _define_header(self, header: List[Optional[Any]]) -> None:
+
+        def fixup_custom_column_mappings(custom_column_mappings: dict, actual_column_names: List[str]) -> dict:
+
+            def fixup_custom_array_column_mappings(custom_column_mappings: dict) -> None:
+
+                def get_simple_array_column_name_component(column_name: str) -> Optional[str]:
+                    if isinstance(column_name, str):
+                        if column_name_components := column_name.split(COLUMN_NAME_SEPARATOR):
+                            if (suffix := column_name_components[0].find(COLUMN_NAME_ARRAY_SUFFIX_CHAR)) > 0:
+                                if (suffix + 1) == len(column_name_components[0]):
+                                    return column_name_components[0][:suffix]
+                    return None
+
+                synthetic_array_column_names = {}
+                for column_name in custom_column_mappings:
+                    for synthetic_column_name in list(custom_column_mappings[column_name].keys()):
+                        synthetic_array_column_name = get_simple_array_column_name_component(synthetic_column_name)
+                        if synthetic_array_column_name:
+                            if synthetic_array_column_name not in synthetic_array_column_names:
+                                synthetic_array_column_names[synthetic_array_column_name] = \
+                                    {"index": 0, "columns": [column_name]}
+                            elif (column_name not in
+                                  synthetic_array_column_names[synthetic_array_column_name]["columns"]):
+                                synthetic_array_column_names[synthetic_array_column_name]["index"] += 1
+                                synthetic_array_column_names[synthetic_array_column_name]["columns"].append(column_name)
+                            synthetic_array_column_index = \
+                                synthetic_array_column_names[synthetic_array_column_name]["index"]
+                            synthetic_array_column_name = synthetic_column_name.replace(
+                                f"{synthetic_array_column_name}#",
+                                f"{synthetic_array_column_name}#{synthetic_array_column_index}")
+                            custom_column_mappings[column_name][synthetic_array_column_name] = \
+                                custom_column_mappings[column_name][synthetic_column_name]
+                            del custom_column_mappings[column_name][synthetic_column_name]
+
+            custom_column_mappings = deepcopy(custom_column_mappings)
+            for custom_column_name in list(custom_column_mappings.keys()):
+                if custom_column_name not in self.header:
+                    del custom_column_mappings[custom_column_name]
+            fixup_custom_array_column_mappings(custom_column_mappings)
+            return custom_column_mappings
+
         super()._define_header(header)
         if self._custom_column_mappings:
+            self._custom_column_mappings = fixup_custom_column_mappings(self._custom_column_mappings, self.header)
             self._original_header = self.header
             self.header = []
             for column_name in header:
@@ -197,3 +235,14 @@ class CustomExcelSheetReader(ExcelSheetReader):
                                 return to_boolean(value, fallback=value)
                         return str(value)
         return None
+
+
+if True:
+    #  "3.5e-07
+    # from dcicutils.portal_utils import Portal
+    # portal = Portal("smaht-local")
+    portal = None
+    from dcicutils.structured_data import StructuredDataSet
+    data = StructuredDataSet(portal=portal, excel_class=CustomExcel)
+    data.load_file("/tmp/test_custom_column_mappings.xlsx")
+    print(json.dumps(data.data, indent=4))
