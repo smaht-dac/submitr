@@ -235,14 +235,3 @@ class CustomExcelSheetReader(ExcelSheetReader):
                                 return to_boolean(value, fallback=value)
                         return str(value)
         return None
-
-
-if True:
-    #  "3.5e-07
-    # from dcicutils.portal_utils import Portal
-    # portal = Portal("smaht-local")
-    portal = None
-    from dcicutils.structured_data import StructuredDataSet
-    data = StructuredDataSet(portal=portal, excel_class=CustomExcel)
-    data.load_file("/tmp/test_custom_column_mappings.xlsx")
-    print(json.dumps(data.data, indent=4))
