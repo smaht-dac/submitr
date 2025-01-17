@@ -86,8 +86,7 @@ class CustomExcel(Excel):
                 synthetic_array_column_names = {}
                 for column_name in (sheet_mapping := sheet_mappings[sheet_name]):
                     for synthetic_column_name in list(sheet_mapping[column_name].keys()):
-                        synthetic_array_column_name = \
-                            CustomExcel._get_simple_array_column_name_component(synthetic_column_name)
+                        synthetic_array_column_name = get_simple_array_column_name_component(synthetic_column_name)
                         if synthetic_array_column_name:
                             if synthetic_array_column_name not in synthetic_array_column_names:
                                 synthetic_array_column_names[synthetic_array_column_name] = \
@@ -105,6 +104,14 @@ class CustomExcel(Excel):
                                 sheet_mapping[column_name][synthetic_column_name]
                             del sheet_mapping[column_name][synthetic_column_name]
 
+        def get_simple_array_column_name_component(column_name: str) -> Optional[str]:
+            if isinstance(column_name, str):
+                if column_name_components := column_name.split(COLUMN_NAME_SEPARATOR):
+                    if (suffix := column_name_components[0].find(COLUMN_NAME_ARRAY_SUFFIX_CHAR)) > 0:
+                        if (suffix + 1) == len(column_name_components[0]):
+                            return column_name_components[0][:suffix]
+            return None
+
         if not (custom_column_mappings := fetch_custom_column_mappings()):
             return None
 
@@ -112,15 +119,6 @@ class CustomExcel(Excel):
             return None
 
         return custom_column_mappings
-
-    @staticmethod
-    def _get_simple_array_column_name_component(column_name: str) -> Optional[str]:
-        if isinstance(column_name, str):
-            if column_name_components := column_name.split(COLUMN_NAME_SEPARATOR):
-                if (suffix := column_name_components[0].find(COLUMN_NAME_ARRAY_SUFFIX_CHAR)) > 0:
-                    if (suffix + 1) == len(column_name_components[0]):
-                        return column_name_components[0][:suffix]
-        return None
 
 
 class CustomExcelSheetReader(ExcelSheetReader):
@@ -199,14 +197,3 @@ class CustomExcelSheetReader(ExcelSheetReader):
                                 return to_boolean(value, fallback=value)
                         return str(value)
         return None
-
-
-if True:
-    #  "3.5e-07
-    # from dcicutils.portal_utils import Portal
-    # portal = Portal("smaht-local")
-    portal = None
-    from dcicutils.structured_data import StructuredDataSet
-    data = StructuredDataSet(portal=portal, excel_class=CustomExcel)
-    data.load_file("/tmp/test_custom_column_mappings.xlsx")
-    print(json.dumps(data.data, indent=4))
