@@ -1,5 +1,4 @@
 import os
-import json
 from dcicutils.structured_data import StructuredDataSet
 from submitr.custom_excel import CustomExcel
 
@@ -52,7 +51,7 @@ EXPECTED_RESULT = {
                     "derived_from": "number_postfiltering_consensus_base_pairs",
                     "value": 2957487201,
                     "key": "Number of Final Post-filtering Consensus Interrogated Base Pairs",
-                    "tooltip": "After applying all filters for variant calling, e.e. Mapping quality, Low complexity regions, a4s2 duplex reconstruction criteria, etc."
+                    "tooltip": "After applying all filters for variant calling, e.e. Mapping quality, Low complexity regions, a4s2 duplex reconstruction criteria, etc."  # noqa
                 },
                 {
                     "derived_from": "somatic_snv_count_by_molecule",
@@ -115,7 +114,7 @@ EXPECTED_RESULT = {
                     "derived_from": "number_postfiltering_consensus_base_pairs",
                     "value": 2957487201,
                     "key": "Number of Final Post-filtering Consensus Interrogated Base Pairs",
-                    "tooltip": "After applying all filters for variant calling, e.e. Mapping quality, Low complexity regions, a4s2 duplex reconstruction criteria, etc."
+                    "tooltip": "After applying all filters for variant calling, e.e. Mapping quality, Low complexity regions, a4s2 duplex reconstruction criteria, etc."  # noqa
                 },
                 {
                     "derived_from": "somatic_snv_count_by_molecule",
@@ -173,7 +172,7 @@ EXPECTED_RESULT = {
                     "derived_from": "number_postfiltering_consensus_base_pairs",
                     "value": 1213,
                     "key": "Number of Final Post-filtering Consensus Interrogated Base Pairs",
-                    "tooltip": "After applying all filters for variant calling, e.e. Mapping quality, Low complexity regions, a4s2 duplex reconstruction criteria, etc."
+                    "tooltip": "After applying all filters for variant calling, e.e. Mapping quality, Low complexity regions, a4s2 duplex reconstruction criteria, etc."  # noqa
                 },
                 {
                     "derived_from": "somatic_snv_count_by_molecule",
@@ -198,6 +197,7 @@ EXPECTED_RESULT = {
         }
     ]
 }
+
 
 def test_custom_excel():
     data = StructuredDataSet(excel_class=CustomExcel)
