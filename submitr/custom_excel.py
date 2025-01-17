@@ -14,7 +14,7 @@ from dcicutils.misc_utils import to_boolean, to_float, to_integer
 # preprocessing step on the spreadsheet. This was first implemented to support the simplified QC
 # columns/values. For EXAMPLE, so the spreadsheet author can specify single columns like this:
 #
-#   external_quality_metric: 11870183
+#   total_raw_reads_sequenced: 11870183
 #   total_raw_bases_sequenced: 44928835584
 #
 # But this will be mapped, i.e the system will act AS-IF we instead had these columns/values:
