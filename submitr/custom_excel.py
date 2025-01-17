@@ -17,7 +17,7 @@ from dcicutils.misc_utils import to_boolean, to_float, to_integer
 #   external_quality_metric: 11870183
 #   total_raw_bases_sequenced: 44928835584
 #
-# But this will be mapped, i.e the system will act AS-iF we instead had these columns/values:
+# But this will be mapped, i.e the system will act AS-IF we instead had these columns/values:
 #
 #   qc_values#0.derived_from: total_raw_reads_sequenced
 #   qc_values#0.value:        11870183
@@ -58,6 +58,15 @@ from dcicutils.misc_utils import to_boolean, to_float, to_integer
 # and to "qc_values#1" for the total_raw_bases_sequenced items, and so on. This will be based on
 # the ACTUAL columns present in the sheet; so if total_raw_reads_sequenced were not present in
 # the sheet, then the total_raw_bases_sequenced items would be expanded to "qc_values#0".
+# Note the special "{name}" and "{value}" values ("macros") for the target (synthetic) properties;
+# these will be evaluated (here) to the name of the original property name and value, respectively.
+#
+# Since the (first) actual use-case of this is in fact for these qc_values, and since these have
+# effectively untyped values (i.e. the ExternalQualityMetric schema specifies all primitive types
+# as possible/acceptable types for qc_values.value), we also allow a ":TYPE" suffix for the
+# special "{value}" macro, so that a specific primitive type may be specified, e.g. "{value:integer}"
+# will evaluate the original property value as an integer (if it cannot be converted to an integer
+# then it whatever its value is will be passed on through as a string).  
 #
 # The hook for this is to pass the CustomExcel type to StructuredDataSet in submission.py.
 # Note that the config file is fetched from GitHub, with a fallback to ../config/custom_column_mappings.json.
