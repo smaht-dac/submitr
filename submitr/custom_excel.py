@@ -51,10 +51,12 @@ from dcicutils.misc_utils import to_boolean, to_float, to_integer
 #       }
 #   }
 #
-# This says that for the ExternalQualityMetric tab (only) the mappings with the config file
-# section column_mappings.external_quality_metric will be applied. The "qc_values#" portaion
-# of the mapped columns names will be expanded to "qc_values#0" for total_raw_reads_sequenced
-# items and to "qc_values#1" for the total_raw_bases_sequenced items, and so on.
+# This says that for the ExternalQualityMetric sheet (only) the mappings with the config file
+# section column_mappings.external_quality_metric will be applied. The "qc_values#" portion of
+# the mapped columns names will be expanded to "qc_values#0" for total_raw_reads_sequenced items,
+# and to "qc_values#1" for the total_raw_bases_sequenced items, and so on. This will be based on
+# the ACTUAL columns present in the sheet; so if total_raw_reads_sequenced were not present in
+# the sheet, then the total_raw_bases_sequenced items would be expanded to "qc_values#0".
 #
 # The hook for this is to pass the CustomExcel type to StructuredDataSet in submission.py.
 # Note that the config file is fetched from GitHub, with a fallback to ../config/custom_column_mappings.json.
@@ -96,7 +98,7 @@ class CustomExcel(Excel):
                 custom_column_mappings = {}
             return custom_column_mappings
 
-        def post_process(custom_column_mappings: dict) -> Optional[dict]:
+        def post_process_custom_column_mappings(custom_column_mappings: dict) -> Optional[dict]:
             if isinstance(column_mappings := custom_column_mappings.get("column_mappings"), dict):
                 if isinstance(sheet_mappings := custom_column_mappings.get("sheet_mappings"), dict):
                     for sheet_name in list(sheet_mappings.keys()):
@@ -112,7 +114,7 @@ class CustomExcel(Excel):
 
         if not (custom_column_mappings := fetch_custom_column_mappings()):
             return None
-        if not (custom_column_mappings := post_process(custom_column_mappings)):
+        if not (custom_column_mappings := post_process_custom_column_mappings(custom_column_mappings)):
             return None
         return custom_column_mappings
 
@@ -170,7 +172,7 @@ class CustomExcelSheetReader(ExcelSheetReader):
 
             custom_column_mappings = deepcopy(custom_column_mappings)
             for custom_column_name in list(custom_column_mappings.keys()):
-                if custom_column_name not in self.header:
+                if custom_column_name not in actual_column_names:
                     del custom_column_mappings[custom_column_name]
             fixup_custom_array_column_mappings(custom_column_mappings)
             return custom_column_mappings
