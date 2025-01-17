@@ -33,6 +33,10 @@ CUSTOM_COLUMN_MAPPINGS_BASE_URL = "https://raw.githubusercontent.com/smaht-dac/s
 CUSTOM_COLUMN_MAPPINGS_BRANCH = "dmichaels-custom-column-mappings-20250115"
 CUSTOM_COLUMN_MAPPINGS_PATH = "submitr/config/custom_column_mappings.json"
 CUSTOM_COLUMN_MAPPINGS_URL = f"{CUSTOM_COLUMN_MAPPINGS_BASE_URL}/{CUSTOM_COLUMN_MAPPINGS_BRANCH}/{CUSTOM_COLUMN_MAPPINGS_PATH}"  # noqa
+CUSTOM_COLUMN_MAPPINGS_LOCAL = True
+
+COLUMN_NAME_ARRAY_SUFFIX_CHAR = "#"
+COLUMN_NAME_SEPARATOR = "."
 
 
 class CustomExcel(Excel):
@@ -42,10 +46,15 @@ class CustomExcel(Excel):
                                       custom_column_mappings=CustomExcel._get_custom_column_mappings())
 
     @staticmethod
-    def _get_custom_column_mappings() -> dict:
-        try:
-            custom_column_mappings = requests_get(CUSTOM_COLUMN_MAPPINGS_URL).json()
-        except Exception:
+    def _get_custom_column_mappings() -> Optional[dict]:
+
+        custom_column_mappings = None
+        if CUSTOM_COLUMN_MAPPINGS_LOCAL is not True:
+            try:
+                custom_column_mappings = requests_get(CUSTOM_COLUMN_MAPPINGS_URL).json()
+            except Exception:
+                pass
+        if not custom_column_mappings:
             try:
                 with open(os.path.join(os.path.dirname(__file__), "config", "custom_column_mappings.json"), "r") as f:
                     custom_column_mappings = json.load(f)
@@ -53,6 +62,7 @@ class CustomExcel(Excel):
                 custom_column_mappings = None
         if not isinstance(custom_column_mappings, dict):
             custom_column_mappings = {}
+
         if isinstance(column_mappings := custom_column_mappings.get("column_mappings"), dict):
             if isinstance(sheet_mappings := custom_column_mappings.get("sheet_mappings"), dict):
                 for sheet_name in list(sheet_mappings.keys()):
@@ -63,7 +73,39 @@ class CustomExcel(Excel):
                             del sheet_mappings[sheet_name]
                     elif not isinstance(sheet_mappings[sheet_name], dict):
                         del sheet_mappings[sheet_name]
-        return sheet_mappings
+                # Post-process the custom column mappings to handle arrays.
+                for sheet_name in sheet_mappings:
+                    synthetic_array_column_names = {}
+                    synthetic_array_column_indices = {}
+                    for column_name in (sheet_mapping := sheet_mappings[sheet_name]):
+                        for synthetic_column_name in list(sheet_mapping[column_name].keys()):
+                            synthetic_array_column_name = \
+                                CustomExcel._get_simple_array_column_name_component(synthetic_column_name)
+                            if synthetic_array_column_name:
+                                if synthetic_array_column_name not in synthetic_array_column_names:
+                                    synthetic_array_column_names[synthetic_array_column_name] = \
+                                        {"index": 0, "columns": [column_name]}
+                                elif column_name not in synthetic_array_column_names[synthetic_array_column_name]["columns"]:
+                                    synthetic_array_column_names[synthetic_array_column_name]["index"] += 1
+                                    synthetic_array_column_names[synthetic_array_column_name]["columns"].append(column_name)
+                                synthetic_array_column_index = synthetic_array_column_names[synthetic_array_column_name]["index"]
+                                synthetic_array_column_name = synthetic_column_name.replace(
+                                    f"{synthetic_array_column_name}#",
+                                    f"{synthetic_array_column_name}#{synthetic_array_column_index}")
+                                sheet_mapping[column_name][synthetic_array_column_name] = \
+                                    sheet_mapping[column_name][synthetic_column_name]
+                                del sheet_mapping[column_name][synthetic_column_name]
+                return sheet_mappings
+        return None
+
+    @staticmethod
+    def _get_simple_array_column_name_component(column_name: str) -> Optional[str]:
+        if isinstance(column_name, str):
+            if column_name_components := column_name.split(COLUMN_NAME_SEPARATOR):
+                if (suffix := column_name_components[0].find(COLUMN_NAME_ARRAY_SUFFIX_CHAR)) > 0:
+                    if (suffix + 1) == len(column_name_components[0]):
+                        return column_name_components[0][:suffix]
+        return None
 
 
 class CustomExcelSheetReader(ExcelSheetReader):
