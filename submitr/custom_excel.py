@@ -28,7 +28,7 @@ from dcicutils.misc_utils import to_boolean, to_float, to_integer
 #   qc_values#1.tooltip:      None
 #
 # The relevant portaion of the controlling config file (config/custom_column_mappings.json)
-# for this example looks something like this:
+# for the above example looks something like this:
 #
 #   "sheet_mappings": {
 #       "ExternalQualityMetric": "external_quality_metric"
@@ -65,7 +65,7 @@ CUSTOM_COLUMN_MAPPINGS_BASE_URL = "https://raw.githubusercontent.com/smaht-dac/s
 CUSTOM_COLUMN_MAPPINGS_BRANCH = "dmichaels-custom-column-mappings-20250115"
 CUSTOM_COLUMN_MAPPINGS_PATH = "submitr/config/custom_column_mappings.json"
 CUSTOM_COLUMN_MAPPINGS_URL = f"{CUSTOM_COLUMN_MAPPINGS_BASE_URL}/{CUSTOM_COLUMN_MAPPINGS_BRANCH}/{CUSTOM_COLUMN_MAPPINGS_PATH}"  # noqa
-CUSTOM_COLUMN_MAPPINGS_LOCAL = True
+CUSTOM_COLUMN_MAPPINGS_LOCAL = False
 
 COLUMN_NAME_ARRAY_SUFFIX_CHAR = "#"
 COLUMN_NAME_SEPARATOR = "."
