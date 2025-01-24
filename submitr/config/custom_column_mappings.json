@@ -11,12 +11,6 @@
                 "qc_values#.key": "Total Raw Reads Sequenced",
                 "qc_values#.tooltip": "# of reads (150bp)"
             },
-            "foobar": {
-                "qc_values#.derived_from": "{name}",
-                "qc_values#.value": "{value:integer}",
-                "qc_values#.key": "Total Raw Bases Sequenced",
-                "qc_values#.tooltip": null
-            },
             "total_raw_bases_sequenced": {
                 "qc_values#.derived_from": "{name}",
                 "qc_values#.value": "{value:integer}",
@@ -70,6 +64,14 @@
                 "qc_values#.value": "{value:float}",
                 "qc_values#.key": "Somatic SNV Mutation Burden by Molecule",
                 "qc_values#.tooltip": "Detected somatic mutation / final consensus interrogated base pairs"
+            }
+        },
+        "add_another_custom_column_mappings_here": {
+            "your_custom_column_name": {
+                "qc_values#.derived_from": "{name}",
+                "qc_values#.value": "{value}",
+                "qc_values#.key": "Your key for this column mapping",
+                "qc_values#.tooltip": "Your tooltip text for this column mapping"
             }
         }
     }
