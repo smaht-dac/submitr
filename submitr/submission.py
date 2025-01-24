@@ -2400,6 +2400,7 @@ def _format_src(issue: dict) -> str:
     if src_column := issue_src.get("column"):
         src = f"{src}.{src_column}" if src else src_column
     if (src_row := issue_src.get("row", 0)) > 0:
+        src_row += 1  # this row number does not include the header row so add it in.
         src = f"{src} [{src_row}]" if src else f"[{src_row}]"
     if not src:
         if issue.get("warning"):

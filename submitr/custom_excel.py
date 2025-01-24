@@ -66,10 +66,10 @@ from dcicutils.misc_utils import to_boolean, to_float, to_integer
 # as possible/acceptable types for qc_values.value), we also allow a ":TYPE" suffix for the
 # special "{value}" macro, so that a specific primitive type may be specified, e.g. "{value:integer}"
 # will evaluate the original property value as an integer (if it cannot be converted to an integer
-# then it whatever its value is will be passed on through as a string).
+# then whatever its value is, will be passed on through as a string).
 #
 # The hook for this is to pass the CustomExcel type to StructuredDataSet in submission.py.
-# Note that the config file is fetched from GitHub, with a fallback to ../config/custom_column_mappings.json.
+# Note that the config file is fetched from GitHub, with a fallback to config/custom_column_mappings.json.
 
 CUSTOM_COLUMN_MAPPINGS_BASE_URL = "https://raw.githubusercontent.com/smaht-dac/submitr/refs/heads"
 CUSTOM_COLUMN_MAPPINGS_BRANCH = "dmichaels-custom-column-mappings-20250115"
@@ -87,17 +87,24 @@ class CustomExcel(Excel):
         return CustomExcelSheetReader(self, sheet_name=sheet_name, workbook=self._workbook,
                                       custom_column_mappings=CustomExcel._get_custom_column_mappings())
 
+    def effective_sheet_name(self, sheet_name: str) -> str:
+        if (underscore := sheet_name.find("_")) > 1:
+            return sheet_name[underscore + 1:]
+        return sheet_name
+
     @staticmethod
     def _get_custom_column_mappings() -> Optional[dict]:
 
         def fetch_custom_column_mappings():
             custom_column_mappings = None
             if CUSTOM_COLUMN_MAPPINGS_LOCAL is not True:
+                # Fetch config file directly from GitHub (yes this repo is public).
                 try:
                     custom_column_mappings = requests_get(CUSTOM_COLUMN_MAPPINGS_URL).json()
                 except Exception:
                     pass
             if not custom_column_mappings:
+                # Fallback to the actual config file in this package.
                 try:
                     file = os.path.join(os.path.dirname(__file__), "config", "custom_column_mappings.json")
                     with io.open(file, "r") as f:
