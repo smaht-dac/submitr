@@ -1,7 +1,8 @@
 {
     "version": "1.0.0",
     "sheet_mappings": {
-        "ExternalQualityMetric": "external_quality_metric"
+        "ExternalQualityMetric": "external_quality_metric",
+        "AnotherTypeForCustomColumnMappingsHere": "another_custom_column_mappings_here"
     },
     "column_mappings": {
         "external_quality_metric": {
@@ -66,7 +67,7 @@
                 "qc_values#.tooltip": "Detected somatic mutation / final consensus interrogated base pairs"
             }
         },
-        "add_another_custom_column_mappings_here": {
+        "another_custom_column_mappings_here": {
             "your_custom_column_name": {
                 "qc_values#.derived_from": "{name}",
                 "qc_values#.value": "{value}",
