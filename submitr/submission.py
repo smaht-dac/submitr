@@ -30,6 +30,7 @@ from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, 
 from dcicutils.structured_data import Portal, StructuredDataSet
 from dcicutils.submitr.progress_constants import PROGRESS_INGESTER, PROGRESS_LOADXL, PROGRESS_PARSE
 from submitr.base import DEFAULT_APP
+from submitr.custom_excel import CustomExcel
 from submitr.exceptions import PortalPermissionError
 from submitr.file_for_upload import FilesForUpload, get_file_upload_bucket
 from submitr.metadata_template import check_metadata_version, print_metadata_version_warning
@@ -1945,6 +1946,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                                         progress=None if noprogress else define_progress_callback(debug=debug),
                                         validator_hook=validator_hook,
                                         validator_sheet_hook=validator_sheet_hook,
+                                        excel_class=CustomExcel,
                                         debug_sleep=debug_sleep)
     structured_data.load_file(ingestion_filename)
 
@@ -2398,6 +2400,7 @@ def _format_src(issue: dict) -> str:
     if src_column := issue_src.get("column"):
         src = f"{src}.{src_column}" if src else src_column
     if (src_row := issue_src.get("row", 0)) > 0:
+        src_row += 1  # this row number does not include the header row so add it in.
         src = f"{src} [{src_row}]" if src else f"[{src_row}]"
     if not src:
         if issue.get("warning"):
@@ -2577,7 +2580,7 @@ def _print_metadata_file_info(file: str, env: str,
     if (refs is True) or (files is True):
         max_output = 10
         portal = _define_portal(env=env, ping=True)
-        structured_data = StructuredDataSet(file, portal, norefs=True)
+        structured_data = StructuredDataSet(file, portal, norefs=True, excel_class=CustomExcel)
         if refs is True:
             def print_refs(refs: List[dict], max_output: int, output_file: str, verbose: bool = False) -> None:
                 nonlocal structured_data

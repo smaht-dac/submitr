@@ -7,6 +7,16 @@ Change Log
 ----------
 
 
+1.4.0
+=====
+* 2025-01-15 / branch: dmichaels-custom-column-mappings-20250115 / PR-16 / dmichaels
+* Added custom column mappings for simplified QCs specification in spreadsheet. 
+  The bulk of this is in submitr/custom_excel.py where we use a special CustomExcel class
+  for use by StructuredDataSet (in submission.py) which effectively/sorta preprocesses the
+  spreadsheet according to the config file in config/custom_column_mappings.json; by default
+  it pulls this config dynamically (from the master branch of) of this (public) GitHub repo.
+
+
 1.3.0
 =====
 * Fix for C4-1187 where we were not implicitly adding consortia to submitted like for submission-centers.
