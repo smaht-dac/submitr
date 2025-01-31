@@ -36,7 +36,7 @@ jobs:
           file binaries/submitr-macos-x86
           echo smaht-submitr version: `binaries/submitr-macos-x86 version`
       - name: Upload MacOS Binary (x86) Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: submitr-macos-x86
           path: binaries/submitr-macos-x86
@@ -60,7 +60,7 @@ jobs:
           file binaries/submitr-macos-arm
           echo smaht-submitr version: `binaries/submitr-macos-arm version`
       - name: Upload MacOS Binary (arm) Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: submitr-macos-arm
           path: binaries/submitr-macos-arm
@@ -80,7 +80,7 @@ jobs:
           file binaries/submitr-linux-x86
           echo smaht-submitr version: `binaries/submitr-linux-x86 version`
       - name: Upload Linux Binary (x86) Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: submitr-linux-x86
           path: binaries/submitr-linux-x86
@@ -104,7 +104,7 @@ jobs:
           file binaries/submitr-linux-arm
           echo smaht-submitr version: `binaries/submitr-linux-arm version`
       - name: Upload Linux Binary (arm) Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: submitr-linux-arm
           path: binaries/submitr-linux-arm
