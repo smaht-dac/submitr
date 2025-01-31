@@ -9,7 +9,7 @@ Change Log
 
 1.4.1
 =====
-* 2025-01-30 / dmichaels  / branch: dmichaels-20250130-release-tracker-api-add-submitted-file / PR-??
+* 2025-01-30 / dmichaels  / branch: dmichaels-20250130-release-tracker-api-add-submitted-file / PR-17
   - Updated dcicutils to change structured_data.py to not use raw=True for portal_utils get calls;
     normal users to not have permission for this.
 
