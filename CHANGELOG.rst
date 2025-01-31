@@ -7,9 +7,16 @@ Change Log
 ----------
 
 
+1.4.1
+=====
+* 2025-01-30 / dmichaels  / branch: dmichaels-20250130-release-tracker-api-add-submitted-file / PR-??
+  - Updated dcicutils to change structured_data.py to not use raw=True for portal_utils get calls;
+    normal users to not have permission for this.
+
+
 1.4.0
 =====
-* 2025-01-15 / branch: dmichaels-custom-column-mappings-20250115 / PR-16 / dmichaels
+* 2025-01-15 / dmichaels / branch: dmichaels-custom-column-mappings-20250115 / PR-16
 * Added custom column mappings for simplified QCs specification in spreadsheet. 
   The bulk of this is in submitr/custom_excel.py where we use a special CustomExcel class
   for use by StructuredDataSet (in submission.py) which effectively/sorta preprocesses the
