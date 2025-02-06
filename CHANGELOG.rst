@@ -7,6 +7,12 @@ Change Log
 ----------
 
 
+1.4.1
+=====
+* 2025-02-06 / branch: dmichaels-20250206-test-branch
+  - Test branch. Trying: git clone --depth 1 --branch master git@github.com:smaht-dac/submitr.git
+    To get around fact that there are some legacy, mistakenly checked in long time ago, very large binary files.
+
 1.4.0
 =====
 * 2025-01-15 / branch: dmichaels-custom-column-mappings-20250115 / PR-16 / dmichaels
