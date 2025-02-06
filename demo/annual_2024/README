@@ -92,3 +92,15 @@ Notes on demo file (bcm_formatted_hapmapmix.xlsx) for Annual Meeting in St. Loui
   222TWJLT4-1-IDUDI0056V2_S2_L001_R2_001.FASTQ.GZ
   > THIS ONE IS CURRENTLY (2024-05-29) in GCS:
     > gs://smaht-submitr-rclone-testing/demo/222TWJLT4-1-IDUDI0056v2_S2_L001_R2_001.fastq.gz
+
+- Note about Redis:
+  The smaht-submitr makes use of Redis to track in real time the progress of the submission.
+  This enables the visual progress bar. The smaht-portal has APIs to view this progress,
+  used by smaht-submitr for this purpose, but can also be viewed directly via curl or browser
+  for troubleshooting purposes, for example, like this:
+
+     http://localhost:8000/ingestion-status/ae959c9d-1daf-4e10-8867-d6affb098883?format=json
+     http://localhost:8000/ingestion-status/keys?format=json
+     http://localhost:8000/ingestion-status/info?format=json
+
+  where ae959c9d-1daf-4e10-8867-d6affb098883 in the above example would be the UUID for the submission.
