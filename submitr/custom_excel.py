@@ -70,6 +70,9 @@ from dcicutils.misc_utils import to_boolean, to_float, to_integer
 #
 # The hook for this is to pass the CustomExcel type to StructuredDataSet in submission.py.
 # Note that the config file is fetched from GitHub, with a fallback to config/custom_column_mappings.json.
+#
+# ALSO ...
+# TODO
 
 CUSTOM_COLUMN_MAPPINGS_BASE_URL = "https://raw.githubusercontent.com/smaht-dac/submitr/refs/heads"
 CUSTOM_COLUMN_MAPPINGS_BRANCH = "dmichaels-custom-column-mappings-20250115"
@@ -258,3 +261,30 @@ class CustomExcelSheetReader(ExcelSheetReader):
                                 return to_boolean(value, fallback=value)
                         return str(value)
         return None
+
+
+# This ExcelSheetName class is used to represent an Excel sheet name; it is simply a str type
+# with an additional "original" property. The value of this string will be given string with
+# any prefix preceeding an underscore removed; and the "original" property will evaluate to the
+# original/given string. This is used to support the use of sheet names of the form "XYZ_TypeName",
+# where "XYZ" is an arbitrary string and "TypeName" is the virtuala name of the sheet, which will
+# be used by StructuredDataSet/etc. The purpose of all this is to allow multiple sheets within
+# a spreadsheet of the same (portal object) type; since sheet names within a spreadsheet must
+# be unique, and since the sheet name identifies the type of the items/rows within the sheet,
+# this would otherwise not be possible; this provides a way for a spreadsheet to partition
+# items/rows of a particular fixed type across multiple sheets.
+#
+# If this requirement was known at the beginning (or if we had more foresight) we would not
+# support this feature this way; we would build it in from the start; this mechanism here
+# merely provides a hook for this feature with minimal disruption (the only real tricky
+# part being to make sure the original sheet name is reported in error messages).
+#
+class ExcelSheetName(str):
+    def __new__(cls, value: str):
+        value = value if isinstance(value, str) else str(value)
+        original_value = value
+        if ((delimiter := value.find("_")) > 0) and (delimiter < len(value) - 1):
+            value = value[delimiter + 1:]
+        instance = super().__new__(cls, value)
+        setattr(instance, "original", original_value)
+        return instance
