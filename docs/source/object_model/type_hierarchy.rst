@@ -10,7 +10,6 @@ Items suffixed with **(A)** are abstract types which may not be directly created
         └─ <a href='../object_model.html#types'><b>Types</b></a>
            ├── <a href='types/analyte.html'>Analyte</a>
            ├── <a href='types/assay.html'>Assay</a>
-           ├── <a href='types/basecalling.html'>Basecalling</a>
            ├── <a href='types/cell_line.html'>CellLine</a>
            ├── <a href='types/consortium.html'>Consortium</a>
            ├── <a href='types/death_circumstances.html'>DeathCircumstances</a>
@@ -31,12 +30,12 @@ Items suffixed with **(A)** are abstract types which may not be directly created
            ├── <a href='types/file_format.html'>FileFormat</a>
            ├── <a href='types/file_set.html'>FileSet</a>
            ├── <a href='types/filter_set.html'>FilterSet</a>
-           ├── <a href='types/gene_annotation.html'>GeneAnnotation</a>
            ├── <a href='types/histology.html'>Histology</a>
            ├── <a href='types/image.html'>Image</a>
            ├── <a href='types/library.html'>Library</a>
            ├── <a href='types/medical_history.html'>MedicalHistory</a>
            ├── <a href='types/medical_treatment.html'>MedicalTreatment</a>
+           ├── <a href='types/ontology.html'>Ontology</a>
            ├── <a href='types/ontology_term.html'>OntologyTerm</a>
            ├── <a href='types/preparation.html'>Preparation</a> <small><b>(A)</b></small>
            │   ├── <a href='types/analyte_preparation.html'>AnalytePreparation</a>
