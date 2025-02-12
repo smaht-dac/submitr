@@ -16,6 +16,11 @@ Change Log
     are both of the type ExternalQualityMetric. Previously the sheet name referred exclusively to
     the single portal object namea; and sheet names must be unique within a spreadsheet; so there
     was no way to have multiple sheets of the same type; with this change this will be allowed.
+    This was actually to custom_excel.py; and/but then realized this, and the previous change
+    WRT the qc_values pseudo-column support contained therein, needed to go into dcicutils because
+    it needed to be used on the smaht-portal/ingestion side of things as well; so it is there now.
+  - Removed "consortia" from the IngestionSubmission object creation as this is not needed and
+    it causes permission problems for non-admin users; see submitr.submission._post_submission.
 
 1.4.0
 =====

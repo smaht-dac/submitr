@@ -498,7 +498,9 @@ def _post_submission(portal: Portal,
     creation_post_data = {
         "ingestion_type": ingestion_type,
         "processing_status": {"state": "submitted"},
-        "consortia": consortia,
+        # 2025-02-11: No need to set consortia here; it is added automatically; and it actually causes
+        # problems (for non-admin users); due to restricted_fields on consortia in smaht-porta/.../mixins.json
+        # "consortia": consortia,
         "submission_centers": creation_submission_centers
     }
     if is_server_validation:
