@@ -1,6 +1,6 @@
 import os
 from dcicutils.structured_data import StructuredDataSet
-from submitr.custom_excel import CustomExcel
+from dcicutils.submitr.custom_excel import CustomExcel
 
 TEST_EXCEL_FILE = os.path.join(os.path.dirname(__file__), "data", "test_custom_column_mappings.xlsx")
 EXPECTED_RESULT = {

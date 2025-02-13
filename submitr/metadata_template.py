@@ -124,8 +124,10 @@ def _get_version_from_metadata_template_based_file(portal: Portal, excel_file: s
             return -1, -1
         def parse_metadata_template_version(value: str) -> Optional[str]:  # noqa
             # Parses and returns the version from a string like "version: 1.2.3".
-            if value.strip().lower().startswith("version:"):
+            if (value := value.strip().lower()).startswith("version:"):
                 return value.replace("version:", "").strip()
+            elif value.startswith("v"):
+                return value[1:]
             return None
         def find_excel_sheet() -> Optional[str]:  # noqa
             nonlocal excel, sheet_name
