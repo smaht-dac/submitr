@@ -9,7 +9,7 @@ For **Windows** users, some testing has been done for ``smaht-submitr``,
 but honesly it has not been as thorough as for MacOS and Linux.
 Similarly for the **Windows** installation process;
 these instructions here are provisional, not guaranteed, and are but one way of doing this;
-but this should help you get started if you are not very experienced.
+but this should help you get started.
 
 Installation
 ============
