@@ -43,7 +43,9 @@ System Requirements
     These instructions are targeted specifically for **Mac OS X** users.
     For **Linux** users, these should be generally applicable (with slight modifications);
     presumed to be a bit more advanced, such users should have little difficulty.
-    For **Windows** users, very little testing has been done; not recommended; but more experienced users should be able to work through it.
+
+    For **Windows** users, little testing has been done; but more experienced users should be able to work through it;
+    here are some provisional installation instructions: `Installation for Windows <windows_installation.html>`_
 
 .. note::
    The command-line shell for all of these instructions is assumed ``bash`` (i.e. not ``zsh`` or ``csh`` et cetera).
