@@ -19,8 +19,9 @@ Change Log
     This was actually to custom_excel.py; and/but then realized this, and the previous change
     WRT the qc_values pseudo-column support contained therein, needed to go into dcicutils because
     it needed to be used on the smaht-portal/ingestion side of things as well; so it is there now.
-  - Removed "consortia" from the IngestionSubmission object creation as this is not needed and
-    it causes permission problems for non-admin users; see submitr.submission._post_submission.
+  - Considered removing "consortia" from the IngestionSubmission object creation as this is not needed and
+    it causes permission problems for non-admin users; see submitr.submission._post_submission. But after
+    back/forth decided instead to remove restricted_fields from consortial in smaht-portal/.../mixins.json.
 
 1.4.0
 =====
