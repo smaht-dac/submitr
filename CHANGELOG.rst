@@ -7,7 +7,7 @@ Change Log
 ----------
 
 
-1.4.1
+1.5.0
 =====
 * 2025-02-07 / dmichaels
   Branch: dmichaels-20250207-sheet-instance-names | from main (5de96fbc5b0c818c3dc3b5122750c13fbf43a6a3) | PR-18
