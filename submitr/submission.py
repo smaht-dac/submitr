@@ -30,7 +30,7 @@ from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, 
 from dcicutils.structured_data import Portal, StructuredDataSet
 from dcicutils.submitr.progress_constants import PROGRESS_INGESTER, PROGRESS_LOADXL, PROGRESS_PARSE
 from submitr.base import DEFAULT_APP
-from submitr.custom_excel import CustomExcel
+from dcicutils.submitr.custom_excel import CustomExcel
 from submitr.exceptions import PortalPermissionError
 from submitr.file_for_upload import FilesForUpload, get_file_upload_bucket
 from submitr.metadata_template import check_metadata_version, print_metadata_version_warning
@@ -498,6 +498,8 @@ def _post_submission(portal: Portal,
     creation_post_data = {
         "ingestion_type": ingestion_type,
         "processing_status": {"state": "submitted"},
+        # 2025-02-12: Considered removing this after running into permission problems with non-admin users setting
+        # this, but after back/forth decided to remove restricted_fields from consortia in smaht-portal/.../mixins.json.
         "consortia": consortia,
         "submission_centers": creation_submission_centers
     }

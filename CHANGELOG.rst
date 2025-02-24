@@ -7,6 +7,22 @@ Change Log
 ----------
 
 
+1.5.0
+=====
+* 2025-02-07 / dmichaels
+  Branch: dmichaels-20250207-sheet-instance-names | from main (5de96fbc5b0c818c3dc3b5122750c13fbf43a6a3) | PR-18
+  - Support for sheet "instance" names, i.e. where we can have multiple sheets referring to the same type,
+    for example can have sheets named "DSA_ExternalQualityMetric" and "ExternalQualityMetric" which
+    are both of the type ExternalQualityMetric. Previously the sheet name referred exclusively to
+    the single portal object namea; and sheet names must be unique within a spreadsheet; so there
+    was no way to have multiple sheets of the same type; with this change this will be allowed.
+    This was actually to custom_excel.py; and/but then realized this, and the previous change
+    WRT the qc_values pseudo-column support contained therein, needed to go into dcicutils because
+    it needed to be used on the smaht-portal/ingestion side of things as well; so it is there now.
+  - Considered removing "consortia" from the IngestionSubmission object creation as this is not needed and
+    it causes permission problems for non-admin users; see submitr.submission._post_submission. But after
+    back/forth decided instead to remove restricted_fields from consortial in smaht-portal/.../mixins.json.
+
 1.4.0
 =====
 * 2025-01-15 / branch: dmichaels-custom-column-mappings-20250115 / PR-16 / dmichaels
