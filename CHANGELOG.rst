@@ -7,6 +7,12 @@ Change Log
 ----------
 
 
+1.5.1
+=====
+* 2025-02-28 / dmichaels
+  Branch: dmichaels-20250228-correct-submitr-config-path | from main(779b6044ab3d84373f1514e36270c4e063d2ed80) | PR-19
+  - Updated dcicutils to 8.18.1 to point to correct (master) branch for config/custom_column_mappings.js.
+
 1.5.0
 =====
 * 2025-02-07 / dmichaels
