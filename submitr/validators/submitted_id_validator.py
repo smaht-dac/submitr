@@ -75,7 +75,8 @@ def _submitted_id_validator_finish(structured_data: StructuredDataSet, **kwargs)
             duplicate_submitted_id = duplicate["value"]
             validation_error = (f"Duplicate submission_id: {duplicate_submitted_id}"
                                 f" (first seen on item: {uniques[duplicate_submitted_id] + 1})")
-            structured_data.note_validation_error(validation_error, schema, row)
+            duplicate_row = duplicate.get("row")
+            structured_data.note_validation_error(validation_error, schema, duplicate_row)
     # This call kicks off calls to the validation functions/lambdas (in submitted_id_validators)
     # in parallel, up to _NTHREADS_FOR_SMAHT_PORTAL_API_CALLS threads at a time.
     run_concurrently(submitted_id_validators, nthreads=_NTHREADS_FOR_SMAHT_PORTAL_API_CALLS)
