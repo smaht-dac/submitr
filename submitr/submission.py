@@ -805,6 +805,7 @@ def submit_any_ingestion(ingestion_filename, *,
             # We actually do exit from _validate_locally if validate_local_only is True.
             # This return is just emphasize that fact.
             return
+        _report_unreferenced_references(structured_data)
     else:
         structured_data = None
         PRINT(f"Skipping local (client) validation (as requested via"
@@ -926,6 +927,12 @@ def submit_any_ingestion(ingestion_filename, *,
                    cloud_store=rclone_google,
                    portal=portal,
                    verbose=verbose)
+
+
+def _report_unreferenced_references(structured_data: StructuredDataSet) -> None:
+    for resolved_ref in structured_data.resolved_refs:
+        # TODO
+        pass
 
 
 def _get_recent_submissions(portal: Portal, count: int = 30, name: Optional[str] = None) -> List[dict]:

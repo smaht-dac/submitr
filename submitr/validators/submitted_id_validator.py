@@ -51,7 +51,7 @@ def _submitted_id_validator_finish(structured_data: StructuredDataSet, **kwargs)
         # Here is the actual call to the /validators/submitted_id/{submitted_id} endpoint/API.
         if result := structured_data.portal.get_metadata(path):
             if (result := result.get("status")) != "OK":
-                structured_data.note_validation_error(result, schema, row + 1)
+                structured_data.note_validation_error(result, schema, row)
 
     # The submitted_id_validators array here will be the list of functions/lambdas to be called
     # in parallel (see run_concurrently call below) for better performance. This same
@@ -75,7 +75,7 @@ def _submitted_id_validator_finish(structured_data: StructuredDataSet, **kwargs)
             duplicate_submitted_id = duplicate["value"]
             validation_error = (f"Duplicate submission_id: {duplicate_submitted_id}"
                                 f" (first seen on item: {uniques[duplicate_submitted_id] + 1})")
-            structured_data.note_validation_error(validation_error, schema, row + 1)
+            structured_data.note_validation_error(validation_error, schema, row)
     # This call kicks off calls to the validation functions/lambdas (in submitted_id_validators)
     # in parallel, up to _NTHREADS_FOR_SMAHT_PORTAL_API_CALLS threads at a time.
     run_concurrently(submitted_id_validators, nthreads=_NTHREADS_FOR_SMAHT_PORTAL_API_CALLS)

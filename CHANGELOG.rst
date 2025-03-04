@@ -7,11 +7,22 @@ Change Log
 ----------
 
 
+1.6.0
+=====
+* 2025-03-04 / dmichaels
+  Branch: dmichaels-20250304-correct-error-row-number-and-detect-orphans | from main (49ebe1ef101b0ec5153d382517ed33a473f4c26c) | PR-20
+  - Corrected for off-by-one error for error reporting in validators.submitted_id_validator._submitted_id_validator_finish.
+  - Detected "orphaned" items in spreadsheet; orphaned items which are those (rows) defined within the spreadsheet which
+    have no internal (within the spreadsheet) referenceds to it; but ignoring such items which are one of these types:
+    AlignedReads, HistologyImage, Supplementaryfiles, TissueSample, UnalignedReads, VariantCalls
+
+
 1.5.1
 =====
 * 2025-02-28 / dmichaels
-  Branch: dmichaels-20250228-correct-submitr-config-path | from main(779b6044ab3d84373f1514e36270c4e063d2ed80) | PR-19
+  Branch: dmichaels-20250228-correct-submitr-config-path | from main (779b6044ab3d84373f1514e36270c4e063d2ed80) | PR-19
   - Updated dcicutils to 8.18.1 to point to correct (master) branch for config/custom_column_mappings.js.
+
 
 1.5.0
 =====
