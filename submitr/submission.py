@@ -47,6 +47,7 @@ from submitr.validators.decorators import (
     define_structured_data_validator_hook,
     define_structured_data_validator_sheet_hook
 )
+from submitr.validators.unreferenced_validator import report_unreferenced_references
 
 
 def set_output_file(output_file):
@@ -623,6 +624,7 @@ def submit_any_ingestion(ingestion_filename, *,
                          validate_remote_only=False,
                          validate_local_skip=False,
                          validate_remote_skip=False,
+                         ignore_orphans=False,
                          post_only=False,
                          patch_only=False,
                          keys_file=None,
@@ -800,12 +802,12 @@ def submit_any_ingestion(ingestion_filename, *,
                                             ref_nocache=ref_nocache, output_file=output_file, noprogress=noprogress,
                                             valid_submission_centers=valid_submission_centers,
                                             noanalyze=noanalyze, json_only=json_only, verbose_json=verbose_json,
+                                            ignore_orphans=ignore_orphans,
                                             verbose=verbose, debug=debug, debug_sleep=debug_sleep)
         if validate_local_only:
             # We actually do exit from _validate_locally if validate_local_only is True.
             # This return is just emphasize that fact.
             return
-        _report_unreferenced_references(structured_data)
     else:
         structured_data = None
         PRINT(f"Skipping local (client) validation (as requested via"
@@ -927,12 +929,6 @@ def submit_any_ingestion(ingestion_filename, *,
                    cloud_store=rclone_google,
                    portal=portal,
                    verbose=verbose)
-
-
-def _report_unreferenced_references(structured_data: StructuredDataSet) -> None:
-    for resolved_ref in structured_data.resolved_refs:
-        # TODO
-        pass
 
 
 def _get_recent_submissions(portal: Portal, count: int = 30, name: Optional[str] = None) -> List[dict]:
@@ -1858,6 +1854,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
                       valid_submission_centers: Optional[str] = None,
                       noanalyze: bool = False, json_only: bool = False, noprogress: bool = False,
                       verbose_json: bool = False, verbose: bool = False,
+                      ignore_orphans: bool = False,
                       debug: bool = False, debug_sleep: Optional[str] = None) -> StructuredDataSet:
 
     if json_only:
@@ -1987,6 +1984,7 @@ def _validate_locally(ingestion_filename: str, portal: Portal, autoadd: Optional
     validation_okay = _validate_data(structured_data, portal, ingestion_filename,
                                      upload_folder, recursive=subfolders,
                                      valid_submission_centers=valid_submission_centers,
+                                     ignore_orphans=ignore_orphans,
                                      verbose=verbose, debug=debug)
     if validation_okay:
         PRINT(f"Validation results (preliminary): OK {chars.check}")
@@ -2030,6 +2028,7 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal,
                    ingestion_filename: str,
                    upload_folder: str, recursive: bool,
                    valid_submission_centers: Optional[str] = None,
+                   ignore_orphans: bool = False,
                    verbose: bool = False, debug: bool = False) -> bool:
     nerrors = 0
 
@@ -2080,6 +2079,10 @@ def _validate_data(structured_data: StructuredDataSet, portal: Portal,
         # else:
         #     for error in ref_validation_errors:
         #         PRINT_OUTPUT(f"  - ERROR: {error['ref']} (refs: {error['count']})")
+
+    if not ignore_orphans:
+        if (unreferenced_error_count := report_unreferenced_references(structured_data, printf=PRINT_OUTPUT)) > 0:
+            nerrors += unreferenced_error_count
 
     return not (nerrors > 0)
 

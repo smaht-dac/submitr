@@ -15,6 +15,7 @@ Change Log
   - Detected "orphaned" items in spreadsheet; orphaned items which are those (rows) defined within the spreadsheet which
     have no internal (within the spreadsheet) referenceds to it; but ignoring such items which are one of these types:
     AlignedReads, HistologyImage, Supplementaryfiles, TissueSample, UnalignedReads, VariantCalls
+    Turn this off using the --ignore-orphans option to submit-metadata-bundle.
 
 
 1.5.1
