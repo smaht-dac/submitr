@@ -9,7 +9,7 @@ from dcicutils.structured_data import StructuredDataSet
 _TYPES_WHICH_ARE_ALLOWED_TO_BE_UNREFERENCED = [
     "AlignedReads",
     "HistologyImage",
-    "SupplementaryFiles",
+    "SupplementaryFile",
     "TissueSample",
     "UnalignedReads",
     "VariantCalls"
