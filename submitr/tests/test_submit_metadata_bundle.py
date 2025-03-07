@@ -61,6 +61,7 @@ def test_submit_metadata_bundle_script(keyfile):
                             "verbose_json": False,
                             "merge": False,
                             "verbose": False,
+                            "ignore_orphans": False,
                             "noversion": False,
                             "noprogress": False,
                             "output_file": False,

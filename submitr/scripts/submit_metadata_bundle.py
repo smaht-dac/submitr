@@ -188,6 +188,8 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--ingestion_type', '--ingestion-type',
                         help=f"The ingestion type (default: {DEFAULT_INGESTION_TYPE}).",
                         default=DEFAULT_INGESTION_TYPE)
+    parser.add_argument('--ignore-orphans', action="store_true",
+                        help="Do not check for items with no references.", default=False)
     parser.add_argument('--noversion', action="store_true",
                         help="Do not check metadata template version.", default=False)
     parser.add_argument('--yes', action="store_true",
@@ -360,6 +362,7 @@ def main(simulated_args_for_testing=None):
                              submission_protocol=args.submission_protocol,
                              upload_folder=args.upload_folder,
                              show_details=args.details,
+                             ignore_orphans=args.ignore_orphans,
                              post_only=args.post_only,
                              patch_only=args.patch_only,
                              # The --submit option (aka --submit-new) allows items to

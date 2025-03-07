@@ -7,11 +7,23 @@ Change Log
 ----------
 
 
+1.6.0
+=====
+* 2025-03-04 / dmichaels
+  Branch: dmichaels-20250304-correct-error-row-number-and-detect-orphans | from main (49ebe1ef101b0ec5153d382517ed33a473f4c26c) | PR-20
+  - Corrected for off-by-one error for error reporting in validators.submitted_id_validator._submitted_id_validator_finish.
+  - Detect "orphaned" items in spreadsheet; orphaned items are those items (rows) defined within the spreadsheet which have
+    no internal (within the spreadsheet) references to it (as identified by the submitted_id for the item); but ignoring such
+    items which are one of these types: AlignedReads, HistologyImage, Supplementaryfiles, TissueSample, UnalignedReads, VariantCalls
+    See submitr/validators/unreferenced_validator.py. Turn this off using the --ignore-orphans option to submit-metadata-bundle.
+
+
 1.5.1
 =====
 * 2025-02-28 / dmichaels
-  Branch: dmichaels-20250228-correct-submitr-config-path | from main(779b6044ab3d84373f1514e36270c4e063d2ed80) | PR-19
+  Branch: dmichaels-20250228-correct-submitr-config-path | from main (779b6044ab3d84373f1514e36270c4e063d2ed80) | PR-19
   - Updated dcicutils to 8.18.1 to point to correct (master) branch for config/custom_column_mappings.js.
+
 
 1.5.0
 =====
