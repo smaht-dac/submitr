@@ -12,10 +12,10 @@ Change Log
 * 2025-03-04 / dmichaels
   Branch: dmichaels-20250304-correct-error-row-number-and-detect-orphans | from main (49ebe1ef101b0ec5153d382517ed33a473f4c26c) | PR-20
   - Corrected for off-by-one error for error reporting in validators.submitted_id_validator._submitted_id_validator_finish.
-  - Detected "orphaned" items in spreadsheet; orphaned items which are those (rows) defined within the spreadsheet which
-    have no internal (within the spreadsheet) referenceds to it; but ignoring such items which are one of these types:
-    AlignedReads, HistologyImage, Supplementaryfiles, TissueSample, UnalignedReads, VariantCalls
-    Turn this off using the --ignore-orphans option to submit-metadata-bundle.
+  - Detect "orphaned" items in spreadsheet; orphaned items are those items (rows) defined within the spreadsheet which have
+    no internal (within the spreadsheet) references to it (as identified by the submitted_id for the item); but ignoring such
+    items which are one of these types: AlignedReads, HistologyImage, Supplementaryfiles, TissueSample, UnalignedReads, VariantCalls
+    See submitr/validators/unreferenced_validator.py. Turn this off using the --ignore-orphans option to submit-metadata-bundle.
 
 
 1.5.1
