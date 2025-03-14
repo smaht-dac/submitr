@@ -56,6 +56,9 @@ def _get_unreferenced_references(structured_data: StructuredDataSet,
     if not (isinstance(identifying_property_name, str) and identifying_property_name):
         identifying_property_name = "submitted_id"
 
+    # Note that structured_data.resolved_refs is an array of all of the references
+    # within the spreadsheet, identified by path (e.g. /Sequencer/pacbio_revio_hifi),
+    # and is set up by the StructuredDataSet spreadsheet parsing process.
     resolved_refs = set(structured_data.resolved_refs)
     unreferenced_items = []
 
