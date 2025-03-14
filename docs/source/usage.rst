@@ -157,7 +157,7 @@ as well as an **example** spreadsheet:
 
 .. raw:: html
 
-    <div style="padding-left:22pt;">•&nbsp;&nbsp;<a target="_blank" href="https://docs.google.com/spreadsheets/d/1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4/edit#gid=1645623888"><b>Metadata Submission Template</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1.5pt;" /></a></div>
+    <div style="padding-left:22pt;">•&nbsp;&nbsp;<a target="_blank" href="https://docs.google.com/spreadsheets/d/1LEaS5QTwm86iZjjKt3tKRe_P31sE9-aJZ7tMINxw3ZM/"><b>Metadata Submission Template</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1.5pt;" /></a></div>
     <div style="padding-left:22pt;" >•&nbsp;&nbsp;<a target="_blank" href="https://docs.google.com/spreadsheets/d/1b5W-8iBEvWfnJQFkcrO9_rG-K7oJEIJlaLr6ZH5qjjA/edit#gid=1589547329"><b>Metadata Submission Example</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1.5pt;" /></a></div>
     <p />
 
