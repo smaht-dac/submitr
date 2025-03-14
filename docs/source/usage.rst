@@ -208,6 +208,15 @@ the command will automatically detect (based on your user profile) and use those
     The answer is: Yes. And, if you had made any changes to the file, updates
     will be applied as expected.
 
+Updating Existing Data
+----------------------
+
+The ``--submit`` option described above is for submitting new data.
+If you are (re)submitting data which was already submitted, you may need to use the ``--submit-update`` option.
+For example::
+
+   submit-metadata-bundle your_metadata_file.xlsx --env data --submit-update
+
 Validation
 ==========
 
