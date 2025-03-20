@@ -157,7 +157,7 @@ as well as an **example** spreadsheet:
 
 .. raw:: html
 
-    <div style="padding-left:22pt;">•&nbsp;&nbsp;<a target="_blank" href="https://docs.google.com/spreadsheets/d/1sEXIA3JvCd35_PFHLj2BC-ZyImin4T-TtoruUe6dKT4/edit#gid=1645623888"><b>Metadata Submission Template</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1.5pt;" /></a></div>
+    <div style="padding-left:22pt;">•&nbsp;&nbsp;<a target="_blank" href="https://docs.google.com/spreadsheets/d/1LEaS5QTwm86iZjjKt3tKRe_P31sE9-aJZ7tMINxw3ZM/"><b>Metadata Submission Template</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1.5pt;" /></a></div>
     <div style="padding-left:22pt;" >•&nbsp;&nbsp;<a target="_blank" href="https://docs.google.com/spreadsheets/d/1b5W-8iBEvWfnJQFkcrO9_rG-K7oJEIJlaLr6ZH5qjjA/edit#gid=1589547329"><b>Metadata Submission Example</b><span class="fa fa-external-link" style="left:4pt;position:relative;top:1.5pt;" /></a></div>
     <p />
 
@@ -207,6 +207,15 @@ the command will automatically detect (based on your user profile) and use those
     You may wonder: Is it okay to submit the same metadata file more that once?
     The answer is: Yes. And, if you had made any changes to the file, updates
     will be applied as expected.
+
+Updating Existing Data
+----------------------
+
+The ``--submit`` option described above is for submitting new data.
+If you are (re)submitting data which was already submitted, you may need to use the ``--submit-update`` option.
+For example::
+
+   submit-metadata-bundle your_metadata_file.xlsx --env data --submit-update
 
 Validation
 ==========
