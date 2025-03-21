@@ -7,6 +7,11 @@ Change Log
 ----------
 
 
+1.6.3
+=====
+Update dcicutils to 8.13.3.
+
+
 1.6.2
 =====
 Thug commit fixing build with comments for these versions.
