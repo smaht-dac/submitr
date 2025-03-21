@@ -7,6 +7,16 @@ Change Log
 ----------
 
 
+1.6.2
+=====
+Thug commit fixing build with comments for these versions.
+
+
+1.6.1
+=====
+Thug commit changing beta dcicutils to real one (8.18.2).
+
+
 1.6.0
 =====
 * 2025-03-04 / dmichaels
