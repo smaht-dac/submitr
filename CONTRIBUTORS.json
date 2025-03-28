@@ -67,21 +67,14 @@
         "William Ronchetti"
       ]
     },
-    "Sarah Nicholson": {
+    "sgonicholson": {
       "emails": [
+        "sgonicholson@.github.com",
         "sarah_nicholson@hms.harvard.edu"
       ],
       "names": [
-        "Sarah Nicholson",
-        "sgonicholson"
-      ]
-    },
-    "sgonicholson": {
-      "emails": [
-        "sgonicholson@.github.com"
-      ],
-      "names": [
-        "sgonicholson"
+        "sgonicholson",
+        "Sarah Nicholson"
       ]
     }
   }
