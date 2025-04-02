@@ -6,6 +6,10 @@ smaht-submitr
 Change Log
 ----------
 
+1.6.4
+=====
+* sgonicholson
+  Update `custom_column_mappings` to include values for both DuplexSeq_ExternalQualityMetrics and DSA_ExternalQualityMetrics
 
 1.6.3
 =====
