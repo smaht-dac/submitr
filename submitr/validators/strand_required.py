@@ -32,13 +32,8 @@ def _strand_required(structured_data: StructuredDataSet, **kwargs) -> None:
                                 if _STRAND_PROPERTY_NAME not in library_prep:
                                     structured_data.note_validation_error(
                                         f"{_LIBRARY_SCHEMA_NAME}:"
-                                        f" {_LIBRARY_PREP_SCHEMA_NAME} property {_STRAND_PROPERTY_NAME} is required for RNA libraries: {submitted_id}"
+                                        f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep.get('submitted_id')} requires property {_STRAND_PROPERTY_NAME} for RNA libraries: {submitted_id}"
                                     )
-                                    # structured_data.note_validation_error(
-                                    #     f"{_LIBRARY_SCHEMA_NAME}: "
-                                    #     f"{_LIBRARY_PREP_SCHEMA_NAME} item {library_prep.get("submitted_id")}"
-                                    #     f" is missing property {_STRAND_PROPERTY_NAME}, which is required for RNA libraries: {submitted_id}"
-                                    # )
                         else:
                             structured_data.note_validation_error(
                                 f"{_LIBRARY_SCHEMA_NAME}:"
