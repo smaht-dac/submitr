@@ -52,43 +52,43 @@
                 "qc_values#.derived_from": "{name}",
                 "qc_values#.value": "{value:integer}",
                 "qc_values#.key": "Number of Final Post-filtering Consensus Interrogated Base Pairs",
-                "qc_values#.tooltip": "After applying all filters for variant calling, e.e. Mapping quality, Low complexity regions, a4s2 duplex reconstruction criteria, etc."
+                "qc_values#.tooltip": "After applying all filters for variant calling, e.g. Mapping quality, Low complexity regions, a4s2 duplex reconstruction criteria, etc."
             },
             "genome_coverage_1x": {
                 "qc_values#.derived_from": "{name}",
                 "qc_values#.value": "{value:float}",
                 "qc_values#.key": "Fraction of Genome Coverage at Specific Depths Post-filtering >=1X",
-                "qc_values#.tooltip": "null"
+                "qc_values#.tooltip": null
             },
             "genome_coverage_2x": {
                 "qc_values#.derived_from": "{name}",
                 "qc_values#.value": "{value:float}",
                 "qc_values#.key": "Fraction of Genome Coverage at Specific Depths Post-filtering >=2X",
-                "qc_values#.tooltip": "null"
+                "qc_values#.tooltip": "Genomic coverage of a4s2 duplexes (%). To estimate the bias introduced by genomic region"
             },
             "genome_coverage_3x": {
                 "qc_values#.derived_from": "{name}",
                 "qc_values#.value": "{value:float}",
                 "qc_values#.key": "Fraction of Genome Coverage at Specific Depths Post-filtering >=3X",
-                "qc_values#.tooltip": "null"
+                "qc_values#.tooltip": null
             },
             "genome_coverage_4x": {
                 "qc_values#.derived_from": "{name}",
                 "qc_values#.value": "{value:float}",
                 "qc_values#.key": "Fraction of Genome Coverage at Specific Depths Post-filtering >=4X",
-                "qc_values#.tooltip": "null"
+                "qc_values#.tooltip": null
             },
             "germline_homozygous_snv_count_by_molecule": {
                 "qc_values#.derived_from": "{name}",
                 "qc_values#.value": "{value:integer}",
                 "qc_values#.key": "Germline Homozygous SNV Count by Molecule",
-                "qc_values#.tooltip": "null"
+                "qc_values#.tooltip": null
             },
             "germline_heterozygous_snv_count_by_molecule": {
                 "qc_values#.derived_from": "{name}",
                 "qc_values#.value": "{value:integer}",
                 "qc_values#.key": "Germline Heterozygous SNV Count by Molecule",
-                "qc_values#.tooltip": "null"
+                "qc_values#.tooltip": null
             },
             "somatic_snv_count_by_molecule": {
                 "qc_values#.derived_from": "{name}",
@@ -185,7 +185,7 @@
             "gaps_between_scaffolds": {
                 "qc_values#.derived_from": "{name}",
                 "qc_values#.value": "{value: integer}",
-                "qc_values#.key": "Gapps Between Scaffolds",
+                "qc_values#.key": "Gaps Between Scaffolds",
                 "qc_values#.tooltip": "Number of gaps between scaffolds"
             },
             "gc_content": {
