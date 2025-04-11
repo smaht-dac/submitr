@@ -1,5 +1,5 @@
 {
-    "version": "1.0.0",
+    "version": "2.0.0",
     "sheet_mappings": {
         "DuplexSeq_ExternalQualityMetric": "duplexseq_external_quality_metric",
         "DSA_ExternalQualityMetric": "dsa_external_quality_metric"
