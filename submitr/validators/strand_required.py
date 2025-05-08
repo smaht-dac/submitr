@@ -68,4 +68,3 @@ def _strand_required(structured_data: StructuredDataSet, **kwargs) -> None:
                                         f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep.get('submitted_id')}:"
                                         f" property {_STRAND_PROPERTY_NAME} is only for RNA libraries"
                                     )
-                                    
