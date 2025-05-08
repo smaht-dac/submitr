@@ -45,11 +45,27 @@ def _strand_required(structured_data: StructuredDataSet, **kwargs) -> None:
                                     structured_data.note_validation_error(
                                         f"{_LIBRARY_SCHEMA_NAME}:"
                                         f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep.get('submitted_id')}"
-                                        f"requires property {_STRAND_PROPERTY_NAME} for RNA libraries: {submitted_id}"
+                                        f" requires property {_STRAND_PROPERTY_NAME} for RNA libraries: {submitted_id}"
                                     )
                         else:
                             structured_data.note_validation_error(
                                 f"{_LIBRARY_SCHEMA_NAME}:"
                                 f" {_LIBRARY_PREP_SCHEMA_NAME} property {_STRAND_PROPERTY_NAME}"
-                                f"is required for RNA libraries: {submitted_id}"
+                                f" is required for RNA libraries: {submitted_id}"
                             )
+                    else:
+                        if _LIBRARY_PREP_PROPERTY_NAME in item:
+                            if library_prep := [
+                                lp_item
+                                for lp_item in structured_data.data.get(
+                                    _LIBRARY_PREP_SCHEMA_NAME
+                                )
+                                if lp_item.get("submitted_id")
+                                == item.get(_LIBRARY_PREP_PROPERTY_NAME)
+                            ][0]:
+                                if _STRAND_PROPERTY_NAME in library_prep:
+                                    structured_data.note_validation_error(
+                                        f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep.get('submitted_id')}:"
+                                        f" property {_STRAND_PROPERTY_NAME} is only for RNA libraries"
+                                    )
+
