@@ -62,6 +62,4 @@ def _paired_read_validator(structured_data: StructuredDataSet, **kwargs) -> None
                         f" item {submitted_id}"
                         f" property paired_with is required for R2 files"
                         f" to link the associated R1 file."
-                        f" Make sure R1 files are before paired R2 files"
-                        f" in submission spreadsheet."
                     )
