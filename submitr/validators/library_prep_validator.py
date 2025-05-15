@@ -3,6 +3,9 @@ from submitr.validators.decorators import structured_data_validator_finish_hook
 
 # Validator that reports if any Library items defined in the spreadsheet (StructuredDataSet)
 # are missing the strand property in LibraryPreparation if they are linked to RNA Analyte items
+# or if they are missing the rna_seq_protocol property if that are linked to an RNA-Seq Assay item.
+# Also reports if non-RNA Library items are linked to LibraryPreparation items with either of these
+# properties.
 _LIBRARY_SCHEMA_NAME = "Library"
 _ANALYTE_PROPERTY_NAME = "analytes"
 _ASSAY_PROPERTY_NAME = "assay"
