@@ -3,8 +3,8 @@ from submitr.validators.decorators import structured_data_validator_finish_hook
 
 import collections
 
-# Validator that reports if any UnalignedRead items that are paired fastqs defined in 
-# the spreadsheet (StructuredDataSet) are paired appropriately to the same FileSet 
+# Validator that reports if any UnalignedRead items that are paired fastqs defined in
+# the spreadsheet (StructuredDataSet) are paired appropriately to the same FileSet
 # with the R2 file paired to the R1 file
 # Also checks for duplicate R1 file references in paired_with
 _UNALIGNED_READS_SCHEMA_NAME = "UnalignedReads"
@@ -24,7 +24,7 @@ def _paired_read_validator(structured_data: StructuredDataSet, **kwargs) -> None
             if _PAIRED_WITH_PROPERTY_NAME in item:
                 # paired_with is present
                 if item.get(_READ_PAIR_NUMBER_PROPERTY_NAME) != "R2":
-                    #read_pair_number is not R2
+                    # read_pair_number is not R2
                     structured_data.note_validation_error(
                         f"{_UNALIGNED_READS_SCHEMA_NAME}:"
                         f" item {submitted_id}"
@@ -60,7 +60,7 @@ def _paired_read_validator(structured_data: StructuredDataSet, **kwargs) -> None
             else:
                 # paired_with is not present
                 if item.get(_READ_PAIR_NUMBER_PROPERTY_NAME) == "R2":
-                    #read_pair_number is R2
+                    # read_pair_number is R2
                     structured_data.note_validation_error(
                         f"{_UNALIGNED_READS_SCHEMA_NAME}:"
                         f" item {submitted_id}"
