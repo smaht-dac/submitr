@@ -1,8 +1,12 @@
 from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorators import structured_data_validator_finish_hook
 
-# Validator that reports if any UnalignedRead items that are paired fastqs defined in the spreadsheet (StructuredDataSet)
-# are paired appropriately to the same FileSet with the R2 file paired to the R1 file
+import collections
+
+# Validator that reports if any UnalignedRead items that are paired fastqs defined in 
+# the spreadsheet (StructuredDataSet) are paired appropriately to the same FileSet 
+# with the R2 file paired to the R1 file
+# Also checks for duplicate R1 file references in paired_with
 _UNALIGNED_READS_SCHEMA_NAME = "UnalignedReads"
 _FILE_SETS_PROPERTY_NAME = "file_sets"
 _READ_PAIR_NUMBER_PROPERTY_NAME = "read_pair_number"
@@ -63,3 +67,18 @@ def _paired_read_validator(structured_data: StructuredDataSet, **kwargs) -> None
                         f" property paired_with is required for R2 files"
                         f" to link the associated R1 file."
                     )
+    paired_with_files = [
+        paired_file_item.get(_PAIRED_WITH_PROPERTY_NAME)
+        for paired_file_item in structured_data.data.get(_UNALIGNED_READS_SCHEMA_NAME)
+    ]
+    paired_with_dups = [
+        file for file, count in collections.Counter(paired_with_files).items() if count > 1 and file is not None
+    ]
+    if paired_with_dups:
+        # duplicate paired_with files
+        structured_data.note_validation_error(
+            f"{_UNALIGNED_READS_SCHEMA_NAME}:"
+            f" the following files are referenced in {_PAIRED_WITH_PROPERTY_NAME}"
+            f" by multiple R2 files. Only one reference expected:"
+            f" {paired_with_dups}"
+        )
