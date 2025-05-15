@@ -52,14 +52,16 @@ def _library_prep_validator(structured_data: StructuredDataSet, **kwargs) -> Non
                                     structured_data.note_validation_error(
                                         f"{_LIBRARY_SCHEMA_NAME}:"
                                         f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep.get('submitted_id')}"
-                                        f" property {_STRAND_PROPERTY_NAME} is required for RNA libraries: {submitted_id}"
+                                        f" property {_STRAND_PROPERTY_NAME} is required for RNA"
+                                        f"libraries: {submitted_id}"
                                     )
                                 if assay == _RNA_SEQ_IDENTIFIER and _RNA_SEQ_PROTOCOL_PROPERTY_NAME not in library_prep:
                                     # missing rna_seq_protocol for RNA-Seq
                                     structured_data.note_validation_error(
                                         f"{_LIBRARY_SCHEMA_NAME}:"
                                         f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep.get('submitted_id')}"
-                                        f" property {_RNA_SEQ_PROTOCOL_PROPERTY_NAME} is required for RNA-Seq libraries: {submitted_id}"
+                                        f" property {_RNA_SEQ_PROTOCOL_PROPERTY_NAME} is required for RNA-Seq"
+                                        f" libraries: {submitted_id}"
                                     )
                         else:
                             # library prep item not present
