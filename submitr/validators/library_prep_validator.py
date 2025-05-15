@@ -6,6 +6,10 @@ from submitr.validators.decorators import structured_data_validator_finish_hook
 # or if they are missing the rna_seq_protocol property if that are linked to an RNA-Seq Assay item.
 # Also reports if non-RNA Library items are linked to LibraryPreparation items with either of these
 # properties.
+
+# NOTE: Currently only works for new POSTs where none of the items checked are already present on the
+# portal and not present in the spreadsheet as their own item rows (e.g. a Library references a LibraryPreparation
+# item that is already present on the portal but is not in the LibraryPreparation sheet will not be checked).
 _LIBRARY_SCHEMA_NAME = "Library"
 _ANALYTE_PROPERTY_NAME = "analytes"
 _ASSAY_PROPERTY_NAME = "assay"
@@ -48,21 +52,21 @@ def _library_prep_validator(structured_data: StructuredDataSet, **kwargs) -> Non
                                 )
                                 if lp_item.get("submitted_id")
                                 == item.get(_LIBRARY_PREP_PROPERTY_NAME)
-                            ][0]:
+                            ]:
                                 assay = item.get(_ASSAY_PROPERTY_NAME)
-                                if _STRAND_PROPERTY_NAME not in library_prep:
+                                if _STRAND_PROPERTY_NAME not in library_prep[0]:
                                     # missing strand property
                                     structured_data.note_validation_error(
                                         f"{_LIBRARY_SCHEMA_NAME}:"
-                                        f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep.get('submitted_id')}"
+                                        f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep[0].get('submitted_id')}"
                                         f" property {_STRAND_PROPERTY_NAME} is required for RNA"
                                         f"libraries: {submitted_id}"
                                     )
-                                if assay == _RNA_SEQ_IDENTIFIER and _RNA_SEQ_PROTOCOL_PROPERTY_NAME not in library_prep:
+                                if assay == _RNA_SEQ_IDENTIFIER and _RNA_SEQ_PROTOCOL_PROPERTY_NAME not in library_prep[0]:
                                     # missing rna_seq_protocol for RNA-Seq
                                     structured_data.note_validation_error(
                                         f"{_LIBRARY_SCHEMA_NAME}:"
-                                        f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep.get('submitted_id')}"
+                                        f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep[0].get('submitted_id')}"
                                         f" property {_RNA_SEQ_PROTOCOL_PROPERTY_NAME} is required for RNA-Seq"
                                         f" libraries: {submitted_id}"
                                     )
