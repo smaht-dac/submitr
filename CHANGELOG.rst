@@ -7,6 +7,14 @@ Change Log
 ----------
 
 
+1.7.0
+=====
+`PR 23 SN paired read validator <https://github.com/smaht-dac/submitr/pull/23>`_
+
+* Adds a validator that reports if any UnalignedRead items that are paired fastqs defined in the spreadsheet (StructuredDataSet) are paired appropriately to the same FileSet item with the R2 file paired to the R1 file
+* Also checks for duplicate R1 file references in paired_with
+
+
 1.6.3
 =====
 Update dcicutils to 8.13.3.
