@@ -6,13 +6,21 @@ smaht-submitr
 Change Log
 ----------
 
-1.7.0
+1.8.0
 =====
-`PR 22: SN strand validator <https://github.com/smaht-dac/submitr/pull/22>`_`
+`PR 22: SN strand validator <https://github.com/smaht-dac/submitr/pull/22>`_
 
 * Add validator that requires that `strand` in LibraryPreparation be filled out if the Library is linked to RNA Analyte items and 
   requires that `rna_seq_protocol` in LibraryPreparation be filled out for RNA-Seq libraries
 * Both of these properties are forbidden for non-RNA libraries
+
+
+1.7.0
+=====
+`PR 23 SN paired read validator <https://github.com/smaht-dac/submitr/pull/23>`_
+
+* Adds a validator that reports if any UnalignedRead items that are paired fastqs defined in the spreadsheet (StructuredDataSet) are paired appropriately to the same FileSet item with the R2 file paired to the R1 file
+* Also checks for duplicate R1 file references in paired_with
 
 
 1.6.3
