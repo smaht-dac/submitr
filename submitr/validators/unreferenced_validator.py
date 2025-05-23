@@ -12,7 +12,14 @@ _TYPES_WHICH_ARE_ALLOWED_TO_BE_UNREFERENCED = [
     "SupplementaryFile",
     "TissueSample",
     "UnalignedReads",
-    "VariantCalls"
+    "VariantCalls",
+    "Demographic",
+    "Diagnosis",
+    "Exposure",
+    "FamilyHistory",
+    "MedicalTreatment",
+    "DeathCircumstances",
+    "TissueCollection"
 ]
 
 

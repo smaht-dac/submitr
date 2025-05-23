@@ -7,6 +7,13 @@ Change Log
 ----------
 
 
+1.7.1
+=====
+`PR 24 SN Add life history items to unreferenced list <https://github.com/smaht-dac/submitr/pull/24>`_
+
+- Add Demographic, Diagnosis, Exposure, FamilyHistory, MedicalTreatment, DeathCircumstances, and TissueCollection to `_TYPES_WHICH_ARE_ALLOWED_TO_BE_UNREFERENCED` in the unreferenced_validator
+
+
 1.7.0
 =====
 `PR 23 SN paired read validator <https://github.com/smaht-dac/submitr/pull/23>`_
