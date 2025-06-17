@@ -27,10 +27,10 @@ def _tissue_sample_external_id_validator(structured_data: StructuredDataSet, **k
                 tissue_external_id = tissue_items[0].get(_EXTERNAL_ID_PROPERTY_NAME)
                 tissue_sample_external_id = item.get(_EXTERNAL_ID_PROPERTY_NAME)
                 if "-".join(tissue_sample_external_id.split("-")[0:2]) != tissue_external_id:
-                        structured_data.note_validation_error(
-                            f"{_TISSUE_SAMPLE_SCHEMA_NAME}:"
-                            f" item {submitted_id}"
-                            f" external_id {tissue_sample_external_id} does not"
-                            f" match {_TISSUE_SCHEMA_NAME} external_id"
-                            f" {tissue_external_id}."
-                        )
+                    structured_data.note_validation_error(
+                        f"{_TISSUE_SAMPLE_SCHEMA_NAME}:"
+                        f" item {submitted_id}"
+                        f" external_id {tissue_sample_external_id} does not"
+                        f" match {_TISSUE_SCHEMA_NAME} external_id"
+                        f" {tissue_external_id}."
+                    )
