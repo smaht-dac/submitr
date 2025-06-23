@@ -1,8 +1,6 @@
 from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorators import structured_data_validator_finish_hook
 
-import collections
-
 # Validator that reports if any Analyte items that have molecule RNA
 # do not have the `rna_integrity_number` property filled out
 _ANALYTE_SCHEMA_NAME = "Analyte"

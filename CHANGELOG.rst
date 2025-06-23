@@ -6,6 +6,13 @@ smaht-submitr
 Change Log
 ----------
 
+1.8.0
+=====
+`PR 27 SN Add RIN required validator <https://github.com/smaht-dac/submitr/pull/27>`_
+
+* Add a validator that ensures that the property rna_integrity_number has a value for Analyte items where "RNA" is in molecule
+
+
 1.7.2
 =====
 `WF resume_uploads credentials check <https://github.com/smaht-dac/submitr/pull/26>`_
