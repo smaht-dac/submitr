@@ -6,6 +6,15 @@ smaht-submitr
 Change Log
 ----------
 
+1.8.0
+=====
+`PR 22: SN strand validator <https://github.com/smaht-dac/submitr/pull/22>`_
+
+* Add validator that requires that `strand` in LibraryPreparation be filled out if the Library is linked to RNA Analyte items and 
+  requires that `rna_seq_protocol` in LibraryPreparation be filled out for RNA-Seq libraries
+* Both of these properties are forbidden for non-RNA libraries
+
+
 1.7.2
 =====
 `WF resume_uploads credentials check <https://github.com/smaht-dac/submitr/pull/26>`_
