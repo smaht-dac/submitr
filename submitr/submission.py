@@ -690,7 +690,8 @@ def submit_any_ingestion(ingestion_filename, *,
                                  consortium=consortium, submission_center=submission_center)
 
     if not portal.ping():
-        SHOW(f"Portal credentials do not seem to work: {portal.keys_file} ({env}). Please double-check your credentials.")
+        SHOW(f"Portal credentials do not seem to work: {portal.keys_file} ({env}). "
+             "Please double-check your credentials.")
         sys.exit(1)
 
     user_record = _get_user_record(portal.server, auth=portal.key_pair, quiet=json_only and not verbose)
@@ -1798,9 +1799,9 @@ def resume_uploads(uuid, server=None, env=None, bundle_filename=None, keydict=No
     portal = _define_portal(key=keydict, keys_file=keys_file, env=env,
                             server=server, app=app, env_from_env=env_from_env,
                             report=True, note="Resuming File Upload")
-    
     if not portal.ping():
-        SHOW(f"Portal credentials do not seem to work: {portal.keys_file} ({env}). Please double-check your credentials.")
+        SHOW(f"Portal credentials do not seem to work: {portal.keys_file} ({env}). "
+             "Please double-check your credentials.")
         sys.exit(1)
 
     if rclone_google:
