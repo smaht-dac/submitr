@@ -15,6 +15,14 @@ Change Log
 * Both of these properties are forbidden for non-RNA libraries
 
 
+1.7.2
+=====
+`WF resume_uploads credentials check <https://github.com/smaht-dac/submitr/pull/26>`_
+
+* Add check to ``resume_uploads`` command for invalid credentials
+* Update error message for invalid credentials
+
+
 1.7.1
 =====
 `PR 24 SN Add life history items to unreferenced list <https://github.com/smaht-dac/submitr/pull/24>`_
