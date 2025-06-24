@@ -6,12 +6,29 @@ smaht-submitr
 Change Log
 ----------
 
-1.8.0
+1.9.0
 =====
 `PR 25 SN External ID validators <https://github.com/smaht-dac/submitr/pull/25>`_
 
 * Add a validator for Tissue that checks that the linked Donor `external_id` is contained within the `external_id` of the Tissue (e.g. SMHT001 and SMHT001-3A)
 * Add a validator for TissueSample that checks that the linked Tissue` external_id` is contained within the `external_id` of the TissueSample (e.g. SMHT001-3A and SMHT001-3A-001A1)
+
+
+1.8.0
+=====
+`PR 22: SN strand validator <https://github.com/smaht-dac/submitr/pull/22>`_
+
+* Add validator that requires that `strand` in LibraryPreparation be filled out if the Library is linked to RNA Analyte items and 
+  requires that `rna_seq_protocol` in LibraryPreparation be filled out for RNA-Seq libraries
+* Both of these properties are forbidden for non-RNA libraries
+
+
+1.7.2
+=====
+`WF resume_uploads credentials check <https://github.com/smaht-dac/submitr/pull/26>`_
+
+* Add check to ``resume_uploads`` command for invalid credentials
+* Update error message for invalid credentials
 
 
 1.7.1
