@@ -6,6 +6,14 @@ smaht-submitr
 Change Log
 ----------
 
+1.9.0
+=====
+`PR 25 SN External ID validators <https://github.com/smaht-dac/submitr/pull/25>`_
+
+* Add a validator for Tissue that checks that the linked Donor `external_id` is contained within the `external_id` of the Tissue (e.g. SMHT001 and SMHT001-3A)
+* Add a validator for TissueSample that checks that the linked Tissue` external_id` is contained within the `external_id` of the TissueSample (e.g. SMHT001-3A and SMHT001-3A-001A1)
+
+
 1.8.0
 =====
 `PR 22: SN strand validator <https://github.com/smaht-dac/submitr/pull/22>`_
