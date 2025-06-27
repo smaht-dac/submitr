@@ -6,6 +6,13 @@ smaht-submitr
 Change Log
 ----------
 
+1.9.0
+=====
+`PR 27 SN Add RIN required validator <https://github.com/smaht-dac/submitr/pull/27>`_
+
+* Add a validator that ensures that the property rna_integrity_number has a value for Analyte items where "RNA" is in molecule and non-RNA analytes cannot have a value for `rna_integrity_number`
+
+
 1.8.0
 =====
 `PR 22: SN strand validator <https://github.com/smaht-dac/submitr/pull/22>`_

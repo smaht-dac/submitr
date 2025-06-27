@@ -5,3 +5,4 @@ import submitr.validators.duplicate_row_validator  # noqa
 import submitr.validators.file_set_count_validator  # noqa
 import submitr.validators.library_prep_validator # noqa
 import submitr.validators.paired_read_validator  # noqa
+import submitr.validators.analyte_rin_validator  # noqa
