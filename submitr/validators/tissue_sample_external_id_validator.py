@@ -27,7 +27,7 @@ def _tissue_sample_external_id_validator(structured_data: StructuredDataSet, **k
                 for tissue in structured_data.data.get(_TISSUE_SCHEMA_NAME)
                 if tissue.get("submitted_id") in item.get(_SAMPLE_SOURCE_PROPERTY_NAME)
             ]):
-                tissue_sc = tissue_items[0].get("submitted_id","").split('_')[0]
+                tissue_sc = tissue_items[0].get("submitted_id", "").split('_')[0]
                 if tissue_sample_sc == _NDRI_SUBMISSION_CENTER or tissue_sc == _NDRI_SUBMISSION_CENTER:
                     tissue_external_id = tissue_items[0].get(_EXTERNAL_ID_PROPERTY_NAME)
                     tissue_sample_external_id = item.get(_EXTERNAL_ID_PROPERTY_NAME)
