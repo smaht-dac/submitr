@@ -33,4 +33,4 @@ def _analyte_rin_validator(structured_data: StructuredDataSet, **kwargs) -> None
                     f" item {submitted_id}"
                     f" property {_RIN_PROPERTY_NAME} only allowed"
                     f" for {_RNA_VALUE} analytes."
-                )   
+                )
