@@ -12,6 +12,7 @@ _DSA_PROPERTY_NAME = "donor_specific_assembly"
 _FASTA_FILE_FORMAT = "fa"
 _DSA_DATA_TYPE = "DSA"
 
+
 @structured_data_validator_finish_hook
 def _dsa_haplotype_validator(structured_data: StructuredDataSet, **kwargs) -> None:
     if not isinstance(data := structured_data.data.get(_SUPP_FILE_SCHEMA_NAME), list):

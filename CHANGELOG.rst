@@ -6,6 +6,13 @@ smaht-submitr
 Change Log
 ----------
 
+1.10.0
+=====
+`PR 29 SN DSA Validator <https://github.com/smaht-dac/submitr/pull/29>`_
+
+* Add validator for SupplementaryFile that checks that `haplotype` and `donor_specific_assembly` are present if `data_type` contains "DSA" and the `file_format` is "fa"
+
+
 1.9.0
 =====
 `PR 25 SN External ID validators <https://github.com/smaht-dac/submitr/pull/25>`_
