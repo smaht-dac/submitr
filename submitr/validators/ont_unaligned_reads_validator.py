@@ -1,10 +1,9 @@
 from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorators import structured_data_validator_finish_hook
 
-import collections
 
 # Validator that reports if any UnalignedRead items that are from ONT sequencers
-# are missing the software item, or if any linked software items are missing
+# are missing the software property, or if any linked software items are missing
 # ONT-specific properties
 # Also checks if derived_from is missing for ONT fastq files
 _UNALIGNED_READS_SCHEMA_NAME = "UnalignedReads"
@@ -34,6 +33,7 @@ _ONT_SEQEUENCERS = [
 ]
 _FASTQ_FILE_FORMAT = "fastq_gz"
 
+
 @structured_data_validator_finish_hook
 def _ont_unaligned_reads_validator(structured_data: StructuredDataSet, **kwargs) -> None:
     if not isinstance(data := structured_data.data.get(_UNALIGNED_READS_SCHEMA_NAME), list):
@@ -58,13 +58,14 @@ def _ont_unaligned_reads_validator(structured_data: StructuredDataSet, **kwargs)
                         for sequencing in sequencings:
                             if sequencing.get(_SEQUENCER_PROPERTY_NAME) in _ONT_SEQEUENCERS:
                                 # ONT unaligned reads file
-                                if _DERIVED_FROM_PROPERTY_NAME not in item and item.get(_FILE_FORMAT_PROPERTY_NAME) == _FASTQ_FILE_FORMAT:
-                                    # fastq file missing derived_from
-                                    structured_data.note_validation_error(
-                                        f"{_UNALIGNED_READS_SCHEMA_NAME}:"
-                                        f" item {submitted_id}"
-                                        f" property derived_from is required for ONT fastq files."
-                                    )
+                                if item.get(_FILE_FORMAT_PROPERTY_NAME) == _FASTQ_FILE_FORMAT:
+                                    if _DERIVED_FROM_PROPERTY_NAME not in item:
+                                        # fastq file missing derived_from
+                                        structured_data.note_validation_error(
+                                            f"{_UNALIGNED_READS_SCHEMA_NAME}:"
+                                            f" item {submitted_id}"
+                                            f" property derived_from is required for ONT fastq files."
+                                        )
                                 if _SOFTWARE_PROPERTY_NAME not in item:
                                     # missing software
                                     structured_data.note_validation_error(
@@ -79,8 +80,8 @@ def _ont_unaligned_reads_validator(structured_data: StructuredDataSet, **kwargs)
                                     in item.get(_SOFTWARE_PROPERTY_NAME)
                                 ]):
                                     for software in softwares:
-                                        missing = [ prop for prop in _ONT_SPECIFIC_PROPERTIES
-                                                   if prop not in software]
+                                        missing = [prop for prop in _ONT_SPECIFIC_PROPERTIES
+                                            if prop not in software]
                                         if missing:
                                             # missing ONT-specific properties
                                             structured_data.note_validation_error(

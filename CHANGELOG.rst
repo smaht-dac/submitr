@@ -6,6 +6,14 @@ smaht-submitr
 Change Log
 ----------
 
+1.10.0
+=====
+`PR 28 SN Add ONT unaligned reads validator <https://github.com/smaht-dac/submitr/pull/28>`_
+
+* Adds a validator that reports if any UnalignedRead items that are from ONT sequencers are missing the `software` property, or if any linked Software items are missing ONT-specific properties
+* Also checks if `derived_from` is missing for ONT fastq files
+
+
 1.9.0
 =====
 `PR 25 SN External ID validators <https://github.com/smaht-dac/submitr/pull/25>`_
