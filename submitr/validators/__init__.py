@@ -7,3 +7,4 @@ import submitr.validators.library_prep_validator # noqa
 import submitr.validators.paired_read_validator  # noqa
 import submitr.validators.tissue_external_id_validator  # noqa
 import submitr.validators.tissue_sample_external_id_validator  # noqa
+import submitr.validators.dsa_haplotype_validator  # noqa
