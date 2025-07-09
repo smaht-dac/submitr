@@ -7,6 +7,7 @@ _SUPP_FILE_SCHEMA_NAME = "SupplementaryFile"
 _FILE_FORMAT_PROPERTY_NAME = "file_format"
 _HAPLOTYPE_PROPERTY_NAME = "haplotype"
 _DATA_TYPE_PROPERTY_NAME = "data_type"
+_DSA_PROPERTY_NAME = "donor_specific_assembly"
 
 _FASTA_FILE_FORMAT = "fa"
 _DSA_DATA_TYPE = "DSA"
@@ -19,11 +20,17 @@ def _dsa_haplotype_validator(structured_data: StructuredDataSet, **kwargs) -> No
         if _DATA_TYPE_PROPERTY_NAME in item and (
             submitted_id := item.get("submitted_id")
         ):
-            if item.get(_DATA_TYPE_PROPERTY_NAME) == _DSA_DATA_TYPE:
-                if item.get(_FILE_FORMAT_PROPERTY_NAME) == _FASTA_FILE_FORMAT:
+            if item.get(_FILE_FORMAT_PROPERTY_NAME) == _FASTA_FILE_FORMAT:
+                if _DSA_DATA_TYPE in item.get(_DATA_TYPE_PROPERTY_NAME):
                     if _HAPLOTYPE_PROPERTY_NAME not in item:
                         structured_data.note_validation_error(
                             f"{_SUPP_FILE_SCHEMA_NAME}: {submitted_id}"
                             f" property {_HAPLOTYPE_PROPERTY_NAME}"
+                            f" is required for DSA fasta files"
+                        )
+                    if _DSA_PROPERTY_NAME not in item:
+                        structured_data.note_validation_error(
+                            f"{_SUPP_FILE_SCHEMA_NAME}: {submitted_id}"
+                            f" property {_DSA_PROPERTY_NAME}"
                             f" is required for DSA fasta files"
                         )
