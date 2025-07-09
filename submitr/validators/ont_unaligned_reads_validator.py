@@ -47,7 +47,7 @@ def _ont_unaligned_reads_validator(structured_data: StructuredDataSet, **kwargs)
                     for file_set_item in structured_data.data.get(_FILE_SET_SCHEMA_NAME)
                     if file_set_item.get("submitted_id")
                     in item.get(_FILE_SETS_PROPERTY_NAME)
-                ]):
+            ]):
                 for file_set in file_sets:
                     if (sequencings := [
                         sequencing_item
@@ -80,8 +80,10 @@ def _ont_unaligned_reads_validator(structured_data: StructuredDataSet, **kwargs)
                                     in item.get(_SOFTWARE_PROPERTY_NAME)
                                 ]):
                                     for software in softwares:
-                                        missing = [prop for prop in _ONT_SPECIFIC_PROPERTIES
-                                            if prop not in software]
+                                        missing = [
+                                            prop for prop in _ONT_SPECIFIC_PROPERTIES
+                                            if prop not in software
+                                        ]
                                         if missing:
                                             # missing ONT-specific properties
                                             structured_data.note_validation_error(
