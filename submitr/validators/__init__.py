@@ -7,3 +7,4 @@ import submitr.validators.library_prep_validator # noqa
 import submitr.validators.paired_read_validator  # noqa
 import submitr.validators.tissue_external_id_validator  # noqa
 import submitr.validators.tissue_sample_external_id_validator  # noqa
+import submitr.validators.ont_unaligned_reads_validator  # noqa
