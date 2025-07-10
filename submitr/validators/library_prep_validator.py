@@ -13,9 +13,9 @@ from submitr.validators.decorators import structured_data_validator_finish_hook
 _LIBRARY_SCHEMA_NAME = "Library"
 _ANALYTE_PROPERTY_NAME = "analytes"
 _ASSAY_PROPERTY_NAME = "assay"
-_RNA_SEQ_IDENTIFIER = "bulk_rna_seq"
+_RNA_SEQ = "bulk_rna_seq"
 _LIBRARY_PREP_PROPERTY_NAME = "library_preparation"
-_RNA_SEQ_PROTOCOL_PROPERTY = "rna_seq_protocol"
+_RNA_SEQ_PROTOCOL = "rna_seq_protocol"
 _ANALTYE_SCHEMA_NAME = "Analyte"
 _MOLECULE_PROPERTY_NAME = "molecule"
 _RNA_VALUE_NAME = "RNA"
@@ -44,60 +44,63 @@ def _library_prep_validator(structured_data: StructuredDataSet, **kwargs) -> Non
                     if _RNA_VALUE_NAME in analyte.get(_MOLECULE_PROPERTY_NAME):
                         # RNA analyte
                         if _LIBRARY_PREP_PROPERTY_NAME in item:
-                            # library prep item present
-                            if library_prep := [
-                                lp_item
-                                for lp_item in structured_data.data.get(
+                            if isinstance(structured_data.data.get(
                                     _LIBRARY_PREP_SCHEMA_NAME
+                                ), list):
+                                # library prep item present
+                                if library_prep := [
+                                    lp_item
+                                    for lp_item in structured_data.data.get(
+                                        _LIBRARY_PREP_SCHEMA_NAME
+                                    )
+                                    if lp_item.get("submitted_id")
+                                    == item.get(_LIBRARY_PREP_PROPERTY_NAME)
+                                ]:
+                                    assay = item.get(_ASSAY_PROPERTY_NAME)
+                                    if _STRAND_PROPERTY_NAME not in library_prep[0]:
+                                        # missing strand property
+                                        structured_data.note_validation_error(
+                                            f"{_LIBRARY_SCHEMA_NAME}: {submitted_id}"
+                                            f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep[0].get('submitted_id')}"
+                                            f" property {_STRAND_PROPERTY_NAME} is required for RNA"
+                                            f" libraries"
+                                        )
+                                    if assay == _RNA_SEQ and _RNA_SEQ_PROTOCOL not in library_prep[0]:
+                                        # missing rna_seq_protocol for RNA-Seq
+                                        structured_data.note_validation_error(
+                                            f"{_LIBRARY_SCHEMA_NAME}: {submitted_id}"
+                                            f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep[0].get('submitted_id')}"
+                                            f" property {_RNA_SEQ_PROTOCOL} is required for RNA-Seq"
+                                            f" libraries"
+                                        )
+                            else:
+                                # library prep item not present
+                                structured_data.note_validation_error(
+                                    f"{_LIBRARY_SCHEMA_NAME}: {submitted_id}"
+                                    f" {_LIBRARY_PREP_SCHEMA_NAME} property {_STRAND_PROPERTY_NAME}"
+                                    f" is required for RNA libraries"
                                 )
-                                if lp_item.get("submitted_id")
-                                == item.get(_LIBRARY_PREP_PROPERTY_NAME)
-                            ]:
-                                assay = item.get(_ASSAY_PROPERTY_NAME)
-                                if _STRAND_PROPERTY_NAME not in library_prep[0]:
-                                    # missing strand property
-                                    structured_data.note_validation_error(
-                                        f"{_LIBRARY_SCHEMA_NAME}: {submitted_id}"
-                                        f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep[0].get('submitted_id')}"
-                                        f" property {_STRAND_PROPERTY_NAME} is required for RNA"
-                                        f" libraries"
-                                    )
-                                if assay == _RNA_SEQ_IDENTIFIER and _RNA_SEQ_PROTOCOL_PROPERTY not in library_prep[0]:
-                                    # missing rna_seq_protocol for RNA-Seq
-                                    structured_data.note_validation_error(
-                                        f"{_LIBRARY_SCHEMA_NAME}: {submitted_id}"
-                                        f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep[0].get('submitted_id')}"
-                                        f" property {_RNA_SEQ_PROTOCOL_PROPERTY} is required for RNA-Seq"
-                                        f" libraries"
-                                    )
                         else:
-                            # library prep item not present
-                            structured_data.note_validation_error(
-                                f"{_LIBRARY_SCHEMA_NAME}: {submitted_id}"
-                                f" {_LIBRARY_PREP_SCHEMA_NAME} property {_STRAND_PROPERTY_NAME}"
-                                f" is required for RNA libraries"
-                            )
-                    else:
-                        if _LIBRARY_PREP_PROPERTY_NAME in item:
-                            if library_prep := [
-                                lp_item
-                                for lp_item in structured_data.data.get(
-                                    _LIBRARY_PREP_SCHEMA_NAME
-                                )
-                                if lp_item.get("submitted_id")
-                                == item.get(_LIBRARY_PREP_PROPERTY_NAME)
-                            ]:
-                                if _STRAND_PROPERTY_NAME in library_prep[0]:
-                                    # DNA analyte with strand property
-                                    structured_data.note_validation_error(
-                                        f"{_LIBRARY_SCHEMA_NAME}: {submitted_id}"
-                                        f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep[0].get('submitted_id')}:"
-                                        f" property {_STRAND_PROPERTY_NAME} is only for RNA libraries"
+                            if _LIBRARY_PREP_PROPERTY_NAME in item:
+                                if library_prep := [
+                                    lp_item
+                                    for lp_item in structured_data.data.get(
+                                        _LIBRARY_PREP_SCHEMA_NAME
                                     )
-                                if _RNA_SEQ_PROTOCOL_PROPERTY in library_prep[0]:
-                                    # DNA analyte with rna_seq_protocol property
-                                    structured_data.note_validation_error(
-                                        f"{_LIBRARY_SCHEMA_NAME}: {submitted_id}"
-                                        f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep[0].get('submitted_id')}:"
-                                        f" property {_RNA_SEQ_PROTOCOL_PROPERTY} is only for RNA libraries"
-                                    )
+                                    if lp_item.get("submitted_id")
+                                    == item.get(_LIBRARY_PREP_PROPERTY_NAME)
+                                ]:
+                                    if _STRAND_PROPERTY_NAME in library_prep[0]:
+                                        # DNA analyte with strand property
+                                        structured_data.note_validation_error(
+                                            f"{_LIBRARY_SCHEMA_NAME}: {submitted_id}"
+                                            f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep[0].get('submitted_id')}:"
+                                            f" property {_STRAND_PROPERTY_NAME} is only for RNA libraries"
+                                        )
+                                    if _RNA_SEQ_PROTOCOL in library_prep[0]:
+                                        # DNA analyte with rna_seq_protocol property
+                                        structured_data.note_validation_error(
+                                            f"{_LIBRARY_SCHEMA_NAME}: {submitted_id}"
+                                            f" {_LIBRARY_PREP_SCHEMA_NAME} item {library_prep[0].get('submitted_id')}:"
+                                            f" property {_RNA_SEQ_PROTOCOL} is only for RNA libraries"
+                                        )
