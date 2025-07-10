@@ -44,14 +44,14 @@ def _ont_unaligned_reads_validator(structured_data: StructuredDataSet, **kwargs)
         ):
             if (file_sets := [
                     file_set_item
-                    for file_set_item in structured_data.data.get(_FILE_SET_SCHEMA_NAME)
+                    for file_set_item in structured_data.data.get(_FILE_SET_SCHEMA_NAME, [])
                     if file_set_item.get("submitted_id")
                     in item.get(_FILE_SETS_PROPERTY_NAME)
             ]):
                 for file_set in file_sets:
                     if (sequencings := [
                         sequencing_item
-                        for sequencing_item in structured_data.data.get(_SEQUENCING_SCHEMA_NAME)
+                        for sequencing_item in structured_data.data.get(_SEQUENCING_SCHEMA_NAME, [])
                         if sequencing_item.get("submitted_id")
                         in file_set.get(_SEQUENCING_PROPERTY_NAME)
                     ]):
@@ -75,7 +75,7 @@ def _ont_unaligned_reads_validator(structured_data: StructuredDataSet, **kwargs)
                                     )
                                 elif (softwares := [
                                     software_item
-                                    for software_item in structured_data.data.get(_SOFTWARE_SCHEMA_NAME)
+                                    for software_item in structured_data.data.get(_SOFTWARE_SCHEMA_NAME, [])
                                     if software_item.get("submitted_id")
                                     in item.get(_SOFTWARE_PROPERTY_NAME)
                                 ]):
