@@ -6,6 +6,13 @@ smaht-submitr
 Change Log
 ----------
 
+1.9.1
+=====
+`PR 30 Fix external_id validator <https://github.com/smaht-dac/submitr/pull/30>`_
+
+* Add protectors in validators to account for empty or hidden spreadsheets
+
+
 1.9.0
 =====
 `PR 25 SN External ID validators <https://github.com/smaht-dac/submitr/pull/25>`_
