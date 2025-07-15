@@ -6,11 +6,26 @@ smaht-submitr
 Change Log
 ----------
 
-1.9.0
-=====
+1.10.0
+======
 `PR 27 SN Add RIN required validator <https://github.com/smaht-dac/submitr/pull/27>`_
 
 * Add a validator that ensures that the property rna_integrity_number has a value for Analyte items where "RNA" is in molecule and non-RNA analytes cannot have a value for `rna_integrity_number`
+
+
+1.9.1
+=====
+`PR 30 Fix external_id validator <https://github.com/smaht-dac/submitr/pull/30>`_
+
+* Add protectors in validators to account for empty or hidden spreadsheets
+
+
+1.9.0
+=====
+`PR 25 SN External ID validators <https://github.com/smaht-dac/submitr/pull/25>`_
+
+* Add a validator for Tissue that checks that the linked Donor `external_id` is contained within the `external_id` of the Tissue (e.g. SMHT001 and SMHT001-3A)
+* Add a validator for TissueSample that checks that the linked Tissue` external_id` is contained within the `external_id` of the TissueSample (e.g. SMHT001-3A and SMHT001-3A-001A1)
 
 
 1.8.0
