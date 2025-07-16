@@ -24,7 +24,7 @@ def _tissue_external_id_validator(structured_data: StructuredDataSet, **kwargs) 
             tissue_sc = submitted_id.split('_')[0]
             if (donor_item := [
                     donor
-                    for donor in structured_data.data.get(_DONOR_SCHEMA_NAME)
+                    for donor in structured_data.data.get(_DONOR_SCHEMA_NAME, [])
                     if donor.get("submitted_id") == item.get(_DONOR_PROPERTY_NAME)
             ]):
                 donor_sc = donor_item[0].get("submitted_id", "").split('_')[0]

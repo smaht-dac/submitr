@@ -6,11 +6,25 @@ smaht-submitr
 Change Log
 ----------
 
-1.10.0
-=====
+1.11.0
+======
 `PR 29 SN DSA Validator <https://github.com/smaht-dac/submitr/pull/29>`_
 
 * Add validator for SupplementaryFile that checks that `haplotype` and `donor_specific_assembly` are present if `data_type` contains "DSA" and the `file_format` is "fa"
+
+
+1.10.0
+======
+`PR 27 SN Add RIN required validator <https://github.com/smaht-dac/submitr/pull/27>`_
+
+* Add a validator that ensures that the property rna_integrity_number has a value for Analyte items where "RNA" is in molecule and non-RNA analytes cannot have a value for `rna_integrity_number`
+
+
+1.9.1
+=====
+`PR 30 Fix external_id validator <https://github.com/smaht-dac/submitr/pull/30>`_
+
+* Add protectors in validators to account for empty or hidden spreadsheets
 
 
 1.9.0
