@@ -6,12 +6,26 @@ smaht-submitr
 Change Log
 ----------
 
-1.10.0
-=====
+1.11.0
+======
 `PR 28 SN Add ONT unaligned reads validator <https://github.com/smaht-dac/submitr/pull/28>`_
 
 * Adds a validator that reports if any UnalignedRead items that are from ONT sequencers are missing the `software` property, or if any linked Software items are missing ONT-specific properties
 * Also checks if `derived_from` is missing for ONT fastq files
+
+
+1.10.0
+======
+`PR 27 SN Add RIN required validator <https://github.com/smaht-dac/submitr/pull/27>`_
+
+* Add a validator that ensures that the property rna_integrity_number has a value for Analyte items where "RNA" is in molecule and non-RNA analytes cannot have a value for `rna_integrity_number`
+
+
+1.9.1
+=====
+`PR 30 Fix external_id validator <https://github.com/smaht-dac/submitr/pull/30>`_
+
+* Add protectors in validators to account for empty or hidden spreadsheets
 
 
 1.9.0

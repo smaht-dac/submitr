@@ -24,7 +24,7 @@ def _tissue_sample_external_id_validator(structured_data: StructuredDataSet, **k
             tissue_sample_sc = submitted_id.split('_')[0]
             if (tissue_items := [
                 tissue
-                for tissue in structured_data.data.get(_TISSUE_SCHEMA_NAME)
+                for tissue in structured_data.data.get(_TISSUE_SCHEMA_NAME, [])
                 if tissue.get("submitted_id") in item.get(_SAMPLE_SOURCE_PROPERTY_NAME)
             ]):
                 tissue_sc = tissue_items[0].get("submitted_id", "").split('_')[0]
