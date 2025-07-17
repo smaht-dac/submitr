@@ -36,8 +36,7 @@ def _library_prep_validator(structured_data: StructuredDataSet, **kwargs) -> Non
                     for analyte_item in structured_data.data.get(_ANALTYE_SCHEMA_NAME, [])
                     if analyte_item.get("submitted_id")
                     in item.get(_ANALYTE_PROPERTY_NAME)
-                ]
-            ):
+            ]):
                 for analyte in analytes:
                     if _RNA_VALUE_NAME in analyte.get(_MOLECULE_PROPERTY_NAME):
                         # RNA analyte
