@@ -34,7 +34,7 @@ def _paired_read_validator(structured_data: StructuredDataSet, **kwargs) -> None
                     )
                 if (paired_file := [
                     paired_file_item
-                    for paired_file_item in structured_data.data.get(_UNALIGNED_READS_SCHEMA_NAME)
+                    for paired_file_item in structured_data.data.get(_UNALIGNED_READS_SCHEMA_NAME, [])
                     if paired_file_item.get("submitted_id") == item.get(_PAIRED_WITH_PROPERTY_NAME)
                 ]):
                     paired_file_set = paired_file[0].get(_FILE_SETS_PROPERTY_NAME)
@@ -69,7 +69,7 @@ def _paired_read_validator(structured_data: StructuredDataSet, **kwargs) -> None
                     )
     paired_with_files = [
         paired_file_item.get(_PAIRED_WITH_PROPERTY_NAME)
-        for paired_file_item in structured_data.data.get(_UNALIGNED_READS_SCHEMA_NAME)
+        for paired_file_item in structured_data.data.get(_UNALIGNED_READS_SCHEMA_NAME, [])
     ]
     paired_with_dups = [
         file for file, count in collections.Counter(paired_with_files).items() if count > 1 and file is not None
