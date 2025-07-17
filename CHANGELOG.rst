@@ -6,6 +6,13 @@ smaht-submitr
 Change Log
 ----------
 
+1.10.1
+======
+`PR 31 SN fix library prep validator <https://github.com/smaht-dac/submitr/pull/31>`_
+
+* Add null value option of empty list to all schema get commands for library prep validator and paired reads validator
+
+
 1.10.0
 ======
 `PR 27 SN Add RIN required validator <https://github.com/smaht-dac/submitr/pull/27>`_
