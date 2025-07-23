@@ -6,7 +6,6 @@ smaht-submitr
 Change Log
 ----------
 
-
 1.11.0
 ======
 `PR 28 SN Add ONT unaligned reads validator <https://github.com/smaht-dac/submitr/pull/28>`_

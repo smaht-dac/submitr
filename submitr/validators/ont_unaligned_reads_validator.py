@@ -54,7 +54,7 @@ def _ont_unaligned_reads_validator(structured_data: StructuredDataSet, **kwargs)
                         in file_set.get(_SEQUENCING_PROPERTY_NAME)
                     ]):
                         for sequencing in sequencings:
-                            if re.match(_ONT_SEQEUENCERS_PATTERN,sequencing.get(_SEQUENCER_PROPERTY_NAME)):
+                            if re.match(_ONT_SEQEUENCERS_PATTERN, sequencing.get(_SEQUENCER_PROPERTY_NAME)):
                                 # ONT unaligned reads file
                                 if item.get(_FILE_FORMAT_PROPERTY_NAME) == _FASTQ_FILE_FORMAT:
                                     if _DERIVED_FROM_PROPERTY_NAME not in item:
