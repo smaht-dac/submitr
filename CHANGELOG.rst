@@ -6,12 +6,20 @@ smaht-submitr
 Change Log
 ----------
 
+
 1.11.0
 ======
 `PR 28 SN Add ONT unaligned reads validator <https://github.com/smaht-dac/submitr/pull/28>`_
 
 * Adds a validator that reports if any UnalignedRead items that are from ONT sequencers are missing the `software` property, or if any linked Software items are missing ONT-specific properties
 * Also checks if `derived_from` is missing for ONT fastq files
+
+
+1.10.1
+======
+`PR 31 SN fix library prep validator <https://github.com/smaht-dac/submitr/pull/31>`_
+
+* Add null value option of empty list to all schema get commands for library prep validator and paired reads validator
 
 
 1.10.0
