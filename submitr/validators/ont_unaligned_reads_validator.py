@@ -1,3 +1,5 @@
+import re
+
 from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorators import structured_data_validator_finish_hook
 
@@ -26,11 +28,7 @@ _ONT_SPECIFIC_PROPERTIES = [
     _TAGS_PROPERTY_NAME
 ]
 
-_ONT_SEQEUENCERS = [
-    "ont_promethion_24",
-    "ont_promethion_2_solo",
-    "ont_minion_mk1b"
-]
+_ONT_SEQEUENCERS_PATTERN = "^ont_"
 _FASTQ_FILE_FORMAT = "fastq_gz"
 
 
@@ -56,7 +54,7 @@ def _ont_unaligned_reads_validator(structured_data: StructuredDataSet, **kwargs)
                         in file_set.get(_SEQUENCING_PROPERTY_NAME)
                     ]):
                         for sequencing in sequencings:
-                            if sequencing.get(_SEQUENCER_PROPERTY_NAME) in _ONT_SEQEUENCERS:
+                            if re.match(_ONT_SEQEUENCERS_PATTERN,sequencing.get(_SEQUENCER_PROPERTY_NAME)):
                                 # ONT unaligned reads file
                                 if item.get(_FILE_FORMAT_PROPERTY_NAME) == _FASTQ_FILE_FORMAT:
                                     if _DERIVED_FROM_PROPERTY_NAME not in item:
