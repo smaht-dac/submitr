@@ -34,8 +34,8 @@ _FASTQ_FILE_FORMAT = "fastq_gz"
 @structured_data_validator_finish_hook
 def _ont_unaligned_reads_validator(structured_data: StructuredDataSet, **kwargs) -> None:
     search = "search/?type=Sequencer&platform=ONT"
-    sequencers = ff_utils.search_metadata(search,key=structured_data.portal.key)
-    ont_identifiers = [seq.get("identifier","") for seq in sequencers]
+    sequencers = ff_utils.search_metadata(search, key=structured_data.portal.key)
+    ont_identifiers = [seq.get("identifier", "") for seq in sequencers]
     if not isinstance(data := structured_data.data.get(_UNALIGNED_READS_SCHEMA_NAME), list):
         return
     for item in data:
