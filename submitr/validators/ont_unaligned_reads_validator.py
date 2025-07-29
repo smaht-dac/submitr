@@ -4,7 +4,8 @@ from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorators import structured_data_validator_finish_hook
 
 
-# Validator that reports if any UnalignedRead items that are from ONT sequencers
+# Validator that reports if any UnalignedRead items that are from ONT sequencerss
+# (determined by querying the portal for ONT platform sequencers)
 # are missing the software property, or if any linked software items are missing
 # ONT-specific properties
 # Also checks if derived_from is missing for ONT fastq files
@@ -29,15 +30,15 @@ _ONT_SPECIFIC_PROPERTIES = [
 ]
 
 _FASTQ_FILE_FORMAT = "fastq_gz"
+_ONT_SEARCH_QUERY = "search/?type=Sequencer&platform=ONT&field=identifier"
 
 
 @structured_data_validator_finish_hook
 def _ont_unaligned_reads_validator(structured_data: StructuredDataSet, **kwargs) -> None:
-    search = "search/?type=Sequencer&platform=ONT"
-    sequencers = ff_utils.search_metadata(search, key=structured_data.portal.key)
-    ont_identifiers = [seq.get("identifier", "") for seq in sequencers]
     if not isinstance(data := structured_data.data.get(_UNALIGNED_READS_SCHEMA_NAME), list):
         return
+    sequencers = ff_utils.search_metadata(_ONT_SEARCH_QUERY, key=structured_data.portal.key)
+    ont_identifiers = [seq.get("identifier", "") for seq in sequencers]
     for item in data:
         if _FILE_SETS_PROPERTY_NAME in item and (
             submitted_id := item.get("submitted_id")
