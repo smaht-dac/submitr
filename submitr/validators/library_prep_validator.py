@@ -31,15 +31,12 @@ def _library_prep_validator(structured_data: StructuredDataSet, **kwargs) -> Non
         if _ANALYTE_PROPERTY_NAME in item and (
             submitted_id := item.get("submitted_id")
         ):
-            if isinstance(
-                analytes := [
+            if (analytes := [
                     analyte_item
-                    for analyte_item in structured_data.data.get(_ANALTYE_SCHEMA_NAME)
+                    for analyte_item in structured_data.data.get(_ANALTYE_SCHEMA_NAME, [])
                     if analyte_item.get("submitted_id")
                     in item.get(_ANALYTE_PROPERTY_NAME)
-                ],
-                list,
-            ):
+            ]):
                 for analyte in analytes:
                     if _RNA_VALUE_NAME in analyte.get(_MOLECULE_PROPERTY_NAME):
                         # RNA analyte
@@ -82,7 +79,7 @@ def _library_prep_validator(structured_data: StructuredDataSet, **kwargs) -> Non
                             if library_prep := [
                                 lp_item
                                 for lp_item in structured_data.data.get(
-                                    _LIBRARY_PREP_SCHEMA_NAME
+                                    _LIBRARY_PREP_SCHEMA_NAME, []
                                 )
                                 if lp_item.get("submitted_id")
                                 == item.get(_LIBRARY_PREP_PROPERTY_NAME)
