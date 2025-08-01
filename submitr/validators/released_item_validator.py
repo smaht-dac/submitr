@@ -3,9 +3,15 @@ from submitr.validators.decorators import structured_data_validator_finish_hook
 
 # Validator that reports any released items that are being modified
 
+# NOTE: (WF) This check probably should not be a validator and would likely work
+# best incorporated into the existing diff check. Running compare() takes some
+# time, so probably best to not run it again
+# NOTE: This code relies on an update to dcicutils where the diffs include
+# the status of the existing items.
+
+# TODO: Update this to not only check for released items, but other items
+# that cannot be modified
 _RELEASED = "released"
-
-
 
 @structured_data_validator_finish_hook
 def _released_item_validator(structured_data: StructuredDataSet, **kwargs) -> None:
