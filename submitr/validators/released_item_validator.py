@@ -27,4 +27,3 @@ def _released_item_validator(structured_data: StructuredDataSet, **kwargs) -> No
                             f"{object_info.path} is not permitted to be modified because"
                             f" it is {_RELEASED} item. Please double-check this."
                         )
-                        
