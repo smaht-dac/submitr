@@ -8,3 +8,4 @@ import submitr.validators.paired_read_validator  # noqa
 import submitr.validators.analyte_rin_validator  # noqa
 import submitr.validators.tissue_external_id_validator  # noqa
 import submitr.validators.tissue_sample_external_id_validator  # noqa
+import submitr.validators.released_item_validator  # noqa
