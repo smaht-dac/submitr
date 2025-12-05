@@ -10,3 +10,5 @@ import submitr.validators.tissue_external_id_validator  # noqa
 import submitr.validators.tissue_sample_external_id_validator  # noqa
 import submitr.validators.dsa_haplotype_validator  # noqa
 import submitr.validators.ont_unaligned_reads_validator  # noqa
+import submitr.validators.patholgy_report_target_tissue_validator  # noqa
+import submitr.validators.analyte_rin_validator  # noqa
