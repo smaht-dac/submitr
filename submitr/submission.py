@@ -1374,6 +1374,7 @@ def _monitor_ingestion_process(uuid: str, server: str, env: str, keys_file: Opti
 
     # If not sucessful then output any validation/submission results.
     if check_status != "success":
+        # import pdb; pdb.set_trace()
         PRINT(f"{'Validation' if validation else 'Submission'} results (server): ERROR"
               f"{f' ({check_status})' if check_status not in ['failure', 'error'] else ''}")
         printed_newline = False
@@ -2162,9 +2163,16 @@ def _format_reference_errors(ref_errors: List[dict], verbose: bool = False, debu
                     truncated = ref_error["ref"]
                 elif isinstance(count := ref_error.get("count"), int):
                     errors.append(f"  - ERROR: {ref_error['ref']} (refs: {count})")
-                    if verbose and isinstance(srcs := ref_error.get("srcs"), list):
-                        for src in srcs:
-                            errors.append(f"    - {_format_src(src)}")
+                    if isinstance(srcs := ref_error.get("srcs"), list):
+                        # Convert dict issues → formatted strings
+                        formatted_srcs = [_format_src(item) for item in srcs]
+
+                        # Collapse or keep detailed based on verbose + rows
+                        final_src_lines = _collapse_formatted_srcs(formatted_srcs, verbose)
+
+                        for line in final_src_lines:
+                            errors.append(f"    - {line}")
+
                 else:
                     errors.append(f"  - ERROR: {ref_error['ref']}")
             if truncated:
@@ -2390,8 +2398,10 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
     issue_message = None
     if issue:
         if error := issue.get("error"):
-            issue_message = error.replace("'$.", "'")
-            issue_message = error.replace("Validation error at '$': ", "")
+            issue_message = error.replace("Validation error ", "")
+            issue_message = issue_message.replace("at ", "")
+            issue_message = issue_message.replace("'$.", "'")
+            issue_message = issue_message.replace("'$':", "")
         elif warning := issue.get("warning"):
             issue_message = warning
         elif issue.get("truncated"):
@@ -2399,7 +2409,87 @@ def _format_issue(issue: dict, original_file: Optional[str] = None) -> str:
     return f"{_format_src(issue)}: {issue_message}" if issue_message else ""
 
 
+def _collapse_consecutive_ints(int_strings: List[str]) -> str:
+    """Take a list of strings containing integers and collapse consecutive runs.
+       Runs of length >= 3 become 'low-high'; shorter runs stay comma-separated.
+       NB: this should probably be moved to dcicutils eventually if it doesn't already live
+       there in some form.
+    """
+    nums = sorted(int(s) for s in int_strings)
+
+    collapsed = []
+    start = prev = nums[0]
+
+    for n in nums[1:]:
+        if n == prev + 1:
+            # continues the run
+            prev = n
+            continue
+
+        # run over so output
+        if prev - start >= 2:       # run length >= 3
+            collapsed.append(f"{start}-{prev}")
+        else:                       # run length 1 or 2
+            collapsed.extend(str(x) for x in range(start, prev + 1))
+
+        start = prev = n
+
+    # flush last run
+    if prev - start >= 2:
+        collapsed.append(f"{start}-{prev}")
+    else:
+        collapsed.extend(str(x) for x in range(start, prev + 1))
+
+    return ", ".join(collapsed)
+
+
+def _collapse_formatted_srcs(srcs: List[str], verbose: bool = False) -> List[str]:
+    """
+    Collapse sources by prefix, but if a given src does not match the expected
+    pattern, append it unchanged as an independent item in the output.
+    """
+
+    if not srcs:
+        return []
+
+    # Verbose → do not collapse
+    if verbose and len(srcs) > 1:
+        return srcs
+
+    row_re = re.compile(r"^(.*?) \[row: (\d+)\]$")
+    grouped: Dict[str, List[str]] = {}
+    invalid_srcs: List[str] = []
+
+    # Parse sources into valid and invalid
+    for s in srcs:
+        m = row_re.match(s)
+        if not m:
+            # Collect invalid strings instead of aborting collapse
+            invalid_srcs.append(s)
+            continue
+        prefix, row = m.groups()
+        grouped.setdefault(prefix, []).append(row)
+
+    results = []
+
+    # Collapse all valid prefixes
+    for prefix in sorted(grouped):
+        rows = grouped[prefix]
+        collapsed = _collapse_consecutive_ints(rows)
+        label = "row"
+        if "," in collapsed or "-" in collapsed:
+            label = "rows"
+
+        results.append(f"{prefix} [{label}: {collapsed}]")
+        
+    # Add invalid entries *as-is*, in original order
+    results.extend(invalid_srcs)
+
+    return results
+
+
 def _format_src(issue: dict) -> str:
+    # import pdb; pdb.set_trace()
     def file_without_extension(file: str) -> str:
         if isinstance(file, str):
             if file.endswith(".gz"):
@@ -2423,6 +2513,7 @@ def _format_src(issue: dict) -> str:
         src = f"{src}.{src_column}" if src else src_column
     if (src_row := issue_src.get("row", 0)) > 0:
         src_row += 1  # this row number does not include the header row so add it in.
+        src_row = f"row: {src_row}"
         src = f"{src} [{src_row}]" if src else f"[{src_row}]"
     if not src:
         if issue.get("warning"):
