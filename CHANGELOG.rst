@@ -6,6 +6,13 @@ smaht-submitr
 Change Log
 ----------
 
+1.12.1
+======
+`PR 34 Update validation output <https://github.com/smaht-dac/submitr/pull/34>`_
+
+* Update the output of validation messages to explicitly add **row** before number and collapse row numbers to ranges when possible
+
+
 1.12.0
 ======
 `PR 29 SN DSA Validator <https://github.com/smaht-dac/submitr/pull/29>`_
