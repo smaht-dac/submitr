@@ -19,18 +19,18 @@ def _tissue_external_id_validator(structured_data: StructuredDataSet, **kwargs) 
         return
     for item in data:
         if _DONOR_PROPERTY_NAME in item and (
-            submitted_id := item.get("submitted_id")
+            submitted_id := item.get("submitted_id", "")
         ):
             tissue_sc = submitted_id.split('_')[0]
             if (donor_item := [
                     donor
                     for donor in structured_data.data.get(_DONOR_SCHEMA_NAME, [])
-                    if donor.get("submitted_id") == item.get(_DONOR_PROPERTY_NAME)
+                    if donor.get("submitted_id", "") == item.get(_DONOR_PROPERTY_NAME, "")
             ]):
                 donor_sc = donor_item[0].get("submitted_id", "").split('_')[0]
                 if tissue_sc == _NDRI_SUBMISSION_CENTER or donor_sc == _NDRI_SUBMISSION_CENTER:
-                    donor_external_id = donor_item[0].get(_EXTERNAL_ID_PROPERTY_NAME)
-                    tissue_external_id = item.get(_EXTERNAL_ID_PROPERTY_NAME)
+                    donor_external_id = donor_item[0].get(_EXTERNAL_ID_PROPERTY_NAME, "")
+                    tissue_external_id = item.get(_EXTERNAL_ID_PROPERTY_NAME, "")
                     if tissue_external_id.split('-')[0] != donor_external_id:
                         structured_data.note_validation_error(
                             f"{_TISSUE_SCHEMA_NAME}:"
