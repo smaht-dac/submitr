@@ -1,6 +1,8 @@
+from typing import Dict, List, Optional, Any
 from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorators import structured_data_validator_finish_hook
 
+from submitr.validators.utils import portal_utils, item_utils
 
 # Validator that reports if any TissueSample items are linked to Tissue items
 # with an external_id that does not contain the external_id of the Tissue
@@ -10,7 +12,13 @@ _TISSUE_SAMPLE_SCHEMA_NAME = "TissueSample"
 _SAMPLE_SOURCE_PROPERTY_NAME = "sample_sources"
 _EXTERNAL_ID_PROPERTY_NAME = "external_id"
 _TISSUE_SCHEMA_NAME = "Tissue"
-_NDRI_SUBMISSION_CENTER = "NDRI"
+_NDRI_SUBMISSION_CENTER_PREFIX = "NDRI"
+_NDRI_TPC_ID = "ndri_tpc"
+_NDRI_TPC_DT = "NDRI TPC"
+_BENCHMARKING_PREFIX = "ST"
+_PRODUCTION_PREFIX = "SMHT"
+_VALIDATING_STUDIES = ["Benchmarking", "Production"]
+
 
 
 @structured_data_validator_finish_hook
@@ -28,7 +36,7 @@ def _tissue_sample_external_id_validator(structured_data: StructuredDataSet, **k
                 if tissue.get("submitted_id") in item.get(_SAMPLE_SOURCE_PROPERTY_NAME)
             ]):
                 tissue_sc = tissue_items[0].get("submitted_id", "").split('_')[0]
-                if tissue_sample_sc == _NDRI_SUBMISSION_CENTER or tissue_sc == _NDRI_SUBMISSION_CENTER:
+                if tissue_sample_sc == _NDRI_SUBMISSION_CENTER_PREFIX or tissue_sc == _NDRI_SUBMISSION_CENTER_PREFIX:
                     tissue_external_id = tissue_items[0].get(_EXTERNAL_ID_PROPERTY_NAME)
                     tissue_sample_external_id = item.get(_EXTERNAL_ID_PROPERTY_NAME)
                     if "-".join(tissue_sample_external_id.split("-")[0:2]) != tissue_external_id:
@@ -41,10 +49,104 @@ def _tissue_sample_external_id_validator(structured_data: StructuredDataSet, **k
                         )
 
 
-from typing import Dict, List, Optional, Any
-from dcicutils.structured_data import StructuredDataSet
-from submitr.validators.decorators import structured_data_validator_finish_hook
-from submitr.validators.utils import portal_queries, item_utils
+@structured_data_validator_finish_hook
+def _tissue_sample_tpc_metadata_validator(structured_data: StructuredDataSet, **kwargs) -> None:
+    """
+    Validate TissueSample metadata consistency with TPC baseline samples.
+
+    This validator queries the portal to compare against existing samples and ensures:
+    - TPC submissions don't create duplicate samples
+    - GCC submissions have a corresponding TPC baseline sample
+    - GCC submissions don't create duplicate non-TPC samples
+    - GCC metadata (category, preservation_type, sample_sources) matches TPC baseline
+
+    Only applies to Benchmarking and Production studies.
+    """
+    # Check if we should skip validation on portal errors
+    fail_on_error = kwargs.get("fail_on_portal_error", True)
+
+    # Get TissueSample items from submission
+    if not isinstance(data := structured_data.data.get(_TISSUE_SAMPLE_SCHEMA_NAME), list):
+        return
+
+    # Initialize caches
+    samples_cache: Dict[str, List[Dict]] = {}
+    tissue_cache: Dict[str, Dict] = {}
+    study_cache: Dict[str, str] = {}
+    seen_external_ids: Dict[str, str] = {}  # external_id -> submitted_id
+
+    portal_key = structured_data.portal.key
+
+    for item in data:
+        submitted_id = item_utils.get_submitted_id(item)
+        external_id = item_utils.get_external_id(item)
+    
+        # Skip if missing required fields
+        if not external_id or not submitted_id:
+            continue
+
+        if not (external_id.startswith(_BENCHMARKING_PREFIX) or external_id.startswith(_PRODUCTION_PREFIX)):    
+            continue
+
+        # Determine if this is TPC or GCC submission
+        is_tpc = _is_tpc_submission(item, portal_key, fail_on_error)
+
+        # Query portal for existing samples with this external_id
+        existing_samples = _get_or_fetch_tissue_samples(
+            external_id, samples_cache, portal_key, fail_on_error
+        )
+
+
+
+        # Get sample_sources
+        sample_sources = item.get(_SAMPLE_SOURCE_PROPERTY_NAME, [])
+        if not sample_sources:
+            continue
+    
+        # what to do if multiple sources? For now just take the first one, but could consider validating all sources
+        tissue_id = sample_sources[0]
+    
+
+        
+        
+        
+        if existing_samples is None:
+            # Portal query failed
+            if fail_on_error:
+                structured_data.note_validation_error(
+                    f"TissueSample: Unable to validate {submitted_id} - "
+                    f"portal query failed for external_id {external_id}"
+                )
+            continue
+        
+        # Categorize existing samples
+        tpc_samples, non_tpc_samples = _categorize_samples_by_submission_center(
+            existing_samples, portal_key, fail_on_error
+        )
+        
+        # Validate based on submission type
+        if is_tpc:
+            # TPC submission - check for duplicates
+            _validate_tpc_duplicate(external_id, submitted_id, tpc_samples, structured_data)
+        else:
+            # GCC submission - check baseline exists and no duplicates
+            if not _validate_gcc_baseline_exists(external_id, tpc_samples, structured_data):
+                continue
+            
+            if not _validate_gcc_duplicate(
+                external_id, submitted_id, non_tpc_samples, seen_external_ids, structured_data
+            ):
+                continue
+            
+            # Compare metadata with TPC baseline
+            if tpc_samples:
+                _validate_metadata_consistency(item, tpc_samples[0], structured_data)
+        
+        # Track this external_id
+        seen_external_ids[external_id] = submitted_id
+
+
+
 
 # ... existing code remains unchanged ...
 
@@ -67,7 +169,7 @@ def _get_or_fetch_tissue_samples(
     if external_id in cache:
         return cache[external_id]
     
-    samples = portal_queries.search_tissue_samples_by_external_id(
+    samples = portal_utils.search_tissue_samples_by_external_id(
         external_id, portal_key, fail_on_error
     )
     if samples is not None:
@@ -95,48 +197,13 @@ def _get_or_fetch_tissue(
                 return tissue
     
     # Fetch from portal
-    tissue = portal_queries.get_item_by_identifier(
+    tissue = portal_utils.get_item_by_identifier(
         tissue_id, "Tissue", portal_key, fail_on_error
     )
     if tissue:
         tissue_cache[tissue_id] = tissue
     
     return tissue
-
-
-def _get_or_fetch_study(
-    tissue_id: str, 
-    study_cache: Dict[str, str],
-    tissue_cache: Dict[str, Dict],
-    structured_data: StructuredDataSet,
-    portal_key: Dict, 
-    fail_on_error: bool
-) -> Optional[str]:
-    """Get study from cache or fetch from portal, caching result."""
-    if tissue_id in study_cache:
-        return study_cache[tissue_id]
-    
-    # Get tissue first
-    tissue = _get_or_fetch_tissue(tissue_id, tissue_cache, structured_data, portal_key, fail_on_error)
-    if not tissue:
-        return None
-    
-    # Extract study from tissue
-    study = tissue.get("study")
-    if isinstance(study, dict):
-        study_name = study.get("display_title") or study.get("name")
-    else:
-        study_name = study
-    
-    if study_name:
-        study_cache[tissue_id] = study_name
-    
-    return study_name
-
-
-def _should_validate_for_study(study: Optional[str]) -> bool:
-    """Check if study requires strict validation (Benchmarking or Production)."""
-    return study in _VALIDATING_STUDIES
 
 
 def _is_tpc_submission(item: Dict[str, Any], portal_key: Dict, fail_on_error: bool) -> bool:
@@ -149,7 +216,7 @@ def _is_tpc_submission(item: Dict[str, Any], portal_key: Dict, fail_on_error: bo
     # Try submission_centers first
     center_identifiers = item_utils.get_submission_center_identifiers(item)
     for center_id in center_identifiers:
-        display_title = portal_queries.get_submission_center_display_title(
+        display_title = portal_utils.get_submission_center_display_title(
             center_id, portal_key, fail_on_error
         )
         if display_title == _NDRI_TPC_DISPLAY_TITLE:
