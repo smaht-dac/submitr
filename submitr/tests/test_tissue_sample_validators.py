@@ -1,4 +1,3 @@
-import pytest
 from unittest import mock
 
 # Import all validator functions being tested
@@ -181,22 +180,22 @@ def test_get_tissue_submitted_id_cache_miss_success():
     """Fetches from portal and caches."""
     cache = {}
     tissue_data = {"uuid": TISSUE_UUID, "submitted_id": NDRI_TISSUE_SUBMITTED_ID}
-
     with mock.patch(
-        "submitr.validators.tissue_sample_validator.portal_utils.get_item_by_identifier",
+        ("submitr.validators.tissue_sample_validator"
+         ".portal_utils.get_item_by_identifier"),
         return_value=tissue_data,
     ) as mock_get_item:
         with mock.patch(
-            "submitr.validators.tissue_sample_validator.item_utils.get_submitted_id",
+            ("submitr.validators.tissue_sample_validator"
+             ".item_utils.get_submitted_id"),
             return_value=NDRI_TISSUE_SUBMITTED_ID,
-        ) as mock_get_submitted_id:
-            result = _get_tissue_submitted_id(TISSUE_UUID, cache, MOCK_PORTAL_KEY)
+        ):
+            result = _get_tissue_submitted_id(
+                TISSUE_UUID, cache, MOCK_PORTAL_KEY)
 
             assert result == NDRI_TISSUE_SUBMITTED_ID
             assert cache[TISSUE_UUID] == NDRI_TISSUE_SUBMITTED_ID
-            mock_get_item.assert_called_once_with(
-                 TISSUE_UUID, MOCK_PORTAL_KEY
-            )
+            mock_get_item.assert_called_once_with(TISSUE_UUID, MOCK_PORTAL_KEY)
 
 
 def test_get_tissue_samples_cache_miss_failure():
@@ -224,7 +223,8 @@ def test_get_tissue_samples_caches_result():
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
         return_value=sample_data,
     ):
-        _get_or_fetch_tissue_samples(PRODUCTION_EXTERNAL_ID, cache, MOCK_PORTAL_KEY)
+        _get_or_fetch_tissue_samples(
+            PRODUCTION_EXTERNAL_ID, cache, MOCK_PORTAL_KEY)
 
         assert PRODUCTION_EXTERNAL_ID in cache
         assert cache[PRODUCTION_EXTERNAL_ID] == sample_data
