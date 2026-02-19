@@ -13,6 +13,7 @@ _SAMPLE_SOURCE_PROPERTY_NAME = "sample_sources"
 _EXTERNAL_ID_PROPERTY_NAME = "external_id"
 _TISSUE_SCHEMA_NAME = "Tissue"
 _NDRI_SUBMISSION_CENTER_PREFIX = "NDRI"
+_NDRI_TPC_DISPLAY_TITLE = "NDRI TPC"
 _BENCHMARKING_PREFIX = "ST"
 _PRODUCTION_PREFIX = "SMHT"
 _METADATA_COMPARISON_PROPERTIES = ["category", "preservation_type"]
@@ -65,8 +66,7 @@ def _tissue_sample_metadata_validator(structured_data: StructuredDataSet, **kwar
 
     # Initialize caches
     samples_cache: Dict[str, List[Dict]] = {}
-    tissue_cache: Dict[str, Dict] = {}
-    study_cache: Dict[str, str] = {}
+    tissue_cache: Dict[str, str] = {}
     seen_external_ids: Dict[str, str] = {}  # external_id -> submitted_id
 
     portal_key = structured_data.portal.key
@@ -130,7 +130,7 @@ def _tissue_sample_metadata_validator(structured_data: StructuredDataSet, **kwar
 
             # Compare metadata with TPC baseline
             if tpc_samples:
-                _validate_metadata_consistency(item, tpc_samples[0], structured_data)
+                _validate_metadata_consistency(item, tpc_samples[0], structured_data, tissue_cache)
 
         # Track this external_id
         seen_external_ids[external_id] = submitted_id
@@ -211,12 +211,12 @@ def _validate_tpc_duplicate(
     if len(tpc_samples) > 0:
         if len(tpc_samples) == 1:
             # check if update to existing item
+            existing_submitted_id = item_utils.get_submitted_id(tpc_samples[0])
             if existing_submitted_id == submitted_id:
                 return
-        else:
-            structured_data.note_validation_error(
-                f"TissueSample: TPC Tissue Sample with external_id {external_id} already exists"
-            )
+        structured_data.note_validation_error(
+            f"TissueSample: TPC Tissue Sample with external_id {external_id} already exists"
+        )
     return
 
 
@@ -299,14 +299,12 @@ def _get_tissue_submitted_id(
 def _validate_metadata_consistency(
     item: Dict,
     tpc_sample: Dict,
-    structured_data: StructuredDataSet
+    structured_data: StructuredDataSet,
+    tissue_cache: Dict[str, Dict]
 ) -> None:
     """
     Validate GCC metadata matches TPC baseline for category, preservation_type, sample_sources.
     """
-    tpc_accession = item_utils.get_accession(tpc_sample)
-    found = tpc_accession or item_utils.get_submitted_id(tpc_sample)
-
     # Compare category and preservation_type
     for prop in _METADATA_COMPARISON_PROPERTIES:
         gcc_value = item.get(prop)
@@ -315,12 +313,14 @@ def _validate_metadata_consistency(
         if gcc_value and tpc_value and tpc_value != gcc_value:
             structured_data.note_validation_error(
                 f"TissueSample: metadata mismatch, {prop} {gcc_value} "
-                f"does not match value {tpc_value} in TPC Tissue Sample {found}"
+                f"does not match value {tpc_value} in TPC Tissue Sample {item_utils.get_submitted_id(tpc_sample)}"
             )
 
     # Compare sample_sources - assumes one source
     gcc_submitted_id = None
-    tpc_submitted_id = item_utils.get_submitted_id(tpc_sample)
+    import pdb; pdb.set_trace()
+    tpc_source = tpc_sample.get(_SAMPLE_SOURCE_PROPERTY_NAME, [])
+    tpc_submitted_id = _get_tissue_submitted_id(tpc_source[0].get('uuid'), tissue_cache, structured_data.portal.key) if tpc_source else None
     gcc_sources = item.get(_SAMPLE_SOURCE_PROPERTY_NAME, [])
     if gcc_sources:
         # this will most likely be submitted_id
