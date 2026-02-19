@@ -20,24 +20,34 @@ _METADATA_COMPARISON_PROPERTIES = ["category", "preservation_type"]
 
 
 @structured_data_validator_finish_hook
-def _tissue_sample_external_id_validator(structured_data: StructuredDataSet, **kwargs) -> None:
-    if not isinstance(data := structured_data.data.get(_TISSUE_SAMPLE_SCHEMA_NAME), list):
+def _tissue_sample_external_id_validator(
+    structured_data: StructuredDataSet, **kwargs
+) -> None:
+    if not isinstance(
+        data := structured_data.data.get(_TISSUE_SAMPLE_SCHEMA_NAME), list
+    ):
         return
     for item in data:
         if _SAMPLE_SOURCE_PROPERTY_NAME in item and (
             submitted_id := item.get("submitted_id")
         ):
-            tissue_sample_sc = submitted_id.split('_')[0]
-            if (tissue_items := [
+            tissue_sample_sc = submitted_id.split("_")[0]
+            if tissue_items := [
                 tissue
                 for tissue in structured_data.data.get(_TISSUE_SCHEMA_NAME, [])
                 if tissue.get("submitted_id") in item.get(_SAMPLE_SOURCE_PROPERTY_NAME)
-            ]):
-                tissue_sc = tissue_items[0].get("submitted_id", "").split('_')[0]
-                if tissue_sample_sc == _NDRI_SUBMISSION_CENTER_PREFIX or tissue_sc == _NDRI_SUBMISSION_CENTER_PREFIX:
+            ]:
+                tissue_sc = tissue_items[0].get("submitted_id", "").split("_")[0]
+                if (
+                    tissue_sample_sc == _NDRI_SUBMISSION_CENTER_PREFIX
+                    or tissue_sc == _NDRI_SUBMISSION_CENTER_PREFIX
+                ):
                     tissue_external_id = tissue_items[0].get(_EXTERNAL_ID_PROPERTY_NAME)
                     tissue_sample_external_id = item.get(_EXTERNAL_ID_PROPERTY_NAME)
-                    if "-".join(tissue_sample_external_id.split("-")[0:2]) != tissue_external_id:
+                    if (
+                        "-".join(tissue_sample_external_id.split("-")[0:2])
+                        != tissue_external_id
+                    ):
                         structured_data.note_validation_error(
                             f"{_TISSUE_SAMPLE_SCHEMA_NAME}:"
                             f" item {submitted_id}"
@@ -48,7 +58,9 @@ def _tissue_sample_external_id_validator(structured_data: StructuredDataSet, **k
 
 
 @structured_data_validator_finish_hook
-def _tissue_sample_metadata_validator(structured_data: StructuredDataSet, **kwargs) -> None:
+def _tissue_sample_metadata_validator(
+    structured_data: StructuredDataSet, **kwargs
+) -> None:
     """
     Validate TissueSample metadata consistency with TPC baseline samples.
 
@@ -61,7 +73,9 @@ def _tissue_sample_metadata_validator(structured_data: StructuredDataSet, **kwar
     Only applies to Benchmarking and Production studies.
     """
     # Get TissueSample items from submission
-    if not isinstance(data := structured_data.data.get(_TISSUE_SAMPLE_SCHEMA_NAME), list):
+    if not isinstance(
+        data := structured_data.data.get(_TISSUE_SAMPLE_SCHEMA_NAME), list
+    ):
         return
 
     # Initialize caches
@@ -90,7 +104,10 @@ def _tissue_sample_metadata_validator(structured_data: StructuredDataSet, **kwar
         # Track this external_id
         seen_external_ids[external_id] = submitted_id
 
-        if not (external_id.startswith(_BENCHMARKING_PREFIX) or external_id.startswith(_PRODUCTION_PREFIX)):    
+        if not (
+            external_id.startswith(_BENCHMARKING_PREFIX)
+            or external_id.startswith(_PRODUCTION_PREFIX)
+        ):
             continue
 
         # Determine if this is TPC or GCC submission
@@ -117,20 +134,30 @@ def _tissue_sample_metadata_validator(structured_data: StructuredDataSet, **kwar
         # Validate based on submission type
         if is_tpc:
             # TPC submission - check for duplicates
-            _validate_tpc_duplicate(external_id, submitted_id, tpc_samples, structured_data)
+            _validate_tpc_duplicate(
+                external_id, submitted_id, tpc_samples, structured_data
+            )
         else:
             # GCC submission - check for TPC exists and no other duplicates
-            if not _validate_gcc_baseline_exists(external_id, tpc_samples, structured_data):
+            if not _validate_gcc_baseline_exists(
+                external_id, tpc_samples, structured_data
+            ):
                 continue
 
             if not _validate_gcc_duplicate(
-                external_id, submitted_id, non_tpc_samples, seen_external_ids, structured_data
+                external_id,
+                submitted_id,
+                non_tpc_samples,
+                seen_external_ids,
+                structured_data,
             ):
                 continue
 
             # Compare metadata with TPC baseline
             if tpc_samples:
-                _validate_metadata_consistency(item, tpc_samples[0], structured_data, tissue_cache)
+                _validate_metadata_consistency(
+                    item, tpc_samples[0], structured_data, tissue_cache
+                )
 
         # Track this external_id
         seen_external_ids[external_id] = submitted_id
@@ -147,17 +174,15 @@ def _is_tpc_submission(submitted_id: str) -> bool:
 
 
 def _get_or_fetch_tissue_samples(
-    external_id: str, 
-    cache: Dict[str, List[Dict]], 
-    portal_key: Dict, 
+    external_id: str,
+    cache: Dict[str, List[Dict]],
+    portal_key: Dict,
 ) -> Optional[List[Dict]]:
     """Get tissue from cache or fetch from portal, caching result."""
     if external_id in cache:
         return cache[external_id]
 
-    samples = portal_utils.search_tissue_samples_by_external_id(
-        external_id, portal_key
-    )
+    samples = portal_utils.search_tissue_samples_by_external_id(external_id, portal_key)
 
     cache[external_id] = samples
 
@@ -165,7 +190,7 @@ def _get_or_fetch_tissue_samples(
 
 
 def _categorize_samples_by_submission_center(
-    samples: List[Dict], 
+    samples: List[Dict],
 ) -> tuple[List[Dict], List[Dict]]:
     """Separate samples into TPC and non-TPC lists based on submission_centers."""
     tpc_samples = []
@@ -201,8 +226,8 @@ def _categorize_samples_by_submission_center(
 def _validate_tpc_duplicate(
     external_id: str,
     submitted_id: str,
-    tpc_samples: List[Dict], 
-    structured_data: StructuredDataSet
+    tpc_samples: List[Dict],
+    structured_data: StructuredDataSet,
 ):
     """
     Validate TPC submission doesn't create duplicate.
@@ -221,9 +246,7 @@ def _validate_tpc_duplicate(
 
 
 def _validate_gcc_baseline_exists(
-    external_id: str, 
-    tpc_samples: List[Dict], 
-    structured_data: StructuredDataSet
+    external_id: str, tpc_samples: List[Dict], structured_data: StructuredDataSet
 ) -> bool:
     """
     Validate GCC submission has TPC baseline sample.
@@ -238,11 +261,11 @@ def _validate_gcc_baseline_exists(
 
 
 def _validate_gcc_duplicate(
-    external_id: str, 
-    submitted_id: str, 
+    external_id: str,
+    submitted_id: str,
     non_tpc_samples: List[Dict],
     seen_external_ids: Dict[str, str],
-    structured_data: StructuredDataSet
+    structured_data: StructuredDataSet,
 ) -> bool:
     """
     Validate GCC submission doesn't create duplicate non-TPC sample.
@@ -277,48 +300,46 @@ def _validate_gcc_duplicate(
 def _is_tissue_submitted_id(identifier: str) -> bool:
     """
     Check if identifier is specifically a Tissue submitted_id.
-    
+
     Tissue pattern: NDRI_TISSUE_{tissue_id}
     Non-Tissue patterns: NDRI_TISSUE_{SUBTYPE}_{id} where SUBTYPE is SAMPLE, COLLECTION, etc.
-    
+
     Strategy: Check if the third segment (after second underscore) is NOT a known subtype.
     """
     if not isinstance(identifier, str):
         return False
-    
+
     # Must start with NDRI_TISSUE_
     if not identifier.startswith(f"{_NDRI_SUBMISSION_CENTER_PREFIX}_TISSUE_"):
         return False
-    
-    parts = identifier.split('_')
-    
+
+    parts = identifier.split("_")
+
     # Must have at least 3 parts
     if len(parts) < 3:
         return False
-    
+
     # Known non-Tissue subtypes (expand as needed)
-    NON_TISSUE_SUBTYPES = {'SAMPLE', 'COLLECTION'}
-    
+    NON_TISSUE_SUBTYPES = {"SAMPLE", "COLLECTION"}
+
     # Third segment should NOT be a known subtype
     third_segment = parts[2]
     return third_segment not in NON_TISSUE_SUBTYPES
 
 
 def _get_tissue_submitted_id(
-    tissue_id: str, 
-    tissue_cache: Dict[str, Dict], 
-    portal_key: Dict, 
+    tissue_id: str,
+    tissue_cache: Dict[str, Dict],
+    portal_key: Dict,
 ) -> Optional[Dict]:
     """Get tissue from cache, or fetch from portal with identifying property."""
     submitted_id = None
     if tissue_id in tissue_cache:
         return tissue_cache[tissue_id]
-    tissue = portal_utils.get_item_by_identifier(
-        tissue_id, "Tissue", portal_key
-    )
+    tissue = portal_utils.get_item_by_identifier(tissue_id, "Tissue", portal_key)
     if tissue:
         submitted_id = item_utils.get_submitted_id(tissue)
-        
+
     tissue_cache[tissue_id] = submitted_id
     return submitted_id
 
@@ -327,7 +348,7 @@ def _validate_metadata_consistency(
     item: Dict,
     tpc_sample: Dict,
     structured_data: StructuredDataSet,
-    tissue_cache: Dict[str, Dict]
+    tissue_cache: Dict[str, Dict],
 ) -> None:
     """
     Validate GCC metadata matches TPC baseline for category, preservation_type, sample_sources.
@@ -346,7 +367,13 @@ def _validate_metadata_consistency(
     # Compare sample_sources - assumes one source
     gcc_submitted_id = None
     tpc_source = tpc_sample.get(_SAMPLE_SOURCE_PROPERTY_NAME, [])
-    tpc_submitted_id = _get_tissue_submitted_id(tpc_source[0].get('uuid'), tissue_cache, structured_data.portal.key) if tpc_source else None
+    tpc_submitted_id = (
+        _get_tissue_submitted_id(
+            tpc_source[0].get("uuid"), tissue_cache, structured_data.portal.key
+        )
+        if tpc_source
+        else None
+    )
     gcc_sources = item.get(_SAMPLE_SOURCE_PROPERTY_NAME, [])
     if gcc_sources:
         # this will most likely be submitted_id
@@ -354,7 +381,9 @@ def _validate_metadata_consistency(
         if _is_tissue_submitted_id(gcc_source):
             gcc_submitted_id = gcc_source
         else:
-            gcc_submitted_id = _get_tissue_submitted_id(gcc_source, tissue_cache, structured_data.portal.key)
+            gcc_submitted_id = _get_tissue_submitted_id(
+                gcc_source, tissue_cache, structured_data.portal.key
+            )
 
     if tpc_submitted_id != gcc_submitted_id:
         structured_data.note_validation_error(

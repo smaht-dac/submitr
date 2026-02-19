@@ -65,12 +65,13 @@ def _tissue_preservation_type_validator(structured_data: StructuredDataSet, **kw
         return
     seen = {}
     for item in data:
-        if _TISSUE_TERM_PROPERTY_NAME in item and (
-             term_id := item.get(_TISSUE_TERM_PROPERTY_NAME)
+        if _TISSUE_TERM_PROPERTY_NAME not in item or not (
+            term_id := item.get(_TISSUE_TERM_PROPERTY_NAME)
         ):
-            if not (term_info := seen.get(term_id)):
-                term_info = _get_term_info(term_id, structured_data.portal.key)
-                seen[term_id] = term_info
+            continue  # Skip items without uberon_id
+        if not (term_info := seen.get(term_id)):
+            term_info = _get_term_info(term_id, structured_data.portal.key)
+            seen[term_id] = term_info
 
         if ptype := item.get("preservation_type"):
             for code, expected_ptype in term_info.items():
