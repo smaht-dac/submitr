@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorators import structured_data_validator_finish_hook
 
@@ -191,7 +191,7 @@ def _get_or_fetch_tissue_samples(
 
 def _categorize_samples_by_submission_center(
     samples: List[Dict],
-) -> tuple[List[Dict], List[Dict]]:
+) -> Tuple[List[Dict], List[Dict]]:
     """Separate samples into TPC and non-TPC lists based on submission_centers."""
     tpc_samples = []
     non_tpc_samples = []
