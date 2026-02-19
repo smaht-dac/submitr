@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
 from dcicutils import ff_utils
 
 
@@ -45,7 +45,7 @@ def get_item_by_identifier(
     try:
         result = ff_utils.get_metadata(identifier, portal_key)
         return result
-    except Exception as e:
+    except Exception:
         return None
 
 
@@ -76,9 +76,7 @@ def get_tissue_study(
         if isinstance(study, dict):
             return study.get("display_title") or study.get("name")
         return study
-    except Exception as e:
-        if fail_on_error:
-            raise
+    except Exception:
         return None
 
 

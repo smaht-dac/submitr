@@ -46,7 +46,6 @@ def _tissue_external_id_validator(structured_data: StructuredDataSet, **kwargs) 
 
 def _get_term_info(term_id: str, key: Dict) -> str:
     term_info = {}
-    #import pdb; pdb.set_trace()
     query = f"/search/?type={_OT_TYPE}&identifier={term_id}"
     result = ff_utils.search_metadata(query, key)
     if result and len(result) == 1:

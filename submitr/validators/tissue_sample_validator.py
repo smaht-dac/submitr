@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
 from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorators import structured_data_validator_finish_hook
 

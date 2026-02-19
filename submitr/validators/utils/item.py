@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 
 
 def get_external_id(item: Dict[str, Any]) -> str:
@@ -25,7 +25,7 @@ def extract_submission_center_from_submitted_id(submitted_id: str) -> str:
     """Extract submission center code from submitted_id (prefix before first underscore)."""
     if not submitted_id:
         return ""
-    return submitted_id.split('_')[0]
+    return submitted_id.split("_")[0]
 
 
 def is_tpc_submission_center(submission_center_code: str) -> bool:
@@ -35,14 +35,14 @@ def is_tpc_submission_center(submission_center_code: str) -> bool:
 
 def get_submission_center_identifiers(item: Dict[str, Any]) -> List[str]:
     """
-    Get submission center identifiers from item.  
+    Get submission center identifiers from item.
     Returns:
         List of submission center identifiers (submitted_ids, uuids, or accessions)
     """
     centers = item.get("submission_centers", [])
     if not centers:
         return []
-    
+
     # Centers might be strings (identifiers) or dicts with embedded data
     identifiers = []
     for center in centers:
@@ -50,8 +50,10 @@ def get_submission_center_identifiers(item: Dict[str, Any]) -> List[str]:
             identifiers.append(center)
         elif isinstance(center, dict):
             # Try to get identifier from embedded object
-            identifier = center.get("submitted_id") or center.get("uuid") or center.get("@id")
+            identifier = (
+                center.get("submitted_id") or center.get("uuid") or center.get("@id")
+            )
             if identifier:
                 identifiers.append(identifier)
-    
+
     return identifiers

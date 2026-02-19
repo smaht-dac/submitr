@@ -97,8 +97,10 @@ def test_is_tissue_submitted_id_empty():
 def test_categorize_all_tpc_samples():
     """All samples have NDRI TPC center."""
     samples = [
-        {"submitted_id": "NDRI_SAMPLE_001", "submission_centers": [NDRI_TPC_CENTER]},
-        {"submitted_id": "NDRI_SAMPLE_002", "submission_centers": [NDRI_TPC_CENTER]},
+        {"submitted_id": "NDRI_SAMPLE_001",
+         "submission_centers": [NDRI_TPC_CENTER]},
+        {"submitted_id": "NDRI_SAMPLE_002",
+         "submission_centers": [NDRI_TPC_CENTER]},
     ]
     tpc, gcc = _categorize_samples_by_submission_center(samples)
     assert len(tpc) == 2
@@ -119,9 +121,12 @@ def test_categorize_all_gcc_samples():
 def test_categorize_mixed_samples():
     """Mix of TPC and GCC samples."""
     samples = [
-        {"submitted_id": "NDRI_SAMPLE_001", "submission_centers": [NDRI_TPC_CENTER]},
-        {"submitted_id": "DAC_SAMPLE_002", "submission_centers": [GCC_CENTER]},
-        {"submitted_id": "NDRI_SAMPLE_003", "submission_centers": [NDRI_TPC_CENTER]},
+        {"submitted_id": "NDRI_SAMPLE_001",
+         "submission_centers": [NDRI_TPC_CENTER]},
+        {"submitted_id": "DAC_SAMPLE_002",
+         "submission_centers": [GCC_CENTER]},
+        {"submitted_id": "NDRI_SAMPLE_003",
+         "submission_centers": [NDRI_TPC_CENTER]},
     ]
     tpc, gcc = _categorize_samples_by_submission_center(samples)
     assert len(tpc) == 2
@@ -150,7 +155,9 @@ def test_categorize_empty_list():
 
 def test_categorize_missing_submission_centers():
     """Uses submitted_id prefix as fallback."""
-    samples = [{"submitted_id": "NDRI_SAMPLE_001"}, {"submitted_id": "DAC_SAMPLE_002"}]
+    samples = [
+        {"submitted_id": "NDRI_SAMPLE_001"},
+        {"submitted_id": "DAC_SAMPLE_002"}]
     tpc, gcc = _categorize_samples_by_submission_center(samples)
     assert len(tpc) == 1
     assert len(gcc) == 1
@@ -179,7 +186,9 @@ def test_get_tissue_samples_cache_hit():
 def test_get_tissue_submitted_id_cache_miss_success():
     """Fetches from portal and caches."""
     cache = {}
-    tissue_data = {"uuid": TISSUE_UUID, "submitted_id": NDRI_TISSUE_SUBMITTED_ID}
+    tissue_data = {
+        "uuid": TISSUE_UUID,
+        "submitted_id": NDRI_TISSUE_SUBMITTED_ID}
     with mock.patch(
         ("submitr.validators.tissue_sample_validator"
          ".portal_utils.get_item_by_identifier"),
@@ -336,7 +345,8 @@ def test_validate_tpc_duplicate_same_item_update():
     existing_tpc = [{"submitted_id": NDRI_TISSUE_SAMPLE_SUBMITTED_ID}]
 
     _validate_tpc_duplicate(
-        PRODUCTION_EXTERNAL_ID, NDRI_TISSUE_SAMPLE_SUBMITTED_ID, existing_tpc, mock_data
+        PRODUCTION_EXTERNAL_ID, NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
+        existing_tpc, mock_data
     )
 
     mock_data.note_validation_error.assert_not_called()
@@ -348,10 +358,12 @@ def test_validate_tpc_duplicate_different_item():
     existing_tpc = [{"submitted_id": "NDRI_OTHER_SAMPLE"}]
 
     _validate_tpc_duplicate(
-        PRODUCTION_EXTERNAL_ID, NDRI_TISSUE_SAMPLE_SUBMITTED_ID, existing_tpc, mock_data
+        PRODUCTION_EXTERNAL_ID, NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
+        existing_tpc, mock_data
     )
 
-    expected_message = f"TissueSample: TPC Tissue Sample with external_id {PRODUCTION_EXTERNAL_ID} already exists"
+    expected_message = (f"TissueSample: TPC Tissue Sample with external_id "
+                        f"{PRODUCTION_EXTERNAL_ID} already exists")
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -364,10 +376,12 @@ def test_validate_tpc_duplicate_multiple_existing():
     ]
 
     _validate_tpc_duplicate(
-        PRODUCTION_EXTERNAL_ID, NDRI_TISSUE_SAMPLE_SUBMITTED_ID, existing_tpc, mock_data
+        PRODUCTION_EXTERNAL_ID, NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
+        existing_tpc, mock_data
     )
 
-    expected_message = f"TissueSample: TPC Tissue Sample with external_id {PRODUCTION_EXTERNAL_ID} already exists"
+    expected_message = (f"TissueSample: TPC Tissue Sample with external_id "
+                        f"{PRODUCTION_EXTERNAL_ID} already exists")
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -393,10 +407,12 @@ def test_validate_gcc_baseline_no_tpc_sample():
     """Returns False and logs error when no TPC sample."""
     mock_data = make_structured_data_mock()
 
-    result = _validate_gcc_baseline_exists(PRODUCTION_EXTERNAL_ID, [], mock_data)
+    result = _validate_gcc_baseline_exists(
+        PRODUCTION_EXTERNAL_ID, [], mock_data)
 
     assert result is False
-    expected_message = f"TissueSample: No TPC Tissue Sample found with external_id {PRODUCTION_EXTERNAL_ID}"
+    expected_message = (f"TissueSample: No TPC Tissue Sample found with "
+                        f"external_id {PRODUCTION_EXTERNAL_ID}")
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -427,7 +443,8 @@ def test_validate_gcc_duplicate_no_existing():
     seen = {}
 
     result = _validate_gcc_duplicate(
-        PRODUCTION_EXTERNAL_ID, GCC_TISSUE_SAMPLE_SUBMITTED_ID, [], seen, mock_data
+        PRODUCTION_EXTERNAL_ID, GCC_TISSUE_SAMPLE_SUBMITTED_ID, [],
+        seen, mock_data
     )
 
     assert result is True
@@ -467,7 +484,8 @@ def test_validate_gcc_duplicate_different_item_in_portal():
     )
 
     assert result is False
-    expected_message = f"TissueSample: A non-TPC sample with external_id {PRODUCTION_EXTERNAL_ID} already exists"
+    expected_message = (f"TissueSample: A non-TPC sample with external_id "
+                        f"{PRODUCTION_EXTERNAL_ID} already exists")
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -477,11 +495,14 @@ def test_validate_gcc_duplicate_different_item_in_batch():
     seen = {PRODUCTION_EXTERNAL_ID: "DAC_OTHER_SAMPLE"}
 
     result = _validate_gcc_duplicate(
-        PRODUCTION_EXTERNAL_ID, GCC_TISSUE_SAMPLE_SUBMITTED_ID, [], seen, mock_data
+        PRODUCTION_EXTERNAL_ID, GCC_TISSUE_SAMPLE_SUBMITTED_ID, [],
+        seen, mock_data
     )
 
     assert result is False
-    expected_message = f"TissueSample: A non-TPC sample with external_id {PRODUCTION_EXTERNAL_ID} already exists in this submission"
+    expected_message = (f"TissueSample: A non-TPC sample with external_id "
+                        f"{PRODUCTION_EXTERNAL_ID} already exists in this "
+                        f"submission")
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -503,7 +524,8 @@ def test_validate_gcc_duplicate_multiple_existing():
     )
 
     assert result is False
-    expected_message = f"TissueSample: A non-TPC sample with external_id {PRODUCTION_EXTERNAL_ID} already exists"
+    expected_message = (f"TissueSample: A non-TPC sample with external_id "
+                        f"{PRODUCTION_EXTERNAL_ID} already exists")
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -582,7 +604,9 @@ def test_validate_metadata_consistency_category_mismatch():
             mock_get_item.return_value = {"submitted_id": GCC_TISSUE_SUBMITTED_ID}
             _validate_metadata_consistency(gcc_item, tpc_item, mock_data, tissue_cache)
 
-    expected_message = f"TissueSample: metadata mismatch, category Homogenate does not match value Specimen in TPC Tissue Sample {NDRI_TISSUE_SAMPLE_SUBMITTED_ID}"
+    expected_message = (f"TissueSample: metadata mismatch, category Homogenate "
+                        f"does not match value Specimen in TPC Tissue Sample "
+                        f"{NDRI_TISSUE_SAMPLE_SUBMITTED_ID}")
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -613,10 +637,14 @@ def test_validate_metadata_consistency_preservation_type_mismatch():
         with mock.patch(
             "submitr.validators.utils.portal.get_item_by_identifier"
         ) as mock_get_item:
-            mock_get_item.return_value = {"submitted_id": GCC_TISSUE_SUBMITTED_ID}
-            _validate_metadata_consistency(gcc_item, tpc_item, mock_data, tissue_cache)
+            mock_get_item.return_value = {
+                "submitted_id": GCC_TISSUE_SUBMITTED_ID}
+            _validate_metadata_consistency(
+                gcc_item, tpc_item, mock_data, tissue_cache)
 
-    expected_message = f"TissueSample: metadata mismatch, preservation_type Frozen does not match value Fresh in TPC Tissue Sample {NDRI_TISSUE_SAMPLE_SUBMITTED_ID}"
+    expected_message = (f"TissueSample: metadata mismatch, preservation_type "
+                        f"Frozen does not match value Fresh in TPC Tissue"
+                        f" Sample {NDRI_TISSUE_SAMPLE_SUBMITTED_ID}")
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -660,12 +688,15 @@ def test_validate_metadata_consistency_both_mismatch():
     assert mock_data.note_validation_error.call_count == 2
 
     # Check both error messages were logged
-    calls = [call[0][0] for call in mock_data.note_validation_error.call_args_list]
+    calls = [
+        call[0][0] for call in mock_data.note_validation_error.call_args_list]
     assert any(
-        "category Homogenate does not match value Specimen" in call for call in calls
+        "category Homogenate does not match value Specimen"
+        in call for call in calls
     )
     assert any(
-        "preservation_type Frozen does not match value Fresh" in call for call in calls
+        "preservation_type Frozen does not match value Fresh"
+        in call for call in calls
     )
 
 
@@ -719,7 +750,10 @@ def test_validate_metadata_consistency_sample_source_mismatch():
                     gcc_item, tpc_item, mock_data, tissue_cache
                 )
 
-    expected_message = f"TissueSample: metadata mismatch: sample_source DAC_TISSUE_DIFFERENT does not match TPC TissueSample sample_source {NDRI_TISSUE_SUBMITTED_ID}"
+    expected_message = (f"TissueSample: metadata mismatch: sample_source "
+                        f"DAC_TISSUE_DIFFERENT does not match TPC "
+                        f"TissueSample sample_source "
+                        f"{NDRI_TISSUE_SUBMITTED_ID}")
     mock_data.note_validation_error.assert_called_with(expected_message)
 
 
@@ -873,8 +907,8 @@ def test_external_id_validator_mismatch_tpc_tissue_sample():
     _tissue_sample_external_id_validator(mock_data)
 
     expected_message = (
-        f"TissueSample: item {NDRI_TISSUE_SAMPLE_SUBMITTED_ID} "
-        f"external_id SMHT001-3A-001 does not match Tissue external_id SMHT999-3A."
+        f"TissueSample: item {NDRI_TISSUE_SAMPLE_SUBMITTED_ID} external_id "
+        f"SMHT001-3A-001 does not match Tissue external_id SMHT999-3A."
     )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
@@ -896,8 +930,8 @@ def test_external_id_validator_mismatch_tpc_tissue():
     _tissue_sample_external_id_validator(mock_data)
 
     expected_message = (
-        f"TissueSample: item {GCC_TISSUE_SAMPLE_SUBMITTED_ID} "
-        f"external_id SMHT001-3A-001 does not match Tissue external_id SMHT999-3A."
+        f"TissueSample: item {GCC_TISSUE_SAMPLE_SUBMITTED_ID} external_id"
+        f" SMHT001-3A-001 does not match Tissue external_id SMHT999-3A."
     )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
@@ -1083,7 +1117,8 @@ def test_metadata_validator_tpc_duplicate():
     ):
         _tissue_sample_metadata_validator(mock_data)
 
-    expected_message = f"TissueSample: TPC Tissue Sample with external_id {PRODUCTION_EXTERNAL_ID} already exists"
+    expected_message = (f"TissueSample: TPC Tissue Sample with external_id "
+                        f"{PRODUCTION_EXTERNAL_ID} already exists")
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -1186,7 +1221,8 @@ def test_metadata_validator_gcc_no_tpc_baseline():
     ):
         _tissue_sample_metadata_validator(mock_data)
 
-    expected_message = f"TissueSample: No TPC Tissue Sample found with external_id {PRODUCTION_EXTERNAL_ID}"
+    expected_message = (f"TissueSample: No TPC Tissue Sample found with "
+                        f"external_id {PRODUCTION_EXTERNAL_ID}")
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -1220,7 +1256,8 @@ def test_metadata_validator_gcc_duplicate():
     ):
         _tissue_sample_metadata_validator(mock_data)
 
-    expected_message = f"TissueSample: A non-TPC sample with external_id {PRODUCTION_EXTERNAL_ID} already exists"
+    expected_message = (f"TissueSample: A non-TPC sample with external_id "
+                        f"{PRODUCTION_EXTERNAL_ID} already exists")
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -1336,7 +1373,9 @@ def test_metadata_validator_intra_batch_duplicate():
         _tissue_sample_metadata_validator(mock_data)
 
     # Should be called once for the intra-batch duplicate
-    expected_message = f"TissueSample: A sample with external_id {PRODUCTION_EXTERNAL_ID} already exists in this submission"
+    expected_message = (f"TissueSample: A sample with external_id "
+                        f"{PRODUCTION_EXTERNAL_ID} already exists "
+                        f"in this submission")
     assert mock_data.note_validation_error.call_count == 1
     mock_data.note_validation_error.assert_called_with(expected_message)
 
@@ -1386,7 +1425,7 @@ def test_metadata_validator_portal_query_failure():
         _tissue_sample_metadata_validator(mock_data)
 
     expected_message = (
-        f"TissueSample: Unable to validate {NDRI_TISSUE_SAMPLE_SUBMITTED_ID} - "
-        f"portal query failed for external_id {PRODUCTION_EXTERNAL_ID}"
+        f"TissueSample: Unable to validate {NDRI_TISSUE_SAMPLE_SUBMITTED_ID}"
+        f" - portal query failed for external_id {PRODUCTION_EXTERNAL_ID}"
     )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
