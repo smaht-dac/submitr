@@ -2,7 +2,6 @@ from typing import Dict
 from dcicutils import ff_utils
 from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorators import structured_data_validator_finish_hook
-from utils.dcicutils import structured_data
 
 
 # Validator that reports if any Tissue items are linked to Donor items
