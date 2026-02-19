@@ -158,8 +158,8 @@ def _get_or_fetch_tissue_samples(
     samples = portal_utils.search_tissue_samples_by_external_id(
         external_id, portal_key
     )
-    if samples is not None:
-        cache[external_id] = samples
+
+    cache[external_id] = samples
 
     return samples
 
@@ -275,7 +275,33 @@ def _validate_gcc_duplicate(
 
 
 def _is_tissue_submitted_id(identifier: str) -> bool:
-    return identifier.startswith(f"{_NDRI_SUBMISSION_CENTER_PREFIX}_TISSUE_")
+    """
+    Check if identifier is specifically a Tissue submitted_id.
+    
+    Tissue pattern: NDRI_TISSUE_{tissue_id}
+    Non-Tissue patterns: NDRI_TISSUE_{SUBTYPE}_{id} where SUBTYPE is SAMPLE, COLLECTION, etc.
+    
+    Strategy: Check if the third segment (after second underscore) is NOT a known subtype.
+    """
+    if not isinstance(identifier, str):
+        return False
+    
+    # Must start with NDRI_TISSUE_
+    if not identifier.startswith(f"{_NDRI_SUBMISSION_CENTER_PREFIX}_TISSUE_"):
+        return False
+    
+    parts = identifier.split('_')
+    
+    # Must have at least 3 parts
+    if len(parts) < 3:
+        return False
+    
+    # Known non-Tissue subtypes (expand as needed)
+    NON_TISSUE_SUBTYPES = {'SAMPLE', 'COLLECTION'}
+    
+    # Third segment should NOT be a known subtype
+    third_segment = parts[2]
+    return third_segment not in NON_TISSUE_SUBTYPES
 
 
 def _get_tissue_submitted_id(
@@ -284,6 +310,7 @@ def _get_tissue_submitted_id(
     portal_key: Dict, 
 ) -> Optional[Dict]:
     """Get tissue from cache, or fetch from portal with identifying property."""
+    submitted_id = None
     if tissue_id in tissue_cache:
         return tissue_cache[tissue_id]
     tissue = portal_utils.get_item_by_identifier(
@@ -291,9 +318,9 @@ def _get_tissue_submitted_id(
     )
     if tissue:
         submitted_id = item_utils.get_submitted_id(tissue)
-        tissue_cache[tissue_id] = submitted_id
-        return submitted_id
-    return None
+        
+    tissue_cache[tissue_id] = submitted_id
+    return submitted_id
 
 
 def _validate_metadata_consistency(
@@ -318,7 +345,6 @@ def _validate_metadata_consistency(
 
     # Compare sample_sources - assumes one source
     gcc_submitted_id = None
-    import pdb; pdb.set_trace()
     tpc_source = tpc_sample.get(_SAMPLE_SOURCE_PROPERTY_NAME, [])
     tpc_submitted_id = _get_tissue_submitted_id(tpc_source[0].get('uuid'), tissue_cache, structured_data.portal.key) if tpc_source else None
     gcc_sources = item.get(_SAMPLE_SOURCE_PROPERTY_NAME, [])

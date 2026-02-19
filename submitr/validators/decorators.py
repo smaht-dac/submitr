@@ -46,6 +46,32 @@ def structured_data_validator_hook(*decorator_args, **decorator_kwargs) -> Calla
     return decorator
 
 
+# # Decorator for finish validator. Called by StructuredData at the end of processing. Usage like this:
+# #
+# #   @structured_data_validator_finish_hook
+# #   def your_finish_validator(structured_data: StructuredDataSet, *kwargs) -> None:
+# #
+# def structured_data_validator_finish_hook(*decorator_args, **decorator_kwargs) -> Callable:
+#     # Reminder of how decorators works:
+#     # - @structured_data_validator_finish_hook -> decorator_args == tuple(wrapped_function)
+#     #   And the decorator function below does NOT get called.
+#     # - @structured_data_validator_finish_hook() -> decorator_args == tuple()
+#     # - @structured_data_validator_finish_hook(arg) -> decorator_args == tuple(arg)
+#     #   And the decorator function below DOES get called with the wrapped_function.
+#     if (len(decorator_args) == 1) and callable(wrapped_function := decorator_args[0]) and (not decorator_kwargs):
+#         _FINISH_VALIDATORS.append(wrapped_function)
+#     def decorator(wrapped_function: Callable) -> Callable:  # noqa
+#         nonlocal decorator_args, decorator_kwargs
+#         if (((len(decorator_args) != 0) and
+#              (not (len(decorator_args) == 1 and
+#                    ([f for f in _FINISH_VALIDATORS if f == wrapped_function]))))) or decorator_kwargs:
+#             print(f"CODE ERROR: No arguments permitted for"
+#                   f" @structured_data_validator_finish_hook: {wrapped_function.__name__}")
+#             exit(1)
+#         _FINISH_VALIDATORS.append(wrapped_function)
+#     return decorator
+
+
 # Decorator for finish validator. Called by StructuredData at the end of processing. Usage like this:
 #
 #   @structured_data_validator_finish_hook
@@ -60,6 +86,7 @@ def structured_data_validator_finish_hook(*decorator_args, **decorator_kwargs) -
     #   And the decorator function below DOES get called with the wrapped_function.
     if (len(decorator_args) == 1) and callable(wrapped_function := decorator_args[0]) and (not decorator_kwargs):
         _FINISH_VALIDATORS.append(wrapped_function)
+        return wrapped_function  # <-- ADDED THIS LINE
     def decorator(wrapped_function: Callable) -> Callable:  # noqa
         nonlocal decorator_args, decorator_kwargs
         if (((len(decorator_args) != 0) and
@@ -69,6 +96,7 @@ def structured_data_validator_finish_hook(*decorator_args, **decorator_kwargs) -
                   f" @structured_data_validator_finish_hook: {wrapped_function.__name__}")
             exit(1)
         _FINISH_VALIDATORS.append(wrapped_function)
+        return wrapped_function  # <-- AND THIS LINE
     return decorator
 
 
