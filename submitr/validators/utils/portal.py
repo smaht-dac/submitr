@@ -25,9 +25,8 @@ def search_tissue_samples_by_external_id(
 
 
 def get_item_by_identifier(
-    identifier: str, 
-    item_type: str, 
-    portal_key: Dict, 
+    identifier: str,
+    portal_key: Dict,
  ) -> Optional[Dict]:
     """
     Fetch item from portal by identifier.
@@ -50,7 +49,6 @@ def get_item_by_identifier(
 def get_tissue_study(
     tissue_identifier: str, 
     portal_key: Dict, 
-    fail_on_error: bool = True
 ) -> Optional[str]:
     """
     Get study name from Tissue item.

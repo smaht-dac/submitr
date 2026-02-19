@@ -336,7 +336,7 @@ def _get_tissue_submitted_id(
     submitted_id = None
     if tissue_id in tissue_cache:
         return tissue_cache[tissue_id]
-    tissue = portal_utils.get_item_by_identifier(tissue_id, "Tissue", portal_key)
+    tissue = portal_utils.get_item_by_identifier(tissue_id, portal_key)
     if tissue:
         submitted_id = item_utils.get_submitted_id(tissue)
 

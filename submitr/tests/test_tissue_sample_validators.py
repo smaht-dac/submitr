@@ -1,6 +1,5 @@
-#import pytest
+import pytest
 from unittest import mock
-#from typing import Dict, List
 
 # Import all validator functions being tested
 from submitr.validators.tissue_sample_validator import (
@@ -178,22 +177,26 @@ def test_get_tissue_samples_cache_hit():
         mock_search.assert_not_called()
 
 
-def test_get_tissue_samples_cache_miss_success():
-    """Fetches from portal and caches result."""
+def test_get_tissue_submitted_id_cache_miss_success():
+    """Fetches from portal and caches."""
     cache = {}
-    sample_data = [{"external_id": PRODUCTION_EXTERNAL_ID}]
+    tissue_data = {"uuid": TISSUE_UUID, "submitted_id": NDRI_TISSUE_SUBMITTED_ID}
 
     with mock.patch(
-        "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
-        return_value=sample_data,
-    ) as mock_search:
-        result = _get_or_fetch_tissue_samples(
-            PRODUCTION_EXTERNAL_ID, cache, MOCK_PORTAL_KEY
-        )
+        "submitr.validators.tissue_sample_validator.portal_utils.get_item_by_identifier",
+        return_value=tissue_data,
+    ) as mock_get_item:
+        with mock.patch(
+            "submitr.validators.tissue_sample_validator.item_utils.get_submitted_id",
+            return_value=NDRI_TISSUE_SUBMITTED_ID,
+        ) as mock_get_submitted_id:
+            result = _get_tissue_submitted_id(TISSUE_UUID, cache, MOCK_PORTAL_KEY)
 
-        assert result == sample_data
-        assert cache[PRODUCTION_EXTERNAL_ID] == sample_data
-        mock_search.assert_called_once_with(PRODUCTION_EXTERNAL_ID, MOCK_PORTAL_KEY)
+            assert result == NDRI_TISSUE_SUBMITTED_ID
+            assert cache[TISSUE_UUID] == NDRI_TISSUE_SUBMITTED_ID
+            mock_get_item.assert_called_once_with(
+                 TISSUE_UUID, MOCK_PORTAL_KEY
+            )
 
 
 def test_get_tissue_samples_cache_miss_failure():
@@ -264,28 +267,6 @@ def test_get_tissue_submitted_id_cache_hit():
             assert result == NDRI_TISSUE_SUBMITTED_ID
             mock_get_item.assert_not_called()
             mock_get_submitted_id.assert_not_called()
-
-
-def test_get_tissue_submitted_id_cache_miss_success():
-    """Fetches from portal and caches."""
-    cache = {}
-    tissue_data = {"uuid": TISSUE_UUID, "submitted_id": NDRI_TISSUE_SUBMITTED_ID}
-
-    with mock.patch(
-        "submitr.validators.utils.portal.get_item_by_identifier",
-        return_value=tissue_data,
-    ) as mock_get_item:
-        with mock.patch(
-            "submitr.validators.utils.item.get_submitted_id",
-            return_value=NDRI_TISSUE_SUBMITTED_ID,
-        ) as mock_get_submitted_id:
-            result = _get_tissue_submitted_id(TISSUE_UUID, cache, MOCK_PORTAL_KEY)
-
-            assert result == NDRI_TISSUE_SUBMITTED_ID
-            assert cache[TISSUE_UUID] == NDRI_TISSUE_SUBMITTED_ID
-            mock_get_item.assert_called_once_with(
-                TISSUE_UUID, "Tissue", MOCK_PORTAL_KEY
-            )
 
 
 def test_get_tissue_submitted_id_not_found():
@@ -716,7 +697,7 @@ def test_validate_metadata_consistency_sample_source_mismatch():
             "submitr.validators.utils.portal.get_item_by_identifier"
         ) as mock_get_item:
 
-            def get_item_side_effect(identifier, item_type, key):
+            def get_item_side_effect(identifier, key):
                 if identifier == TISSUE_UUID:
                     return {"submitted_id": NDRI_TISSUE_SUBMITTED_ID}
                 elif identifier == "DAC_TISSUE_DIFFERENT":

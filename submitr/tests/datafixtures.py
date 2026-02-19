@@ -13,7 +13,11 @@ BENCHMARKING_EXTERNAL_ID = "ST001-3A-001"
 PRODUCTION_EXTERNAL_ID = "SMHT001-3A-001"
 NON_PRODUCTION_EXTERNAL_ID = "TEST001-3A-001"
 
-MOCK_PORTAL_KEY = {"key": "test_key", "secret": "test_secret", "server": "http://localhost"}
+MOCK_PORTAL_KEY = {
+    "key": "test_key",
+    "secret": "test_secret",
+    "server": "http://localhost",
+}
 
 TISSUE_EXTERNAL_ID = "SMHT001-3A"
 TISSUE_SAMPLE_EXTERNAL_ID = "SMHT001-3A-001"
@@ -47,7 +51,7 @@ def sample_tissue_item():
     return {
         "submitted_id": NDRI_TISSUE_SUBMITTED_ID,
         "external_id": TISSUE_EXTERNAL_ID,
-        "uuid": TISSUE_UUID
+        "uuid": TISSUE_UUID,
     }
 
 
@@ -61,7 +65,7 @@ def sample_tissue_sample_tpc():
         "category": "Specimen",
         "preservation_type": "Fresh",
         "submission_centers": [NDRI_TPC_CENTER],
-        "uuid": "tpc-sample-uuid-001"
+        "uuid": "tpc-sample-uuid-001",
     }
 
 
@@ -75,7 +79,7 @@ def sample_tissue_sample_gcc():
         "category": "Specimen",
         "preservation_type": "Fresh",
         "submission_centers": [GCC_CENTER],
-        "uuid": "gcc-sample-uuid-001"
+        "uuid": "gcc-sample-uuid-001",
     }
 
 
@@ -94,7 +98,7 @@ def mock_tissue_cache():
 def make_structured_data_mock(data_dict: Dict = None, portal_key: Dict = None):
     """
     Create a mock StructuredDataSet with specified data.
-    
+
     Returns mock with:
     - .data dict (defaults to empty dict)
     - .portal.key (defaults to MOCK_PORTAL_KEY)
@@ -115,7 +119,7 @@ def make_tissue_sample(
     category: str = "Specimen",
     preservation_type: str = "Fresh",
     submission_centers: List[Dict] = None,
-    uuid: str = None
+    uuid: str = None,
 ) -> Dict:
     """Convenience function to create test TissueSample data."""
     return {
@@ -125,18 +129,14 @@ def make_tissue_sample(
         "category": category,
         "preservation_type": preservation_type,
         "submission_centers": submission_centers or [GCC_CENTER],
-        "uuid": uuid or f"sample-uuid-{submitted_id}"
+        "uuid": uuid or f"sample-uuid-{submitted_id}",
     }
 
 
-def make_tissue(
-    submitted_id: str,
-    external_id: str,
-    uuid: str = None
-) -> Dict:
+def make_tissue(submitted_id: str, external_id: str, uuid: str = None) -> Dict:
     """Convenience function to create test Tissue data."""
     return {
         "submitted_id": submitted_id,
         "external_id": external_id,
-        "uuid": uuid or f"tissue-uuid-{submitted_id}"
+        "uuid": uuid or f"tissue-uuid-{submitted_id}",
     }
