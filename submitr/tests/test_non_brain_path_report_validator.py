@@ -2,10 +2,10 @@ import pytest
 from unittest import mock
 
 # Import validator functions being tested
-from submitr.validators.non_brain_pathology_validators import (
-    non_brain_pathology_target_tissues_validator,
-    non_brain_pathology_non_target_tissues_validator,
-    non_brain_pathology_findings_validator,
+from submitr.validators.non_brain_path_report_validator import (
+    _non_brain_pathology_target_tissues_validator,
+    _non_brain_pathology_non_target_tissues_validator,
+    _non_brain_pathology_findings_validator,
 )
 
 # Import fixtures and helpers from datafixtures
@@ -18,7 +18,7 @@ SAMPLE_SUBMITTED_ID = "DAC_NON-BRAIN-PATHOLOGY-REPORT_001"
 
 
 # ============================================================================
-# Test non_brain_pathology_target_tissues_validator
+# Test  _non_brain_pathology_target_tissues_validator
 # ============================================================================
 
 
@@ -39,7 +39,7 @@ def test_target_tissues_present_no_valid():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
@@ -60,7 +60,7 @@ def test_target_tissues_present_no_invalid_percentage():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_called_once()
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "target_tissue_percentage must be '0'" in error_msg
@@ -85,7 +85,7 @@ def test_target_tissues_present_no_invalid_autolysis_score():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_called_once()
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "target_tissue_autolysis_score must be empty" in error_msg
@@ -110,7 +110,7 @@ def test_target_tissues_present_yes_valid():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
@@ -132,7 +132,7 @@ def test_target_tissues_present_yes_invalid_percentage_zero():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_called_once()
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "target_tissue_percentage cannot be '0'" in error_msg
@@ -156,7 +156,7 @@ def test_target_tissues_present_yes_missing_percentage():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_called_once()
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "target_tissue_percentage must be provided" in error_msg
@@ -180,7 +180,7 @@ def test_target_tissues_present_yes_missing_autolysis_score():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_called_once()
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "target_tissue_autolysis_score must be provided" in error_msg
@@ -205,7 +205,7 @@ def test_target_tissues_multiple_errors():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_target_tissues_validator(mock_structured_data)
     assert mock_structured_data.note_validation_error.call_count == 2
 
 
@@ -213,7 +213,7 @@ def test_target_tissues_missing_array():
     """No error when target_tissues array is missing."""
     data = {SCHEMA_NAME: [{"submitted_id": SAMPLE_SUBMITTED_ID}]}
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
@@ -221,14 +221,14 @@ def test_target_tissues_empty_array():
     """No error when target_tissues array is empty."""
     data = {SCHEMA_NAME: [{"submitted_id": SAMPLE_SUBMITTED_ID, "target_tissues": []}]}
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
 def test_target_tissues_no_schema_data():
     """No error when schema data doesn't exist."""
     mock_structured_data = make_structured_data_mock({})
-    non_brain_pathology_target_tissues_validator(mock_structured_data)
+    __non_brain_pathology_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
@@ -248,13 +248,13 @@ def test_target_tissues_missing_subtype():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_target_tissues_validator(mock_structured_data)
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "target_tissue_subtype: unknown" in error_msg
 
 
 # ============================================================================
-# Test non_brain_pathology_non_target_tissues_validator
+# Test _non_brain_pathology_non_target_tissues_validator
 # ============================================================================
 
 
@@ -275,7 +275,7 @@ def test_non_target_tissues_present_yes_valid():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_non_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_non_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
@@ -295,7 +295,7 @@ def test_non_target_tissues_present_yes_missing_percentage():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_non_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_non_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_called_once()
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "non_target_tissue_percentage must be provided" in error_msg
@@ -319,7 +319,7 @@ def test_non_target_tissues_present_yes_empty_percentage():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_non_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_non_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_called_once()
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "non_target_tissue_percentage must be provided" in error_msg
@@ -341,7 +341,7 @@ def test_non_target_tissues_present_no_valid():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_non_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_non_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
@@ -362,7 +362,7 @@ def test_non_target_tissues_present_no_invalid_percentage():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_non_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_non_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_called_once()
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "non_target_tissue_percentage must be empty" in error_msg
@@ -373,7 +373,7 @@ def test_non_target_tissues_missing_array():
     """No error when non_target_tissues array is missing."""
     data = {SCHEMA_NAME: [{"submitted_id": SAMPLE_SUBMITTED_ID}]}
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_non_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_non_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
@@ -383,19 +383,19 @@ def test_non_target_tissues_empty_array():
         SCHEMA_NAME: [{"submitted_id": SAMPLE_SUBMITTED_ID, "non_target_tissues": []}]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_non_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_non_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
 def test_non_target_tissues_no_schema_data():
     """No error when schema data doesn't exist."""
     mock_structured_data = make_structured_data_mock({})
-    non_brain_pathology_non_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_non_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
 # ============================================================================
-# Test non_brain_pathology_findings_validator
+# Test _non_brain_pathology_findings_validator
 # ============================================================================
 
 
@@ -417,7 +417,7 @@ def test_pathologic_findings_present_yes_valid():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_findings_validator(mock_structured_data)
+    _non_brain_pathology_findings_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
@@ -438,7 +438,7 @@ def test_pathologic_findings_present_yes_missing_description():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_findings_validator(mock_structured_data)
+    _non_brain_pathology_findings_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_called_once()
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "finding_description must be provided" in error_msg
@@ -463,7 +463,7 @@ def test_pathologic_findings_present_yes_empty_description():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_findings_validator(mock_structured_data)
+    _non_brain_pathology_findings_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_called_once()
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "finding_description must be provided" in error_msg
@@ -488,7 +488,7 @@ def test_pathologic_findings_present_yes_whitespace_description():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_findings_validator(mock_structured_data)
+    _non_brain_pathology_findings_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_called_once()
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "finding_description must be provided" in error_msg
@@ -511,7 +511,7 @@ def test_pathologic_findings_present_yes_missing_percentage():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_findings_validator(mock_structured_data)
+    _non_brain_pathology_findings_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_called_once()
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "finding_percentage must be provided" in error_msg
@@ -534,7 +534,7 @@ def test_pathologic_findings_present_yes_multiple_errors():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_findings_validator(mock_structured_data)
+    _non_brain_pathology_findings_validator(mock_structured_data)
     assert mock_structured_data.note_validation_error.call_count == 2
 
 
@@ -554,7 +554,7 @@ def test_pathologic_findings_present_no_valid():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_findings_validator(mock_structured_data)
+    _non_brain_pathology_findings_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
@@ -575,7 +575,7 @@ def test_pathologic_findings_present_no_invalid_percentage():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_findings_validator(mock_structured_data)
+    _non_brain_pathology_findings_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_called_once()
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "finding_percentage must be empty" in error_msg
@@ -586,7 +586,7 @@ def test_pathologic_findings_missing_array():
     """No error when pathologic_findings array is missing."""
     data = {SCHEMA_NAME: [{"submitted_id": SAMPLE_SUBMITTED_ID}]}
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_findings_validator(mock_structured_data)
+    _non_brain_pathology_findings_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
@@ -596,14 +596,14 @@ def test_pathologic_findings_empty_array():
         SCHEMA_NAME: [{"submitted_id": SAMPLE_SUBMITTED_ID, "pathologic_findings": []}]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_findings_validator(mock_structured_data)
+    _non_brain_pathology_findings_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
 def test_pathologic_findings_no_schema_data():
     """No error when schema data doesn't exist."""
     mock_structured_data = make_structured_data_mock({})
-    non_brain_pathology_findings_validator(mock_structured_data)
+    _non_brain_pathology_findings_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
@@ -623,6 +623,6 @@ def test_pathologic_findings_missing_finding_type():
         ]
     }
     mock_structured_data = make_structured_data_mock(data)
-    non_brain_pathology_findings_validator(mock_structured_data)
+    _non_brain_pathology_findings_validator(mock_structured_data)
     error_msg = mock_structured_data.note_validation_error.call_args[0][0]
     assert "finding_type: unknown" in error_msg
