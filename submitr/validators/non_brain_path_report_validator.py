@@ -1,6 +1,8 @@
 from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorators import structured_data_validator_finish_hook
 
+print(f"DEBUG: Loading non_brain_path_report_validator module")
+print(f"DEBUG: Decorator type: {type(structured_data_validator_finish_hook)}")
 
 # Constants
 _SCHEMA_NAME = "NonBrainPathologyReport"

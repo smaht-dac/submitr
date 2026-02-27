@@ -104,7 +104,8 @@ def make_structured_data_mock(data_dict: Dict = None, portal_key: Dict = None):
     - .portal.key (defaults to MOCK_PORTAL_KEY)
     - .note_validation_error() as Mock for call tracking
     """
-    mock_structured_data = mock.Mock()
+    from dcicutils.structured_data import StructuredDataSet
+    mock_structured_data = mock.Mock(spec=StructuredDataSet)
     mock_structured_data.data = data_dict if data_dict is not None else {}
     mock_structured_data.portal = mock.Mock()
     mock_structured_data.portal.key = portal_key or MOCK_PORTAL_KEY
