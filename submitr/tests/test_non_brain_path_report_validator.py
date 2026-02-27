@@ -228,7 +228,7 @@ def test_target_tissues_empty_array():
 def test_target_tissues_no_schema_data():
     """No error when schema data doesn't exist."""
     mock_structured_data = make_structured_data_mock({})
-    __non_brain_pathology_target_tissues_validator(mock_structured_data)
+    _non_brain_pathology_target_tissues_validator(mock_structured_data)
     mock_structured_data.note_validation_error.assert_not_called()
 
 
