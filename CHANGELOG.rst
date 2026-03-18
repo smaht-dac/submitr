@@ -6,6 +6,19 @@ smaht-submitr
 Change Log
 ----------
 
+1.13.0
+======
+`PR 36 Add additional validation for Tissue and TissueSample <https://github.com/smaht-dac/submitr/pull/36>`_
+
+* 'fixed' a potential bug in the finish_hook decorator
+* Added submitr validators for:
+  - TissueSample - mirror the portal validators as much as possible - check for duplication and ensure there is a TPC sample for each GCC submitted sample
+  - Tissue - added validator for matching tissue code and tissue preservation type when possible - fixed and frozen
+
+* Renamed the validator files for tissue_sample and tissue to be more general as there is now more than just external_id validation.
+* Added tests.
+
+
 1.12.1
 ======
 `PR 34 Update validation output <https://github.com/smaht-dac/submitr/pull/34>`_
