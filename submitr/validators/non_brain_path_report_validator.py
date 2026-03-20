@@ -18,8 +18,10 @@ def _non_brain_pathology_target_tissues_validator(
 ) -> None:
     """
     Validates target_tissues conditional logic:
-    - If target_tissue_present = "No": target_tissue_percentage must be "0" and target_tissue_autolysis_score must be empty
-    - If target_tissue_present = "Yes": target_tissue_percentage must be non-zero enum value and target_tissue_autolysis_score must be present
+    - If target_tissue_present = "No": target_tissue_percentage must be "0"
+      and target_tissue_autolysis_score must be empty
+    - If target_tissue_present = "Yes": target_tissue_percentage must be
+      non-zero enum value and target_tissue_autolysis_score must be present
     """
     if not isinstance(data := structured_data.data.get(_SCHEMA_NAME), list):
         return

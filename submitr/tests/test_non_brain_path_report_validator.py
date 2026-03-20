@@ -1,6 +1,3 @@
-import pytest
-from unittest import mock
-
 # Import validator functions being tested
 from submitr.validators.non_brain_path_report_validator import (
     _non_brain_pathology_target_tissues_validator,

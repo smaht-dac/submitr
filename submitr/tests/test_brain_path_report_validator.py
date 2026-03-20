@@ -1,5 +1,4 @@
 import pytest
-from unittest import mock
 
 from submitr.validators.brain_path_report_validator import (
     _brain_pathology_neuropathology_present_validator,

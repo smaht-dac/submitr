@@ -1439,21 +1439,21 @@ def test_metadata_validator_portal_query_failure():
 # Valid external_id for each category, using SMHT production prefix
 _VALID_CATEGORY_EXTERNAL_IDS = [
     ("Tissue Aliquot", "SMHT001-3AT-001"),   # ends after 3-digit range
-    ("Cells",          "SMHT001-3AC-001X"),  # -3AC- with trailing X
-    ("Core",           "SMHT001-3AT-001A1"), # [A-F][1-6] suffix
-    ("Homogenate",     "SMHT001-1AT-001X"),  # -1- prefix with trailing X
-    ("Specimen",       "SMHT001-3AT-001S1"), # [S-W][1-9] suffix
-    ("Liquid",         "SMHT001-3A-001X"),   # -3[AB]- with trailing X
+    ("Cells", "SMHT001-3AC-001X"),  # -3AC- with trailing X
+    ("Core", "SMHT001-3AT-001A1"),  # [A-F][1-6] suffix
+    ("Homogenate", "SMHT001-1AT-001X"),  # -1- prefix with trailing X
+    ("Specimen", "SMHT001-3AT-001S1"),  # [S-W][1-9] suffix
+    ("Liquid", "SMHT001-3A-001X"),   # -3[AB]- with trailing X
 ]
 
 # Invalid external_id for each category with explanation
 _INVALID_CATEGORY_EXTERNAL_IDS = [
-    ("Tissue Aliquot", "SMHT001-2AT-001",   "2 not in [13]"),
-    ("Cells",          "SMHT001-3AC-001",   "missing trailing X"),
-    ("Core",           "SMHT001-3AT-001G1", "G not in [A-F]"),
-    ("Homogenate",     "SMHT001-3AT-001X",  "3 not valid, only 1 permitted"),
-    ("Specimen",       "SMHT001-3AT-001",   "missing [S-W][1-9] suffix"),
-    ("Liquid",         "SMHT001-3C-001X",   "C not in [AB]"),
+    ("Tissue Aliquot", "SMHT001-2AT-001", "2 not in [13]"),
+    ("Cells", "SMHT001-3AC-001", "missing trailing X"),
+    ("Core", "SMHT001-3AT-001G1", "G not in [A-F]"),
+    ("Homogenate", "SMHT001-3AT-001X", "3 not valid, only 1 permitted"),
+    ("Specimen", "SMHT001-3AT-001", "missing [S-W][1-9] suffix"),
+    ("Liquid", "SMHT001-3C-001X", "C not in [AB]"),
 ]
 
 
