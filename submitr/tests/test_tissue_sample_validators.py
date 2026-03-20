@@ -1,5 +1,5 @@
 from unittest import mock
-
+import pytest
 # Import all validator functions being tested
 from submitr.validators.tissue_sample_validator import (
     _tissue_sample_external_id_validator,
@@ -13,6 +13,7 @@ from submitr.validators.tissue_sample_validator import (
     _is_tissue_submitted_id,
     _get_tissue_submitted_id,
     _validate_metadata_consistency,
+    _tissue_sample_external_id_category_match_validator,
 )
 
 # Import fixtures and helpers from datafixtures
@@ -1429,3 +1430,203 @@ def test_metadata_validator_portal_query_failure():
         f" - portal query failed for external_id {PRODUCTION_EXTERNAL_ID}"
     )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
+
+
+# ============================================================================
+# Test _tissue_sample_external_id_category_match_validator()
+# ============================================================================
+
+# Valid external_id for each category, using SMHT production prefix
+_VALID_CATEGORY_EXTERNAL_IDS = [
+    ("Tissue Aliquot", "SMHT001-3AT-001"),   # ends after 3-digit range
+    ("Cells", "SMHT001-3AC-001X"),  # -3AC- with trailing X
+    ("Core", "SMHT001-3AT-001A1"),  # [A-F][1-6] suffix
+    ("Homogenate", "SMHT001-1AT-001X"),  # -1- prefix with trailing X
+    ("Specimen", "SMHT001-3AT-001S1"),  # [S-W][1-9] suffix
+    ("Liquid", "SMHT001-3A-001X"),   # -3[AB]- with trailing X
+]
+
+# Invalid external_id for each category with explanation
+_INVALID_CATEGORY_EXTERNAL_IDS = [
+    ("Tissue Aliquot", "SMHT001-2AT-001", "2 not in [13]"),
+    ("Cells", "SMHT001-3AC-001", "missing trailing X"),
+    ("Core", "SMHT001-3AT-001G1", "G not in [A-F]"),
+    ("Homogenate", "SMHT001-3AT-001X", "3 not valid, only 1 permitted"),
+    ("Specimen", "SMHT001-3AT-001", "missing [S-W][1-9] suffix"),
+    ("Liquid", "SMHT001-3C-001X", "C not in [AB]"),
+]
+
+
+def test_ext_id_category_no_schema_data():
+    """Returns early when no TissueSample data."""
+    mock_data = make_structured_data_mock({})
+    _tissue_sample_external_id_category_match_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_category_empty_list():
+    """No error when TissueSample list is empty."""
+    mock_data = make_structured_data_mock({"TissueSample": []})
+    _tissue_sample_external_id_category_match_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_category_unknown_category():
+    """No error when category is not in _TISSUE_CATEGORIES."""
+    tissue_sample = make_tissue_sample(
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
+        "SMHT001-3AT-001",
+        [],
+        category="Unknown",
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_category_match_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+@pytest.mark.parametrize("category,external_id", _VALID_CATEGORY_EXTERNAL_IDS)
+def test_ext_id_category_valid(category, external_id):
+    """No error when external_id matches the expected pattern for its category."""
+    tissue_sample = make_tissue_sample(
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
+        external_id,
+        [],
+        category=category,
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_category_match_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+@pytest.mark.parametrize("category,external_id,reason", _INVALID_CATEGORY_EXTERNAL_IDS)
+def test_ext_id_category_invalid(category, external_id, reason):
+    """Error when external_id does not match the expected pattern for its category."""
+    tissue_sample = make_tissue_sample(
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
+        external_id,
+        [],
+        category=category,
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_category_match_validator(mock_data)
+    mock_data.note_validation_error.assert_called_once()
+    error_msg = mock_data.note_validation_error.call_args[0][0]
+    assert f"has category {category}" in error_msg
+    assert f"external_id {external_id}" in error_msg
+    assert "does not match expected pattern" in error_msg
+
+
+def test_ext_id_category_error_includes_submitted_id():
+    """Error message includes the item submitted_id."""
+    tissue_sample = make_tissue_sample(
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
+        "SMHT001-2AT-001",  # invalid for Tissue Aliquot
+        [],
+        category="Tissue Aliquot",
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_category_match_validator(mock_data)
+    error_msg = mock_data.note_validation_error.call_args[0][0]
+    assert NDRI_TISSUE_SAMPLE_SUBMITTED_ID in error_msg
+
+
+def test_ext_id_category_cross_category_core_as_tissue_aliquot():
+    """Error when Core-format external_id is submitted under Tissue Aliquot category."""
+    tissue_sample = make_tissue_sample(
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
+        "SMHT001-3AT-001A1",  # valid Core, invalid Tissue Aliquot (extra A1 before $)
+        [],
+        category="Tissue Aliquot",
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_category_match_validator(mock_data)
+    mock_data.note_validation_error.assert_called_once()
+
+
+def test_ext_id_category_cross_category_tissue_aliquot_as_core():
+    """Error when Tissue Aliquot-format external_id is submitted under Core category."""
+    tissue_sample = make_tissue_sample(
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
+        "SMHT001-3AT-001",  # valid Tissue Aliquot, invalid Core (missing [A-F][1-6])
+        [],
+        category="Core",
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_category_match_validator(mock_data)
+    mock_data.note_validation_error.assert_called_once()
+
+
+def test_ext_id_category_valid_and_invalid_in_same_batch():
+    """Only invalid items produce errors when mixed with valid ones."""
+    valid_sample = make_tissue_sample(
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
+        "SMHT001-3AT-001",
+        [],
+        category="Tissue Aliquot",
+    )
+    invalid_sample = make_tissue_sample(
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
+        "SMHT001-2AT-001",  # 2 not valid
+        [],
+        category="Tissue Aliquot",
+    )
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [valid_sample, invalid_sample]}
+    )
+    _tissue_sample_external_id_category_match_validator(mock_data)
+    assert mock_data.note_validation_error.call_count == 1
+    error_msg = mock_data.note_validation_error.call_args[0][0]
+    assert GCC_TISSUE_SAMPLE_SUBMITTED_ID in error_msg
+
+
+def test_ext_id_category_multiple_invalid_items():
+    """Each invalid item independently produces an error."""
+    samples = [
+        make_tissue_sample(
+            f"NDRI_SAMPLE_{i:03d}",
+            "SMHT001-2AT-001",  # invalid for Tissue Aliquot
+            [],
+            category="Tissue Aliquot",
+        )
+        for i in range(3)
+    ]
+    mock_data = make_structured_data_mock({"TissueSample": samples})
+    _tissue_sample_external_id_category_match_validator(mock_data)
+    assert mock_data.note_validation_error.call_count == 3
+
+
+@pytest.mark.parametrize("external_id", [
+    "SMHT001-3AT-001",  # lower boundary
+    "SMHT001-3AT-125",  # upper boundary
+    "SMHT001-3AT-010",  # mid range, two-digit leading zero
+    "SMHT001-3AT-100",  # three-digit lower
+])
+def test_ext_id_category_range_valid_boundaries(external_id):
+    """No error for valid boundary and mid-range values 001-125."""
+    tissue_sample = make_tissue_sample(
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
+        external_id,
+        [],
+        category="Tissue Aliquot",
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_category_match_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+@pytest.mark.parametrize("external_id", [
+    "SMHT001-3AT-000",  # below lower boundary
+    "SMHT001-3AT-126",  # above upper boundary
+    "SMHT001-3AT-999",  # well above upper boundary
+])
+def test_ext_id_category_range_invalid_boundaries(external_id):
+    """Error for out-of-range values outside 001-125."""
+    tissue_sample = make_tissue_sample(
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
+        external_id,
+        [],
+        category="Tissue Aliquot",
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_category_match_validator(mock_data)
+    mock_data.note_validation_error.assert_called_once()
