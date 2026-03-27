@@ -6,6 +6,23 @@ smaht-submitr
 Change Log
 ----------
 
+1.14.0
+======
+`PR 37 Add validation for PathologyReport validators <https://github.com/smaht-dac/submitr/pull/37>`_
+
+* Non-brain-path-reports validators include:
+* target_tissues fields if is_present = Yes autolysis score required, percentage required and if not percent = 0 and no autolysis score
+* non_target_tissues fields if is_present = Yes percentage is required
+* pathology_findings fields if is_present = Yes description and percentage required
+
+* Brain-path-reports validators include:
+* brain-subregions - if present autolysis score is required
+* neuropathology-fields - if Yes decription is required
+* age related pathology fields - if Yes at least one must be filled
+
+* tissue_sample category - external_id consistency check
+
+
 1.13.0
 ======
 `PR 36 Add additional validation for Tissue and TissueSample <https://github.com/smaht-dac/submitr/pull/36>`_

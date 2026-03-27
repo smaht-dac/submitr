@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional, Tuple
+import re
 from dcicutils.structured_data import StructuredDataSet
 from submitr.validators.decorators import structured_data_validator_finish_hook
 
@@ -17,6 +18,28 @@ _NDRI_TPC_DISPLAY_TITLE = "NDRI TPC"
 _BENCHMARKING_PREFIX = "ST"
 _PRODUCTION_PREFIX = "SMHT"
 _METADATA_COMPARISON_PROPERTIES = ["category", "preservation_type"]
+_CATEGORY_REGEX_MAP = {
+    "Tissue Aliquot": re.compile(
+        r"-[13](?:A[A-Z]?|[B-Z])-(?:00[1-9]|0[1-9][0-9]|1[0-1][0-9]|12[0-5])$"
+    ),
+    "Cells": re.compile(
+        r"-3AC-(?:00[1-9]|0[1-9][0-9]|1[0-1][0-9]|12[0-5])X$"
+    ),
+    "Core": re.compile(
+        r"-[13](?:A[A-Z]?|[B-Z])-(?:00[1-9]|0[1-9][0-9]|1[0-1][0-9]|12[0-5])[A-F][1-6]$"
+    ),
+    "Homogenate": re.compile(
+        r"-1(?:A[A-Z]?|[B-Z])-(?:00[1-9]|0[1-9][0-9]|1[0-1][0-9]|12[0-5])X$"
+    ),
+    "Specimen": re.compile(
+        r"-[13](?:A[A-Z]?|[B-Z])-(?:00[1-9]|0[1-9][0-9]|1[0-1][0-9]|12[0-5])[S-W][1-9]$"
+    ),
+    "Liquid": re.compile(
+        r"-3[AB]-(?:00[1-9]|0[1-9][0-9]|1[0-1][0-9]|12[0-5])X$"
+    ),
+}
+
+_TISSUE_CATEGORIES = list(_CATEGORY_REGEX_MAP.keys())
 
 
 @structured_data_validator_finish_hook
@@ -390,3 +413,29 @@ def _validate_metadata_consistency(
             f"TissueSample: metadata mismatch: sample_source {gcc_submitted_id} does not "
             f"match TPC TissueSample sample_source {tpc_submitted_id}"
         )
+
+
+@structured_data_validator_finish_hook
+def _tissue_sample_external_id_category_match_validator(
+    structured_data: StructuredDataSet, **kwargs
+) -> None:
+
+    # Get TissueSample items from submission
+    if not isinstance(
+        data := structured_data.data.get(_TISSUE_SAMPLE_SCHEMA_NAME), list
+    ):
+        return
+
+    for item in data:
+        submitted_id = item_utils.get_submitted_id(item)
+        external_id = item_utils.get_external_id(item)
+        category = item.get("category")
+        """Check that external_id pattern matches for category."""
+        if category in _TISSUE_CATEGORIES and external_id:
+            category_regex = _CATEGORY_REGEX_MAP.get(category)
+            if category_regex and not category_regex.search(external_id):
+                structured_data.note_validation_error(
+                    f"TissueSample: item {submitted_id} has category {category} "
+                    f"but external_id {external_id} does not match expected pattern "
+                    f"for that category."
+                )
