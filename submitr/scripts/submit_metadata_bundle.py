@@ -348,7 +348,6 @@ def main(simulated_args_for_testing=None):
 
         if not _sanity_check_submitted_file(args.bundle_filename):
             sys.exit(1)
-
         submit_any_ingestion(ingestion_filename=args.bundle_filename, ingestion_type=args.ingestion_type,
                              env=args.env, env_from_env=env_from_env,
                              keys_file=args.keys,
