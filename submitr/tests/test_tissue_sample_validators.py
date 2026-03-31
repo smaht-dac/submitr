@@ -14,7 +14,14 @@ from submitr.validators.tissue_sample_validator import (
     _get_tissue_submitted_id,
     _validate_metadata_consistency,
     _tissue_sample_external_id_category_match_validator,
+    _text_before_nth,
+    _text_after_nth,
+    _extract_donor_tissue_prefix,
+    _extract_donor_tissue_prefix_from_sample_source,
+    _tissue_sample_external_id_in_submitted_id_validator,
+    _tissue_sample_external_id_sample_source_consistency_validator,
 )
+
 
 # Import fixtures and helpers from datafixtures
 from .datafixtures import (
@@ -1630,3 +1637,684 @@ def test_ext_id_category_range_invalid_boundaries(external_id):
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_category_match_validator(mock_data)
     mock_data.note_validation_error.assert_called_once()
+
+
+# ============================================================================
+# Test _text_before_nth()
+# ============================================================================
+
+
+def test_text_before_nth_hyphen_n2():
+    """Returns text before 2nd hyphen — core production use case."""
+    assert _text_before_nth("SMHT001-3G-001D2", "-", 2) == "SMHT001-3G"
+
+
+def test_text_before_nth_hyphen_n1():
+    """Returns text before 1st hyphen."""
+    assert _text_before_nth("SMHT001-3G-001D2", "-", 1) == "SMHT001"
+
+
+def test_text_before_nth_underscore_delimiter():
+    """Works with underscore delimiter."""
+    assert _text_before_nth("NDRI_TISSUE_SMHT001", "_", 2) == "NDRI_TISSUE"
+
+
+def test_text_before_nth_n_exceeds_delimiter_count():
+    """Returns None when n exceeds the number of available delimiters."""
+    assert _text_before_nth("SMHT001-3G", "-", 3) is None
+
+
+def test_text_before_nth_exactly_n_parts():
+    """Returns None when text has exactly n parts (n-1 delimiters present)."""
+    # "A-B" → 2 parts; n=2 requires 3+ parts → None
+    assert _text_before_nth("A-B", "-", 2) is None
+
+
+def test_text_before_nth_no_delimiter_in_text():
+    """Returns None when delimiter is absent from text."""
+    assert _text_before_nth("SMHT001", "-", 1) is None
+
+
+def test_text_before_nth_empty_string():
+    """Returns None for empty string."""
+    assert _text_before_nth("", "-", 1) is None
+
+
+def test_text_before_nth_many_delimiters():
+    """Returns correct prefix when many delimiters are present."""
+    assert _text_before_nth("A-B-C-D-E", "-", 3) == "A-B-C"
+
+
+def test_text_before_nth_same_result_across_samples_same_tissue():
+    """Two samples from the same tissue produce identical prefixes."""
+    assert _text_before_nth("SMHT001-3G-001D2", "-", 2) == \
+           _text_before_nth("SMHT001-3G-002D1", "-", 2)
+
+
+# ============================================================================
+# Test _text_after_nth()
+# ============================================================================
+
+
+def test_text_after_nth_underscore_n2():
+    """Returns text after 2nd underscore — core production use case."""
+    assert _text_after_nth(
+        "NDRI_TISSUE_SMHT001-3G-DESCEN_COLON", "_", 2
+    ) == "SMHT001-3G-DESCEN_COLON"
+
+
+def test_text_after_nth_underscore_n1():
+    """Returns text after 1st underscore."""
+    assert _text_after_nth("NDRI_TISSUE_SMHT001", "_", 1) == "TISSUE_SMHT001"
+
+
+def test_text_after_nth_hyphen_delimiter():
+    """Works with hyphen delimiter."""
+    assert _text_after_nth("SMHT001-3G-001D2", "-", 2) == "001D2"
+
+
+def test_text_after_nth_n_exceeds_delimiter_count():
+    """Returns None when n exceeds available delimiters."""
+    assert _text_after_nth("NDRI_TISSUE", "_", 3) is None
+
+
+def test_text_after_nth_single_delimiter():
+    """Returns text after the only delimiter when n=1."""
+    assert _text_after_nth("A_B", "_", 1) == "B"
+
+
+def test_text_after_nth_no_delimiter_in_text():
+    """Returns None when delimiter is absent."""
+    assert _text_after_nth("SMHT001", "_", 1) is None
+
+
+def test_text_after_nth_empty_string():
+    """Returns None for empty string."""
+    assert _text_after_nth("", "_", 1) is None
+
+
+def test_text_after_nth_preserves_remaining_delimiters():
+    """Remaining delimiters in the suffix are preserved intact."""
+    result = _text_after_nth("NDRI_TISSUE_SMHT001-3G-DESCEN_COLON", "_", 2)
+    assert result is not None
+    assert "-" in result
+    assert "_" in result
+
+
+# ============================================================================
+# Test _extract_donor_tissue_prefix()
+# ============================================================================
+
+
+def test_extract_donor_tissue_prefix_production_core():
+    """Extracts donor-tissue prefix from a production Core external_id."""
+    assert _extract_donor_tissue_prefix("SMHT001-3G-001D2") == "SMHT001-3G"
+
+
+def test_extract_donor_tissue_prefix_production_tissue_aliquot():
+    """Extracts prefix from a Tissue Aliquot external_id."""
+    assert _extract_donor_tissue_prefix("SMHT001-3G-001") == "SMHT001-3G"
+
+
+def test_extract_donor_tissue_prefix_benchmarking():
+    """Extracts prefix from benchmarking (ST prefix) external_id."""
+    assert _extract_donor_tissue_prefix("ST001-3G-001") == "ST001-3G"
+
+
+def test_extract_donor_tissue_prefix_long_tissue_code():
+    """Handles multi-character tissue codes such as '3AT'."""
+    assert _extract_donor_tissue_prefix("SMHT001-3AT-001") == "SMHT001-3AT"
+
+
+def test_extract_donor_tissue_prefix_one_hyphen_only():
+    """Returns None when external_id contains only one hyphen."""
+    assert _extract_donor_tissue_prefix("SMHT001-3G") is None
+
+
+def test_extract_donor_tissue_prefix_no_hyphen():
+    """Returns None when external_id contains no hyphens."""
+    assert _extract_donor_tissue_prefix("SMHT001") is None
+
+
+def test_extract_donor_tissue_prefix_empty_string():
+    """Returns None for empty string."""
+    assert _extract_donor_tissue_prefix("") is None
+
+
+def test_extract_donor_tissue_prefix_same_across_samples_same_tissue():
+    """Two samples from the same tissue yield the same prefix."""
+    assert _extract_donor_tissue_prefix("SMHT001-3G-001D2") == \
+           _extract_donor_tissue_prefix("SMHT001-3G-002D1")
+
+
+# ============================================================================
+# Test _extract_donor_tissue_prefix_from_sample_source()
+# ============================================================================
+
+
+def test_extract_prefix_from_sample_source_production():
+    """Extracts donor-tissue prefix from production tissue submitted_id."""
+    assert _extract_donor_tissue_prefix_from_sample_source(
+        "NDRI_TISSUE_SMHT001-3G-DESCEN_COLON"
+    ) == "SMHT001-3G"
+
+
+def test_extract_prefix_from_sample_source_benchmarking():
+    """Extracts donor-tissue prefix from benchmarking tissue submitted_id."""
+    assert _extract_donor_tissue_prefix_from_sample_source(
+        "NDRI_TISSUE_ST001-3G-DESCEN_COLON"
+    ) == "ST001-3G"
+
+
+def test_extract_prefix_from_sample_source_different_organ():
+    """Returns same prefix regardless of organ/tissue-name suffix."""
+    assert _extract_donor_tissue_prefix_from_sample_source(
+        "NDRI_TISSUE_SMHT001-3G-CAUD_CORTEX"
+    ) == "SMHT001-3G"
+
+
+def test_extract_prefix_from_sample_source_long_tissue_code():
+    """Handles multi-character tissue codes correctly."""
+    assert _extract_donor_tissue_prefix_from_sample_source(
+        "NDRI_TISSUE_SMHT001-3AT-DESCEN_COLON"
+    ) == "SMHT001-3AT"
+
+
+def test_extract_prefix_from_sample_source_too_few_underscores():
+    """Returns None when fewer than two underscores are present."""
+    assert _extract_donor_tissue_prefix_from_sample_source("NDRI_TISSUE") is None
+
+
+def test_extract_prefix_from_sample_source_no_hyphen_after_extraction():
+    """Returns None when extracted segment contains no hyphens."""
+    assert _extract_donor_tissue_prefix_from_sample_source(
+        "NDRI_TISSUE_SMHT001"
+    ) is None
+
+
+def test_extract_prefix_from_sample_source_empty_string():
+    """Returns None for empty string."""
+    assert _extract_donor_tissue_prefix_from_sample_source("") is None
+
+
+def test_extract_prefix_from_sample_source_matches_external_id_prefix():
+    """
+    Prefix from sample_source equals prefix from external_id for the same
+    donor-tissue — validates the core consistency invariant both helpers underpin.
+    """
+    assert _extract_donor_tissue_prefix_from_sample_source(
+        "NDRI_TISSUE_SMHT001-3G-DESCEN_COLON"
+    ) == _extract_donor_tissue_prefix("SMHT001-3G-001D2")
+
+
+# ============================================================================
+# Test _tissue_sample_external_id_in_submitted_id_validator()
+# ============================================================================
+
+
+def test_ext_id_in_submitted_id_no_schema_data():
+    """Returns early when TissueSample key is absent from structured data."""
+    mock_data = make_structured_data_mock({})
+    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_in_submitted_id_empty_list():
+    """No error for empty TissueSample list."""
+    mock_data = make_structured_data_mock({"TissueSample": []})
+    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_in_submitted_id_valid_ndri():
+    """No error when external_id is a substring of NDRI submitted_id."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3G-001D2",
+        [],
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_in_submitted_id_valid_gcc():
+    """No error when external_id is a substring of a GCC submitted_id."""
+    tissue_sample = make_tissue_sample(
+        "DAC_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3G-001D2",
+        [],
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_in_submitted_id_valid_benchmarking():
+    """No error for valid benchmarking (ST) format."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_ST001-3G-001",
+        "ST001-3G-001",
+        [],
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_in_submitted_id_invalid_different_donor():
+    """Error when external_id donor code does not appear in submitted_id."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT999-3G-001D2",  # donor 999 vs 001
+        [],
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+    mock_data.note_validation_error.assert_called_once()
+
+
+def test_ext_id_in_submitted_id_invalid_different_tissue_code():
+    """Error when external_id tissue code does not appear in submitted_id."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3Z-001D2",  # tissue 3Z vs 3G
+        [],
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+    mock_data.note_validation_error.assert_called_once()
+
+
+def test_ext_id_in_submitted_id_error_contains_submitted_id():
+    """Error message identifies the offending item by submitted_id."""
+    submitted_id = "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2"
+    tissue_sample = make_tissue_sample(submitted_id, "SMHT999-3G-001D2", [])
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+    error_msg = mock_data.note_validation_error.call_args[0][0]
+    assert submitted_id in error_msg
+
+
+def test_ext_id_in_submitted_id_error_contains_external_id_and_description():
+    """Error message includes the problematic external_id and failure reason."""
+    external_id = "SMHT999-3G-001D2"
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", external_id, []
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+    error_msg = mock_data.note_validation_error.call_args[0][0]
+    assert external_id in error_msg
+    assert "is not contained within submitted_id" in error_msg
+
+
+def test_ext_id_in_submitted_id_case_sensitive():
+    """Check is case-sensitive, mirroring Excel FIND behaviour."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "smht001-3g-001d2",  # lowercase — not present in uppercase submitted_id
+        [],
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+    mock_data.note_validation_error.assert_called_once()
+
+
+def test_ext_id_in_submitted_id_missing_submitted_id_skipped():
+    """Items without submitted_id are silently skipped."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT999-3G-001D2",  # would error if processed
+        [],
+    )
+    del tissue_sample["submitted_id"]
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_in_submitted_id_missing_external_id_skipped():
+    """Items without external_id are silently skipped."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3G-001D2",
+        [],
+    )
+    del tissue_sample["external_id"]
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_in_submitted_id_mixed_batch():
+    """Only the invalid item in a mixed batch produces an error."""
+    valid_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3G-001D2",
+        [],
+    )
+    invalid_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D1",
+        "SMHT999-3Z-001D1",
+        [],
+    )
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [valid_sample, invalid_sample]}
+    )
+    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+    assert mock_data.note_validation_error.call_count == 1
+    error_msg = mock_data.note_validation_error.call_args[0][0]
+    assert "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D1" in error_msg
+
+
+def test_ext_id_in_submitted_id_multiple_invalid_items():
+    """Each invalid item independently produces its own error."""
+    samples = [
+        make_tissue_sample(
+            f"NDRI_TISSUE-SAMPLE_SMHT00{i}-3G-001D2",
+            "SMHT999-3Z-001D2",
+            [],
+        )
+        for i in range(1, 4)
+    ]
+    mock_data = make_structured_data_mock({"TissueSample": samples})
+    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+    assert mock_data.note_validation_error.call_count == 3
+
+
+# ============================================================================
+# Test _tissue_sample_external_id_sample_source_consistency_validator()
+# ============================================================================
+
+
+def test_ext_id_sample_source_no_schema_data():
+    """Returns early when TissueSample key is absent from structured data."""
+    mock_data = make_structured_data_mock({})
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_empty_list():
+    """No error for empty TissueSample list."""
+    mock_data = make_structured_data_mock({"TissueSample": []})
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_valid_production():
+    """No error when external_id and sample_source share the donor-tissue prefix."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3G-001D2",
+        ["NDRI_TISSUE_SMHT001-3G-DESCEN_COLON"],
+    )
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [tissue_sample], "Tissue": []}
+    )
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_valid_benchmarking():
+    """No error for valid benchmarking (ST) format."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_ST001-3G-001",
+        "ST001-3G-001",
+        ["NDRI_TISSUE_ST001-3G-DESCEN_COLON"],
+    )
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [tissue_sample], "Tissue": []}
+    )
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_valid_gcc():
+    """No error for a GCC submission with matching prefixes."""
+    tissue_sample = make_tissue_sample(
+        "DAC_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3G-001D2",
+        ["NDRI_TISSUE_SMHT001-3G-DESCEN_COLON"],
+    )
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [tissue_sample], "Tissue": []}
+    )
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_mismatched_donor():
+    """Error when donor codes differ between external_id and sample_source."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3G-001D2",
+        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],  # donor 999 vs 001
+    )
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [tissue_sample], "Tissue": []}
+    )
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_called_once()
+    error_msg = mock_data.note_validation_error.call_args[0][0]
+    assert "'SMHT001-3G'" in error_msg
+    assert "'SMHT999-3G'" in error_msg
+
+
+def test_ext_id_sample_source_mismatched_tissue_code():
+    """Error when tissue codes differ between external_id and sample_source."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3G-001D2",
+        ["NDRI_TISSUE_SMHT001-3Z-DESCEN_COLON"],  # tissue 3Z vs 3G
+    )
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [tissue_sample], "Tissue": []}
+    )
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_called_once()
+    error_msg = mock_data.note_validation_error.call_args[0][0]
+    assert "'SMHT001-3G'" in error_msg
+    assert "'SMHT001-3Z'" in error_msg
+
+
+def test_ext_id_sample_source_skips_non_production_prefix():
+    """Skips items whose external_id is not a benchmarking or production prefix."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_OTHER001-3G-001",
+        "OTHER001-3G-001",  # not SMHT or ST — would mismatch if evaluated
+        ["NDRI_TISSUE_SMHT001-3G-DESCEN_COLON"],
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_missing_submitted_id_skipped():
+    """Items without submitted_id are silently skipped."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3G-001D2",
+        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],  # would error if processed
+    )
+    del tissue_sample["submitted_id"]
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_missing_external_id_skipped():
+    """Items without external_id are silently skipped."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3G-001D2",
+        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],  # would error if processed
+    )
+    del tissue_sample["external_id"]
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_missing_sample_sources_key_skipped():
+    """Items without sample_sources key are silently skipped."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3G-001D2",
+        [],
+    )
+    del tissue_sample["sample_sources"]
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_empty_sample_sources_skipped():
+    """Items with an empty sample_sources list are silently skipped."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3G-001D2",
+        [],
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_unparseable_sample_source_skipped():
+    """Gracefully skips when sample_source has no underscores and cannot be parsed."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3G-001D2",
+        ["UNPARSEABLE"],
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_unparseable_external_id_prefix_skipped():
+    """Gracefully skips when external_id has insufficient hyphens for extraction."""
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001",
+        "SMHT001",  # starts with SMHT but no hyphens → prefix extraction returns None
+        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_guard_skips_ndri_when_tissue_in_submission():
+    """
+    NDRI item with a prefix mismatch is deferred to
+    _tissue_sample_external_id_validator and produces no error here when
+    the Tissue submitted_id is present in the same submission.
+    """
+    tissue_source_submitted_id = "NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",  # NDRI
+        "SMHT001-3G-001D2",
+        [tissue_source_submitted_id],            # prefix SMHT999 — would mismatch SMHT001
+    )
+    tissue = make_tissue(tissue_source_submitted_id, "SMHT999-3G")
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [tissue_sample], "Tissue": [tissue]}
+    )
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_guard_does_not_skip_gcc_with_tissue_in_submission():
+    """
+    GCC (non-NDRI) items are NOT guarded — a mismatch still raises an error
+    even when the Tissue is present in the same submission.
+    """
+    tissue_source_submitted_id = "NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"
+    tissue_sample = make_tissue_sample(
+        "DAC_TISSUE-SAMPLE_SMHT001-3G-001D2",  # GCC, not NDRI
+        "SMHT001-3G-001D2",
+        [tissue_source_submitted_id],           # prefix mismatch
+    )
+    tissue = make_tissue(tissue_source_submitted_id, "SMHT999-3G")
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [tissue_sample], "Tissue": [tissue]}
+    )
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_called_once()
+
+
+def test_ext_id_sample_source_guard_does_not_skip_ndri_tissue_not_in_submission():
+    """
+    NDRI item IS validated (and errors) when no matching Tissue is in the
+    submission — the guard only activates when the Tissue is also present.
+    """
+    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",  # NDRI
+        "SMHT001-3G-001D2",
+        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],  # prefix mismatch
+    )
+    # No Tissue items in this submission
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [tissue_sample], "Tissue": []}
+    )
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    mock_data.note_validation_error.assert_called_once()
+
+
+def test_ext_id_sample_source_error_message_content():
+    """Error message includes submitted_id, both prefixes (repr), and sample_source."""
+    submitted_id = "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2"
+    sample_source = "NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"
+    tissue_sample = make_tissue_sample(
+        submitted_id,
+        "SMHT001-3G-001D2",
+        [sample_source],
+    )
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [tissue_sample], "Tissue": []}
+    )
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    error_msg = mock_data.note_validation_error.call_args[0][0]
+    assert submitted_id in error_msg
+    assert "'SMHT001-3G'" in error_msg   # external_id prefix via !r formatting
+    assert "'SMHT999-3G'" in error_msg   # sample_source prefix via !r formatting
+    assert sample_source in error_msg
+
+
+def test_ext_id_sample_source_mixed_batch():
+    """Only the invalid item in a mixed batch produces an error."""
+    valid_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "SMHT001-3G-001D2",
+        ["NDRI_TISSUE_SMHT001-3G-DESCEN_COLON"],
+    )
+    invalid_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D1",
+        "SMHT001-3G-001D1",
+        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],  # wrong donor
+    )
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [valid_sample, invalid_sample], "Tissue": []}
+    )
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    assert mock_data.note_validation_error.call_count == 1
+    error_msg = mock_data.note_validation_error.call_args[0][0]
+    assert "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D1" in error_msg
+
+
+def test_ext_id_sample_source_multiple_invalid_items():
+    """Each invalid item independently produces its own error."""
+    samples = [
+        make_tissue_sample(
+            f"NDRI_TISSUE-SAMPLE_SMHT00{i}-3G-001D2",
+            f"SMHT00{i}-3G-001D2",
+            ["NDRI_TISSUE_SMHT999-3Z-DESCEN_COLON"],
+        )
+        for i in range(1, 4)
+    ]
+    mock_data = make_structured_data_mock(
+        {"TissueSample": samples, "Tissue": []}
+    )
+    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+    assert mock_data.note_validation_error.call_count == 3
