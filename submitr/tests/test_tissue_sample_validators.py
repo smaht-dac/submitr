@@ -1,6 +1,5 @@
 from unittest import mock
 import pytest
-# Import all validator functions being tested
 from submitr.validators.tissue_sample_validator import (
     _tissue_sample_external_id_validator,
     _tissue_sample_metadata_validator,
@@ -20,12 +19,10 @@ from submitr.validators.tissue_sample_validator import (
     _extract_donor_tissue_prefix_from_sample_source,
     _tissue_sample_external_id_in_submitted_id_validator,
     _tissue_sample_external_id_sample_source_consistency_validator,
+    _note_validation_warning,
 )
 
-
-# Import fixtures and helpers from datafixtures
 from .datafixtures import (
-    # Constants
     NDRI_TISSUE_SUBMITTED_ID,
     NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
     GCC_TISSUE_SUBMITTED_ID,
@@ -40,7 +37,6 @@ from .datafixtures import (
     NDRI_TPC_CENTER,
     GCC_CENTER,
     BWH_CENTER,
-    # Helper functions
     make_structured_data_mock,
     make_tissue_sample,
     make_tissue,
@@ -105,10 +101,8 @@ def test_is_tissue_submitted_id_empty():
 def test_categorize_all_tpc_samples():
     """All samples have NDRI TPC center."""
     samples = [
-        {"submitted_id": "NDRI_SAMPLE_001",
-         "submission_centers": [NDRI_TPC_CENTER]},
-        {"submitted_id": "NDRI_SAMPLE_002",
-         "submission_centers": [NDRI_TPC_CENTER]},
+        {"submitted_id": "NDRI_SAMPLE_001", "submission_centers": [NDRI_TPC_CENTER]},
+        {"submitted_id": "NDRI_SAMPLE_002", "submission_centers": [NDRI_TPC_CENTER]},
     ]
     tpc, gcc = _categorize_samples_by_submission_center(samples)
     assert len(tpc) == 2
@@ -129,29 +123,13 @@ def test_categorize_all_gcc_samples():
 def test_categorize_mixed_samples():
     """Mix of TPC and GCC samples."""
     samples = [
-        {"submitted_id": "NDRI_SAMPLE_001",
-         "submission_centers": [NDRI_TPC_CENTER]},
-        {"submitted_id": "DAC_SAMPLE_002",
-         "submission_centers": [GCC_CENTER]},
-        {"submitted_id": "NDRI_SAMPLE_003",
-         "submission_centers": [NDRI_TPC_CENTER]},
+        {"submitted_id": "NDRI_SAMPLE_001", "submission_centers": [NDRI_TPC_CENTER]},
+        {"submitted_id": "DAC_SAMPLE_002", "submission_centers": [GCC_CENTER]},
+        {"submitted_id": "NDRI_SAMPLE_003", "submission_centers": [NDRI_TPC_CENTER]},
     ]
     tpc, gcc = _categorize_samples_by_submission_center(samples)
     assert len(tpc) == 2
     assert len(gcc) == 1
-
-
-def test_categorize_by_submitted_id_prefix():
-    """Falls back to submitted_id when submission_centers missing."""
-    samples = [
-        {"submitted_id": "NDRI_SAMPLE_001", "submission_centers": []},
-        {"submitted_id": "DAC_SAMPLE_002", "submission_centers": []},
-    ]
-    tpc, gcc = _categorize_samples_by_submission_center(samples)
-    assert len(tpc) == 1
-    assert len(gcc) == 1
-    assert tpc[0]["submitted_id"] == "NDRI_SAMPLE_001"
-    assert gcc[0]["submitted_id"] == "DAC_SAMPLE_002"
 
 
 def test_categorize_empty_list():
@@ -161,14 +139,25 @@ def test_categorize_empty_list():
     assert gcc == []
 
 
-def test_categorize_missing_submission_centers():
-    """Uses submitted_id prefix as fallback."""
-    samples = [
+@pytest.mark.parametrize("samples", [
+    # empty submission_centers list present
+    [
+        {"submitted_id": "NDRI_SAMPLE_001", "submission_centers": []},
+        {"submitted_id": "DAC_SAMPLE_002", "submission_centers": []},
+    ],
+    # submission_centers key absent entirely
+    [
         {"submitted_id": "NDRI_SAMPLE_001"},
-        {"submitted_id": "DAC_SAMPLE_002"}]
+        {"submitted_id": "DAC_SAMPLE_002"},
+    ],
+])
+def test_categorize_falls_back_to_submitted_id_prefix(samples):
+    """Falls back to submitted_id prefix when submission_centers is absent or empty."""
     tpc, gcc = _categorize_samples_by_submission_center(samples)
     assert len(tpc) == 1
     assert len(gcc) == 1
+    assert tpc[0]["submitted_id"] == "NDRI_SAMPLE_001"
+    assert gcc[0]["submitted_id"] == "DAC_SAMPLE_002"
 
 
 # ============================================================================
@@ -179,46 +168,19 @@ def test_categorize_missing_submission_centers():
 def test_get_tissue_samples_cache_hit():
     """Returns cached value without portal call."""
     cache = {PRODUCTION_EXTERNAL_ID: [{"sample": "data"}]}
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id"
     ) as mock_search:
         result = _get_or_fetch_tissue_samples(
             PRODUCTION_EXTERNAL_ID, cache, MOCK_PORTAL_KEY
         )
-
         assert result == [{"sample": "data"}]
         mock_search.assert_not_called()
-
-
-def test_get_tissue_submitted_id_cache_miss_success():
-    """Fetches from portal and caches."""
-    cache = {}
-    tissue_data = {
-        "uuid": TISSUE_UUID,
-        "submitted_id": NDRI_TISSUE_SUBMITTED_ID}
-    with mock.patch(
-        ("submitr.validators.tissue_sample_validator"
-         ".portal_utils.get_item_by_identifier"),
-        return_value=tissue_data,
-    ) as mock_get_item:
-        with mock.patch(
-            ("submitr.validators.tissue_sample_validator"
-             ".item_utils.get_submitted_id"),
-            return_value=NDRI_TISSUE_SUBMITTED_ID,
-        ):
-            result = _get_tissue_submitted_id(
-                TISSUE_UUID, cache, MOCK_PORTAL_KEY)
-
-            assert result == NDRI_TISSUE_SUBMITTED_ID
-            assert cache[TISSUE_UUID] == NDRI_TISSUE_SUBMITTED_ID
-            mock_get_item.assert_called_once_with(TISSUE_UUID, MOCK_PORTAL_KEY)
 
 
 def test_get_tissue_samples_cache_miss_failure():
     """Returns None on portal failure."""
     cache = {}
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
         return_value=None,
@@ -226,42 +188,26 @@ def test_get_tissue_samples_cache_miss_failure():
         result = _get_or_fetch_tissue_samples(
             PRODUCTION_EXTERNAL_ID, cache, MOCK_PORTAL_KEY
         )
-
         assert result is None
         mock_search.assert_called_once()
 
 
-def test_get_tissue_samples_caches_result():
-    """Verify result is added to cache."""
+@pytest.mark.parametrize("portal_return,expected_cached", [
+    ([{"data": "test"}], [{"data": "test"}]),
+    (None, None),
+])
+def test_get_tissue_samples_caches_portal_result(portal_return, expected_cached):
+    """Portal result (including None) is written into the cache."""
     cache = {}
-    sample_data = [{"data": "test"}]
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
-        return_value=sample_data,
-    ):
-        _get_or_fetch_tissue_samples(
-            PRODUCTION_EXTERNAL_ID, cache, MOCK_PORTAL_KEY)
-
-        assert PRODUCTION_EXTERNAL_ID in cache
-        assert cache[PRODUCTION_EXTERNAL_ID] == sample_data
-
-
-def test_get_tissue_samples_caches_none():
-    """Verify None result is cached."""
-    cache = {}
-
-    with mock.patch(
-        "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
-        return_value=None,
+        return_value=portal_return,
     ):
         result = _get_or_fetch_tissue_samples(
             PRODUCTION_EXTERNAL_ID, cache, MOCK_PORTAL_KEY
         )
-
-        assert result is None
-        assert PRODUCTION_EXTERNAL_ID in cache
-        assert cache[PRODUCTION_EXTERNAL_ID] is None
+    assert result == expected_cached
+    assert cache[PRODUCTION_EXTERNAL_ID] == expected_cached
 
 
 # ============================================================================
@@ -270,9 +216,8 @@ def test_get_tissue_samples_caches_none():
 
 
 def test_get_tissue_submitted_id_cache_hit():
-    """Returns cached submitted_id."""
+    """Returns cached submitted_id without portal call."""
     cache = {TISSUE_UUID: NDRI_TISSUE_SUBMITTED_ID}
-
     with mock.patch(
         "submitr.validators.utils.portal.get_item_by_identifier"
     ) as mock_get_item:
@@ -280,7 +225,6 @@ def test_get_tissue_submitted_id_cache_hit():
             "submitr.validators.utils.item.get_submitted_id"
         ) as mock_get_submitted_id:
             result = _get_tissue_submitted_id(TISSUE_UUID, cache, MOCK_PORTAL_KEY)
-
             assert result == NDRI_TISSUE_SUBMITTED_ID
             mock_get_item.assert_not_called()
             mock_get_submitted_id.assert_not_called()
@@ -289,46 +233,31 @@ def test_get_tissue_submitted_id_cache_hit():
 def test_get_tissue_submitted_id_not_found():
     """Returns None when tissue not found."""
     cache = {}
-
     with mock.patch(
         "submitr.validators.utils.portal.get_item_by_identifier", return_value=None
     ):
         result = _get_tissue_submitted_id(TISSUE_UUID, cache, MOCK_PORTAL_KEY)
-
         assert result is None
 
 
-def test_get_tissue_submitted_id_caches_result():
-    """Verify submitted_id cached."""
+@pytest.mark.parametrize("portal_return,expected_cached", [
+    ({"uuid": TISSUE_UUID}, NDRI_TISSUE_SUBMITTED_ID),
+    (None, None),
+])
+def test_get_tissue_submitted_id_caches_portal_result(portal_return, expected_cached):
+    """Portal result (including None) is written into the cache."""
     cache = {}
-    tissue_data = {"uuid": TISSUE_UUID}
-
     with mock.patch(
         "submitr.validators.utils.portal.get_item_by_identifier",
-        return_value=tissue_data,
+        return_value=portal_return,
     ):
         with mock.patch(
             "submitr.validators.utils.item.get_submitted_id",
             return_value=NDRI_TISSUE_SUBMITTED_ID,
         ):
-            _get_tissue_submitted_id(TISSUE_UUID, cache, MOCK_PORTAL_KEY)
-
-            assert TISSUE_UUID in cache
-            assert cache[TISSUE_UUID] == NDRI_TISSUE_SUBMITTED_ID
-
-
-def test_get_tissue_submitted_id_caches_none():
-    """Verify None result is cached."""
-    cache = {}
-
-    with mock.patch(
-        "submitr.validators.utils.portal.get_item_by_identifier", return_value=None
-    ):
-        result = _get_tissue_submitted_id(TISSUE_UUID, cache, MOCK_PORTAL_KEY)
-
-        assert result is None
-        assert TISSUE_UUID in cache
-        assert cache[TISSUE_UUID] is None
+            result = _get_tissue_submitted_id(TISSUE_UUID, cache, MOCK_PORTAL_KEY)
+    assert result == expected_cached
+    assert cache[TISSUE_UUID] == expected_cached
 
 
 # ============================================================================
@@ -339,11 +268,9 @@ def test_get_tissue_submitted_id_caches_none():
 def test_validate_tpc_duplicate_no_existing():
     """No error when no existing samples."""
     mock_data = make_structured_data_mock()
-
     _validate_tpc_duplicate(
         PRODUCTION_EXTERNAL_ID, NDRI_TISSUE_SAMPLE_SUBMITTED_ID, [], mock_data
     )
-
     mock_data.note_validation_error.assert_not_called()
 
 
@@ -351,12 +278,10 @@ def test_validate_tpc_duplicate_same_item_update():
     """No error when updating same item."""
     mock_data = make_structured_data_mock()
     existing_tpc = [{"submitted_id": NDRI_TISSUE_SAMPLE_SUBMITTED_ID}]
-
     _validate_tpc_duplicate(
         PRODUCTION_EXTERNAL_ID, NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
         existing_tpc, mock_data
     )
-
     mock_data.note_validation_error.assert_not_called()
 
 
@@ -364,14 +289,14 @@ def test_validate_tpc_duplicate_different_item():
     """Error when different TPC sample exists."""
     mock_data = make_structured_data_mock()
     existing_tpc = [{"submitted_id": "NDRI_OTHER_SAMPLE"}]
-
     _validate_tpc_duplicate(
         PRODUCTION_EXTERNAL_ID, NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
         existing_tpc, mock_data
     )
-
-    expected_message = (f"TissueSample: TPC Tissue Sample with external_id "
-                        f"{PRODUCTION_EXTERNAL_ID} already exists")
+    expected_message = (
+        f"TissueSample: TPC Tissue Sample with external_id "
+        f"{PRODUCTION_EXTERNAL_ID} already exists"
+    )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -382,14 +307,14 @@ def test_validate_tpc_duplicate_multiple_existing():
         {"submitted_id": "NDRI_SAMPLE_001"},
         {"submitted_id": "NDRI_SAMPLE_002"},
     ]
-
     _validate_tpc_duplicate(
         PRODUCTION_EXTERNAL_ID, NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
         existing_tpc, mock_data
     )
-
-    expected_message = (f"TissueSample: TPC Tissue Sample with external_id "
-                        f"{PRODUCTION_EXTERNAL_ID} already exists")
+    expected_message = (
+        f"TissueSample: TPC Tissue Sample with external_id "
+        f"{PRODUCTION_EXTERNAL_ID} already exists"
+    )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -402,11 +327,9 @@ def test_validate_gcc_baseline_exists_found():
     """Returns True when TPC sample exists."""
     mock_data = make_structured_data_mock()
     tpc_samples = [{"submitted_id": NDRI_TISSUE_SAMPLE_SUBMITTED_ID}]
-
     result = _validate_gcc_baseline_exists(
         PRODUCTION_EXTERNAL_ID, tpc_samples, mock_data
     )
-
     assert result is True
     mock_data.note_validation_error.assert_not_called()
 
@@ -414,28 +337,25 @@ def test_validate_gcc_baseline_exists_found():
 def test_validate_gcc_baseline_no_tpc_sample():
     """Returns False and logs error when no TPC sample."""
     mock_data = make_structured_data_mock()
-
-    result = _validate_gcc_baseline_exists(
-        PRODUCTION_EXTERNAL_ID, [], mock_data)
-
+    result = _validate_gcc_baseline_exists(PRODUCTION_EXTERNAL_ID, [], mock_data)
     assert result is False
-    expected_message = (f"TissueSample: No TPC Tissue Sample found with "
-                        f"external_id {PRODUCTION_EXTERNAL_ID}")
+    expected_message = (
+        f"TissueSample: No TPC Tissue Sample found with "
+        f"external_id {PRODUCTION_EXTERNAL_ID}"
+    )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
 def test_validate_gcc_baseline_multiple_tpc():
-    """Returns True when multiple TPC samples."""
+    """Returns True when multiple TPC samples exist."""
     mock_data = make_structured_data_mock()
     tpc_samples = [
         {"submitted_id": "NDRI_SAMPLE_001"},
         {"submitted_id": "NDRI_SAMPLE_002"},
     ]
-
     result = _validate_gcc_baseline_exists(
         PRODUCTION_EXTERNAL_ID, tpc_samples, mock_data
     )
-
     assert result is True
     mock_data.note_validation_error.assert_not_called()
 
@@ -449,12 +369,10 @@ def test_validate_gcc_duplicate_no_existing():
     """Returns True when no existing GCC samples."""
     mock_data = make_structured_data_mock()
     seen = {}
-
     result = _validate_gcc_duplicate(
         PRODUCTION_EXTERNAL_ID, GCC_TISSUE_SAMPLE_SUBMITTED_ID, [],
         seen, mock_data
     )
-
     assert result is True
     mock_data.note_validation_error.assert_not_called()
 
@@ -464,15 +382,10 @@ def test_validate_gcc_duplicate_same_item_update():
     mock_data = make_structured_data_mock()
     seen = {}
     existing_gcc = [{"submitted_id": GCC_TISSUE_SAMPLE_SUBMITTED_ID}]
-
     result = _validate_gcc_duplicate(
-        PRODUCTION_EXTERNAL_ID,
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        existing_gcc,
-        seen,
-        mock_data,
+        PRODUCTION_EXTERNAL_ID, GCC_TISSUE_SAMPLE_SUBMITTED_ID,
+        existing_gcc, seen, mock_data,
     )
-
     assert result is True
     mock_data.note_validation_error.assert_not_called()
 
@@ -482,18 +395,15 @@ def test_validate_gcc_duplicate_different_item_in_portal():
     mock_data = make_structured_data_mock()
     seen = {}
     existing_gcc = [{"submitted_id": "DAC_OTHER_SAMPLE"}]
-
     result = _validate_gcc_duplicate(
-        PRODUCTION_EXTERNAL_ID,
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        existing_gcc,
-        seen,
-        mock_data,
+        PRODUCTION_EXTERNAL_ID, GCC_TISSUE_SAMPLE_SUBMITTED_ID,
+        existing_gcc, seen, mock_data,
     )
-
     assert result is False
-    expected_message = (f"TissueSample: A non-TPC sample with external_id "
-                        f"{PRODUCTION_EXTERNAL_ID} already exists")
+    expected_message = (
+        f"TissueSample: A non-TPC sample with external_id "
+        f"{PRODUCTION_EXTERNAL_ID} already exists"
+    )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -501,16 +411,15 @@ def test_validate_gcc_duplicate_different_item_in_batch():
     """Returns False when different GCC sample in current batch."""
     mock_data = make_structured_data_mock()
     seen = {PRODUCTION_EXTERNAL_ID: "DAC_OTHER_SAMPLE"}
-
     result = _validate_gcc_duplicate(
         PRODUCTION_EXTERNAL_ID, GCC_TISSUE_SAMPLE_SUBMITTED_ID, [],
         seen, mock_data
     )
-
     assert result is False
-    expected_message = (f"TissueSample: A non-TPC sample with external_id "
-                        f"{PRODUCTION_EXTERNAL_ID} already exists in this "
-                        f"submission")
+    expected_message = (
+        f"TissueSample: A non-TPC sample with external_id "
+        f"{PRODUCTION_EXTERNAL_ID} already exists in this submission"
+    )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -522,18 +431,15 @@ def test_validate_gcc_duplicate_multiple_existing():
         {"submitted_id": "DAC_SAMPLE_001"},
         {"submitted_id": "BWH_SAMPLE_002"},
     ]
-
     result = _validate_gcc_duplicate(
-        PRODUCTION_EXTERNAL_ID,
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        existing_gcc,
-        seen,
-        mock_data,
+        PRODUCTION_EXTERNAL_ID, GCC_TISSUE_SAMPLE_SUBMITTED_ID,
+        existing_gcc, seen, mock_data,
     )
-
     assert result is False
-    expected_message = (f"TissueSample: A non-TPC sample with external_id "
-                        f"{PRODUCTION_EXTERNAL_ID} already exists")
+    expected_message = (
+        f"TissueSample: A non-TPC sample with external_id "
+        f"{PRODUCTION_EXTERNAL_ID} already exists"
+    )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -546,22 +452,14 @@ def test_validate_metadata_consistency_all_match():
     """No errors when all metadata matches."""
     mock_data = make_structured_data_mock()
     tissue_cache = {}
-
     gcc_item = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
-        category="Specimen",
-        preservation_type="Fresh",
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [GCC_TISSUE_SUBMITTED_ID], category="Specimen", preservation_type="Fresh",
     )
     tpc_item = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [{"uuid": TISSUE_UUID}],
-        category="Specimen",
-        preservation_type="Fresh",
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [{"uuid": TISSUE_UUID}], category="Specimen", preservation_type="Fresh",
     )
-
     with mock.patch(
         "submitr.validators.utils.item.get_submitted_id",
         return_value=NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
@@ -574,10 +472,7 @@ def test_validate_metadata_consistency_all_match():
                 "submitr.validators.utils.item.get_submitted_id",
                 return_value=GCC_TISSUE_SUBMITTED_ID,
             ):
-                _validate_metadata_consistency(
-                    gcc_item, tpc_item, mock_data, tissue_cache
-                )
-
+                _validate_metadata_consistency(gcc_item, tpc_item, mock_data, tissue_cache)
     mock_data.note_validation_error.assert_not_called()
 
 
@@ -585,23 +480,14 @@ def test_validate_metadata_consistency_category_mismatch():
     """Error on category mismatch."""
     mock_data = make_structured_data_mock()
     tissue_cache = {}
-
     gcc_item = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
-        category="Homogenate",
-        preservation_type="Fresh",
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [GCC_TISSUE_SUBMITTED_ID], category="Homogenate", preservation_type="Fresh",
     )
     tpc_item = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [{"uuid": TISSUE_UUID}],
-        category="Specimen",
-        preservation_type="Fresh",
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [{"uuid": TISSUE_UUID}], category="Specimen", preservation_type="Fresh",
     )
-
-    # Use side_effect to handle multiple calls
     with mock.patch(
         "submitr.validators.utils.item.get_submitted_id"
     ) as mock_get_submitted:
@@ -611,10 +497,11 @@ def test_validate_metadata_consistency_category_mismatch():
         ) as mock_get_item:
             mock_get_item.return_value = {"submitted_id": GCC_TISSUE_SUBMITTED_ID}
             _validate_metadata_consistency(gcc_item, tpc_item, mock_data, tissue_cache)
-
-    expected_message = (f"TissueSample: metadata mismatch, category Homogenate "
-                        f"does not match value Specimen in TPC Tissue Sample "
-                        f"{NDRI_TISSUE_SAMPLE_SUBMITTED_ID}")
+    expected_message = (
+        f"TissueSample: metadata mismatch, category Homogenate "
+        f"does not match value Specimen in TPC Tissue Sample "
+        f"{NDRI_TISSUE_SAMPLE_SUBMITTED_ID}"
+    )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -622,22 +509,14 @@ def test_validate_metadata_consistency_preservation_type_mismatch():
     """Error on preservation_type mismatch."""
     mock_data = make_structured_data_mock()
     tissue_cache = {}
-
     gcc_item = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
-        category="Specimen",
-        preservation_type="Frozen",
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [GCC_TISSUE_SUBMITTED_ID], category="Specimen", preservation_type="Frozen",
     )
     tpc_item = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [{"uuid": TISSUE_UUID}],
-        category="Specimen",
-        preservation_type="Fresh",
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [{"uuid": TISSUE_UUID}], category="Specimen", preservation_type="Fresh",
     )
-
     with mock.patch(
         "submitr.validators.utils.item.get_submitted_id"
     ) as mock_get_submitted:
@@ -645,14 +524,13 @@ def test_validate_metadata_consistency_preservation_type_mismatch():
         with mock.patch(
             "submitr.validators.utils.portal.get_item_by_identifier"
         ) as mock_get_item:
-            mock_get_item.return_value = {
-                "submitted_id": GCC_TISSUE_SUBMITTED_ID}
-            _validate_metadata_consistency(
-                gcc_item, tpc_item, mock_data, tissue_cache)
-
-    expected_message = (f"TissueSample: metadata mismatch, preservation_type "
-                        f"Frozen does not match value Fresh in TPC Tissue"
-                        f" Sample {NDRI_TISSUE_SAMPLE_SUBMITTED_ID}")
+            mock_get_item.return_value = {"submitted_id": GCC_TISSUE_SUBMITTED_ID}
+            _validate_metadata_consistency(gcc_item, tpc_item, mock_data, tissue_cache)
+    expected_message = (
+        f"TissueSample: metadata mismatch, preservation_type "
+        f"Frozen does not match value Fresh in TPC Tissue"
+        f" Sample {NDRI_TISSUE_SAMPLE_SUBMITTED_ID}"
+    )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
@@ -660,22 +538,14 @@ def test_validate_metadata_consistency_both_mismatch():
     """Multiple errors for multiple mismatches."""
     mock_data = make_structured_data_mock()
     tissue_cache = {}
-
     gcc_item = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
-        category="Homogenate",
-        preservation_type="Frozen",
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [GCC_TISSUE_SUBMITTED_ID], category="Homogenate", preservation_type="Frozen",
     )
     tpc_item = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [{"uuid": TISSUE_UUID}],
-        category="Specimen",
-        preservation_type="Fresh",
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [{"uuid": TISSUE_UUID}], category="Specimen", preservation_type="Fresh",
     )
-
     with mock.patch(
         "submitr.validators.utils.item.get_submitted_id",
         return_value=NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
@@ -688,46 +558,25 @@ def test_validate_metadata_consistency_both_mismatch():
                 "submitr.validators.utils.item.get_submitted_id",
                 return_value=GCC_TISSUE_SUBMITTED_ID,
             ):
-                _validate_metadata_consistency(
-                    gcc_item, tpc_item, mock_data, tissue_cache
-                )
-
-    # Should have two error calls - one for category, one for preservation_type
+                _validate_metadata_consistency(gcc_item, tpc_item, mock_data, tissue_cache)
     assert mock_data.note_validation_error.call_count == 2
-
-    # Check both error messages were logged
-    calls = [
-        call[0][0] for call in mock_data.note_validation_error.call_args_list]
-    assert any(
-        "category Homogenate does not match value Specimen"
-        in call for call in calls
-    )
-    assert any(
-        "preservation_type Frozen does not match value Fresh"
-        in call for call in calls
-    )
+    calls = [call[0][0] for call in mock_data.note_validation_error.call_args_list]
+    assert any("category Homogenate does not match value Specimen" in c for c in calls)
+    assert any("preservation_type Frozen does not match value Fresh" in c for c in calls)
 
 
 def test_validate_metadata_consistency_sample_source_mismatch():
     """Error when sample_sources don't match."""
     mock_data = make_structured_data_mock()
     tissue_cache = {}
-
     gcc_item = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        ["DAC_TISSUE_DIFFERENT"],
-        category="Specimen",
-        preservation_type="Fresh",
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        ["DAC_TISSUE_DIFFERENT"], category="Specimen", preservation_type="Fresh",
     )
     tpc_item = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [{"uuid": TISSUE_UUID}],
-        category="Specimen",
-        preservation_type="Fresh",
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [{"uuid": TISSUE_UUID}], category="Specimen", preservation_type="Fresh",
     )
-
     with mock.patch(
         "submitr.validators.utils.item.get_submitted_id",
         return_value=NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
@@ -735,59 +584,39 @@ def test_validate_metadata_consistency_sample_source_mismatch():
         with mock.patch(
             "submitr.validators.utils.portal.get_item_by_identifier"
         ) as mock_get_item:
-
             def get_item_side_effect(identifier, key):
                 if identifier == TISSUE_UUID:
                     return {"submitted_id": NDRI_TISSUE_SUBMITTED_ID}
                 elif identifier == "DAC_TISSUE_DIFFERENT":
                     return {"submitted_id": "DAC_TISSUE_DIFFERENT"}
                 return None
-
             mock_get_item.side_effect = get_item_side_effect
-
             with mock.patch(
                 "submitr.validators.utils.item.get_submitted_id"
             ) as mock_get_submitted:
-
-                def get_submitted_side_effect(item):
-                    return item.get("submitted_id")
-
-                mock_get_submitted.side_effect = get_submitted_side_effect
-
-                _validate_metadata_consistency(
-                    gcc_item, tpc_item, mock_data, tissue_cache
-                )
-
-    expected_message = (f"TissueSample: metadata mismatch: sample_source "
-                        f"DAC_TISSUE_DIFFERENT does not match TPC "
-                        f"TissueSample sample_source "
-                        f"{NDRI_TISSUE_SUBMITTED_ID}")
+                mock_get_submitted.side_effect = lambda item: item.get("submitted_id")
+                _validate_metadata_consistency(gcc_item, tpc_item, mock_data, tissue_cache)
+    expected_message = (
+        f"TissueSample: metadata mismatch: sample_source "
+        f"DAC_TISSUE_DIFFERENT does not match TPC "
+        f"TissueSample sample_source {NDRI_TISSUE_SUBMITTED_ID}"
+    )
     mock_data.note_validation_error.assert_called_with(expected_message)
 
 
 def test_validate_metadata_consistency_missing_values():
-    """No error when values are None/missing."""
+    """No error when GCC value is None/missing."""
     mock_data = make_structured_data_mock()
     tissue_cache = {}
-
     gcc_item = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
-        category="Specimen",
-        preservation_type="Fresh",
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [GCC_TISSUE_SUBMITTED_ID], category="Specimen", preservation_type="Fresh",
     )
-    # Remove category from gcc_item
     gcc_item["category"] = None
-
     tpc_item = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [{"uuid": TISSUE_UUID}],
-        category="Specimen",
-        preservation_type="Fresh",
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [{"uuid": TISSUE_UUID}], category="Specimen", preservation_type="Fresh",
     )
-
     with mock.patch(
         "submitr.validators.utils.item.get_submitted_id",
         return_value=NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
@@ -800,11 +629,7 @@ def test_validate_metadata_consistency_missing_values():
                 "submitr.validators.utils.item.get_submitted_id",
                 return_value=GCC_TISSUE_SUBMITTED_ID,
             ):
-                _validate_metadata_consistency(
-                    gcc_item, tpc_item, mock_data, tissue_cache
-                )
-
-    # Should not error when GCC value is None
+                _validate_metadata_consistency(gcc_item, tpc_item, mock_data, tissue_cache)
     mock_data.note_validation_error.assert_not_called()
 
 
@@ -812,22 +637,14 @@ def test_validate_metadata_consistency_uses_tissue_cache():
     """Verifies caching behavior for tissue lookups."""
     mock_data = make_structured_data_mock()
     tissue_cache = {TISSUE_UUID: NDRI_TISSUE_SUBMITTED_ID}
-
     gcc_item = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
-        category="Specimen",
-        preservation_type="Fresh",
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [GCC_TISSUE_SUBMITTED_ID], category="Specimen", preservation_type="Fresh",
     )
     tpc_item = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [{"uuid": TISSUE_UUID}],
-        category="Specimen",
-        preservation_type="Fresh",
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [{"uuid": TISSUE_UUID}], category="Specimen", preservation_type="Fresh",
     )
-
     with mock.patch(
         "submitr.validators.utils.item.get_submitted_id",
         return_value=NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
@@ -835,17 +652,11 @@ def test_validate_metadata_consistency_uses_tissue_cache():
         with mock.patch(
             "submitr.validators.utils.portal.get_item_by_identifier"
         ) as mock_get_item:
-            # Should not be called since UUID is in cache
             with mock.patch(
                 "submitr.validators.utils.item.get_submitted_id",
                 return_value=GCC_TISSUE_SUBMITTED_ID,
             ):
-                _validate_metadata_consistency(
-                    gcc_item, tpc_item, mock_data, tissue_cache
-                )
-
-            # Verify cache was used (tissue lookup not called for cached UUID)
-            # Only called for GCC tissue, not the cached TPC tissue
+                _validate_metadata_consistency(gcc_item, tpc_item, mock_data, tissue_cache)
             assert mock_get_item.call_count <= 1
 
 
@@ -857,9 +668,7 @@ def test_validate_metadata_consistency_uses_tissue_cache():
 def test_external_id_validator_no_tissue_samples():
     """Returns early if no TissueSample data."""
     mock_data = make_structured_data_mock({"Tissue": []})
-
     _tissue_sample_external_id_validator(mock_data)
-
     mock_data.note_validation_error.assert_not_called()
 
 
@@ -869,13 +678,10 @@ def test_external_id_validator_no_sample_sources():
         NDRI_TISSUE_SAMPLE_SUBMITTED_ID, TISSUE_SAMPLE_EXTERNAL_ID, []
     )
     del tissue_sample["sample_sources"]
-
     mock_data = make_structured_data_mock(
         {"TissueSample": [tissue_sample], "Tissue": []}
     )
-
     _tissue_sample_external_id_validator(mock_data)
-
     mock_data.note_validation_error.assert_not_called()
 
 
@@ -883,18 +689,13 @@ def test_external_id_validator_matching_ids():
     """No error when external_ids match."""
     tissue = make_tissue(NDRI_TISSUE_SUBMITTED_ID, TISSUE_EXTERNAL_ID)
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        TISSUE_SAMPLE_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, TISSUE_SAMPLE_EXTERNAL_ID,
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[NDRI_TPC_CENTER],
     )
-
     mock_data = make_structured_data_mock(
         {"TissueSample": [tissue_sample], "Tissue": [tissue]}
     )
-
     _tissue_sample_external_id_validator(mock_data)
-
     mock_data.note_validation_error.assert_not_called()
 
 
@@ -902,18 +703,13 @@ def test_external_id_validator_mismatch_tpc_tissue_sample():
     """Error when TPC TissueSample external_id doesn't match Tissue."""
     tissue = make_tissue(NDRI_TISSUE_SUBMITTED_ID, "SMHT999-3A")
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        "SMHT001-3A-001",
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, "SMHT001-3A-001",
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[NDRI_TPC_CENTER],
     )
-
     mock_data = make_structured_data_mock(
         {"TissueSample": [tissue_sample], "Tissue": [tissue]}
     )
-
     _tissue_sample_external_id_validator(mock_data)
-
     expected_message = (
         f"TissueSample: item {NDRI_TISSUE_SAMPLE_SUBMITTED_ID} external_id "
         f"SMHT001-3A-001 does not match Tissue external_id SMHT999-3A."
@@ -925,18 +721,13 @@ def test_external_id_validator_mismatch_tpc_tissue():
     """Error when TPC Tissue linked from non-TPC TissueSample."""
     tissue = make_tissue(NDRI_TISSUE_SUBMITTED_ID, "SMHT999-3A")
     tissue_sample = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        "SMHT001-3A-001",
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[GCC_CENTER],
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, "SMHT001-3A-001",
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[GCC_CENTER],
     )
-
     mock_data = make_structured_data_mock(
         {"TissueSample": [tissue_sample], "Tissue": [tissue]}
     )
-
     _tissue_sample_external_id_validator(mock_data)
-
     expected_message = (
         f"TissueSample: item {GCC_TISSUE_SAMPLE_SUBMITTED_ID} external_id"
         f" SMHT001-3A-001 does not match Tissue external_id SMHT999-3A."
@@ -948,54 +739,39 @@ def test_external_id_validator_non_tpc_submission():
     """No validation when neither is TPC."""
     tissue = make_tissue(GCC_TISSUE_SUBMITTED_ID, "SMHT999-3A")
     tissue_sample = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        "SMHT001-3A-001",
-        [GCC_TISSUE_SUBMITTED_ID],
-        submission_centers=[GCC_CENTER],
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, "SMHT001-3A-001",
+        [GCC_TISSUE_SUBMITTED_ID], submission_centers=[GCC_CENTER],
     )
-
     mock_data = make_structured_data_mock(
         {"TissueSample": [tissue_sample], "Tissue": [tissue]}
     )
-
     _tissue_sample_external_id_validator(mock_data)
-
     mock_data.note_validation_error.assert_not_called()
 
 
 def test_external_id_validator_tissue_not_in_data():
     """Handles missing Tissue gracefully."""
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        TISSUE_SAMPLE_EXTERNAL_ID,
-        ["NONEXISTENT_TISSUE"],
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, TISSUE_SAMPLE_EXTERNAL_ID,
+        ["NONEXISTENT_TISSUE"], submission_centers=[NDRI_TPC_CENTER],
     )
-
     mock_data = make_structured_data_mock(
         {"TissueSample": [tissue_sample], "Tissue": []}
     )
-
     _tissue_sample_external_id_validator(mock_data)
-
     mock_data.note_validation_error.assert_not_called()
 
 
 def test_external_id_validator_no_submitted_id():
     """Skips items without submitted_id."""
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        TISSUE_SAMPLE_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, TISSUE_SAMPLE_EXTERNAL_ID, [NDRI_TISSUE_SUBMITTED_ID],
     )
     del tissue_sample["submitted_id"]
-
     mock_data = make_structured_data_mock(
         {"TissueSample": [tissue_sample], "Tissue": []}
     )
-
     _tissue_sample_external_id_validator(mock_data)
-
     mock_data.note_validation_error.assert_not_called()
 
 
@@ -1007,151 +783,106 @@ def test_external_id_validator_no_submitted_id():
 def test_metadata_validator_no_tissue_samples():
     """Returns early if no TissueSample data."""
     mock_data = make_structured_data_mock({"Tissue": []})
-
     _tissue_sample_metadata_validator(mock_data)
-
     mock_data.note_validation_error.assert_not_called()
 
 
 def test_metadata_validator_missing_required_fields():
     """Skips items missing submitted_id or external_id."""
     sample_no_submitted_id = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID, [NDRI_TISSUE_SUBMITTED_ID],
     )
     del sample_no_submitted_id["submitted_id"]
-
     sample_no_external_id = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID, [GCC_TISSUE_SUBMITTED_ID],
     )
     del sample_no_external_id["external_id"]
-
     mock_data = make_structured_data_mock(
         {"TissueSample": [sample_no_submitted_id, sample_no_external_id]}
     )
-
     _tissue_sample_metadata_validator(mock_data)
-
     mock_data.note_validation_error.assert_not_called()
 
 
 def test_metadata_validator_non_production_external_id():
     """Skips validation for non-Benchmarking/Production samples."""
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        NON_PRODUCTION_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, NON_PRODUCTION_EXTERNAL_ID,
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[NDRI_TPC_CENTER],
     )
-
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
-
     _tissue_sample_metadata_validator(mock_data)
-
     mock_data.note_validation_error.assert_not_called()
 
 
 def test_metadata_validator_tpc_new_submission():
     """Allows new TPC sample."""
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[NDRI_TPC_CENTER],
     )
-
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
         return_value=[],
     ):
         _tissue_sample_metadata_validator(mock_data)
-
     mock_data.note_validation_error.assert_not_called()
 
 
 def test_metadata_validator_tpc_update_same_item():
     """Allows TPC to update own sample."""
     existing_tpc = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[NDRI_TPC_CENTER],
     )
-
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[NDRI_TPC_CENTER],
     )
-
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
         return_value=[existing_tpc],
     ):
         _tissue_sample_metadata_validator(mock_data)
-
     mock_data.note_validation_error.assert_not_called()
 
 
 def test_metadata_validator_tpc_duplicate():
     """Rejects duplicate TPC submission."""
     existing_tpc = make_tissue_sample(
-        "NDRI_OTHER_SAMPLE",
-        PRODUCTION_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[NDRI_TPC_CENTER],
+        "NDRI_OTHER_SAMPLE", PRODUCTION_EXTERNAL_ID,
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[NDRI_TPC_CENTER],
     )
-
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[NDRI_TPC_CENTER],
     )
-
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
         return_value=[existing_tpc],
     ):
         _tissue_sample_metadata_validator(mock_data)
-
-    expected_message = (f"TissueSample: TPC Tissue Sample with external_id "
-                        f"{PRODUCTION_EXTERNAL_ID} already exists")
+    expected_message = (
+        f"TissueSample: TPC Tissue Sample with external_id "
+        f"{PRODUCTION_EXTERNAL_ID} already exists"
+    )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
 def test_metadata_validator_gcc_new_with_tpc_baseline():
     """Allows new GCC when TPC exists with matching metadata."""
     tpc_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [{"uuid": TISSUE_UUID}],
-        category="Specimen",
-        preservation_type="Fresh",
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID, [{"uuid": TISSUE_UUID}],
+        category="Specimen", preservation_type="Fresh", submission_centers=[NDRI_TPC_CENTER],
     )
-
     gcc_sample = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
-        category="Specimen",
-        preservation_type="Fresh",
-        submission_centers=[GCC_CENTER],
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID, [GCC_TISSUE_SUBMITTED_ID],
+        category="Specimen", preservation_type="Fresh", submission_centers=[GCC_CENTER],
     )
-
     mock_data = make_structured_data_mock({"TissueSample": [gcc_sample]})
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
         return_value=[tpc_sample],
@@ -1169,128 +900,89 @@ def test_metadata_validator_gcc_new_with_tpc_baseline():
                     return_value=GCC_TISSUE_SUBMITTED_ID,
                 ):
                     _tissue_sample_metadata_validator(mock_data)
-
     mock_data.note_validation_error.assert_not_called()
 
 
 def test_metadata_validator_gcc_update_same_item():
     """Allows GCC to update own sample."""
     tpc_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [{"uuid": TISSUE_UUID}],  # Make sure this is dict format
-        category="Specimen",
-        preservation_type="Fresh",
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID, [{"uuid": TISSUE_UUID}],
+        category="Specimen", preservation_type="Fresh", submission_centers=[NDRI_TPC_CENTER],
     )
     existing_gcc = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [{"uuid": "gcc-tissue-uuid"}],  # Make sure this is dict format
-        category="Specimen",
-        preservation_type="Fresh",
-        submission_centers=[GCC_CENTER],
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID, [{"uuid": "gcc-tissue-uuid"}],
+        category="Specimen", preservation_type="Fresh", submission_centers=[GCC_CENTER],
     )
-
     gcc_sample = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
-        category="Specimen",
-        preservation_type="Fresh",
-        submission_centers=[GCC_CENTER],
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID, [GCC_TISSUE_SUBMITTED_ID],
+        category="Specimen", preservation_type="Fresh", submission_centers=[GCC_CENTER],
     )
-
     mock_data = make_structured_data_mock({"TissueSample": [gcc_sample]})
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
         return_value=[tpc_sample, existing_gcc],
     ):
         _tissue_sample_metadata_validator(mock_data)
-
     mock_data.note_validation_error.assert_not_called()
 
 
 def test_metadata_validator_gcc_no_tpc_baseline():
     """Rejects GCC without TPC baseline."""
     gcc_sample = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
-        submission_centers=[GCC_CENTER],
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [GCC_TISSUE_SUBMITTED_ID], submission_centers=[GCC_CENTER],
     )
-
     mock_data = make_structured_data_mock({"TissueSample": [gcc_sample]})
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
         return_value=[],
     ):
         _tissue_sample_metadata_validator(mock_data)
-
-    expected_message = (f"TissueSample: No TPC Tissue Sample found with "
-                        f"external_id {PRODUCTION_EXTERNAL_ID}")
+    expected_message = (
+        f"TissueSample: No TPC Tissue Sample found with "
+        f"external_id {PRODUCTION_EXTERNAL_ID}"
+    )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
 def test_metadata_validator_gcc_duplicate():
     """Rejects duplicate GCC submission."""
     tpc_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[NDRI_TPC_CENTER],
     )
     existing_gcc = make_tissue_sample(
-        "DAC_OTHER_SAMPLE",
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
-        submission_centers=[GCC_CENTER],
+        "DAC_OTHER_SAMPLE", PRODUCTION_EXTERNAL_ID,
+        [GCC_TISSUE_SUBMITTED_ID], submission_centers=[GCC_CENTER],
     )
-
     gcc_sample = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
-        submission_centers=[GCC_CENTER],
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [GCC_TISSUE_SUBMITTED_ID], submission_centers=[GCC_CENTER],
     )
-
     mock_data = make_structured_data_mock({"TissueSample": [gcc_sample]})
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
         return_value=[tpc_sample, existing_gcc],
     ):
         _tissue_sample_metadata_validator(mock_data)
-
-    expected_message = (f"TissueSample: A non-TPC sample with external_id "
-                        f"{PRODUCTION_EXTERNAL_ID} already exists")
+    expected_message = (
+        f"TissueSample: A non-TPC sample with external_id "
+        f"{PRODUCTION_EXTERNAL_ID} already exists"
+    )
     mock_data.note_validation_error.assert_called_once_with(expected_message)
 
 
 def test_metadata_validator_gcc_metadata_mismatch():
     """Rejects GCC when metadata doesn't match TPC."""
     tpc_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [{"uuid": TISSUE_UUID}],
-        category="Specimen",
-        preservation_type="Fresh",
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID, [{"uuid": TISSUE_UUID}],
+        category="Specimen", preservation_type="Fresh", submission_centers=[NDRI_TPC_CENTER],
     )
-
     gcc_sample = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
-        category="Homogenate",
-        preservation_type="Fresh",
-        submission_centers=[GCC_CENTER],
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID, [GCC_TISSUE_SUBMITTED_ID],
+        category="Homogenate", preservation_type="Fresh", submission_centers=[GCC_CENTER],
     )
-
     mock_data = make_structured_data_mock({"TissueSample": [gcc_sample]})
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
         return_value=[tpc_sample],
@@ -1298,22 +990,15 @@ def test_metadata_validator_gcc_metadata_mismatch():
         with mock.patch(
             "submitr.validators.utils.item.get_submitted_id"
         ) as mock_get_submitted:
-            # Return different values based on what dict is passed in
-            def get_submitted_side_effect(item):
-                return item.get("submitted_id")
-
-            mock_get_submitted.side_effect = get_submitted_side_effect
-
+            mock_get_submitted.side_effect = lambda item: item.get("submitted_id")
             with mock.patch(
                 "submitr.validators.utils.portal.get_item_by_identifier"
             ) as mock_get_item:
-                # Return tissue object when TISSUE_UUID is requested
                 mock_get_item.return_value = {
                     "submitted_id": GCC_TISSUE_SUBMITTED_ID,
                     "uuid": TISSUE_UUID,
                 }
                 _tissue_sample_metadata_validator(mock_data)
-
     expected_message = (
         f"TissueSample: metadata mismatch, category Homogenate does not match "
         f"value Specimen in TPC Tissue Sample {NDRI_TISSUE_SAMPLE_SUBMITTED_ID}"
@@ -1324,66 +1009,46 @@ def test_metadata_validator_gcc_metadata_mismatch():
 def test_metadata_validator_multiple_items_mixed():
     """Processes multiple TissueSamples correctly."""
     sample1 = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[NDRI_TPC_CENTER],
     )
     sample2 = make_tissue_sample(
-        "NDRI_SAMPLE_002",
-        BENCHMARKING_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[NDRI_TPC_CENTER],
+        "NDRI_SAMPLE_002", BENCHMARKING_EXTERNAL_ID,
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[NDRI_TPC_CENTER],
     )
-
     mock_data = make_structured_data_mock({"TissueSample": [sample1, sample2]})
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
         return_value=[],
     ):
         _tissue_sample_metadata_validator(mock_data)
-
     mock_data.note_validation_error.assert_not_called()
 
 
 def test_metadata_validator_intra_batch_duplicate():
     """Detects duplicates within submission batch."""
     sample1 = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
-        submission_centers=[GCC_CENTER],
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [GCC_TISSUE_SUBMITTED_ID], submission_centers=[GCC_CENTER],
     )
     sample2 = make_tissue_sample(
-        "DAC_DIFFERENT_SAMPLE",
-        PRODUCTION_EXTERNAL_ID,
-        [GCC_TISSUE_SUBMITTED_ID],
-        submission_centers=[GCC_CENTER],
+        "DAC_DIFFERENT_SAMPLE", PRODUCTION_EXTERNAL_ID,
+        [GCC_TISSUE_SUBMITTED_ID], submission_centers=[GCC_CENTER],
     )
-
     mock_data = make_structured_data_mock({"TissueSample": [sample1, sample2]})
-
-    # Mock portal to return TPC sample with proper dict format for sample_sources
     tpc_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [{"uuid": TISSUE_UUID}],
-        category="Specimen",
-        preservation_type="Fresh",
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID, [{"uuid": TISSUE_UUID}],
+        category="Specimen", preservation_type="Fresh", submission_centers=[NDRI_TPC_CENTER],
     )
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
         return_value=[tpc_sample],
     ):
         _tissue_sample_metadata_validator(mock_data)
-
-    # Should be called once for the intra-batch duplicate
-    expected_message = (f"TissueSample: A sample with external_id "
-                        f"{PRODUCTION_EXTERNAL_ID} already exists "
-                        f"in this submission")
+    expected_message = (
+        f"TissueSample: A sample with external_id "
+        f"{PRODUCTION_EXTERNAL_ID} already exists in this submission"
+    )
     assert mock_data.note_validation_error.call_count == 1
     mock_data.note_validation_error.assert_called_with(expected_message)
 
@@ -1391,47 +1056,34 @@ def test_metadata_validator_intra_batch_duplicate():
 def test_metadata_validator_caching_behavior():
     """Verifies portal queries are cached."""
     sample1 = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[NDRI_TPC_CENTER],
     )
     sample2 = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[NDRI_TPC_CENTER],
     )
-
     mock_data = make_structured_data_mock({"TissueSample": [sample1, sample2]})
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
         return_value=[],
     ) as mock_search:
         _tissue_sample_metadata_validator(mock_data)
-
-        # Should only query portal once due to caching
         assert mock_search.call_count == 1
 
 
 def test_metadata_validator_portal_query_failure():
     """Handles portal query failure gracefully."""
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        PRODUCTION_EXTERNAL_ID,
-        [NDRI_TISSUE_SUBMITTED_ID],
-        submission_centers=[NDRI_TPC_CENTER],
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, PRODUCTION_EXTERNAL_ID,
+        [NDRI_TISSUE_SUBMITTED_ID], submission_centers=[NDRI_TPC_CENTER],
     )
-
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
-
     with mock.patch(
         "submitr.validators.utils.portal.search_tissue_samples_by_external_id",
         return_value=None,
     ):
         _tissue_sample_metadata_validator(mock_data)
-
     expected_message = (
         f"TissueSample: Unable to validate {NDRI_TISSUE_SAMPLE_SUBMITTED_ID}"
         f" - portal query failed for external_id {PRODUCTION_EXTERNAL_ID}"
@@ -1443,17 +1095,15 @@ def test_metadata_validator_portal_query_failure():
 # Test _tissue_sample_external_id_category_match_validator()
 # ============================================================================
 
-# Valid external_id for each category, using SMHT production prefix
 _VALID_CATEGORY_EXTERNAL_IDS = [
-    ("Tissue Aliquot", "SMHT001-3AT-001"),   # ends after 3-digit range
-    ("Cells", "SMHT001-3AC-001X"),  # -3AC- with trailing X
-    ("Core", "SMHT001-3AT-001A1"),  # [A-F][1-6] suffix
-    ("Homogenate", "SMHT001-1AT-001X"),  # -1- prefix with trailing X
-    ("Specimen", "SMHT001-3AT-001S1"),  # [S-W][1-9] suffix
-    ("Liquid", "SMHT001-3A-001X"),   # -3[AB]- with trailing X
+    ("Tissue Aliquot", "SMHT001-3AT-001"),
+    ("Cells", "SMHT001-3AC-001X"),
+    ("Core", "SMHT001-3AT-001A1"),
+    ("Homogenate", "SMHT001-1AT-001X"),
+    ("Specimen", "SMHT001-3AT-001S1"),
+    ("Liquid", "SMHT001-3A-001X"),
 ]
 
-# Invalid external_id for each category with explanation
 _INVALID_CATEGORY_EXTERNAL_IDS = [
     ("Tissue Aliquot", "SMHT001-2AT-001", "2 not in [13]"),
     ("Cells", "SMHT001-3AC-001", "missing trailing X"),
@@ -1481,10 +1131,7 @@ def test_ext_id_category_empty_list():
 def test_ext_id_category_unknown_category():
     """No error when category is not in _TISSUE_CATEGORIES."""
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        "SMHT001-3AT-001",
-        [],
-        category="Unknown",
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, "SMHT001-3AT-001", [], category="Unknown",
     )
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_category_match_validator(mock_data)
@@ -1495,10 +1142,7 @@ def test_ext_id_category_unknown_category():
 def test_ext_id_category_valid(category, external_id):
     """No error when external_id matches the expected pattern for its category."""
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        external_id,
-        [],
-        category=category,
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, external_id, [], category=category,
     )
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_category_match_validator(mock_data)
@@ -1509,10 +1153,7 @@ def test_ext_id_category_valid(category, external_id):
 def test_ext_id_category_invalid(category, external_id, reason):
     """Error when external_id does not match the expected pattern for its category."""
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        external_id,
-        [],
-        category=category,
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, external_id, [], category=category,
     )
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_category_match_validator(mock_data)
@@ -1526,10 +1167,7 @@ def test_ext_id_category_invalid(category, external_id, reason):
 def test_ext_id_category_error_includes_submitted_id():
     """Error message includes the item submitted_id."""
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        "SMHT001-2AT-001",  # invalid for Tissue Aliquot
-        [],
-        category="Tissue Aliquot",
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, "SMHT001-2AT-001", [], category="Tissue Aliquot",
     )
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_category_match_validator(mock_data)
@@ -1540,10 +1178,7 @@ def test_ext_id_category_error_includes_submitted_id():
 def test_ext_id_category_cross_category_core_as_tissue_aliquot():
     """Error when Core-format external_id is submitted under Tissue Aliquot category."""
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        "SMHT001-3AT-001A1",  # valid Core, invalid Tissue Aliquot (extra A1 before $)
-        [],
-        category="Tissue Aliquot",
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, "SMHT001-3AT-001A1", [], category="Tissue Aliquot",
     )
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_category_match_validator(mock_data)
@@ -1553,10 +1188,7 @@ def test_ext_id_category_cross_category_core_as_tissue_aliquot():
 def test_ext_id_category_cross_category_tissue_aliquot_as_core():
     """Error when Tissue Aliquot-format external_id is submitted under Core category."""
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        "SMHT001-3AT-001",  # valid Tissue Aliquot, invalid Core (missing [A-F][1-6])
-        [],
-        category="Core",
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, "SMHT001-3AT-001", [], category="Core",
     )
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_category_match_validator(mock_data)
@@ -1566,16 +1198,10 @@ def test_ext_id_category_cross_category_tissue_aliquot_as_core():
 def test_ext_id_category_valid_and_invalid_in_same_batch():
     """Only invalid items produce errors when mixed with valid ones."""
     valid_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        "SMHT001-3AT-001",
-        [],
-        category="Tissue Aliquot",
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, "SMHT001-3AT-001", [], category="Tissue Aliquot",
     )
     invalid_sample = make_tissue_sample(
-        GCC_TISSUE_SAMPLE_SUBMITTED_ID,
-        "SMHT001-2AT-001",  # 2 not valid
-        [],
-        category="Tissue Aliquot",
+        GCC_TISSUE_SAMPLE_SUBMITTED_ID, "SMHT001-2AT-001", [], category="Tissue Aliquot",
     )
     mock_data = make_structured_data_mock(
         {"TissueSample": [valid_sample, invalid_sample]}
@@ -1590,10 +1216,7 @@ def test_ext_id_category_multiple_invalid_items():
     """Each invalid item independently produces an error."""
     samples = [
         make_tissue_sample(
-            f"NDRI_SAMPLE_{i:03d}",
-            "SMHT001-2AT-001",  # invalid for Tissue Aliquot
-            [],
-            category="Tissue Aliquot",
+            f"NDRI_SAMPLE_{i:03d}", "SMHT001-2AT-001", [], category="Tissue Aliquot"
         )
         for i in range(3)
     ]
@@ -1603,18 +1226,15 @@ def test_ext_id_category_multiple_invalid_items():
 
 
 @pytest.mark.parametrize("external_id", [
-    "SMHT001-3AT-001",  # lower boundary
-    "SMHT001-3AT-125",  # upper boundary
-    "SMHT001-3AT-010",  # mid range, two-digit leading zero
-    "SMHT001-3AT-100",  # three-digit lower
+    "SMHT001-3AT-001",
+    "SMHT001-3AT-125",
+    "SMHT001-3AT-010",
+    "SMHT001-3AT-100",
 ])
 def test_ext_id_category_range_valid_boundaries(external_id):
     """No error for valid boundary and mid-range values 001-125."""
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        external_id,
-        [],
-        category="Tissue Aliquot",
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, external_id, [], category="Tissue Aliquot",
     )
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_category_match_validator(mock_data)
@@ -1622,17 +1242,14 @@ def test_ext_id_category_range_valid_boundaries(external_id):
 
 
 @pytest.mark.parametrize("external_id", [
-    "SMHT001-3AT-000",  # below lower boundary
-    "SMHT001-3AT-126",  # above upper boundary
-    "SMHT001-3AT-999",  # well above upper boundary
+    "SMHT001-3AT-000",
+    "SMHT001-3AT-126",
+    "SMHT001-3AT-999",
 ])
 def test_ext_id_category_range_invalid_boundaries(external_id):
     """Error for out-of-range values outside 001-125."""
     tissue_sample = make_tissue_sample(
-        NDRI_TISSUE_SAMPLE_SUBMITTED_ID,
-        external_id,
-        [],
-        category="Tissue Aliquot",
+        NDRI_TISSUE_SAMPLE_SUBMITTED_ID, external_id, [], category="Tissue Aliquot",
     )
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_category_match_validator(mock_data)
@@ -1644,45 +1261,26 @@ def test_ext_id_category_range_invalid_boundaries(external_id):
 # ============================================================================
 
 
-def test_text_before_nth_hyphen_n2():
-    """Returns text before 2nd hyphen — core production use case."""
-    assert _text_before_nth("SMHT001-3G-001D2", "-", 2) == "SMHT001-3G"
+@pytest.mark.parametrize("text,delimiter,n,expected", [
+    ("SMHT001-3G-001D2", "-", 2, "SMHT001-3G"),
+    ("SMHT001-3G-001D2", "-", 1, "SMHT001"),
+    ("NDRI_TISSUE_SMHT001", "_", 2, "NDRI_TISSUE"),
+    ("A-B-C-D-E", "-", 3, "A-B-C"),
+])
+def test_text_before_nth_returns_expected(text, delimiter, n, expected):
+    """Returns correct prefix for valid inputs."""
+    assert _text_before_nth(text, delimiter, n) == expected
 
 
-def test_text_before_nth_hyphen_n1():
-    """Returns text before 1st hyphen."""
-    assert _text_before_nth("SMHT001-3G-001D2", "-", 1) == "SMHT001"
-
-
-def test_text_before_nth_underscore_delimiter():
-    """Works with underscore delimiter."""
-    assert _text_before_nth("NDRI_TISSUE_SMHT001", "_", 2) == "NDRI_TISSUE"
-
-
-def test_text_before_nth_n_exceeds_delimiter_count():
-    """Returns None when n exceeds the number of available delimiters."""
-    assert _text_before_nth("SMHT001-3G", "-", 3) is None
-
-
-def test_text_before_nth_exactly_n_parts():
-    """Returns None when text has exactly n parts (n-1 delimiters present)."""
-    # "A-B" → 2 parts; n=2 requires 3+ parts → None
-    assert _text_before_nth("A-B", "-", 2) is None
-
-
-def test_text_before_nth_no_delimiter_in_text():
-    """Returns None when delimiter is absent from text."""
-    assert _text_before_nth("SMHT001", "-", 1) is None
-
-
-def test_text_before_nth_empty_string():
-    """Returns None for empty string."""
-    assert _text_before_nth("", "-", 1) is None
-
-
-def test_text_before_nth_many_delimiters():
-    """Returns correct prefix when many delimiters are present."""
-    assert _text_before_nth("A-B-C-D-E", "-", 3) == "A-B-C"
+@pytest.mark.parametrize("text,delimiter,n", [
+    ("SMHT001-3G", "-", 3),   # n exceeds delimiter count
+    ("A-B", "-", 2),           # exactly n parts (n-1 delimiters present)
+    ("SMHT001", "-", 1),       # delimiter absent
+    ("", "-", 1),              # empty string
+])
+def test_text_before_nth_returns_none(text, delimiter, n):
+    """Returns None for all insufficient-delimiter inputs."""
+    assert _text_before_nth(text, delimiter, n) is None
 
 
 def test_text_before_nth_same_result_across_samples_same_tissue():
@@ -1696,41 +1294,25 @@ def test_text_before_nth_same_result_across_samples_same_tissue():
 # ============================================================================
 
 
-def test_text_after_nth_underscore_n2():
-    """Returns text after 2nd underscore — core production use case."""
-    assert _text_after_nth(
-        "NDRI_TISSUE_SMHT001-3G-DESCEN_COLON", "_", 2
-    ) == "SMHT001-3G-DESCEN_COLON"
+@pytest.mark.parametrize("text,delimiter,n,expected", [
+    ("NDRI_TISSUE_SMHT001-3G-DESCEN_COLON", "_", 2, "SMHT001-3G-DESCEN_COLON"),
+    ("NDRI_TISSUE_SMHT001", "_", 1, "TISSUE_SMHT001"),
+    ("SMHT001-3G-001D2", "-", 2, "001D2"),
+    ("A_B", "_", 1, "B"),
+])
+def test_text_after_nth_returns_expected(text, delimiter, n, expected):
+    """Returns correct suffix for valid inputs."""
+    assert _text_after_nth(text, delimiter, n) == expected
 
 
-def test_text_after_nth_underscore_n1():
-    """Returns text after 1st underscore."""
-    assert _text_after_nth("NDRI_TISSUE_SMHT001", "_", 1) == "TISSUE_SMHT001"
-
-
-def test_text_after_nth_hyphen_delimiter():
-    """Works with hyphen delimiter."""
-    assert _text_after_nth("SMHT001-3G-001D2", "-", 2) == "001D2"
-
-
-def test_text_after_nth_n_exceeds_delimiter_count():
-    """Returns None when n exceeds available delimiters."""
-    assert _text_after_nth("NDRI_TISSUE", "_", 3) is None
-
-
-def test_text_after_nth_single_delimiter():
-    """Returns text after the only delimiter when n=1."""
-    assert _text_after_nth("A_B", "_", 1) == "B"
-
-
-def test_text_after_nth_no_delimiter_in_text():
-    """Returns None when delimiter is absent."""
-    assert _text_after_nth("SMHT001", "_", 1) is None
-
-
-def test_text_after_nth_empty_string():
-    """Returns None for empty string."""
-    assert _text_after_nth("", "_", 1) is None
+@pytest.mark.parametrize("text,delimiter,n", [
+    ("NDRI_TISSUE", "_", 3),   # n exceeds delimiter count
+    ("SMHT001", "_", 1),        # delimiter absent
+    ("", "_", 1),               # empty string
+])
+def test_text_after_nth_returns_none(text, delimiter, n):
+    """Returns None for all insufficient-delimiter inputs."""
+    assert _text_after_nth(text, delimiter, n) is None
 
 
 def test_text_after_nth_preserves_remaining_delimiters():
@@ -1746,39 +1328,25 @@ def test_text_after_nth_preserves_remaining_delimiters():
 # ============================================================================
 
 
-def test_extract_donor_tissue_prefix_production_core():
-    """Extracts donor-tissue prefix from a production Core external_id."""
-    assert _extract_donor_tissue_prefix("SMHT001-3G-001D2") == "SMHT001-3G"
+@pytest.mark.parametrize("external_id,expected", [
+    ("SMHT001-3G-001D2", "SMHT001-3G"),
+    ("SMHT001-3G-001", "SMHT001-3G"),
+    ("ST001-3G-001", "ST001-3G"),
+    ("SMHT001-3AT-001", "SMHT001-3AT"),
+])
+def test_extract_donor_tissue_prefix_returns_expected(external_id, expected):
+    """Returns correct donor-tissue prefix."""
+    assert _extract_donor_tissue_prefix(external_id) == expected
 
 
-def test_extract_donor_tissue_prefix_production_tissue_aliquot():
-    """Extracts prefix from a Tissue Aliquot external_id."""
-    assert _extract_donor_tissue_prefix("SMHT001-3G-001") == "SMHT001-3G"
-
-
-def test_extract_donor_tissue_prefix_benchmarking():
-    """Extracts prefix from benchmarking (ST prefix) external_id."""
-    assert _extract_donor_tissue_prefix("ST001-3G-001") == "ST001-3G"
-
-
-def test_extract_donor_tissue_prefix_long_tissue_code():
-    """Handles multi-character tissue codes such as '3AT'."""
-    assert _extract_donor_tissue_prefix("SMHT001-3AT-001") == "SMHT001-3AT"
-
-
-def test_extract_donor_tissue_prefix_one_hyphen_only():
-    """Returns None when external_id contains only one hyphen."""
-    assert _extract_donor_tissue_prefix("SMHT001-3G") is None
-
-
-def test_extract_donor_tissue_prefix_no_hyphen():
-    """Returns None when external_id contains no hyphens."""
-    assert _extract_donor_tissue_prefix("SMHT001") is None
-
-
-def test_extract_donor_tissue_prefix_empty_string():
-    """Returns None for empty string."""
-    assert _extract_donor_tissue_prefix("") is None
+@pytest.mark.parametrize("external_id", [
+    "SMHT001-3G",   # only one hyphen
+    "SMHT001",      # no hyphens
+    "",             # empty string
+])
+def test_extract_donor_tissue_prefix_returns_none(external_id):
+    """Returns None for inputs with fewer than two hyphens."""
+    assert _extract_donor_tissue_prefix(external_id) is None
 
 
 def test_extract_donor_tissue_prefix_same_across_samples_same_tissue():
@@ -1792,59 +1360,53 @@ def test_extract_donor_tissue_prefix_same_across_samples_same_tissue():
 # ============================================================================
 
 
-def test_extract_prefix_from_sample_source_production():
-    """Extracts donor-tissue prefix from production tissue submitted_id."""
-    assert _extract_donor_tissue_prefix_from_sample_source(
-        "NDRI_TISSUE_SMHT001-3G-DESCEN_COLON"
-    ) == "SMHT001-3G"
+@pytest.mark.parametrize("sample_source,expected", [
+    ("NDRI_TISSUE_SMHT001-3G-DESCEN_COLON", "SMHT001-3G"),
+    ("NDRI_TISSUE_ST001-3G-DESCEN_COLON", "ST001-3G"),
+    ("NDRI_TISSUE_SMHT001-3G-CAUD_CORTEX", "SMHT001-3G"),
+    ("NDRI_TISSUE_SMHT001-3AT-DESCEN_COLON", "SMHT001-3AT"),
+])
+def test_extract_prefix_from_sample_source_returns_expected(sample_source, expected):
+    """Returns correct donor-tissue prefix from tissue sample_source identifier."""
+    assert _extract_donor_tissue_prefix_from_sample_source(sample_source) == expected
 
 
-def test_extract_prefix_from_sample_source_benchmarking():
-    """Extracts donor-tissue prefix from benchmarking tissue submitted_id."""
-    assert _extract_donor_tissue_prefix_from_sample_source(
-        "NDRI_TISSUE_ST001-3G-DESCEN_COLON"
-    ) == "ST001-3G"
-
-
-def test_extract_prefix_from_sample_source_different_organ():
-    """Returns same prefix regardless of organ/tissue-name suffix."""
-    assert _extract_donor_tissue_prefix_from_sample_source(
-        "NDRI_TISSUE_SMHT001-3G-CAUD_CORTEX"
-    ) == "SMHT001-3G"
-
-
-def test_extract_prefix_from_sample_source_long_tissue_code():
-    """Handles multi-character tissue codes correctly."""
-    assert _extract_donor_tissue_prefix_from_sample_source(
-        "NDRI_TISSUE_SMHT001-3AT-DESCEN_COLON"
-    ) == "SMHT001-3AT"
-
-
-def test_extract_prefix_from_sample_source_too_few_underscores():
-    """Returns None when fewer than two underscores are present."""
-    assert _extract_donor_tissue_prefix_from_sample_source("NDRI_TISSUE") is None
-
-
-def test_extract_prefix_from_sample_source_no_hyphen_after_extraction():
-    """Returns None when extracted segment contains no hyphens."""
-    assert _extract_donor_tissue_prefix_from_sample_source(
-        "NDRI_TISSUE_SMHT001"
-    ) is None
-
-
-def test_extract_prefix_from_sample_source_empty_string():
-    """Returns None for empty string."""
-    assert _extract_donor_tissue_prefix_from_sample_source("") is None
+@pytest.mark.parametrize("sample_source", [
+    "NDRI_TISSUE",           # too few underscores
+    "NDRI_TISSUE_SMHT001",   # no hyphen in extracted segment
+    "",                       # empty string
+])
+def test_extract_prefix_from_sample_source_returns_none(sample_source):
+    """Returns None for unparseable inputs."""
+    assert _extract_donor_tissue_prefix_from_sample_source(sample_source) is None
 
 
 def test_extract_prefix_from_sample_source_matches_external_id_prefix():
-    """
-    Prefix from sample_source equals prefix from external_id for the same
-    donor-tissue — validates the core consistency invariant both helpers underpin.
-    """
+    """Prefix from sample_source equals prefix from external_id for the same donor-tissue."""
     assert _extract_donor_tissue_prefix_from_sample_source(
         "NDRI_TISSUE_SMHT001-3G-DESCEN_COLON"
     ) == _extract_donor_tissue_prefix("SMHT001-3G-001D2")
+
+
+# ============================================================================
+# Test _note_validation_warning()
+# ============================================================================
+
+
+def test_note_validation_warning_logs_at_warning_level():
+    """
+    _note_validation_warning emits logging.WARNING — not an error —
+    so structured_data.note_validation_error is never called.
+    """
+    mock_data = make_structured_data_mock({"TissueSample": []})
+    with mock.patch(
+        "submitr.validators.tissue_sample_validator._logger"
+    ) as mock_logger:
+        _note_validation_warning(mock_data, "test warning message")
+        mock_logger.warning.assert_called_once()
+        call_args = " ".join(str(a) for a in mock_logger.warning.call_args[0])
+        assert "test warning message" in call_args
+    mock_data.note_validation_error.assert_not_called()
 
 
 # ============================================================================
@@ -1869,21 +1431,7 @@ def test_ext_id_in_submitted_id_empty_list():
 def test_ext_id_in_submitted_id_valid_ndri():
     """No error when external_id is a substring of NDRI submitted_id."""
     tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "SMHT001-3G-001D2",
-        [],
-    )
-    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
-    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
-    mock_data.note_validation_error.assert_not_called()
-
-
-def test_ext_id_in_submitted_id_valid_gcc():
-    """No error when external_id is a substring of a GCC submitted_id."""
-    tissue_sample = make_tissue_sample(
-        "DAC_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "SMHT001-3G-001D2",
-        [],
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT001-3G-001D2", [],
     )
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_in_submitted_id_validator(mock_data)
@@ -1891,36 +1439,34 @@ def test_ext_id_in_submitted_id_valid_gcc():
 
 
 def test_ext_id_in_submitted_id_valid_benchmarking():
-    """No error for valid benchmarking (ST) format."""
+    """No error for valid NDRI benchmarking (ST) format."""
     tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_ST001-3G-001",
-        "ST001-3G-001",
-        [],
+        "NDRI_TISSUE-SAMPLE_ST001-3G-001", "ST001-3G-001", [],
     )
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_in_submitted_id_validator(mock_data)
     mock_data.note_validation_error.assert_not_called()
 
 
-def test_ext_id_in_submitted_id_invalid_different_donor():
-    """Error when external_id donor code does not appear in submitted_id."""
-    tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "SMHT999-3G-001D2",  # donor 999 vs 001
-        [],
-    )
-    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
-    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
-    mock_data.note_validation_error.assert_called_once()
-
-
-def test_ext_id_in_submitted_id_invalid_different_tissue_code():
-    """Error when external_id tissue code does not appear in submitted_id."""
-    tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "SMHT001-3Z-001D2",  # tissue 3Z vs 3G
-        [],
-    )
+@pytest.mark.parametrize("submitted_id,external_id,description", [
+    (
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT999-3G-001D2",
+        "donor mismatch",
+    ),
+    (
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT001-3Z-001D2",
+        "tissue code mismatch",
+    ),
+    (
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", "smht001-3g-001d2",
+        "case mismatch — FIND is case-sensitive",
+    ),
+])
+def test_ext_id_in_submitted_id_ndri_mismatch_produces_error(
+    submitted_id, external_id, description
+):
+    """NDRI items with any external_id mismatch produce a blocking error."""
+    tissue_sample = make_tissue_sample(submitted_id, external_id, [])
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_in_submitted_id_validator(mock_data)
     mock_data.note_validation_error.assert_called_once()
@@ -1949,55 +1495,25 @@ def test_ext_id_in_submitted_id_error_contains_external_id_and_description():
     assert "is not contained within submitted_id" in error_msg
 
 
-def test_ext_id_in_submitted_id_case_sensitive():
-    """Check is case-sensitive, mirroring Excel FIND behaviour."""
+@pytest.mark.parametrize("field_to_delete", ["submitted_id", "external_id"])
+def test_ext_id_in_submitted_id_missing_required_field_skipped(field_to_delete):
+    """Items missing submitted_id or external_id are silently skipped."""
     tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "smht001-3g-001d2",  # lowercase — not present in uppercase submitted_id
-        [],
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT999-3G-001D2", [],
     )
-    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
-    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
-    mock_data.note_validation_error.assert_called_once()
-
-
-def test_ext_id_in_submitted_id_missing_submitted_id_skipped():
-    """Items without submitted_id are silently skipped."""
-    tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "SMHT999-3G-001D2",  # would error if processed
-        [],
-    )
-    del tissue_sample["submitted_id"]
-    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
-    _tissue_sample_external_id_in_submitted_id_validator(mock_data)
-    mock_data.note_validation_error.assert_not_called()
-
-
-def test_ext_id_in_submitted_id_missing_external_id_skipped():
-    """Items without external_id are silently skipped."""
-    tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "SMHT001-3G-001D2",
-        [],
-    )
-    del tissue_sample["external_id"]
+    del tissue_sample[field_to_delete]
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_in_submitted_id_validator(mock_data)
     mock_data.note_validation_error.assert_not_called()
 
 
 def test_ext_id_in_submitted_id_mixed_batch():
-    """Only the invalid item in a mixed batch produces an error."""
+    """Only the invalid NDRI item in a mixed NDRI batch produces an error."""
     valid_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "SMHT001-3G-001D2",
-        [],
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT001-3G-001D2", [],
     )
     invalid_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D1",
-        "SMHT999-3Z-001D1",
-        [],
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D1", "SMHT999-3Z-001D1", [],
     )
     mock_data = make_structured_data_mock(
         {"TissueSample": [valid_sample, invalid_sample]}
@@ -2009,18 +1525,79 @@ def test_ext_id_in_submitted_id_mixed_batch():
 
 
 def test_ext_id_in_submitted_id_multiple_invalid_items():
-    """Each invalid item independently produces its own error."""
+    """Each invalid NDRI item independently produces its own error."""
     samples = [
         make_tissue_sample(
-            f"NDRI_TISSUE-SAMPLE_SMHT00{i}-3G-001D2",
-            "SMHT999-3Z-001D2",
-            [],
+            f"NDRI_TISSUE-SAMPLE_SMHT00{i}-3G-001D2", "SMHT999-3Z-001D2", []
         )
         for i in range(1, 4)
     ]
     mock_data = make_structured_data_mock({"TissueSample": samples})
     _tissue_sample_external_id_in_submitted_id_validator(mock_data)
     assert mock_data.note_validation_error.call_count == 3
+
+
+def test_ext_id_in_submitted_id_non_ndri_mismatch_is_warning_not_error():
+    """Non-NDRI items with mismatch produce a warning, not a blocking error."""
+    tissue_sample = make_tissue_sample(
+        "DAC_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT999-3G-001D2", [],
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    with mock.patch(
+        "submitr.validators.tissue_sample_validator._logger"
+    ) as mock_logger:
+        _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+        mock_logger.warning.assert_called_once()
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_in_submitted_id_non_ndri_warning_message_content():
+    """Warning message for non-NDRI items contains submitted_id and external_id."""
+    submitted_id = "BWH_TISSUE-SAMPLE_SMHT001-3G-001D2"
+    external_id = "SMHT999-3G-001D2"
+    tissue_sample = make_tissue_sample(submitted_id, external_id, [])
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    with mock.patch(
+        "submitr.validators.tissue_sample_validator._logger"
+    ) as mock_logger:
+        _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+        call_args = " ".join(str(a) for a in mock_logger.warning.call_args[0])
+        assert submitted_id in call_args
+        assert external_id in call_args
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_in_submitted_id_non_ndri_valid_no_warning():
+    """Non-NDRI items with matching external_id produce neither error nor warning."""
+    tissue_sample = make_tissue_sample(
+        "DAC_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT001-3G-001D2", [],
+    )
+    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
+    with mock.patch(
+        "submitr.validators.tissue_sample_validator._logger"
+    ) as mock_logger:
+        _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+        mock_logger.warning.assert_not_called()
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_in_submitted_id_mixed_batch_ndri_error_gcc_warning():
+    """NDRI mismatch → error; GCC mismatch → warning in the same batch."""
+    ndri_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT999-3G-001D2", [],
+    )
+    gcc_sample = make_tissue_sample(
+        "DAC_TISSUE-SAMPLE_SMHT001-3G-001D1", "SMHT999-3G-001D1", [],
+    )
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [ndri_sample, gcc_sample]}
+    )
+    with mock.patch(
+        "submitr.validators.tissue_sample_validator._logger"
+    ) as mock_logger:
+        _tissue_sample_external_id_in_submitted_id_validator(mock_data)
+        mock_logger.warning.assert_called_once()
+    mock_data.note_validation_error.assert_called_once()
 
 
 # ============================================================================
@@ -2042,27 +1619,21 @@ def test_ext_id_sample_source_empty_list():
     mock_data.note_validation_error.assert_not_called()
 
 
-def test_ext_id_sample_source_valid_production():
-    """No error when external_id and sample_source share the donor-tissue prefix."""
-    tissue_sample = make_tissue_sample(
+@pytest.mark.parametrize("submitted_id,external_id,sample_source", [
+    (
         "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
         "SMHT001-3G-001D2",
-        ["NDRI_TISSUE_SMHT001-3G-DESCEN_COLON"],
-    )
-    mock_data = make_structured_data_mock(
-        {"TissueSample": [tissue_sample], "Tissue": []}
-    )
-    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
-    mock_data.note_validation_error.assert_not_called()
-
-
-def test_ext_id_sample_source_valid_benchmarking():
-    """No error for valid benchmarking (ST) format."""
-    tissue_sample = make_tissue_sample(
+        "NDRI_TISSUE_SMHT001-3G-DESCEN_COLON",
+    ),
+    (
         "NDRI_TISSUE-SAMPLE_ST001-3G-001",
         "ST001-3G-001",
-        ["NDRI_TISSUE_ST001-3G-DESCEN_COLON"],
-    )
+        "NDRI_TISSUE_ST001-3G-DESCEN_COLON",
+    ),
+])
+def test_ext_id_sample_source_valid_ndri(submitted_id, external_id, sample_source):
+    """No error when external_id and sample_source share the donor-tissue prefix (NDRI)."""
+    tissue_sample = make_tissue_sample(submitted_id, external_id, [sample_source])
     mock_data = make_structured_data_mock(
         {"TissueSample": [tissue_sample], "Tissue": []}
     )
@@ -2070,43 +1641,26 @@ def test_ext_id_sample_source_valid_benchmarking():
     mock_data.note_validation_error.assert_not_called()
 
 
-def test_ext_id_sample_source_valid_gcc():
-    """No error for a GCC submission with matching prefixes."""
-    tissue_sample = make_tissue_sample(
-        "DAC_TISSUE-SAMPLE_SMHT001-3G-001D2",
+@pytest.mark.parametrize("external_id,sample_source,ext_prefix,src_prefix", [
+    (
         "SMHT001-3G-001D2",
-        ["NDRI_TISSUE_SMHT001-3G-DESCEN_COLON"],
-    )
-    mock_data = make_structured_data_mock(
-        {"TissueSample": [tissue_sample], "Tissue": []}
-    )
-    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
-    mock_data.note_validation_error.assert_not_called()
-
-
-def test_ext_id_sample_source_mismatched_donor():
-    """Error when donor codes differ between external_id and sample_source."""
-    tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
+        "NDRI_TISSUE_SMHT999-3G-DESCEN_COLON",
+        "'SMHT001-3G'",
+        "'SMHT999-3G'",
+    ),
+    (
         "SMHT001-3G-001D2",
-        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],  # donor 999 vs 001
-    )
-    mock_data = make_structured_data_mock(
-        {"TissueSample": [tissue_sample], "Tissue": []}
-    )
-    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
-    mock_data.note_validation_error.assert_called_once()
-    error_msg = mock_data.note_validation_error.call_args[0][0]
-    assert "'SMHT001-3G'" in error_msg
-    assert "'SMHT999-3G'" in error_msg
-
-
-def test_ext_id_sample_source_mismatched_tissue_code():
-    """Error when tissue codes differ between external_id and sample_source."""
+        "NDRI_TISSUE_SMHT001-3Z-DESCEN_COLON",
+        "'SMHT001-3G'",
+        "'SMHT001-3Z'",
+    ),
+])
+def test_ext_id_sample_source_ndri_mismatch_produces_error(
+    external_id, sample_source, ext_prefix, src_prefix
+):
+    """NDRI items with prefix mismatch produce a blocking error with informative message."""
     tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "SMHT001-3G-001D2",
-        ["NDRI_TISSUE_SMHT001-3Z-DESCEN_COLON"],  # tissue 3Z vs 3G
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", external_id, [sample_source],
     )
     mock_data = make_structured_data_mock(
         {"TissueSample": [tissue_sample], "Tissue": []}
@@ -2114,15 +1668,14 @@ def test_ext_id_sample_source_mismatched_tissue_code():
     _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
     mock_data.note_validation_error.assert_called_once()
     error_msg = mock_data.note_validation_error.call_args[0][0]
-    assert "'SMHT001-3G'" in error_msg
-    assert "'SMHT001-3Z'" in error_msg
+    assert ext_prefix in error_msg
+    assert src_prefix in error_msg
 
 
 def test_ext_id_sample_source_skips_non_production_prefix():
     """Skips items whose external_id is not a benchmarking or production prefix."""
     tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_OTHER001-3G-001",
-        "OTHER001-3G-001",  # not SMHT or ST — would mismatch if evaluated
+        "NDRI_TISSUE-SAMPLE_OTHER001-3G-001", "OTHER001-3G-001",
         ["NDRI_TISSUE_SMHT001-3G-DESCEN_COLON"],
     )
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
@@ -2130,40 +1683,14 @@ def test_ext_id_sample_source_skips_non_production_prefix():
     mock_data.note_validation_error.assert_not_called()
 
 
-def test_ext_id_sample_source_missing_submitted_id_skipped():
-    """Items without submitted_id are silently skipped."""
+@pytest.mark.parametrize("field_to_delete", ["submitted_id", "external_id", "sample_sources"])
+def test_ext_id_sample_source_missing_required_field_skipped(field_to_delete):
+    """Items missing submitted_id, external_id, or sample_sources are silently skipped."""
     tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "SMHT001-3G-001D2",
-        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],  # would error if processed
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT001-3G-001D2",
+        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],
     )
-    del tissue_sample["submitted_id"]
-    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
-    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
-    mock_data.note_validation_error.assert_not_called()
-
-
-def test_ext_id_sample_source_missing_external_id_skipped():
-    """Items without external_id are silently skipped."""
-    tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "SMHT001-3G-001D2",
-        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],  # would error if processed
-    )
-    del tissue_sample["external_id"]
-    mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
-    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
-    mock_data.note_validation_error.assert_not_called()
-
-
-def test_ext_id_sample_source_missing_sample_sources_key_skipped():
-    """Items without sample_sources key are silently skipped."""
-    tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "SMHT001-3G-001D2",
-        [],
-    )
-    del tissue_sample["sample_sources"]
+    del tissue_sample[field_to_delete]
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
     mock_data.note_validation_error.assert_not_called()
@@ -2172,9 +1699,7 @@ def test_ext_id_sample_source_missing_sample_sources_key_skipped():
 def test_ext_id_sample_source_empty_sample_sources_skipped():
     """Items with an empty sample_sources list are silently skipped."""
     tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "SMHT001-3G-001D2",
-        [],
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT001-3G-001D2", [],
     )
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
@@ -2182,11 +1707,9 @@ def test_ext_id_sample_source_empty_sample_sources_skipped():
 
 
 def test_ext_id_sample_source_unparseable_sample_source_skipped():
-    """Gracefully skips when sample_source has no underscores and cannot be parsed."""
+    """Gracefully skips when sample_source cannot be parsed."""
     tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "SMHT001-3G-001D2",
-        ["UNPARSEABLE"],
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT001-3G-001D2", ["UNPARSEABLE"],
     )
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
     _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
@@ -2196,8 +1719,7 @@ def test_ext_id_sample_source_unparseable_sample_source_skipped():
 def test_ext_id_sample_source_unparseable_external_id_prefix_skipped():
     """Gracefully skips when external_id has insufficient hyphens for extraction."""
     tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001",
-        "SMHT001",  # starts with SMHT but no hyphens → prefix extraction returns None
+        "NDRI_TISSUE-SAMPLE_SMHT001", "SMHT001",
         ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],
     )
     mock_data = make_structured_data_mock({"TissueSample": [tissue_sample]})
@@ -2207,15 +1729,13 @@ def test_ext_id_sample_source_unparseable_external_id_prefix_skipped():
 
 def test_ext_id_sample_source_guard_skips_ndri_when_tissue_in_submission():
     """
-    NDRI item with a prefix mismatch is deferred to
-    _tissue_sample_external_id_validator and produces no error here when
+    NDRI item is deferred to _tissue_sample_external_id_validator when
     the Tissue submitted_id is present in the same submission.
     """
     tissue_source_submitted_id = "NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"
     tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",  # NDRI
-        "SMHT001-3G-001D2",
-        [tissue_source_submitted_id],            # prefix SMHT999 — would mismatch SMHT001
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT001-3G-001D2",
+        [tissue_source_submitted_id],
     )
     tissue = make_tissue(tissue_source_submitted_id, "SMHT999-3G")
     mock_data = make_structured_data_mock(
@@ -2225,36 +1745,15 @@ def test_ext_id_sample_source_guard_skips_ndri_when_tissue_in_submission():
     mock_data.note_validation_error.assert_not_called()
 
 
-def test_ext_id_sample_source_guard_does_not_skip_gcc_with_tissue_in_submission():
-    """
-    GCC (non-NDRI) items are NOT guarded — a mismatch still raises an error
-    even when the Tissue is present in the same submission.
-    """
-    tissue_source_submitted_id = "NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"
-    tissue_sample = make_tissue_sample(
-        "DAC_TISSUE-SAMPLE_SMHT001-3G-001D2",  # GCC, not NDRI
-        "SMHT001-3G-001D2",
-        [tissue_source_submitted_id],           # prefix mismatch
-    )
-    tissue = make_tissue(tissue_source_submitted_id, "SMHT999-3G")
-    mock_data = make_structured_data_mock(
-        {"TissueSample": [tissue_sample], "Tissue": [tissue]}
-    )
-    _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
-    mock_data.note_validation_error.assert_called_once()
-
-
 def test_ext_id_sample_source_guard_does_not_skip_ndri_tissue_not_in_submission():
     """
     NDRI item IS validated (and errors) when no matching Tissue is in the
-    submission — the guard only activates when the Tissue is also present.
+    submission — guard only activates when Tissue is also present.
     """
     tissue_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",  # NDRI
-        "SMHT001-3G-001D2",
-        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],  # prefix mismatch
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT001-3G-001D2",
+        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],
     )
-    # No Tissue items in this submission
     mock_data = make_structured_data_mock(
         {"TissueSample": [tissue_sample], "Tissue": []}
     )
@@ -2266,33 +1765,27 @@ def test_ext_id_sample_source_error_message_content():
     """Error message includes submitted_id, both prefixes (repr), and sample_source."""
     submitted_id = "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2"
     sample_source = "NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"
-    tissue_sample = make_tissue_sample(
-        submitted_id,
-        "SMHT001-3G-001D2",
-        [sample_source],
-    )
+    tissue_sample = make_tissue_sample(submitted_id, "SMHT001-3G-001D2", [sample_source])
     mock_data = make_structured_data_mock(
         {"TissueSample": [tissue_sample], "Tissue": []}
     )
     _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
     error_msg = mock_data.note_validation_error.call_args[0][0]
     assert submitted_id in error_msg
-    assert "'SMHT001-3G'" in error_msg   # external_id prefix via !r formatting
-    assert "'SMHT999-3G'" in error_msg   # sample_source prefix via !r formatting
+    assert "'SMHT001-3G'" in error_msg
+    assert "'SMHT999-3G'" in error_msg
     assert sample_source in error_msg
 
 
 def test_ext_id_sample_source_mixed_batch():
-    """Only the invalid item in a mixed batch produces an error."""
+    """Only the invalid NDRI item in a mixed batch produces an error."""
     valid_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2",
-        "SMHT001-3G-001D2",
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT001-3G-001D2",
         ["NDRI_TISSUE_SMHT001-3G-DESCEN_COLON"],
     )
     invalid_sample = make_tissue_sample(
-        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D1",
-        "SMHT001-3G-001D1",
-        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],  # wrong donor
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D1", "SMHT001-3G-001D1",
+        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],
     )
     mock_data = make_structured_data_mock(
         {"TissueSample": [valid_sample, invalid_sample], "Tissue": []}
@@ -2304,7 +1797,7 @@ def test_ext_id_sample_source_mixed_batch():
 
 
 def test_ext_id_sample_source_multiple_invalid_items():
-    """Each invalid item independently produces its own error."""
+    """Each invalid NDRI item independently produces its own error."""
     samples = [
         make_tissue_sample(
             f"NDRI_TISSUE-SAMPLE_SMHT00{i}-3G-001D2",
@@ -2318,3 +1811,100 @@ def test_ext_id_sample_source_multiple_invalid_items():
     )
     _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
     assert mock_data.note_validation_error.call_count == 3
+
+
+def test_ext_id_sample_source_non_ndri_mismatch_is_warning_not_error():
+    """Non-NDRI items with prefix mismatch produce a warning, not a blocking error."""
+    tissue_sample = make_tissue_sample(
+        "DAC_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT001-3G-001D2",
+        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],
+    )
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [tissue_sample], "Tissue": []}
+    )
+    with mock.patch(
+        "submitr.validators.tissue_sample_validator._logger"
+    ) as mock_logger:
+        _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+        mock_logger.warning.assert_called_once()
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_non_ndri_warning_message_content():
+    """Warning message for non-NDRI items contains submitted_id and both prefixes."""
+    submitted_id = "BWH_TISSUE-SAMPLE_SMHT001-3G-001D2"
+    sample_source = "NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"
+    tissue_sample = make_tissue_sample(submitted_id, "SMHT001-3G-001D2", [sample_source])
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [tissue_sample], "Tissue": []}
+    )
+    with mock.patch(
+        "submitr.validators.tissue_sample_validator._logger"
+    ) as mock_logger:
+        _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+        call_args = " ".join(str(a) for a in mock_logger.warning.call_args[0])
+        assert submitted_id in call_args
+        assert "'SMHT001-3G'" in call_args
+        assert "'SMHT999-3G'" in call_args
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_non_ndri_valid_no_warning():
+    """Non-NDRI items with matching prefixes produce neither error nor warning."""
+    tissue_sample = make_tissue_sample(
+        "DAC_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT001-3G-001D2",
+        ["NDRI_TISSUE_SMHT001-3G-DESCEN_COLON"],
+    )
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [tissue_sample], "Tissue": []}
+    )
+    with mock.patch(
+        "submitr.validators.tissue_sample_validator._logger"
+    ) as mock_logger:
+        _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+        mock_logger.warning.assert_not_called()
+    mock_data.note_validation_error.assert_not_called()
+
+
+def test_ext_id_sample_source_mixed_batch_ndri_error_gcc_warning():
+    """NDRI mismatch → error; GCC mismatch → warning in the same batch."""
+    ndri_sample = make_tissue_sample(
+        "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT001-3G-001D2",
+        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],
+    )
+    gcc_sample = make_tissue_sample(
+        "DAC_TISSUE-SAMPLE_SMHT001-3G-001D1", "SMHT001-3G-001D1",
+        ["NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"],
+    )
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [ndri_sample, gcc_sample], "Tissue": []}
+    )
+    with mock.patch(
+        "submitr.validators.tissue_sample_validator._logger"
+    ) as mock_logger:
+        _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+        mock_logger.warning.assert_called_once()
+    mock_data.note_validation_error.assert_called_once()
+
+
+def test_ext_id_sample_source_guard_does_not_skip_gcc_with_tissue_in_submission():
+    """
+    GCC items are NOT guarded by the same-submission Tissue check.
+    A mismatch produces a WARNING (not a blocking error) even when Tissue
+    is present in the same submission.
+    """
+    tissue_source_submitted_id = "NDRI_TISSUE_SMHT999-3G-DESCEN_COLON"
+    tissue_sample = make_tissue_sample(
+        "DAC_TISSUE-SAMPLE_SMHT001-3G-001D2", "SMHT001-3G-001D2",
+        [tissue_source_submitted_id],
+    )
+    tissue = make_tissue(tissue_source_submitted_id, "SMHT999-3G")
+    mock_data = make_structured_data_mock(
+        {"TissueSample": [tissue_sample], "Tissue": [tissue]}
+    )
+    with mock.patch(
+        "submitr.validators.tissue_sample_validator._logger"
+    ) as mock_logger:
+        _tissue_sample_external_id_sample_source_consistency_validator(mock_data)
+        mock_logger.warning.assert_called_once()
+    mock_data.note_validation_error.assert_not_called()
