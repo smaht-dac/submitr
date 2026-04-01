@@ -6,9 +6,17 @@ smaht-submitr
 Change Log
 ----------
 
+1.14.2
+======
+`PR 39 Additional tissue sample validationD <https://github.com/smaht-dac/submitr/pull/39>`_
+
+* Addition additional validation for TPC samples to ensure consistency between submitted_id, external_id and tissue submitted_id
+* Non-TPC samples - warning for inconsistency is shown but submission is not blocked
+* new tests and some test consolitdation/parmaeterization 
+
 1.14.1
 ======
-`PR Decrease polling frequency by updating PROGRESS_INTERVAL to 1 second <https://github.com/smaht-dac/submitr/pull/>`_
+`PR 38 Decrease polling frequency by updating PROGRESS_INTERVAL to 1 second <https://github.com/smaht-dac/submitr/pull/38>`_
 
 * PROGRESS_INTERVAL from 0.1 to 1 second to decrease polling frequency for server-side validation/submission progress meter
 

@@ -1,6 +1,8 @@
 from typing import Dict, List, Optional, Tuple
 import re
+import logging
 from dcicutils.structured_data import StructuredDataSet
+
 from submitr.validators.decorators import structured_data_validator_finish_hook
 
 from submitr.validators.utils import portal as portal_utils, item as item_utils
@@ -8,6 +10,8 @@ from submitr.validators.utils import portal as portal_utils, item as item_utils
 # Validator that reports if any TissueSample items are linked to Tissue items
 # with an external_id that does not contain the external_id of the Tissue
 # if at least one of the two items is TPC-submitted
+
+_logger = logging.getLogger(__name__)
 
 _TISSUE_SAMPLE_SCHEMA_NAME = "TissueSample"
 _SAMPLE_SOURCE_PROPERTY_NAME = "sample_sources"
@@ -40,6 +44,22 @@ _CATEGORY_REGEX_MAP = {
 }
 
 _TISSUE_CATEGORIES = list(_CATEGORY_REGEX_MAP.keys())
+
+
+# add to helper functions section
+def _note_validation_warning(structured_data: StructuredDataSet, message: str) -> None:
+    """
+    Report a non-blocking inconsistency warning.
+
+    Currently implemented via Python logging since StructuredDataSet does not
+    expose a warning-level hook. If one becomes available (e.g.,
+    structured_data.note_validation_warning), replace the body of this
+    function with that call — all callers will pick up the change automatically.
+
+    The structured_data parameter is accepted for forward-compatibility with
+    a future native warning mechanism.
+    """
+    _logger.warning("Validation warning: %s", message)
 
 
 @structured_data_validator_finish_hook
@@ -439,3 +459,195 @@ def _tissue_sample_external_id_category_match_validator(
                     f"but external_id {external_id} does not match expected pattern "
                     f"for that category."
                 )
+
+
+def _text_before_nth(text: str, delimiter: str, n: int) -> Optional[str]:
+    """
+    Return text before the nth occurrence of delimiter.
+    Equivalent to Excel's TEXTBEFORE(text, delimiter, n).
+
+    Example: _text_before_nth("SMHT001-3G-001D2", "-", 2) -> "SMHT001-3G"
+    """
+    parts = text.split(delimiter)
+    if len(parts) <= n:
+        return None
+    return delimiter.join(parts[:n])
+
+
+def _text_after_nth(text: str, delimiter: str, n: int) -> Optional[str]:
+    """
+    Return text after the nth occurrence of delimiter.
+    Equivalent to Excel's TEXTAFTER(text, delimiter, n).
+
+    Example: _text_after_nth("NDRI_TISSUE_SMHT001-3G-DESCEN_COLON", "_", 2)
+             -> "SMHT001-3G-DESCEN_COLON"
+    """
+    parts = text.split(delimiter, n)
+    if len(parts) <= n:
+        return None
+    return parts[n]
+
+
+def _extract_donor_tissue_prefix(external_id: str) -> Optional[str]:
+    """
+    Extract the donor-tissue prefix (e.g., 'SMHT001-3G') from an external_id.
+    Returns text before the 2nd hyphen.
+
+    Excel equivalent: TEXTBEFORE(C2, "-", 2)
+
+    Example: _extract_donor_tissue_prefix("SMHT001-3G-001D2") -> "SMHT001-3G"
+    """
+    return _text_before_nth(external_id, "-", 2)
+
+
+def _extract_donor_tissue_prefix_from_sample_source(sample_source: str) -> Optional[str]:
+    """
+    Extract the donor-tissue prefix from a tissue sample_source identifier.
+
+    Excel equivalent: TEXTBEFORE(TEXTAFTER(K2, "_", 2), {"-", "_"}, 2)
+
+    Example: _extract_donor_tissue_prefix_from_sample_source(
+                 "NDRI_TISSUE_SMHT001-3G-DESCEN_COLON"
+             ) -> "SMHT001-3G"
+
+    Steps:
+        TEXTAFTER("NDRI_TISSUE_SMHT001-3G-DESCEN_COLON", "_", 2)
+            -> "SMHT001-3G-DESCEN_COLON"
+        TEXTBEFORE("SMHT001-3G-DESCEN_COLON", "-", 2)
+            -> "SMHT001-3G"
+    """
+    after_second_underscore = _text_after_nth(sample_source, "_", 2)
+    if not after_second_underscore:
+        return None
+    return _text_before_nth(after_second_underscore, "-", 2)
+
+
+@structured_data_validator_finish_hook
+def _tissue_sample_external_id_in_submitted_id_validator(
+    structured_data: StructuredDataSet, **kwargs
+) -> None:
+    """
+    Validate that the external_id code is contained within the submitted_id.
+
+    Excel equivalent: =ISNUMBER(FIND(C2, A2))
+    where C2=external_id, A2=submitted_id
+
+    FIND is case-sensitive, so a direct substring check is used.
+
+    Strictness by submission center:
+    - NDRI (TPC) submissions: blocking validation error — the format is
+      required and any mismatch indicates a data problem.
+    - Non-NDRI submissions: non-blocking warning only — non-TPC centers have
+      no strict format requirement for submitted_ids, so a mismatch is
+      surfaced for awareness but does not prevent ingestion.
+
+    Example (VALID):
+        submitted_id : NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2
+        external_id  : SMHT001-3G-001D2
+        -> "SMHT001-3G-001D2" is found in "NDRI_TISSUE-SAMPLE_SMHT001-3G-001D2"
+    """
+    if not isinstance(
+        data := structured_data.data.get(_TISSUE_SAMPLE_SCHEMA_NAME), list
+    ):
+        return
+
+    for item in data:
+        submitted_id = item_utils.get_submitted_id(item)
+        external_id = item_utils.get_external_id(item)
+
+        if not submitted_id or not external_id:
+            continue
+
+        if external_id not in submitted_id:
+            is_ndri = submitted_id.startswith(_NDRI_SUBMISSION_CENTER_PREFIX)
+            message = (
+                f"TissueSample: item {submitted_id} - "
+                f"external_id {external_id} is not contained within submitted_id."
+            )
+            if is_ndri:
+                structured_data.note_validation_error(message)
+            else:
+                _note_validation_warning(structured_data, message)
+
+
+@structured_data_validator_finish_hook
+def _tissue_sample_external_id_sample_source_consistency_validator(
+    structured_data: StructuredDataSet, **kwargs
+) -> None:
+    """
+    Validate that the donor-tissue prefix extracted from external_id exactly
+    matches the donor-tissue prefix extracted from the tissue identifier in
+    sample_sources.
+
+    Excel equivalent:
+    =TEXTBEFORE(C2,"-",2)=TEXTBEFORE(TEXTAFTER(K2,"_",2),{"-","_"},2)
+    where C2=external_id, K2=sample_sources
+
+    Strictness by submission center:
+    - NDRI (TPC) submissions: blocking validation error — the format is
+      required and any prefix mismatch indicates a data problem.
+    - Non-NDRI submissions: non-blocking warning only — non-TPC centers have
+      no strict format requirement for submitted_ids, so a mismatch is
+      surfaced for awareness but does not prevent ingestion.
+
+    Only applied to benchmarking and production studies.
+    """
+    if not isinstance(
+        data := structured_data.data.get(_TISSUE_SAMPLE_SCHEMA_NAME), list
+    ):
+        return
+
+    for item in data:
+        submitted_id = item_utils.get_submitted_id(item)
+        external_id = item_utils.get_external_id(item)
+        sample_sources = item.get(_SAMPLE_SOURCE_PROPERTY_NAME, [])
+
+        if not submitted_id or not external_id or not sample_sources:
+            continue
+
+        if not (
+            external_id.startswith(_BENCHMARKING_PREFIX)
+            or external_id.startswith(_PRODUCTION_PREFIX)
+        ):
+            continue
+
+        is_ndri = submitted_id.startswith(_NDRI_SUBMISSION_CENTER_PREFIX)
+
+        # Guard: skip if any Tissue in this submission has its submitted_id in
+        # sample_sources AND this is an NDRI item — _tissue_sample_external_id_validator
+        # already covers that case and we avoid duplicate error messages.
+        # Non-NDRI items are not guarded since _tissue_sample_external_id_validator
+        # only fires for NDRI items.
+        tissue_in_submission = any(
+            tissue.get("submitted_id") in sample_sources
+            for tissue in structured_data.data.get(_TISSUE_SCHEMA_NAME, [])
+        )
+        if is_ndri and tissue_in_submission:
+            continue
+
+        # Take first sample_source for prefix comparison (typically array of 1)
+        sample_source = (
+            sample_sources[0] if isinstance(sample_sources, list) else sample_sources
+        )
+
+        external_id_prefix = _extract_donor_tissue_prefix(external_id)
+        if not external_id_prefix:
+            continue
+
+        sample_source_prefix = _extract_donor_tissue_prefix_from_sample_source(
+            sample_source
+        )
+        if not sample_source_prefix:
+            continue
+
+        if external_id_prefix != sample_source_prefix:
+            message = (
+                f"TissueSample: item {submitted_id} - "
+                f"external_id donor-tissue prefix {external_id_prefix!r} does not match "
+                f"sample_source donor-tissue prefix {sample_source_prefix!r} "
+                f"(sample_source: {sample_source})."
+            )
+            if is_ndri:
+                structured_data.note_validation_error(message)
+            else:
+                _note_validation_warning(structured_data, message)
