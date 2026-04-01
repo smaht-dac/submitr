@@ -521,8 +521,6 @@ def _extract_donor_tissue_prefix_from_sample_source(sample_source: str) -> Optio
         return None
     return _text_before_nth(after_second_underscore, "-", 2)
 
-###################
-###################
 
 @structured_data_validator_finish_hook
 def _tissue_sample_external_id_in_submitted_id_validator(
