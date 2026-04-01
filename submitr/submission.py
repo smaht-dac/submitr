@@ -2621,7 +2621,7 @@ def _validate_locally(
         progress=None if noprogress else define_progress_callback(debug=debug),
         validator_hook=validator_hook,
         validator_sheet_hook=validator_sheet_hook,
-        excel_class=CustomExcel,
+        excel_class=lambda *args, **kwargs: CustomExcel(*args, portal=portal, **kwargs),
         debug_sleep=debug_sleep,
     )
     structured_data.load_file(ingestion_filename)
@@ -3553,7 +3553,7 @@ def _print_metadata_file_info(
         max_output = 10
         portal = _define_portal(env=env, ping=True)
         structured_data = StructuredDataSet(
-            file, portal, norefs=True, excel_class=CustomExcel
+            file, portal, norefs=True, excel_class=lambda *args, **kwargs: CustomExcel(*args, portal=portal, **kwargs),
         )
         if refs is True:
 
