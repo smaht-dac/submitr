@@ -6,6 +6,13 @@ smaht-submitr
 Change Log
 ----------
 
+1.14.1
+======
+`PR Decrease polling frequency by updating PROGRESS_INTERVAL to 1 second <https://github.com/smaht-dac/submitr/pull/>`_
+
+* PROGRESS_INTERVAL from 0.1 to 1 second to decrease polling frequency for server-side validation/submission progress meter
+
+
 1.14.0
 ======
 `PR 37 Add validation for PathologyReport validators <https://github.com/smaht-dac/submitr/pull/37>`_
