@@ -10,33 +10,37 @@ from dcicutils.misc_utils import to_boolean, to_float, to_integer
 # meaning that, at a very low/early level in processing, the columns/values in the spreadsheet
 # can be redefined/remapped to different columns/values.
 #
-# Previously the mapping config was defined by a static JSON file (config/custom_column_mappings.json)
-# and fetched from GitHub on startup. It is now fetched live from the portal via:
+# The mapping config is fetched live from the portal via:
 #
 #   GET /search/?type=GenericQcConfig&tags=external_quality_metrics
 #
-# Each GenericQcConfig item returned is expected to have the structure:
+# Each GenericQcConfig item returned carries the complete ready-to-use config in its "body"
+# field, which already has the exact structure this module expects:
 #
 #   {
-#     "sheet_name": "DuplexSeq_ExternalQualityMetric",   # Excel sheet name(s) this config applies to
-#     "mapping_name": "duplexseq_external_quality_metric",  # internal key
-#     "fields": [
-#       {
-#         "column": "total_raw_reads_sequenced",
-#         "key": "Total Raw Reads Sequenced",
-#         "tooltip": "# of reads (150bp)",
-#         "value_type": "integer"     # one of: integer, float, boolean, string
+#     "sheet_mappings": {
+#       "DuplexSeq_ExternalQualityMetric": "duplexseq_external_quality_metric",
+#       "DSA_ExternalQualityMetric":       "dsa_external_quality_metric"
+#     },
+#     "column_mappings": {
+#       "duplexseq_external_quality_metric": {
+#         "total_raw_reads_sequenced": {
+#           "qc_values#.derived_from": "{name}",
+#           "qc_values#.value":        "{value:integer}",
+#           "qc_values#.key":          "Total Raw Reads Sequenced",
+#           "qc_values#.tooltip":      "# of reads (150bp)"
+#         },
+#         ...
 #       },
 #       ...
-#     ]
+#     }
 #   }
 #
-# From these items the code reconstructs the same internal config dict structure that was
-# previously loaded from JSON (see comments below for format details).  If the portal query
-# fails or returns nothing, the local JSON file (config/custom_column_mappings.json) is used
-# as a fallback so that existing behaviour is preserved.
+# If multiple GenericQcConfig items are returned the one with the highest "version"
+# (integer-parsed) is used.  If the portal query fails or returns nothing, the bundled
+# local JSON file (config/custom_column_mappings.json) is used as a fallback.
 #
-# The mapping config can be thought of as a virtual preprocessing step on the spreadsheet.
+# The mapping can be thought of as a virtual preprocessing step on the spreadsheet.
 # For EXAMPLE, so the spreadsheet author can specify single columns like this:
 #
 #   total_raw_reads_sequenced: 11870183
@@ -52,25 +56,6 @@ from dcicutils.misc_utils import to_boolean, to_float, to_integer
 #   qc_values#1.value:        44928835584
 #   qc_values#1.key:          Total Raw Bases Sequenced
 #   qc_values#1.tooltip:      None
-#
-# The internal config dict (whether built from the portal or loaded from JSON) looks like:
-#
-#   {
-#     "sheet_mappings": {
-#       "DuplexSeq_ExternalQualityMetric": "duplexseq_external_quality_metric"
-#     },
-#     "column_mappings": {
-#       "duplexseq_external_quality_metric": {
-#         "total_raw_reads_sequenced": {
-#           "qc_values#.derived_from": "{name}",
-#           "qc_values#.value": "{value:integer}",
-#           "qc_values#.key": "Total Raw Reads Sequenced",
-#           "qc_values#.tooltip": "# of reads (150bp)"
-#         },
-#         ...
-#       }
-#     }
-#   }
 #
 # The hook for this is to pass the CustomExcel type to StructuredDataSet in submission.py.
 #
@@ -88,18 +73,15 @@ COLUMN_NAME_SEPARATOR = "."
 # The portal search used to retrieve EQM column-mapping configs.
 GENERIC_QC_CONFIG_SEARCH = "search/?type=GenericQcConfig&tags=external_quality_metrics"
 
-# Mapping from GenericQcConfig field value_type strings to the {value:TYPE} macro suffix
-# used in the column-mapping config.
-_VALUE_TYPE_MACRO = {
-    "integer": "{value:integer}",
-    "int":     "{value:integer}",
-    "float":   "{value:float}",
-    "number":  "{value:float}",
-    "boolean": "{value:boolean}",
-    "bool":    "{value:boolean}",
-    "string":  "{value}",
-    "str":     "{value}",
-}
+
+def _get_most_recent_config_version(items: list) -> Optional[dict]:
+    """Return the GenericQcConfig item with the highest integer version number."""
+    def parse_version(item):
+        try:
+            return int(item.get("version", 0))
+        except (ValueError, TypeError):
+            return 0
+    return max(items, key=parse_version, default=None)
 
 
 class CustomExcel(Excel):
@@ -107,6 +89,23 @@ class CustomExcel(Excel):
     def __init__(self, *args, portal=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._custom_column_mappings = CustomExcel._get_custom_column_mappings(portal=portal)
+
+    @classmethod
+    def with_portal(cls, portal):
+        """Return a subclass of CustomExcel with portal baked in.
+
+        Use this when passing excel_class to StructuredDataSet, which requires
+        a real class (it calls issubclass() on the argument internally):
+
+            excel_class=CustomExcel.with_portal(portal)
+        """
+        class _CustomExcelWithPortal(cls):
+            def __init__(self, *args, **kwargs):
+                kwargs.setdefault("portal", portal)
+                super().__init__(*args, **kwargs)
+        _CustomExcelWithPortal.__name__ = "CustomExcel"
+        _CustomExcelWithPortal.__qualname__ = "CustomExcel"
+        return _CustomExcelWithPortal
 
     def sheet_reader(self, sheet_name: str) -> ExcelSheetReader:
         return CustomExcelSheetReader(self, sheet_name=sheet_name, workbook=self._workbook,
@@ -122,8 +121,8 @@ class CustomExcel(Excel):
     def _get_custom_column_mappings(portal=None) -> Optional[dict]:
 
         def fetch_from_portal(portal) -> Optional[dict]:
-            """Query the portal for GenericQcConfig items and convert them into
-            the same config-dict structure previously loaded from JSON."""
+            """Query the portal for GenericQcConfig items. The most recent item's
+            "body" field is the complete ready-to-use config dict."""
             if portal is None:
                 return None
             try:
@@ -133,7 +132,13 @@ class CustomExcel(Excel):
                 items = results.get("@graph", [])
                 if not items:
                     return None
-                return _build_config_from_portal_results(items)
+                item = _get_most_recent_config_version(items)
+                if item is None:
+                    return None
+                body = item.get("body")
+                if not isinstance(body, dict):
+                    return None
+                return body
             except Exception:
                 return None
 
@@ -169,60 +174,6 @@ class CustomExcel(Excel):
         if not raw_config:
             return None
         return post_process(raw_config)
-
-
-def _build_config_from_portal_results(items: list) -> Optional[dict]:
-    """Convert a list of GenericQcConfig portal objects into the internal config dict.
-
-    Each item is expected to have at minimum:
-      - "sheet_name"   : str  (the Excel sheet name this config applies to)
-      - "mapping_name" : str  (internal key linking sheet_mappings → column_mappings)
-      - "fields"       : list of dicts with keys: column, key, tooltip, value_type
-
-    Returns a dict with "sheet_mappings" and "column_mappings" keys, or None if
-    nothing useful could be built.
-    """
-    sheet_mappings: dict = {}
-    column_mappings: dict = {}
-
-    for item in items:
-        sheet_name = item.get("sheet_name")
-        mapping_name = item.get("mapping_name")
-        fields = item.get("fields")
-
-        if not (isinstance(sheet_name, str) and sheet_name
-                and isinstance(mapping_name, str) and mapping_name
-                and isinstance(fields, list) and fields):
-            continue
-
-        # Build the per-column mapping dict for this config item.
-        per_column: dict = {}
-        for field in fields:
-            column = field.get("column")
-            if not isinstance(column, str) or not column:
-                continue
-            key = field.get("key", column)
-            tooltip = field.get("tooltip")  # may be None / null
-            value_type = str(field.get("value_type", "string")).lower().strip()
-            value_macro = _VALUE_TYPE_MACRO.get(value_type, "{value}")
-
-            per_column[column] = {
-                "qc_values#.derived_from": "{name}",
-                "qc_values#.value": value_macro,
-                "qc_values#.key": key,
-                "qc_values#.tooltip": tooltip,
-            }
-
-        if not per_column:
-            continue
-
-        sheet_mappings[sheet_name] = mapping_name
-        column_mappings[mapping_name] = per_column
-
-    if not sheet_mappings:
-        return None
-
-    return {"sheet_mappings": sheet_mappings, "column_mappings": column_mappings}
 
 
 class CustomExcelSheetReader(ExcelSheetReader):

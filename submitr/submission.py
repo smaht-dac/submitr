@@ -40,7 +40,7 @@ from dcicutils.submitr.progress_constants import (
     PROGRESS_PARSE,
 )
 from submitr.base import DEFAULT_APP
-from dcicutils.submitr.custom_excel import CustomExcel
+from submitr.custom_excel import CustomExcel
 from submitr.exceptions import PortalPermissionError
 from submitr.file_for_upload import FilesForUpload, get_file_upload_bucket
 from submitr.metadata_template import (
@@ -2621,7 +2621,7 @@ def _validate_locally(
         progress=None if noprogress else define_progress_callback(debug=debug),
         validator_hook=validator_hook,
         validator_sheet_hook=validator_sheet_hook,
-        excel_class=lambda *args, **kwargs: CustomExcel(*args, portal=portal, **kwargs),
+        excel_class=CustomExcel.with_portal(portal),
         debug_sleep=debug_sleep,
     )
     structured_data.load_file(ingestion_filename)
@@ -2677,6 +2677,7 @@ def _validate_locally(
     if verbose_json:
         PRINT_OUTPUT(f"Parsed JSON:")
         PRINT_OUTPUT(json.dumps(structured_data.data, indent=4))
+
     validation_okay = _validate_data(
         structured_data,
         portal,
@@ -3553,7 +3554,7 @@ def _print_metadata_file_info(
         max_output = 10
         portal = _define_portal(env=env, ping=True)
         structured_data = StructuredDataSet(
-            file, portal, norefs=True, excel_class=lambda *args, **kwargs: CustomExcel(*args, portal=portal, **kwargs),
+            file, portal, norefs=True, excel_class=CustomExcel.with_portal(portal),
         )
         if refs is True:
 
