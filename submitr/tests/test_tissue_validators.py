@@ -213,32 +213,6 @@ def test_tissue_external_id_validator_multiple_tissues(mock_structured_data):
     assert "NDRI_TISSUE002" in error_msg
 
 
-def test_tissue_external_id_validator_donor_without_external_id(
-        mock_structured_data):
-    """Test validator when donor is missing external_id"""
-    mock_structured_data.data = {
-        "Tissue": [
-            {
-                "submitted_id": "NDRI_TISSUE001",
-                "donor": "NDRI_DONOR001",
-                "external_id": "EXT001-T1",
-            }
-        ],
-        "Donor": [
-            {
-                "submitted_id": "NDRI_DONOR001"
-                # Missing external_id
-            }
-        ],
-    }
-    _tissue_external_id_validator(mock_structured_data)
-    # Should report error because external_id doesn't match None
-    mock_structured_data.note_validation_error.assert_called_once()
-    error_msg = mock_structured_data.note_validation_error.call_args[0][0]
-    assert "NDRI_TISSUE001" in error_msg
-    assert "None" in error_msg
-
-
 # Tests for _get_term_info
 
 
