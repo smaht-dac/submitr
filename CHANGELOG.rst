@@ -6,11 +6,55 @@ smaht-submitr
 Change Log
 ----------
 
-1.12.2
+1.14.3
 ======
 `PR 35 SN Fix validation errors <https://github.com/smaht-dac/submitr/pull/35>`_
 
 * Add escape characters to `.get()` commands so that empty values pass initial submitr validation and go to basic schema validation
+
+1.14.2
+======
+`PR 39 Additional tissue sample validationD <https://github.com/smaht-dac/submitr/pull/39>`_
+
+* Addition additional validation for TPC samples to ensure consistency between submitted_id, external_id and tissue submitted_id
+* Non-TPC samples - warning for inconsistency is shown but submission is not blocked
+* new tests and some test consolitdation/parmaeterization 
+
+1.14.1
+======
+`PR 38 Decrease polling frequency by updating PROGRESS_INTERVAL to 1 second <https://github.com/smaht-dac/submitr/pull/38>`_
+
+* PROGRESS_INTERVAL from 0.1 to 1 second to decrease polling frequency for server-side validation/submission progress meter
+
+
+1.14.0
+======
+`PR 37 Add validation for PathologyReport validators <https://github.com/smaht-dac/submitr/pull/37>`_
+
+* Non-brain-path-reports validators include:
+* target_tissues fields if is_present = Yes autolysis score required, percentage required and if not percent = 0 and no autolysis score
+* non_target_tissues fields if is_present = Yes percentage is required
+* pathology_findings fields if is_present = Yes description and percentage required
+
+* Brain-path-reports validators include:
+* brain-subregions - if present autolysis score is required
+* neuropathology-fields - if Yes decription is required
+* age related pathology fields - if Yes at least one must be filled
+
+* tissue_sample category - external_id consistency check
+
+
+1.13.0
+======
+`PR 36 Add additional validation for Tissue and TissueSample <https://github.com/smaht-dac/submitr/pull/36>`_
+
+* 'fixed' a potential bug in the finish_hook decorator
+* Added submitr validators for:
+  - TissueSample - mirror the portal validators as much as possible - check for duplication and ensure there is a TPC sample for each GCC submitted sample
+  - Tissue - added validator for matching tissue code and tissue preservation type when possible - fixed and frozen
+
+* Renamed the validator files for tissue_sample and tissue to be more general as there is now more than just external_id validation.
+* Added tests.
 
 
 1.12.1
