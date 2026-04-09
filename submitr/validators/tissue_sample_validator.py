@@ -72,21 +72,21 @@ def _tissue_sample_external_id_validator(
         return
     for item in data:
         if _SAMPLE_SOURCE_PROPERTY_NAME in item and (
-            submitted_id := item.get("submitted_id")
+            submitted_id := item.get("submitted_id", "")
         ):
             tissue_sample_sc = submitted_id.split("_")[0]
             if tissue_items := [
                 tissue
                 for tissue in structured_data.data.get(_TISSUE_SCHEMA_NAME, [])
-                if tissue.get("submitted_id") in item.get(_SAMPLE_SOURCE_PROPERTY_NAME)
+                if tissue.get("submitted_id", "") in item.get(_SAMPLE_SOURCE_PROPERTY_NAME, "")
             ]:
                 tissue_sc = tissue_items[0].get("submitted_id", "").split("_")[0]
                 if (
                     tissue_sample_sc == _NDRI_SUBMISSION_CENTER_PREFIX
                     or tissue_sc == _NDRI_SUBMISSION_CENTER_PREFIX
                 ):
-                    tissue_external_id = tissue_items[0].get(_EXTERNAL_ID_PROPERTY_NAME)
-                    tissue_sample_external_id = item.get(_EXTERNAL_ID_PROPERTY_NAME)
+                    tissue_external_id = tissue_items[0].get(_EXTERNAL_ID_PROPERTY_NAME, "")
+                    tissue_sample_external_id = item.get(_EXTERNAL_ID_PROPERTY_NAME, "")
                     if (
                         "-".join(tissue_sample_external_id.split("-")[0:2])
                         != tissue_external_id
@@ -449,7 +449,7 @@ def _tissue_sample_external_id_category_match_validator(
     for item in data:
         submitted_id = item_utils.get_submitted_id(item)
         external_id = item_utils.get_external_id(item)
-        category = item.get("category")
+        category = item.get("category", "")
         """Check that external_id pattern matches for category."""
         if category in _TISSUE_CATEGORIES and external_id:
             category_regex = _CATEGORY_REGEX_MAP.get(category)
@@ -619,7 +619,7 @@ def _tissue_sample_external_id_sample_source_consistency_validator(
         # Non-NDRI items are not guarded since _tissue_sample_external_id_validator
         # only fires for NDRI items.
         tissue_in_submission = any(
-            tissue.get("submitted_id") in sample_sources
+            tissue.get("submitted_id", "") in sample_sources
             for tissue in structured_data.data.get(_TISSUE_SCHEMA_NAME, [])
         )
         if is_ndri and tissue_in_submission:

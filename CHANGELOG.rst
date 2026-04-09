@@ -6,6 +6,12 @@ smaht-submitr
 Change Log
 ----------
 
+1.14.3
+======
+`PR 35 SN Fix validation errors <https://github.com/smaht-dac/submitr/pull/35>`_
+
+* Add escape characters to `.get()` commands so that empty values pass initial submitr validation and go to basic schema validation
+
 1.14.2
 ======
 `PR 39 Additional tissue sample validationD <https://github.com/smaht-dac/submitr/pull/39>`_
