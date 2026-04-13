@@ -265,23 +265,27 @@ class CustomExcelSheetReader(ExcelSheetReader):
             synthetic_columns = {}
             columns_to_delete = []
             for column_name in row:
-                if column_name in self._custom_column_mappings:
-                    column_mapping = self._custom_column_mappings[column_name]
-                    for synthetic_column_name in column_mapping:
-                        synthetic_column_value = column_mapping[synthetic_column_name]
-                        if synthetic_column_value == "{name}":
-                            synthetic_columns[synthetic_column_name] = column_name
-                        elif (column_value := self._parse_value_specifier(synthetic_column_value,
-                                                                          row[column_name])) is not None:
-                            synthetic_columns[synthetic_column_name] = column_value
-                        else:
-                            synthetic_columns[synthetic_column_name] = synthetic_column_value
-                    columns_to_delete.append(column_name)
-            if columns_to_delete:
-                for column_to_delete in columns_to_delete:
-                    del row[column_to_delete]
-            if synthetic_columns:
-                row.update(synthetic_columns)
+                if column_name not in self._custom_column_mappings:
+                    continue
+                columns_to_delete.append(column_name)
+                # If the source column value is empty, skip the entire mapping group.
+                # Emitting static synthetic columns (key, tooltip, derived_from) for an
+                # empty value produces a partial array element that triggers the
+                # "Non-empty element found after empty element" check in structured_data.
+                if not row[column_name]:
+                    continue
+                column_mapping = self._custom_column_mappings[column_name]
+                for synthetic_column_name, synthetic_column_value in column_mapping.items():
+                    if synthetic_column_value == "{name}":
+                        synthetic_columns[synthetic_column_name] = column_name
+                    elif (column_value := self._parse_value_specifier(synthetic_column_value,
+                                                                      row[column_name])) is not None:
+                        synthetic_columns[synthetic_column_name] = column_value
+                    else:
+                        synthetic_columns[synthetic_column_name] = synthetic_column_value
+            for column_to_delete in columns_to_delete:
+                del row[column_to_delete]
+            row.update(synthetic_columns)
         return row
 
     @staticmethod
