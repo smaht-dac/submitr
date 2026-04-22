@@ -6,6 +6,12 @@ smaht-submitr
 Change Log
 ----------
 
+1.14.4
+======
+`PR 41 WF Update macOS runners <https://github.com/smaht-dac/submitr/pull/41>`_
+
+* Update macOS runners to `macos-15-intel` for x86 builds
+
 1.14.3
 ======
 `PR 35 SN Fix validation errors <https://github.com/smaht-dac/submitr/pull/35>`_
