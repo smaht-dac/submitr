@@ -105,16 +105,19 @@ def structured_data_validator_sheet_hook(*decorator_args, **decorator_kwargs) ->
 # Define the main per-column/value StructuredDataSet hook (including the "finish" hook as a property thereof).
 #
 def define_structured_data_validator_hook(**kwargs) -> Callable:
+    skip = set(kwargs.pop("skip_validators", None) or [])
     def hook(structured_data: StructuredDataSet, schema: str,
              column: str, row: int, value: Any) -> Any:
         if ((validator := _VALIDATORS.get(column)) or
             (validator := _VALIDATORS.get(f"{schema}.{column}"))):  # noqa
-            return validator(structured_data, schema, column, row, value=value, **kwargs)
+            if validator.__name__ not in skip:
+                return validator(structured_data, schema, column, row, value=value, **kwargs)
         return value
     def finish_hook(structured_data: StructuredDataSet) -> None:  # noqa
         nonlocal kwargs
         for validator in _FINISH_VALIDATORS:
-            validator(structured_data, **kwargs)
+            if validator.__name__ not in skip:
+                validator(structured_data, **kwargs)
     setattr(hook, "finish", finish_hook)
     return hook
 
