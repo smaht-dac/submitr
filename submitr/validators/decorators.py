@@ -106,6 +106,7 @@ def structured_data_validator_sheet_hook(*decorator_args, **decorator_kwargs) ->
 #
 def define_structured_data_validator_hook(**kwargs) -> Callable:
     skip = set(kwargs.pop("skip_validators", None) or [])
+
     def hook(structured_data: StructuredDataSet, schema: str,
              column: str, row: int, value: Any) -> Any:
         if ((validator := _VALIDATORS.get(column)) or
