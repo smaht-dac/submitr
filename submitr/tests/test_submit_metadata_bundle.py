@@ -67,7 +67,8 @@ def test_submit_metadata_bundle_script(keyfile):
                             "output_file": False,
                             "timeout": None,
                             "debug": False,
-                            "debug_sleep": False
+                            "debug_sleep": False,
+                            "skip_validators": None,
                         }
                         mock_submit_any_ingestion.assert_called_with(**expect_call_args)
                     assert output == []
