@@ -821,6 +821,7 @@ def submit_any_ingestion(
     noversion=False,
     debug=False,
     debug_sleep=None,
+    skip_validators=None,
 ):
     """
     Does the core action of submitting a metadata bundle.
@@ -1047,6 +1048,7 @@ def submit_any_ingestion(
             verbose=verbose,
             debug=debug,
             debug_sleep=debug_sleep,
+            skip_validators=skip_validators,
         )
         if validate_local_only:
             # We actually do exit from _validate_locally if validate_local_only is True.
@@ -2504,6 +2506,7 @@ def _validate_locally(
     ignore_orphans: bool = False,
     debug: bool = False,
     debug_sleep: Optional[str] = None,
+    skip_validators: Optional[List[str]] = None,
 ) -> StructuredDataSet:
 
     if json_only:
@@ -2599,7 +2602,8 @@ def _validate_locally(
         PRINT("DEBUG: Starting client validation.")
 
     validator_hook = define_structured_data_validator_hook(
-        valid_submission_centers=valid_submission_centers
+        valid_submission_centers=valid_submission_centers,
+        skip_validators=skip_validators,
     )
     validator_sheet_hook = define_structured_data_validator_sheet_hook()
     structured_data = StructuredDataSet(
