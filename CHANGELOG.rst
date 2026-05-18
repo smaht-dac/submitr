@@ -6,7 +6,13 @@ smaht-submitr
 Change Log
 ----------
 
-1.14.4
+1.15.0
+======
+`PR 43 Validator updates <https://github.com/smaht-dac/submitr/pull/43>`_
+
+* Add feature to skip local validators by name
+* update to pathology report validators to allow either or for description and percentage for pathology finding validators 
+
 ======
 `PR 41 WF Update macOS runners <https://github.com/smaht-dac/submitr/pull/41>`_
 
