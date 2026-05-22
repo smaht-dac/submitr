@@ -125,8 +125,11 @@ def define_structured_data_validator_hook(**kwargs) -> Callable:
 
 # Define the main StructuredDataSet per-sheet hook.
 #
-def define_structured_data_validator_sheet_hook() -> Callable:
+def define_structured_data_validator_sheet_hook(**kwargs) -> Callable:
+    skip = set(kwargs.pop("skip_validators", None) or [])
+
     def hook(structured_data: StructuredDataSet, schema: str, data: dict) -> None:
         if validator := _SHEET_VALIDATORS.get(schema):
-            validator(structured_data, schema, data)
+            if validator.__name__ not in skip:
+                validator(structured_data, schema, data)
     return hook

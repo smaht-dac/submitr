@@ -2605,7 +2605,7 @@ def _validate_locally(
         valid_submission_centers=valid_submission_centers,
         skip_validators=skip_validators,
     )
-    validator_sheet_hook = define_structured_data_validator_sheet_hook()
+    validator_sheet_hook = define_structured_data_validator_sheet_hook(skip_validators=skip_validators)
     structured_data = StructuredDataSet(
         None,
         portal,
