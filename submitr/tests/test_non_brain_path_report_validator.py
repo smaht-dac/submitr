@@ -419,7 +419,7 @@ def test_pathologic_findings_present_yes_valid():
 
 
 def test_pathologic_findings_present_yes_missing_description():
-    """Error: present=Yes but description is missing."""
+    """No error: present=Yes, description missing but percentage provided (at least one satisfied)."""
     data = {
         SCHEMA_NAME: [
             {
@@ -436,14 +436,11 @@ def test_pathologic_findings_present_yes_missing_description():
     }
     mock_structured_data = make_structured_data_mock(data)
     _non_brain_pathology_findings_validator(mock_structured_data)
-    mock_structured_data.note_validation_error.assert_called_once()
-    error_msg = mock_structured_data.note_validation_error.call_args[0][0]
-    assert "finding_description must be provided" in error_msg
-    assert "finding_type: Necrosis" in error_msg
+    mock_structured_data.note_validation_error.assert_not_called()
 
 
 def test_pathologic_findings_present_yes_empty_description():
-    """Error: present=Yes but description is empty string."""
+    """No error: present=Yes, description empty but percentage provided (at least one satisfied)."""
     data = {
         SCHEMA_NAME: [
             {
@@ -461,14 +458,11 @@ def test_pathologic_findings_present_yes_empty_description():
     }
     mock_structured_data = make_structured_data_mock(data)
     _non_brain_pathology_findings_validator(mock_structured_data)
-    mock_structured_data.note_validation_error.assert_called_once()
-    error_msg = mock_structured_data.note_validation_error.call_args[0][0]
-    assert "finding_description must be provided" in error_msg
-    assert "finding_type: Metaplasia" in error_msg
+    mock_structured_data.note_validation_error.assert_not_called()
 
 
 def test_pathologic_findings_present_yes_whitespace_description():
-    """Error: present=Yes but description is only whitespace."""
+    """No error: present=Yes, description whitespace-only but percentage provided (at least one satisfied)."""
     data = {
         SCHEMA_NAME: [
             {
@@ -486,13 +480,11 @@ def test_pathologic_findings_present_yes_whitespace_description():
     }
     mock_structured_data = make_structured_data_mock(data)
     _non_brain_pathology_findings_validator(mock_structured_data)
-    mock_structured_data.note_validation_error.assert_called_once()
-    error_msg = mock_structured_data.note_validation_error.call_args[0][0]
-    assert "finding_description must be provided" in error_msg
+    mock_structured_data.note_validation_error.assert_not_called()
 
 
 def test_pathologic_findings_present_yes_missing_percentage():
-    """Error: present=Yes but percentage is missing."""
+    """No error: present=Yes, percentage missing but description provided (at least one satisfied)."""
     data = {
         SCHEMA_NAME: [
             {
@@ -509,14 +501,11 @@ def test_pathologic_findings_present_yes_missing_percentage():
     }
     mock_structured_data = make_structured_data_mock(data)
     _non_brain_pathology_findings_validator(mock_structured_data)
-    mock_structured_data.note_validation_error.assert_called_once()
-    error_msg = mock_structured_data.note_validation_error.call_args[0][0]
-    assert "finding_percentage must be provided" in error_msg
-    assert "finding_type: Neoplasia/Tumor/Carcinoma" in error_msg
+    mock_structured_data.note_validation_error.assert_not_called()
 
 
-def test_pathologic_findings_present_yes_multiple_errors():
-    """Multiple errors should all be reported."""
+def test_pathologic_findings_present_yes_both_missing():
+    """One combined error when both description and percentage are absent."""
     data = {
         SCHEMA_NAME: [
             {
@@ -532,7 +521,9 @@ def test_pathologic_findings_present_yes_multiple_errors():
     }
     mock_structured_data = make_structured_data_mock(data)
     _non_brain_pathology_findings_validator(mock_structured_data)
-    assert mock_structured_data.note_validation_error.call_count == 2
+    mock_structured_data.note_validation_error.assert_called_once()
+    error_msg = mock_structured_data.note_validation_error.call_args[0][0]
+    assert "at least one of finding_description or finding_percentage must be provided" in error_msg
 
 
 def test_pathologic_findings_present_no_valid():
@@ -613,7 +604,6 @@ def test_pathologic_findings_missing_finding_type():
                 "pathologic_findings": [
                     {
                         "finding_present": "Yes",
-                        "finding_description": "Something found",
                     }
                 ],
             }

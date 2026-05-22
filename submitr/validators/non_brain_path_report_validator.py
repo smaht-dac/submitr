@@ -146,7 +146,7 @@ def _non_brain_pathology_findings_validator(
 ) -> None:
     """
     Validates pathologic_findings conditional logic:
-    - If finding_present = "Yes": finding_description and finding_percentage must be provided
+    - If finding_present = "Yes": either finding_description or finding_percentage must be provided
     """
     if not isinstance(data := structured_data.data.get(_SCHEMA_NAME), list):
         return
@@ -166,26 +166,18 @@ def _non_brain_pathology_findings_validator(
             percentage = finding.get("finding_percentage")
 
             if present == "Yes":
-                # When present, description must exist and have a non-empty value
-                if description is None or (
+                description_missing = description is None or (
                     isinstance(description, str) and description.strip() == ""
-                ):
-                    structured_data.note_validation_error(
-                        f"{_SCHEMA_NAME}: item {submitted_id} "
-                        f"{_PATHOLOGIC_FINDINGS_PROPERTY}[{index}] "
-                        f"(finding_type: {finding_type}): "
-                        f"when finding_present is 'Yes', "
-                        f"finding_description must be provided"
-                    )
+                )
+                percentage_missing = percentage is None or percentage == ""
 
-                # When present, percentage must exist
-                if percentage is None or percentage == "":
+                if description_missing and percentage_missing:
                     structured_data.note_validation_error(
                         f"{_SCHEMA_NAME}: item {submitted_id} "
                         f"{_PATHOLOGIC_FINDINGS_PROPERTY}[{index}] "
                         f"(finding_type: {finding_type}): "
                         f"when finding_present is 'Yes', "
-                        f"finding_percentage must be provided"
+                        f"at least one of finding_description or finding_percentage must be provided"
                     )
             elif present == "No":
                 # When not present, percentage must be absent or empty
