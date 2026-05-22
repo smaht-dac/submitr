@@ -49,7 +49,8 @@ include = [
 
 python = ">=3.8.1,<3.13"
 boto3 = "^1.36.5"
-dcicutils = "^8.18.3"
+# dcicutils = "^8.18.3"
+dcicutils = { git = "https://github.com/4dn-dcic/utils.git", branch = "sn_refactor_custom_excel" }
 PyYAML = "^6.0.1"
 requests = "^2.31.0"
 googleapi = "^0.1.0"
