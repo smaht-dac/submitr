@@ -130,6 +130,9 @@ ADVANCED OPTIONS:
   Maximum umber of seconds to wait for server validation or submission.
 --debug
   Displays some debugging related output.
+--skip-validator VALIDATOR-FUNCTION-NAME
+  Skips the named client-side validator function; may be used more than once.
+  Use the internal validator function name, e.g. _analyte_rin_validator.
 --ping
   Pings the server; to test connectivity.
 --yes
@@ -230,6 +233,8 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--timeout', help="Wait timeout for server validation/submission.")
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
+    parser.add_argument('--skip-validator', action='append', dest='skip_validators',
+                        help=argparse.SUPPRESS, default=None)
     parser.add_argument('--ping', action="store_true", help="Ping server.", default=False)
 
     # These original/deprecated options are just for backward compatibility.
@@ -386,7 +391,8 @@ def main(simulated_args_for_testing=None):
                              output_file=args.output,
                              timeout=args.timeout,
                              debug=args.debug,
-                             debug_sleep=args.debug_sleep)
+                             debug_sleep=args.debug_sleep,
+                             skip_validators=args.skip_validators)
 
 
 def _sanity_check_submitted_file(file_name: str) -> bool:
