@@ -5,6 +5,7 @@ import sys
 from typing import Optional
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
+from foursight.vendor.yaml import parser
 from .cli_utils import CustomArgumentParser
 from submitr.base import DEFAULT_APP
 from submitr.rclone import RCloneStore
@@ -247,8 +248,9 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--cloud-credentials', help="GCS credentials (service account file).", default=None)
     parser.add_argument('--cloud-location', help="Cloud location/region.", default=None)
     parser.add_argument('--cloud-region', help="Synonym for --cloud-location ", default=None)
-
+    import pdb; pdb.set_trace()
     args = parser.parse_args(args=simulated_args_for_testing)
+    
 
     directory_only = True
     if args.directory:
