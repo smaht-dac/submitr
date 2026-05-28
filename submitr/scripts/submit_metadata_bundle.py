@@ -248,7 +248,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--cloud-credentials', help="GCS credentials (service account file).", default=None)
     parser.add_argument('--cloud-location', help="Cloud location/region.", default=None)
     parser.add_argument('--cloud-region', help="Synonym for --cloud-location ", default=None)
-    import pdb; pdb.set_trace()
+    
     args = parser.parse_args(args=simulated_args_for_testing)
     
 

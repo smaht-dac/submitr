@@ -896,6 +896,7 @@ def submit_any_ingestion(
     user_record = _get_user_record(
         portal.server, auth=portal.key_pair, quiet=json_only and not verbose
     )
+    #import pdb; pdb.set_trace()
 
     # Nevermind: Too confusing for both testing and general usage
     # to have different behaviours for admin and non-admin users.
@@ -2771,13 +2772,16 @@ def _validate_data(
     debug: bool = False,
 ) -> bool:
     nerrors = 0
+    #import pdb; pdb.set_trace()
 
     if initial_validation_errors := _validate_initial(structured_data, portal):
+        import pdb; pdb.set_trace()
         nerrors += len(initial_validation_errors)
 
     if ref_validation_errors := _validate_references(
         structured_data.ref_errors, ingestion_filename, debug=debug
     ):
+        import pdb; pdb.set_trace()
         nerrors += len(ref_validation_errors)
 
     structured_data.validate()
