@@ -7,6 +7,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 import time
 from typing import Any, BinaryIO, Callable, Dict, List, Literal, Optional, Tuple
 
@@ -518,10 +519,16 @@ def _initiate_server_ingestion_process(
     merge: bool = False,
     datafile_size: Optional[Any] = None,
     datafile_checksum: Optional[Any] = None,
+    upload_filename: Optional[str] = None,
     user: Optional[dict] = None,
     debug: bool = False,
     debug_sleep: Optional[str] = None,
 ) -> str:
+    # upload_filename, if provided, is the file actually POSTed to the portal as the
+    # datafile.  ingestion_filename is still used for all metadata stored on the
+    # IngestionSubmission item (ingestion_directory, datafile_size, datafile_checksum)
+    # so that the portal records the path, size and checksum of the original source file
+    # even when a pre-transformed temp file is being uploaded in its place.
 
     if isinstance(validation_ingestion_submission_object, dict):
         # This ingestion action is for a submission (rather than for a validation),
@@ -583,6 +590,7 @@ def _initiate_server_ingestion_process(
         portal=portal,
         is_resume_submission=is_resume_submission,
         ingestion_filename=ingestion_filename,
+        upload_filename=upload_filename,
         consortia=consortia,
         submission_centers=submission_centers,
         add_submission_center=add_submission_center,
@@ -615,6 +623,7 @@ def _post_submission(
     add_submission_center: Optional[str] = None,
     ingestion_type: str = DEFAULT_INGESTION_TYPE,
     submission_protocol: str = DEFAULT_SUBMISSION_PROTOCOL,
+    upload_filename: Optional[str] = None,
     is_server_validation: bool = False,
     is_resume_submission: bool = False,
     debug: bool = False,
@@ -663,9 +672,15 @@ def _post_submission(
             submission_protocol=submission_protocol, ingestion_filename=None
         )
     else:
+        # upload_filename, if provided, is the serialised JSON of already-transformed data
+        # (written by _pre_transform_to_temp_json) and replaces the raw source file for
+        # the upload POST only.  All IngestionSubmission metadata (ingestion_directory,
+        # datafile_size, datafile_checksum) was already computed from ingestion_filename
+        # in _initiate_server_ingestion_process, so the portal stores the correct
+        # original-file provenance regardless of which file is actually uploaded.
         file_post_data = _post_files_data(
             submission_protocol=submission_protocol,
-            ingestion_filename=ingestion_filename,
+            ingestion_filename=upload_filename or ingestion_filename,
         )
     response = portal.post(
         new_style_submission_url,
@@ -701,6 +716,47 @@ def _post_files_data(
             return {"datafile": io.open("/dev/null", "rb")}
     else:
         return {"datafile": None}
+
+
+def _pre_transform_to_temp_json(ingestion_filename: str, structured_data) -> Optional[str]:
+    """Serialise structured_data.data to a temporary JSON file and return its path.
+
+    Returns None (no-op) when:
+      - structured_data is None, or
+      - the ingestion file is not an Excel workbook (.xlsx / .xls).
+
+    TRANSFORMATION vs SERIALISATION
+    --------------------------------
+    The *transformation* — converting human-entry column names (e.g. 'contig_l50')
+    into schema-compliant structure (e.g. 'qc_values' array elements) — is done
+    by CustomExcel during StructuredDataSet.load_file().  By the time this
+    function is called, structured_data.data already holds the fully transformed
+    data; no further mapping happens here.
+
+    The *serialisation* this function performs is simply a delivery mechanism.
+    The portal's server-side ingestion endpoint receives the raw workbook file
+    and re-parses it independently, with no knowledge of the CustomExcel mapping,
+    so it would see the original column names and reject them.  Writing the
+    already-transformed data to a temp JSON file lets the portal ingest it
+    directly without needing to re-apply any mapping.
+
+    For workbooks with no custom column mapping, structured_data.data is
+    equivalent to what the portal would parse from the raw file anyway, so
+    this path is always safe — it is a no-op in the common case.
+
+    CALLER RESPONSIBILITY
+    ---------------------
+    The caller must delete the returned temp file once the upload POST inside
+    _initiate_server_ingestion_process has completed (the file only needs to
+    exist long enough for the upload to finish).
+    """
+    if (structured_data is None
+            or not ingestion_filename
+            or not (ingestion_filename.endswith(".xlsx") or ingestion_filename.endswith(".xls"))):
+        return None
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False, encoding="utf-8") as f:
+        json.dump(structured_data.data, f)
+        return f.name
 
 
 def _resolve_app_args(
@@ -1077,29 +1133,68 @@ def submit_any_ingestion(
 
         SHOW(f"Continuing with additional (server) validation: {portal.server}")
 
-        validation_uuid = _initiate_server_ingestion_process(
-            portal=portal,
-            ingestion_filename=ingestion_filename,
-            is_server_validation=True,
-            consortia=app_args.get("consortia"),
-            submission_centers=app_args.get("submission_centers"),
-            add_submission_center=add_submission_center,
-            post_only=post_only,
-            patch_only=patch_only,
-            autoadd=autoadd,
-            merge=merge,
-            user=(
-                {
-                    "uuid": user_record.get("uuid"),
-                    "email": user_record.get("email"),
-                    "name": user_record.get("display_title"),
-                }
-                if user_record
-                else None
-            ),
-            debug=debug,
-            debug_sleep=debug_sleep,
-        )
+        # Determine the data source for server validation.
+        #
+        # Normally structured_data was built during local validation above and
+        # has already had CustomExcel column mapping applied (transformation is done
+        # as part of StructuredDataSet.load_file()).  When --validate-remote-only is
+        # used the user explicitly skipped local validation, so structured_data is None;
+        # in that case we build a lightweight StructuredDataSet here (norefs=True skips
+        # reference resolution) solely to apply the transformation.
+        #
+        # _pre_transform_to_temp_json then serialises the already-transformed
+        # structured_data.data to a temp JSON file.  The portal's server-side ingestion
+        # endpoint receives the raw workbook and re-parses it without any column mapping,
+        # so sending the raw file would cause it to reject the human-entry column names.
+        # Sending the serialised JSON instead lets the portal validate the already
+        # schema-compliant structure directly.  For non-Excel inputs or workbooks with
+        # no custom mapping _pre_transform_to_temp_json returns None and the original
+        # file is used unchanged.
+        _transform_source = structured_data
+        if _transform_source is None and ingestion_filename.endswith((".xlsx", ".xls")):
+            _transform_source = StructuredDataSet(
+                file=ingestion_filename,
+                portal=portal,
+                excel_class=CustomExcel.with_portal(portal),
+                norefs=True,
+            )
+
+        temp_json = _pre_transform_to_temp_json(ingestion_filename, _transform_source)
+        try:
+            # ingestion_filename is always the original source file so that the portal's
+            # IngestionSubmission item stores correct provenance (directory, size, checksum).
+            # upload_filename=temp_json routes only the upload POST to the serialised JSON
+            # of the already-transformed data; if temp_json is None (no custom mapping or
+            # non-Excel input) this is a no-op and the original file is uploaded as before.
+            # The temp file only needs to exist for the duration of _initiate_server_ingestion_process
+            # (the upload POST); the finally block deletes it immediately after.
+            validation_uuid = _initiate_server_ingestion_process(
+                portal=portal,
+                ingestion_filename=ingestion_filename,
+                upload_filename=temp_json,
+                is_server_validation=True,
+                consortia=app_args.get("consortia"),
+                submission_centers=app_args.get("submission_centers"),
+                add_submission_center=add_submission_center,
+                post_only=post_only,
+                patch_only=patch_only,
+                autoadd=autoadd,
+                merge=merge,
+                user=(
+                    {
+                        "uuid": user_record.get("uuid"),
+                        "email": user_record.get("email"),
+                        "name": user_record.get("display_title"),
+                    }
+                    if user_record
+                    else None
+                ),
+                debug=debug,
+                debug_sleep=debug_sleep,
+            )
+        finally:
+            if temp_json and os.path.exists(temp_json):
+                os.unlink(temp_json)
 
         SHOW(f"Validation tracking ID: {validation_uuid}")
 
@@ -2626,7 +2721,7 @@ def _validate_locally(
         progress=None if noprogress else define_progress_callback(debug=debug),
         validator_hook=validator_hook,
         validator_sheet_hook=validator_sheet_hook,
-        excel_class=CustomExcel,
+        excel_class=CustomExcel.with_portal(portal),
         debug_sleep=debug_sleep,
     )
     structured_data.load_file(ingestion_filename)
@@ -2972,6 +3067,7 @@ def _validate_initial(structured_data: StructuredDataSet, portal: Portal) -> Lis
                 if data := structured_data.data[schema_name]:
                     data_properties = set(data[0].keys())
                     if (data_properties & required_properties) != required_properties:
+                        import pdb; pdb.set_trace()
                         if (
                             missing_required_properties := required_properties
                             - data_properties
@@ -3561,7 +3657,7 @@ def _print_metadata_file_info(
         max_output = 10
         portal = _define_portal(env=env, ping=True)
         structured_data = StructuredDataSet(
-            file, portal, norefs=True, excel_class=CustomExcel
+            file, portal, norefs=True, excel_class=CustomExcel.with_portal(portal)
         )
         if refs is True:
 
