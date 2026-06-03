@@ -1251,31 +1251,54 @@ def submit_any_ingestion(
     if not yes_or_no("Continue on with the actual submission?"):
         sys.exit(0)
 
-    submission_uuid = _initiate_server_ingestion_process(
-        portal=portal,
-        ingestion_filename=ingestion_filename,
-        is_server_validation=False,
-        validate_remote_skip=validate_remote_skip,
-        validation_ingestion_submission_object=server_validation_response,
-        consortia=app_args.get("consortia"),
-        submission_centers=app_args.get("submission_centers"),
-        add_submission_center=add_submission_center,
-        post_only=post_only,
-        patch_only=patch_only,
-        autoadd=autoadd,
-        merge=merge,
-        user=(
-            {
-                "uuid": user_record.get("uuid"),
-                "email": user_record.get("email"),
-                "name": user_record.get("display_title"),
-            }
-            if user_record
-            else None
-        ),
-        debug=debug,
-        debug_sleep=debug_sleep,
+    # Apply the same pre-transform logic as for server validation: if the
+    # ingestion file is an Excel workbook, serialise the already-transformed
+    # structured_data.data to a temp JSON so the portal receives schema-compliant
+    # data rather than the raw workbook.  structured_data may be None when local
+    # validation was skipped (--validate-local-skip), in which case we build a
+    # lightweight transform-only pass before serialising.
+    _submission_transform_source = structured_data
+    if _submission_transform_source is None and ingestion_filename.endswith((".xlsx", ".xls")):
+        _submission_transform_source = StructuredDataSet(
+            file=ingestion_filename,
+            portal=portal,
+            excel_class=CustomExcel.with_portal(portal),
+            norefs=True,
+        )
+
+    _submission_temp_json = _pre_transform_to_temp_json(
+        ingestion_filename, _submission_transform_source
     )
+    try:
+        submission_uuid = _initiate_server_ingestion_process(
+            portal=portal,
+            ingestion_filename=ingestion_filename,
+            upload_filename=_submission_temp_json,
+            is_server_validation=False,
+            validate_remote_skip=validate_remote_skip,
+            validation_ingestion_submission_object=server_validation_response,
+            consortia=app_args.get("consortia"),
+            submission_centers=app_args.get("submission_centers"),
+            add_submission_center=add_submission_center,
+            post_only=post_only,
+            patch_only=patch_only,
+            autoadd=autoadd,
+            merge=merge,
+            user=(
+                {
+                    "uuid": user_record.get("uuid"),
+                    "email": user_record.get("email"),
+                    "name": user_record.get("display_title"),
+                }
+                if user_record
+                else None
+            ),
+            debug=debug,
+            debug_sleep=debug_sleep,
+        )
+    finally:
+        if _submission_temp_json and os.path.exists(_submission_temp_json):
+            os.unlink(_submission_temp_json)
 
     SHOW(f"Submission tracking ID: {submission_uuid}")
 
