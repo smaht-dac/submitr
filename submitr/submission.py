@@ -725,30 +725,20 @@ def _pre_transform_to_temp_json(ingestion_filename: str, structured_data) -> Opt
       - structured_data is None, or
       - the ingestion file is not an Excel workbook (.xlsx / .xls).
 
-    TRANSFORMATION vs SERIALISATION
-    --------------------------------
-    The *transformation* — converting human-entry column names (e.g. 'contig_l50')
-    into schema-compliant structure (e.g. 'qc_values' array elements) — is done
-    by CustomExcel during StructuredDataSet.load_file().  By the time this
-    function is called, structured_data.data already holds the fully transformed
-    data; no further mapping happens here.
+    By the time this function is called, structured_data.data already holds the fully 
+    transformed data (if transform is needed)
 
     The *serialisation* this function performs is simply a delivery mechanism.
-    The portal's server-side ingestion endpoint receives the raw workbook file
-    and re-parses it independently, with no knowledge of the CustomExcel mapping,
-    so it would see the original column names and reject them.  Writing the
-    already-transformed data to a temp JSON file lets the portal ingest it
-    directly without needing to re-apply any mapping.
+    Writing the already-transformed data from StructuredDatasetto a temp JSON file
+    lets the portal ingest it directly without needing to re-apply any mapping.
 
     For workbooks with no custom column mapping, structured_data.data is
     equivalent to what the portal would parse from the raw file anyway, so
     this path is always safe — it is a no-op in the common case.
 
-    CALLER RESPONSIBILITY
-    ---------------------
-    The caller must delete the returned temp file once the upload POST inside
-    _initiate_server_ingestion_process has completed (the file only needs to
-    exist long enough for the upload to finish).
+    The caller function deletes the returned temp file once the upload POST inside
+    _initiate_server_ingestion_process has completed as the file only needs to
+    exist long enough for the upload to finish.
     """
     if (structured_data is None
             or not ingestion_filename
@@ -1134,21 +1124,12 @@ def submit_any_ingestion(
 
         # Determine the data source for server validation.
         #
-        # Normally structured_data was built during local validation above and
+        # Normally structured_data is built during local validation above and
         # has already had CustomExcel column mapping applied (transformation is done
         # as part of StructuredDataSet.load_file()).  When --validate-remote-only is
         # used the user explicitly skipped local validation, so structured_data is None;
-        # in that case we build a lightweight StructuredDataSet here (norefs=True skips
+        # in this case we build a lightweight StructuredDataSet here (norefs=True skips
         # reference resolution) solely to apply the transformation.
-        #
-        # _pre_transform_to_temp_json then serialises the already-transformed
-        # structured_data.data to a temp JSON file.  The portal's server-side ingestion
-        # endpoint receives the raw workbook and re-parses it without any column mapping,
-        # so sending the raw file would cause it to reject the human-entry column names.
-        # Sending the serialised JSON instead lets the portal validate the already
-        # schema-compliant structure directly.  For non-Excel inputs or workbooks with
-        # no custom mapping _pre_transform_to_temp_json returns None and the original
-        # file is used unchanged.
         _transform_source = structured_data
         if _transform_source is None and ingestion_filename.endswith((".xlsx", ".xls")):
             _transform_source = StructuredDataSet(
@@ -1160,11 +1141,8 @@ def submit_any_ingestion(
 
         temp_json = _pre_transform_to_temp_json(ingestion_filename, _transform_source)
         try:
-            # ingestion_filename is always the original source file so that the portal's
-            # IngestionSubmission item stores correct provenance (directory, size, checksum).
-            # upload_filename=temp_json routes only the upload POST to the serialised JSON
-            # of the already-transformed data; if temp_json is None (no custom mapping or
-            # non-Excel input) this is a no-op and the original file is uploaded as before.
+            # if temp_json is None (no custom mapping or non-Excel input) this is a no-op 
+            # and the original file is uploaded as before.
             # The temp file only needs to exist for the duration of _initiate_server_ingestion_process
             # (the upload POST); the finally block deletes it immediately after.
             validation_uuid = _initiate_server_ingestion_process(
