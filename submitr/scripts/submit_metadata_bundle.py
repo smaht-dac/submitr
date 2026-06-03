@@ -5,7 +5,6 @@ import sys
 from typing import Optional
 from dcicutils.command_utils import script_catch_errors
 from dcicutils.misc_utils import PRINT
-from foursight.vendor.yaml import parser
 from .cli_utils import CustomArgumentParser
 from submitr.base import DEFAULT_APP
 from submitr.rclone import RCloneStore
