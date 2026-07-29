@@ -565,50 +565,46 @@ test-randomorder = ["pytest-randomly"]
 
 [[package]]
 name = "dcicutils"
-version = "8.18.8"
+version = "8.19.0"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 optional = false
-python-versions = ">=3.10,<3.13"
-files = []
-develop = false
+python-versions = "<3.13,>=3.10"
+files = [
+    {file = "dcicutils-8.19.0-py3-none-any.whl", hash = "sha256:e16028cfafe883ccc81186a6af0eb21cc5832bad3cd467de272a120a65e21fec"},
+    {file = "dcicutils-8.19.0.tar.gz", hash = "sha256:d2c4276129b9a3bafab4e3a4f7a0c724e251ad02513208b75dde13e70a77be1e"},
+]
 
 [package.dependencies]
-appdirs = "^1.4.4"
+appdirs = ">=1.4.4,<2.0.0"
 aws-requests-auth = ">=0.4.2,<1"
-boto3 = "^1.43.58"
-botocore = "^1.43.58"
-chardet = "^5.2.0"
-cryptography = "^43.0.1"
-docker = "^7.1.0"
+boto3 = ">=1.43.58,<2.0.0"
+botocore = ">=1.43.58,<2.0.0"
+chardet = ">=5.2.0,<6.0.0"
+cryptography = ">=43.0.1,<44.0.0"
+docker = ">=7.1.0,<8.0.0"
 elasticsearch = "7.13.4"
-gitpython = "^3.1.2"
-jsonc-parser = "^1.1.5"
-jsonschema = "^4.22.0"
-openpyxl = "^3.1.2"
-opensearch-py = "^2.0.1"
-PyJWT = "^2.6.0"
-pyopenssl = "^24.2.1"
-pyperclip = "^1.8.2"
+gitpython = ">=3.1.2,<4.0.0"
+jsonc-parser = ">=1.1.5,<2.0.0"
+jsonschema = ">=4.22.0,<5.0.0"
+openpyxl = ">=3.1.2,<4.0.0"
+opensearch-py = ">=2.0.1,<3.0.0"
+PyJWT = ">=2.6.0,<3.0.0"
+pyopenssl = ">=24.2.1,<25.0.0"
+pyperclip = ">=1.8.2,<2.0.0"
 pyramid = "1.10.8"
 pytz = ">=2020.4"
-PyYAML = "^6.0.1"
-redis = "^4.5.1"
-requests = "^2.27.1"
-rfc3986 = "^1.4.0"
+PyYAML = ">=6.0.1,<7.0.0"
+redis = ">=4.5.1,<5.0.0"
+requests = ">=2.27.1,<3.0.0"
+rfc3986 = ">=1.4.0,<2.0.0"
 setuptools = ">=70.3,<82"
-shortuuid = "^1.0.13"
-structlog = "^19.2.0"
+shortuuid = ">=1.0.13,<2.0.0"
+structlog = ">=19.2.0,<20.0.0"
 toml = ">=0.10.1,<1"
-tqdm = "^4.66.2"
+tqdm = ">=4.66.2,<5.0.0"
 typing-extensions = ">=3.8"
-urllib3 = "^1.26.19"
-webtest = "^2.0.34"
-
-[package.source]
-type = "git"
-url = "https://github.com/4dn-dcic/utils.git"
-reference = "sn_refactor_custom_excel"
-resolved_reference = "84923b7e3dda4c34c1c067b49bf5ce07f7b79dea"
+urllib3 = ">=1.26.19,<2.0.0"
+webtest = ">=2.0.34,<3.0.0"
 
 [[package]]
 name = "docker"
@@ -2749,4 +2745,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "03f034773b4fafe49769733f24040a51ec714670e2e91ead000f2d880bec3e7b"
+content-hash = "c54402b23a0d75b32f33f0f4d286a481b908609c9c925aad5a3fc063274cc14f"
