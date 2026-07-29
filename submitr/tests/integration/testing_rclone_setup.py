@@ -155,15 +155,22 @@ def rclone_setup_module():
                 # Google credentials can be None on a GCE instance; i.e. no service account file needed.
                 _GOOGLE_SERVICE_ACCOUNT_FILE_PATH = None
 
-    # Actually test the Amazon credentials.
+    # Actually test the Amazon credentials. Report why the ping failed rather than just that it
+    # did; sts:GetCallerIdentity needs no permissions, so a failure here generally means the
+    # AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY secrets are no longer valid (e.g. the access key was
+    # deactivated or deleted), which is not something any policy change would fix.
     amazon_credentials = AmazonCredentials(_AMAZON_CREDENTIALS_FILE_PATH)
-    if not amazon_credentials.ping():
-        pytest.fail("Test setup ERROR: Amazon credentials do not appear to work!")
+    try:
+        amazon_credentials.ping(raise_exception=True)
+    except Exception as e:
+        pytest.fail(f"Test setup ERROR: Amazon credentials do not appear to work! {e!r}")
 
     # Actually test the Google credentials.
     google_credentials = GoogleCredentials(_GOOGLE_SERVICE_ACCOUNT_FILE_PATH)
-    if not google_credentials.ping():
-        pytest.fail("Test setup ERROR: Google credentials do not appear to work!")
+    try:
+        google_credentials.ping(raise_exception=True)
+    except Exception as e:
+        pytest.fail(f"Test setup ERROR: Google credentials do not appear to work! {e!r}")
 
     # TODO: check existence of buckets.
 

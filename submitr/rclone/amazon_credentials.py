@@ -119,7 +119,10 @@ class AmazonCredentials:
                 result["region_name"] = region
         return result
 
-    def ping(self) -> bool:
+    def ping(self, raise_exception: bool = False) -> bool:
+        # N.B. sts:GetCallerIdentity requires no permissions at all, so a failure here means the
+        # credentials themselves are unusable (e.g. an inactive or deleted access key), rather than
+        # a policy problem. Pass raise_exception to see which; the reason is otherwise invisible.
         try:
             sts = BotoClient("sts",
                              region_name=self.region,
@@ -128,7 +131,9 @@ class AmazonCredentials:
                              aws_session_token=self.session_token)
             _ = sts.get_caller_identity()
             return True
-        except Exception:
+        except Exception as e:
+            if raise_exception is True:
+                raise e
             return False
 
     def __eq__(self, other: Optional[AmazonCredentials]) -> bool:

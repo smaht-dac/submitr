@@ -12,6 +12,7 @@ way whose real cause is not obvious from the failure output.
 
 import os
 
+from submitr.rclone.amazon_credentials import AmazonCredentials
 from submitr.tests.integration import testing_rclone_helpers
 from submitr.tests.integration.testing_rclone_helpers import Amazon
 from submitr.tests.integration import testing_rclone_setup
@@ -70,3 +71,16 @@ def test_default_credentials_kms_key_id_still_honored(amazon_credentials_file) -
     credentials = Amazon.credentials(credentials_type=Amazon.CredentialsType.DEFAULT, kms=True)
     assert credentials.kms_key_id == testing_rclone_helpers.AMAZON_KMS_KEY_ID
     assert not credentials.session_token
+
+
+def test_ping_reports_why_it_failed(amazon_credentials_file, mocker) -> None:
+    # A ping failure used to be reported as a bare False, which left the integration test setup
+    # saying only "Amazon credentials do not appear to work!" -- no help at all in distinguishing
+    # an invalid access key from, say, a bad region. Callers can now ask for the reason.
+    amazon_credentials_file()
+    credentials = AmazonCredentials(testing_rclone_setup.amazon_credentials_file_path())
+    mocker.patch("submitr.rclone.amazon_credentials.BotoClient",
+                 side_effect=Exception("The security token included in the request is invalid"))
+    assert credentials.ping() is False
+    with pytest.raises(Exception, match="security token"):
+        credentials.ping(raise_exception=True)
