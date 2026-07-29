@@ -13,9 +13,17 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-permissions: # Needed for OIDC authentication
-  id-token: write
-  contents: read
+# N.B. Unlike the other workflows here, this one canNOT authenticate to AWS via GitHub OIDC
+# (aws-actions/configure-aws-credentials); it requires the long-term access keys of an IAM user.
+# The rclone integration test harness mints scoped, short-lived S3 credentials via
+# sts:GetFederationToken (submitr/rclone/testing/rclone_utils_for_testing_amazon.py), which
+# deliberately mirrors how smaht-portal issues upload credentials (encoded_core.types.file
+# external_creds). AWS only permits GetFederationToken to be called by an IAM user or the account
+# root user, and credentials obtained via AssumeRoleWithWebIdentity (what OIDC gives us) explicitly
+# "cannot call GetFederationToken or GetSessionToken". See "Compare AWS STS credentials":
+# https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_sts-comparison.html
+# So no IAM trust policy, role permission, bucket policy or KMS grant can make OIDC work here;
+# moving off static keys requires first changing the harness away from GetFederationToken.
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -41,20 +49,22 @@ jobs:
         run: |
           make build
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
-          aws-region: us-east-1
-
       # The integration tests actually talk to AWS S3 and Google Cloud Storage (GCS);
       # both directly (via Python boto3 and google.cloud.storage) and via rclone.
-      # AWS access is via the role assumed above (OIDC); the Google value is the JSON from the
-      # service account file exported from the HMS Google account for the smaht-dac project;
-      # the service account email is ga4-service-account@smaht-dac.iam.gserviceaccount.com;
-      # its key ID is b488dd9cfde6b59b1aa347aabd9add86c7ff9057; it was created on 2024-04-28.
+      # The access credentials are defined by the environment variables described below.
       - name: INTEGRATION TESTS
         env:
+          # These are setup in GitHub as "secrets". The AWS access key values are currently,
+          # May 2024, for the special user test-integration-user in the smaht-wolf account;
+          # the access key was created on 2024-05-15. These must be IAM *user* keys, not an
+          # OIDC assumed role -- see the note at the top of this file. The Google value is the
+          # JSON from the service account file exported from the HMS Google account for the
+          # smaht-dac project; the service account email is
+          # ga4-service-account@smaht-dac.iam.gserviceaccount.com;
+          # its key ID is b488dd9cfde6b59b1aa347aabd9add86c7ff9057; it was created on 2024-04-28.
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON }}
         run: |
           make test-integration

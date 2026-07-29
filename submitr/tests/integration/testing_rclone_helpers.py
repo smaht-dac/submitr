@@ -72,7 +72,17 @@ class Amazon:
         else:
             assert isinstance(credentials.kms_key_id, str) and credentials.kms_key_id
         if credentials_type == Amazon.CredentialsType.DEFAULT:
-            assert not credentials.session_token
+            # The DEFAULT credentials must be an IAM user's long-term keys, i.e. with no session
+            # token. This is not incidental: these are the credentials used to mint the TEMPORARY
+            # ones below via sts:GetFederationToken, which AWS only allows an IAM user (or the
+            # account root user) to call. So these tests cannot run against credentials obtained
+            # from GitHub OIDC / AssumeRoleWithWebIdentity. See the note in
+            # .github/workflows/main-integration-tests.yml
+            assert not credentials.session_token, (
+                "Amazon DEFAULT credentials unexpectedly have a session token, i.e. they are"
+                " temporary credentials. These integration tests require the long-term access keys"
+                " of an IAM user; credentials assumed via GitHub OIDC will not work because"
+                " sts:GetFederationToken cannot be called from a web identity role session.")
         else:
             assert isinstance(credentials.session_token, str) and credentials.session_token
         return credentials
@@ -118,6 +128,8 @@ class Amazon:
             key = cloud_path.join(subfolder, key)
 
         s3 = Amazon.s3 if kms is False else Amazon.s3_kms
+        # N.B. Only the *setup* below is wrapped in try/except; the yield deliberately is not.
+        # See the corresponding note in Google.temporary_cloud_file.
         try:
             with temporary_random_file(prefix=TEST_FILE_PREFIX, suffix=TEST_FILE_SUFFIX, nbytes=size) as tmp_file_path:
                 assert s3.upload_file(tmp_file_path, Amazon.bucket, key) is True
@@ -125,10 +137,15 @@ class Amazon:
                 assert s3.file_size(Amazon.bucket, key) == size
                 if kms is True:
                     assert s3.file_kms_encrypted(Amazon.bucket, key, AMAZON_KMS_KEY_ID) is True
-                yield cloud_path.join(Amazon.bucket, key)
         except Exception as e:
-            pytest.fail(f"Error on Amazon temporary cloud file creation context! {str(e)}")
-            return None
+            try:
+                s3.delete_file(Amazon.bucket, key)
+            except Exception:
+                pass  # Do not let a cleanup error mask the actual error reported below.
+            # Use repr rather than str; a bare assert failure has an empty str, which says nothing.
+            pytest.fail(f"Error on Amazon temporary cloud file creation context! {e!r}")
+        try:
+            yield cloud_path.join(Amazon.bucket, key)
         finally:
             s3.delete_file(Amazon.bucket, key)
 
@@ -179,15 +196,24 @@ class Google:
             key = cloud_path.join(subfolder, key)
 
         gcs = Google.gcs
+        # N.B. Only the *setup* below is wrapped in try/except; the yield deliberately is not.
+        # Catching around the yield swallows failures raised by the caller's with-body and
+        # relabels them as Google errors, discarding the original traceback; e.g. an Amazon
+        # credentials problem in test_google_to_amazon would surface here as a Google problem.
         try:
             with temporary_random_file(prefix=TEST_FILE_PREFIX, suffix=TEST_FILE_SUFFIX, nbytes=size) as tmp_file_path:
                 assert gcs.upload_file(tmp_file_path, Google.bucket, key) is True
                 assert gcs.file_exists(Google.bucket, key) is True
                 assert gcs.file_size(Google.bucket, key) == size
-                yield cloud_path.join(Google.bucket, key)
         except Exception as e:
-            pytest.fail(f"Error on Google temporary cloud file creation context! {str(e)}")
-            return None
+            try:
+                gcs.delete_file(Google.bucket, key)
+            except Exception:
+                pass  # Do not let a cleanup error mask the actual error reported below.
+            # Use repr rather than str; a bare assert failure has an empty str, which says nothing.
+            pytest.fail(f"Error on Google temporary cloud file creation context! {e!r}")
+        try:
+            yield cloud_path.join(Google.bucket, key)
         finally:
             gcs.delete_file(Google.bucket, key)
 

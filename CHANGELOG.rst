@@ -6,6 +6,21 @@ smaht-submitr
 Change Log
 ----------
 
+1.16.0
+======
+`PR 44 ExternalQualityMetric ingestion <https://github.com/smaht-dac/submitr/pull/44>`_
+
+* Transform structured data for ``ExternalQualityMetric`` sheets into a schema conformant form,
+  serialized to a temporary JSON file which is then used as the ingestion input to the portal;
+  all Excel workbooks are now handled this way, whether or not they have an EQM sheet
+* Update GitHub Actions workflows to ``actions/checkout@v4`` / ``actions/setup-python@v5``
+  and test against Python 3.10, 3.11 and 3.12
+* Keep the integration tests authenticating to AWS with IAM user access keys rather than
+  GitHub OIDC; the rclone test harness mints scoped credentials via ``sts:GetFederationToken``,
+  which cannot be called from a web identity (OIDC) role session
+* Stop the rclone test helpers from relabeling failures raised by the caller as cloud file
+  setup errors, which discarded the original traceback
+
 1.15.0
 ======
 `PR 43 Validator updates <https://github.com/smaht-dac/submitr/pull/43>`_
