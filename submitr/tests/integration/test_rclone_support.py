@@ -800,7 +800,6 @@ def test_rclone_do_any_uploads() -> None:
     uploaded_uris_amazon = []
 
     def mocked_generate_credentials_for_upload(file, uuid, portal):
-        nonlocal env_amazon, uploaded_uris_amazon
         bucket_amazon = f"{env_amazon.bucket}/test-{create_uuid()}"
         key_amazon = f"SMA-{create_uuid()}.fastq"
         aws_s3_uri = f"s3://{bucket_amazon}/{key_amazon}"

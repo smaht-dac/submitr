@@ -130,7 +130,6 @@ def _get_version_from_metadata_template_based_file(portal: Portal, excel_file: s
                 return value[1:]
             return None
         def find_excel_sheet() -> Optional[str]:  # noqa
-            nonlocal excel, sheet_name
             # Slash (and who know what else) is removed from tab name on download.
             normalized_sheet_name = remove_punctuation_and_space(sheet_name)
             for excel_sheet_name in excel.sheet_names:

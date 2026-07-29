@@ -323,7 +323,6 @@ def _get_defaulted_consortia(
     """
 
     def show_consortia():
-        nonlocal portal
         if portal:
             if consortia := _get_consortia(portal):
                 SHOW("CONSORTIA SUPPORTED:")
@@ -397,7 +396,6 @@ def _get_defaulted_submission_centers(
     """
 
     def show_submission_centers():
-        nonlocal portal
         if portal:
             if submission_centers := _get_submission_centers(portal):
                 SHOW("SUBMISSION CENTERS SUPPORTED:")
@@ -725,7 +723,7 @@ def _pre_transform_to_temp_json(ingestion_filename: str, structured_data) -> Opt
       - structured_data is None, or
       - the ingestion file is not an Excel workbook (.xlsx / .xls).
 
-    By the time this function is called, structured_data.data already holds the fully 
+    By the time this function is called, structured_data.data already holds the fully
     transformed data (if transform is needed)
 
     The *serialisation* this function performs is simply a delivery mechanism.
@@ -1141,7 +1139,7 @@ def submit_any_ingestion(
 
         temp_json = _pre_transform_to_temp_json(ingestion_filename, _transform_source)
         try:
-            # if temp_json is None (no custom mapping or non-Excel input) this is a no-op 
+            # if temp_json is None (no custom mapping or non-Excel input) this is a no-op
             # and the original file is uploaded as before.
             # The temp file only needs to exist for the duration of _initiate_server_ingestion_process
             # (the upload POST); the finally block deletes it immediately after.
@@ -1470,7 +1468,6 @@ def _monitor_ingestion_process(
         interrupt_exit_message: Optional[Callable] = None,
         include_status: bool = False,
     ) -> None:
-        nonlocal validation
         bar = ProgressBar(
             max_checks,
             "Calculating",
@@ -1489,8 +1486,8 @@ def _monitor_ingestion_process(
         phases_seen = []
 
         def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status, noprogress, validation
-            nonlocal loadxl_total, loadxl_started, loadxl_started_second_round, verbose
+            nonlocal nchecks, nchecks_server, next_check, check_status
+            nonlocal loadxl_total, loadxl_started, loadxl_started_second_round
             if noprogress:
                 return
             # This are from the (new/2024-03-25) /ingestion-status/{submission_uuid} call.
@@ -1552,7 +1549,6 @@ def _monitor_ingestion_process(
             # ingester_done                PROGRESS_INGESTER.DONE
             # ingester_queue_cleanup       PROGRESS_INGESTER.QUEUE_CLEANUP
             def reset_eta_if_necessary():  # noqa
-                nonlocal loadxl_started, loadxl_started_second_round, loadxl_done, phases_seen
                 if loadxl_started is not None:
                     if (phase := PROGRESS_LOADXL.START) not in phases_seen:
                         phases_seen.append(phase)
@@ -1637,7 +1633,6 @@ def _monitor_ingestion_process(
     )
 
     def interrupt_exit_message(bar: ProgressBar):
-        nonlocal uuid, server, env, validation, portal
         command_summary = _summarize_submission(
             uuid=uuid, server=server, env=env, app=portal.app
         )
@@ -2113,7 +2108,6 @@ def _print_submission_summary(
         return
 
     def is_admin_user(user_record: Optional[dict]) -> bool:  # noqa
-        nonlocal portal, check_submission_script
         if (
             not check_submission_script
             or not user_record
@@ -2624,7 +2618,7 @@ def _validate_locally(
         bar = ProgressBar(nrows, "Calculating", interrupt_exit=True)
 
         def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, nsheets, nrows, nrows_processed, verbose, noprogress
+            nonlocal nsheets, nrows, nrows_processed
             nonlocal nrefs_total, nrefs_resolved, nrefs_unresolved, nrefs_lookup
             nonlocal nrefs_exists_cache_hit, nrefs_lookup_cache_hit, nrefs_invalid
             if noprogress:
@@ -3159,7 +3153,7 @@ def _print_structured_data_status(
         )
 
         def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, ntypes, nobjects, ncreates, nupdates, nlookups, noprogress
+            nonlocal ntypes, nobjects, ncreates, nupdates, nlookups
             if noprogress:
                 return
             increment = 1
@@ -3448,7 +3442,6 @@ def _define_portal(
 ) -> Portal:
 
     def get_default_keys_file():
-        nonlocal app
         return os.path.expanduser(
             os.path.join(Portal.KEYS_FILE_DIRECTORY, f".{app.lower()}-keys.json")
         )
@@ -3663,10 +3656,9 @@ def _print_metadata_file_info(
                 output_file: str,
                 verbose: bool = False,
             ) -> None:
-                nonlocal structured_data
 
                 def note_output():  # noqa
-                    nonlocal max_output, output_file, noutput, printf, truncated
+                    nonlocal noutput, printf, truncated
                     noutput += 1
                     if noutput >= max_output and output_file and not truncated:
                         PRINT_STDOUT(

@@ -25,6 +25,9 @@ Change Log
   which has no answer for a role session
 * Stop the rclone test helpers from relabeling failures raised by the caller as cloud file
   setup errors, which discarded the original traceback
+* Remove ``global``/``nonlocal`` declarations for names which are only ever read, which are
+  redundant and which newer flake8 reports as ``F824``; where only some names on a declaration
+  were redundant the rest are kept, as those are assigned and so do need declaring
 
 1.15.0
 ======

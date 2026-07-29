@@ -72,12 +72,10 @@ def is_running_from_google_compute_engine():
 
 
 def amazon_credentials_file_path():
-    global _AMAZON_CREDENTIALS_FILE_PATH
     return _AMAZON_CREDENTIALS_FILE_PATH
 
 
 def google_service_account_file_path():
-    global _GOOGLE_SERVICE_ACCOUNT_FILE_PATH
     return _GOOGLE_SERVICE_ACCOUNT_FILE_PATH
 
 

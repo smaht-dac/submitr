@@ -43,7 +43,6 @@ class Amazon:
     @classmethod
     @property
     def bucket(cls) -> str:
-        global AMAZON_TEST_BUCKET_NAME
         return AMAZON_TEST_BUCKET_NAME
 
     @staticmethod
@@ -121,8 +120,6 @@ class Amazon:
     @contextmanager
     def temporary_cloud_file(kms: bool = False, subfolder: bool = True, size: Optional[int] = None) -> str:
 
-        global TEST_FILE_PREFIX, TEST_FILE_SUFFIX, TEST_FILE_SIZE
-
         assert kms in [True, False]
         assert subfolder in [True, False]
         if size is None: size = TEST_FILE_SIZE  # noqa
@@ -173,7 +170,6 @@ class Google:
     @classmethod
     @property
     def bucket(cls) -> str:
-        global GOOGLE_TEST_BUCKET_NAME
         return GOOGLE_TEST_BUCKET_NAME
 
     @staticmethod
@@ -189,8 +185,6 @@ class Google:
     @staticmethod
     @contextmanager
     def temporary_cloud_file(subfolder: bool = True, size: Optional[int] = None) -> str:
-
-        global TEST_FILE_PREFIX, TEST_FILE_SUFFIX, TEST_FILE_SIZE
 
         assert subfolder in [True, False]
         if size is None: size = TEST_FILE_SIZE  # noqa
