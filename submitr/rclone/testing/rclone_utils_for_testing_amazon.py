@@ -467,9 +467,10 @@ class AwsS3:
             sts = AwsS3._create_boto_client("sts", generating_credentials)
             arn = sts.get_caller_identity().get("Arn") or ""
             if len(parts := arn.split(":")) == 6 and parts[2] == "sts":
-                if (resource := parts[5]).startswith("assumed-role/"):
-                    if role_name := resource.split("/")[1:2]:
-                        return f"arn:aws:iam::{parts[4]}:role/{role_name[0]}"
+                resource = parts[5].split("/")
+                if (len(resource) > 1) and (resource[0] == "assumed-role"):
+                    if role_name := normalize_string(resource[1]):
+                        return f"arn:aws:iam::{parts[4]}:role/{role_name}"
         except Exception as e:
             DEBUG(f"WEB-IDENTITY: cannot derive role ARN: {e!r}")
         return None

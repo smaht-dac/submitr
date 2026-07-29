@@ -258,3 +258,19 @@ def test_ping_reports_why_it_failed(amazon_credentials_file, mocker) -> None:
     assert credentials.ping() is False
     with pytest.raises(Exception, match="security token"):
         credentials.ping(raise_exception=True)
+
+
+@pytest.mark.parametrize("arn", ["arn:aws:iam::537626822796:user/some-user",
+                                 "arn:aws:sts::537626822796:federated-user/foo",
+                                 "arn:aws:sts::537626822796:assumed-role/",
+                                 ""])
+def test_role_arn_not_derived_from_unusable_identity(fake_sts, web_identity, arn) -> None:
+    # Anything we cannot confidently turn into a role ARN must fall back rather than send a
+    # malformed one to STS.
+    sts = fake_sts(arn=arn)
+    web_identity(role_arn=None)
+    AwsS3._generate_temporary_credentials(
+        generating_credentials=AmazonCredentials(access_key_id="AKIA", secret_access_key="s"),
+        policy={"Version": "2012-10-17", "Statement": []})
+    assert "get_federation_token" in sts.calls
+    assert "assume_role_with_web_identity" not in sts.calls
