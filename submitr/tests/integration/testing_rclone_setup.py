@@ -19,15 +19,17 @@ from submitr.tests.testing_cloud_helpers import TEST_FILE_SIZE
 # If running from within GitHub actions these environment variables assumed to be
 # setup; via .github/workflows/main-integration-tests.yml file and GitHub secrets.
 #
-# These are setup in GitHub as "secrets". The AWS access key values are currently,
-# June 2024, for the special user test-integration-user in the smaht-wolf account;
-# the access key was created on 2024-05-15. The Google value is the JSON from the
-# service account file exported from the HMS Google account for the smaht-dac project;
-# the service account email is ga4-service-account@smaht-dac.iam.gserviceaccount.com;
+# The AWS values are exported by aws-actions/configure-aws-credentials, which assumes a role via
+# GitHub OIDC; they are a role session, so AWS_SESSION_TOKEN is set too. The Google value is a
+# GitHub "secret", being the JSON from the service account file exported from the HMS Google
+# account for the smaht-dac project; the service account email is
+# ga4-service-account@smaht-dac.iam.gserviceaccount.com;
 # its key ID is b488dd9cfde6b59b1aa347aabd9add86c7ff9057; it was created on 2024-04-28.
 #
 # - AWS_ACCESS_KEY_ID
 # - AWS_SECRET_ACCESS_KEY
+# - AWS_SESSION_TOKEN
+# - AWS_OIDC_ROLE_ARN (the role assumed above; used to mint scoped temporary credentials)
 # - GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON
 #
 # If NOT running from within GitHub actions (i.e. locally) these variables assumed
@@ -103,7 +105,8 @@ def rclone_setup_module():
         session_token = os.environ.get("AWS_SESSION_TOKEN", None)
         if not (access_key_id and secret_access_key):
             pytest.fail(f"Test setup ERROR: AWS acesss keys not defined!"
-                        f" GitHub secrets should be defined for AWS credentials.")
+                        f" The aws-actions/configure-aws-credentials step should have run before"
+                        f" this and exported them for the role it assumed via OIDC.")
         else:
             _AMAZON_CREDENTIALS_FILE_PATH = create_temporary_file_name()
             with open(_AMAZON_CREDENTIALS_FILE_PATH, "w") as f:
@@ -156,9 +159,9 @@ def rclone_setup_module():
                 _GOOGLE_SERVICE_ACCOUNT_FILE_PATH = None
 
     # Actually test the Amazon credentials. Report why the ping failed rather than just that it
-    # did; sts:GetCallerIdentity needs no permissions, so a failure here generally means the
-    # AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY secrets are no longer valid (e.g. the access key was
-    # deactivated or deleted), which is not something any policy change would fix.
+    # did; sts:GetCallerIdentity needs no permissions, so a failure here means the credentials
+    # themselves are unusable (e.g. an expired role session) rather than under-permissioned, which
+    # is not something any policy change would fix.
     amazon_credentials = AmazonCredentials(_AMAZON_CREDENTIALS_FILE_PATH)
     try:
         amazon_credentials.ping(raise_exception=True)

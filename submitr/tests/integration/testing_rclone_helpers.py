@@ -72,18 +72,24 @@ class Amazon:
         else:
             assert isinstance(credentials.kms_key_id, str) and credentials.kms_key_id
         if credentials_type == Amazon.CredentialsType.DEFAULT:
-            # The DEFAULT credentials must be an IAM user's long-term keys, i.e. with no session
-            # token. This is not incidental: these are the credentials used to mint the TEMPORARY
-            # ones below via sts:GetFederationToken, which AWS only allows an IAM user (or the
-            # account root user) to call. So these tests cannot run against credentials obtained
-            # from GitHub OIDC / AssumeRoleWithWebIdentity. See the note in
-            # .github/workflows/main-integration-tests.yml
-            assert not credentials.session_token, (
-                "Amazon DEFAULT credentials unexpectedly have a session token, i.e. they are"
-                " temporary credentials. These integration tests require the long-term access keys"
-                " of an IAM user; credentials assumed via GitHub OIDC will not work because"
-                " sts:GetFederationToken cannot be called from a web identity role session.")
+            # The DEFAULT credentials are whatever the ambient environment authenticated us as, so
+            # whether they carry a session token depends on how that was done: credentials assumed
+            # from a web identity (e.g. GitHub OIDC) are a role session and always have one, an IAM
+            # user's long-term access keys never do. Both are supported; assert we got the shape
+            # this environment implies, since a mismatch means credentials are leaking in from
+            # somewhere other than where we think.
+            if AwsS3.is_web_identity_configured():
+                assert credentials.session_token, (
+                    "Amazon DEFAULT credentials have no session token, but this environment"
+                    " authenticates via web identity federation, which yields a role session."
+                    " Check that aws-actions/configure-aws-credentials ran before the tests.")
+            else:
+                assert not credentials.session_token, (
+                    "Amazon DEFAULT credentials unexpectedly have a session token. This environment"
+                    " is not setup for web identity federation, so they were expected to be an IAM"
+                    " user's long-term access keys.")
         else:
+            # The TEMPORARY credentials types are always a scoped session, however they were minted.
             assert isinstance(credentials.session_token, str) and credentials.session_token
         return credentials
 

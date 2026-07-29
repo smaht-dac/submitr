@@ -15,9 +15,14 @@ Change Log
   all Excel workbooks are now handled this way, whether or not they have an EQM sheet
 * Update GitHub Actions workflows to ``actions/checkout@v4`` / ``actions/setup-python@v5``
   and test against Python 3.10, 3.11 and 3.12
-* Keep the integration tests authenticating to AWS with IAM user access keys rather than
-  GitHub OIDC; the rclone test harness mints scoped credentials via ``sts:GetFederationToken``,
-  which cannot be called from a web identity (OIDC) role session
+* Mint the scoped temporary credentials used by the rclone integration tests with
+  ``sts:AssumeRoleWithWebIdentity`` when authenticated via web identity federation (GitHub OIDC),
+  falling back to ``sts:GetFederationToken`` as before for an IAM user's long-term access keys.
+  AWS only lets an IAM user call ``GetFederationToken``, so it cannot be used from a role session;
+  ``AssumeRoleWithWebIdentity`` accepts the same inline session policy and has the same
+  intersection semantics
+* Determine the AWS account number from ``sts:GetCallerIdentity`` rather than ``iam:GetUser``,
+  which has no answer for a role session
 * Stop the rclone test helpers from relabeling failures raised by the caller as cloud file
   setup errors, which discarded the original traceback
 

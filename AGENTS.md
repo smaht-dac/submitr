@@ -10,15 +10,22 @@ This file is the project's committed home for project-intrinsic agent knowledge:
 rclone tests that really talk to AWS S3 and Google Cloud Storage. The `integration` marker is
 applied per-file via `pytestmark` (see `submitr/tests/integration/`), and `pytest.ini` declares it.
 
-**The INTEGRATION TESTS workflow cannot use GitHub OIDC for AWS; it needs an IAM user's long-term
-access keys.** The harness mints scoped credentials with `sts:GetFederationToken`
-(`submitr/rclone/testing/rclone_utils_for_testing_amazon.py`), deliberately mirroring how
-smaht-portal issues upload credentials. AWS only lets an IAM user or the account root user call
-that operation, and credentials from `AssumeRoleWithWebIdentity` explicitly cannot
-(https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_sts-comparison.html). No trust
-policy, role permission, bucket policy or KMS grant changes this — migrating off static keys
-requires changing the harness away from `GetFederationToken` first. See the note at the top of
-`.github/workflows/main-integration-tests.yml`.
+AWS auth for CI is GitHub OIDC (`aws-actions/configure-aws-credentials`) in every workflow. **Do not
+reintroduce long-lived AWS access keys.**
+
+Part of what the rclone tests exercise is minting scoped, short-lived credentials for one
+bucket/key, mirroring how smaht-portal issues upload credentials
+(`encoded_core.types.file.external_creds`). **`sts:GetFederationToken` cannot be used for that under
+OIDC** — AWS only lets an IAM user or the account root user call it, so a role session cannot
+(https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_sts-comparison.html). So
+`AwsS3._generate_temporary_credentials` uses `sts:AssumeRoleWithWebIdentity` instead whenever web
+identity federation is available, passing the same inline session policy (same intersection
+semantics, and it needs no caller credentials); it falls back to `GetFederationToken` for
+command-line use with an IAM user. This is why the workflow needs `id-token: write` and passes
+`AWS_OIDC_ROLE_ARN` through to the test step.
+
+Relatedly, anything needing the AWS account number must use `sts:GetCallerIdentity`, not
+`iam:GetUser` — the latter has no answer for a role session.
 
 Reading integration failures in GitHub Actions: because the multi-line
 `GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON` secret has lines that are just `{` and `}`, Actions masks
