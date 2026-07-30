@@ -822,6 +822,8 @@ def submit_any_ingestion(
     debug=False,
     debug_sleep=None,
     skip_validators=None,
+    transform_protected_donor: bool = True,
+    transformed_workbook_path: Optional[str] = None,
 ):
     """
     Does the core action of submitting a metadata bundle.
@@ -1049,6 +1051,8 @@ def submit_any_ingestion(
             debug=debug,
             debug_sleep=debug_sleep,
             skip_validators=skip_validators,
+            transform_protected_donor=transform_protected_donor,
+            transformed_workbook_path=transformed_workbook_path,
         )
         if validate_local_only:
             # We actually do exit from _validate_locally if validate_local_only is True.
@@ -2507,6 +2511,8 @@ def _validate_locally(
     debug: bool = False,
     debug_sleep: Optional[str] = None,
     skip_validators: Optional[List[str]] = None,
+    transform_protected_donor: bool = True,
+    transformed_workbook_path: Optional[str] = None,
 ) -> StructuredDataSet:
 
     if json_only:
@@ -2625,7 +2631,9 @@ def _validate_locally(
         progress=None if noprogress else define_progress_callback(debug=debug),
         validator_hook=validator_hook,
         validator_sheet_hook=validator_sheet_hook,
-        excel_class=CustomExcel,
+        excel_class=CustomExcel.with_portal(portal,
+                                            transform_protected_donor=transform_protected_donor,
+                                            transformed_workbook_path=transformed_workbook_path),
         debug_sleep=debug_sleep,
     )
     structured_data.load_file(ingestion_filename)
