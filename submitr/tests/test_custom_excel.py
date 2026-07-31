@@ -132,16 +132,12 @@ EXPECTED_RESULT = {
             "cost_efficiency": "140"
         },
         {
+            # N.B. This row leaves total_raw_reads_sequenced and total_raw_bases_sequenced empty in
+            # the spreadsheet, and so has no qc_values entries for them. As of dcicutils 8.19.0 a
+            # mapped column with an empty cell is skipped entirely, rather than producing a
+            # qc_values entry with no "value"; such an entry is not schema conformant. This also
+            # keeps the array indices a compact 0-based range with no gaps.
             "qc_values": [
-                {
-                    "derived_from": "total_raw_reads_sequenced",
-                    "key": "Total Raw Reads Sequenced",
-                    "tooltip": "# of reads (150bp)"
-                },
-                {
-                    "derived_from": "total_raw_bases_sequenced",
-                    "key": "Total Raw Bases Sequenced"
-                },
                 {
                     "derived_from": "prefiltering_number_of_consensus_molecules",
                     "value": 12,
