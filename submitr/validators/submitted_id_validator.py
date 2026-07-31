@@ -44,7 +44,6 @@ def _submitted_id_validator_finish(structured_data: StructuredDataSet, **kwargs)
     valid_submission_centers = kwargs.get("valid_submission_centers")
 
     def validate_submitted_id(submitted_id: str, schema: str, row: int) -> None:
-        nonlocal structured_data, valid_submission_centers
         path = f"/validators/submitted_id/{submitted_id}"
         if valid_submission_centers:
             path += f"?submission_centers={valid_submission_centers}"

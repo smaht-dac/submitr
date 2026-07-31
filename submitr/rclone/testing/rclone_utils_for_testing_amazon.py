@@ -4,7 +4,8 @@ from boto3 import client as BotoClient
 from datetime import timedelta
 from json import dumps as dump_json
 import os
-from typing import List, Optional, Union
+import requests
+from typing import List, Optional, Tuple, Union
 from dcicutils.file_utils import are_files_equal, normalize_path
 from dcicutils.misc_utils import create_short_uuid, normalize_string
 from dcicutils.tmpfile_utils import temporary_file
@@ -25,6 +26,11 @@ class AwsS3:
     # of the destination key; note that also with this S3-to-S3 rclone copy situation, for some reason,
     # we cannot use --s3-no-head-object, but rather just --s3-no-head.
     ALLOW_EXTRA_POLICY_FOR_RCLONE_S3_TO_S3 = True
+
+    # Audience for the OIDC token we request when generating scoped temporary credentials via
+    # web identity federation; this is what aws-actions/configure-aws-credentials uses by default,
+    # and the role's trust policy is expected to condition on it.
+    WEB_IDENTITY_AUDIENCE = "sts.amazonaws.com"
 
     @staticmethod
     def create(*args, **kwargs) -> AwsS3:
@@ -323,7 +329,12 @@ class AwsS3:
         actions = ["s3:GetObject"]
         if kms_key_id := normalize_string(kms_key_id):
             actions_kms = ["kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey"]
-            resource_kms = f"arn:aws:kms:{self.credentials.region}:{self.credentials.account_number}:key/{kms_key_id}"
+            if not (account_number := self.credentials.account_number):
+                # Fail clearly here; otherwise the account number lands in the resource ARN as
+                # "None" and AWS rejects the whole request with a confusing MalformedPolicyDocument.
+                raise Exception("Cannot determine the AWS account number needed for the KMS"
+                                " resource ARN of the temporary credentials policy.")
+            resource_kms = f"arn:aws:kms:{self.credentials.region}:{account_number}:key/{kms_key_id}"
             statements.append({"Effect": "Allow", "Action": actions_kms, "Resource": resource_kms})
         if not (readonly is True):
             # Note the s3:CreateBucket is specifically required (for some reason) by rclone (but not for plain
@@ -384,7 +395,25 @@ class AwsS3:
         name = f"test.smaht.submitr.{create_short_uuid(length=12)}"
         try:
             sts = AwsS3._create_boto_client("sts", generating_credentials)
-            response = sts.get_federation_token(Name=name, Policy=policy, DurationSeconds=duration)
+            if web_identity := AwsS3._obtain_web_identity(generating_credentials):
+                # We are authenticated via web identity federation (e.g. GitHub OIDC), so the
+                # generating credentials are a role session, and a role session cannot call
+                # sts:GetFederationToken -- AWS only permits an IAM user or the account root user
+                # to call it. AssumeRoleWithWebIdentity takes the same kind of inline session
+                # policy and gives the same result (permissions are the intersection of the role's
+                # own policy and the session policy), and requires no caller credentials at all.
+                role_arn, web_identity_token = web_identity
+                arguments = {"RoleArn": role_arn,
+                             "RoleSessionName": name,
+                             "WebIdentityToken": web_identity_token,
+                             # A role session cannot outlive the role's maximum session duration,
+                             # which defaults to one hour; asking for more fails outright.
+                             "DurationSeconds": min(duration, DURATION_DEFAULT)}
+                if policy:
+                    arguments["Policy"] = policy
+                response = sts.assume_role_with_web_identity(**arguments)
+            else:
+                response = sts.get_federation_token(Name=name, Policy=policy, DurationSeconds=duration)
             if isinstance(credentials := response.get("Credentials"), dict):
                 return AmazonCredentials(access_key_id=credentials.get("AccessKeyId"),
                                          secret_access_key=credentials.get("SecretAccessKey"),
@@ -393,6 +422,84 @@ class AwsS3:
         except Exception as e:
             if raise_exception is True:
                 raise e
+        return None
+
+    @staticmethod
+    def is_web_identity_configured() -> bool:
+        """
+        Returns True iff this environment is setup to authenticate to AWS via web identity
+        federation, i.e. iff an OIDC token can be obtained for us. Deliberately cheap (environment
+        variables only, no I/O) as this is also used to decide what shape the ambient credentials
+        are expected to have.
+        """
+        return bool((os.environ.get("ACTIONS_ID_TOKEN_REQUEST_URL") and
+                     os.environ.get("ACTIONS_ID_TOKEN_REQUEST_TOKEN")) or
+                    os.environ.get("AWS_WEB_IDENTITY_TOKEN_FILE"))
+
+    @staticmethod
+    def _obtain_web_identity(generating_credentials: AmazonCredentials) -> Optional[Tuple[str, str]]:
+        """
+        Returns a (role_arn, web_identity_token) tuple for generating temporary credentials via
+        sts:AssumeRoleWithWebIdentity, or None if web identity federation is not usable here (e.g.
+        for a normal command-line user authenticated with an IAM user's long-term access keys, in
+        which case the sts:GetFederationToken path is used instead).
+        """
+        if not AwsS3.is_web_identity_configured():
+            return None
+        if not (role_arn := AwsS3._obtain_web_identity_role_arn(generating_credentials)):
+            DEBUG("WEB-IDENTITY: no role ARN can be determined; not using web identity federation.")
+            return None
+        if not (web_identity_token := AwsS3._obtain_web_identity_token()):
+            DEBUG("WEB-IDENTITY: no token can be obtained; not using web identity federation.")
+            return None
+        return role_arn, web_identity_token
+
+    @staticmethod
+    def _obtain_web_identity_role_arn(generating_credentials: AmazonCredentials) -> Optional[str]:
+        # Prefer being told explicitly; see .github/workflows/main-integration-tests.yml
+        if role_arn := normalize_string(os.environ.get("AWS_OIDC_ROLE_ARN")):
+            return role_arn
+        # Otherwise derive it from whoever we currently are, turning e.g.
+        # arn:aws:sts::1234:assumed-role/some-role/some-session into
+        # arn:aws:iam::1234:role/some-role. N.B. this does not round-trip for a role which was
+        # created with a path, as the assumed-role ARN does not include it.
+        try:
+            sts = AwsS3._create_boto_client("sts", generating_credentials)
+            arn = sts.get_caller_identity().get("Arn") or ""
+            if len(parts := arn.split(":")) == 6 and parts[2] == "sts":
+                resource = parts[5].split("/")
+                if (len(resource) > 1) and (resource[0] == "assumed-role"):
+                    if role_name := normalize_string(resource[1]):
+                        return f"arn:aws:iam::{parts[4]}:role/{role_name}"
+        except Exception as e:
+            DEBUG(f"WEB-IDENTITY: cannot derive role ARN: {e!r}")
+        return None
+
+    @staticmethod
+    def _obtain_web_identity_token() -> Optional[str]:
+        # N.B. A fresh token is fetched for each call rather than cached; these are short-lived
+        # and STS rejects an expired one (ExpiredToken/InvalidIdentityToken).
+        request_url = os.environ.get("ACTIONS_ID_TOKEN_REQUEST_URL")
+        request_token = os.environ.get("ACTIONS_ID_TOKEN_REQUEST_TOKEN")
+        if request_url and request_token:
+            # Running within GitHub Actions, with the id-token: write permission granted.
+            try:
+                response = requests.get(f"{request_url}&audience={AwsS3.WEB_IDENTITY_AUDIENCE}",
+                                        headers={"Authorization": f"Bearer {request_token}"},
+                                        timeout=30)
+                response.raise_for_status()
+                if token := normalize_string(response.json().get("value")):
+                    return token
+            except Exception as e:
+                DEBUG(f"WEB-IDENTITY: cannot fetch OIDC token from GitHub: {e!r}")
+        if token_file := normalize_path(os.environ.get("AWS_WEB_IDENTITY_TOKEN_FILE"), expand_home=True):
+            # Conventional location for a projected OIDC token; e.g. on EKS.
+            try:
+                with open(token_file) as f:
+                    if token := normalize_string(f.read()):
+                        return token
+            except Exception as e:
+                DEBUG(f"WEB-IDENTITY: cannot read token file {token_file}: {e!r}")
         return None
 
     def _file_head(self, bucket: str, key: str, raise_exception: bool = True) -> Optional[dict]:

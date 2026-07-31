@@ -6,6 +6,29 @@ smaht-submitr
 Change Log
 ----------
 
+1.16.0
+======
+`PR 44 ExternalQualityMetric ingestion <https://github.com/smaht-dac/submitr/pull/44>`_
+
+* Transform structured data for ``ExternalQualityMetric`` sheets into a schema conformant form,
+  serialized to a temporary JSON file which is then used as the ingestion input to the portal;
+  all Excel workbooks are now handled this way, whether or not they have an EQM sheet
+* Update GitHub Actions workflows to ``actions/checkout@v4`` / ``actions/setup-python@v5``
+  and test against Python 3.10, 3.11 and 3.12
+* Mint the scoped temporary credentials used by the rclone integration tests with
+  ``sts:AssumeRoleWithWebIdentity`` when authenticated via web identity federation (GitHub OIDC),
+  falling back to ``sts:GetFederationToken`` as before for an IAM user's long-term access keys.
+  AWS only lets an IAM user call ``GetFederationToken``, so it cannot be used from a role session;
+  ``AssumeRoleWithWebIdentity`` accepts the same inline session policy and has the same
+  intersection semantics
+* Determine the AWS account number from ``sts:GetCallerIdentity`` rather than ``iam:GetUser``,
+  which has no answer for a role session
+* Stop the rclone test helpers from relabeling failures raised by the caller as cloud file
+  setup errors, which discarded the original traceback
+* Remove ``global``/``nonlocal`` declarations for names which are only ever read, which are
+  redundant and which newer flake8 reports as ``F824``; where only some names on a declaration
+  were redundant the rest are kept, as those are assigned and so do need declaring
+
 1.15.0
 ======
 `PR 43 Validator updates <https://github.com/smaht-dac/submitr/pull/43>`_

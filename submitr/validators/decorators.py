@@ -36,7 +36,6 @@ def structured_data_validator_hook(*decorator_args, **decorator_kwargs) -> Calla
               f" @structured_data_validator_hook: {decorator_args[0].__name__}")
         exit(1)
     def decorator(wrapped_function: Callable) -> Callable:  # noqa
-        nonlocal decorator_args, decorator_kwargs
         if not ((len(decorator_args) == 1) and
                 isinstance(arg := decorator_args[0], str) and arg and (not decorator_kwargs)):
             print(f"CODE ERROR: Only a column or schema.column argument permitted for"
@@ -62,7 +61,6 @@ def structured_data_validator_finish_hook(*decorator_args, **decorator_kwargs) -
         _FINISH_VALIDATORS.append(wrapped_function)
         return wrapped_function  # <-- ADDED THIS LINE
     def decorator(wrapped_function: Callable) -> Callable:  # noqa
-        nonlocal decorator_args, decorator_kwargs
         if (((len(decorator_args) != 0) and
              (not (len(decorator_args) == 1 and
                    ([f for f in _FINISH_VALIDATORS if f == wrapped_function]))))) or decorator_kwargs:
@@ -86,7 +84,6 @@ def structured_data_validator_sheet_hook(*decorator_args, **decorator_kwargs) ->
               f" @structured_data_validator_sheet_hook decorator: {decorator_args[0].__name__}")
         exit(1)
     def decorator(wrapped_function: Callable) -> Callable:  # noqa
-        nonlocal decorator_args, decorator_kwargs
         if not ((len(decorator_args) == 1) and
                 isinstance(schemas := decorator_args[0], (str, list)) and schemas):
             print(f"CODE ERROR: Single sheet name argument required for"
@@ -115,7 +112,6 @@ def define_structured_data_validator_hook(**kwargs) -> Callable:
                 return validator(structured_data, schema, column, row, value=value, **kwargs)
         return value
     def finish_hook(structured_data: StructuredDataSet) -> None:  # noqa
-        nonlocal kwargs
         for validator in _FINISH_VALIDATORS:
             if validator.__name__ not in skip:
                 validator(structured_data, **kwargs)
