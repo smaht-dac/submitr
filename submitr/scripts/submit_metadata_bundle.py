@@ -126,6 +126,10 @@ ADVANCED OPTIONS:
   and refrains from printing lengthy content to output/stdout.
 --noprogress
   Do not print progress of (client-side) parsing/validation output.
+--save-transformed-workbook OUTPUT-XLSX
+  Saves the automatically transformed Donor/ProtectedDonor workbook to the
+  specified .xlsx path for visual inspection. The output file must not already
+  exist. This may not be used with --no-transform-protected-donor.
 --timeout SECONDS
   Maximum umber of seconds to wait for server validation or submission.
 --debug
@@ -236,10 +240,7 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--no-transform-protected-donor', action="store_true",
                         help="Do not automatically transform Donor workbook sheets for ProtectedDonor ingestion.",
                         default=False)
-    parser.add_argument('--save-transformed-workbook',
-                        help="Save the automatically transformed Donor/ProtectedDonor workbook to this .xlsx path "
-                             "for inspection. The file must not already exist.",
-                        default=None)
+    parser.add_argument('--save-transformed-workbook', help=argparse.SUPPRESS, default=None)
     parser.add_argument('--skip-validator', action='append', dest='skip_validators',
                         help=argparse.SUPPRESS, default=None)
     parser.add_argument('--ping', action="store_true", help="Ping server.", default=False)
