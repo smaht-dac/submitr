@@ -6,7 +6,10 @@ import io
 from json import dumps as json_dumps, loads as json_loads
 import os
 from pathlib import Path
-import pkg_resources
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API.*")
+    import pkg_resources
 import requests
 from signal import signal, SIGINT
 import string

@@ -12,7 +12,7 @@ from typing import Any, BinaryIO, Callable, Dict, List, Literal, Optional, Tuple
 
 # get_env_real_url would rely on env_utils
 # from dcicutils.env_utils import get_env_real_url
-from dcicutils.command_utils import yes_or_no
+from dcicutils.command_utils import yes_or_no, y_or_n
 from dcicutils.common import APP_CGAP, APP_FOURFRONT, APP_SMAHT, OrchestratedApp
 from dcicutils.data_readers import Excel
 from dcicutils.datetime_utils import format_datetime
@@ -500,6 +500,129 @@ def _ingestion_submission_item_url(server, uuid):
 
 # TRY_OLD_PROTOCOL = True
 DEBUG_PROTOCOL = environ_bool("DEBUG_PROTOCOL", default=False)
+TPC_SUBMISSION_CENTER_IDENTIFIER = "ndri_tpc"
+TRANSFORMED_WORKBOOK_SUFFIX = ".transformed"
+
+
+def _is_excel_workbook(file_name: Optional[str]) -> bool:
+    return isinstance(file_name, str) and is_excel_file_name(file_name)
+
+
+def _workbook_has_visible_donor_sheet(file_name: Optional[str]) -> bool:
+    if not _is_excel_workbook(file_name):
+        return False
+    try:
+        excel = Excel(file_name)
+        return any(CustomExcel.effective_sheet_name(sheet_name) == "Donor"
+                   for sheet_name in excel.sheet_names)
+    except Exception:
+        # Let normal parsing/validation report malformed workbook errors later.
+        return False
+
+
+def _default_transformed_workbook_path(file_name: str) -> str:
+    directory, basename = os.path.split(os.path.abspath(os.path.expanduser(file_name)))
+    stem, extension = os.path.splitext(basename)
+    return os.path.join(directory, f"{stem}{TRANSFORMED_WORKBOOK_SUFFIX}{extension or '.xlsx'}")
+
+
+def _resolve_submission_center_identifiers(portal: Portal, submission_centers: Optional[List[str]]) -> List[str]:
+    identifiers = []
+    for submission_center in submission_centers or []:
+        if resolved := _get_submission_center(portal, submission_center):
+            identifiers.append(resolved)
+    return identifiers
+
+
+def _is_tpc_submission_center_identifiers(identifiers: List[str]) -> bool:
+    return (len(identifiers) == 1 and
+            identifiers[0].strip().lower() == TPC_SUBMISSION_CENTER_IDENTIFIER)
+
+
+def _prepare_protected_donor_transform(
+    *,
+    portal: Portal,
+    ingestion_filename: str,
+    submission_centers: Optional[List[str]],
+    validation: bool,
+    no_query: bool,
+    transform_protected_donor: bool,
+    transformed_workbook_path: Optional[str],
+) -> Tuple[bool, Optional[str]]:
+    if not transform_protected_donor or not _is_excel_workbook(ingestion_filename):
+        return False, None
+    if not _workbook_has_visible_donor_sheet(ingestion_filename):
+        return False, None
+    identifiers = _resolve_submission_center_identifiers(portal, submission_centers)
+    is_tpc = _is_tpc_submission_center_identifiers(identifiers)
+    centers = ", ".join(identifiers) if identifiers else "unknown"
+    if not is_tpc:
+        PRINT("WARNING: Donor metadata was detected in a non-TPC submission.")
+        PRINT(f"Submission center identifier(s): {centers}")
+        PRINT("ProtectedDonor transformation is restricted to TPC / ndri_tpc submissions.")
+        PRINT("This workbook will be ingested WITHOUT ProtectedDonor transformation if you continue.")
+        if no_query:
+            PRINT("ERROR: Non-TPC Donor submissions require interactive confirmation; aborting.")
+            sys.exit(1)
+        if not yes_or_no("Continue with plain ingestion?"):
+            PRINT("Aborting.")
+            sys.exit(1)
+        return False, None
+    if no_query:
+        apply_transform = True
+    else:
+        apply_transform = y_or_n(
+            "TPC submission with Donor metadata detected. Apply ProtectedDonor workbook transformation?",
+            default=True,
+        )
+    if not apply_transform:
+        PRINT("Aborting because visible Donor metadata in a TPC submission requires ProtectedDonor transformation.")
+        sys.exit(1)
+    output_path = os.path.abspath(os.path.expanduser(
+        transformed_workbook_path or _default_transformed_workbook_path(ingestion_filename)
+    ))
+    input_path = os.path.abspath(os.path.expanduser(ingestion_filename))
+    if output_path == input_path:
+        PRINT(f"ERROR: Transformed workbook output path must differ from input workbook path: {output_path}")
+        sys.exit(1)
+    if os.path.exists(output_path):
+        if validation:
+            PRINT(f"Overwriting existing transformed workbook: {format_path(output_path)}")
+            os.remove(output_path)
+        elif no_query:
+            PRINT(f"Overwriting existing transformed workbook: {format_path(output_path)}")
+            os.remove(output_path)
+        elif y_or_n(f"Transformed workbook already exists: {format_path(output_path)}. Overwrite?",
+                    default=False):
+            os.remove(output_path)
+        else:
+            PRINT("Aborting.")
+            sys.exit(1)
+    return True, output_path
+
+
+def _ensure_protected_donor_transformed_workbook(
+    ingestion_filename: str,
+    portal: Portal,
+    transformed_workbook_path: str,
+) -> None:
+    # Loading through CustomExcel is enough here: the workbook transform and save are
+    # side effects of parsing the Excel workbook. Full validation is handled elsewhere.
+    structured_data = StructuredDataSet(
+        file=ingestion_filename,
+        portal=portal,
+        excel_class=CustomExcel.with_portal(
+            portal,
+            transform_protected_donor=True,
+            transformed_workbook_path=transformed_workbook_path,
+        ),
+        norefs=True,
+    )
+    ignored(structured_data)
+    if not os.path.exists(transformed_workbook_path):
+        PRINT("ERROR: ProtectedDonor transformation was requested but no transformed workbook was created.")
+        PRINT("Check that the visible Donor sheet has a submitted_id column and at least one data row.")
+        sys.exit(1)
 
 
 def _initiate_server_ingestion_process(
@@ -1012,10 +1135,22 @@ def submit_any_ingestion(
     else:
         valid_submission_centers = ""
 
+    protected_donor_transform, protected_donor_transformed_workbook = _prepare_protected_donor_transform(
+        portal=portal,
+        ingestion_filename=ingestion_filename,
+        submission_centers=app_args.get("submission_centers"),
+        validation=validation,
+        no_query=no_query,
+        transform_protected_donor=transform_protected_donor,
+        transformed_workbook_path=transformed_workbook_path,
+    )
+
     if not json_only:
         PRINT(
             f"Metadata file to {'validate' if validation else 'ingest'}: {format_path(ingestion_filename)}"
         )
+        if protected_donor_transform:
+            PRINT(f"ProtectedDonor transformed workbook: {format_path(protected_donor_transformed_workbook)}")
 
     if verbose:
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
@@ -1051,8 +1186,8 @@ def submit_any_ingestion(
             debug=debug,
             debug_sleep=debug_sleep,
             skip_validators=skip_validators,
-            transform_protected_donor=transform_protected_donor,
-            transformed_workbook_path=transformed_workbook_path,
+            transform_protected_donor=protected_donor_transform,
+            transformed_workbook_path=protected_donor_transformed_workbook,
         )
         if validate_local_only:
             # We actually do exit from _validate_locally if validate_local_only is True.
@@ -1064,6 +1199,16 @@ def submit_any_ingestion(
             f"Skipping local (client) validation (as requested via"
             f" {'--validate-remote-only' if validate_remote_only else '--validate-local-skip'})."
         )
+
+    if protected_donor_transform and structured_data is None:
+        _ensure_protected_donor_transformed_workbook(
+            ingestion_filename,
+            portal,
+            protected_donor_transformed_workbook,
+        )
+    if protected_donor_transform:
+        assert protected_donor_transformed_workbook is not None
+    remote_ingestion_filename = protected_donor_transformed_workbook if protected_donor_transform else ingestion_filename
 
     # Nevermind: Too confusing for both testing and general usage
     # to have different behaviours for admin and non-admin users.
@@ -1082,7 +1227,7 @@ def submit_any_ingestion(
 
         validation_uuid = _initiate_server_ingestion_process(
             portal=portal,
-            ingestion_filename=ingestion_filename,
+            ingestion_filename=remote_ingestion_filename,
             is_server_validation=True,
             consortia=app_args.get("consortia"),
             submission_centers=app_args.get("submission_centers"),
@@ -1142,7 +1287,7 @@ def submit_any_ingestion(
     if validation:
         do_any_uploads(
             structured_data,
-            metadata_file=ingestion_filename,
+            metadata_file=remote_ingestion_filename,
             main_search_directory=upload_folder,
             main_search_directory_recursively=subfolders,
             cloud_store=rclone_google,
@@ -1155,14 +1300,14 @@ def submit_any_ingestion(
     # Server submission.
 
     SHOW(
-        f"Ready to submit your metadata to {portal.server}: {format_path(ingestion_filename)}"
+        f"Ready to submit your metadata to {portal.server}: {format_path(remote_ingestion_filename)}"
     )
     if not yes_or_no("Continue on with the actual submission?"):
         sys.exit(0)
 
     submission_uuid = _initiate_server_ingestion_process(
         portal=portal,
-        ingestion_filename=ingestion_filename,
+        ingestion_filename=remote_ingestion_filename,
         is_server_validation=False,
         validate_remote_skip=validate_remote_skip,
         validation_ingestion_submission_object=server_validation_response,
@@ -2511,7 +2656,7 @@ def _validate_locally(
     debug: bool = False,
     debug_sleep: Optional[str] = None,
     skip_validators: Optional[List[str]] = None,
-    transform_protected_donor: bool = True,
+    transform_protected_donor: bool = False,
     transformed_workbook_path: Optional[str] = None,
 ) -> StructuredDataSet:
 
@@ -2637,6 +2782,10 @@ def _validate_locally(
         debug_sleep=debug_sleep,
     )
     structured_data.load_file(ingestion_filename)
+    if transform_protected_donor and transformed_workbook_path and not os.path.exists(transformed_workbook_path):
+        PRINT("ERROR: ProtectedDonor transformation was requested but no transformed workbook was created.")
+        PRINT("Check that the visible Donor sheet has a submitted_id column and at least one data row.")
+        sys.exit(1)
 
     if debug:
         PRINT("DEBUG: Finished client validation.")
