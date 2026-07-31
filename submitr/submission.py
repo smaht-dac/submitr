@@ -7,6 +7,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 import time
 from typing import Any, BinaryIO, Callable, Dict, List, Literal, Optional, Tuple
 
@@ -322,7 +323,6 @@ def _get_defaulted_consortia(
     """
 
     def show_consortia():
-        nonlocal portal
         if portal:
             if consortia := _get_consortia(portal):
                 SHOW("CONSORTIA SUPPORTED:")
@@ -396,7 +396,6 @@ def _get_defaulted_submission_centers(
     """
 
     def show_submission_centers():
-        nonlocal portal
         if portal:
             if submission_centers := _get_submission_centers(portal):
                 SHOW("SUBMISSION CENTERS SUPPORTED:")
@@ -641,10 +640,16 @@ def _initiate_server_ingestion_process(
     merge: bool = False,
     datafile_size: Optional[Any] = None,
     datafile_checksum: Optional[Any] = None,
+    upload_filename: Optional[str] = None,
     user: Optional[dict] = None,
     debug: bool = False,
     debug_sleep: Optional[str] = None,
 ) -> str:
+    # upload_filename, if provided, is the file actually POSTed to the portal as the
+    # datafile.  ingestion_filename is still used for all metadata stored on the
+    # IngestionSubmission item (ingestion_directory, datafile_size, datafile_checksum)
+    # so that the portal records the path, size and checksum of the original source file
+    # even when a pre-transformed temp file is being uploaded in its place.
 
     if isinstance(validation_ingestion_submission_object, dict):
         # This ingestion action is for a submission (rather than for a validation),
@@ -706,6 +711,7 @@ def _initiate_server_ingestion_process(
         portal=portal,
         is_resume_submission=is_resume_submission,
         ingestion_filename=ingestion_filename,
+        upload_filename=upload_filename,
         consortia=consortia,
         submission_centers=submission_centers,
         add_submission_center=add_submission_center,
@@ -738,6 +744,7 @@ def _post_submission(
     add_submission_center: Optional[str] = None,
     ingestion_type: str = DEFAULT_INGESTION_TYPE,
     submission_protocol: str = DEFAULT_SUBMISSION_PROTOCOL,
+    upload_filename: Optional[str] = None,
     is_server_validation: bool = False,
     is_resume_submission: bool = False,
     debug: bool = False,
@@ -786,9 +793,15 @@ def _post_submission(
             submission_protocol=submission_protocol, ingestion_filename=None
         )
     else:
+        # upload_filename, if provided, is the serialised JSON of already-transformed data
+        # (written by _pre_transform_to_temp_json) and replaces the raw source file for
+        # the upload POST only.  All IngestionSubmission metadata (ingestion_directory,
+        # datafile_size, datafile_checksum) was already computed from ingestion_filename
+        # in _initiate_server_ingestion_process, so the portal stores the correct
+        # original-file provenance regardless of which file is actually uploaded.
         file_post_data = _post_files_data(
             submission_protocol=submission_protocol,
-            ingestion_filename=ingestion_filename,
+            ingestion_filename=upload_filename or ingestion_filename,
         )
     response = portal.post(
         new_style_submission_url,
@@ -824,6 +837,37 @@ def _post_files_data(
             return {"datafile": io.open("/dev/null", "rb")}
     else:
         return {"datafile": None}
+
+
+def _pre_transform_to_temp_json(ingestion_filename: str, structured_data) -> Optional[str]:
+    """Serialise structured_data.data to a temporary JSON file and return its path.
+
+    Returns None (no-op) when:
+      - structured_data is None, or
+      - the ingestion file is not an Excel workbook (.xlsx / .xls).
+
+    By the time this function is called, structured_data.data already holds the fully
+    transformed data (if transform is needed)
+
+    The *serialisation* this function performs is simply a delivery mechanism.
+    Writing the already-transformed data from StructuredDatasetto a temp JSON file
+    lets the portal ingest it directly without needing to re-apply any mapping.
+
+    For workbooks with no custom column mapping, structured_data.data is
+    equivalent to what the portal would parse from the raw file anyway, so
+    this path is always safe — it is a no-op in the common case.
+
+    The caller function deletes the returned temp file once the upload POST inside
+    _initiate_server_ingestion_process has completed as the file only needs to
+    exist long enough for the upload to finish.
+    """
+    if (structured_data is None
+            or not ingestion_filename
+            or not (ingestion_filename.endswith(".xlsx") or ingestion_filename.endswith(".xls"))):
+        return None
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False, encoding="utf-8") as f:
+        json.dump(structured_data.data, f)
+        return f.name
 
 
 def _resolve_app_args(
@@ -1330,6 +1374,36 @@ def submit_any_ingestion(
         debug=debug,
         debug_sleep=debug_sleep,
     )
+    try:
+        submission_uuid = _initiate_server_ingestion_process(
+            portal=portal,
+            ingestion_filename=ingestion_filename,
+            upload_filename=_submission_temp_json,
+            is_server_validation=False,
+            validate_remote_skip=validate_remote_skip,
+            validation_ingestion_submission_object=server_validation_response,
+            consortia=app_args.get("consortia"),
+            submission_centers=app_args.get("submission_centers"),
+            add_submission_center=add_submission_center,
+            post_only=post_only,
+            patch_only=patch_only,
+            autoadd=autoadd,
+            merge=merge,
+            user=(
+                {
+                    "uuid": user_record.get("uuid"),
+                    "email": user_record.get("email"),
+                    "name": user_record.get("display_title"),
+                }
+                if user_record
+                else None
+            ),
+            debug=debug,
+            debug_sleep=debug_sleep,
+        )
+    finally:
+        if _submission_temp_json and os.path.exists(_submission_temp_json):
+            os.unlink(_submission_temp_json)
 
     SHOW(f"Submission tracking ID: {submission_uuid}")
 
@@ -1523,7 +1597,6 @@ def _monitor_ingestion_process(
         interrupt_exit_message: Optional[Callable] = None,
         include_status: bool = False,
     ) -> None:
-        nonlocal validation
         bar = ProgressBar(
             max_checks,
             "Calculating",
@@ -1542,8 +1615,8 @@ def _monitor_ingestion_process(
         phases_seen = []
 
         def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, max_checks, nchecks, nchecks_server, next_check, check_status, noprogress, validation
-            nonlocal loadxl_total, loadxl_started, loadxl_started_second_round, verbose
+            nonlocal nchecks, nchecks_server, next_check, check_status
+            nonlocal loadxl_total, loadxl_started, loadxl_started_second_round
             if noprogress:
                 return
             # This are from the (new/2024-03-25) /ingestion-status/{submission_uuid} call.
@@ -1605,7 +1678,6 @@ def _monitor_ingestion_process(
             # ingester_done                PROGRESS_INGESTER.DONE
             # ingester_queue_cleanup       PROGRESS_INGESTER.QUEUE_CLEANUP
             def reset_eta_if_necessary():  # noqa
-                nonlocal loadxl_started, loadxl_started_second_round, loadxl_done, phases_seen
                 if loadxl_started is not None:
                     if (phase := PROGRESS_LOADXL.START) not in phases_seen:
                         phases_seen.append(phase)
@@ -1690,7 +1762,6 @@ def _monitor_ingestion_process(
     )
 
     def interrupt_exit_message(bar: ProgressBar):
-        nonlocal uuid, server, env, validation, portal
         command_summary = _summarize_submission(
             uuid=uuid, server=server, env=env, app=portal.app
         )
@@ -2166,7 +2237,6 @@ def _print_submission_summary(
         return
 
     def is_admin_user(user_record: Optional[dict]) -> bool:  # noqa
-        nonlocal portal, check_submission_script
         if (
             not check_submission_script
             or not user_record
@@ -2679,7 +2749,7 @@ def _validate_locally(
         bar = ProgressBar(nrows, "Calculating", interrupt_exit=True)
 
         def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, nsheets, nrows, nrows_processed, verbose, noprogress
+            nonlocal nsheets, nrows, nrows_processed
             nonlocal nrefs_total, nrefs_resolved, nrefs_unresolved, nrefs_lookup
             nonlocal nrefs_exists_cache_hit, nrefs_lookup_cache_hit, nrefs_invalid
             if noprogress:
@@ -3220,7 +3290,7 @@ def _print_structured_data_status(
         )
 
         def progress_report(status: dict) -> None:  # noqa
-            nonlocal bar, ntypes, nobjects, ncreates, nupdates, nlookups, noprogress
+            nonlocal ntypes, nobjects, ncreates, nupdates, nlookups
             if noprogress:
                 return
             increment = 1
@@ -3509,7 +3579,6 @@ def _define_portal(
 ) -> Portal:
 
     def get_default_keys_file():
-        nonlocal app
         return os.path.expanduser(
             os.path.join(Portal.KEYS_FILE_DIRECTORY, f".{app.lower()}-keys.json")
         )
@@ -3714,7 +3783,7 @@ def _print_metadata_file_info(
         max_output = 10
         portal = _define_portal(env=env, ping=True)
         structured_data = StructuredDataSet(
-            file, portal, norefs=True, excel_class=CustomExcel
+            file, portal, norefs=True, excel_class=CustomExcel.with_portal(portal)
         )
         if refs is True:
 
@@ -3724,10 +3793,9 @@ def _print_metadata_file_info(
                 output_file: str,
                 verbose: bool = False,
             ) -> None:
-                nonlocal structured_data
 
                 def note_output():  # noqa
-                    nonlocal max_output, output_file, noutput, printf, truncated
+                    nonlocal noutput, printf, truncated
                     noutput += 1
                     if noutput >= max_output and output_file and not truncated:
                         PRINT_STDOUT(

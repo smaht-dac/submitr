@@ -43,7 +43,6 @@ class Amazon:
     @classmethod
     @property
     def bucket(cls) -> str:
-        global AMAZON_TEST_BUCKET_NAME
         return AMAZON_TEST_BUCKET_NAME
 
     @staticmethod
@@ -72,8 +71,24 @@ class Amazon:
         else:
             assert isinstance(credentials.kms_key_id, str) and credentials.kms_key_id
         if credentials_type == Amazon.CredentialsType.DEFAULT:
-            assert not credentials.session_token
+            # The DEFAULT credentials are whatever the ambient environment authenticated us as, so
+            # whether they carry a session token depends on how that was done: credentials assumed
+            # from a web identity (e.g. GitHub OIDC) are a role session and always have one, an IAM
+            # user's long-term access keys never do. Both are supported; assert we got the shape
+            # this environment implies, since a mismatch means credentials are leaking in from
+            # somewhere other than where we think.
+            if AwsS3.is_web_identity_configured():
+                assert credentials.session_token, (
+                    "Amazon DEFAULT credentials have no session token, but this environment"
+                    " authenticates via web identity federation, which yields a role session."
+                    " Check that aws-actions/configure-aws-credentials ran before the tests.")
+            else:
+                assert not credentials.session_token, (
+                    "Amazon DEFAULT credentials unexpectedly have a session token. This environment"
+                    " is not setup for web identity federation, so they were expected to be an IAM"
+                    " user's long-term access keys.")
         else:
+            # The TEMPORARY credentials types are always a scoped session, however they were minted.
             assert isinstance(credentials.session_token, str) and credentials.session_token
         return credentials
 
@@ -105,8 +120,6 @@ class Amazon:
     @contextmanager
     def temporary_cloud_file(kms: bool = False, subfolder: bool = True, size: Optional[int] = None) -> str:
 
-        global TEST_FILE_PREFIX, TEST_FILE_SUFFIX, TEST_FILE_SIZE
-
         assert kms in [True, False]
         assert subfolder in [True, False]
         if size is None: size = TEST_FILE_SIZE  # noqa
@@ -118,6 +131,8 @@ class Amazon:
             key = cloud_path.join(subfolder, key)
 
         s3 = Amazon.s3 if kms is False else Amazon.s3_kms
+        # N.B. Only the *setup* below is wrapped in try/except; the yield deliberately is not.
+        # See the corresponding note in Google.temporary_cloud_file.
         try:
             with temporary_random_file(prefix=TEST_FILE_PREFIX, suffix=TEST_FILE_SUFFIX, nbytes=size) as tmp_file_path:
                 assert s3.upload_file(tmp_file_path, Amazon.bucket, key) is True
@@ -125,10 +140,15 @@ class Amazon:
                 assert s3.file_size(Amazon.bucket, key) == size
                 if kms is True:
                     assert s3.file_kms_encrypted(Amazon.bucket, key, AMAZON_KMS_KEY_ID) is True
-                yield cloud_path.join(Amazon.bucket, key)
         except Exception as e:
-            pytest.fail(f"Error on Amazon temporary cloud file creation context! {str(e)}")
-            return None
+            try:
+                s3.delete_file(Amazon.bucket, key)
+            except Exception:
+                pass  # Do not let a cleanup error mask the actual error reported below.
+            # Use repr rather than str; a bare assert failure has an empty str, which says nothing.
+            pytest.fail(f"Error on Amazon temporary cloud file creation context! {e!r}")
+        try:
+            yield cloud_path.join(Amazon.bucket, key)
         finally:
             s3.delete_file(Amazon.bucket, key)
 
@@ -150,7 +170,6 @@ class Google:
     @classmethod
     @property
     def bucket(cls) -> str:
-        global GOOGLE_TEST_BUCKET_NAME
         return GOOGLE_TEST_BUCKET_NAME
 
     @staticmethod
@@ -167,8 +186,6 @@ class Google:
     @contextmanager
     def temporary_cloud_file(subfolder: bool = True, size: Optional[int] = None) -> str:
 
-        global TEST_FILE_PREFIX, TEST_FILE_SUFFIX, TEST_FILE_SIZE
-
         assert subfolder in [True, False]
         if size is None: size = TEST_FILE_SIZE  # noqa
         assert isinstance(size, int) and (size >= 0)
@@ -179,15 +196,24 @@ class Google:
             key = cloud_path.join(subfolder, key)
 
         gcs = Google.gcs
+        # N.B. Only the *setup* below is wrapped in try/except; the yield deliberately is not.
+        # Catching around the yield swallows failures raised by the caller's with-body and
+        # relabels them as Google errors, discarding the original traceback; e.g. an Amazon
+        # credentials problem in test_google_to_amazon would surface here as a Google problem.
         try:
             with temporary_random_file(prefix=TEST_FILE_PREFIX, suffix=TEST_FILE_SUFFIX, nbytes=size) as tmp_file_path:
                 assert gcs.upload_file(tmp_file_path, Google.bucket, key) is True
                 assert gcs.file_exists(Google.bucket, key) is True
                 assert gcs.file_size(Google.bucket, key) == size
-                yield cloud_path.join(Google.bucket, key)
         except Exception as e:
-            pytest.fail(f"Error on Google temporary cloud file creation context! {str(e)}")
-            return None
+            try:
+                gcs.delete_file(Google.bucket, key)
+            except Exception:
+                pass  # Do not let a cleanup error mask the actual error reported below.
+            # Use repr rather than str; a bare assert failure has an empty str, which says nothing.
+            pytest.fail(f"Error on Google temporary cloud file creation context! {e!r}")
+        try:
+            yield cloud_path.join(Google.bucket, key)
         finally:
             gcs.delete_file(Google.bucket, key)
 

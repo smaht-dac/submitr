@@ -118,13 +118,12 @@ def upload_file_to_aws_s3(file: FileForUpload,
         raise Exception("File for upload not found; should not happen at this point!")
 
     def define_upload_file_callback(progress_total_nbytes: bool = False) -> None:
-        nonlocal file_size
 
         def upload_file_callback_internal(nbytes_chunk: int) -> None:  # noqa
             # The execution of this may be in any number of child threads due to the way upload_fileobj
             # works; we do not create the progress bar until the upload actually starts because if we
             # do we get some initial bar output file.
-            nonlocal started, file, file_size, nbytes_transferred, ncallbacks, upload_done, bar, progress_total_nbytes
+            nonlocal nbytes_transferred, ncallbacks, upload_done
             ncallbacks += 1
             if progress_total_nbytes is True:
                 if (nbytes_transferred := nbytes_chunk) > file_size:
@@ -146,7 +145,6 @@ def upload_file_to_aws_s3(file: FileForUpload,
                     upload_done += f" | {format_size(nbytes_transferred / duration)} per second {chars.larrow}"
 
         def upload_file_callback(nbytes_chunk: int) -> None:  # noqa
-            nonlocal threads_aborted, thread_lock, should_abort
             thread_id = threading.current_thread().ident
             will_abort = False
             with thread_lock:
@@ -161,14 +159,13 @@ def upload_file_to_aws_s3(file: FileForUpload,
             upload_file_callback_internal(nbytes_chunk)
 
         def done() -> Optional[str]:  # noqa
-            nonlocal bar, ncallbacks, upload_done, printf
             if ncallbacks == 0:
                 upload_file_callback(file_size)
             bar.done()
             if upload_done:
                 printf(upload_done)
         def abort_upload(bar: ProgressBar) -> bool:  # noqa
-            nonlocal should_abort, rclone_subprocess_info, upload_aborted
+            nonlocal should_abort, upload_aborted
             with thread_lock:
                 should_abort = True
             if rclone_subprocess_info and (rclone_subprocess_pid := rclone_subprocess_info.get("pid")):
@@ -197,11 +194,10 @@ def upload_file_to_aws_s3(file: FileForUpload,
         return upload_file_callback_type(upload_file_callback, done, abort_upload)
 
     def get_uploaded_file_info(strings: bool = False) -> Optional[dict]:
-        nonlocal aws_credentials, s3_bucket, s3_key
         return get_s3_key_metadata(aws_credentials, s3_bucket, s3_key, strings=strings)
 
     def verify_with_any_already_uploaded_file() -> None:
-        nonlocal file, file_size, file_checksum, file_checksum_timestamp, printf
+        nonlocal file_checksum, file_checksum_timestamp
         if not (existing_file_info := get_uploaded_file_info()):
             if not file_checksum and file.from_local:
                 # TODO
@@ -252,7 +248,6 @@ def upload_file_to_aws_s3(file: FileForUpload,
         return True
 
     def verify_uploaded_file() -> bool:
-        nonlocal file, file_size
         try:
             if file_info := get_uploaded_file_info():
                 printf(f"Verifying upload: {file.name} ... ", end="")
@@ -275,7 +270,6 @@ def upload_file_to_aws_s3(file: FileForUpload,
         return False
 
     def create_metadata_for_uploading_file() -> dict:
-        nonlocal file, file_checksum, file_checksum_timestamp
         if not (metadata := get_uploaded_file_info(strings=True)):
             metadata = {}
         if file_checksum:
