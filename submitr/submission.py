@@ -870,6 +870,24 @@ def _pre_transform_to_temp_json(ingestion_filename: str, structured_data) -> Opt
         return f.name
 
 
+def _pre_transform_to_temp_json_for_excel(
+    ingestion_filename: str,
+    structured_data: Optional[StructuredDataSet],
+    portal: Portal,
+) -> Optional[str]:
+    if not _is_excel_workbook(ingestion_filename):
+        return None
+    transform_source = structured_data
+    if transform_source is None:
+        transform_source = StructuredDataSet(
+            file=ingestion_filename,
+            portal=portal,
+            excel_class=CustomExcel.with_portal(portal),
+            norefs=True,
+        )
+    return _pre_transform_to_temp_json(ingestion_filename, transform_source)
+
+
 def _resolve_app_args(
     institution, project, lab, award, app, consortium, submission_center
 ):
@@ -1269,29 +1287,41 @@ def submit_any_ingestion(
 
         SHOW(f"Continuing with additional (server) validation: {portal.server}")
 
-        validation_uuid = _initiate_server_ingestion_process(
-            portal=portal,
-            ingestion_filename=remote_ingestion_filename,
-            is_server_validation=True,
-            consortia=app_args.get("consortia"),
-            submission_centers=app_args.get("submission_centers"),
-            add_submission_center=add_submission_center,
-            post_only=post_only,
-            patch_only=patch_only,
-            autoadd=autoadd,
-            merge=merge,
-            user=(
-                {
-                    "uuid": user_record.get("uuid"),
-                    "email": user_record.get("email"),
-                    "name": user_record.get("display_title"),
-                }
-                if user_record
-                else None
-            ),
-            debug=debug,
-            debug_sleep=debug_sleep,
-        )
+        validation_upload_filename = None
+        if not protected_donor_transform:
+            validation_upload_filename = _pre_transform_to_temp_json_for_excel(
+                ingestion_filename,
+                structured_data,
+                portal,
+            )
+        try:
+            validation_uuid = _initiate_server_ingestion_process(
+                portal=portal,
+                ingestion_filename=remote_ingestion_filename,
+                upload_filename=validation_upload_filename,
+                is_server_validation=True,
+                consortia=app_args.get("consortia"),
+                submission_centers=app_args.get("submission_centers"),
+                add_submission_center=add_submission_center,
+                post_only=post_only,
+                patch_only=patch_only,
+                autoadd=autoadd,
+                merge=merge,
+                user=(
+                    {
+                        "uuid": user_record.get("uuid"),
+                        "email": user_record.get("email"),
+                        "name": user_record.get("display_title"),
+                    }
+                    if user_record
+                    else None
+                ),
+                debug=debug,
+                debug_sleep=debug_sleep,
+            )
+        finally:
+            if validation_upload_filename and os.path.exists(validation_upload_filename):
+                os.unlink(validation_upload_filename)
 
         SHOW(f"Validation tracking ID: {validation_uuid}")
 
@@ -1349,36 +1379,18 @@ def submit_any_ingestion(
     if not yes_or_no("Continue on with the actual submission?"):
         sys.exit(0)
 
-    submission_uuid = _initiate_server_ingestion_process(
-        portal=portal,
-        ingestion_filename=remote_ingestion_filename,
-        is_server_validation=False,
-        validate_remote_skip=validate_remote_skip,
-        validation_ingestion_submission_object=server_validation_response,
-        consortia=app_args.get("consortia"),
-        submission_centers=app_args.get("submission_centers"),
-        add_submission_center=add_submission_center,
-        post_only=post_only,
-        patch_only=patch_only,
-        autoadd=autoadd,
-        merge=merge,
-        user=(
-            {
-                "uuid": user_record.get("uuid"),
-                "email": user_record.get("email"),
-                "name": user_record.get("display_title"),
-            }
-            if user_record
-            else None
-        ),
-        debug=debug,
-        debug_sleep=debug_sleep,
-    )
+    submission_upload_filename = None
+    if not protected_donor_transform:
+        submission_upload_filename = _pre_transform_to_temp_json_for_excel(
+            ingestion_filename,
+            structured_data,
+            portal,
+        )
     try:
         submission_uuid = _initiate_server_ingestion_process(
             portal=portal,
-            ingestion_filename=ingestion_filename,
-            upload_filename=_submission_temp_json,
+            ingestion_filename=remote_ingestion_filename,
+            upload_filename=submission_upload_filename,
             is_server_validation=False,
             validate_remote_skip=validate_remote_skip,
             validation_ingestion_submission_object=server_validation_response,
@@ -1402,8 +1414,8 @@ def submit_any_ingestion(
             debug_sleep=debug_sleep,
         )
     finally:
-        if _submission_temp_json and os.path.exists(_submission_temp_json):
-            os.unlink(_submission_temp_json)
+        if submission_upload_filename and os.path.exists(submission_upload_filename):
+            os.unlink(submission_upload_filename)
 
     SHOW(f"Submission tracking ID: {submission_uuid}")
 
