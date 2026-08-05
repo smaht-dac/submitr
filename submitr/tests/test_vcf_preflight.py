@@ -20,7 +20,8 @@ def _fixture(name):
 def _bgzf(data):
     """Make a small BGZF stream from bytes using the public block layout."""
 
-    compressed = zlib.compress(data, wbits=-15)
+    compressor = zlib.compressobj(wbits=-15)
+    compressed = compressor.compress(data) + compressor.flush()
     block_size = 18 + len(compressed) + 8
     header = b"\x1f\x8b\x08\x04\x00\x00\x00\x00\x00\xff"
     extra = b"\x06\x00BC\x02\x00" + struct.pack("<H", block_size - 1)
