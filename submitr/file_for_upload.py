@@ -7,6 +7,7 @@ from dcicutils.file_utils import compute_file_md5, get_file_size, normalize_path
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import format_size, normalize_string
 from dcicutils.structured_data import Portal, StructuredDataSet
+from submitr.file_preflight import VcfPreflightResult, is_vcf_filename, validate_vcf
 from submitr.output import PRINT
 from submitr.rclone import RCloneAmazon, RCloneStore
 from submitr.utils import chars
@@ -42,10 +43,14 @@ class FileForUpload:
         # {"uuid": "96f29020-7abd-4a42-b4c7-d342563b7074", "filename": "first_file.fastq"}
         # Or just a file name.
 
+        self._type = None
+        self._uuid = None
+        self._file_format = None
         if isinstance(file, dict):
             self._name = file.get("file", file.get("filename", ""))
             self._type = normalize_string(file.get("type")) or None
             self._uuid = normalize_string(file.get("uuid")) or None
+            self._file_format = normalize_string(file.get("file_format")) or None
         elif isinstance(file, pathlib.Path):
             self._name = str(file)
         elif isinstance(file, str):
@@ -119,6 +124,10 @@ class FileForUpload:
     @property
     def type(self) -> Optional[str]:
         return self._type
+
+    @property
+    def file_format(self) -> Optional[str]:
+        return self._file_format
 
     @property
     def accession(self) -> Optional[str]:
@@ -405,7 +414,7 @@ class FileForUpload:
                     printf(f"- File for upload: {self.path_local} ({format_size(self.size_local)})")
                     if destination:
                         printf(f"  AWS destination: {destination}")
-            return True
+            return self._review_vcf(review_only=review_only, printf=printf)
 
         elif self.found_cloud:
             printf(f"- File for upload from {self.cloud_store.proper_name_title} ({self.cloud_store.proper_name}):"
@@ -424,6 +433,45 @@ class FileForUpload:
                     printf(f"  - Use --directory to specify a directory where the file(s) can be found.")
             self._ignore = True
             return False
+
+    def _is_vcf(self) -> bool:
+        file_type = (self.type or "").lower().replace("_", "")
+        file_format = (self.file_format or "").lower().replace("_", "")
+        return (is_vcf_filename(self.name) or file_type == "variantcalls" or
+                file_format in {"vcf", "vcfgz", "variantcalls"})
+
+    def _review_vcf(self, review_only: bool, printf: Callable) -> bool:
+        """Run local VCF preflight after the local/cloud choice is resolved."""
+
+        if not self._is_vcf() or not self.from_local or not self.path:
+            return True
+
+        result: VcfPreflightResult = validate_vcf(self.path, filename=self.display_name)
+        if not result.ok:
+            printf(f"{chars.xmark} ERROR: VCF preflight failed for {self.display_name}")
+            for finding in result.structural_findings:
+                printf(f"  - {finding}")
+            if result.errors_truncated:
+                printf("  - Additional structural findings were omitted after the configured error limit.")
+            printf("  - Upload is blocked. Correct the file and run the upload again.")
+            self._ignore = True
+            return False
+
+        if not result.requires_confirmation:
+            return True
+
+        printf(f"WARNING: VCF header compatibility findings for {self.display_name}")
+        for finding in result.advisory_findings:
+            printf(f"  - {finding}")
+        if review_only:
+            printf("  - Upload confirmation is required when running without review-only mode.")
+            self._ignore = True
+            return False
+        if not yes_or_no("  - Continue with this file despite the VCF header warnings?"):
+            printf("  - File not selected for upload because confirmation was not given.")
+            self._ignore = True
+            return False
+        return True
 
     def __str__(self) -> str:  # for troubleshooting only
         return (
