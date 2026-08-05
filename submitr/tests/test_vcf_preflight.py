@@ -53,6 +53,49 @@ def test_valid_gzip_and_bgzf_streams_pass(tmp_path):
     assert validate_vcf(bgzf_path).ok is True
 
 
+@pytest.mark.parametrize("encoding", ["plain", "gzip", "bgzf"])
+def test_header_only_vcf_passes_all_stream_encodings(tmp_path, encoding):
+    content = _fixture("header_only.vcf").read_bytes()
+    path = tmp_path / f"header-only-{encoding}.vcf"
+    if encoding == "plain":
+        path.write_bytes(content)
+    elif encoding == "gzip":
+        path = path.with_suffix(".vcf.gz")
+        with gzip.open(path, "wb") as compressed:
+            compressed.write(content)
+    else:
+        path = path.with_suffix(".vcf.gz")
+        path.write_bytes(_bgzf(content))
+
+    result = validate_vcf(path)
+
+    assert result.ok is True
+    assert result.records_checked == 0
+    assert not result.structural_findings
+
+
+def test_empty_plain_payload_is_structural(tmp_path):
+    path = tmp_path / "empty.vcf"
+    path.write_bytes(b"")
+
+    result = validate_vcf(path)
+
+    assert result.ok is False
+    assert any("file is empty" in finding.message for finding in result.structural_findings)
+
+
+def test_truncated_empty_gzip_payload_is_structural(tmp_path):
+    path = tmp_path / "truncated-empty.vcf.gz"
+    with gzip.open(path, "wb") as compressed:
+        compressed.write(b"")
+    path.write_bytes(path.read_bytes()[:-1])
+
+    result = validate_vcf(path)
+
+    assert result.ok is False
+    assert any(finding.stage == "compression" for finding in result.structural_findings)
+
+
 @pytest.mark.parametrize("corruptor", [lambda data: data[:-5], lambda data: data[:-1] + bytes([data[-1] ^ 1])])
 def test_compressed_corruption_blocks_upload(tmp_path, corruptor):
     content = _fixture("valid_plain.vcf").read_bytes()
