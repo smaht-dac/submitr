@@ -186,6 +186,89 @@ def test_captain_combined_header_fixture_has_all_three_advisories():
     assert result.requires_confirmation is True
 
 
+def test_combined_advisory_and_structural_findings_remain_blocking():
+    result = validate_vcf(_fixture("combined_advisory_malformed.vcf"))
+
+    assert result.ok is False
+    assert result.requires_confirmation is False
+    assert len(result.advisory_findings) == 3
+    assert sum(result.advisory_counts.values()) == 3
+    assert result.structural_findings
+
+
+def test_default_review_aggregates_many_header_advisories(tmp_path):
+    source = _fixture("many_advisory_headers.vcf")
+    path = tmp_path / source.name
+    path.write_bytes(source.read_bytes())
+    file_for_upload = FileForUpload(path.name, main_search_directory=tmp_path)
+    output = []
+
+    with mock.patch("submitr.file_for_upload.yes_or_no", return_value=True) as confirm:
+        reviewed = FilesForUpload.review([file_for_upload], printf=output.append)
+
+    assert reviewed is True
+    assert confirm.call_count == 1
+    assert any("30 advisory findings detected" in line for line in output)
+    assert any("30 metadata-like header lines use one #" in line for line in output)
+    assert not any("line 2:" in line for line in output)
+
+
+def test_verbose_review_includes_advisory_line_details(tmp_path):
+    source = _fixture("captain_advisory_headers.vcf")
+    path = tmp_path / source.name
+    path.write_bytes(source.read_bytes())
+    file_for_upload = FileForUpload(path.name, main_search_directory=tmp_path)
+    output = []
+
+    with mock.patch("submitr.file_for_upload.yes_or_no", return_value=True):
+        reviewed = FilesForUpload.review(
+            [file_for_upload], verbose=True, printf=output.append
+        )
+
+    assert reviewed is True
+    assert any("line 2:" in line and "one #" in line for line in output)
+    assert any("line 3:" in line and "key:value" in line for line in output)
+    assert any("line 4:" in line and "no key" in line for line in output)
+
+
+def test_combined_review_surfaces_advisories_without_confirmation(tmp_path):
+    source = _fixture("combined_advisory_malformed.vcf")
+    path = tmp_path / source.name
+    path.write_bytes(source.read_bytes())
+    file_for_upload = FileForUpload(path.name, main_search_directory=tmp_path)
+    output = []
+
+    with mock.patch("submitr.file_for_upload.yes_or_no") as confirm:
+        reviewed = FilesForUpload.review([file_for_upload], printf=output.append)
+
+    assert reviewed is False
+    assert file_for_upload.ignore is True
+    confirm.assert_not_called()
+    assert any("Structural errors block upload" in line for line in output)
+    assert any("Header compatibility findings were also detected (3 total)" in line for line in output)
+    assert any("confirmation was not requested" in line for line in output)
+    assert any("Upload is blocked" in line for line in output)
+
+
+def test_review_only_advisory_output_explains_confirmation_requirement(tmp_path):
+    source = _fixture("captain_advisory_headers.vcf")
+    path = tmp_path / source.name
+    path.write_bytes(source.read_bytes())
+    file_for_upload = FileForUpload(path.name, main_search_directory=tmp_path)
+    output = []
+
+    with mock.patch("submitr.file_for_upload.yes_or_no") as confirm:
+        reviewed = FilesForUpload.review(
+            [file_for_upload], review_only=True, printf=output.append
+        )
+
+    assert reviewed is False
+    assert file_for_upload.ignore is True
+    confirm.assert_not_called()
+    assert any("Review-only mode" in line for line in output)
+    assert any("would require explicit confirmation before upload" in line for line in output)
+
+
 def test_colons_inside_quoted_info_descriptions_are_not_advisories(tmp_path):
     path = tmp_path / "quoted-info.vcf"
     content = _fixture("valid_plain.vcf").read_bytes().replace(

@@ -18,5 +18,10 @@ Metadata-like lines with one ``#`` instead of ``##``, INFO attributes written
 with ``key: value`` instead of ``key=value``, and continuation lines without a
 key are accepted but require explicit submitter confirmation before upload.
 Line-ending and unknown-minor-version advisories use the same confirmation
-path. No reference genome is consulted and the validator does not attempt
-downstream VCF semantic or annotation validation.
+path. Normal review output aggregates repeated advisories into actionable
+counts; ``--verbose`` includes the affected line details. Review-only/
+``--validate`` output does not select a file for upload and states when that
+file would require confirmation. Structural errors are reported separately,
+take precedence, and cannot be overridden by confirmation. No reference genome
+is consulted and the validator does not attempt downstream VCF semantic or
+annotation validation.

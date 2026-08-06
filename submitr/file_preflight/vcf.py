@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 import re
 import zlib
-from typing import BinaryIO, Iterable, List, Optional, Tuple, Union
+from typing import BinaryIO, Dict, Iterable, List, Optional, Tuple, Union
 
 
 DEFAULT_MAX_ERRORS = 25
@@ -39,6 +39,7 @@ class VcfFinding:
     message: str
     line_number: Optional[int] = None
     severity: str = "error"
+    code: Optional[str] = None
 
     @property
     def is_error(self) -> bool:
@@ -59,6 +60,8 @@ class VcfPreflightResult:
     records_checked: int = 0
     source_name: Optional[str] = None
     errors_truncated: bool = False
+    advisory_counts: Dict[str, int] = field(default_factory=dict)
+    advisory_details_truncated: bool = False
 
     @property
     def ok(self) -> bool:
@@ -99,11 +102,19 @@ class _FindingCollector:
         else:
             self.result.errors_truncated = True
 
-    def advisory(self, stage: str, message: str, line_number: Optional[int] = None) -> None:
+    def advisory(self, stage: str, message: str, line_number: Optional[int] = None,
+                 code: Optional[str] = None) -> None:
+        finding_code = code or stage
+        self.result.advisory_counts[finding_code] = (
+            self.result.advisory_counts.get(finding_code, 0) + 1
+        )
         if len(self.result.advisory_findings) < self.max_errors:
             self.result.advisory_findings.append(
-                VcfFinding(stage=stage, message=message, line_number=line_number, severity="warning")
+                VcfFinding(stage=stage, message=message, line_number=line_number,
+                           severity="warning", code=finding_code)
             )
+        else:
+            self.result.advisory_details_truncated = True
 
 
 class _ByteLimitExceeded(Exception):
@@ -282,6 +293,7 @@ def _validate_stream(source: _CountingReader,
                 "header",
                 "non-LF line terminators are accepted but may not be compatible with downstream VCF tools",
                 line_number,
+                code="line_terminator",
             )
             warned_non_lf = True
 
@@ -317,6 +329,7 @@ def _validate_stream(source: _CountingReader,
                         f"VCF version {result.version} is not one of the commonly supported 4.x versions; "
                         "continuing with structural checks",
                         line_number,
+                        code="version",
                     )
             continue
 
@@ -351,6 +364,7 @@ def _validate_stream(source: _CountingReader,
                     "header",
                     "metadata-like header line uses one #; bcftools-compatible metadata lines use ##",
                     line_number,
+                    code="one_hash_header",
                 )
                 continue
             if line.startswith("##"):
@@ -403,12 +417,14 @@ def _validate_meta_line(line: str,
                 "header",
                 "metadata uses key:value notation; bcftools-compatible metadata uses key=value",
                 line_number,
+                code="metadata_colon",
             )
         else:
             collector.advisory(
                 "header",
                 "header continuation line has no key=value declaration; add a metadata key",
                 line_number,
+                code="keyless_continuation",
             )
         return
 
@@ -430,6 +446,7 @@ def _validate_meta_line(line: str,
                 "header",
                 f"INFO attribute {attribute_name} uses key:value notation; use key=value",
                 line_number,
+                code="info_attribute_colon",
             )
 
 

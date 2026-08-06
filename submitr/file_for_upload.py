@@ -17,6 +17,66 @@ from submitr.utils import chars
 # preventing upload credentials from being generated for anything but these statuss.
 _FILE_STATUS_UPLOADING = "uploading"
 _FILE_STATUSES_REQUIRED_FOR_UPLOAD = [_FILE_STATUS_UPLOADING, "to be uploaded by workflow", "upload failed"]
+_VCF_DEFAULT_FINDING_DETAILS = 5
+
+
+def _vcf_advisory_summary_lines(result: VcfPreflightResult) -> List[str]:
+    """Return concise, actionable summaries for bounded VCF advisory output."""
+
+    counts = result.advisory_counts
+    if not counts:
+        counts = {}
+        for finding in result.advisory_findings:
+            code = finding.code or finding.stage
+            counts[code] = counts.get(code, 0) + 1
+
+    summaries = []
+    for code, count in counts.items():
+        if code == "one_hash_header":
+            summaries.append(
+                f"{count} metadata-like header line{'s' if count != 1 else ''} use one #; "
+                "change them to ## for bcftools-compatible metadata."
+            )
+        elif code == "info_attribute_colon":
+            summaries.append(
+                f"{count} INFO declaration{'s' if count != 1 else ''} use key:value; "
+                "change the attributes to key=value."
+            )
+        elif code == "metadata_colon":
+            summaries.append(
+                f"{count} metadata line{'s' if count != 1 else ''} use key:value; "
+                "change them to key=value."
+            )
+        elif code == "keyless_continuation":
+            summaries.append(
+                f"{count} header continuation line{'s' if count != 1 else ''} have no key; "
+                "add a metadata key=value declaration."
+            )
+        elif code == "line_terminator":
+            summaries.append(
+                f"{count} line{'s' if count != 1 else ''} use non-LF terminators; "
+                "save the file with LF line endings."
+            )
+        elif code == "version":
+            summaries.append(
+                f"{count} VCF version advisory{'ies' if count != 1 else ''}; "
+                "confirm that downstream tools support the declared version."
+            )
+        else:
+            summaries.append(f"{count} header compatibility finding{'s' if count != 1 else ''} detected.")
+    return summaries
+
+
+def _print_vcf_finding_details(findings: List, *, verbose: bool, printf: Callable,
+                               kind: str) -> None:
+    """Print bounded normal-mode details or all retained verbose-mode details."""
+
+    displayed_findings = findings if verbose else findings[:_VCF_DEFAULT_FINDING_DETAILS]
+    for finding in displayed_findings:
+        printf(f"  - {finding}")
+    omitted = len(findings) - len(displayed_findings)
+    if omitted:
+        printf(f"  - {omitted} additional {kind} details omitted; rerun with --verbose for details.")
 
 
 # Unified the logic for looking for files to upload (to AWS S3), and storing
@@ -414,7 +474,7 @@ class FileForUpload:
                     printf(f"- File for upload: {self.path_local} ({format_size(self.size_local)})")
                     if destination:
                         printf(f"  AWS destination: {destination}")
-            return self._review_vcf(review_only=review_only, printf=printf)
+            return self._review_vcf(review_only=review_only, verbose=verbose, printf=printf)
 
         elif self.found_cloud:
             printf(f"- File for upload from {self.cloud_store.proper_name_title} ({self.cloud_store.proper_name}):"
@@ -440,7 +500,7 @@ class FileForUpload:
         return (is_vcf_filename(self.name) or file_type == "variantcalls" or
                 file_format in {"vcf", "vcfgz", "variantcalls"})
 
-    def _review_vcf(self, review_only: bool, printf: Callable) -> bool:
+    def _review_vcf(self, review_only: bool, verbose: bool, printf: Callable) -> bool:
         """Run local VCF preflight after the local/cloud choice is resolved."""
 
         if not self._is_vcf() or not self.from_local or not self.path:
@@ -448,11 +508,30 @@ class FileForUpload:
 
         result: VcfPreflightResult = validate_vcf(self.path, filename=self.display_name)
         if not result.ok:
-            printf(f"{chars.xmark} ERROR: VCF preflight failed for {self.display_name}")
-            for finding in result.structural_findings:
-                printf(f"  - {finding}")
+            printf(f"{chars.xmark} ERROR: VCF preflight found blocking structural errors for {self.display_name}")
+            printf("  - Structural errors block upload; confirmation cannot override them.")
+            _print_vcf_finding_details(
+                result.structural_findings,
+                verbose=verbose,
+                printf=printf,
+                kind="structural finding",
+            )
             if result.errors_truncated:
                 printf("  - Additional structural findings were omitted after the configured error limit.")
+            if result.advisory_findings:
+                advisory_count = sum(result.advisory_counts.values())
+                printf(
+                    f"  - Header compatibility findings were also detected ({advisory_count} total);"
+                    " confirmation was not requested because structural errors already block upload."
+                )
+                for summary in _vcf_advisory_summary_lines(result):
+                    printf(f"    - {summary}")
+                if verbose:
+                    printf("  - Affected header lines:")
+                    for finding in result.advisory_findings:
+                        printf(f"    - {finding}")
+                    if result.advisory_details_truncated:
+                        printf("    - Additional header line details were omitted after the configured error limit.")
             printf("  - Upload is blocked. Correct the file and run the upload again.")
             self._ignore = True
             return False
@@ -461,10 +540,24 @@ class FileForUpload:
             return True
 
         printf(f"WARNING: VCF header compatibility findings for {self.display_name}")
-        for finding in result.advisory_findings:
-            printf(f"  - {finding}")
+        advisory_count = sum(result.advisory_counts.values())
+        printf(
+            f"  - {advisory_count} advisory finding{'s' if advisory_count != 1 else ''} detected; "
+            "explicit confirmation is required to continue with upload."
+        )
+        for summary in _vcf_advisory_summary_lines(result):
+            printf(f"  - {summary}")
+        if verbose:
+            printf("  - Affected header lines:")
+            for finding in result.advisory_findings:
+                printf(f"    - {finding}")
+            if result.advisory_details_truncated:
+                printf("    - Additional header line details were omitted after the configured error limit.")
         if review_only:
-            printf("  - Upload confirmation is required when running without review-only mode.")
+            printf(
+                "  - Review-only mode: no upload will be attempted; this file would require "
+                "explicit confirmation before upload."
+            )
             self._ignore = True
             return False
         if not yes_or_no("  - Continue with this file despite the VCF header warnings?"):
