@@ -1,0 +1,6 @@
+##fileformat=VCFv4.0
+#pipeline-note: sanitized metadata
+##INFO=<ID:DP,Number:1,Type:String,Description:Depth>
+##continuation without a key
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr1	bad	.	A	C	.	PASS

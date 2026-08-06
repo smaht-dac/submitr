@@ -6,6 +6,14 @@ smaht-submitr
 Change Log
 ----------
 
+1.17.0
+======
+
+* Add a pure-Python VCF preflight that checks compressed-stream integrity,
+  required VCF header shape, and record shape before upload. Structural
+  failures block upload; narrowly scoped header compatibility findings require
+  explicit confirmation.
+
 1.16.0
 ======
 `PR 44 ExternalQualityMetric ingestion <https://github.com/smaht-dac/submitr/pull/44>`_
@@ -485,4 +493,3 @@ Thug commit changing beta dcicutils to real one (8.18.2).
 =====
 
 * Forked from SubmitCGAP 4.1.0.
-

@@ -1,0 +1,7 @@
+##fileformat=VCFv4.0
+##ref_fasta = sanitized/reference.fa
+##genomad_file = sanitized/annotations.vcf
+##ref_mask_bed = sanitized/mask.bed
+##pre-meta-rescue = sanitized command text
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr1	10	.	A	C	.	.	.

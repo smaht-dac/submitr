@@ -1,0 +1,6 @@
+##fileformat=VCFv4.3
+##source=submitr-regression
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Read depth">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	sample_a	sample_b
+chr1	10	.	A	C,G	99	PASS	DP=8	GT:DP	0/1:8	1/2:7
