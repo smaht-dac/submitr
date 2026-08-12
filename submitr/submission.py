@@ -28,6 +28,7 @@ from dcicutils.misc_utils import (
     environ_bool,
     format_duration,
     format_size,
+    ignored,
     is_uuid,
     url_path_join,
     normalize_spaces,
@@ -1274,7 +1275,9 @@ def submit_any_ingestion(
         )
     if protected_donor_transform:
         assert protected_donor_transformed_workbook is not None
-    remote_ingestion_filename = protected_donor_transformed_workbook if protected_donor_transform else ingestion_filename
+    remote_ingestion_filename = (
+        protected_donor_transformed_workbook if protected_donor_transform else ingestion_filename
+    )
 
     # Nevermind: Too confusing for both testing and general usage
     # to have different behaviours for admin and non-admin users.

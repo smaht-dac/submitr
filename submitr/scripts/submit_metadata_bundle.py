@@ -126,6 +126,10 @@ ADVANCED OPTIONS:
   and refrains from printing lengthy content to output/stdout.
 --noprogress
   Do not print progress of (client-side) parsing/validation output.
+--no-transform-protected-donor
+  Do not automatically transform Donor workbook sheets for ProtectedDonor
+  ingestion. Use this when the input workbook has already been transformed
+  and already contains ProtectedDonor sheets/links.
 --save-transformed-workbook OUTPUT-XLSX
   Transformed workbooks are saved automatically by default as
   original.xlsx -> original.transformed.xlsx. This option only overrides that
