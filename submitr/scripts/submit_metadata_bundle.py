@@ -127,9 +127,11 @@ ADVANCED OPTIONS:
 --noprogress
   Do not print progress of (client-side) parsing/validation output.
 --save-transformed-workbook OUTPUT-XLSX
-  Saves the automatically transformed Donor/ProtectedDonor workbook to the
-  specified .xlsx path for visual inspection. The output file must not already
-  exist. This may not be used with --no-transform-protected-donor.
+  Transformed workbooks are saved automatically by default as
+  original.xlsx -> original.transformed.xlsx. This option only overrides that
+  output path. To reuse an already transformed workbook later, pass it as the
+  input workbook together with --no-transform-protected-donor. This may not be
+  used with --no-transform-protected-donor.
 --timeout SECONDS
   Maximum umber of seconds to wait for server validation or submission.
 --debug
@@ -238,7 +240,9 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
     parser.add_argument('--no-transform-protected-donor', action="store_true",
-                        help="Do not automatically transform Donor workbook sheets for ProtectedDonor ingestion.",
+                        help=("Do not automatically transform Donor workbook sheets for ProtectedDonor ingestion. "
+                              "Use this when the input workbook has already been transformed and already contains "
+                              "ProtectedDonor sheets/links."),
                         default=False)
     parser.add_argument('--save-transformed-workbook', help=argparse.SUPPRESS, default=None)
     parser.add_argument('--skip-validator', action='append', dest='skip_validators',
