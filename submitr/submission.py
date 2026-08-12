@@ -597,6 +597,10 @@ def _prepare_protected_donor_transform(
         else:
             PRINT("Aborting.")
             sys.exit(1)
+    PRINT("ProtectedDonor transformation will be applied.")
+    PRINT(f"Transformed workbook output path: {format_path(output_path)}")
+    PRINT("You can later reuse this transformed workbook by passing it as input with"
+          " --no-transform-protected-donor.")
     return True, output_path
 
 
