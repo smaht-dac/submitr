@@ -129,7 +129,8 @@ ADVANCED OPTIONS:
 --no-transform-protected-donor
   Do not automatically transform Donor workbook sheets for ProtectedDonor
   ingestion. Use this when the input workbook has already been transformed
-  and already contains ProtectedDonor sheets/links.
+  (e.g. from a prior validate or submit run) and already contains
+  ProtectedDonor sheets/links.
 --save-transformed-workbook OUTPUT-XLSX
   Transformed workbooks are saved automatically by default as
   original.xlsx -> original.transformed.xlsx. This option only overrides that
@@ -245,8 +246,8 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
     parser.add_argument('--no-transform-protected-donor', action="store_true",
                         help=("Do not automatically transform Donor workbook sheets for ProtectedDonor ingestion. "
-                              "Use this when the input workbook has already been transformed and already contains "
-                              "ProtectedDonor sheets/links."),
+                              "Use this when the input workbook has already been transformed (e.g. from a prior "
+                              "validate or submit run) and already contains ProtectedDonor sheets/links."),
                         default=False)
     parser.add_argument('--save-transformed-workbook', help=argparse.SUPPRESS, default=None)
     parser.add_argument('--skip-validator', action='append', dest='skip_validators',

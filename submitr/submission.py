@@ -520,6 +520,22 @@ def _workbook_has_visible_donor_sheet(file_name: Optional[str]) -> bool:
         return False
 
 
+def _workbook_appears_already_transformed(file_name: Optional[str]) -> bool:
+    """Detect if a workbook already appears to have been transformed for ProtectedDonor.
+    
+    A transformed workbook will have a ProtectedDonor sheet instead of (or in addition to) a Donor sheet.
+    """
+    if not _is_excel_workbook(file_name):
+        return False
+    try:
+        excel = Excel(file_name)
+        return any(CustomExcel.effective_sheet_name(sheet_name) == "ProtectedDonor"
+                   for sheet_name in excel.sheet_names)
+    except Exception:
+        # Let normal parsing/validation report malformed workbook errors later.
+        return False
+
+
 def _default_transformed_workbook_path(file_name: str) -> str:
     directory, basename = os.path.split(os.path.abspath(os.path.expanduser(file_name)))
     stem, extension = os.path.splitext(basename)
@@ -551,6 +567,36 @@ def _prepare_protected_donor_transform(
 ) -> Tuple[bool, Optional[str]]:
     if not transform_protected_donor or not _is_excel_workbook(ingestion_filename):
         return False, None
+    
+    # Check if the workbook already appears transformed
+    if _workbook_appears_already_transformed(ingestion_filename):
+        PRINT("")
+        PRINT("WARNING: This workbook appears to have already been transformed for ProtectedDonor ingestion.")
+        PRINT(f"Workbook: {format_path(ingestion_filename)}")
+        PRINT("")
+        PRINT("Re-transforming an already-transformed workbook will likely produce incorrect results.")
+        PRINT("")
+        if no_query:
+            PRINT("ERROR: Cannot proceed in non-interactive mode.")
+            PRINT("")
+            PRINT("To use this workbook as-is (already transformed), rerun with:")
+            PRINT("  --no-transform-protected-donor")
+            PRINT("")
+            sys.exit(1)
+        else:
+            PRINT("If you want to use this workbook as-is (already transformed), we can proceed")
+            PRINT("by treating it as though you had passed --no-transform-protected-donor.")
+            PRINT("")
+            if yes_or_no("Proceed using the workbook as already transformed (skip transformation)?"):
+                PRINT("")
+                PRINT("Skipping transformation and proceeding with the workbook as-is.")
+                # Return False to indicate no transformation should happen
+                return False, None
+            else:
+                PRINT("")
+                PRINT("Aborting. If you need to re-transform, start with an untransformed workbook.")
+                sys.exit(1)
+    
     if not _workbook_has_visible_donor_sheet(ingestion_filename):
         return False, None
     identifiers = _resolve_submission_center_identifiers(portal, submission_centers)
@@ -586,22 +632,22 @@ def _prepare_protected_donor_transform(
         PRINT(f"ERROR: Transformed workbook output path must differ from input workbook path: {output_path}")
         sys.exit(1)
     if os.path.exists(output_path):
-        if validation:
-            PRINT(f"Overwriting existing transformed workbook: {format_path(output_path)}")
+        PRINT(f"Overwriting existing transformed workbook: {format_path(output_path)}")
+        try:
             os.remove(output_path)
-        elif no_query:
-            PRINT(f"Overwriting existing transformed workbook: {format_path(output_path)}")
-            os.remove(output_path)
-        elif y_or_n(f"Transformed workbook already exists: {format_path(output_path)}. Overwrite?",
-                    default=False):
-            os.remove(output_path)
-        else:
-            PRINT("Aborting.")
+        except (OSError, PermissionError) as e:
+            PRINT(f"ERROR: Cannot overwrite existing transformed workbook: {format_path(output_path)}")
+            PRINT(f"The file may be locked, read-only, or protected by permissions.")
+            PRINT(f"Details: {e}")
+            PRINT(f"Please close any applications using this file, check permissions, or specify a different output path.")
             sys.exit(1)
     PRINT("ProtectedDonor transformation will be applied.")
     PRINT(f"Transformed workbook output path: {format_path(output_path)}")
-    PRINT("You can later reuse this transformed workbook by passing it as input with"
-          " --no-transform-protected-donor.")
+    if validation:
+        PRINT("After validation, you can rerun with --submit on this original workbook,")
+        PRINT("or pass the transformed workbook as input with --no-transform-protected-donor.")
+    else:
+        PRINT("The transformed workbook can be reused directly with --no-transform-protected-donor.")
     return True, output_path
 
 
