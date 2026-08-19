@@ -69,6 +69,8 @@ def test_submit_metadata_bundle_script(keyfile):
                             "debug": False,
                             "debug_sleep": False,
                             "skip_validators": None,
+                            "transform_protected_donor": expect_call_args.get("transform_protected_donor", True),
+                            "transformed_workbook_path": expect_call_args.get("transformed_workbook_path"),
                         }
                         mock_submit_any_ingestion.assert_called_with(**expect_call_args)
                     assert output == []
@@ -87,6 +89,35 @@ def test_submit_metadata_bundle_script(keyfile):
         'no_query': False,
         'subfolders': False,
     })
+    test_it(args_in=["--no-transform-protected-donor", some_file],
+            expect_exit_code=0,
+            expect_called=True,
+            expect_call_args={
+                'ingestion_filename': some_file,
+                'ingestion_type': DEFAULT_INGESTION_TYPE,
+                'env': None,
+                'server': None,
+                'validate_remote_only': False,
+                'upload_folder': None,
+                'no_query': False,
+                'subfolders': False,
+                'transform_protected_donor': False,
+            })
+    transformed_workbook = some_file + ".transformed.xlsx"
+    test_it(args_in=["--save-transformed-workbook", transformed_workbook, some_file],
+            expect_exit_code=0,
+            expect_called=True,
+            expect_call_args={
+                'ingestion_filename': some_file,
+                'ingestion_type': DEFAULT_INGESTION_TYPE,
+                'env': None,
+                'server': None,
+                'validate_remote_only': False,
+                'upload_folder': None,
+                'no_query': False,
+                'subfolders': False,
+                'transformed_workbook_path': transformed_workbook,
+            })
     expect_call_args = {
         'ingestion_filename': some_file,
         'ingestion_type': DEFAULT_INGESTION_TYPE,
@@ -197,6 +228,11 @@ def test_submit_metadata_bundle_script(keyfile):
             expect_exit_code=0,
             expect_called=True,
             expect_call_args=expect_call_args)
+
+
+def test_compatibility_transform_flag_is_hidden_from_documented_help():
+    assert "--no-transform-protected-donor" not in submit_metadata_bundle_module._HELP
+    assert "--no-transform-protected-donor" not in submit_metadata_bundle_module._HELP_ADVANCED
 
 
 def _create_some_temporary_file() -> str:
