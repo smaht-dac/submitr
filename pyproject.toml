@@ -47,7 +47,8 @@ include = [
 
 python = ">=3.10,<3.13"
 boto3 = "^1.43.58"
-dcicutils = "^8.19.0"
+# dcicutils = "^8.19.0"
+dcicutils = { git = "https://github.com/4dn-dcic/utils.git", branch = "ajs/protected-donor-transform" }
 PyYAML = "^6.0.1"
 requests = "^2.31.0"
 googleapi = "^0.1.0"
