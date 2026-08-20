@@ -525,18 +525,6 @@ def _analyze_protected_donor_workbook(file_name: Optional[str], portal):
     ).analyze(workbook, portal=portal)
 
 
-def _workbook_appears_already_transformed(file_name: Optional[str], portal=None) -> bool:
-    """Return true only for a valid, fully transformed workbook."""
-    analysis = _analyze_protected_donor_workbook(file_name, portal)
-    return bool(
-        analysis
-        and not analysis.needs_transformation
-        and analysis.protected_donor_ids
-        and not analysis.missing_references
-        and not analysis.invalid_references
-    )
-
-
 def _default_transformed_workbook_path(file_name: str) -> str:
     directory, basename = os.path.split(os.path.abspath(os.path.expanduser(file_name)))
     stem, extension = os.path.splitext(basename)
