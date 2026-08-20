@@ -583,8 +583,6 @@ def _prepare_protected_donor_transform(
             PRINT("The file may be locked, read-only, or protected by permissions.")
             PRINT(f"Details: {error}")
             sys.exit(1)
-    PRINT("ProtectedDonor transformation is occurring.")
-    PRINT(f"Transformed workbook path: {format_path(output_path)}")
     return True, output_path
 
 
@@ -1188,6 +1186,11 @@ def submit_any_ingestion(
     else:
         valid_submission_centers = ""
 
+    if not json_only:
+        PRINT(
+            f"Metadata file to {'validate' if validation else 'ingest'}: {format_path(ingestion_filename)}"
+        )
+
     protected_donor_transform, protected_donor_transformed_workbook = _prepare_protected_donor_transform(
         portal=portal,
         ingestion_filename=ingestion_filename,
@@ -1198,12 +1201,9 @@ def submit_any_ingestion(
         transformed_workbook_path=transformed_workbook_path,
     )
 
-    if not json_only:
-        PRINT(
-            f"Metadata file to {'validate' if validation else 'ingest'}: {format_path(ingestion_filename)}"
-        )
-        if protected_donor_transform:
-            PRINT(f"ProtectedDonor transformed workbook: {format_path(protected_donor_transformed_workbook)}")
+    if not json_only and protected_donor_transform:
+        PRINT("ProtectedDonor transformation is occurring.")
+        PRINT(f"ProtectedDonor transformed workbook: {format_path(protected_donor_transformed_workbook)}")
 
     if verbose:
         SHOW(f"Metadata bundle upload bucket: {metadata_bundles_bucket}")
@@ -1369,7 +1369,12 @@ def submit_any_ingestion(
     SHOW(
         f"Ready to submit your metadata to {portal.server}: {format_path(remote_ingestion_filename)}"
     )
-    if not yes_or_no("Continue on with the actual submission?"):
+    submission_prompt = (
+        "ProtectedDonor transformation has occurred - Do you still wish to continue?"
+        if protected_donor_transform
+        else "Continue on with the actual submission?"
+    )
+    if not yes_or_no(submission_prompt):
         sys.exit(0)
 
     submission_upload_filename = None

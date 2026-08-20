@@ -164,7 +164,7 @@ def test_submitr_analysis_distinguishes_partial_and_invalid_workbooks(tmp_path):
         )
 
 
-def test_prepare_auto_transforms_without_prompt_and_prints_path(tmp_path):
+def test_prepare_auto_transforms_without_prompt_without_printing_output_path(tmp_path):
     path = make_workbook(
         tmp_path / "input.xlsx",
         donor_rows=[["D_DONOR_1", "one", "active"]],
@@ -181,8 +181,8 @@ def test_prepare_auto_transforms_without_prompt_and_prints_path(tmp_path):
     assert output_path.endswith("input.transformed.xlsx")
     prompt.assert_not_called()
     messages = [str(call.args[0]) for call in output.call_args_list]
-    assert any("transformation is occurring" in message for message in messages)
-    assert any("Transformed workbook path:" in message for message in messages)
+    assert not any("transformation is occurring" in message for message in messages)
+    assert not any("Transformed workbook path:" in message for message in messages)
 
 
 def test_custom_excel_saves_the_transformed_workbook(tmp_path):
