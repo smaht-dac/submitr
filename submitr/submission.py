@@ -635,9 +635,11 @@ def _initiate_server_ingestion_process(
 ) -> str:
     # upload_filename, if provided, is the file actually POSTed to the portal as the
     # datafile.  ingestion_filename is still used for all metadata stored on the
-    # IngestionSubmission item (ingestion_directory, datafile_size, datafile_checksum)
-    # so that the portal records the path, size and checksum of the original source file
-    # even when a pre-transformed temp file is being uploaded in its place.
+    # IngestionSubmission item (ingestion_directory, datafile_size, datafile_checksum).
+    # Callers pass whichever path they consider the file of record here: the original
+    # source file when only a temp JSON is being swapped in for the upload, or the
+    # ProtectedDonor-transformed workbook when that transform produced the file being
+    # submitted (in which case the recorded provenance is of the transformed workbook).
 
     if isinstance(validation_ingestion_submission_object, dict):
         # This ingestion action is for a submission (rather than for a validation),
@@ -782,11 +784,12 @@ def _post_submission(
         )
     else:
         # upload_filename, if provided, is the serialised JSON of already-transformed data
-        # (written by _pre_transform_to_temp_json) and replaces the raw source file for
-        # the upload POST only.  All IngestionSubmission metadata (ingestion_directory,
+        # (written by _pre_transform_to_temp_json) and replaces ingestion_filename for the
+        # upload POST only.  All IngestionSubmission metadata (ingestion_directory,
         # datafile_size, datafile_checksum) was already computed from ingestion_filename
-        # in _initiate_server_ingestion_process, so the portal stores the correct
-        # original-file provenance regardless of which file is actually uploaded.
+        # in _initiate_server_ingestion_process, so the portal's recorded provenance
+        # matches whichever file the caller passed as ingestion_filename (the original
+        # source file, or a ProtectedDonor-transformed workbook standing in for it).
         file_post_data = _post_files_data(
             submission_protocol=submission_protocol,
             ingestion_filename=upload_filename or ingestion_filename,
