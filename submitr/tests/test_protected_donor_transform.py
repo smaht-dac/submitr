@@ -34,8 +34,10 @@ from ..submission import (
     _analyze_protected_donor_workbook,
     _ensure_protected_donor_transformed_workbook,
     _initiate_server_ingestion_process,
+    _validate_locally,
     _prepare_protected_donor_transform,
     _pre_transform_to_temp_json,
+    _stage_protected_donor_workbook,
     submit_any_ingestion,
 )
 
@@ -231,6 +233,55 @@ def test_custom_excel_saves_the_transformed_workbook(tmp_path):
     )(str(source))
     transformed = openpyxl.load_workbook(destination)
     assert transformed["Demographic"]["A2"].value == "D_PROTECTED-DONOR_1"
+
+
+def test_custom_excel_protects_caller_selected_existing_output(tmp_path):
+    source = make_workbook(
+        tmp_path / "source.xlsx",
+        donor_rows=[["D_DONOR_1", "one", "active"]],
+        references={"Demographic": ["D_DONOR_1"]},
+    )
+    destination = tmp_path / "source.transformed.xlsx"
+    previous = b"caller-owned output"
+    destination.write_bytes(previous)
+
+    with pytest.raises(ValueError, match="output path already exists"):
+        CustomExcel.with_portal(
+            None, transform_protected_donor=True,
+            transformed_workbook_path=str(destination),
+        )(str(source))
+
+    assert destination.read_bytes() == previous
+
+
+def test_local_validation_replaces_existing_owned_staging_file_after_success(tmp_path):
+    source = make_workbook(
+        tmp_path / "source.xlsx",
+        donor_rows=[["D_DONOR_1", "one", "active"]],
+        references={"Demographic": ["D_DONOR_1"]},
+    )
+    destination = tmp_path / "source.transformed.xlsx"
+    destination.write_bytes(b"pre-created staging file")
+
+    def stage_with_existing_path(path):
+        staged_path = _stage_protected_donor_workbook(path)
+        assert Path(staged_path).exists()
+        return staged_path
+
+    with patch("submitr.submission._validate_data", return_value=True), \
+            patch("submitr.submission._stage_protected_donor_workbook", side_effect=stage_with_existing_path), \
+            pytest.raises(SystemExit) as exit_info:
+        _validate_locally(
+            str(source), None, autoadd={}, validation=True,
+            validate_local_only=True, exit_immediately_on_errors=True,
+            noprogress=True, noanalyze=True, transform_protected_donor=True,
+            transformed_workbook_path=str(destination),
+        )
+
+    assert exit_info.value.code == 0
+    assert openpyxl.load_workbook(destination)["Demographic"]["A2"].value == (
+        "D_PROTECTED-DONOR_1"
+    )
 
 
 def test_protected_donor_remote_payload_contains_mapped_data(tmp_path):

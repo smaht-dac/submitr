@@ -659,7 +659,6 @@ def _stage_protected_donor_workbook(target_path: str) -> str:
             suffix=".xlsx",
         )
         os.close(file_descriptor)
-        os.unlink(staged_path)
     except Exception as error:
         raise ProtectedDonorTransformError(
             f"Unable to stage transformed ProtectedDonor workbook for {target_path!r}: {error}"
@@ -714,6 +713,7 @@ def _ensure_protected_donor_transformed_workbook(
                     portal,
                     transform_protected_donor=True,
                     transformed_workbook_path=staged_path,
+                    allow_existing_staging_path=True,
                 ),
                 norefs=True,
             )
@@ -2988,6 +2988,7 @@ def _validate_locally(
             portal,
             transform_protected_donor=transform_protected_donor,
             transformed_workbook_path=staged_transformed_workbook_path,
+            allow_existing_staging_path=bool(staged_transformed_workbook_path),
         ),
         debug_sleep=debug_sleep,
     )
