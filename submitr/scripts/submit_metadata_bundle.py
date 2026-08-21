@@ -233,6 +233,10 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--timeout', help="Wait timeout for server validation/submission.")
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
+    # Retained as a hidden compatibility switch for internal workflows/tests.
+    parser.add_argument('--no-transform-protected-donor', action="store_true",
+                        help=argparse.SUPPRESS, default=False)
+    parser.add_argument('--save-transformed-workbook', help=argparse.SUPPRESS, default=None)
     parser.add_argument('--skip-validator', action='append', dest='skip_validators',
                         help=argparse.SUPPRESS, default=None)
     parser.add_argument('--ping', action="store_true", help="Ping server.", default=False)
@@ -336,6 +340,10 @@ def main(simulated_args_for_testing=None):
         else:
             args.timeout = int(args.timeout)
 
+    if args.no_transform_protected_donor and args.save_transformed_workbook:
+        PRINT("May not specify both --no-transform-protected-donor and --save-transformed-workbook.")
+        sys.exit(2)
+
     if args.info:
         if not os.path.exists(args.bundle_filename):
             PRINT(f"File does not exist: {args.bundle_filename}")
@@ -392,7 +400,9 @@ def main(simulated_args_for_testing=None):
                              timeout=args.timeout,
                              debug=args.debug,
                              debug_sleep=args.debug_sleep,
-                             skip_validators=args.skip_validators)
+                             skip_validators=args.skip_validators,
+                             transform_protected_donor=not args.no_transform_protected_donor,
+                             transformed_workbook_path=args.save_transformed_workbook)
 
 
 def _sanity_check_submitted_file(file_name: str) -> bool:

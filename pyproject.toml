@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "smaht-submitr"
-version = "1.16.0"
+version = "1.16.0.1b2"
 description = "Support for uploading file submissions to SMAHT."
 # TODO: Update this email address when a more specific one is available for SMaHT.
 authors = ["SMaHT DAC <smhelp@hms-dbmi.atlassian.net >"]
@@ -47,7 +47,8 @@ include = [
 
 python = ">=3.10,<3.13"
 boto3 = "^1.43.58"
-dcicutils = "^8.19.0"
+# dcicutils = "^8.19.0"
+dcicutils = { git = "https://github.com/4dn-dcic/utils.git", branch = "fm/protected-donor-dcicutils" }
 PyYAML = "^6.0.1"
 requests = "^2.31.0"
 googleapi = "^0.1.0"
