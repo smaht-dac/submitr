@@ -717,7 +717,7 @@ webtest = "^2.0.34"
 type = "git"
 url = "https://github.com/4dn-dcic/utils.git"
 reference = "fm/protected-donor-dcicutils"
-resolved_reference = "c68fa4091724f7346d88d18a97c1316195258a0e"
+resolved_reference = "5b7f17f767a61b25b9186d1e3926b49236145220"
 
 [[package]]
 name = "docker"

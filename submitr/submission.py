@@ -29,7 +29,6 @@ from dcicutils.misc_utils import (
     environ_bool,
     format_duration,
     format_size,
-    ignored,
     is_uuid,
     url_path_join,
     normalize_spaces,
@@ -44,7 +43,10 @@ from dcicutils.submitr.progress_constants import (
 )
 from submitr.base import DEFAULT_APP
 from dcicutils.submitr.custom_excel import CustomExcel
-from dcicutils.submitr.donor_transformer import ProtectedDonorWorkbookTransformer
+from dcicutils.submitr.donor_transformer import (
+    ProtectedDonorTransformError,
+    ProtectedDonorWorkbookTransformer,
+)
 from submitr.exceptions import PortalPermissionError
 from submitr.file_for_upload import FilesForUpload, get_file_upload_bucket
 from submitr.metadata_template import (
@@ -509,20 +511,90 @@ def _is_excel_workbook(file_name: Optional[str]) -> bool:
     return isinstance(file_name, (str, os.PathLike)) and is_excel_file_name(str(file_name))
 
 
+def _is_hidden_workbook_sheet(sheet) -> bool:
+    title = sheet.title
+    return sheet.sheet_state == "hidden" or any(
+        title.startswith(left) and title.endswith(right)
+        for left, right in (("(", ")"), ("[", "]"), ("{", "}"), ("<", ">"))
+    )
+
+
+def _load_protected_donor_workbooks(file_name: str):
+    """Load formula and cached-value views of a workbook for ProtectedDonor handling."""
+    try:
+        # CustomExcel, which performs normal ingestion, deliberately uses data_only=True.
+        # Keep analysis aligned with that representation while retaining the formula view
+        # solely to diagnose missing or unusable cached donor references.
+        formula_workbook = openpyxl.load_workbook(file_name, data_only=False)
+        cached_workbook = openpyxl.load_workbook(file_name, data_only=True)
+    except Exception as error:
+        raise ProtectedDonorTransformError(
+            f"Unable to load ProtectedDonor workbook {file_name!r}: {error}"
+        ) from error
+    return formula_workbook, cached_workbook
+
+
+def _validate_cached_formula_donor_references(formula_workbook, cached_workbook, file_name: str):
+    """Reject formula donor links whose cached values cannot drive ingestion.
+
+    Formula evaluation is intentionally out of scope.  A cached value is acceptable only
+    when it is a string containing one of the donor identifier tokens understood by the
+    dcicutils transformer; the transformer then validates whether that identifier exists.
+    """
+    protected_reference_sheets = {
+        "Demographic",
+        "DeathCircumstances",
+        "FamilyHistory",
+        "MedicalHistory",
+        "TissueCollection",
+    }
+    for formula_sheet in formula_workbook.worksheets:
+        if _is_hidden_workbook_sheet(formula_sheet):
+            continue
+        if CustomExcel.effective_sheet_name(formula_sheet.title) not in protected_reference_sheets:
+            continue
+        cached_sheet = cached_workbook[formula_sheet.title]
+        headers = []
+        for cell in formula_sheet[1]:
+            if cell.value is None or not str(cell.value).strip():
+                break
+            headers.append(str(cell.value).strip())
+        try:
+            donor_column = headers.index("donor") + 1
+        except ValueError:
+            continue
+        for row_number in range(2, formula_sheet.max_row + 1):
+            formula_cell = formula_sheet.cell(row_number, donor_column)
+            if formula_cell.data_type != "f":
+                continue
+            cached_value = cached_sheet.cell(row_number, donor_column).value
+            location = f"{formula_sheet.title}!{formula_cell.coordinate}"
+            if not isinstance(cached_value, str) or not cached_value.strip():
+                raise ProtectedDonorTransformError(
+                    f"Formula-backed donor reference at {location} in {file_name!r} "
+                    "has no valid cached value; save the workbook with a cached donor "
+                    "identifier before submitting (formula evaluation is not supported)."
+                )
+            cached_value = cached_value.strip()
+            if "_DONOR_" not in cached_value and "_PROTECTED-DONOR_" not in cached_value:
+                raise ProtectedDonorTransformError(
+                    f"Formula-backed donor reference at {location} in {file_name!r} "
+                    f"has invalid cached value {cached_value!r}; expected a Donor or "
+                    "ProtectedDonor identifier (formula evaluation is not supported)."
+                )
+
+
 def _analyze_protected_donor_workbook(file_name: Optional[str], portal):
-    """Analyze a workbook using dcicutils' ProtectedDonor public API."""
+    """Analyze the cached-value workbook used by normal CustomExcel ingestion."""
     if not _is_excel_workbook(file_name):
         return None
-    try:
-        workbook = openpyxl.load_workbook(file_name)
-    except Exception:
-        # Let normal parsing/validation report malformed or unsupported workbooks.
-        return None
+    formula_workbook, cached_workbook = _load_protected_donor_workbooks(str(file_name))
+    _validate_cached_formula_donor_references(formula_workbook, cached_workbook, str(file_name))
     # Do not hide transformer/API errors: dcicutils owns the business rules and
     # its required analysis API must be present in the runtime environment.
     return ProtectedDonorWorkbookTransformer(
         effective_sheet_name=CustomExcel.effective_sheet_name
-    ).analyze(workbook, portal=portal)
+    ).analyze(cached_workbook, portal=portal)
 
 
 def _default_transformed_workbook_path(file_name: str) -> str:
@@ -557,7 +629,7 @@ def _prepare_protected_donor_transform(
     if analysis.invalid_references or analysis.missing_references:
         # Ask dcicutils to raise its canonical error before selecting an output
         # path or allowing any workbook mutation.
-        workbook = openpyxl.load_workbook(ingestion_filename)
+        _, workbook = _load_protected_donor_workbooks(ingestion_filename)
         ProtectedDonorWorkbookTransformer(
             effective_sheet_name=CustomExcel.effective_sheet_name
         ).transform(workbook, portal=portal)
@@ -574,40 +646,86 @@ def _prepare_protected_donor_transform(
     if output_path == input_path:
         PRINT(f"ERROR: Transformed workbook output path must differ from input workbook path: {output_path}")
         sys.exit(1)
-    if os.path.exists(output_path):
-        PRINT(f"Overwriting existing transformed workbook: {format_path(output_path)}")
-        try:
-            os.remove(output_path)
-        except (OSError, PermissionError) as error:
-            PRINT(f"ERROR: Cannot overwrite existing transformed workbook: {format_path(output_path)}")
-            PRINT("The file may be locked, read-only, or protected by permissions.")
-            PRINT(f"Details: {error}")
-            sys.exit(1)
     return True, output_path
+
+
+def _stage_protected_donor_workbook(target_path: str) -> str:
+    """Reserve a same-directory temporary path for an atomic transformed output."""
+    directory = os.path.dirname(os.path.abspath(target_path))
+    try:
+        file_descriptor, staged_path = tempfile.mkstemp(
+            dir=directory,
+            prefix=f".{os.path.basename(target_path)}.",
+            suffix=".xlsx",
+        )
+        os.close(file_descriptor)
+        os.unlink(staged_path)
+    except Exception as error:
+        raise ProtectedDonorTransformError(
+            f"Unable to stage transformed ProtectedDonor workbook for {target_path!r}: {error}"
+        ) from error
+    return staged_path
+
+
+def _cleanup_staged_protected_donor_workbook(staged_path: Optional[str]) -> None:
+    if staged_path and os.path.exists(staged_path):
+        try:
+            os.unlink(staged_path)
+        except OSError:
+            pass
+
+
+def _commit_staged_protected_donor_workbook(staged_path: str, target_path: str) -> None:
+    """Validate and atomically publish a staged transformed workbook."""
+    if not os.path.exists(staged_path):
+        raise ProtectedDonorTransformError(
+            f"ProtectedDonor transformation did not create staged workbook {staged_path!r}"
+        )
+    try:
+        # The StructuredDataSet has already consumed the in-memory workbook, but reopen
+        # the saved artifact before replacing a user's prior target.
+        openpyxl.load_workbook(staged_path, data_only=True)
+    except Exception as error:
+        raise ProtectedDonorTransformError(
+            f"Transformed ProtectedDonor workbook {staged_path!r} failed validation: {error}"
+        ) from error
+    try:
+        os.replace(staged_path, target_path)
+    except Exception as error:
+        raise ProtectedDonorTransformError(
+            f"Unable to atomically replace transformed ProtectedDonor workbook "
+            f"{target_path!r}: {error}"
+        ) from error
 
 
 def _ensure_protected_donor_transformed_workbook(
     ingestion_filename: str,
     portal: Portal,
     transformed_workbook_path: str,
-) -> None:
-    # Loading through CustomExcel is enough here: the workbook transform and save are
-    # side effects of parsing the Excel workbook. Full validation is handled elsewhere.
-    structured_data = StructuredDataSet(
-        file=ingestion_filename,
-        portal=portal,
-        excel_class=CustomExcel.with_portal(
-            portal,
-            transform_protected_donor=True,
-            transformed_workbook_path=transformed_workbook_path,
-        ),
-        norefs=True,
-    )
-    ignored(structured_data)
-    if not os.path.exists(transformed_workbook_path):
-        PRINT("ERROR: ProtectedDonor transformation was requested but no transformed workbook was created.")
-        PRINT("Check that the protected-item sheets reference a Donor with a submitted_id column.")
-        sys.exit(1)
+) -> StructuredDataSet:
+    """Build mapped data and publish the transformed workbook when local validation is skipped."""
+    staged_path = _stage_protected_donor_workbook(transformed_workbook_path)
+    try:
+        try:
+            structured_data = StructuredDataSet(
+                file=ingestion_filename,
+                portal=portal,
+                excel_class=CustomExcel.with_portal(
+                    portal,
+                    transform_protected_donor=True,
+                    transformed_workbook_path=staged_path,
+                ),
+                norefs=True,
+            )
+        except Exception as error:
+            raise ProtectedDonorTransformError(
+                f"Unable to load or transform ProtectedDonor workbook "
+                f"{ingestion_filename!r} for remote ingestion: {error}"
+            ) from error
+        _commit_staged_protected_donor_workbook(staged_path, transformed_workbook_path)
+        return structured_data
+    finally:
+        _cleanup_staged_protected_donor_workbook(staged_path)
 
 
 def _initiate_server_ingestion_process(
@@ -634,10 +752,8 @@ def _initiate_server_ingestion_process(
     # upload_filename, if provided, is the file actually POSTed to the portal as the
     # datafile.  ingestion_filename is still used for all metadata stored on the
     # IngestionSubmission item (ingestion_directory, datafile_size, datafile_checksum).
-    # Callers pass whichever path they consider the file of record here: the original
-    # source file when only a temp JSON is being swapped in for the upload, or the
-    # ProtectedDonor-transformed workbook when that transform produced the file being
-    # submitted (in which case the recorded provenance is of the transformed workbook).
+    # Callers pass whichever path they consider the file of record here. The actual
+    # upload may be a temporary JSON serialization of already-mapped StructuredDataSet.data.
 
     if isinstance(validation_ingestion_submission_object, dict):
         # This ingestion action is for a submission (rather than for a validation),
@@ -786,8 +902,7 @@ def _post_submission(
         # upload POST only.  All IngestionSubmission metadata (ingestion_directory,
         # datafile_size, datafile_checksum) was already computed from ingestion_filename
         # in _initiate_server_ingestion_process, so the portal's recorded provenance
-        # matches whichever file the caller passed as ingestion_filename (the original
-        # source file, or a ProtectedDonor-transformed workbook standing in for it).
+        # matches the file of record even when a mapped JSON payload is uploaded instead.
         file_post_data = _post_files_data(
             submission_protocol=submission_protocol,
             ingestion_filename=upload_filename or ingestion_filename,
@@ -1254,7 +1369,7 @@ def submit_any_ingestion(
         )
 
     if protected_donor_transform and structured_data is None:
-        _ensure_protected_donor_transformed_workbook(
+        structured_data = _ensure_protected_donor_transformed_workbook(
             ingestion_filename,
             portal,
             protected_donor_transformed_workbook,
@@ -1280,13 +1395,11 @@ def submit_any_ingestion(
 
         SHOW(f"Continuing with additional (server) validation: {portal.server}")
 
-        validation_upload_filename = None
-        if not protected_donor_transform:
-            validation_upload_filename = _pre_transform_to_temp_json_for_excel(
-                ingestion_filename,
-                structured_data,
-                portal,
-            )
+        validation_upload_filename = _pre_transform_to_temp_json_for_excel(
+            ingestion_filename,
+            structured_data,
+            portal,
+        )
         try:
             validation_uuid = _initiate_server_ingestion_process(
                 portal=portal,
@@ -1377,13 +1490,11 @@ def submit_any_ingestion(
     if not yes_or_no(submission_prompt):
         sys.exit(0)
 
-    submission_upload_filename = None
-    if not protected_donor_transform:
-        submission_upload_filename = _pre_transform_to_temp_json_for_excel(
-            ingestion_filename,
-            structured_data,
-            portal,
-        )
+    submission_upload_filename = _pre_transform_to_temp_json_for_excel(
+        ingestion_filename,
+        structured_data,
+        portal,
+    )
     try:
         submission_uuid = _initiate_server_ingestion_process(
             portal=portal,
@@ -2744,6 +2855,23 @@ def _validate_locally(
         noprogress = True
 
     structured_data = None  # TEMPORARY WORKAROUND FOR DCICUTILS BUG
+    staged_transformed_workbook_path = None
+    if transform_protected_donor and transformed_workbook_path:
+        staged_transformed_workbook_path = _stage_protected_donor_workbook(
+            transformed_workbook_path
+        )
+
+    def finalize_transformed_workbook() -> None:
+        nonlocal staged_transformed_workbook_path
+        if staged_transformed_workbook_path:
+            staged_path = staged_transformed_workbook_path
+            staged_transformed_workbook_path = None
+            try:
+                _commit_staged_protected_donor_workbook(
+                    staged_path, transformed_workbook_path
+                )
+            finally:
+                _cleanup_staged_protected_donor_workbook(staged_path)
 
     def define_progress_callback(debug: bool = False) -> None:
         nsheets = 0
@@ -2856,16 +2984,28 @@ def _validate_locally(
         progress=None if noprogress else define_progress_callback(debug=debug),
         validator_hook=validator_hook,
         validator_sheet_hook=validator_sheet_hook,
-        excel_class=CustomExcel.with_portal(portal,
-                                            transform_protected_donor=transform_protected_donor,
-                                            transformed_workbook_path=transformed_workbook_path),
+        excel_class=CustomExcel.with_portal(
+            portal,
+            transform_protected_donor=transform_protected_donor,
+            transformed_workbook_path=staged_transformed_workbook_path,
+        ),
         debug_sleep=debug_sleep,
     )
-    structured_data.load_file(ingestion_filename)
-    if transform_protected_donor and transformed_workbook_path and not os.path.exists(transformed_workbook_path):
-        PRINT("ERROR: ProtectedDonor transformation was requested but no transformed workbook was created.")
-        PRINT("Check that the visible Donor sheet has a submitted_id column and at least one data row.")
-        sys.exit(1)
+    try:
+        structured_data.load_file(ingestion_filename)
+    except Exception as error:
+        _cleanup_staged_protected_donor_workbook(staged_transformed_workbook_path)
+        raise ProtectedDonorTransformError(
+            f"Unable to load or transform ProtectedDonor workbook "
+            f"{ingestion_filename!r} during local validation: {error}"
+        ) from error
+    if (transform_protected_donor and staged_transformed_workbook_path
+            and not os.path.exists(staged_transformed_workbook_path)):
+        _cleanup_staged_protected_donor_workbook(staged_transformed_workbook_path)
+        raise ProtectedDonorTransformError(
+            f"ProtectedDonor transformation did not create staged workbook "
+            f"{staged_transformed_workbook_path!r}"
+        )
 
     if debug:
         PRINT("DEBUG: Finished client validation.")
@@ -2913,25 +3053,31 @@ def _validate_locally(
             f" {structured_data.ref_invalid_identifying_property_count}"
         )
     if json_only:
+        finalize_transformed_workbook()
         PRINT_OUTPUT(json.dumps(structured_data.data, indent=4))
         sys.exit(1)
     if verbose_json:
         PRINT_OUTPUT(f"Parsed JSON:")
         PRINT_OUTPUT(json.dumps(structured_data.data, indent=4))
-    validation_okay = _validate_data(
-        structured_data,
-        portal,
-        ingestion_filename,
-        upload_folder,
-        recursive=subfolders,
-        valid_submission_centers=valid_submission_centers,
-        ignore_orphans=ignore_orphans,
-        verbose=verbose,
-        debug=debug,
-    )
+    try:
+        validation_okay = _validate_data(
+            structured_data,
+            portal,
+            ingestion_filename,
+            upload_folder,
+            recursive=subfolders,
+            valid_submission_centers=valid_submission_centers,
+            ignore_orphans=ignore_orphans,
+            verbose=verbose,
+            debug=debug,
+        )
+    except BaseException:
+        _cleanup_staged_protected_donor_workbook(staged_transformed_workbook_path)
+        raise
     if validation_okay:
         PRINT(f"Validation results (preliminary): OK {chars.check}")
     elif exit_immediately_on_errors:
+        _cleanup_staged_protected_donor_workbook(staged_transformed_workbook_path)
         if verbose:
             _print_structured_data_verbose(
                 portal,
@@ -2988,7 +3134,14 @@ def _validate_locally(
             f"There are some preliminary errors outlined above;"
             f" do you want to continue with {'validation' if validation else 'submission'}?"
         ):
+            _cleanup_staged_protected_donor_workbook(staged_transformed_workbook_path)
             sys.exit(1)
+        # Do not publish a workbook that failed local validation, even when the
+        # user elects to continue with the remote operation.
+        _cleanup_staged_protected_donor_workbook(staged_transformed_workbook_path)
+    else:
+        finalize_transformed_workbook()
+
     if validate_local_only:
         PRINT("Terminating as requested (per --validate-local-only).")
         sys.exit(0 if validation_okay else 1)
