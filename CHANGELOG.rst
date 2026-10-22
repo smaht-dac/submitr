@@ -6,6 +6,10 @@ smaht-submitr
 Change Log
 ----------
 
+1.17.0
+======
+
+
 1.16.0
 ======
 `PR 44 ExternalQualityMetric ingestion <https://github.com/smaht-dac/submitr/pull/44>`_
