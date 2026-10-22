@@ -858,6 +858,95 @@ def test_submit_any_ingestion():
                         pass  # in this case, it also means pass the test
 
 
+def _run_protected_donor_messaging_flow(*, submission, transform_protected_donor):
+    portal = mock.Mock()
+    portal.app = APP_FOURFRONT
+    portal.server = SOME_SERVER
+    portal.key_pair = SOME_AUTH
+    portal.keys_file = None
+    portal.ping.return_value = True
+
+    output = mock.Mock()
+    prompt = mock.Mock(return_value=False)
+    call_kwargs = dict(
+        ingestion_filename="/tmp/input.xlsx",
+        ingestion_type=SOME_INGESTION_TYPE,
+        server=SOME_SERVER,
+        env=SOME_ENV,
+        app=APP_FOURFRONT,
+        noversion=True,
+        transform_protected_donor=transform_protected_donor,
+    )
+    if submission:
+        call_kwargs.update(submit=True, validate_local_skip=True, validate_remote_skip=True)
+    else:
+        call_kwargs.update(validate_local_only=True)
+
+    with mock.patch.object(submission_module, "PRINT", output), \
+            mock.patch.object(submission_module, "_define_portal", return_value=portal), \
+            mock.patch.object(submission_module, "_get_user_record", return_value={}), \
+            mock.patch.object(
+                submission_module, "_resolve_app_args",
+                return_value={"submission_centers": [], "consortia": []},
+            ), \
+            mock.patch.object(submission_module, "_do_app_arg_defaulting", return_value=True), \
+            mock.patch.object(submission_module, "_get_submission_centers", return_value=[]), \
+            mock.patch.object(submission_module, "_is_admin_user", return_value=False), \
+            mock.patch.object(
+                submission_module, "get_metadata_bundles_bucket_from_health_path",
+                return_value="metadata-bundles",
+            ), \
+            mock.patch.object(
+                submission_module, "_prepare_protected_donor_transform",
+                return_value=(
+                    transform_protected_donor,
+                    "/tmp/input.transformed.xlsx" if transform_protected_donor else None,
+                ),
+            ), \
+            mock.patch.object(submission_module, "_validate_locally", return_value=mock.Mock()), \
+            mock.patch.object(submission_module, "_ensure_protected_donor_transformed_workbook"), \
+            mock.patch.object(submission_module, "SHOW"), \
+            mock.patch.object(submission_module, "yes_or_no", prompt):
+        if submission:
+            with pytest.raises(SystemExit):
+                submit_any_ingestion(**call_kwargs)
+        else:
+            submit_any_ingestion(**call_kwargs)
+
+    return [str(call.args[0]) for call in output.call_args_list], prompt
+
+
+def test_protected_donor_messages_follow_metadata_for_validation_and_submission():
+    for submission in (False, True):
+        messages, prompt = _run_protected_donor_messaging_flow(
+            submission=submission, transform_protected_donor=True
+        )
+        metadata = next(i for i, message in enumerate(messages) if message.startswith("Metadata file to "))
+        occurring = next(i for i, message in enumerate(messages) if "transformation is occurring" in message)
+        transformed = next(
+            i for i, message in enumerate(messages)
+            if message.startswith("ProtectedDonor transformed workbook:")
+        )
+        assert metadata < occurring < transformed
+        assert sum(message.startswith("ProtectedDonor transformed workbook:") for message in messages) == 1
+        assert not any(message.startswith("Transformed workbook path:") for message in messages)
+        if submission:
+            prompt.assert_called_once_with(
+                "ProtectedDonor transformation has occurred - Do you still wish to continue?"
+            )
+        else:
+            prompt.assert_not_called()
+
+
+def test_untransformed_submission_keeps_existing_confirmation_prompt_and_output():
+    messages, prompt = _run_protected_donor_messaging_flow(
+        submission=True, transform_protected_donor=False
+    )
+    assert any(message.startswith("Metadata file to ingest:") for message in messages)
+    assert not any("ProtectedDonor" in message for message in messages)
+    prompt.assert_called_once_with("Continue on with the actual submission?")
+
+
 def test_get_defaulted_lab():
 
     assert _get_defaulted_lab(lab=SOME_LAB, user_record="does-not-matter") == SOME_LAB
