@@ -1329,6 +1329,7 @@ def submit_any_ingestion(
     if not noversion and not json_only:
         check_metadata_version(ingestion_filename, portal=portal)
 
+    protected_donor_transform_status = {}
     if not validate_remote_only and not validate_local_skip:
         structured_data = _validate_locally(
             ingestion_filename,
@@ -1356,6 +1357,7 @@ def submit_any_ingestion(
             skip_validators=skip_validators,
             transform_protected_donor=protected_donor_transform,
             transformed_workbook_path=protected_donor_transformed_workbook,
+            transform_status=protected_donor_transform_status,
         )
         if validate_local_only:
             # We actually do exit from _validate_locally if validate_local_only is True.
@@ -1374,11 +1376,17 @@ def submit_any_ingestion(
             portal,
             protected_donor_transformed_workbook,
         )
+        protected_donor_transform_status["published"] = True
     if protected_donor_transform:
         assert protected_donor_transformed_workbook is not None
-    remote_ingestion_filename = (
-        protected_donor_transformed_workbook if protected_donor_transform else ingestion_filename
-    )
+    if protected_donor_transform and protected_donor_transform_status.get("published"):
+        remote_ingestion_filename = protected_donor_transformed_workbook
+    else:
+        # The transformed workbook is not published when local validation failed and the
+        # user chose to continue; any file at that path is stale, so record the original.
+        if protected_donor_transform:
+            PRINT("ProtectedDonor transformed workbook not saved due to local validation errors.")
+        remote_ingestion_filename = ingestion_filename
 
     # Nevermind: Too confusing for both testing and general usage
     # to have different behaviours for admin and non-admin users.
@@ -2849,6 +2857,7 @@ def _validate_locally(
     skip_validators: Optional[List[str]] = None,
     transform_protected_donor: bool = False,
     transformed_workbook_path: Optional[str] = None,
+    transform_status: Optional[dict] = None,
 ) -> StructuredDataSet:
 
     if json_only:
@@ -2870,6 +2879,8 @@ def _validate_locally(
                 _commit_staged_protected_donor_workbook(
                     staged_path, transformed_workbook_path
                 )
+                if transform_status is not None:
+                    transform_status["published"] = True
             finally:
                 _cleanup_staged_protected_donor_workbook(staged_path)
 
@@ -2995,6 +3006,8 @@ def _validate_locally(
     try:
         structured_data.load_file(ingestion_filename)
     except Exception as error:
+        if not staged_transformed_workbook_path:
+            raise
         _cleanup_staged_protected_donor_workbook(staged_transformed_workbook_path)
         raise ProtectedDonorTransformError(
             f"Unable to load or transform ProtectedDonor workbook "

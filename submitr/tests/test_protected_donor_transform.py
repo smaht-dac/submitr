@@ -444,3 +444,86 @@ def test_malformed_workbook_fails_before_each_validation_mode(tmp_path, mode):
             )
 
     assert error.value.__cause__ is not None
+
+
+def test_failed_local_validation_continue_does_not_publish_transformed_workbook(tmp_path):
+    source = make_workbook(
+        tmp_path / "source.xlsx",
+        donor_rows=[["D_DONOR_1", "one", "active"]],
+        references={"Demographic": ["D_DONOR_1"]},
+    )
+    destination = tmp_path / "source.transformed.xlsx"
+    previous = b"previous transformed workbook"
+    destination.write_bytes(previous)
+    transform_status = {}
+
+    with patch("submitr.submission._validate_data", return_value=False), \
+            patch("submitr.submission.yes_or_no", return_value=True):
+        structured_data = _validate_locally(
+            str(source), None, autoadd={}, validation=True,
+            exit_immediately_on_errors=False, noprogress=True, noanalyze=True,
+            transform_protected_donor=True, transformed_workbook_path=str(destination),
+            transform_status=transform_status,
+        )
+
+    assert structured_data is not None
+    assert "published" not in transform_status
+    assert destination.read_bytes() == previous
+    assert sorted(path.name for path in tmp_path.iterdir()) == [
+        "source.transformed.xlsx", "source.xlsx",
+    ]
+
+
+def test_unpublished_transformed_workbook_is_not_recorded_for_remote_ingestion(tmp_path):
+    source = tmp_path / "source.xlsx"
+    source.write_bytes(b"source workbook")
+    destination = tmp_path / "source.transformed.xlsx"
+    destination.write_bytes(b"stale transformed workbook from a previous run")
+    portal = Mock()
+    portal.ping.return_value = True
+    portal.app = APP_FOURFRONT
+    portal.server = "https://example.test"
+
+    class StopAfterIngestion(Exception):
+        pass
+
+    with patch("submitr.submission._define_portal", return_value=portal), \
+            patch("submitr.submission._get_user_record", return_value={}), \
+            patch("submitr.submission._resolve_app_args", return_value={
+                "submission_centers": [], "consortia": [],
+            }), \
+            patch("submitr.submission._do_app_arg_defaulting", return_value=True), \
+            patch("submitr.submission._get_submission_centers", return_value=[]), \
+            patch("submitr.submission._is_admin_user", return_value=False), \
+            patch("submitr.submission.get_metadata_bundles_bucket_from_health_path", return_value="bucket"), \
+            patch("submitr.submission._prepare_protected_donor_transform",
+                  return_value=(True, str(destination))), \
+            patch("submitr.submission._validate_locally", return_value=Mock()), \
+            patch("submitr.submission._pre_transform_to_temp_json_for_excel", return_value=None), \
+            patch("submitr.submission._initiate_server_ingestion_process",
+                  side_effect=StopAfterIngestion) as initiate:
+        with pytest.raises(StopAfterIngestion):
+            submit_any_ingestion(
+                ingestion_filename=str(source),
+                ingestion_type="metadata_bundle",
+                server="https://example.test",
+                env="test",
+                app=APP_FOURFRONT,
+                noversion=True,
+                no_query=True,
+            )
+
+    assert initiate.call_args.kwargs["ingestion_filename"] == str(source)
+
+
+def test_local_load_errors_are_not_relabelled_without_protected_donor_transform(tmp_path):
+    source = tmp_path / "malformed.xlsx"
+    source.write_bytes(b"not an xlsx workbook")
+
+    with pytest.raises(Exception) as error:
+        _validate_locally(
+            str(source), None, autoadd={}, validation=True,
+            exit_immediately_on_errors=True, noprogress=True, noanalyze=True,
+        )
+
+    assert not isinstance(error.value, ProtectedDonorTransformError)
