@@ -32,6 +32,7 @@ from dcicutils.misc_utils import (
     is_uuid,
     url_path_join,
     normalize_spaces,
+    right_trim,
 )
 from dcicutils.progress_bar import ProgressBar
 from dcicutils.schema_utils import EncodedSchemaConstants, JsonSchemaConstants, Schema
@@ -44,6 +45,10 @@ from dcicutils.submitr.progress_constants import (
 from submitr.base import DEFAULT_APP
 from dcicutils.submitr.custom_excel import CustomExcel
 from dcicutils.submitr.donor_transformer import (
+    DONOR_LINK_COLUMN,
+    DONOR_TOKEN,
+    PROTECTED_DONOR_TOKEN,
+    PROTECTED_REFERENCE_SHEETS,
     ProtectedDonorTransformError,
     ProtectedDonorWorkbookTransformer,
 )
@@ -512,11 +517,38 @@ def _is_excel_workbook(file_name: Optional[str]) -> bool:
 
 
 def _is_hidden_workbook_sheet(sheet) -> bool:
+    # Mirrors dcicutils Excel.is_hidden_sheet (an instance method, so not reusable here).
     title = sheet.title
     return sheet.sheet_state == "hidden" or any(
         title.startswith(left) and title.endswith(right)
         for left, right in (("(", ")"), ("[", "]"), ("{", "}"), ("<", ">"))
     )
+
+
+def _has_protected_reference_sheets(file_name: str) -> bool:
+    """Cheaply check sheet names so workbooks without donor-referencing sheets skip analysis."""
+    try:
+        workbook = openpyxl.load_workbook(file_name, read_only=True)
+        try:
+            sheet_names = workbook.sheetnames
+        finally:
+            workbook.close()
+    except Exception as error:
+        raise ProtectedDonorTransformError(
+            f"Unable to load ProtectedDonor workbook {file_name!r}: {error}"
+        ) from error
+    return any(CustomExcel.effective_sheet_name(name) in PROTECTED_REFERENCE_SHEETS
+               for name in sheet_names)
+
+
+def _logical_last_row(sheet) -> int:
+    """The last row normal ingestion reads: data ends before the first (right-trimmed) empty row."""
+    last_row = 1
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        if not right_trim(row):
+            break
+        last_row += 1
+    return last_row
 
 
 def _load_protected_donor_workbooks(file_name: str):
@@ -541,17 +573,10 @@ def _validate_cached_formula_donor_references(formula_workbook, cached_workbook,
     when it is a string containing one of the donor identifier tokens understood by the
     dcicutils transformer; the transformer then validates whether that identifier exists.
     """
-    protected_reference_sheets = {
-        "Demographic",
-        "DeathCircumstances",
-        "FamilyHistory",
-        "MedicalHistory",
-        "TissueCollection",
-    }
     for formula_sheet in formula_workbook.worksheets:
         if _is_hidden_workbook_sheet(formula_sheet):
             continue
-        if CustomExcel.effective_sheet_name(formula_sheet.title) not in protected_reference_sheets:
+        if CustomExcel.effective_sheet_name(formula_sheet.title) not in PROTECTED_REFERENCE_SHEETS:
             continue
         cached_sheet = cached_workbook[formula_sheet.title]
         headers = []
@@ -560,10 +585,11 @@ def _validate_cached_formula_donor_references(formula_workbook, cached_workbook,
                 break
             headers.append(str(cell.value).strip())
         try:
-            donor_column = headers.index("donor") + 1
+            donor_column = headers.index(DONOR_LINK_COLUMN) + 1
         except ValueError:
             continue
-        for row_number in range(2, formula_sheet.max_row + 1):
+        # Rows past the logical end (e.g. formulas dragged down a template) are never ingested.
+        for row_number in range(2, _logical_last_row(cached_sheet) + 1):
             formula_cell = formula_sheet.cell(row_number, donor_column)
             if formula_cell.data_type != "f":
                 continue
@@ -576,7 +602,7 @@ def _validate_cached_formula_donor_references(formula_workbook, cached_workbook,
                     "identifier before submitting (formula evaluation is not supported)."
                 )
             cached_value = cached_value.strip()
-            if "_DONOR_" not in cached_value and "_PROTECTED-DONOR_" not in cached_value:
+            if DONOR_TOKEN not in cached_value and PROTECTED_DONOR_TOKEN not in cached_value:
                 raise ProtectedDonorTransformError(
                     f"Formula-backed donor reference at {location} in {file_name!r} "
                     f"has invalid cached value {cached_value!r}; expected a Donor or "
@@ -586,7 +612,7 @@ def _validate_cached_formula_donor_references(formula_workbook, cached_workbook,
 
 def _analyze_protected_donor_workbook(file_name: Optional[str], portal):
     """Analyze the cached-value workbook used by normal CustomExcel ingestion."""
-    if not _is_excel_workbook(file_name):
+    if not _is_excel_workbook(file_name) or not _has_protected_reference_sheets(str(file_name)):
         return None
     formula_workbook, cached_workbook = _load_protected_donor_workbooks(str(file_name))
     _validate_cached_formula_donor_references(formula_workbook, cached_workbook, str(file_name))
@@ -607,9 +633,6 @@ def _prepare_protected_donor_transform(
     *,
     portal: Portal,
     ingestion_filename: str,
-    submission_centers: Optional[List[str]],
-    validation: bool,
-    no_query: bool,
     transform_protected_donor: bool,
     transformed_workbook_path: Optional[str],
 ) -> Tuple[bool, Optional[str]]:
@@ -619,7 +642,6 @@ def _prepare_protected_donor_transform(
     transformer subsequently raises its detailed error for missing or invalid
     references before changing any cells.
     """
-    del submission_centers, validation, no_query  # retained for CLI compatibility
     if not transform_protected_donor or not _is_excel_workbook(ingestion_filename):
         return False, None
 
@@ -1309,9 +1331,6 @@ def submit_any_ingestion(
     protected_donor_transform, protected_donor_transformed_workbook = _prepare_protected_donor_transform(
         portal=portal,
         ingestion_filename=ingestion_filename,
-        submission_centers=app_args.get("submission_centers"),
-        validation=validation,
-        no_query=no_query,
         transform_protected_donor=transform_protected_donor,
         transformed_workbook_path=transformed_workbook_path,
     )
@@ -1475,7 +1494,7 @@ def submit_any_ingestion(
     if validation:
         do_any_uploads(
             structured_data,
-            metadata_file=remote_ingestion_filename,
+            metadata_file=ingestion_filename,
             main_search_directory=upload_folder,
             main_search_directory_recursively=subfolders,
             cloud_store=rclone_google,
@@ -3067,7 +3086,8 @@ def _validate_locally(
             f" {structured_data.ref_invalid_identifying_property_count}"
         )
     if json_only:
-        finalize_transformed_workbook()
+        # Exits before validation, so do not publish the transformed workbook.
+        _cleanup_staged_protected_donor_workbook(staged_transformed_workbook_path)
         PRINT_OUTPUT(json.dumps(structured_data.data, indent=4))
         sys.exit(1)
     if verbose_json:

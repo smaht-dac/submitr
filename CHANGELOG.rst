@@ -16,7 +16,12 @@ Change Log
   are supported, missing Donors fail clearly, and already-transformed workbooks are left unchanged
 * Write the transformed workbook next to the original as ``<name>.transformed.xlsx``, replacing it
   atomically and only after it passes local validation
-* Reject formula-backed donor references that have no usable cached value (formulas are not evaluated)
+* Reject formula-backed donor references that have no usable cached value (formulas are not evaluated);
+  formulas below the last data row (e.g. dragged down a template) are ignored, as in normal ingestion
+* Do not record a stale or missing transformed workbook when local validation fails and the user continues,
+  and do not save the transformed workbook with ``--json-only``
+* Skip ProtectedDonor analysis for workbooks with none of the protected sheets
+* Document ProtectedDonor auto-transform in the Validation section of the usage docs
 * Add hidden ``--no-transform-protected-donor`` and ``--save-transformed-workbook`` options
 * Update to ``dcicutils`` 8.19.1 (ProtectedDonor transformer) and ``boto3`` ^1.43.100; relock
 

@@ -11,19 +11,6 @@ import pytest
 
 from dcicutils.common import APP_FOURFRONT
 from dcicutils.submitr.custom_excel import CustomExcel
-from dcicutils.submitr import donor_transformer as _donor_transformer_module
-
-if not hasattr(_donor_transformer_module, "DonorReferenceKind"):
-    # The pinned dcicutils dependency (4dn-dcic/utils branch ajs/protected-donor-transform,
-    # tracked at https://github.com/4dn-dcic/utils/pull/337) has not yet landed the analyze()/
-    # DonorReferenceKind/portal-aware ProtectedDonor API these tests exercise. Skip rather than
-    # fail collection until that dependency catches up.
-    pytest.skip(
-        "dcicutils.submitr.donor_transformer.DonorReferenceKind is not available in the "
-        "pinned dcicutils dependency; see 4dn-dcic/utils PR #337.",
-        allow_module_level=True,
-    )
-
 from dcicutils.submitr.donor_transformer import (
     DonorReferenceKind,
     ProtectedDonorTransformError,
@@ -185,16 +172,16 @@ def test_submitr_analysis_distinguishes_partial_and_invalid_workbooks(tmp_path):
         references={"Demographic": ["not-an-id"]},
     )
     assert _prepare_protected_donor_transform(
-        portal=None, ingestion_filename=str(partial), submission_centers=None,
-        validation=False, no_query=False, transform_protected_donor=True,
+        portal=None, ingestion_filename=str(partial),
+        transform_protected_donor=True,
         transformed_workbook_path=None,
     )[0] is True
     invalid_analysis = _analyze_protected_donor_workbook(invalid, None)
     assert invalid_analysis.invalid_references == frozenset({"not-an-id"})
     with pytest.raises(ProtectedDonorTransformError, match="Invalid donor reference"):
         _prepare_protected_donor_transform(
-            portal=None, ingestion_filename=str(invalid), submission_centers=None,
-            validation=False, no_query=False, transform_protected_donor=True,
+            portal=None, ingestion_filename=str(invalid),
+            transform_protected_donor=True,
             transformed_workbook_path=None,
         )
 
@@ -208,8 +195,8 @@ def test_prepare_auto_transforms_without_prompt_without_printing_output_path(tmp
     with patch("submitr.submission.yes_or_no") as prompt, \
             patch("submitr.submission.PRINT") as output:
         apply, output_path = _prepare_protected_donor_transform(
-            portal=None, ingestion_filename=str(path), submission_centers=None,
-            validation=False, no_query=False, transform_protected_donor=True,
+            portal=None, ingestion_filename=str(path),
+            transform_protected_donor=True,
             transformed_workbook_path=None,
         )
     assert apply is True
@@ -370,6 +357,34 @@ def test_formula_donor_reference_requires_a_valid_cached_value(tmp_path, cached_
         _analyze_protected_donor_workbook(source, None)
 
 
+def test_formula_donor_reference_below_the_ingested_rows_is_ignored(tmp_path):
+    source = make_workbook(
+        tmp_path / "formula.xlsx",
+        donor_rows=[["D_DONOR_1", "one", "active"]],
+        references={"Demographic": ["D_DONOR_1"]},
+    )
+    workbook = openpyxl.load_workbook(source)
+    # A template formula dragged down past a blank row; ingestion never reads it.
+    workbook["Demographic"]["A5"] = '=IF(Z5="","",Z5)'
+    workbook.save(source)
+
+    analysis = _analyze_protected_donor_workbook(source, None)
+    assert analysis.needs_transformation
+
+
+def test_workbook_without_protected_reference_sheets_skips_analysis(tmp_path):
+    source = tmp_path / "other.xlsx"
+    workbook = openpyxl.Workbook()
+    workbook.active.title = "Donor"
+    workbook.active.append(["submitted_id"])
+    workbook.active.append(["D_DONOR_1"])
+    workbook.save(source)
+
+    with patch("submitr.submission._load_protected_donor_workbooks") as load:
+        assert _analyze_protected_donor_workbook(source, None) is None
+    load.assert_not_called()
+
+
 def test_existing_transformed_workbook_is_preserved_until_successful_replacement(tmp_path):
     source = make_workbook(
         tmp_path / "source.xlsx",
@@ -381,8 +396,8 @@ def test_existing_transformed_workbook_is_preserved_until_successful_replacement
     previous = destination.read_bytes()
 
     _prepare_protected_donor_transform(
-        portal=None, ingestion_filename=str(source), submission_centers=None,
-        validation=False, no_query=False, transform_protected_donor=True,
+        portal=None, ingestion_filename=str(source),
+        transform_protected_donor=True,
         transformed_workbook_path=str(destination),
     )
     assert destination.read_bytes() == previous
@@ -401,8 +416,8 @@ def test_failed_protected_donor_load_preserves_existing_target_and_has_cause(tmp
 
     with pytest.raises(ProtectedDonorTransformError, match="Unable to load ProtectedDonor workbook") as error:
         _prepare_protected_donor_transform(
-            portal=None, ingestion_filename=str(source), submission_centers=None,
-            validation=False, no_query=False, transform_protected_donor=True,
+            portal=None, ingestion_filename=str(source),
+            transform_protected_donor=True,
             transformed_workbook_path=str(destination),
         )
 
@@ -467,6 +482,32 @@ def test_failed_local_validation_continue_does_not_publish_transformed_workbook(
         )
 
     assert structured_data is not None
+    assert "published" not in transform_status
+    assert destination.read_bytes() == previous
+    assert sorted(path.name for path in tmp_path.iterdir()) == [
+        "source.transformed.xlsx", "source.xlsx",
+    ]
+
+
+def test_json_only_does_not_publish_transformed_workbook(tmp_path):
+    source = make_workbook(
+        tmp_path / "source.xlsx",
+        donor_rows=[["D_DONOR_1", "one", "active"]],
+        references={"Demographic": ["D_DONOR_1"]},
+    )
+    destination = tmp_path / "source.transformed.xlsx"
+    previous = b"previous transformed workbook"
+    destination.write_bytes(previous)
+    transform_status = {}
+
+    with patch("submitr.submission.PRINT_OUTPUT"), pytest.raises(SystemExit):
+        _validate_locally(
+            str(source), None, autoadd={}, validation=True, json_only=True,
+            exit_immediately_on_errors=True, noprogress=True, noanalyze=True,
+            transform_protected_donor=True, transformed_workbook_path=str(destination),
+            transform_status=transform_status,
+        )
+
     assert "published" not in transform_status
     assert destination.read_bytes() == previous
     assert sorted(path.name for path in tmp_path.iterdir()) == [
