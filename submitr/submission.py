@@ -54,6 +54,7 @@ from dcicutils.submitr.donor_transformer import (
 )
 from submitr.exceptions import PortalPermissionError
 from submitr.file_for_upload import FilesForUpload, get_file_upload_bucket
+from submitr.filename_preflight import duplicate_upload_filename_errors
 from submitr.metadata_template import (
     check_metadata_version,
     print_metadata_version_warning,
@@ -1587,6 +1588,9 @@ def submit_any_ingestion(
         PRINT("Skipping any uploads (per --nouploads option).")
         return
 
+    upload_submission_centers = list(app_args.get("submission_centers") or [])
+    if add_submission_center and add_submission_center not in upload_submission_centers:
+        upload_submission_centers.append(add_submission_center)
     do_any_uploads(
         submission_response,
         metadata_file=ingestion_filename,
@@ -1594,6 +1598,7 @@ def submit_any_ingestion(
         main_search_directory_recursively=subfolders,
         cloud_store=rclone_google,
         portal=portal,
+        submission_centers=upload_submission_centers,
         verbose=verbose,
     )
 
@@ -3195,6 +3200,12 @@ def _validate_data(
     debug: bool = False,
 ) -> bool:
     nerrors = 0
+
+    if filename_errors := duplicate_upload_filename_errors(structured_data, portal):
+        nerrors += len(filename_errors)
+        PRINT_OUTPUT(f"- Filename errors: {len(filename_errors)}")
+        for error in filename_errors:
+            PRINT_OUTPUT(f"  - ERROR: {error}")
 
     if initial_validation_errors := _validate_initial(structured_data, portal):
         nerrors += len(initial_validation_errors)
