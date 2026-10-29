@@ -2832,6 +2832,10 @@ def resume_uploads(
         rclone_google.verify_connectivity()
 
     PRINT(f"Attempting to resume uploads for submission: {uuid}")
+    # Scope the pre-upload filename collision check to the submitting center(s) recorded on the item.
+    submission_centers = None
+    if isinstance(item := portal.get_metadata(uuid, raise_exception=False), dict):
+        submission_centers = item.get("submission_centers") or item.get("submission_center")
     do_any_uploads(
         uuid,
         metadata_file=bundle_filename,
@@ -2840,6 +2844,7 @@ def resume_uploads(
         cloud_store=rclone_google,
         portal=portal,
         verbose=verbose,
+        submission_centers=submission_centers,
     )
 
 

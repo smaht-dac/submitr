@@ -2,7 +2,7 @@
 
 ## Findings
 
-Submitr assembles workbook-referenced files from `StructuredDataSet.upload_files` and then, for each portal File item, patches its `filename` to obtain upload credentials before sending bytes to S3. Metadata submission (server ingestion) creates or updates those File items before any upload begins, so a collision found only at upload time would leave the colliding item already committed. The portal collision preflight therefore runs after validation and before the metadata is submitted, and is repeated immediately before each filename PATCH/credential request as a last guard (for example on resumed uploads).
+Submitr assembles workbook-referenced files from `StructuredDataSet.upload_files` and then, for each portal File item, patches its `filename` to obtain upload credentials before sending bytes to S3. Metadata submission (server ingestion) creates or updates those File items before any upload begins, so a collision found only at upload time would leave the colliding item already committed. The portal collision preflight therefore runs after validation and before the metadata is submitted, and is repeated immediately before each filename PATCH/credential request as a last guard, including on resumed uploads, where `resume-uploads` takes the submission center from the item being resumed (the IngestionSubmission or File).
 
 Workbook file references are basenames for upload purposes. Two different source paths can therefore address the same uploaded filename. The preflight reports duplicate normalized basenames with workbook sheet and row locations. A repeated filename is allowed when the references identify the same portal item, which supports legitimate updates without treating the item as a collision with itself.
 

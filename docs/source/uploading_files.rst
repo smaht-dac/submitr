@@ -29,7 +29,7 @@ so each referenced file name must be unique:
   whether a file with the same name already exists in the portal for your submission center;
   if so, it lists each collision and aborts without creating or updating anything.
   Updating an existing file item with its own file name is allowed.
-  The same check is repeated just before each file is uploaded.
+  The same check is repeated just before each file is uploaded, including with ``resume-uploads``.
 
 Resuming Uploads
 ================
