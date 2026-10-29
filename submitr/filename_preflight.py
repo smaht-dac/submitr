@@ -29,14 +29,17 @@ def _is_file_schema(portal: Any, schema: str) -> bool:
 
 def _file_entries(value: Any, location: str, portal: Any,
                   top_level_file_schema: bool,
-                  inherited_identity: Optional[str] = None) -> Iterable[Tuple[str, str, Optional[str]]]:
-    """Yield filename, location, and owning-item identity from nested row data."""
+                  inherited_identity: Optional[str] = None,
+                  inherited_owner: Optional[dict] = None
+                  ) -> Iterable[Tuple[str, str, Optional[str], Optional[dict]]]:
+    """Yield filename, location, owning-item identity, and owning item from nested row data."""
     if isinstance(value, dict):
         item_identity = _identity(value) or inherited_identity
+        owner = value if _item_keys(value) else inherited_owner
         for key, child in value.items():
             if key == "filename" and isinstance(child, str):
                 if filename := normalize_upload_filename(child):
-                    yield filename, location, item_identity
+                    yield filename, location, item_identity, owner
             elif key == "file" and isinstance(child, str):
                 # ``file`` is the normalized upload entry shape emitted by
                 # StructuredDataSet.upload_files. Only accept it for a known
@@ -44,15 +47,28 @@ def _file_entries(value: Any, location: str, portal: Any,
                 child_type = value.get("type")
                 if top_level_file_schema or (isinstance(child_type, str) and _is_file_schema(portal, child_type)):
                     if filename := normalize_upload_filename(child):
-                        yield filename, location, item_identity
+                        yield filename, location, item_identity, owner
             elif isinstance(child, (dict, list)):
                 child_location = f"{location}.{key}"
                 yield from _file_entries(child, child_location, portal,
-                                         top_level_file_schema, item_identity)
+                                         top_level_file_schema, item_identity, owner)
     elif isinstance(value, list):
         for index, child in enumerate(value):
             yield from _file_entries(child, f"{location}[{index}]", portal,
-                                     top_level_file_schema, inherited_identity)
+                                     top_level_file_schema, inherited_identity, inherited_owner)
+
+
+def _workbook_file_entries(structured_data: Any, portal: Any
+                           ) -> Iterable[Tuple[str, str, Optional[str], Optional[dict]]]:
+    data = getattr(structured_data, "data", structured_data)
+    if not isinstance(data, dict):
+        return
+    for sheet, rows in data.items():
+        if not isinstance(rows, list) or not _is_file_schema(portal, sheet):
+            continue
+        for index, row in enumerate(rows):
+            yield from _file_entries(row, f"{sheet} row {index + 2}", portal,
+                                     top_level_file_schema=True)
 
 
 def duplicate_upload_filename_errors(structured_data: Any, portal: Any) -> List[str]:
@@ -62,22 +78,11 @@ def duplicate_upload_filename_errors(structured_data: Any, portal: Any) -> List[
     item, which is the normal shape of an update represented in more than one
     workbook location.
     """
-    data = getattr(structured_data, "data", structured_data)
-    if not isinstance(data, dict):
-        return []
-
     occurrences: Dict[str, List[Tuple[str, Optional[str]]]] = defaultdict(list)
-    for sheet, rows in data.items():
-        if not isinstance(rows, list) or not _is_file_schema(portal, sheet):
-            continue
-        for index, row in enumerate(rows):
-            location = f"{sheet} row {index + 2}"
-            for filename, entry_location, item_identity in _file_entries(
-                row, location, portal, top_level_file_schema=True
-            ):
-                occurrences[filename].append(
-                    (f"{entry_location} ({filename})", item_identity)
-                )
+    for filename, entry_location, item_identity, _ in _workbook_file_entries(structured_data, portal):
+        occurrences[filename].append(
+            (f"{entry_location} ({filename})", item_identity)
+        )
 
     errors = []
     for normalized_name, entries in occurrences.items():
@@ -129,6 +134,20 @@ def _item_tokens(value: Any) -> set:
     return tokens
 
 
+_ITEM_KEY_FIELDS = ("uuid", "@id", "submitted_id", "accession", "aliases")
+
+
+def _item_keys(value: Any) -> set:
+    if not isinstance(value, dict):
+        return set()
+    result = set()
+    for key in _ITEM_KEY_FIELDS:
+        child = value.get(key)
+        for item in (child if isinstance(child, list) else [child]):
+            result.update(_item_tokens(item))
+    return result
+
+
 def _portal_file_records(filename: str, portal: Any) -> List[dict]:
     try:
         response = portal.get(f"/search/?filename={quote(filename)}&type=File")
@@ -163,22 +182,52 @@ class FilenameCollisionError(ValueError):
     """Raised when a filename is already owned by another same-center file."""
 
 
+def _portal_filename_collision(filename: str, records: List[dict], centers: set,
+                               current_item_keys: set) -> Optional[str]:
+    for record in records:
+        record_centers = _center_tokens(_record_submission_centers(record))
+        if not centers.intersection(record_centers):
+            continue
+        if current_item_keys.intersection(_item_keys(record)):
+            continue
+        record_uuid = record.get("uuid") or record.get("@id")
+        return (
+            f"A portal file named '{filename}' already exists for submission center "
+            f"'{sorted(centers)[0]}' ({record_uuid or 'unknown item'}). "
+            "Choose a unique filename."
+        )
+    return None
+
+
+def portal_filename_collision_errors(structured_data: Any, portal: Any,
+                                     submission_centers: Any = None) -> List[str]:
+    """Report workbook upload filenames already owned by other same-center portal files.
+
+    Intended to run before the metadata is submitted, so that no File item is
+    created or updated with a colliding filename.
+    """
+    centers = _center_tokens(submission_centers)
+    if not centers:
+        return []
+    entries: Dict[str, List[Tuple[str, set]]] = defaultdict(list)
+    for filename, location, _, owner in _workbook_file_entries(structured_data, portal):
+        entries[filename].append((location, _item_keys(owner)))
+    errors = []
+    for filename, occurrences in entries.items():
+        records = _portal_file_records(filename, portal)
+        for location, item_keys in occurrences:
+            if error := _portal_filename_collision(filename, records, centers, item_keys):
+                errors.append(f"{location}: {error}")
+    return errors
+
+
 def check_portal_filename_collision(file: Any, portal: Any,
                                     submission_centers: Any = None) -> None:
     """Raise if ``file.name`` belongs to another file in a submitting center."""
     centers = _center_tokens(submission_centers)
     if not centers or not getattr(file, "name", None):
         return
-
-    for record in _portal_file_records(file.name, portal):
-        record_centers = _center_tokens(_record_submission_centers(record))
-        if not centers.intersection(record_centers):
-            continue
-        record_uuid = record.get("uuid") or record.get("@id")
-        if record_uuid and _item_tokens(record_uuid).intersection(_item_tokens(getattr(file, "uuid", None))):
-            continue
-        raise FilenameCollisionError(
-            f"A portal file named '{file.name}' already exists for submission center "
-            f"'{sorted(centers)[0]}' ({record_uuid or 'unknown item'}). "
-            "Choose a unique filename."
-        )
+    records = _portal_file_records(file.name, portal)
+    if error := _portal_filename_collision(file.name, records, centers,
+                                           _item_tokens(getattr(file, "uuid", None))):
+        raise FilenameCollisionError(error)

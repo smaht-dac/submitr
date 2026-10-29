@@ -9,8 +9,9 @@ from submitr.filename_preflight import (
     FilenameCollisionError,
     check_portal_filename_collision,
     duplicate_upload_filename_errors,
+    portal_filename_collision_errors,
 )
-from submitr import submission_uploads
+from submitr import submission, submission_uploads
 
 
 class FakePortal:
@@ -111,3 +112,59 @@ def test_filename_collision_check_precedes_patch_and_upload():
         submission_uploads.upload_file(file, portal, submission_centers=["center-a"])
 
     assert events == ["collision", "credentials", "bytes"]
+
+
+def test_portal_filename_collision_errors_scope_and_same_item():
+    portal = FakePortal([{
+        "uuid": "existing-file",
+        "submitted_id": "TEST_FILE_EXISTING",
+        "filename": "reads.fastq",
+        "submission_centers": [{"@id": "/submission-centers/center-a/"}],
+    }])
+    data = {"File": [
+        {"submitted_id": "TEST_FILE_NEW", "filename": "dir/reads.fastq"},
+        {"submitted_id": "TEST_FILE_EXISTING", "filename": "reads.fastq"},
+    ]}
+
+    errors = portal_filename_collision_errors(data, portal, ["/submission-centers/center-a/"])
+
+    assert len(errors) == 1
+    assert errors[0].startswith("File row 2: ")
+    assert "existing-file" in errors[0]
+    assert portal_filename_collision_errors(data, portal, ["/submission-centers/center-b/"]) == []
+
+
+def test_portal_filename_collision_aborts_before_metadata_submission():
+    portal = FakePortal([{
+        "uuid": "existing-file",
+        "filename": "reads.fastq",
+        "submission_centers": [{"@id": "/submission-centers/center-a/"}],
+    }])
+    portal.ping = lambda: True
+    portal.key = {}
+    portal.key_pair = ("key", "secret")
+    portal.server = "http://localhost"
+    portal.app = "smaht"
+    structured_data = SimpleNamespace(
+        data={"File": [{"submitted_id": "TEST_FILE_NEW", "filename": "reads.fastq"}]}
+    )
+    app_args = {"consortia": ["/consortia/smaht/"],
+                "submission_centers": ["/submission-centers/center-a/"]}
+
+    with mock.patch.object(submission, "_define_portal", return_value=portal), \
+         mock.patch.object(submission, "_resolve_app_args", return_value=app_args), \
+         mock.patch.object(submission, "_get_user_record", return_value={}), \
+         mock.patch.object(submission, "get_metadata_bundles_bucket_from_health_path", return_value="bucket"), \
+         mock.patch.object(submission, "_do_app_arg_defaulting", return_value=True), \
+         mock.patch.object(submission, "_get_submission_centers", return_value=[]), \
+         mock.patch.object(submission, "_validate_locally", return_value=structured_data), \
+         mock.patch.object(submission, "yes_or_no", return_value=True), \
+         mock.patch.object(submission, "_initiate_server_ingestion_process") as initiate:
+        with pytest.raises(SystemExit) as exc:
+            submission.submit_any_ingestion(
+                "workbook.json", ingestion_type="metadata_bundle", server="http://localhost",
+                env=None, submit=True, validate_remote_skip=True, noversion=True,
+            )
+
+    assert exc.value.code == 1
+    initiate.assert_not_called()

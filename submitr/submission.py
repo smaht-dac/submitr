@@ -54,7 +54,10 @@ from dcicutils.submitr.donor_transformer import (
 )
 from submitr.exceptions import PortalPermissionError
 from submitr.file_for_upload import FilesForUpload, get_file_upload_bucket
-from submitr.filename_preflight import duplicate_upload_filename_errors
+from submitr.filename_preflight import (
+    duplicate_upload_filename_errors,
+    portal_filename_collision_errors,
+)
 from submitr.metadata_template import (
     check_metadata_version,
     print_metadata_version_warning,
@@ -1492,6 +1495,14 @@ def submit_any_ingestion(
             f" {'--validate-local-only' if validate_local_only else '--validate-remote-skip'})."
         )
 
+    upload_submission_centers = list(app_args.get("submission_centers") or [])
+    if add_submission_center and add_submission_center not in upload_submission_centers:
+        upload_submission_centers.append(add_submission_center)
+
+    _check_portal_filename_collisions(
+        structured_data, ingestion_filename, portal, upload_submission_centers
+    )
+
     if validation:
         do_any_uploads(
             structured_data,
@@ -1588,9 +1599,6 @@ def submit_any_ingestion(
         PRINT("Skipping any uploads (per --nouploads option).")
         return
 
-    upload_submission_centers = list(app_args.get("submission_centers") or [])
-    if add_submission_center and add_submission_center not in upload_submission_centers:
-        upload_submission_centers.append(add_submission_center)
     do_any_uploads(
         submission_response,
         metadata_file=ingestion_filename,
@@ -1601,6 +1609,29 @@ def submit_any_ingestion(
         submission_centers=upload_submission_centers,
         verbose=verbose,
     )
+
+
+def _check_portal_filename_collisions(
+    structured_data: Optional[StructuredDataSet],
+    ingestion_filename: str,
+    portal: Portal,
+    submission_centers: List[str],
+) -> None:
+    if structured_data is None and ingestion_filename.endswith((".xlsx", ".xls")):
+        structured_data = StructuredDataSet(
+            file=ingestion_filename,
+            portal=portal,
+            excel_class=CustomExcel.with_portal(portal),
+            norefs=True,
+        )
+    if structured_data is None:
+        return
+    if errors := portal_filename_collision_errors(structured_data, portal, submission_centers):
+        PRINT(f"Filename collisions with existing portal files: {len(errors)}")
+        for error in errors:
+            PRINT(f"- ERROR: {error}")
+        PRINT("Aborting before submitting metadata; no portal items were created or updated.")
+        sys.exit(1)
 
 
 def _get_recent_submissions(
