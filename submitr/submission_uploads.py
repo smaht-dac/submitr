@@ -6,6 +6,7 @@ from dcicutils.command_utils import yes_or_no
 from dcicutils.s3_utils import HealthPageKey
 from dcicutils.structured_data import Portal, StructuredDataSet
 from submitr.file_for_upload import FileForUpload, FilesForUpload
+from submitr.filename_preflight import check_portal_filename_collision
 from submitr.output import PRINT
 from submitr.rclone import RCloneStore
 from submitr.s3_upload import upload_file_to_aws_s3
@@ -19,8 +20,11 @@ def do_any_uploads(arg: Union[str, dict, StructuredDataSet],
                    cloud_store: Optional[RCloneStore] = None,
                    portal: Optional[Portal] = None,
                    review_only: bool = False,
-                   verbose: bool = False) -> None:
+                   verbose: bool = False,
+                   submission_centers: Optional[List[str]] = None) -> None:
 
+    if submission_centers is None and isinstance(arg, dict):
+        submission_centers = arg.get("submission_centers") or arg.get("submission_center")
     files_for_upload = assemble_files_for_upload(
         arg,
         main_search_directory=main_search_directory,
@@ -32,7 +36,7 @@ def do_any_uploads(arg: Union[str, dict, StructuredDataSet],
         verbose=verbose)
 
     if not review_only:
-        upload_files(files_for_upload, portal)
+        upload_files(files_for_upload, portal, submission_centers=submission_centers)
 
 
 def assemble_files_for_upload(arg: Union[str, dict, StructuredDataSet],
@@ -210,17 +214,19 @@ def get_submission_object_upload_files(submission_item: dict, portal: Portal) ->
     return None
 
 
-def upload_files(files: List[FileForUpload], portal: Portal) -> None:
+def upload_files(files: List[FileForUpload], portal: Portal,
+                 submission_centers: Optional[List[str]] = None) -> None:
     if not isinstance(files, list) or not files or not (files := [file for file in files if not file.ignore]):
         PRINT("No files to upload.")
         return
     if yes_or_no(f"Ready to actually upload ({len(files)}) file{'s' if len(files) != 1 else ''}. Upload now?"):
         for file in files:
-            upload_file(file, portal=portal)
+            upload_file(file, portal=portal, submission_centers=submission_centers)
     PRINT("Upload process complete.")
 
 
-def upload_file(file: FileForUpload, portal: Portal) -> None:
+def upload_file(file: FileForUpload, portal: Portal,
+                submission_centers: Optional[List[str]] = None) -> None:
     """
     Upload file to a target environment.
 
@@ -242,6 +248,7 @@ def upload_file(file: FileForUpload, portal: Portal) -> None:
         # marked as FileForUpload.ignore and should therefore not be in the list from FilesForUpload.
         return
 
+    check_portal_filename_collision(file, portal, submission_centers=submission_centers)
     aws_s3_uri, aws_credentials, aws_kms_key_id = generate_credentials_for_upload(file.name, file.uuid, portal)
 
     upload_file_to_aws_s3(file=file,

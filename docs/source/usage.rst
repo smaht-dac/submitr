@@ -238,6 +238,16 @@ To be more specific about the the validation checks, they include the following:
 #. Verifies that referenced files (to be subsequently uploaded) actually exist on the file system.
 
 .. note::
+    If the ``donor`` column of your ``Demographic``, ``DeathCircumstances``, ``FamilyHistory``,
+    ``MedicalHistory``, or ``TissueCollection`` sheets references ``Donor`` items, then ``submit-metadata-bundle``
+    automatically converts those references to ``ProtectedDonor`` (adding matching ``ProtectedDonor`` rows)
+    during validation and submission. The converted copy of your workbook is saved next to the original
+    as ``<name>.transformed.xlsx``, but only if local validation passes; your original file is never changed.
+    When submitting you will be asked to confirm that the transformation occurred.
+    If a ``donor`` cell contains an Excel formula, save the workbook in Excel first so that its computed
+    value is stored; formulas are not evaluated.
+
+.. note::
     If you get validation errors, and then you fix them, and then you try again,
     it is `possible` that you will get new, additional errors. I.e. it is not necessarily
     the case that `all` validation errors will be comprehensively reported all at once.

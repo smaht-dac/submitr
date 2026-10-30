@@ -1,17 +1,6 @@
 {
   "forked_at": "2020-07-02T03:43:50-04:00",
-  "pre_fork_contributors_by_name": {},
   "contributors_by_name": {
-    "Andy Schroeder": {
-      "emails": [
-        "andrew_schroeder@hms.harvard.edu"
-      ],
-      "names": [
-        "Andrew Schroeder",
-        "Andy Schroeder",
-        "aschroed"
-      ]
-    },
     "David Michaels": {
       "emails": [
         "david_michaels@hms.harvard.edu"
@@ -69,15 +58,25 @@
         "Sarah Reiff"
       ]
     },
-    "sgonicholson": {
+    "William Ronchetti": {
       "emails": [
-        "sarah_nicholson@hms.harvard.edu",
-        "sgonicholson@github.com"
+        "william_ronchetti@hms.harvard.edu",
+        "wrr33@cornell.edu"
       ],
       "names": [
-        "Sarah Nicholson",
+        "Will Ronchetti",
+        "William Ronchetti"
+      ]
+    },
+    "sgonicholson": {
+      "emails": [
+        "sgonicholson@github.com",
+        "sarah_nicholson@hms.harvard.edu"
+      ],
+      "names": [
+        "sgonicholson",
         "sarahgonicholson",
-        "sgonicholson"
+        "Sarah Nicholson"
       ]
     },
     "William Feng": {
@@ -91,14 +90,14 @@
         "wfeng19"
       ]
     },
-    "William Ronchetti": {
+    "Andy Schroeder": {
       "emails": [
-        "william_ronchetti@hms.harvard.edu",
-        "wrr33@cornell.edu"
+        "andrew_schroeder@hms.harvard.edu"
       ],
       "names": [
-        "Will Ronchetti",
-        "William Ronchetti"
+        "Andy Schroeder",
+        "Andrew Schroeder",
+        "aschroed"
       ]
     }
   }

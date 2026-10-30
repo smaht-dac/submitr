@@ -6,8 +6,9 @@ smaht-submitr
 Change Log
 ----------
 
-1.17.0
+1.19.0
 ======
+`PR 46 VCF upload preflight <https://github.com/smaht-dac/submitr/pull/46>`_
 
 * Add a pure-Python VCF preflight that checks compressed-stream integrity,
   required VCF header shape, and record shape before upload. Structural
@@ -17,6 +18,39 @@ Change Log
   declared ``file_format`` or else the file name, and block a mismatched file name,
   ``file_format``, or compression explicitly without preflighting the content.
 * Accept ``ALT`` of ``.`` as the no-alternate-allele case.
+
+
+1.18.0
+======
+Filename upload preflight protections
+
+* Report an error during validation when two different file items in a workbook reference the
+  same upload file name (basename); repeated references to the same item are allowed
+* Before submitting metadata, abort if a file with the same name already exists in the portal for
+  the submitting submission center (other than the item being updated); the same check is
+  repeated before each file upload, including for ``resume-uploads``
+* See ``docs/filename-preflight-investigation.md`` for the staged plan; checksum comparison and
+  server-side filename reservation are out of scope
+
+
+1.17.0
+======
+
+`PR 48 Auto-transform ProtectedDonor workbooks <https://github.com/smaht-dac/submitr/pull/48>`_
+
+* Automatically transform Donor references to ProtectedDonor on the Demographic, DeathCircumstances,
+  FamilyHistory, MedicalHistory and TissueCollection sheets during validate/submit; mixed references
+  are supported, missing Donors fail clearly, and already-transformed workbooks are left unchanged
+* Write the transformed workbook next to the original as ``<name>.transformed.xlsx``, replacing it
+  atomically and only after it passes local validation
+* Reject formula-backed donor references that have no usable cached value (formulas are not evaluated);
+  formulas below the last data row (e.g. dragged down a template) are ignored, as in normal ingestion
+* Do not record a stale or missing transformed workbook when local validation fails and the user continues,
+  and do not save the transformed workbook with ``--json-only``
+* Skip ProtectedDonor analysis for workbooks with none of the protected sheets
+* Document ProtectedDonor auto-transform in the Validation section of the usage docs
+* Add hidden ``--no-transform-protected-donor`` and ``--save-transformed-workbook`` options
+* Update to ``dcicutils`` 8.19.1 (ProtectedDonor transformer) and ``boto3`` ^1.43.100; relock
 
 1.16.0
 ======
