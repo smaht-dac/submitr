@@ -40,7 +40,7 @@ def _portal_vcf_format(file_format: Optional[Union[str, dict]]) -> Optional[str]
         if not isinstance(value, str):
             continue
         value = value.strip()
-        if match := re.fullmatch(r"/file-formats/([^/]+)/?", value):
+        if match := re.fullmatch(r"/(?:file-formats|FileFormat)/([^/]+)/?", value):
             value = match.group(1)
         for identifier, (_, uuid) in _PORTAL_VCF_FORMATS.items():
             if value in (identifier, uuid):
@@ -534,13 +534,11 @@ class FileForUpload:
             self._ignore = True
             return False
 
-    def _vcf_format(self) -> Optional[str]:
-        """Return the portal VCF format (vcf or vcf_gz) to preflight this file as, if any. A declared
-        file_format governs when present; otherwise the filename extension identifies the format."""
-
-        if self.file_format:
-            return _portal_vcf_format(self.file_format)
-        return _portal_vcf_format_for_filename(self.name)
+    def _declared_file_format_title(self) -> str:
+        if isinstance(self.file_format, dict):
+            return str(self.file_format.get("display_title") or self.file_format.get("identifier") or
+                       self.file_format.get("uuid") or self.file_format.get("@id"))
+        return str(self.file_format)
 
     def _starts_with_gzip_magic(self) -> Optional[bool]:
         try:
@@ -559,13 +557,21 @@ class FileForUpload:
     def _review_vcf(self, review_only: bool, verbose: bool, printf: Callable) -> bool:
         """Run local VCF preflight after the local/cloud choice is resolved."""
 
-        if not (vcf_format := self._vcf_format()) or not self.from_local or not self.path:
+        # Only the two portal VCF formats are preflighted; a declared file_format governs when
+        # present, otherwise the file name extension identifies the format.
+        named_format = _portal_vcf_format_for_filename(self.name)
+        vcf_format = _portal_vcf_format(self.file_format) if self.file_format else named_format
+        if not (vcf_format or named_format) or not self.from_local or not self.path:
             return True
 
         # A file whose name, declared format, or compression disagree is blocked
         # explicitly here rather than by the VCF content preflight.
+        if not vcf_format:
+            return self._block_vcf_mismatch(
+                f"A {_PORTAL_VCF_FORMATS[named_format][0]} file name requires file_format {named_format},"
+                f" but the declared file_format is {self._declared_file_format_title()}.", printf)
         extension = _PORTAL_VCF_FORMATS[vcf_format][0]
-        if _portal_vcf_format_for_filename(self.name) != vcf_format:
+        if named_format != vcf_format:
             return self._block_vcf_mismatch(
                 f"The declared file_format {vcf_format} requires a file name ending in {extension}.", printf)
         compressed = vcf_format == "vcf_gz"

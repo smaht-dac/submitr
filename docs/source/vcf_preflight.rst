@@ -10,9 +10,10 @@ does. Other file formats, including other ``VariantCalls`` file formats, are not
 VCF preflighted.
 
 A file declared as ``vcf`` or ``vcf_gz`` whose name does not end in that
-format's extension, a ``.vcf`` file that is gzip/BGZF-compressed, or a
-``.vcf.gz`` file that is not, is reported as a file format mismatch and kept
-out of the upload; its content is not preflighted.
+format's extension, a ``.vcf`` or ``.vcf.gz`` file declared as another file
+format, a ``.vcf`` file that is gzip/BGZF-compressed, or a ``.vcf.gz`` file that
+is not, is reported as a file format mismatch and kept out of the upload; its
+content is not preflighted.
 
 Structural failures are non-overridable and keep the file out of the upload:
 
