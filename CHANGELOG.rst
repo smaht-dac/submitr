@@ -6,6 +6,20 @@ smaht-submitr
 Change Log
 ----------
 
+1.19.0
+======
+`PR 46 VCF upload preflight <https://github.com/smaht-dac/submitr/pull/46>`_
+
+* Add a pure-Python VCF preflight that checks compressed-stream integrity,
+  required VCF header shape, and record shape before upload. Structural
+  failures block upload; narrowly scoped header compatibility findings require
+  explicit confirmation.
+* Preflight only the portal ``vcf`` and ``vcf_gz`` file formats, identified by the
+  declared ``file_format`` or else the file name, and block a mismatched file name,
+  ``file_format``, or compression explicitly without preflighting the content.
+* Accept ``ALT`` of ``.`` as the no-alternate-allele case.
+
+
 1.18.0
 ======
 Filename upload preflight protections
@@ -37,7 +51,6 @@ Filename upload preflight protections
 * Document ProtectedDonor auto-transform in the Validation section of the usage docs
 * Add hidden ``--no-transform-protected-donor`` and ``--save-transformed-workbook`` options
 * Update to ``dcicutils`` 8.19.1 (ProtectedDonor transformer) and ``boto3`` ^1.43.100; relock
-
 
 1.16.0
 ======
@@ -518,4 +531,3 @@ Thug commit changing beta dcicutils to real one (8.18.2).
 =====
 
 * Forked from SubmitCGAP 4.1.0.
-

@@ -1,0 +1,4 @@
+##fileformat=VCFv4.2
+##source=submitr-regression
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Read depth">
+chr1	10	.	A	C	.	PASS	DP=4

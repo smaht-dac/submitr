@@ -1,12 +1,14 @@
 from __future__ import annotations
 import os
 import pathlib
+import re
 from typing import Callable, List, Optional, Tuple, Union
 from dcicutils.command_utils import yes_or_no
 from dcicutils.file_utils import compute_file_md5, get_file_size, normalize_path, search_for_file
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import format_size, normalize_string
-from dcicutils.structured_data import Portal, StructuredDataSet
+from dcicutils.structured_data import FILE_TYPE_PROPERTY_NAME, Portal, StructuredDataSet
+from submitr.file_preflight import VcfPreflightResult, validate_vcf
 from submitr.output import PRINT
 from submitr.rclone import RCloneAmazon, RCloneStore
 from submitr.utils import chars
@@ -16,6 +18,104 @@ from submitr.utils import chars
 # preventing upload credentials from being generated for anything but these statuss.
 _FILE_STATUS_UPLOADING = "uploading"
 _FILE_STATUSES_REQUIRED_FOR_UPLOAD = [_FILE_STATUS_UPLOADING, "to be uploaded by workflow", "upload failed"]
+_VCF_DEFAULT_FINDING_DETAILS = 5
+# The two portal FileFormat items whose content is VCF, keyed by identifier, with their standard
+# file extension and uuid; see docs/source/file_formats.rst. Only these are VCF preflighted.
+_PORTAL_VCF_FORMATS = {
+    "vcf": (".vcf", "fcc2647d-301b-4888-8d9d-83ea4270309c"),
+    "vcf_gz": (".vcf.gz", "1b8f525f-aecb-4211-9ae5-a2c998b05599"),
+}
+_GZIP_MAGIC = b"\x1f\x8b"
+
+
+def _portal_vcf_format(file_format: Optional[Union[str, dict]]) -> Optional[str]:
+    """Return vcf or vcf_gz if the declared file_format (identifier, uuid, @id path, or
+    embedded portal object) is one of the two portal VCF formats; otherwise None."""
+
+    if isinstance(file_format, dict):
+        values = [file_format.get(key) for key in ("identifier", "display_title", "uuid", "@id")]
+    else:
+        values = [file_format]
+    for value in values:
+        if not isinstance(value, str):
+            continue
+        value = value.strip()
+        if match := re.fullmatch(r"/(?:file-formats|FileFormat)/([^/]+)/?", value):
+            value = match.group(1)
+        for identifier, (_, uuid) in _PORTAL_VCF_FORMATS.items():
+            if value in (identifier, uuid):
+                return identifier
+    return None
+
+
+def _portal_vcf_format_for_filename(filename: str) -> Optional[str]:
+    """Return vcf or vcf_gz if the filename has that portal format's standard extension."""
+
+    filename = filename.lower()
+    if filename.endswith(_PORTAL_VCF_FORMATS["vcf_gz"][0]):
+        return "vcf_gz"
+    if filename.endswith(_PORTAL_VCF_FORMATS["vcf"][0]):
+        return "vcf"
+    return None
+
+
+def _vcf_advisory_summary_lines(result: VcfPreflightResult) -> List[str]:
+    """Return concise, actionable summaries for bounded VCF advisory output."""
+
+    counts = result.advisory_counts
+    if not counts:
+        counts = {}
+        for finding in result.advisory_findings:
+            code = finding.code or finding.stage
+            counts[code] = counts.get(code, 0) + 1
+
+    summaries = []
+    for code, count in counts.items():
+        if code == "one_hash_header":
+            summaries.append(
+                f"{count} metadata-like header line{'s' if count != 1 else ''} use one #; "
+                "change them to ## for bcftools-compatible metadata."
+            )
+        elif code == "info_attribute_colon":
+            summaries.append(
+                f"{count} INFO declaration{'s' if count != 1 else ''} use key:value; "
+                "change the attributes to key=value."
+            )
+        elif code == "metadata_colon":
+            summaries.append(
+                f"{count} metadata line{'s' if count != 1 else ''} use key:value; "
+                "change them to key=value."
+            )
+        elif code == "keyless_continuation":
+            summaries.append(
+                f"{count} header continuation line{'s' if count != 1 else ''} have no key; "
+                "add a metadata key=value declaration."
+            )
+        elif code == "line_terminator":
+            summaries.append(
+                f"{count} line{'s' if count != 1 else ''} use non-LF terminators; "
+                "save the file with LF line endings."
+            )
+        elif code == "version":
+            summaries.append(
+                f"{count} VCF version advisory{'ies' if count != 1 else ''}; "
+                "confirm that downstream tools support the declared version."
+            )
+        else:
+            summaries.append(f"{count} header compatibility finding{'s' if count != 1 else ''} detected.")
+    return summaries
+
+
+def _print_vcf_finding_details(findings: List, *, verbose: bool, printf: Callable,
+                               kind: str) -> None:
+    """Print bounded normal-mode details or all retained verbose-mode details."""
+
+    displayed_findings = findings if verbose else findings[:_VCF_DEFAULT_FINDING_DETAILS]
+    for finding in displayed_findings:
+        printf(f"  - {finding}")
+    omitted = len(findings) - len(displayed_findings)
+    if omitted:
+        printf(f"  - {omitted} additional {kind} details omitted; rerun with --verbose for details.")
 
 
 # Unified the logic for looking for files to upload (to AWS S3), and storing
@@ -42,10 +142,15 @@ class FileForUpload:
         # {"uuid": "96f29020-7abd-4a42-b4c7-d342563b7074", "filename": "first_file.fastq"}
         # Or just a file name.
 
+        self._type = None
+        self._uuid = None
+        self._file_format = None
         if isinstance(file, dict):
             self._name = file.get("file", file.get("filename", ""))
             self._type = normalize_string(file.get("type")) or None
             self._uuid = normalize_string(file.get("uuid")) or None
+            # Declared format if present, e.g. an identifier or uuid from a submission spreadsheet.
+            self._file_format = file.get("file_format") or None
         elif isinstance(file, pathlib.Path):
             self._name = str(file)
         elif isinstance(file, str):
@@ -119,6 +224,10 @@ class FileForUpload:
     @property
     def type(self) -> Optional[str]:
         return self._type
+
+    @property
+    def file_format(self) -> Optional[Union[str, dict]]:
+        return self._file_format
 
     @property
     def accession(self) -> Optional[str]:
@@ -405,7 +514,7 @@ class FileForUpload:
                     printf(f"- File for upload: {self.path_local} ({format_size(self.size_local)})")
                     if destination:
                         printf(f"  AWS destination: {destination}")
-            return True
+            return self._review_vcf(review_only=review_only, verbose=verbose, printf=printf)
 
         elif self.found_cloud:
             printf(f"- File for upload from {self.cloud_store.proper_name_title} ({self.cloud_store.proper_name}):"
@@ -424,6 +533,112 @@ class FileForUpload:
                     printf(f"  - Use --directory to specify a directory where the file(s) can be found.")
             self._ignore = True
             return False
+
+    def _declared_file_format_title(self) -> str:
+        if isinstance(self.file_format, dict):
+            return str(self.file_format.get("display_title") or self.file_format.get("identifier") or
+                       self.file_format.get("uuid") or self.file_format.get("@id"))
+        return str(self.file_format)
+
+    def _starts_with_gzip_magic(self) -> Optional[bool]:
+        try:
+            with open(self.path, "rb") as f:
+                return f.read(len(_GZIP_MAGIC)) == _GZIP_MAGIC
+        except OSError:
+            return None  # Let the preflight report the unreadable file.
+
+    def _block_vcf_mismatch(self, reason: str, printf: Callable) -> bool:
+        printf(f"{chars.xmark} ERROR: VCF file format mismatch for {self.display_name}")
+        printf(f"  - {reason}")
+        printf("  - Upload is blocked. Correct the file name, file_format, or compression and run the upload again.")
+        self._ignore = True
+        return False
+
+    def _review_vcf(self, review_only: bool, verbose: bool, printf: Callable) -> bool:
+        """Run local VCF preflight after the local/cloud choice is resolved."""
+
+        # Only the two portal VCF formats are preflighted; a declared file_format governs when
+        # present, otherwise the file name extension identifies the format.
+        named_format = _portal_vcf_format_for_filename(self.name)
+        vcf_format = _portal_vcf_format(self.file_format) if self.file_format else named_format
+        if not (vcf_format or named_format) or not self.from_local or not self.path:
+            return True
+
+        # A file whose name, declared format, or compression disagree is blocked
+        # explicitly here rather than by the VCF content preflight.
+        if not vcf_format:
+            return self._block_vcf_mismatch(
+                f"A {_PORTAL_VCF_FORMATS[named_format][0]} file name requires file_format {named_format},"
+                f" but the declared file_format is {self._declared_file_format_title()}.", printf)
+        extension = _PORTAL_VCF_FORMATS[vcf_format][0]
+        if named_format != vcf_format:
+            return self._block_vcf_mismatch(
+                f"The declared file_format {vcf_format} requires a file name ending in {extension}.", printf)
+        compressed = vcf_format == "vcf_gz"
+        if (gzip_content := self._starts_with_gzip_magic()) is not None and gzip_content != compressed:
+            return self._block_vcf_mismatch(
+                f"A {extension} file must {'be' if compressed else 'not be'} gzip/BGZF-compressed,"
+                f" but this file is {'not ' if compressed else ''}compressed.", printf)
+
+        result: VcfPreflightResult = validate_vcf(self.path, filename=self.display_name, compressed=compressed)
+        if not result.ok:
+            printf(f"{chars.xmark} ERROR: VCF preflight found blocking structural errors for {self.display_name}")
+            printf("  - Structural errors block upload; confirmation cannot override them.")
+            _print_vcf_finding_details(
+                result.structural_findings,
+                verbose=verbose,
+                printf=printf,
+                kind="structural finding",
+            )
+            if result.errors_truncated:
+                printf("  - Additional structural findings were omitted after the configured error limit.")
+            if result.advisory_findings:
+                advisory_count = sum(result.advisory_counts.values())
+                printf(
+                    f"  - Header compatibility findings were also detected ({advisory_count} total);"
+                    " confirmation was not requested because structural errors already block upload."
+                )
+                for summary in _vcf_advisory_summary_lines(result):
+                    printf(f"    - {summary}")
+                if verbose:
+                    printf("  - Affected header lines:")
+                    for finding in result.advisory_findings:
+                        printf(f"    - {finding}")
+                    if result.advisory_details_truncated:
+                        printf("    - Additional header line details were omitted after the configured error limit.")
+            printf("  - Upload is blocked. Correct the file and run the upload again.")
+            self._ignore = True
+            return False
+
+        if not result.requires_confirmation:
+            return True
+
+        printf(f"WARNING: VCF header compatibility findings for {self.display_name}")
+        advisory_count = sum(result.advisory_counts.values())
+        printf(
+            f"  - {advisory_count} advisory finding{'s' if advisory_count != 1 else ''} detected; "
+            "explicit confirmation is required to continue with upload."
+        )
+        for summary in _vcf_advisory_summary_lines(result):
+            printf(f"  - {summary}")
+        if verbose:
+            printf("  - Affected header lines:")
+            for finding in result.advisory_findings:
+                printf(f"    - {finding}")
+            if result.advisory_details_truncated:
+                printf("    - Additional header line details were omitted after the configured error limit.")
+        if review_only:
+            printf(
+                "  - Review-only mode: no upload will be attempted; this file would require "
+                "explicit confirmation before upload."
+            )
+            self._ignore = True
+            return False
+        if not yes_or_no("  - Continue with this file despite the VCF header warnings?"):
+            printf("  - File not selected for upload because confirmation was not given.")
+            self._ignore = True
+            return False
+        return True
 
     def __str__(self) -> str:  # for troubleshooting only
         return (
@@ -445,6 +660,17 @@ class FileForUpload:
             f"status={self._status}")
 
 
+def _structured_data_upload_files(structured_data: StructuredDataSet) -> List[dict]:
+    # Same as StructuredDataSet.upload_files but also with each file item's declared file_format.
+    upload_files = structured_data.upload_files
+    for upload_file in upload_files:
+        for item in structured_data.data.get(upload_file["type"], []):
+            if item.get(FILE_TYPE_PROPERTY_NAME) == upload_file["file"] and item.get("file_format"):
+                upload_file["file_format"] = item["file_format"]
+                break
+    return upload_files
+
+
 class FilesForUpload:
 
     @staticmethod
@@ -455,7 +681,7 @@ class FilesForUpload:
                  cloud_store: Optional[RCloneStore] = None) -> List[FileForUpload]:
 
         if isinstance(files, StructuredDataSet):
-            files = files.upload_files
+            files = _structured_data_upload_files(files)
         elif isinstance(files, (str, pathlib.Path)):
             files = [files]
         if not isinstance(files, list):

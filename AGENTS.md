@@ -13,6 +13,10 @@ applied per-file via `pytestmark` (see `submitr/tests/integration/`), and `pytes
 AWS auth for CI is GitHub OIDC (`aws-actions/configure-aws-credentials`) in every workflow. **Do not
 reintroduce long-lived AWS access keys.**
 
+VCF content preflight lives in `submitr/file_preflight/` and is gated from the
+`FilesForUpload.review()` seam; its structural/advisory behavior is covered by
+`submitr/tests/test_vcf_preflight.py`.
+
 Part of what the rclone tests exercise is minting scoped, short-lived credentials for one
 bucket/key, mirroring how smaht-portal issues upload credentials
 (`encoded_core.types.file.external_creds`). **`sts:GetFederationToken` cannot be used for that under
