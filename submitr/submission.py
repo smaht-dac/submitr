@@ -54,6 +54,10 @@ from dcicutils.submitr.donor_transformer import (
 )
 from submitr.exceptions import PortalPermissionError
 from submitr.file_for_upload import FilesForUpload, get_file_upload_bucket
+from submitr.filename_preflight import (
+    duplicate_upload_filename_errors,
+    portal_filename_collision_errors,
+)
 from submitr.metadata_template import (
     check_metadata_version,
     print_metadata_version_warning,
@@ -1491,6 +1495,14 @@ def submit_any_ingestion(
             f" {'--validate-local-only' if validate_local_only else '--validate-remote-skip'})."
         )
 
+    upload_submission_centers = list(app_args.get("submission_centers") or [])
+    if add_submission_center and add_submission_center not in upload_submission_centers:
+        upload_submission_centers.append(add_submission_center)
+
+    _check_portal_filename_collisions(
+        structured_data, ingestion_filename, portal, upload_submission_centers
+    )
+
     if validation:
         do_any_uploads(
             structured_data,
@@ -1594,8 +1606,32 @@ def submit_any_ingestion(
         main_search_directory_recursively=subfolders,
         cloud_store=rclone_google,
         portal=portal,
+        submission_centers=upload_submission_centers,
         verbose=verbose,
     )
+
+
+def _check_portal_filename_collisions(
+    structured_data: Optional[StructuredDataSet],
+    ingestion_filename: str,
+    portal: Portal,
+    submission_centers: List[str],
+) -> None:
+    if structured_data is None and ingestion_filename.endswith((".xlsx", ".xls")):
+        structured_data = StructuredDataSet(
+            file=ingestion_filename,
+            portal=portal,
+            excel_class=CustomExcel.with_portal(portal),
+            norefs=True,
+        )
+    if structured_data is None:
+        return
+    if errors := portal_filename_collision_errors(structured_data, portal, submission_centers):
+        PRINT(f"Filename collisions with existing portal files: {len(errors)}")
+        for error in errors:
+            PRINT(f"- ERROR: {error}")
+        PRINT("Aborting before submitting metadata; no portal items were created or updated.")
+        sys.exit(1)
 
 
 def _get_recent_submissions(
@@ -2796,6 +2832,10 @@ def resume_uploads(
         rclone_google.verify_connectivity()
 
     PRINT(f"Attempting to resume uploads for submission: {uuid}")
+    # Scope the pre-upload filename collision check to the submitting center(s) recorded on the item.
+    submission_centers = None
+    if isinstance(item := portal.get_metadata(uuid, raise_exception=False), dict):
+        submission_centers = item.get("submission_centers") or item.get("submission_center")
     do_any_uploads(
         uuid,
         metadata_file=bundle_filename,
@@ -2804,6 +2844,7 @@ def resume_uploads(
         cloud_store=rclone_google,
         portal=portal,
         verbose=verbose,
+        submission_centers=submission_centers,
     )
 
 
@@ -3195,6 +3236,12 @@ def _validate_data(
     debug: bool = False,
 ) -> bool:
     nerrors = 0
+
+    if filename_errors := duplicate_upload_filename_errors(structured_data, portal):
+        nerrors += len(filename_errors)
+        PRINT_OUTPUT(f"- Filename errors: {len(filename_errors)}")
+        for error in filename_errors:
+            PRINT_OUTPUT(f"  - ERROR: {error}")
 
     if initial_validation_errors := _validate_initial(structured_data, portal):
         nerrors += len(initial_validation_errors)

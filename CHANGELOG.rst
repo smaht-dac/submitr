@@ -6,6 +6,19 @@ smaht-submitr
 Change Log
 ----------
 
+1.18.0
+======
+Filename upload preflight protections
+
+* Report an error during validation when two different file items in a workbook reference the
+  same upload file name (basename); repeated references to the same item are allowed
+* Before submitting metadata, abort if a file with the same name already exists in the portal for
+  the submitting submission center (other than the item being updated); the same check is
+  repeated before each file upload, including for ``resume-uploads``
+* See ``docs/filename-preflight-investigation.md`` for the staged plan; checksum comparison and
+  server-side filename reservation are out of scope
+
+
 1.17.0
 ======
 
