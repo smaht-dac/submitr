@@ -905,6 +905,7 @@ def _run_protected_donor_messaging_flow(*, submission, transform_protected_donor
             ), \
             mock.patch.object(submission_module, "_validate_locally", return_value=mock.Mock()), \
             mock.patch.object(submission_module, "_ensure_protected_donor_transformed_workbook"), \
+            mock.patch.object(submission_module, "_check_portal_filename_collisions"), \
             mock.patch.object(submission_module, "SHOW"), \
             mock.patch.object(submission_module, "yes_or_no", prompt):
         if submission:
