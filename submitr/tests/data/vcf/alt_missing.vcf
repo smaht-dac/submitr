@@ -1,0 +1,4 @@
+##fileformat=VCFv4.3
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr1	10	.	A	.	.	PASS	.
+chr1	20	.	AC	A,<DEL>	.	.	.

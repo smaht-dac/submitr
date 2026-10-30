@@ -503,9 +503,10 @@ def _record_shape_errors(line: str, expected_fields: int, format_keys: List[str]
             reasons.append("FILTER must be . or a non-empty semicolon-delimited token list")
     if not _valid_allele(fields[3], allow_star=False):
         reasons.append("REF must contain IUPAC bases or a symbolic allele")
-    alt_alleles = fields[4].split(",")
-    if not alt_alleles or any(not _valid_allele(allele, allow_star=True) for allele in alt_alleles):
-        reasons.append("ALT must contain IUPAC bases, symbolic alleles, or * separated by commas")
+    # A lone . is the MISSING value the VCF specification requires when there is no alternate allele;
+    # it is not an allele, so it is never accepted within a comma-separated ALT list.
+    if fields[4] != "." and any(not _valid_allele(allele, allow_star=True) for allele in fields[4].split(",")):
+        reasons.append("ALT must be . or contain IUPAC bases, symbolic alleles, or * separated by commas")
 
     if expected_fields > 8:
         if not format_keys or any(not key for key in format_keys):

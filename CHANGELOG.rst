@@ -13,6 +13,10 @@ Change Log
   required VCF header shape, and record shape before upload. Structural
   failures block upload; narrowly scoped header compatibility findings require
   explicit confirmation.
+* Preflight only the portal ``vcf`` and ``vcf_gz`` file formats, identified by the
+  declared ``file_format`` or else the file name, and block a mismatched file name,
+  ``file_format``, or compression explicitly without preflighting the content.
+* Accept ``ALT`` of ``.`` as the no-alternate-allele case.
 
 1.16.0
 ======

@@ -6,6 +6,8 @@ from unittest import mock
 
 import pytest
 
+from dcicutils.structured_data import StructuredDataSet
+
 from submitr.file_for_upload import FileForUpload, FilesForUpload
 from submitr.file_preflight import validate_vcf
 
@@ -339,23 +341,156 @@ def test_review_hard_blocks_structural_vcf_without_prompt(tmp_path):
     assert any("Upload is blocked" in line for line in output)
 
 
-def test_variant_calls_type_runs_preflight_even_without_vcf_suffix(tmp_path):
-    path = tmp_path / "calls.data"
-    path.write_bytes(_fixture("valid_plain.vcf").read_bytes())
-    file_for_upload = FileForUpload(
-        {"file": path.name, "type": "VariantCalls"},
-        main_search_directory=tmp_path,
+def _encoded(content, encoding):
+    if encoding == "gzip":
+        return gzip.compress(content)
+    if encoding == "bgzf":
+        return _bgzf(content)
+    return content
+
+
+@pytest.mark.parametrize("encoding", ["plain", "gzip", "bgzf"])
+def test_missing_alt_dot_is_accepted_in_all_stream_encodings(tmp_path, encoding):
+    path = tmp_path / "alt-missing.vcf"
+    path.write_bytes(_encoded(_fixture("alt_missing.vcf").read_bytes(), encoding))
+
+    result = validate_vcf(path, compressed=encoding != "plain")
+
+    assert result.ok is True
+    assert result.records_checked == 2
+
+
+@pytest.mark.parametrize(
+    ("ref", "alt"),
+    [("A", "A,."), ("A", ".,A"), ("A", ".,."), ("A", ".."), ("A", ".A"), ("A", "A."), ("A", ""),
+     ("A", "G]17:198982]"), (".", "C"), (".", ".")],
+)
+def test_dot_is_only_valid_as_the_entire_alt_field(tmp_path, ref, alt):
+    path = tmp_path / "bad-dot.vcf"
+    path.write_bytes(
+        b"##fileformat=VCFv4.3\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
+        + f"chr1\t10\t.\t{ref}\t{alt}\t.\tPASS\t.\n".encode()
     )
 
-    assert file_for_upload.review(printf=lambda message: None) is True
+    result = validate_vcf(path)
+
+    assert result.ok is False
+    assert result.records_checked == 0
+    assert result.structural_findings[0].stage == "record"
 
 
-def test_vcf_file_format_runs_preflight_even_without_vcf_suffix(tmp_path):
-    path = tmp_path / "calls.data"
-    path.write_bytes(_fixture("valid_plain.vcf").read_bytes())
-    file_for_upload = FileForUpload(
-        {"file": path.name, "file_format": "vcf"},
-        main_search_directory=tmp_path,
-    )
+@pytest.mark.parametrize(("name", "encoding"), [("alt-missing.vcf", "plain"), ("alt-missing.vcf.gz", "bgzf")])
+def test_review_accepts_missing_alt_dot(tmp_path, name, encoding):
+    (tmp_path / name).write_bytes(_encoded(_fixture("alt_missing.vcf").read_bytes(), encoding))
+    file_for_upload = FileForUpload(name, main_search_directory=tmp_path)
 
-    assert file_for_upload.review(printf=lambda message: None) is True
+    with mock.patch("submitr.file_for_upload.yes_or_no") as confirm:
+        assert FilesForUpload.review([file_for_upload], printf=lambda message: None) is True
+
+    assert file_for_upload.ignore is False
+    confirm.assert_not_called()
+
+
+# Files are VCF preflighted only as one of the two portal VCF formats, vcf (.vcf) and
+# vcf_gz (.vcf.gz), identified by the declared file_format if any, else by file name.
+VCF_FORMAT = "fcc2647d-301b-4888-8d9d-83ea4270309c"
+VCF_GZ_FORMAT = {"@id": "/file-formats/vcf_gz/", "display_title": "vcf_gz",
+                 "uuid": "1b8f525f-aecb-4211-9ae5-a2c998b05599"}
+
+
+@pytest.mark.parametrize(
+    ("name", "metadata", "encoding", "compressed"),
+    [
+        ("calls.vcf", {}, "plain", False),
+        ("calls.vcf.gz", {}, "gzip", True),
+        ("calls.vcf", {"file_format": "vcf"}, "plain", False),
+        ("calls.vcf", {"file_format": VCF_FORMAT}, "plain", False),
+        ("calls.vcf", {"file_format": "/file-formats/vcf/", "type": "VariantCalls"}, "plain", False),
+        ("calls.vcf.gz", {"file_format": "vcf_gz"}, "bgzf", True),
+        ("CALLS.VCF.GZ", {"file_format": VCF_GZ_FORMAT, "type": "OutputFile"}, "gzip", True),
+    ],
+)
+def test_portal_vcf_formats_run_preflight(tmp_path, name, metadata, encoding, compressed):
+    (tmp_path / name).write_bytes(_encoded(_fixture("valid_plain.vcf").read_bytes(), encoding))
+    file_for_upload = FileForUpload(dict(metadata, file=name), main_search_directory=tmp_path)
+
+    with mock.patch("submitr.file_for_upload.validate_vcf", wraps=validate_vcf) as preflight:
+        assert file_for_upload.review(printf=lambda message: None) is True
+
+    assert preflight.call_args.kwargs["compressed"] is compressed
+
+
+@pytest.mark.parametrize(
+    ("name", "metadata", "content"),
+    [
+        ("calls.txt", {"type": "VariantCalls"}, b"not a vcf\n"),
+        ("calls.vcf", {"type": "VariantCalls", "file_format": "gvcf"}, b"not checked\n"),
+        ("calls.bin", {"file_format": "variantcalls"}, b"\x00\x01"),
+        ("calls.vcf", {"file_format": "vcfgz"}, b"not checked\n"),
+        ("calls.vcf", {"file_format": "VCF"}, b"not checked\n"),
+        ("calls.gvcf.gz", {}, b"\x1f\x8bnot checked"),
+        ("calls.vcf.gz.tbi", {}, b"not checked"),
+        ("reads.fastq", {"type": "UnalignedReads"}, b"@r\nA\n+\nI\n"),
+    ],
+)
+def test_other_formats_are_not_vcf_preflighted(tmp_path, name, metadata, content):
+    (tmp_path / name).write_bytes(content)
+    file_for_upload = FileForUpload(dict(metadata, file=name), main_search_directory=tmp_path)
+
+    with mock.patch("submitr.file_for_upload.validate_vcf") as preflight:
+        assert file_for_upload.review(printf=lambda message: None) is True
+
+    preflight.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("name", "metadata", "encoding", "message"),
+    [
+        ("calls.vcf.gz", {"file_format": "vcf"}, "gzip", "file_format vcf requires a file name ending in .vcf"),
+        ("calls.vcf", {"file_format": VCF_GZ_FORMAT}, "plain",
+         "file_format vcf_gz requires a file name ending in .vcf.gz"),
+        ("calls.txt", {"file_format": "vcf", "type": "VariantCalls"}, "plain",
+         "file_format vcf requires a file name ending in .vcf"),
+        ("calls.vcf", {}, "gzip", "A .vcf file must not be gzip/BGZF-compressed"),
+        ("calls.vcf", {"file_format": "vcf"}, "bgzf", "A .vcf file must not be gzip/BGZF-compressed"),
+        ("calls.vcf.gz", {}, "plain", "A .vcf.gz file must be gzip/BGZF-compressed"),
+        ("calls.vcf.gz", {"file_format": "vcf_gz"}, "plain", "A .vcf.gz file must be gzip/BGZF-compressed"),
+    ],
+)
+def test_vcf_format_mismatch_blocks_without_content_preflight(tmp_path, name, metadata, encoding, message):
+    (tmp_path / name).write_bytes(_encoded(_fixture("valid_plain.vcf").read_bytes(), encoding))
+    file_for_upload = FileForUpload(dict(metadata, file=name), main_search_directory=tmp_path)
+    output = []
+
+    with mock.patch("submitr.file_for_upload.validate_vcf") as preflight, \
+            mock.patch("submitr.file_for_upload.yes_or_no") as confirm:
+        reviewed = FilesForUpload.review([file_for_upload], printf=output.append)
+
+    assert reviewed is False
+    assert file_for_upload.ignore is True
+    preflight.assert_not_called()
+    confirm.assert_not_called()
+    assert any("VCF file format mismatch" in line for line in output)
+    assert any(message in line for line in output)
+    assert any("Upload is blocked" in line for line in output)
+
+
+def test_structured_data_upload_files_carry_declared_file_format(tmp_path):
+    (tmp_path / "calls.vcf").write_bytes(_fixture("valid_plain.vcf").read_bytes())
+    (tmp_path / "other.vcf").write_bytes(_fixture("valid_plain.vcf").read_bytes())
+    structured_data = mock.MagicMock(spec=StructuredDataSet)
+    structured_data.upload_files = [{"type": "VariantCalls", "file": "calls.vcf"},
+                                    {"type": "VariantCalls", "file": "other.vcf"}]
+    structured_data.data = {"VariantCalls": [{"filename": "other.vcf", "file_format": "vcf"},
+                                             {"filename": "calls.vcf", "file_format": "vcf_gz"}]}
+    output = []
+
+    files_for_upload = FilesForUpload.assemble(structured_data, main_search_directory=tmp_path)
+    with mock.patch("submitr.file_for_upload.validate_vcf", wraps=validate_vcf) as preflight:
+        reviewed = FilesForUpload.review(files_for_upload, review_only=True, printf=output.append)
+
+    assert [file.file_format for file in files_for_upload] == ["vcf_gz", "vcf"]
+    assert reviewed is False
+    assert [file.ignore for file in files_for_upload] == [True, False]
+    assert preflight.call_count == 1
+    assert any("file_format vcf_gz requires a file name ending in .vcf.gz" in line for line in output)
