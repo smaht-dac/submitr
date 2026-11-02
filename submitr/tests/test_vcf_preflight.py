@@ -180,11 +180,13 @@ def test_captain_header_advisories_are_non_blocking(fixture, message):
     assert any(message in finding.message for finding in result.advisory_findings)
 
 
-def test_captain_combined_header_fixture_has_all_three_advisories():
+def test_captain_combined_header_fixture_reports_each_distinct_advisory():
     result = validate_vcf(_fixture("captain_advisory_headers.vcf"))
 
     assert result.ok is True
-    assert len(result.advisory_findings) == 3
+    # Line 2 (#pipeline-note: ...) both uses one # and uses key:value notation.
+    assert [(finding.code, finding.line_number) for finding in result.advisory_findings] == [
+        ("one_hash_header", 2), ("metadata_colon", 2), ("info_attribute_colon", 3), ("keyless_continuation", 4)]
     assert result.requires_confirmation is True
 
 
@@ -193,8 +195,8 @@ def test_combined_advisory_and_structural_findings_remain_blocking():
 
     assert result.ok is False
     assert result.requires_confirmation is False
-    assert len(result.advisory_findings) == 3
-    assert sum(result.advisory_counts.values()) == 3
+    assert len(result.advisory_findings) == 4
+    assert sum(result.advisory_counts.values()) == 4
     assert result.structural_findings
 
 
@@ -210,8 +212,12 @@ def test_default_review_aggregates_many_header_advisories(tmp_path):
 
     assert reviewed is True
     assert confirm.call_count == 1
-    assert any("30 advisory findings detected" in line for line in output)
+    assert any("60 advisory findings detected" in line for line in output)
     assert any("30 metadata-like header lines use one #" in line for line in output)
+    assert any("30 metadata lines use key:value" in line for line in output)
+    result = validate_vcf(path)
+    assert len(result.advisory_findings) == 25
+    assert result.advisory_details_truncated is True
     assert not any("line 2:" in line for line in output)
 
 
@@ -247,7 +253,7 @@ def test_combined_review_surfaces_advisories_without_confirmation(tmp_path):
     assert file_for_upload.ignore is True
     confirm.assert_not_called()
     assert any("Structural errors block upload" in line for line in output)
-    assert any("Header compatibility findings were also detected (3 total)" in line for line in output)
+    assert any("Header compatibility findings were also detected (4 total)" in line for line in output)
     assert any("confirmation was not requested" in line for line in output)
     assert any("Upload is blocked" in line for line in output)
 
@@ -339,6 +345,93 @@ def test_review_hard_blocks_structural_vcf_without_prompt(tmp_path):
     assert file_for_upload.ignore is True
     confirm.assert_not_called()
     assert any("Upload is blocked" in line for line in output)
+
+
+_ONE_HASH_INFO_COLON = '#INFO=<ID:DP,Number:1,Type:Integer,Description:"Depth">'
+_INFO_COLON = '##INFO=<ID:DP,Number:1,Type:Integer,Description:"Depth">'
+_HEADER_COLUMNS = "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO"
+
+
+def _review_header_lines(tmp_path, header_lines, *, fileformat="##fileformat=VCFv4.2", answer=True):
+    path = tmp_path / "header.vcf"
+    path.write_text("\n".join([fileformat, *header_lines, _HEADER_COLUMNS, "1\t10\t.\tA\tC\t.\tPASS\t.", ""]))
+    file_for_upload = FileForUpload(path.name, main_search_directory=tmp_path)
+    output = []
+    with mock.patch("submitr.file_for_upload.yes_or_no", return_value=answer) as confirm:
+        reviewed = FilesForUpload.review([file_for_upload], verbose=True, printf=output.append)
+    return validate_vcf(path), reviewed, confirm.call_count, output
+
+
+@pytest.mark.parametrize("answer", [True, False])
+@pytest.mark.parametrize(
+    ("header_line", "colon_code", "colon_summary"),
+    [
+        (_ONE_HASH_INFO_COLON, "info_attribute_colon", "1 INFO declaration use key:value"),
+        ("#source:synthetic", "metadata_colon", "1 metadata line use key:value"),
+    ],
+)
+def test_review_reports_one_hash_and_key_value_on_the_same_line_together(
+        tmp_path, header_line, colon_code, colon_summary, answer):
+    result, reviewed, prompts, output = _review_header_lines(tmp_path, [header_line], answer=answer)
+
+    assert result.ok is True
+    assert [(finding.code, finding.line_number) for finding in result.advisory_findings] == [
+        ("one_hash_header", 2), (colon_code, 2)]
+    assert reviewed is answer
+    assert prompts == 1
+    assert any("2 advisory findings detected" in line for line in output)
+    assert any("1 metadata-like header line use one #" in line for line in output)
+    assert any(colon_summary in line for line in output)
+
+
+def test_review_reports_one_hash_and_info_colon_on_separate_lines(tmp_path):
+    result, reviewed, prompts, output = _review_header_lines(tmp_path, [_INFO_COLON, "#contig=<ID=1>"])
+
+    assert [(finding.code, finding.line_number) for finding in result.advisory_findings] == [
+        ("info_attribute_colon", 2), ("one_hash_header", 3)]
+    assert reviewed is True
+    assert prompts == 1
+    assert any("2 advisory findings detected" in line for line in output)
+
+
+def test_same_line_header_advisories_are_listed_but_structural_errors_still_block(tmp_path):
+    result, reviewed, prompts, output = _review_header_lines(
+        tmp_path, [_ONE_HASH_INFO_COLON], fileformat="#fileformat=VCFv4.2")
+
+    assert result.ok is False
+    assert [finding.code for finding in result.advisory_findings] == ["one_hash_header", "info_attribute_colon"]
+    assert reviewed is False
+    assert prompts == 0
+    assert any("Header compatibility findings were also detected (2 total)" in line for line in output)
+    assert any("Upload is blocked" in line for line in output)
+
+
+@pytest.mark.parametrize(
+    ("header_line", "codes"),
+    [
+        ("##INFO=<ID=DP,Number:1,Type=Integer,Description=\"Depth\">", ["info_attribute_colon"]),
+        ("##INFO=<ID=DP,Number=1,Type=Integer,Description=\"Depth\">", []),
+        ("##source:synthetic", ["metadata_colon"]),
+        ("#source=synthetic", ["one_hash_header"]),
+        ("#contig=<ID=1,length=1000>", ["one_hash_header"]),
+        ("#INFO=<ID=DP,Number=1,Type=Integer,Description=\"Depth: a,b: c\">", ["one_hash_header"]),
+        ("# free-text note without a key", ["one_hash_header"]),
+        ("#source: sanitized pipeline metadata", ["one_hash_header", "metadata_colon"]),
+        ("#INFO=<ID:DP,Number=1", ["one_hash_header", "info_attribute_colon"]),
+        ("#INFO=", ["one_hash_header"]),
+        ("#fileformat=VCFv4.2", ["one_hash_header"]),
+        ("#FORMAT=<ID:GT,Number=1,Type=String,Description=\"Genotype\">", ["one_hash_header"]),
+    ],
+)
+def test_one_hash_lines_add_only_distinct_key_value_advisories(tmp_path, header_line, codes):
+    result, reviewed, prompts, _ = _review_header_lines(tmp_path, [header_line])
+
+    assert result.ok is True
+    assert not result.structural_findings
+    assert [finding.code for finding in result.advisory_findings] == codes
+    assert sum(result.advisory_counts.values()) == len(codes)
+    assert reviewed is True
+    assert prompts == (1 if codes else 0)
 
 
 def _encoded(content, encoding):

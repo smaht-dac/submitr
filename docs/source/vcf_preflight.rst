@@ -29,6 +29,8 @@ The preflight also reports narrowly scoped header compatibility advisories.
 Metadata-like lines with one ``#`` instead of ``##``, INFO attributes written
 with ``key: value`` instead of ``key=value``, and continuation lines without a
 key are accepted but require explicit submitter confirmation before upload.
+A one-``#`` line that also uses key:value notation is reported with both
+advisories in the same review.
 Line-ending and unknown-minor-version advisories use the same confirmation
 path. Normal review output aggregates repeated advisories into actionable
 counts; ``--verbose`` includes the affected line details. Review-only/

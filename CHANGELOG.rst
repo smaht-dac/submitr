@@ -18,6 +18,8 @@ Change Log
   declared ``file_format`` or else the file name, and block a mismatched file name,
   ``file_format``, or compression explicitly without preflighting the content.
 * Accept ``ALT`` of ``.`` as the no-alternate-allele case.
+* Report a one-``#`` header line that also uses key:value notation as both
+  advisories in a single review, rather than the key:value advisory only after a rerun.
 
 
 1.18.0

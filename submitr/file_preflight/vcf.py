@@ -366,6 +366,12 @@ def _validate_stream(source: _CountingReader,
                     line_number,
                     code="one_hash_header",
                 )
+                # Also report key:value notation on this line now, rather than only after a rerun
+                # with ##; this adds advisories only, never the ## structural checks.
+                if match := _META_KEY_RE.fullmatch("#" + line):
+                    _report_info_attribute_colon(*match.groups(), line_number, collector)
+                else:
+                    _report_metadata_colon("#" + line, line_number, collector)
                 continue
             if line.startswith("##"):
                 _validate_meta_line(line, line_number, collector, fileformat_seen)
@@ -411,15 +417,7 @@ def _validate_meta_line(line: str,
                         fileformat_seen: bool) -> None:
     match = _META_KEY_RE.fullmatch(line)
     if not match:
-        key_value_match = re.match(r"^##\s*[A-Za-z][A-Za-z0-9_.-]*\s*:", line)
-        if key_value_match:
-            collector.advisory(
-                "header",
-                "metadata uses key:value notation; bcftools-compatible metadata uses key=value",
-                line_number,
-                code="metadata_colon",
-            )
-        else:
+        if not _report_metadata_colon(line, line_number, collector):
             collector.advisory(
                 "header",
                 "header continuation line has no key=value declaration; add a metadata key",
@@ -438,7 +436,22 @@ def _validate_meta_line(line: str,
     if value.lstrip().startswith("<") and not value.rstrip().endswith(">"):
         collector.error("header", f"##{key} structured metadata is missing its closing >", line_number)
         return
+    _report_info_attribute_colon(key, value, line_number, collector)
 
+
+def _report_metadata_colon(line: str, line_number: int, collector: _FindingCollector) -> bool:
+    if not re.match(r"^##\s*[A-Za-z][A-Za-z0-9_.-]*\s*:", line):
+        return False
+    collector.advisory(
+        "header",
+        "metadata uses key:value notation; bcftools-compatible metadata uses key=value",
+        line_number,
+        code="metadata_colon",
+    )
+    return True
+
+
+def _report_info_attribute_colon(key: str, value: str, line_number: int, collector: _FindingCollector) -> None:
     if key.upper() == "INFO" and value.lstrip().startswith("<"):
         inner = value.strip()[1:-1] if value.rstrip().endswith(">") else value.strip()[1:]
         if attribute_name := _first_colon_attribute(inner):
