@@ -3483,7 +3483,7 @@ def _print_structured_data_verbose(
         for resolved_ref in sorted(resolved_refs):
             PRINT_OUTPUT(f"  - {resolved_ref}")
     files_for_upload = FilesForUpload.assemble(
-        structured_data.upload_files,
+        structured_data,
         main_search_directory=upload_folder,
         main_search_directory_recursively=recursive,
         other_search_directories=[ingestion_filename, os.path.curdir],

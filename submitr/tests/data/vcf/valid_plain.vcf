@@ -1,0 +1,7 @@
+##fileformat=VCFv4.2
+##source=submitr-regression
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Read depth">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr1	10	.	A	C,G	99	PASS	DP=8
+chr2	20	.	N	<DEL>	.	.	.
+chr3	30	.	A	*	.	PASS	.

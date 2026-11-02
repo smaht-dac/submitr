@@ -1,0 +1,33 @@
+##fileformat=VCFv4.0
+#pipeline-note-01: sanitized metadata
+#pipeline-note-02: sanitized metadata
+#pipeline-note-03: sanitized metadata
+#pipeline-note-04: sanitized metadata
+#pipeline-note-05: sanitized metadata
+#pipeline-note-06: sanitized metadata
+#pipeline-note-07: sanitized metadata
+#pipeline-note-08: sanitized metadata
+#pipeline-note-09: sanitized metadata
+#pipeline-note-10: sanitized metadata
+#pipeline-note-11: sanitized metadata
+#pipeline-note-12: sanitized metadata
+#pipeline-note-13: sanitized metadata
+#pipeline-note-14: sanitized metadata
+#pipeline-note-15: sanitized metadata
+#pipeline-note-16: sanitized metadata
+#pipeline-note-17: sanitized metadata
+#pipeline-note-18: sanitized metadata
+#pipeline-note-19: sanitized metadata
+#pipeline-note-20: sanitized metadata
+#pipeline-note-21: sanitized metadata
+#pipeline-note-22: sanitized metadata
+#pipeline-note-23: sanitized metadata
+#pipeline-note-24: sanitized metadata
+#pipeline-note-25: sanitized metadata
+#pipeline-note-26: sanitized metadata
+#pipeline-note-27: sanitized metadata
+#pipeline-note-28: sanitized metadata
+#pipeline-note-29: sanitized metadata
+#pipeline-note-30: sanitized metadata
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr1	10	.	A	C	.	.	.
