@@ -6,8 +6,9 @@ from unittest import mock
 
 import pytest
 
-from dcicutils.structured_data import StructuredDataSet
+from dcicutils.structured_data import Portal, StructuredDataSet
 
+from submitr import submission_uploads
 from submitr.file_for_upload import FileForUpload, FilesForUpload
 from submitr.file_preflight import validate_vcf
 
@@ -17,6 +18,30 @@ VCF_FIXTURE_DIR = Path(__file__).parent / "data" / "vcf"
 
 def _fixture(name):
     return VCF_FIXTURE_DIR / name
+
+
+def _me_response(status_code=307, body=None, error=None):
+    # The portal answers /me with a 307 status and the user record as its body.
+    response = mock.Mock(status_code=status_code)
+    response.json.side_effect = error if error else (lambda: body)
+    return response
+
+
+def _portal(groups=("admin",), me=None):
+    """A mocked authenticated portal whose /me user record has the given groups."""
+
+    portal = mock.MagicMock(spec=Portal)
+    if me is None:
+        me = _me_response(body={"uuid": "00000000-0000-0000-0000-0000000000aa", "groups": list(groups)})
+    if isinstance(me, Exception):
+        portal.get.side_effect = me
+    else:
+        portal.get.return_value = me
+    return portal
+
+
+def _me_lookups(portal):
+    return [call for call in portal.get.call_args_list if call.args and call.args[0].startswith("/me")]
 
 
 def _bgzf(data):
@@ -208,7 +233,7 @@ def test_default_review_aggregates_many_header_advisories(tmp_path):
     output = []
 
     with mock.patch("submitr.file_for_upload.yes_or_no", return_value=True) as confirm:
-        reviewed = FilesForUpload.review([file_for_upload], printf=output.append)
+        reviewed = FilesForUpload.review([file_for_upload], portal=_portal(), printf=output.append)
 
     assert reviewed is True
     assert confirm.call_count == 1
@@ -230,7 +255,7 @@ def test_verbose_review_includes_advisory_line_details(tmp_path):
 
     with mock.patch("submitr.file_for_upload.yes_or_no", return_value=True):
         reviewed = FilesForUpload.review(
-            [file_for_upload], verbose=True, printf=output.append
+            [file_for_upload], portal=_portal(), verbose=True, printf=output.append
         )
 
     assert reviewed is True
@@ -274,7 +299,7 @@ def test_review_only_advisory_output_explains_confirmation_requirement(tmp_path)
     assert file_for_upload.ignore is True
     confirm.assert_not_called()
     assert any("Review-only mode" in line for line in output)
-    assert any("would require explicit confirmation before upload" in line for line in output)
+    assert any("would require explicit portal admin confirmation before upload" in line for line in output)
 
 
 def test_colons_inside_quoted_info_descriptions_are_not_advisories(tmp_path):
@@ -323,7 +348,7 @@ def test_review_requires_confirmation_for_advisory_headers(tmp_path, answer):
     output = []
 
     with mock.patch("submitr.file_for_upload.yes_or_no", return_value=answer) as confirm:
-        reviewed = FilesForUpload.review([file_for_upload], printf=output.append)
+        reviewed = FilesForUpload.review([file_for_upload], portal=_portal(), printf=output.append)
 
     assert reviewed is answer
     assert file_for_upload.ignore is (not answer)
@@ -358,7 +383,7 @@ def _review_header_lines(tmp_path, header_lines, *, fileformat="##fileformat=VCF
     file_for_upload = FileForUpload(path.name, main_search_directory=tmp_path)
     output = []
     with mock.patch("submitr.file_for_upload.yes_or_no", return_value=answer) as confirm:
-        reviewed = FilesForUpload.review([file_for_upload], verbose=True, printf=output.append)
+        reviewed = FilesForUpload.review([file_for_upload], portal=_portal(), verbose=True, printf=output.append)
     return validate_vcf(path), reviewed, confirm.call_count, output
 
 
@@ -592,3 +617,146 @@ def test_structured_data_upload_files_carry_declared_file_format(tmp_path):
     assert [file.ignore for file in files_for_upload] == [True, False]
     assert preflight.call_count == 1
     assert any("file_format vcf_gz requires a file name ending in .vcf.gz" in line for line in output)
+
+
+_ADVISORY_VCF = "##fileformat=VCFv4.2\n#source:synthetic\n" + _HEADER_COLUMNS + "\n1\t10\t.\tA\tC\t.\tPASS\t.\n"
+_CLEAN_VCF = "##fileformat=VCFv4.2\n##source=synthetic\n" + _HEADER_COLUMNS + "\n1\t10\t.\tA\tC\t.\tPASS\t.\n"
+_NOT_CONFIRMED = "your portal admin status could not be confirmed"
+
+
+def _review_files(tmp_path, files, portal, *, answer=True, review_only=False):
+    for name, content in files.items():
+        (tmp_path / name).write_text(content)
+    files_for_upload = [FileForUpload(name, main_search_directory=tmp_path) for name in files]
+    output = []
+    with mock.patch("submitr.file_for_upload.yes_or_no", return_value=answer) as confirm:
+        reviewed = FilesForUpload.review(files_for_upload, portal=portal, review_only=review_only,
+                                         printf=output.append)
+    return reviewed, files_for_upload, confirm.call_count, output
+
+
+@pytest.mark.parametrize("answer", [True, False])
+def test_admin_can_accept_or_decline_advisory_vcf(tmp_path, answer):
+    portal = _portal(["admin"])
+    reviewed, [file], prompts, output = _review_files(tmp_path, {"a.vcf": _ADVISORY_VCF}, portal, answer=answer)
+
+    assert reviewed is answer
+    assert file.ignore is (not answer)
+    assert prompts == 1
+    assert len(_me_lookups(portal)) == 1
+    assert not any("Only portal admins" in line for line in output)
+
+
+@pytest.mark.parametrize(
+    ("portal", "unconfirmed"),
+    [
+        (_portal([]), False),
+        (_portal(["read-only-admin"]), False),
+        (_portal(["dbgap", "public-dbgap"]), False),
+        (_portal(me=_me_response(body={"uuid": "u", "groups": "admin"})), True),
+        (_portal(me=_me_response(body={"groups": ["admin"]})), True),
+        (_portal(me=_me_response(403, body={"Title": "Not logged in."})), True),
+        (_portal(me=_me_response(200, error=ValueError("not json"))), True),
+        (_portal(me=ConnectionError("portal unreachable")), True),
+        (None, True),
+    ],
+    ids=["no-groups", "read-only-admin", "other-groups", "groups-string", "no-uuid", "me-403", "me-not-json",
+         "me-raises", "no-portal"],
+)
+def test_non_admin_or_unknown_identity_cannot_continue_past_advisories(tmp_path, portal, unconfirmed):
+    reviewed, [file], prompts, output = _review_files(tmp_path, {"a.vcf": _ADVISORY_VCF}, portal)
+
+    assert reviewed is False
+    assert file.ignore is True
+    assert prompts == 0
+    assert any("Only portal admins can upload a VCF with header warnings" in line for line in output)
+    assert any(_NOT_CONFIRMED in line for line in output) is unconfirmed
+    assert any("File not selected for upload" in line for line in output)
+    assert not any("not json" in line or "unreachable" in line for line in output)
+
+
+def test_file_metadata_and_environment_cannot_grant_admin(tmp_path, monkeypatch):
+    (tmp_path / "a.vcf").write_text(_ADVISORY_VCF)
+    claims = {"file": "a.vcf", "is_admin": True, "groups": ["admin"], "submitted_by": {"groups": ["admin"]}}
+    file_for_upload = FileForUpload(claims, main_search_directory=tmp_path)
+    with mock.patch("submitr.file_for_upload.yes_or_no", return_value=True) as confirm:
+        assert FilesForUpload.review([file_for_upload], portal=_portal([]), printf=lambda message: None) is False
+    confirm.assert_not_called()
+
+    # SMAHT_NOADMIN can only remove admin status.
+    monkeypatch.setenv("SMAHT_NOADMIN", "true")
+    reviewed, _, prompts, output = _review_files(tmp_path, {"b.vcf": _ADVISORY_VCF}, _portal(["admin"]))
+    assert reviewed is False
+    assert prompts == 0
+    assert any("Only portal admins" in line for line in output)
+
+
+@pytest.mark.parametrize("groups", [["admin"], []])
+def test_structural_vcf_blocks_admins_too_without_identity_lookup(tmp_path, groups):
+    portal = _portal(groups)
+    content = _fixture("combined_advisory_malformed.vcf").read_text()
+    reviewed, [file], prompts, output = _review_files(tmp_path, {"bad.vcf": content}, portal)
+
+    assert reviewed is False
+    assert file.ignore is True
+    assert prompts == 0
+    assert not _me_lookups(portal)
+    assert any("confirmation cannot override them" in line for line in output)
+
+
+def test_clean_vcf_and_non_vcf_upload_without_admin_or_lookup(tmp_path):
+    portal = _portal([])
+    files = {"clean.vcf": _CLEAN_VCF, "reads.fastq": "@r1\nACGT\n+\nIIII\n"}
+    reviewed, reviewed_files, prompts, _ = _review_files(tmp_path, files, portal)
+
+    assert reviewed is True
+    assert [file.ignore for file in reviewed_files] == [False, False]
+    assert prompts == 0
+    assert not _me_lookups(portal)
+
+
+def test_review_only_reports_admin_requirement_without_lookup(tmp_path):
+    portal = _portal([])
+    reviewed, [file], prompts, output = _review_files(tmp_path, {"a.vcf": _ADVISORY_VCF}, portal, review_only=True)
+
+    assert reviewed is False
+    assert prompts == 0
+    assert not _me_lookups(portal)
+    assert any("would require explicit portal admin confirmation before upload" in line for line in output)
+
+
+def test_admin_status_is_looked_up_once_per_review(tmp_path):
+    portal = _portal(["admin"])
+    files = {"a.vcf": _ADVISORY_VCF, "b.vcf": _ADVISORY_VCF}
+    reviewed, reviewed_files, prompts, _ = _review_files(tmp_path, files, portal)
+
+    assert reviewed is True
+    assert prompts == 2
+    assert len(_me_lookups(portal)) == 1
+
+
+@pytest.mark.parametrize(("groups", "answer", "uploaded"), [
+    (["admin"], True, ["a.vcf", "clean.vcf"]),
+    (["admin"], False, ["clean.vcf"]),
+    ([], True, ["clean.vcf"]),
+])
+def test_post_submission_upload_selects_advisory_vcf_only_for_confirming_admin(tmp_path, groups, answer, uploaded):
+    (tmp_path / "a.vcf").write_text(_ADVISORY_VCF)
+    (tmp_path / "clean.vcf").write_text(_CLEAN_VCF)
+    portal = _portal(groups)
+    portal.get_metadata.side_effect = lambda uuid, **kwargs: {"uuid": uuid, "status": "uploading"}
+    portal.is_schema_type.side_effect = lambda item, schema: schema == "IngestionSubmission"
+    upload_info = [{"uuid": f"00000000-0000-0000-0000-00000000000{index}", "filename": name}
+                   for index, name in enumerate(["a.vcf", "clean.vcf"])]
+    submission = {"@type": ["IngestionSubmission"], "parameters": {}, "additional_data": {"upload_info": upload_info}}
+    selected = []
+
+    with mock.patch("submitr.file_for_upload.yes_or_no", return_value=answer), \
+         mock.patch("submitr.file_for_upload.get_file_upload_bucket", return_value=None), \
+         mock.patch.object(submission_uploads, "yes_or_no", return_value=True), \
+         mock.patch.object(submission_uploads, "upload_file",
+                           side_effect=lambda file, **kwargs: selected.append(file.name)), \
+         mock.patch.object(submission_uploads, "PRINT"):
+        submission_uploads.do_any_uploads(submission, main_search_directory=str(tmp_path), portal=portal)
+
+    assert selected == uploaded

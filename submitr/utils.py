@@ -108,6 +108,13 @@ def tobool(value: Any, fallback: bool = False) -> bool:
         return fallback
 
 
+def is_admin_user(user: Optional[dict]) -> bool:
+    # The portal grants the group.admin principal to users whose groups include "admin".
+    if tobool(os.environ.get("SMAHT_NOADMIN")):
+        return False
+    return isinstance(user, dict) and isinstance(groups := user.get("groups", []), list) and "admin" in groups
+
+
 def format_path(path: str) -> str:
     if isinstance(path, str) and os.path.isabs(path) and path.startswith(os.path.expanduser("~")):
         path = "~/" + Path(path).relative_to(Path.home()).as_posix()

@@ -81,6 +81,7 @@ from submitr.utils import (
     chars,
     format_path,
     get_health_page,
+    is_admin_user,
     is_excel_file_name,
     print_boxed,
     tobool,
@@ -191,9 +192,7 @@ def _get_user_record(server, auth, quiet=False):
 
 
 def _is_admin_user(user: dict) -> bool:
-    if tobool(os.environ.get("SMAHT_NOADMIN")):
-        return False
-    return "admin" in user.get("groups", []) if isinstance(user, dict) else False
+    return is_admin_user(user)
 
 
 def _get_defaulted_institution(

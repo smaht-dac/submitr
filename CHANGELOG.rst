@@ -13,13 +13,16 @@ Change Log
 * Add a pure-Python VCF preflight that checks compressed-stream integrity,
   required VCF header shape, and record shape before upload. Structural
   failures block upload; narrowly scoped header compatibility findings require
-  explicit confirmation.
+  explicit portal admin confirmation.
 * Preflight only the portal ``vcf`` and ``vcf_gz`` file formats, identified by the
   declared ``file_format`` or else the file name, and block a mismatched file name,
   ``file_format``, or compression explicitly without preflighting the content.
 * Accept ``ALT`` of ``.`` as the no-alternate-allele case.
 * Report a one-``#`` header line that also uses key:value notation as both
   advisories in a single review, rather than the key:value advisory only after a rerun.
+* Only authenticated portal admins (``/me`` groups include ``admin``) can continue past
+  VCF header advisories; other users, or an unconfirmed admin status, keep the file out
+  of the upload without a prompt. Structural failures still block every user.
 
 
 1.18.0

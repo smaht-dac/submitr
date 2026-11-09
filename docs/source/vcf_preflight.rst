@@ -28,14 +28,21 @@ Structural failures are non-overridable and keep the file out of the upload:
 The preflight also reports narrowly scoped header compatibility advisories.
 Metadata-like lines with one ``#`` instead of ``##``, INFO attributes written
 with ``key: value`` instead of ``key=value``, and continuation lines without a
-key are accepted but require explicit submitter confirmation before upload.
-A one-``#`` line that also uses key:value notation is reported with both
-advisories in the same review.
-Line-ending and unknown-minor-version advisories use the same confirmation
-path. Normal review output aggregates repeated advisories into actionable
+key are reported as advisories. A one-``#`` line that also uses key:value
+notation is reported with both advisories in the same review.
+Line-ending and unknown-minor-version advisories are handled the same way.
+
+Only a portal admin can upload a VCF with advisories, after explicit typed
+confirmation. Admin status comes from the authenticated portal user (``/me``):
+the user's ``groups`` must include ``admin``. For any other user, or when admin
+status cannot be established, the file is reported and not selected for upload,
+with no confirmation prompt; ``--yes`` does not change this. Clean VCF files and
+other uploads need no admin status.
+
+Normal review output aggregates repeated advisories into actionable
 counts; ``--verbose`` includes the affected line details. Review-only/
 ``--validate`` output does not select a file for upload and states when that
-file would require confirmation. Structural errors are reported separately,
-take precedence, and cannot be overridden by confirmation. No reference genome
+file would require admin confirmation. Structural errors are reported separately,
+take precedence, and block upload for every user, including admins. No reference genome
 is consulted and the validator does not attempt downstream VCF semantic or
 annotation validation.

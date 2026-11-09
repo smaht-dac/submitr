@@ -11,7 +11,7 @@ from dcicutils.structured_data import FILE_TYPE_PROPERTY_NAME, Portal, Structure
 from submitr.file_preflight import VcfPreflightResult, validate_vcf
 from submitr.output import PRINT
 from submitr.rclone import RCloneAmazon, RCloneStore
-from submitr.utils import chars
+from submitr.utils import chars, is_admin_user
 
 # See smaht-portal/.../schemas/file.json for these values; and see the definition and
 # usage of SHOW_UPLOAD_CREDENTIALS_STATUSES in encoded-core/.../types/file.py for logic
@@ -104,6 +104,35 @@ def _vcf_advisory_summary_lines(result: VcfPreflightResult) -> List[str]:
         else:
             summaries.append(f"{count} header compatibility finding{'s' if count != 1 else ''} detected.")
     return summaries
+
+
+def _authenticated_user_is_admin(portal: Optional[Portal]) -> Optional[bool]:
+    """Whether the portal's authenticated (/me) user is a portal admin; None if that cannot be established."""
+
+    if not isinstance(portal, Portal):
+        return None
+    try:
+        # The portal answers /me with a 307 status and the user record as its body.
+        response = portal.get("/me?format=json")
+        if response.status_code >= 400 or not isinstance(user := response.json(), dict) or not user.get("uuid"):
+            return None
+    except Exception:
+        return None
+    if not isinstance(user.get("groups", []), list):
+        return None
+    return is_admin_user(user)
+
+
+def _admin_check(portal: Optional[Portal]) -> Callable[[], Optional[bool]]:
+    """Return a check of the portal user's admin status that looks it up at most once."""
+
+    status = []
+
+    def is_admin() -> Optional[bool]:
+        if not status:
+            status.append(_authenticated_user_is_admin(portal))
+        return status[0]
+    return is_admin
 
 
 def _print_vcf_finding_details(findings: List, *, verbose: bool, printf: Callable,
@@ -446,7 +475,8 @@ class FileForUpload:
         return True
 
     def review(self, portal: Optional[Portal] = None, review_only: bool = False,
-               last_in_list: bool = False, verbose: bool = False, printf: Optional[Callable] = None) -> bool:
+               last_in_list: bool = False, verbose: bool = False, printf: Optional[Callable] = None,
+               is_admin: Optional[Callable[[], Optional[bool]]] = None) -> bool:
         """
         Reviews, possibly confirming interactively the file for upload. If the
         file was found both locally (on the filesystem) and in the cloud, we
@@ -514,7 +544,8 @@ class FileForUpload:
                     printf(f"- File for upload: {self.path_local} ({format_size(self.size_local)})")
                     if destination:
                         printf(f"  AWS destination: {destination}")
-            return self._review_vcf(review_only=review_only, verbose=verbose, printf=printf)
+            return self._review_vcf(review_only=review_only, verbose=verbose, printf=printf,
+                                    is_admin=is_admin or _admin_check(portal))
 
         elif self.found_cloud:
             printf(f"- File for upload from {self.cloud_store.proper_name_title} ({self.cloud_store.proper_name}):"
@@ -554,7 +585,8 @@ class FileForUpload:
         self._ignore = True
         return False
 
-    def _review_vcf(self, review_only: bool, verbose: bool, printf: Callable) -> bool:
+    def _review_vcf(self, review_only: bool, verbose: bool, printf: Callable,
+                    is_admin: Callable[[], Optional[bool]]) -> bool:
         """Run local VCF preflight after the local/cloud choice is resolved."""
 
         # Only the two portal VCF formats are preflighted; a declared file_format governs when
@@ -617,7 +649,7 @@ class FileForUpload:
         advisory_count = sum(result.advisory_counts.values())
         printf(
             f"  - {advisory_count} advisory finding{'s' if advisory_count != 1 else ''} detected; "
-            "explicit confirmation is required to continue with upload."
+            "explicit portal admin confirmation is required to continue with upload."
         )
         for summary in _vcf_advisory_summary_lines(result):
             printf(f"  - {summary}")
@@ -630,8 +662,15 @@ class FileForUpload:
         if review_only:
             printf(
                 "  - Review-only mode: no upload will be attempted; this file would require "
-                "explicit confirmation before upload."
+                "explicit portal admin confirmation before upload."
             )
+            self._ignore = True
+            return False
+        # Only an authenticated portal admin may continue past advisory findings; fail closed otherwise.
+        if (admin := is_admin()) is not True:
+            printf("  - Only portal admins can upload a VCF with header warnings"
+                   f"{'' if admin is False else ', and your portal admin status could not be confirmed'}.")
+            printf("  - File not selected for upload. Correct the VCF header and run the upload again.")
             self._ignore = True
             return False
         if not yes_or_no("  - Continue with this file despite the VCF header warnings?"):
@@ -720,10 +759,11 @@ class FilesForUpload:
                 message += f" | Ambiguous: {len(files_for_upload_ambiguous)}"
             printf(message)
             max_index = len(files_for_upload) - 1
+            is_admin = _admin_check(portal)
             for index, file_for_upload in enumerate(files_for_upload):
                 if not file_for_upload.review(portal=portal, review_only=review_only,
                                               last_in_list=index == max_index,
-                                              verbose=verbose, printf=printf):
+                                              verbose=verbose, printf=printf, is_admin=is_admin):
                     result = False
         return result
 
