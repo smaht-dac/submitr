@@ -81,6 +81,7 @@ from submitr.utils import (
     chars,
     format_path,
     get_health_page,
+    is_admin_user,
     is_excel_file_name,
     print_boxed,
     tobool,
@@ -191,9 +192,7 @@ def _get_user_record(server, auth, quiet=False):
 
 
 def _is_admin_user(user: dict) -> bool:
-    if tobool(os.environ.get("SMAHT_NOADMIN")):
-        return False
-    return "admin" in user.get("groups", []) if isinstance(user, dict) else False
+    return is_admin_user(user)
 
 
 def _get_defaulted_institution(
@@ -3483,7 +3482,7 @@ def _print_structured_data_verbose(
         for resolved_ref in sorted(resolved_refs):
             PRINT_OUTPUT(f"  - {resolved_ref}")
     files_for_upload = FilesForUpload.assemble(
-        structured_data.upload_files,
+        structured_data,
         main_search_directory=upload_folder,
         main_search_directory_recursively=recursive,
         other_search_directories=[ingestion_filename, os.path.curdir],
