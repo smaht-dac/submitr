@@ -101,6 +101,7 @@ Below (and to the left) is the general table of contents for this documentation.
 
   usage
   uploading_files
+  vcf_preflight
   advanced_usage
 
 ..  Commented out (2023-03-04) from below toctree: Decided do not really need this as this is live on portal.
