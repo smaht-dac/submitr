@@ -11,7 +11,7 @@ from submitr.validators.decorators import structured_data_validator_finish_hook
 
 
 _NON_MODIFIABLE_STATUSES = {
-    "retracted", "archived", "obsolete", "released", 
+    "retracted", "archived", "obsolete", "released",
     "open", "open-early", "open-network",
     "protected", "protected-early", "protected-network",
     "public",
