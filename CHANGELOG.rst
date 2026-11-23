@@ -6,6 +6,151 @@ smaht-submitr
 Change Log
 ----------
 
+1.19.0
+======
+`PR 46 VCF upload preflight <https://github.com/smaht-dac/submitr/pull/46>`_
+
+* Add a pure-Python VCF preflight that checks compressed-stream integrity,
+  required VCF header shape, and record shape before upload. Structural
+  failures block upload; narrowly scoped header compatibility findings require
+  explicit portal admin confirmation.
+* Preflight only the portal ``vcf`` and ``vcf_gz`` file formats, identified by the
+  declared ``file_format`` or else the file name, and block a mismatched file name,
+  ``file_format``, or compression explicitly without preflighting the content.
+* Accept ``ALT`` of ``.`` as the no-alternate-allele case.
+* Report a one-``#`` header line that also uses key:value notation as both
+  advisories in a single review, rather than the key:value advisory only after a rerun.
+* Only authenticated portal admins (``/me`` groups include ``admin``) can continue past
+  VCF header advisories; other users, or an unconfirmed admin status, keep the file out
+  of the upload without a prompt. Structural failures still block every user.
+
+
+1.18.0
+======
+Filename upload preflight protections
+
+* Report an error during validation when two different file items in a workbook reference the
+  same upload file name (basename); repeated references to the same item are allowed
+* Before submitting metadata, abort if a file with the same name already exists in the portal for
+  the submitting submission center (other than the item being updated); the same check is
+  repeated before each file upload, including for ``resume-uploads``
+* See ``docs/filename-preflight-investigation.md`` for the staged plan; checksum comparison and
+  server-side filename reservation are out of scope
+
+
+1.17.0
+======
+
+`PR 48 Auto-transform ProtectedDonor workbooks <https://github.com/smaht-dac/submitr/pull/48>`_
+
+* Automatically transform Donor references to ProtectedDonor on the Demographic, DeathCircumstances,
+  FamilyHistory, MedicalHistory and TissueCollection sheets during validate/submit; mixed references
+  are supported, missing Donors fail clearly, and already-transformed workbooks are left unchanged
+* Write the transformed workbook next to the original as ``<name>.transformed.xlsx``, replacing it
+  atomically and only after it passes local validation
+* Reject formula-backed donor references that have no usable cached value (formulas are not evaluated);
+  formulas below the last data row (e.g. dragged down a template) are ignored, as in normal ingestion
+* Do not record a stale or missing transformed workbook when local validation fails and the user continues,
+  and do not save the transformed workbook with ``--json-only``
+* Skip ProtectedDonor analysis for workbooks with none of the protected sheets
+* Document ProtectedDonor auto-transform in the Validation section of the usage docs
+* Add hidden ``--no-transform-protected-donor`` and ``--save-transformed-workbook`` options
+* Update to ``dcicutils`` 8.19.1 (ProtectedDonor transformer) and ``boto3`` ^1.43.100; relock
+
+1.16.0
+======
+`PR 44 ExternalQualityMetric ingestion <https://github.com/smaht-dac/submitr/pull/44>`_
+
+* Transform structured data for ``ExternalQualityMetric`` sheets into a schema conformant form,
+  serialized to a temporary JSON file which is then used as the ingestion input to the portal;
+  all Excel workbooks are now handled this way, whether or not they have an EQM sheet
+* Update GitHub Actions workflows to ``actions/checkout@v4`` / ``actions/setup-python@v5``
+  and test against Python 3.10, 3.11 and 3.12
+* Mint the scoped temporary credentials used by the rclone integration tests with
+  ``sts:AssumeRoleWithWebIdentity`` when authenticated via web identity federation (GitHub OIDC),
+  falling back to ``sts:GetFederationToken`` as before for an IAM user's long-term access keys.
+  AWS only lets an IAM user call ``GetFederationToken``, so it cannot be used from a role session;
+  ``AssumeRoleWithWebIdentity`` accepts the same inline session policy and has the same
+  intersection semantics
+* Determine the AWS account number from ``sts:GetCallerIdentity`` rather than ``iam:GetUser``,
+  which has no answer for a role session
+* Stop the rclone test helpers from relabeling failures raised by the caller as cloud file
+  setup errors, which discarded the original traceback
+* Remove ``global``/``nonlocal`` declarations for names which are only ever read, which are
+  redundant and which newer flake8 reports as ``F824``; where only some names on a declaration
+  were redundant the rest are kept, as those are assigned and so do need declaring
+
+1.15.0
+======
+`PR 43 Validator updates <https://github.com/smaht-dac/submitr/pull/43>`_
+
+* Add feature to skip local validators by name
+* update to pathology report validators to allow either or for description and percentage for pathology finding validators 
+
+1.14.4
+======
+`PR 41 WF Update macOS runners <https://github.com/smaht-dac/submitr/pull/41>`_
+
+* Update macOS runners to `macos-15-intel` for x86 builds
+
+1.14.3
+======
+`PR 35 SN Fix validation errors <https://github.com/smaht-dac/submitr/pull/35>`_
+
+* Add escape characters to `.get()` commands so that empty values pass initial submitr validation and go to basic schema validation
+
+1.14.2
+======
+`PR 39 Additional tissue sample validationD <https://github.com/smaht-dac/submitr/pull/39>`_
+
+* Addition additional validation for TPC samples to ensure consistency between submitted_id, external_id and tissue submitted_id
+* Non-TPC samples - warning for inconsistency is shown but submission is not blocked
+* new tests and some test consolitdation/parmaeterization 
+
+1.14.1
+======
+`PR 38 Decrease polling frequency by updating PROGRESS_INTERVAL to 1 second <https://github.com/smaht-dac/submitr/pull/38>`_
+
+* PROGRESS_INTERVAL from 0.1 to 1 second to decrease polling frequency for server-side validation/submission progress meter
+
+
+1.14.0
+======
+`PR 37 Add validation for PathologyReport validators <https://github.com/smaht-dac/submitr/pull/37>`_
+
+* Non-brain-path-reports validators include:
+* target_tissues fields if is_present = Yes autolysis score required, percentage required and if not percent = 0 and no autolysis score
+* non_target_tissues fields if is_present = Yes percentage is required
+* pathology_findings fields if is_present = Yes description and percentage required
+
+* Brain-path-reports validators include:
+* brain-subregions - if present autolysis score is required
+* neuropathology-fields - if Yes decription is required
+* age related pathology fields - if Yes at least one must be filled
+
+* tissue_sample category - external_id consistency check
+
+
+1.13.0
+======
+`PR 36 Add additional validation for Tissue and TissueSample <https://github.com/smaht-dac/submitr/pull/36>`_
+
+* 'fixed' a potential bug in the finish_hook decorator
+* Added submitr validators for:
+  - TissueSample - mirror the portal validators as much as possible - check for duplication and ensure there is a TPC sample for each GCC submitted sample
+  - Tissue - added validator for matching tissue code and tissue preservation type when possible - fixed and frozen
+
+* Renamed the validator files for tissue_sample and tissue to be more general as there is now more than just external_id validation.
+* Added tests.
+
+
+1.12.1
+======
+`PR 34 Update validation output <https://github.com/smaht-dac/submitr/pull/34>`_
+
+* Update the output of validation messages to explicitly add **row** before number and collapse row numbers to ranges when possible
+
+
 1.12.0
 ======
 `PR 29 SN DSA Validator <https://github.com/smaht-dac/submitr/pull/29>`_
@@ -391,4 +536,3 @@ Thug commit changing beta dcicutils to real one (8.18.2).
 =====
 
 * Forked from SubmitCGAP 4.1.0.
-

@@ -16,6 +16,21 @@ The above commands will only look for the files to upload directly within the sp
 
    submit-metadata-bundle your_metadata_file.xlsx --env <environment-name> --directory <path-to-files> --sub-directories
 
+Filename Checks
+===============
+
+Files are uploaded by file name only (any directory part of a referenced path is ignored),
+so each referenced file name must be unique:
+
+- **Within your workbook:** validation reports an error, with sheet and row locations,
+  when two different file items reference the same file name.
+  Referencing the same file name more than once for the `same` item is allowed.
+- **Within the portal:** before any metadata is submitted, ``submit-metadata-bundle`` checks
+  whether a file with the same name already exists in the portal for your submission center;
+  if so, it lists each collision and aborts without creating or updating anything.
+  Updating an existing file item with its own file name is allowed.
+  The same check is repeated just before each file is uploaded, including with ``resume-uploads``.
+
 Resuming Uploads
 ================
 When using ``submit-metadata-bundle`` you can choose `not` to upload any referenced files when prompted.

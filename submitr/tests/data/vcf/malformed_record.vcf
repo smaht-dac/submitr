@@ -1,0 +1,4 @@
+##fileformat=VCFv4.2
+##source=submitr-regression
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr1	bad	.	A	C	.	PASS

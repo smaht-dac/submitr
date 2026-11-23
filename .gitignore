@@ -83,6 +83,7 @@ ipython_config.py
 
 # pyenv
 .python-version
+envs.toml
 
 # Kent's environment tools
 .python-cmd

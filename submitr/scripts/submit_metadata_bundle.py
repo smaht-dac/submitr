@@ -130,6 +130,9 @@ ADVANCED OPTIONS:
   Maximum umber of seconds to wait for server validation or submission.
 --debug
   Displays some debugging related output.
+--skip-validator VALIDATOR-FUNCTION-NAME
+  Skips the named client-side validator function; may be used more than once.
+  Use the internal validator function name, e.g. _analyte_rin_validator.
 --ping
   Pings the server; to test connectivity.
 --yes
@@ -230,6 +233,12 @@ def main(simulated_args_for_testing=None):
     parser.add_argument('--timeout', help="Wait timeout for server validation/submission.")
     parser.add_argument('--debug', action="store_true", help="Debug output.", default=False)
     parser.add_argument('--debug-sleep', help="Sleep on each row read for troubleshooting/testing.", default=False)
+    # Retained as a hidden compatibility switch for internal workflows/tests.
+    parser.add_argument('--no-transform-protected-donor', action="store_true",
+                        help=argparse.SUPPRESS, default=False)
+    parser.add_argument('--save-transformed-workbook', help=argparse.SUPPRESS, default=None)
+    parser.add_argument('--skip-validator', action='append', dest='skip_validators',
+                        help=argparse.SUPPRESS, default=None)
     parser.add_argument('--ping', action="store_true", help="Ping server.", default=False)
 
     # These original/deprecated options are just for backward compatibility.
@@ -331,6 +340,10 @@ def main(simulated_args_for_testing=None):
         else:
             args.timeout = int(args.timeout)
 
+    if args.no_transform_protected_donor and args.save_transformed_workbook:
+        PRINT("May not specify both --no-transform-protected-donor and --save-transformed-workbook.")
+        sys.exit(2)
+
     if args.info:
         if not os.path.exists(args.bundle_filename):
             PRINT(f"File does not exist: {args.bundle_filename}")
@@ -348,7 +361,6 @@ def main(simulated_args_for_testing=None):
 
         if not _sanity_check_submitted_file(args.bundle_filename):
             sys.exit(1)
-
         submit_any_ingestion(ingestion_filename=args.bundle_filename, ingestion_type=args.ingestion_type,
                              env=args.env, env_from_env=env_from_env,
                              keys_file=args.keys,
@@ -387,7 +399,10 @@ def main(simulated_args_for_testing=None):
                              output_file=args.output,
                              timeout=args.timeout,
                              debug=args.debug,
-                             debug_sleep=args.debug_sleep)
+                             debug_sleep=args.debug_sleep,
+                             skip_validators=args.skip_validators,
+                             transform_protected_donor=not args.no_transform_protected_donor,
+                             transformed_workbook_path=args.save_transformed_workbook)
 
 
 def _sanity_check_submitted_file(file_name: str) -> bool:

@@ -24,7 +24,6 @@ _TYPES_WHICH_ARE_ALLOWED_TO_BE_UNREFERENCED = [
 
 
 def report_unreferenced_references(structured_data: StructuredDataSet, printf: Optional[Callable] = None) -> int:
-    global _TYPES_WHICH_ARE_ALLOWED_TO_BE_UNREFERENCED
     unreferenced_items = _get_unreferenced_references(structured_data,
                                                       ignore_types=_TYPES_WHICH_ARE_ALLOWED_TO_BE_UNREFERENCED)
     if unreferenced_items:
@@ -42,7 +41,6 @@ def _get_unreferenced_references(structured_data: StructuredDataSet,
                                  identifying_property_name: Optional[str] = None) -> List[str]:
 
     def get_item_identifying_paths(item: dict, item_type: str) -> List[str]:
-        nonlocal structured_data, identifying_property_name
         if isinstance(item, dict) and isinstance(item_type, str):
             if item_identifying_value := item.get(identifying_property_name):
                 identifying_paths = set()

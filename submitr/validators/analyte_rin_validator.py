@@ -16,9 +16,9 @@ def _analyte_rin_validator(structured_data: StructuredDataSet, **kwargs) -> None
         return
     for item in data:
         if _MOLECULE_PROPERTY_NAME in item and (
-            submitted_id := item.get("submitted_id")
+            submitted_id := item.get("submitted_id", "")
         ):
-            if _RNA_VALUE in item.get(_MOLECULE_PROPERTY_NAME) and _RIN_PROPERTY_NAME not in item:
+            if _RNA_VALUE in item.get(_MOLECULE_PROPERTY_NAME, "") and _RIN_PROPERTY_NAME not in item:
                 # rna and rna_integrity_number not present
                 structured_data.note_validation_error(
                     f"{_ANALYTE_SCHEMA_NAME}:"
@@ -26,7 +26,7 @@ def _analyte_rin_validator(structured_data: StructuredDataSet, **kwargs) -> None
                     f" property {_RIN_PROPERTY_NAME} is required"
                     f" for {_RNA_VALUE} analytes."
                 )
-            elif _RNA_VALUE not in item.get(_MOLECULE_PROPERTY_NAME) and _RIN_PROPERTY_NAME in item:
+            elif _RNA_VALUE not in item.get(_MOLECULE_PROPERTY_NAME, "") and _RIN_PROPERTY_NAME in item:
                 # not rna and rna_integrity_number present
                 structured_data.note_validation_error(
                     f"{_ANALYTE_SCHEMA_NAME}:"

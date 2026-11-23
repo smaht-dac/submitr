@@ -38,7 +38,7 @@ class GoogleCredentials:
     def __ne__(self, other: Optional[GoogleCredentials]) -> bool:
         return not self.__eq__(other)
 
-    def ping(self) -> bool:
+    def ping(self, raise_exception: bool = False) -> bool:
         try:
             if GoogleCredentials.is_google_compute_engine():
                 client = GcsClient()
@@ -46,7 +46,9 @@ class GoogleCredentials:
                 client = GcsClient.from_service_account_json(self.service_account_file)
             _ = list(client.list_buckets())
             return True
-        except Exception:
+        except Exception as e:
+            if raise_exception is True:
+                raise e
             return False
 
     @staticmethod

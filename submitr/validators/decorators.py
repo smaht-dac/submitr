@@ -36,7 +36,6 @@ def structured_data_validator_hook(*decorator_args, **decorator_kwargs) -> Calla
               f" @structured_data_validator_hook: {decorator_args[0].__name__}")
         exit(1)
     def decorator(wrapped_function: Callable) -> Callable:  # noqa
-        nonlocal decorator_args, decorator_kwargs
         if not ((len(decorator_args) == 1) and
                 isinstance(arg := decorator_args[0], str) and arg and (not decorator_kwargs)):
             print(f"CODE ERROR: Only a column or schema.column argument permitted for"
@@ -60,8 +59,8 @@ def structured_data_validator_finish_hook(*decorator_args, **decorator_kwargs) -
     #   And the decorator function below DOES get called with the wrapped_function.
     if (len(decorator_args) == 1) and callable(wrapped_function := decorator_args[0]) and (not decorator_kwargs):
         _FINISH_VALIDATORS.append(wrapped_function)
+        return wrapped_function  # <-- ADDED THIS LINE
     def decorator(wrapped_function: Callable) -> Callable:  # noqa
-        nonlocal decorator_args, decorator_kwargs
         if (((len(decorator_args) != 0) and
              (not (len(decorator_args) == 1 and
                    ([f for f in _FINISH_VALIDATORS if f == wrapped_function]))))) or decorator_kwargs:
@@ -69,6 +68,7 @@ def structured_data_validator_finish_hook(*decorator_args, **decorator_kwargs) -
                   f" @structured_data_validator_finish_hook: {wrapped_function.__name__}")
             exit(1)
         _FINISH_VALIDATORS.append(wrapped_function)
+        return wrapped_function  # <-- AND THIS LINE
     return decorator
 
 
@@ -84,7 +84,6 @@ def structured_data_validator_sheet_hook(*decorator_args, **decorator_kwargs) ->
               f" @structured_data_validator_sheet_hook decorator: {decorator_args[0].__name__}")
         exit(1)
     def decorator(wrapped_function: Callable) -> Callable:  # noqa
-        nonlocal decorator_args, decorator_kwargs
         if not ((len(decorator_args) == 1) and
                 isinstance(schemas := decorator_args[0], (str, list)) and schemas):
             print(f"CODE ERROR: Single sheet name argument required for"
@@ -103,24 +102,30 @@ def structured_data_validator_sheet_hook(*decorator_args, **decorator_kwargs) ->
 # Define the main per-column/value StructuredDataSet hook (including the "finish" hook as a property thereof).
 #
 def define_structured_data_validator_hook(**kwargs) -> Callable:
+    skip = set(kwargs.pop("skip_validators", None) or [])
+
     def hook(structured_data: StructuredDataSet, schema: str,
              column: str, row: int, value: Any) -> Any:
         if ((validator := _VALIDATORS.get(column)) or
             (validator := _VALIDATORS.get(f"{schema}.{column}"))):  # noqa
-            return validator(structured_data, schema, column, row, value=value, **kwargs)
+            if validator.__name__ not in skip:
+                return validator(structured_data, schema, column, row, value=value, **kwargs)
         return value
     def finish_hook(structured_data: StructuredDataSet) -> None:  # noqa
-        nonlocal kwargs
         for validator in _FINISH_VALIDATORS:
-            validator(structured_data, **kwargs)
+            if validator.__name__ not in skip:
+                validator(structured_data, **kwargs)
     setattr(hook, "finish", finish_hook)
     return hook
 
 
 # Define the main StructuredDataSet per-sheet hook.
 #
-def define_structured_data_validator_sheet_hook() -> Callable:
+def define_structured_data_validator_sheet_hook(**kwargs) -> Callable:
+    skip = set(kwargs.pop("skip_validators", None) or [])
+
     def hook(structured_data: StructuredDataSet, schema: str, data: dict) -> None:
         if validator := _SHEET_VALIDATORS.get(schema):
-            validator(structured_data, schema, data)
+            if validator.__name__ not in skip:
+                validator(structured_data, schema, data)
     return hook

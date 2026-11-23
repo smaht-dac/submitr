@@ -48,7 +48,6 @@ def main() -> None:
     args = parser.parse_args(None)
 
     def define_portal() -> None:
-        nonlocal args
         portal = _define_portal(env=args.env, keys_file=args.keys,
                                 report=args.verbose, ping=True, note="Metadata Template")
         return portal

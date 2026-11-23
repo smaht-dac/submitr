@@ -60,6 +60,7 @@
     },
     "William Ronchetti": {
       "emails": [
+        "william_ronchetti@hms.harvard.edu",
         "wrr33@cornell.edu"
       ],
       "names": [
@@ -81,11 +82,22 @@
     "William Feng": {
       "emails": [
         "willf182@gmail.com",
-        "william.feng@hms.harvard.edu"
+        "william_feng@hms.harvard.edu"
       ],
       "names": [
         "Will Feng",
-        "William Feng"
+        "William Feng",
+        "wfeng19"
+      ]
+    },
+    "Andy Schroeder": {
+      "emails": [
+        "andrew_schroeder@hms.harvard.edu"
+      ],
+      "names": [
+        "Andy Schroeder",
+        "Andrew Schroeder",
+        "aschroed"
       ]
     }
   }

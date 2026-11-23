@@ -41,25 +41,25 @@ def _ont_unaligned_reads_validator(structured_data: StructuredDataSet, **kwargs)
     ont_identifiers = [seq.get("identifier", "") for seq in sequencers]
     for item in data:
         if _FILE_SETS_PROPERTY_NAME in item and (
-            submitted_id := item.get("submitted_id")
+            submitted_id := item.get("submitted_id", "")
         ):
             if (file_sets := [
                     file_set_item
                     for file_set_item in structured_data.data.get(_FILE_SET_SCHEMA_NAME, [])
-                    if file_set_item.get("submitted_id")
-                    in item.get(_FILE_SETS_PROPERTY_NAME)
+                    if file_set_item.get("submitted_id", "")
+                    in item.get(_FILE_SETS_PROPERTY_NAME, [])
             ]):
                 for file_set in file_sets:
                     if (sequencings := [
                         sequencing_item
                         for sequencing_item in structured_data.data.get(_SEQUENCING_SCHEMA_NAME, [])
-                        if sequencing_item.get("submitted_id")
-                        in file_set.get(_SEQUENCING_PROPERTY_NAME)
+                        if sequencing_item.get("submitted_id", "")
+                        in file_set.get(_SEQUENCING_PROPERTY_NAME, "")
                     ]):
                         for sequencing in sequencings:
-                            if sequencing.get(_SEQUENCER_PROPERTY_NAME) in ont_identifiers:
+                            if sequencing.get(_SEQUENCER_PROPERTY_NAME, "") in ont_identifiers:
                                 # ONT unaligned reads file
-                                if item.get(_FILE_FORMAT_PROPERTY_NAME) == _FASTQ_FILE_FORMAT:
+                                if item.get(_FILE_FORMAT_PROPERTY_NAME, "") == _FASTQ_FILE_FORMAT:
                                     if _DERIVED_FROM_PROPERTY_NAME not in item:
                                         # fastq file missing derived_from
                                         structured_data.note_validation_error(
@@ -77,8 +77,8 @@ def _ont_unaligned_reads_validator(structured_data: StructuredDataSet, **kwargs)
                                 elif (softwares := [
                                     software_item
                                     for software_item in structured_data.data.get(_SOFTWARE_SCHEMA_NAME, [])
-                                    if software_item.get("submitted_id")
-                                    in item.get(_SOFTWARE_PROPERTY_NAME)
+                                    if software_item.get("submitted_id", "")
+                                    in item.get(_SOFTWARE_PROPERTY_NAME, [])
                                 ]):
                                     for software in softwares:
                                         missing = [

@@ -17,7 +17,7 @@ permissions:
 jobs:
 
   test-macos-x86:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
       - name: Test MacOS Binary (x86)
         env:

@@ -77,15 +77,18 @@ class AmazonCredentials:
 
     @property
     def account_number(self) -> Optional[str]:
+        # N.B. This uses sts:GetCallerIdentity rather than iam:GetUser because GetCallerIdentity
+        # requires no permissions and works whoever we are, whereas GetUser only works for an IAM
+        # user -- it has no answer for a role session (e.g. assumed via OIDC) or a federated user,
+        # and temporary credentials may not be allowed to call IAM at all.
         if not self._account_number:
             try:
-                iam = BotoClient("iam",
+                sts = BotoClient("sts",
                                  region_name=self.region,
                                  aws_access_key_id=self.access_key_id,
                                  aws_secret_access_key=self.secret_access_key,
                                  aws_session_token=self.session_token)
-                response = iam.get_user()
-                self._account_number = response["User"]["Arn"].split(":")[4]
+                self._account_number = sts.get_caller_identity()["Account"]
             except Exception:
                 pass
         return self._account_number
@@ -119,7 +122,10 @@ class AmazonCredentials:
                 result["region_name"] = region
         return result
 
-    def ping(self) -> bool:
+    def ping(self, raise_exception: bool = False) -> bool:
+        # N.B. sts:GetCallerIdentity requires no permissions at all, so a failure here means the
+        # credentials themselves are unusable (e.g. an inactive or deleted access key), rather than
+        # a policy problem. Pass raise_exception to see which; the reason is otherwise invisible.
         try:
             sts = BotoClient("sts",
                              region_name=self.region,
@@ -128,7 +134,9 @@ class AmazonCredentials:
                              aws_session_token=self.session_token)
             _ = sts.get_caller_identity()
             return True
-        except Exception:
+        except Exception as e:
+            if raise_exception is True:
+                raise e
             return False
 
     def __eq__(self, other: Optional[AmazonCredentials]) -> bool:

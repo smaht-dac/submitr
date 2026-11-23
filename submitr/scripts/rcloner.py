@@ -308,10 +308,8 @@ def main_copy(source: str, destination: str,
             destination_config = RCloneGoogle(credentials_destination_google)
 
     def define_progress_callback(source_target: RCloneStore, source: str) -> None:
-        nonlocal source_config, destination_config
         process_info = {}
         def interrupt_stop(bar: ProgressBar):  # noqa
-            nonlocal process_info
             if pid := process_info.get("pid"):
                 os.killpg(os.getpgid(pid), signal.SIGTERM)
             return False
@@ -322,7 +320,6 @@ def main_copy(source: str, destination: str,
                                    interrupt_stop=interrupt_stop,
                                    interrupt_message="upload")
         def progress_callback(nbytes: int) -> None:  # noqa
-            nonlocal progress_bar
             progress_bar.set_progress(nbytes)
         return namedtuple("progress_callback", ["function", "process"])(progress_callback, process_info)
         return progress_callback

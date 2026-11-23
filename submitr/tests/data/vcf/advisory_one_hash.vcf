@@ -1,0 +1,4 @@
+##fileformat=VCFv4.0
+#source: sanitized pipeline metadata
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr1	10	.	A	C	.	.	.
